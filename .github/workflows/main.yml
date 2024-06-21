@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,7 +27,7 @@ jobs:
             ${{ runner.os }}-nuget-
               
       - name: 🔫 Build and Pack
-        run: ./build.ps1 pack
+        run: ./build.sh pack
 
       - name: Push to nuget.org
         run: dotnet nuget push output\*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${{secrets.CONNECTORS_NUGET_TOKEN }} --skip-duplicate
