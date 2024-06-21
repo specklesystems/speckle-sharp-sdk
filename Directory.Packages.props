@@ -24,5 +24,8 @@
     <PackageVersion Include="NUnit.Analyzers" Version="4.2.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="JunitXml.TestLogger" Version="3.0.124" />
+    <PackageVersion Include="Bullseye" Version="5.0.0"/>
+    <PackageVersion Include="Glob" Version="1.1.9"/>
+    <PackageVersion Include="SimpleExec" Version="12.0.0"/>
   </ItemGroup>
 </Project>
