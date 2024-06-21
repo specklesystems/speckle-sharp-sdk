@@ -1,5 +1,6 @@
 #nullable enable
 using NUnit.Framework;
+using Speckle.Core.Common;
 using Speckle.Core.Transports;
 using Speckle.Newtonsoft.Json;
 
@@ -8,7 +9,7 @@ namespace Speckle.Core.Tests.Unit.Transports;
 [TestFixture]
 public abstract class TransportTests
 {
-  protected abstract ITransport Sut { get; }
+  protected abstract ITransport? Sut { get; }
 
   [Test]
   public async Task SaveAndRetrieveObject()
@@ -17,7 +18,7 @@ public abstract class TransportTests
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     {
-      var preAdd = Sut.GetObject(PAYLOAD_ID);
+      var preAdd = Sut.NotNull().GetObject(PAYLOAD_ID);
       Assert.That(preAdd, Is.Null);
     }
 
@@ -37,7 +38,7 @@ public abstract class TransportTests
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     {
-      var preAdd = await Sut.HasObjects(new[] { PAYLOAD_ID });
+      var preAdd = await Sut.NotNull().HasObjects(new[] { PAYLOAD_ID });
       Assert.That(preAdd, Has.Exactly(1).Items);
       Assert.That(preAdd, Has.No.ContainValue(true));
       Assert.That(preAdd, Contains.Key(PAYLOAD_ID));
@@ -69,11 +70,11 @@ public abstract class TransportTests
       testData,
       x =>
       {
-        Sut.SaveObject(x.id, x.data);
+        Sut.NotNull().SaveObject(x.id, x.data);
       }
     );
 
-    await Sut.WriteComplete();
+    await Sut.NotNull().WriteComplete();
 
     //Test 1. SavedObjectCount //WARN: FAIL!!! seems this is not implemented for SQLite Transport
     //Assert.That(transport.SavedObjectCount, Is.EqualTo(testDataCount));
@@ -96,7 +97,7 @@ public abstract class TransportTests
   [Test]
   public void SaveObject_FromTransport_FailsPredictably()
   {
-    var exception = Assert.Throws<TransportException>(() => Sut.SaveObject("non-existent-id", Sut));
+    var exception = Assert.Throws<TransportException>(() => Sut.NotNull().SaveObject("non-existent-id", Sut));
     Assert.That(exception?.Transport, Is.EqualTo(Sut));
   }
 
@@ -104,7 +105,7 @@ public abstract class TransportTests
   public async Task ProgressAction_Called_OnSaveObject()
   {
     bool wasCalled = false;
-    Sut.OnProgressAction = (_, _) => wasCalled = true;
+    Sut.NotNull().OnProgressAction = (_, _) => wasCalled = true;
 
     Sut.SaveObject("12345", "fake payload data");
 
@@ -116,7 +117,7 @@ public abstract class TransportTests
   [Test]
   public void ToString_IsNotEmpty()
   {
-    var toString = Sut.ToString();
+    var toString = Sut.NotNull().ToString();
 
     Assert.That(toString, Is.Not.Null);
     Assert.That(toString, Is.Not.Empty);
@@ -125,7 +126,7 @@ public abstract class TransportTests
   [Test]
   public void TransportName_IsNotEmpty()
   {
-    var toString = Sut.TransportName;
+    var toString = Sut.NotNull().TransportName;
 
     Assert.That(toString, Is.Not.Null);
     Assert.That(toString, Is.Not.Empty);
@@ -135,7 +136,7 @@ public abstract class TransportTests
   public void SaveObject_ExceptionThrown_TaskIsCanceled()
   {
     using CancellationTokenSource tokenSource = new();
-    Sut.CancellationToken = tokenSource.Token;
+    Sut.NotNull().CancellationToken = tokenSource.Token;
 
     tokenSource.Cancel();
 
@@ -158,13 +159,13 @@ public abstract class TransportTests
 
     foreach (var x in testData)
     {
-      Sut.SaveObject(x.id, x.data);
+      Sut.NotNull().SaveObject(x.id, x.data);
     }
 
     var parent = JsonConvert.SerializeObject(
       new TransportHelpers.Placeholder() { __closure = testData.Select(x => x.id).ToDictionary(x => x, _ => 1) }
     );
-    Sut.SaveObject("root", parent);
+    Sut.NotNull().SaveObject("root", parent);
 
     await Sut.WriteComplete();
 

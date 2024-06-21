@@ -3,6 +3,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Speckle.Core.Api;
+using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 
 namespace Speckle.Core.Credentials;
@@ -94,6 +95,7 @@ public class Account : IEquatable<Account>
   {
     return obj is Account acc && Equals(acc);
   }
+  public override int GetHashCode() => HashCode.Of(userInfo.email).And(serverInfo.url);
 
   #endregion
 

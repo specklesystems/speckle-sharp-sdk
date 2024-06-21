@@ -166,7 +166,7 @@ internal static class ValueConverter
       }
 
       Type listElementType = type.GenericTypeArguments[0];
-      IList ret = Activator.CreateInstance(type, valueList.Count) as IList;
+      IList ret = (IList)Activator.CreateInstance(type, valueList.Count);
       foreach (object inputListElement in valueList)
       {
         if (!ConvertValue(listElementType, inputListElement, out object? convertedListElement))
@@ -194,7 +194,7 @@ internal static class ValueConverter
       }
 
       Type dictValueType = type.GenericTypeArguments[1];
-      IDictionary ret = Activator.CreateInstance(type) as IDictionary;
+      IDictionary ret = (IDictionary)Activator.CreateInstance(type);
 
       foreach (KeyValuePair<string, object> kv in valueDict)
       {
@@ -220,7 +220,7 @@ internal static class ValueConverter
       Type arrayElementType =
         type.GetElementType() ?? throw new ArgumentException("IsArray yet not valid element type", nameof(type));
 
-      Array ret = Activator.CreateInstance(type, valueList.Count) as Array;
+      Array ret = (Array)Activator.CreateInstance(type, valueList.Count);
       for (int i = 0; i < valueList.Count; i++)
       {
         object inputListElement = valueList[i];

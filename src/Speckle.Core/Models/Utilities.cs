@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
+using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 
@@ -176,7 +177,7 @@ public static class Utilities
         var value = props[propInfo.Name];
         if (propInfo.PropertyType.BaseType.Name == "Enum")
         {
-          value = Enum.Parse(propInfo.PropertyType, (string)value);
+          value = Enum.Parse(propInfo.PropertyType, (string)value.NotNull());
         }
 
         if (value != null)

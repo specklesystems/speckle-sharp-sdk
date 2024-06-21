@@ -2,15 +2,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <RootNamespace>Speckle.Core</RootNamespace>
     <PackageId>Speckle.Core</PackageId>
     <Product>Speckle.Core</Product>
     <AssemblyName>Speckle.Core</AssemblyName>
     <Description>Core is the .NET SDK for Speckle</Description>
     <PackageTags>$(PackageTags) core</PackageTags>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
+    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit;System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
+    <PolySharpUsePublicAccessibilityForGeneratedTypes>true</PolySharpUsePublicAccessibilityForGeneratedTypes>
+    <RuntimeIdentifiers>win-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>

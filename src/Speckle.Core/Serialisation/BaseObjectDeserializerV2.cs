@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Speckle.Core.Common;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation.SerializationUtilities;
@@ -129,7 +130,7 @@ public sealed class BaseObjectDeserializerV2
         return new List<(string, int)>();
       }
 
-      foreach (JToken prop in doc1["__closure"])
+      foreach (JToken prop in doc1["__closure"].NotNull())
       {
         string childId = ((JProperty)prop).Name;
         int childMinDepth = (int)((JProperty)prop).Value;
@@ -143,8 +144,12 @@ public sealed class BaseObjectDeserializerV2
     }
   }
 
-  private object? DeserializeTransportObjectProxy(string objectJson)
+  private object? DeserializeTransportObjectProxy(string? objectJson)
   {
+    if (objectJson is null)
+    {
+      return null;
+    }
     // Try background work
     Task<object?>? bgResult = _workerThreads!.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
     if (bgResult != null)
@@ -279,9 +284,9 @@ public sealed class BaseObjectDeserializerV2
 
         if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
         {
-          var objId = (string)referencedId!;
+          var objId = (string)referencedId.NotNull();
           object? deserialized = null;
-          lock (_deserializedObjects)
+          lock (_deserializedObjects.NotNull())
           {
             if (_deserializedObjects.TryGetValue(objId, out object? o))
             {

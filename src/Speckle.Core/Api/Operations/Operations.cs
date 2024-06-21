@@ -8,7 +8,7 @@ using Speckle.Newtonsoft.Json.Serialization;
 namespace Speckle.Core.Api;
 
 /// <summary>
-/// Exposes several key methods for interacting with Speckle.Speckle.Core.
+/// Exposes several key methods for interacting with Speckle.Core.
 /// <para>Serialize/Deserialize</para>
 /// <para>Push/Pull (methods to serialize and send data to one or more servers)</para>
 /// </summary>

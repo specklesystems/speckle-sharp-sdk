@@ -16,6 +16,7 @@ using GraphQL.Client.Http;
 using Speckle.Core.Api;
 using Speckle.Core.Api.GraphQL;
 using Speckle.Core.Api.GraphQL.Serializer;
+using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Transports;
@@ -267,7 +268,7 @@ public static class AccountManager
     account.id = null;
 
     RemoveAccount(id);
-    s_accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
+    s_accountStorage.SaveObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
     await s_accountStorage.WriteComplete().ConfigureAwait(false);
   }
 
@@ -339,7 +340,7 @@ public static class AccountManager
 
     foreach (var acc in sqlAccounts)
     {
-      if (IsInvalid(acc))
+      if (IsInvalid(acc.NotNull()))
       {
         RemoveAccount(acc.id);
       }
@@ -759,7 +760,7 @@ public static class AccountManager
 
       return JsonConvert.DeserializeObject<TokenExchangeResponse>(
         await response.Content.ReadAsStringAsync().ConfigureAwait(false)
-      );
+      ).NotNull();
     }
     catch (Exception ex) when (!ex.IsFatal())
     {
@@ -786,7 +787,7 @@ public static class AccountManager
 
       return JsonConvert.DeserializeObject<TokenExchangeResponse>(
         await response.Content.ReadAsStringAsync().ConfigureAwait(false)
-      );
+      ).NotNull();
     }
     catch (Exception ex) when (!ex.IsFatal())
     {

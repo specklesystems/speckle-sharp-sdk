@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Speckle.Core.Common;
 using Speckle.Core.Logging;
 using Speckle.Core.Serialisation.SerializationUtilities;
 
@@ -190,9 +191,9 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
   {
     EnsureStarted();
     Task<object?> op = QueueOperation(ServerApiOperation.HasBlobs, (streamId, blobs));
-    var res = (List<string>)await op.ConfigureAwait(false)!;
+    var res = (List<string>?)await op.ConfigureAwait(false);
     Debug.Assert(res is not null);
-    return res!;
+    return res.NotNull();
   }
 
   #endregion

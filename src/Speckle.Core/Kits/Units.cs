@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using Speckle.Core.Common;
 
 namespace Speckle.Core.Kits;
 
@@ -259,7 +260,7 @@ public static class Units
       return null;
     }
 
-    return unit.ToLower() switch
+    return unit.NotNull().ToLower() switch
     {
       "mm" or "mil" or "millimeter" or "millimeters" or "millimetres" => Millimeters,
       "cm" or "centimetre" or "centimeter" or "centimetres" or "centimeters" => Centimeters,

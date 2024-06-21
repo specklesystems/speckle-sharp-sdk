@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using NUnit.Framework;
+using Speckle.Core.Common;
 using Speckle.Core.Transports;
 
 namespace Speckle.Core.Tests.Unit.Transports;
@@ -8,9 +9,9 @@ namespace Speckle.Core.Tests.Unit.Transports;
 [TestOf(nameof(SQLiteTransport))]
 public sealed class SQLiteTransportTests : TransportTests, IDisposable
 {
-  protected override ITransport Sut => _sqlite!;
+  protected override ITransport? Sut => _sqlite;
 
-  private SQLiteTransport _sqlite;
+  private SQLiteTransport? _sqlite;
 
   private static readonly string s_basePath = $"./temp {Guid.NewGuid()}";
   private const string APPLICATION_NAME = "Speckle Integration Tests";
@@ -44,7 +45,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     const string PAYLOAD_ID = "MyTestObjectId";
     const string PAYLOAD_DATA = "MyTestObjectData";
 
-    _sqlite.SaveObject(PAYLOAD_ID, PAYLOAD_DATA);
+    _sqlite.NotNull().SaveObject(PAYLOAD_ID, PAYLOAD_DATA);
     await _sqlite.WriteComplete();
 
     const string NEW_PAYLOAD = "MyEvenBetterObjectData";
@@ -62,7 +63,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     const string PAYLOAD_ID = "MyTestObjectId";
     const string PAYLOAD_DATA = "MyTestObjectData";
 
-    var preUpdate = _sqlite.GetObject(PAYLOAD_ID);
+    var preUpdate = _sqlite.NotNull().GetObject(PAYLOAD_ID);
     Assert.That(preUpdate, Is.Null);
 
     _sqlite.UpdateObject(PAYLOAD_ID, PAYLOAD_DATA);
@@ -78,12 +79,11 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     const string PAYLOAD_ID = "MyTestObjectId";
     const string PAYLOAD_DATA = "MyTestObjectData";
 
-    {
-      var preAdd = Sut.GetObject(PAYLOAD_ID);
+    
+      var preAdd = Sut.NotNull().GetObject(PAYLOAD_ID);
       Assert.That(preAdd, Is.Null);
-    }
 
-    _sqlite.SaveObjectSync(PAYLOAD_ID, PAYLOAD_DATA);
+    _sqlite.NotNull().SaveObjectSync(PAYLOAD_ID, PAYLOAD_DATA);
 
     {
       var postAdd = Sut.GetObject(PAYLOAD_ID);
@@ -111,10 +111,10 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
 
     foreach (var (key, data) in testData)
     {
-      _sqlite.SaveObjectSync(key, data);
+      _sqlite.NotNull().SaveObjectSync(key, data);
     }
 
-    foreach (var o in _sqlite.GetAllObjects())
+    foreach (var o in _sqlite.NotNull().GetAllObjects())
     {
       string newData = o + UPDATE_STRING;
       string key = $"{o[length - 1]}";
@@ -138,7 +138,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
   {
     foreach (int i in Enumerable.Range(0, dataSize))
     {
-      _sqlite.SaveObjectSync(i.ToString(), Guid.NewGuid().ToString());
+      _sqlite.NotNull().SaveObjectSync(i.ToString(), Guid.NewGuid().ToString());
     }
 
     List<string>[] results = new List<string>[parallelism];
@@ -146,7 +146,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
       Enumerable.Range(0, parallelism),
       i =>
       {
-        results[i] = _sqlite.GetAllObjects().ToList();
+        results[i] = _sqlite.NotNull().GetAllObjects().ToList();
       }
     );
 

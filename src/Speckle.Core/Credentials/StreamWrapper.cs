@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using Speckle.Core.Api;
+using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 
@@ -304,7 +305,7 @@ public class StreamWrapper
     List<Exception> err = new();
     try
     {
-      await ValidateWithAccount(defAcc).ConfigureAwait(false);
+      await ValidateWithAccount(defAcc.NotNull()).ConfigureAwait(false);
       _account = defAcc;
       return defAcc;
     }

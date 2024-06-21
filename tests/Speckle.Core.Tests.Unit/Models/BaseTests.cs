@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Speckle.Core.Common;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
@@ -177,12 +178,12 @@ public class BaseTests
     var value = "something";
     // Can create a new dynamic member
     @base[key] = value;
-    Assert.That(value, Is.EqualTo((string)@base[key]));
+    Assert.That(value, Is.EqualTo((string)@base[key].NotNull()));
 
     // Can overwrite existing
     value = "some other value";
     @base[key] = value;
-    Assert.That(value, Is.EqualTo((string)@base[key]));
+    Assert.That(value, Is.EqualTo((string)@base[key].NotNull()));
 
     // Accepts null values
     @base[key] = null;

@@ -43,11 +43,11 @@ public class BaseExtensionsTests
     var basePaths = collection.TraverseWithPath((obj => obj is not Collection)).ToList();
 
     Assert.That(basePaths.Count, Is.EqualTo(3));
-    Assert.That(basePaths[0].Item2.speckle_type, Is.EqualTo("Speckle.Speckle.Core.Models.Collection"));
+    Assert.That(basePaths[0].Item2.speckle_type, Is.EqualTo("Speckle.Core.Models.Collection"));
     Assert.That(basePaths[0].Item2["name"], Is.EqualTo("collection"));
     Assert.That(basePaths[0].Item1, Is.EqualTo(new List<string>()));
 
-    Assert.That(basePaths[1].Item2.speckle_type, Is.EqualTo("Speckle.Speckle.Core.Models.Collection"));
+    Assert.That(basePaths[1].Item2.speckle_type, Is.EqualTo("Speckle.Core.Models.Collection"));
     Assert.That(basePaths[1].Item2["name"], Is.EqualTo("subCollection"));
     Assert.That(basePaths[1].Item1, Is.EqualTo(new List<string>() { "collection" }));
 

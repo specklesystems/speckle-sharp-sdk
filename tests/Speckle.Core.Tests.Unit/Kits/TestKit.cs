@@ -17,7 +17,7 @@ public class TestKit : ISpeckleKit
 
   public string Author => "Dimitrie";
 
-  public string WebsiteOrEmail => "hello@Speckle.Speckle.Core.works";
+  public string WebsiteOrEmail => "hello@Speckle.Core.works";
 
   public IEnumerable<string> Converters => new List<string>();
 

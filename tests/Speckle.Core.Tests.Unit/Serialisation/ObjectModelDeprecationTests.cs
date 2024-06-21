@@ -12,7 +12,7 @@ namespace Speckle.Core.Tests.Unit.Serialisation
     [Test]
     public void GetDeprecatedAtomicType()
     {
-      string destinationType = $"Speckle.Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
+      string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
 
       var result = BaseObjectSerializationUtilities.GetAtomicType(destinationType);
       Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));

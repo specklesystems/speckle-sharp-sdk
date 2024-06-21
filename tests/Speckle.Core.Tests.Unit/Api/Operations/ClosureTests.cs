@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
+using Speckle.Core.Common;
 using Speckle.Core.Models;
 using Speckle.Core.Tests.Unit.Kits;
 using Speckle.Core.Transports;
@@ -40,12 +41,12 @@ public class Closures
 
     var test = Core.Api.Operations.Receive(result, localTransport: transport).Result;
 
-    Assert.IsNotNull(test.id);
+    test.id.NotNull();
     Assert.That(d1.GetId(true), Is.EqualTo(test.id));
 
-    var d1_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d1.GetId(true)]);
-    var d2_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d2.GetId(true)]);
-    var d3_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d3.GetId(true)]);
+    var d1_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d1.GetId(true)]));
+    var d2_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d2.GetId(true)]));
+    var d3_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d3.GetId(true)]));
     var d4_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d4.GetId(true)]);
     var d5_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d5.GetId(true)]);
 

@@ -100,11 +100,6 @@
         "resolved": "17.10.0",
         "contentHash": "yC7oSlnR54XO5kOuHlVOKtxomNNN1BWXX8lK1G2jaPXT9sUok7kCOoA4Pgs0qyFaCtMrNsprztYMeoEGqCm4uA=="
       },
-      "Microsoft.CSharp": {
-        "type": "Transitive",
-        "resolved": "4.7.0",
-        "contentHash": "pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA=="
-      },
       "Microsoft.Data.Sqlite.Core": {
         "type": "Transitive",
         "resolved": "7.0.5",
@@ -304,6 +299,12 @@
           "GraphQL.Client.Abstractions.Websocket": "6.0.0",
           "System.Reactive": "5.0.0"
         }
+      },
+      "Microsoft.CSharp": {
+        "type": "CentralTransitive",
+        "requested": "[4.7.0, )",
+        "resolved": "4.7.0",
+        "contentHash": "pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA=="
       },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",
