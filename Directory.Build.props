@@ -19,12 +19,18 @@
     <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
+  <PropertyGroup> 
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <MinVerDefaultPreReleaseIdentifiers>alpha</MinVerDefaultPreReleaseIdentifiers>
   </PropertyGroup>  
   <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="PolySharp" PrivateAssets="All"/>
+    <PackageReference Include="MinVer" PrivateAssets="All"/>
   </ItemGroup>
 </Project>
