@@ -16,7 +16,6 @@
     <PackageVersion Include="Speckle.Newtonsoft.Json" Version="13.0.2" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.6" />
     <PackageVersion Include="System.DoubleNumerics" Version="3.1.3" />
-    <PackageVersion Include="PolySharp" Version="1.14.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="Moq" Version="4.20.70" />
@@ -27,12 +26,10 @@
     <PackageVersion Include="Bullseye" Version="5.0.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
     <PackageVersion Include="SimpleExec" Version="12.0.0" />
-    <PackageVersion Include="MinVer" Version="5.0.0" />
     <PackageVersion Include="MongoDB.Driver" Version="2.19.2" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     
-    <GlobalPackageReference Include="PolySharp" />
-    <GlobalPackageReference Include="MinVer" />
-    <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" />
+    <GlobalPackageReference Include="PolySharp" Version="1.14.1" />
+    <GlobalPackageReference Include="MinVer" Version="5.0.0" />
+    <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
   </ItemGroup>
 </Project>
