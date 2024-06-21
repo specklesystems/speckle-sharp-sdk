@@ -758,9 +758,9 @@ public static class AccountManager
       content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
       var response = await client.PostAsync($"{server}/auth/token", content).ConfigureAwait(false);
 
-      return JsonConvert.DeserializeObject<TokenExchangeResponse>(
-        await response.Content.ReadAsStringAsync().ConfigureAwait(false)
-      ).NotNull();
+      return JsonConvert
+        .DeserializeObject<TokenExchangeResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false))
+        .NotNull();
     }
     catch (Exception ex) when (!ex.IsFatal())
     {
@@ -785,9 +785,9 @@ public static class AccountManager
       content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
       var response = await client.PostAsync(new Uri(server, "/auth/token"), content).ConfigureAwait(false);
 
-      return JsonConvert.DeserializeObject<TokenExchangeResponse>(
-        await response.Content.ReadAsStringAsync().ConfigureAwait(false)
-      ).NotNull();
+      return JsonConvert
+        .DeserializeObject<TokenExchangeResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false))
+        .NotNull();
     }
     catch (Exception ex) when (!ex.IsFatal())
     {

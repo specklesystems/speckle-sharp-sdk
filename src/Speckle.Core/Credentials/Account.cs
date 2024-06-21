@@ -95,6 +95,7 @@ public class Account : IEquatable<Account>
   {
     return obj is Account acc && Equals(acc);
   }
+
   public override int GetHashCode() => HashCode.Of(userInfo.email).And(serverInfo.url);
 
   #endregion

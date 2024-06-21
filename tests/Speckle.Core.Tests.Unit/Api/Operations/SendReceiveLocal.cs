@@ -27,7 +27,9 @@ public sealed class SendReceiveLocal : IDisposable
 
     for (int i = 0; i < NUM_OBJECTS; i++)
     {
-      ((List<Base>)myObject["@items"].NotNull()).Add(new Point(i, i, i + rand.NextDouble()) { applicationId = i + "-___/---" });
+      ((List<Base>)myObject["@items"].NotNull()).Add(
+        new Point(i, i, i + rand.NextDouble()) { applicationId = i + "-___/---" }
+      );
     }
 
     using SQLiteTransport localTransport = new();
@@ -56,7 +58,9 @@ public sealed class SendReceiveLocal : IDisposable
 
     for (int i = 0; i < NUM_OBJECTS; i++)
     {
-      ((List<Base>)myObject["@items"].NotNull()).Add(new Point(i, i, i + rand.NextDouble()) { applicationId = i + "-___/---" });
+      ((List<Base>)myObject["@items"].NotNull()).Add(
+        new Point(i, i, i + rand.NextDouble()) { applicationId = i + "-___/---" }
+      );
     }
 
     _objId01 = Core.Api.Operations.Send(myObject, _sut, false).Result;
@@ -78,7 +82,9 @@ public sealed class SendReceiveLocal : IDisposable
 
     for (int i = 0; i < 30; i++)
     {
-      ((List<Base>)myObject["@items"].NotNull()).Add(new Point(i, i, i + rand.NextDouble()) { applicationId = i + "-ugh/---" });
+      ((List<Base>)myObject["@items"].NotNull()).Add(
+        new Point(i, i, i + rand.NextDouble()) { applicationId = i + "-ugh/---" }
+      );
     }
 
     _objId01 = await Core.Api.Operations.Send(myObject, _sut, false);
@@ -110,7 +116,10 @@ public sealed class SendReceiveLocal : IDisposable
     Assert.That(_objId01, Is.Not.Null);
 
     var objsPulled = await Core.Api.Operations.Receive(_objId01);
-    Assert.That(((List<object>)((Dictionary<string, object>)objsPulled["@dictionary"].NotNull())["a"]).First(), Is.EqualTo(1));
+    Assert.That(
+      ((List<object>)((Dictionary<string, object>)objsPulled["@dictionary"].NotNull())["a"]).First(),
+      Is.EqualTo(1)
+    );
     Assert.That(((List<object>)objsPulled["@list"].NotNull()).Last(), Is.EqualTo("ciao"));
   }
 
@@ -172,7 +181,9 @@ public sealed class SendReceiveLocal : IDisposable
 
     for (int i = 0; i < 30; i++)
     {
-      ((List<Base>)myObject["items"].NotNull()).Add(new Point(i, i, i + rand.NextDouble()) { applicationId = i + "-fab/---" });
+      ((List<Base>)myObject["items"].NotNull()).Add(
+        new Point(i, i, i + rand.NextDouble()) { applicationId = i + "-fab/---" }
+      );
     }
 
     ConcurrentDictionary<string, int>? progress = null;

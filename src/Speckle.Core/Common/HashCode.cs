@@ -62,8 +62,7 @@ public readonly struct HashCode : IEquatable<HashCode>
   /// <typeparam name="T">The type of the item.</typeparam>
   /// <param name="item">The item.</param>
   /// <returns>The new hash code.</returns>
-  public HashCode And<T>(T item) =>
-    new HashCode(CombineHashCodes(this.value, GetHashCode(item)));
+  public HashCode And<T>(T item) => new HashCode(CombineHashCodes(this.value, GetHashCode(item)));
 
   /// <summary>
   /// Adds the hash code of the specified items in the collection.
@@ -102,8 +101,7 @@ public readonly struct HashCode : IEquatable<HashCode>
   /// <exception cref="NotSupportedException">Implicitly convert this struct to an <see cref="int" /> to get the hash code.</exception>
   [EditorBrowsable(EditorBrowsableState.Never)]
   public override int GetHashCode() =>
-    throw new NotSupportedException(
-      "Implicitly convert this struct to an int to get the hash code.");
+    throw new NotSupportedException("Implicitly convert this struct to an int to get the hash code.");
 
   private static int CombineHashCodes(int h1, int h2)
   {

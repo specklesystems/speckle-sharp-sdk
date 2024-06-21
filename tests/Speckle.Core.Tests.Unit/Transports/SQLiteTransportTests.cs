@@ -79,9 +79,8 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     const string PAYLOAD_ID = "MyTestObjectId";
     const string PAYLOAD_DATA = "MyTestObjectData";
 
-    
-      var preAdd = Sut.NotNull().GetObject(PAYLOAD_ID);
-      Assert.That(preAdd, Is.Null);
+    var preAdd = Sut.NotNull().GetObject(PAYLOAD_ID);
+    Assert.That(preAdd, Is.Null);
 
     _sqlite.NotNull().SaveObjectSync(PAYLOAD_ID, PAYLOAD_DATA);
 
