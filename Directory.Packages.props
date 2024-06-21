@@ -29,5 +29,10 @@
     <PackageVersion Include="SimpleExec" Version="12.0.0" />
     <PackageVersion Include="MinVer" Version="5.0.0" />
     <PackageVersion Include="MongoDB.Driver" Version="2.19.2" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+    
+    <GlobalPackageReference Include="PolySharp" />
+    <GlobalPackageReference Include="MinVer" />
+    <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" />
   </ItemGroup>
 </Project>
