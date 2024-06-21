@@ -10,6 +10,7 @@
     <IsPackable>true</IsPackable>
     <Nullable>enable</Nullable>
     <RootNamespace>Speckle.Core.Transports</RootNamespace>
+    <RuntimeIdentifiers>win-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>

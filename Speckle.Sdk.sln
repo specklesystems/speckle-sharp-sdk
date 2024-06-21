@@ -10,6 +10,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Objects", "src\Spec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Objects.Tests.Unit", "tests\Speckle.Objects.Tests.Unit\Speckle.Objects.Tests.Unit.csproj", "{A0338FC0-3011-498F-AD09-01230FABD3ED}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{5CB96C27-FC5B-4A41-86B6-951AF99B8116}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{35047EE7-AD1D-4741-80A7-8F0E874718E9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{DA2AED52-58F9-471E-8AD8-102FD36129E3}"
+	ProjectSection(SolutionItems) = preProject
+		.csharpierrc.yaml = .csharpierrc.yaml
+		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		global.json = global.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,5 +53,12 @@ Global
 		{A0338FC0-3011-498F-AD09-01230FABD3ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0338FC0-3011-498F-AD09-01230FABD3ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A0338FC0-3011-498F-AD09-01230FABD3ED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A413E196-3696-4F48-B635-04B5F76BF9C9} = {5CB96C27-FC5B-4A41-86B6-951AF99B8116}
+		{6845F190-036C-4AEF-B267-23EE84DBD2A6} = {5CB96C27-FC5B-4A41-86B6-951AF99B8116}
+		{181F50AA-DD2A-4541-98EF-B868E2D06B9A} = {5CB96C27-FC5B-4A41-86B6-951AF99B8116}
+		{99AE2273-12C5-4A9D-9FDD-19F8B394B5E2} = {35047EE7-AD1D-4741-80A7-8F0E874718E9}
+		{A0338FC0-3011-498F-AD09-01230FABD3ED} = {35047EE7-AD1D-4741-80A7-8F0E874718E9}
 	EndGlobalSection
 EndGlobal
