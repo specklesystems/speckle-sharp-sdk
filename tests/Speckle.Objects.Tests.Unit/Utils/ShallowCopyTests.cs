@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Objects.BuiltElements;
 using Objects.Geometry;
+using Speckle.Core.Common;
 using Speckle.Core.Kits;
 
 namespace Objects.Tests.Unit.Utils;
@@ -20,7 +21,7 @@ public class ShallowCopyTests
     };
 
     var shallow = wall.ShallowCopy();
-    var displayValue = (IList)shallow["displayValue"];
+    var displayValue = (IList)shallow["displayValue"].NotNull();
     Assert.That(wall.displayValue, Has.Count.EqualTo(displayValue.Count));
   }
 }

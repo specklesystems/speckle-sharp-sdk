@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Speckle.Objects</RootNamespace>
+    <PackageId>Speckle.Objects</PackageId>
+    <Product>Speckle.Objects</Product>
+    <Description>Objects is the default object model for Speckle</Description>
+    <PackageTags>$(PackageTags), objects</PackageTags>
+    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit;System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Speckle.Objects.Tests.Unit"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Speckle.Core\Speckle.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Objects.Other;
+using Speckle.Core.Common;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
@@ -237,6 +238,8 @@ public class Point : Base, ITransformable<Point>
       return false;
     }
 
-    throw new NotImplementedException();
+    return this == (Point)obj;
   }
+
+  public override int GetHashCode() => HashCode.Of(units).And(x).And(y).And(y).GetHashCode();
 }

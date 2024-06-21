@@ -570,7 +570,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       {
         if (e.Brep != null)
         {
+#pragma warning disable CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
           e = new BrepEdge(
+#pragma warning restore CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
             this,
             e.Curve3dIndex,
             e.TrimIndices,
@@ -595,7 +597,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       {
         if (l.Brep != null)
         {
+#pragma warning disable CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
           l = new BrepLoop(this, l.FaceIndex, l.TrimIndices, l.Type);
+#pragma warning restore CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
           Loops[i] = l;
         }
         else
@@ -612,7 +616,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       {
         if (t.Brep != null)
         {
+#pragma warning disable CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
           t = new BrepTrim(
+#pragma warning restore CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
             this,
             t.EdgeIndex,
             t.FaceIndex,
@@ -640,7 +646,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       {
         if (f.Brep != null)
         {
+#pragma warning disable CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
           f = new BrepFace(this, f.SurfaceIndex, f.LoopIndices, f.OuterLoopIndex, f.OrientationReversed);
+#pragma warning restore CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
           Faces[i] = f;
         }
         else
