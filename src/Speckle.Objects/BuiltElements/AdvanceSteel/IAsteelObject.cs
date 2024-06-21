@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Objects.BuiltElements.AdvanceSteel;
+namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
 public interface IAsteelObject
 {

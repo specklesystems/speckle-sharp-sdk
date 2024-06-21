@@ -1,7 +1,6 @@
-using System.Collections.Generic;
 using Speckle.Core.Models;
 
-namespace Objects.GIS;
+namespace Speckle.Objects.GIS;
 
 public class GisFeature : Base
 {

@@ -1,8 +1,6 @@
-using System;
-using System.Collections.Generic;
 using Speckle.Core.Models;
 
-namespace Objects.GIS;
+namespace Speckle.Objects.GIS;
 
 [Obsolete("PolygonElement was replaced by a more generic class, \"GisFeature\", which contains more information")]
 public class PolygonElement : Base

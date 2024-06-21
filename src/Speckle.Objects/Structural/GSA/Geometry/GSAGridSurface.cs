@@ -1,8 +1,7 @@
-using System.Collections.Generic;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Objects.Structural.GSA.Geometry;
+namespace Speckle.Objects.Structural.GSA.Geometry;
 
 public class GSAGridSurface : Base
 {

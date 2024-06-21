@@ -1,8 +1,7 @@
-using System.Collections.Generic;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 /*
 For further informations about given the variables, visit:

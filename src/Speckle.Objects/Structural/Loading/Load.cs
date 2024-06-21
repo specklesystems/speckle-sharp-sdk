@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Objects.Structural.Loading;
+namespace Speckle.Objects.Structural.Loading;
 
 public class Load : Base
 {

@@ -1,9 +1,9 @@
-using Objects.Structural.CSI.Analysis;
-using Objects.Structural.Materials;
-using Objects.Structural.Properties;
 using Speckle.Core.Kits;
+using Speckle.Objects.Structural.CSI.Analysis;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties;
 
-namespace Objects.Structural.CSI.Properties;
+namespace Speckle.Objects.Structural.CSI.Properties;
 
 public class CSIOpening : Property2D
 {

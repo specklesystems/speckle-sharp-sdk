@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
-using Objects.Structural.Properties;
 using Speckle.Core.Kits;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Properties;
 
-namespace Objects.Structural.GSA.Geometry;
+namespace Speckle.Objects.Structural.GSA.Geometry;
 
 public class GSAMember2D : Element2D
 {

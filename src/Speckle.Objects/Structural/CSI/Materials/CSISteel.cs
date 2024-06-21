@@ -1,6 +1,6 @@
-using Objects.Structural.Materials;
+using Speckle.Objects.Structural.Materials;
 
-namespace Objects.Structural.CSI.Materials;
+namespace Speckle.Objects.Structural.CSI.Materials;
 
 public class CSISteel : Steel
 {

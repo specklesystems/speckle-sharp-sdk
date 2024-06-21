@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Structural.Loading;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Loading;
 
-namespace Objects.Structural.GSA.Loading;
+namespace Speckle.Objects.Structural.GSA.Loading;
 
 public class GSALoadGravity : LoadGravity
 {

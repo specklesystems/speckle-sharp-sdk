@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-using Objects.Utils;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Utils;
 
-namespace Objects.BuiltElements.Revit.Curve;
+namespace Speckle.Objects.BuiltElements.Revit.Curve;
 
 public class ModelCurve : Base
 {

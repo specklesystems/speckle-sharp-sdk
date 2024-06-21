@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.BuiltElements.Revit.Interfaces;
 using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit.Interfaces;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
 public class RevitCableTray : CableTray, IHasMEPConnectors
 {

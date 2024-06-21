@@ -1,8 +1,8 @@
-using Objects.Structural.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
 
-namespace Objects.Structural.GSA.Geometry;
+namespace Speckle.Objects.Structural.GSA.Geometry;
 
 public class GSAGridPlane : Storey
 {

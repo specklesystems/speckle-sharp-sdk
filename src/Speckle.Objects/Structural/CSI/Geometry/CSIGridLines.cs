@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.BuiltElements;
 using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements;
 
-namespace Objects.Structural.CSI.Geometry;
+namespace Speckle.Objects.Structural.CSI.Geometry;
 
 public class CSIGridLines : Base
 {

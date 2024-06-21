@@ -1,7 +1,6 @@
-using System;
-using Objects.Geometry;
+using Speckle.Objects.Geometry;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
 [Obsolete(
   "Networks are no longer used to assemble MEP systems in Revit. See the RevitCommitBuilder for MEP systems conversion."

@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Objects.BuiltElements.TeklaStructures;
+namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
 public class TeklaPosition : Base
 {

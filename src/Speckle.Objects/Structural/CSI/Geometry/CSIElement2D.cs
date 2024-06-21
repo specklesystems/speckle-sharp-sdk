@@ -1,12 +1,11 @@
-using System.Collections.Generic;
-using Objects.Structural.CSI.Properties;
-using Objects.Structural.Geometry;
-using Objects.Structural.Properties;
-using Objects.Structural.Results;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.CSI.Properties;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Objects.Structural.Results;
 
-namespace Objects.Structural.CSI.Geometry;
+namespace Speckle.Objects.Structural.CSI.Geometry;
 
 public class CSIElement2D : Element2D
 {

@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.Geometry;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
 public class Featureline : Base, IDisplayValue<List<Polyline>>
 {

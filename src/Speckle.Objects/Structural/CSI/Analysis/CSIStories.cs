@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
 
-namespace Objects.Structural.CSI.Analysis;
+namespace Speckle.Objects.Structural.CSI.Analysis;
 
 public class CSIStories : Base
 {

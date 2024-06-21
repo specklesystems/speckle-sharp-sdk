@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Objects.Structural.Loading;
+namespace Speckle.Objects.Structural.Loading;
 
 public class LoadCase : Base // or LoadPattern? (per CSI)
 {

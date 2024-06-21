@@ -1,11 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
-using Objects.Other;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.Objects.Other;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// A collection of points, with color and size support.

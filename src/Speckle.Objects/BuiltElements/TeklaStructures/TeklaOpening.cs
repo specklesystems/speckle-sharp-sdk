@@ -1,4 +1,4 @@
-namespace Objects.BuiltElements.TeklaStructures;
+namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
 public class TeklaOpening : Opening
 {

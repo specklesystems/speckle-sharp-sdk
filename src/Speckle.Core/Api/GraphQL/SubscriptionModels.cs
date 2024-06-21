@@ -1,7 +1,4 @@
 #nullable disable
-using System;
-using System.Collections.Generic;
-
 namespace Speckle.Core.Api.SubscriptionModels;
 
 #region streams

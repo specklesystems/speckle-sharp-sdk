@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 public class MaterialQuantity : Base
 {

@@ -1,10 +1,10 @@
-using Objects.Structural.Materials;
-using Objects.Structural.Properties;
-using Objects.Structural.Properties.Profiles;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Objects.Structural.Properties.Profiles;
 
-namespace Objects.Structural.GSA.Properties;
+namespace Speckle.Objects.Structural.GSA.Properties;
 
 public class GSAProperty1D : Property1D
 {

@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-using Objects.Other;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Other;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// A 3-dimensional Plane consisting of an origin <see cref="Point"/>, and 3 <see cref="Vector"/> as it's X, Y and Z axis.

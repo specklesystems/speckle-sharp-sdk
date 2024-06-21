@@ -1,7 +1,7 @@
-using Objects.Structural.Loading;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.Loading;
 
-namespace Objects.Structural.Results;
+namespace Speckle.Objects.Structural.Results;
 
 public class Result : Base
 {

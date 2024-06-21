@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.Geometry;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
 /// <summary>
 /// A generic Revit element for which we don't have direct conversions

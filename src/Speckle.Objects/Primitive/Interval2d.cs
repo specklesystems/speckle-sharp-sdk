@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Objects.Primitive;
+namespace Speckle.Objects.Primitive;
 
 public class Interval2d : Base
 {

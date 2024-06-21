@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Objects.Structural.CSI.Analysis;
+namespace Speckle.Objects.Structural.CSI.Analysis;
 
 public class CSIAnalysis : Base
 {

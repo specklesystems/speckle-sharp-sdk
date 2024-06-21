@@ -1,11 +1,10 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Structural.Materials;
-using Objects.Structural.Properties.Profiles;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties.Profiles;
 
-namespace Objects.BuiltElements.AdvanceSteel;
+namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
 public class AsteelBeam : Beam, IDisplayValue<List<Mesh>>, IHasVolume, IHasArea, IAsteelObject
 {

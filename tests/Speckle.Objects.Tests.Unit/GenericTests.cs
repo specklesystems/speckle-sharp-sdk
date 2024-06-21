@@ -1,11 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Speckle.Core.Common;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects;
 
 namespace Objects.Tests.Unit;
 

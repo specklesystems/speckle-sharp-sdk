@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
-using Objects.Geometry;
-using Objects.Utils;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
 
 namespace Objects.Tests.Unit.Utils;
 

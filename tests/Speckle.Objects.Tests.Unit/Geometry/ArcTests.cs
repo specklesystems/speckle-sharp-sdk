@@ -1,6 +1,5 @@
-using System;
 using NUnit.Framework;
-using Objects.Geometry;
+using Speckle.Objects.Geometry;
 
 namespace Objects.Tests.Unit.Geometry;
 

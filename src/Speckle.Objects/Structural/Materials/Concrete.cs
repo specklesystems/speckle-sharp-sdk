@@ -1,6 +1,6 @@
 using Speckle.Core.Kits;
 
-namespace Objects.Structural.Materials;
+namespace Speckle.Objects.Structural.Materials;
 
 public class Concrete : StructuralMaterial
 {

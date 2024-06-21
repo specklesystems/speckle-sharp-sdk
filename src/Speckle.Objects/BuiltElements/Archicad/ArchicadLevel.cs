@@ -1,4 +1,4 @@
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 /*
 For further informations about given the variables, visit:

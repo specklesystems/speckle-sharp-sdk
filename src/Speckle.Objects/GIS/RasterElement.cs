@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.Geometry;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
 
-namespace Objects.GIS;
+namespace Speckle.Objects.GIS;
 
 public class RasterElement : Base
 {
