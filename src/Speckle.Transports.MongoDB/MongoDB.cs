@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Speckle.Core.Common;
 using Speckle.Core.Logging;
 using Timer = System.Timers.Timer;
 
@@ -80,9 +81,9 @@ public class MongoDBTransport : IDisposable, ITransport
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<string, int> OnProgressAction { get; set; }
+  public Action<string, int>? OnProgressAction { get; set; }
 
-  public Action<string, Exception> OnErrorAction { get; set; }
+  public Action<string, Exception>? OnErrorAction { get; set; }
   public int SavedObjectCount { get; private set; }
 
   // not implementing this properly
@@ -109,7 +110,7 @@ public class MongoDBTransport : IDisposable, ITransport
     bool isMongoLive = Database.RunCommandAsync((Command<BsonDocument>)"{ping:1}").Wait(1000);
     if (!isMongoLive)
     {
-      OnErrorAction(TransportName, new Exception("The Mongo database could not be reached."));
+      OnErrorAction?.Invoke(TransportName, new Exception("The Mongo database could not be reached."));
     }
   }
 
@@ -222,7 +223,7 @@ public class MongoDBTransport : IDisposable, ITransport
 
   public void SaveObject(string hash, ITransport sourceTransport)
   {
-    var serializedObject = sourceTransport.GetObject(hash);
+    var serializedObject = sourceTransport.GetObject(hash).NotNull();
     Queue.Enqueue((hash, serializedObject, Encoding.UTF8.GetByteCount(serializedObject)));
   }
 
@@ -246,7 +247,7 @@ public class MongoDBTransport : IDisposable, ITransport
   /// </summary>
   /// <param name="hash"></param>
   /// <returns></returns>
-  public string GetObject(string hash)
+  public string? GetObject(string hash)
   {
     var filter = Builders<BsonDocument>.Filter.Eq(Field.hash.ToString(), hash);
     BsonDocument objectDocument = Collection.Find(filter).FirstOrDefault();
@@ -259,10 +260,10 @@ public class MongoDBTransport : IDisposable, ITransport
     return null;
   }
 
-  public async Task<string> CopyObjectAndChildren(
+  public Task<string> CopyObjectAndChildren(
     string hash,
     ITransport targetTransport,
-    Action<int> onTotalChildrenCountKnown = null
+    Action<int>? onTotalChildrenCountKnown = null
   )
   {
     throw new NotImplementedException();
