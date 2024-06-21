@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <RootNamespace>Speckle.Core</RootNamespace>
+    <PackageId>Speckle.Core</PackageId>
+    <Product>Speckle.Core</Product>
+    <AssemblyName>Speckle.Core</AssemblyName>
+    <Description>Core is the .NET SDK for Speckle</Description>
+    <PackageTags>$(PackageTags) core</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Speckle.Core.Tests.Unit"/>
+    <InternalsVisibleTo Include="Speckle.Core.Tests.Integration"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GraphQL.Client" />
+    <PackageReference Include="Microsoft.CSharp" />
+    <PackageReference Include="Polly"/>
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" />
+    <PackageReference Include="Polly.Extensions.Http" />
+    <PackageReference Include="Sentry" />
+    <PackageReference Include="Sentry.Serilog" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Enrichers.ClientInfo" />
+    <PackageReference Include="Serilog.Exceptions" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.Seq" />
+    <PackageReference Include="SerilogTimings" />
+    <PackageReference Include="Speckle.Newtonsoft.Json"/>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="System.DoubleNumerics" />
+  </ItemGroup>
+  
+</Project>

@@ -1,0 +1,28 @@
+<Project>
+  <ItemGroup>
+    <PackageVersion Include="GraphQL.Client" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageVersion Include="Polly" Version="7.2.3" />
+    <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
+    <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
+    <PackageVersion Include="Sentry" Version="3.33.0" />
+    <PackageVersion Include="Sentry.Serilog" Version="3.33.0" />
+    <PackageVersion Include="Serilog" Version="2.12.0" />
+    <PackageVersion Include="Serilog.Enrichers.ClientInfo" Version="1.3.0" />
+    <PackageVersion Include="Serilog.Exceptions" Version="8.4.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="4.1.0" />
+    <PackageVersion Include="Serilog.Sinks.Seq" Version="5.2.2" />
+    <PackageVersion Include="SerilogTimings" Version="3.0.1" />
+    <PackageVersion Include="Speckle.Newtonsoft.Json" Version="13.0.2" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="7.0.5" />
+    <PackageVersion Include="System.DoubleNumerics" Version="3.1.3" />
+    <PackageVersion Include="PolySharp" Version="1.14.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageVersion Include="Moq" Version="4.20.70" />
+    <PackageVersion Include="NUnit" Version="4.1.0" />
+    <PackageVersion Include="NUnit.Analyzers" Version="4.2.0" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+    <PackageVersion Include="JunitXml.TestLogger" Version="3.0.124" />
+  </ItemGroup>
+</Project>
