@@ -37,66 +37,26 @@ Target(
   }
 );
 
-Target(
-  RESTORE_TOOLS,
-  () =>
-  {
-    Run("dotnet", "tool restore");
-  }
-);
+Target(RESTORE_TOOLS, () => RunAsync("dotnet", "tool restore"));
 
-Target(
-  FORMAT,
-  DependsOn(RESTORE_TOOLS),
-  () =>
-  {
-    Run("dotnet", "csharpier --check .");
-  }
-);
+Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --check ."));
 
 #region
-Target(
-  RESTORE,
-  () =>
-  {
-    Run("dotnet", $"restore Speckle.Sdk.sln --locked-mode");
-  }
-);
+Target(RESTORE, () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
 
-Target(
-  BUILD,
-  DependsOn(RESTORE),
-  s =>
-  {
-    Run("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore");
-  }
-);
+Target(BUILD, DependsOn(RESTORE), () => RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore"));
 
 Target(
   TEST,
   DependsOn(BUILD),
-  () =>
+  Glob.Files(".", "**/*.Tests.Unit.csproj"),
+  async file =>
   {
-    IEnumerable<string> GetFiles(string d)
-    {
-      return Glob.Files(".", d);
-    }
-
-    foreach (var file in GetFiles("**/*.Tests.csproj"))
-    {
-      Run("dotnet", $"test {file} -c Release --no-build --verbosity=normal");
-    }
+    await RunAsync("dotnet", $"test {file} -c Release --no-build --verbosity=normal");
   }
 );
 
-Target(
-  PACK,
-  DependsOn(TEST),
-  s =>
-  {
-    Run("dotnet", $"pack Speckle.Sdk.sln -c Release -o output --no-build");
-  }
-);
+Target(PACK, DependsOn(TEST), () => RunAsync("dotnet", $"pack Speckle.Sdk.sln -c Release -o output --no-build"));
 #endregion
 
 
