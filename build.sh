@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-dotnet run --project Build/Build.csproj -- "$@"
+dotnet run --project build/Build.csproj -- "$@"
