@@ -1,6 +1,6 @@
 #nullable disable
 using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
+using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Core.Api;
 
