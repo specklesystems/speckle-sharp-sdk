@@ -1,4 +1,7 @@
 #nullable disable
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Speckle.Core.Models;
 
 namespace Speckle.Core.Kits;

@@ -1,4 +1,4 @@
-namespace Speckle.Objects.Other.Civil;
+namespace Objects.Other.Civil;
 
 public class CivilDataField : DataField
 {

@@ -1,6 +1,6 @@
 using Speckle.Core.Kits;
 
-namespace Speckle.Objects.Structural.Materials;
+namespace Objects.Structural.Materials;
 
 public class Timber : StructuralMaterial
 {

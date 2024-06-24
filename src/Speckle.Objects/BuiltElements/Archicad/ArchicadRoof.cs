@@ -1,9 +1,11 @@
+using System;
+using System.Collections.Generic;
+using Objects.Geometry;
+using Objects.Other;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
-using Speckle.Objects.Geometry;
-using Speckle.Objects.Other;
 
-namespace Speckle.Objects.BuiltElements.Archicad;
+namespace Objects.BuiltElements.Archicad;
 
 /*
 For further informations about given the variables, visit:

@@ -1,7 +1,9 @@
+using System;
+using System.Collections.Generic;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.Loading;
+namespace Objects.Structural.Loading;
 
 public class LoadCombination : Base //combination case
 {

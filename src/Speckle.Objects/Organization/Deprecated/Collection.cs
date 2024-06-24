@@ -1,4 +1,6 @@
-namespace Speckle.Objects.Organization.Deprecated;
+using System;
+
+namespace Objects.Organization.Deprecated;
 
 [Obsolete("Replaced by " + nameof(Speckle.Core.Models.Collection))]
 public class Collection : Speckle.Core.Models.Collection

@@ -1,4 +1,4 @@
-namespace Speckle.Objects.Structural.Loading;
+namespace Objects.Structural.Loading;
 
 public enum LoadType
 {

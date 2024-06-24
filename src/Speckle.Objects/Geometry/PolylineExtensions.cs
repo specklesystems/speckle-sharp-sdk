@@ -1,4 +1,6 @@
-namespace Speckle.Objects.Geometry;
+using System.Collections.Generic;
+
+namespace Objects.Geometry;
 
 public static class PolylineExtensions
 {

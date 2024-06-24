@@ -1,3 +1,4 @@
+using System;
 using Speckle.Core.Logging;
 
 namespace Speckle.Core.Models;

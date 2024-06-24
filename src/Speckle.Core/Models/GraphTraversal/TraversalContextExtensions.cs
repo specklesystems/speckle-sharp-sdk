@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.Contracts;
+﻿using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using System.Linq;
 
 namespace Speckle.Core.Models.GraphTraversal;
 

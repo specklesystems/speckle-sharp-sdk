@@ -1,7 +1,8 @@
+using System;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 
-namespace Speckle.Objects.Primitive;
+namespace Objects.Primitive;
 
 public class Interval : Base
 {

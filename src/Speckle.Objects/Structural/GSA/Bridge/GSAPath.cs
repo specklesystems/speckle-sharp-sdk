@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.GSA.Bridge;
+namespace Objects.Structural.GSA.Bridge;
 
 public class GSAPath : Base
 {

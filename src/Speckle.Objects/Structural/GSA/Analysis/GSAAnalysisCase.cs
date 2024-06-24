@@ -1,8 +1,10 @@
+using System;
+using System.Collections.Generic;
+using Objects.Structural.Loading;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Structural.Loading;
 
-namespace Speckle.Objects.Structural.GSA.Analysis;
+namespace Objects.Structural.GSA.Analysis;
 
 public class GSAAnalysisCase : Base
 {

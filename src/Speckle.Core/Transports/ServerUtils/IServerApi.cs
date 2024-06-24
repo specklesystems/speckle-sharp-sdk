@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 namespace Speckle.Core.Transports.ServerUtils;
 
 public delegate void CbObjectDownloaded(string id, string json);

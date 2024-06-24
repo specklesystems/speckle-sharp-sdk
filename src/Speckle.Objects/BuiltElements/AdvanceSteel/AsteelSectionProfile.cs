@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.BuiltElements.AdvanceSteel;
+namespace Objects.BuiltElements.AdvanceSteel;
 
 public class AsteelSectionProfile : Base
 {

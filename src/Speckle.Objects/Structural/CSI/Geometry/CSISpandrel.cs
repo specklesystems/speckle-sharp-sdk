@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.CSI.Geometry;
+namespace Objects.Structural.CSI.Geometry;
 
 public class CSISpandrel : Base
 {

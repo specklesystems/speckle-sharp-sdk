@@ -1,7 +1,7 @@
+using Objects.BuiltElements;
 using Speckle.Core.Kits;
-using Speckle.Objects.BuiltElements;
 
-namespace Speckle.Objects.Structural.Geometry;
+namespace Objects.Structural.Geometry;
 
 public class Storey : Level // or inherit from Base?
 {

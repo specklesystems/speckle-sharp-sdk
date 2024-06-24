@@ -1,10 +1,11 @@
+using System.Collections.Generic;
+using Objects.BuiltElements;
+using Objects.Geometry;
+using Objects.Other;
+using Objects.Primitive;
 using Speckle.Core.Models;
-using Speckle.Objects.BuiltElements;
-using Speckle.Objects.Geometry;
-using Speckle.Objects.Other;
-using Speckle.Objects.Primitive;
 
-namespace Speckle.Objects;
+namespace Objects;
 
 #region Generic interfaces.
 

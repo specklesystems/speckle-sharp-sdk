@@ -1,9 +1,11 @@
+using System.Collections.Generic;
+using System.Linq;
+using Objects.Geometry;
+using Objects.Structural.GSA.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Geometry;
-using Speckle.Objects.Structural.GSA.Geometry;
 
-namespace Speckle.Objects.Structural.GSA.Loading;
+namespace Objects.Structural.GSA.Loading;
 
 public class GSAPolyline : Polyline
 {

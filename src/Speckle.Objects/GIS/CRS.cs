@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.GIS;
+namespace Objects.GIS;
 
 public class CRS : Base
 {

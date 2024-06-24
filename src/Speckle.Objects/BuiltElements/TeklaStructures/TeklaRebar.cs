@@ -1,7 +1,8 @@
+using System;
+using Objects.Structural.Materials;
 using Speckle.Core.Models;
-using Speckle.Objects.Structural.Materials;
 
-namespace Speckle.Objects.BuiltElements.TeklaStructures;
+namespace Objects.BuiltElements.TeklaStructures;
 
 #region Obsolete
 [Obsolete("Deprecated in 2.17: Create a TeklaRebarGroup class instead")]

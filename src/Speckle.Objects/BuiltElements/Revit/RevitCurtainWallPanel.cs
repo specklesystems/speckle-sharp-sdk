@@ -1,3 +1,3 @@
-namespace Speckle.Objects.BuiltElements.Revit;
+namespace Objects.BuiltElements.Revit;
 
 public class RevitCurtainWallPanel : RevitElement { }

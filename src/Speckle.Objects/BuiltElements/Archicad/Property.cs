@@ -1,7 +1,8 @@
+using System.Collections.Generic;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.BuiltElements.Archicad;
+namespace Objects.BuiltElements.Archicad;
 
 public class Property : Base
 {

@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.Materials;
+namespace Objects.Structural.Materials;
 
 public class StructuralMaterial : Base
 {

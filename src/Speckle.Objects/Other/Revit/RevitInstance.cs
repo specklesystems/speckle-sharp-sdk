@@ -1,10 +1,12 @@
+using System.Collections.Generic;
+using System.Linq;
+using Objects.BuiltElements;
+using Objects.BuiltElements.Revit;
+using Objects.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.BuiltElements;
-using Speckle.Objects.BuiltElements.Revit;
-using Speckle.Objects.Geometry;
 
-namespace Speckle.Objects.Other.Revit;
+namespace Objects.Other.Revit;
 
 public class RevitInstance : Instance<RevitSymbolElementType>
 {

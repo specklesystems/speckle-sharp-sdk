@@ -1,10 +1,11 @@
+using System.Collections.Generic;
+using Objects.Geometry;
+using Objects.Structural.Materials;
+using Objects.Structural.Properties.Profiles;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Geometry;
-using Speckle.Objects.Structural.Materials;
-using Speckle.Objects.Structural.Properties.Profiles;
 
-namespace Speckle.Objects.BuiltElements.TeklaStructures;
+namespace Objects.BuiltElements.TeklaStructures;
 
 public class TeklaContourPlate : Area
 {

@@ -1,6 +1,8 @@
-using Speckle.Objects.Geometry;
+using System;
+using System.Collections.Generic;
+using Objects.Geometry;
 
-namespace Speckle.Objects;
+namespace Objects;
 
 public static class CurveTypeEncoding
 {

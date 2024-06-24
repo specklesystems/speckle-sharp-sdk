@@ -1,7 +1,7 @@
+using Objects.Geometry;
 using Speckle.Core.Models;
-using Speckle.Objects.Geometry;
 
-namespace Speckle.Objects.BuiltElements;
+namespace Objects.BuiltElements;
 
 public class Station : Base
 {

@@ -1,4 +1,6 @@
-namespace Speckle.Objects.BuiltElements.Revit.Interfaces;
+using System.Collections.Generic;
+
+namespace Objects.BuiltElements.Revit.Interfaces;
 
 public interface IHasMEPConnectors
 {

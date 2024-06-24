@@ -1,4 +1,4 @@
-namespace Speckle.Objects.Structural;
+namespace Objects.Structural;
 
 public enum PropertyType2D
 {

@@ -1,7 +1,8 @@
+using System.Collections.Generic;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.GSA.Analysis;
+namespace Objects.Structural.GSA.Analysis;
 
 public class GSAStage : Base
 {

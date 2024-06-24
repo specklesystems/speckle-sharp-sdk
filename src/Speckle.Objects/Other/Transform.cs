@@ -1,12 +1,14 @@
+using System;
+using System.Collections.Generic;
 using System.DoubleNumerics;
+using Objects.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
-using Speckle.Objects.Geometry;
-using Vector = Speckle.Objects.Geometry.Vector;
+using Vector = Objects.Geometry.Vector;
 
-namespace Speckle.Objects.Other;
+namespace Objects.Other;
 
 /// <summary>
 /// Generic transform class

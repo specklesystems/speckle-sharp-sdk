@@ -1,6 +1,6 @@
-using Speckle.Objects.Structural.Materials;
+using Objects.Structural.Materials;
 
-namespace Speckle.Objects.Structural.CSI.Materials;
+namespace Objects.Structural.CSI.Materials;
 
 public class CSIConcrete : Concrete
 {

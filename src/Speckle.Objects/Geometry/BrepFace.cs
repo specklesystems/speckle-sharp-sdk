@@ -1,7 +1,9 @@
+using System.Collections.Generic;
+using System.Linq;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 
-namespace Speckle.Objects.Geometry;
+namespace Objects.Geometry;
 
 /// <summary>
 /// Represents a face on a <see cref="Brep"/>

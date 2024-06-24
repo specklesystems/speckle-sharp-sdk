@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.Geometry;
+namespace Objects.Structural.Geometry;
 
 public class Restraint : Base
 {

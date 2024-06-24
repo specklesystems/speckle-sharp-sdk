@@ -1,7 +1,9 @@
+using System;
+using System.Collections.Generic;
+using Objects.Other;
 using Speckle.Newtonsoft.Json;
-using Speckle.Objects.Other;
 
-namespace Speckle.Objects.Geometry;
+namespace Objects.Geometry;
 
 public class ControlPoint : Point, ITransformable<ControlPoint>
 {

@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.Analysis;
+namespace Objects.Structural.Analysis;
 
 /// <summary>
 /// Codes and standards references, model units, design settings, analysis settings, precision and tolerances

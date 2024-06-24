@@ -1,7 +1,7 @@
 using System.Drawing;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Other;
+namespace Objects.Other;
 
 /// <summary>
 /// Minimal display style class. Developed primarily for display styles in Rhino and AutoCAD.

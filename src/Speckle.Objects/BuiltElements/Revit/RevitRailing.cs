@@ -1,8 +1,9 @@
+using System.Collections.Generic;
+using Objects.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Geometry;
 
-namespace Speckle.Objects.BuiltElements.Revit;
+namespace Objects.BuiltElements.Revit;
 
 public class RevitRailing : Base, IDisplayValue<List<Mesh>>
 {

@@ -1,8 +1,8 @@
+using Objects.Primitive;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Primitive;
 
-namespace Speckle.Objects.Geometry;
+namespace Objects.Geometry;
 
 /// <summary>
 /// Represents a 3-dimensional box oriented on a plane.

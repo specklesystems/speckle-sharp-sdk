@@ -1,7 +1,8 @@
+using System.Collections.Generic;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.Analysis;
+namespace Objects.Structural.Analysis;
 
 public class Model : Base
 {

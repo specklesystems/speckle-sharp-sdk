@@ -1,9 +1,10 @@
+using System.Collections.Generic;
+using Objects.BuiltElements.Revit.Interfaces;
+using Objects.Utils;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.BuiltElements.Revit.Interfaces;
-using Speckle.Objects.Utils;
 
-namespace Speckle.Objects.BuiltElements.Revit;
+namespace Objects.BuiltElements.Revit;
 
 public class RevitWire : Wire, IHasMEPConnectors
 {

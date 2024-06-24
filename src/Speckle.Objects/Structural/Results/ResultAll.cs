@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.Results;
+namespace Objects.Structural.Results;
 
 public class ResultSetAll : Base
 {

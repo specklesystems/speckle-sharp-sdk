@@ -1,5 +1,7 @@
 #nullable disable
 
+using System;
+using System.Linq;
 using System.Reflection;
 using GraphQL.Client.Abstractions.Utilities;
 using Speckle.Newtonsoft.Json;

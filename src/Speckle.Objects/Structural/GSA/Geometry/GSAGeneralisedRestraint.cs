@@ -1,9 +1,10 @@
+using System.Collections.Generic;
+using Objects.Structural.Geometry;
+using Objects.Structural.GSA.Analysis;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Structural.Geometry;
-using Speckle.Objects.Structural.GSA.Analysis;
 
-namespace Speckle.Objects.Structural.GSA.Geometry;
+namespace Objects.Structural.GSA.Geometry;
 
 public class GSAGeneralisedRestraint : Base
 {

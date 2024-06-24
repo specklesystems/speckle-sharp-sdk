@@ -1,7 +1,8 @@
+using System.Collections.Generic;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.BuiltElements;
+namespace Objects.BuiltElements;
 
 public class Wire : Base
 {

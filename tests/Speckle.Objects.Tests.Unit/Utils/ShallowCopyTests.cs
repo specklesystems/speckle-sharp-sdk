@@ -1,9 +1,10 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
+using Objects.BuiltElements;
+using Objects.Geometry;
 using Speckle.Core.Common;
 using Speckle.Core.Kits;
-using Speckle.Objects.BuiltElements;
-using Speckle.Objects.Geometry;
 
 namespace Objects.Tests.Unit.Utils;
 

@@ -1,7 +1,8 @@
+using System.Collections.Generic;
+using Objects.Geometry;
 using Speckle.Core.Models;
-using Speckle.Objects.Geometry;
 
-namespace Speckle.Objects.BuiltElements.Revit;
+namespace Objects.BuiltElements.Revit;
 
 public class RevitStair : Base, IDisplayValue<List<Mesh>>
 {

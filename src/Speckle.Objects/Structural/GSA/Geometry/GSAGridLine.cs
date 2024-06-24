@@ -1,7 +1,7 @@
+using Objects.BuiltElements;
 using Speckle.Core.Kits;
-using Speckle.Objects.BuiltElements;
 
-namespace Speckle.Objects.Structural.GSA.Geometry;
+namespace Objects.Structural.GSA.Geometry;
 
 public class GSAGridLine : GridLine
 {

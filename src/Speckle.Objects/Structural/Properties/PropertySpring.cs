@@ -1,6 +1,6 @@
 using Speckle.Core.Kits;
 
-namespace Speckle.Objects.Structural.Properties;
+namespace Objects.Structural.Properties;
 
 public class PropertySpring : Property
 {

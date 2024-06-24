@@ -1,7 +1,9 @@
+using System;
+using System.Collections.Generic;
+using Objects.Geometry;
 using Speckle.Core.Models;
-using Speckle.Objects.Geometry;
 
-namespace Speckle.Objects.BuiltElements;
+namespace Objects.BuiltElements;
 
 /// <summary>
 /// A reinforcement bar group comprised of reinforcing bars of the same type and shape.

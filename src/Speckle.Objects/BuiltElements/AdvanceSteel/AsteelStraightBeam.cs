@@ -1,4 +1,4 @@
-namespace Speckle.Objects.BuiltElements.AdvanceSteel;
+namespace Objects.BuiltElements.AdvanceSteel;
 
 public class AsteelStraightBeam : AsteelBeam
 {

@@ -1,9 +1,10 @@
+using System.Collections.Generic;
+using Objects.Structural.Geometry;
+using Objects.Structural.GSA.Geometry;
+using Objects.Structural.Loading;
 using Speckle.Core.Kits;
-using Speckle.Objects.Structural.Geometry;
-using Speckle.Objects.Structural.GSA.Geometry;
-using Speckle.Objects.Structural.Loading;
 
-namespace Speckle.Objects.Structural.GSA.Loading;
+namespace Objects.Structural.GSA.Loading;
 
 public class GSALoadNode : LoadNode
 {

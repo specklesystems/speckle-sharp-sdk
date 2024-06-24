@@ -1,8 +1,9 @@
+using System.Collections.Generic;
+using Objects.Structural.Loading;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Structural.Loading;
 
-namespace Speckle.Objects.Structural.GSA.Loading;
+namespace Objects.Structural.GSA.Loading;
 
 public class GSALoadFace : LoadFace
 {

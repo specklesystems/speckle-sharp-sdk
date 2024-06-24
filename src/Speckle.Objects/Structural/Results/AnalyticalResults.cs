@@ -1,6 +1,7 @@
+using System.Collections.Generic;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.Results;
+namespace Objects.Structural.Results;
 
 public class AnalyticalResults : Base
 {

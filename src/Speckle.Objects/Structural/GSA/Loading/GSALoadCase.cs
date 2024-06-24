@@ -1,7 +1,7 @@
+using Objects.Structural.Loading;
 using Speckle.Core.Kits;
-using Speckle.Objects.Structural.Loading;
 
-namespace Speckle.Objects.Structural.GSA.Loading;
+namespace Objects.Structural.GSA.Loading;
 
 public class GSALoadCase : LoadCase
 {

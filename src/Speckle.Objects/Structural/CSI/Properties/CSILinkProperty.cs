@@ -1,7 +1,7 @@
+using Objects.Structural.Properties;
 using Speckle.Core.Kits;
-using Speckle.Objects.Structural.Properties;
 
-namespace Speckle.Objects.Structural.CSI.Properties;
+namespace Objects.Structural.CSI.Properties;
 
 public class CSILinkProperty : Property1D
 {

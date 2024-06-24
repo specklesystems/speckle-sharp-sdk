@@ -1,8 +1,9 @@
+using System.Collections.Generic;
+using Objects.Structural.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Structural.Geometry;
 
-namespace Speckle.Objects.Structural.Loading;
+namespace Objects.Structural.Loading;
 
 public class LoadNode : Load
 {

@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Other;
+namespace Objects.Other;
 
 /// <summary>
 /// Generic class for a data field

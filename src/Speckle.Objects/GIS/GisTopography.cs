@@ -1,3 +1,3 @@
-namespace Speckle.Objects.GIS;
+namespace Objects.GIS;
 
 public class GisTopography : RasterElement { }

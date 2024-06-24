@@ -1,1 +1,1 @@
-namespace Speckle.Objects.BuiltElements.AdvanceSteel;
+namespace Objects.BuiltElements.AdvanceSteel;

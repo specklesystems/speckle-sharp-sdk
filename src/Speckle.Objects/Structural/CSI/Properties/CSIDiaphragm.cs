@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.CSI.Properties;
+namespace Objects.Structural.CSI.Properties;
 
 public class CSIDiaphragm : Base
 {

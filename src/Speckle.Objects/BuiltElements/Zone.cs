@@ -1,6 +1,7 @@
+using System.Collections.Generic;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.BuiltElements;
+namespace Objects.BuiltElements;
 
 public class Zone : Base, IHasArea, IHasVolume
 {

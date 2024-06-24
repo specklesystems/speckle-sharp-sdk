@@ -1,8 +1,9 @@
+using System.Collections.Generic;
+using Objects.Primitive;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Primitive;
 
-namespace Speckle.Objects.Geometry;
+namespace Objects.Geometry;
 
 public class Ellipse : Base, ICurve, IHasArea
 {

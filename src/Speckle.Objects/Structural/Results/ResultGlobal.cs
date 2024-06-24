@@ -1,9 +1,9 @@
+using Objects.Structural.Analysis;
+using Objects.Structural.Loading;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Objects.Structural.Analysis;
-using Speckle.Objects.Structural.Loading;
 
-namespace Speckle.Objects.Structural.Results;
+namespace Objects.Structural.Results;
 
 public class ResultGlobal : Result
 {

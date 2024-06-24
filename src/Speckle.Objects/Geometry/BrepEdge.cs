@@ -1,8 +1,10 @@
+using System.Collections.Generic;
+using System.Linq;
+using Objects.Primitive;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
-using Speckle.Objects.Primitive;
 
-namespace Speckle.Objects.Geometry;
+namespace Objects.Geometry;
 
 /// <summary>
 /// Represents an edge of the <see cref="Brep"/>.

@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Speckle.Objects.Structural.GSA.Analysis;
+namespace Objects.Structural.GSA.Analysis;
 
 public class GSATask : Base
 {

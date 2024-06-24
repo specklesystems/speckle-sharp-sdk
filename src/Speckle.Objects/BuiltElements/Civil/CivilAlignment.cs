@@ -1,4 +1,4 @@
-namespace Speckle.Objects.BuiltElements.Civil;
+namespace Objects.BuiltElements.Civil;
 
 public class CivilAlignment : Alignment
 {
