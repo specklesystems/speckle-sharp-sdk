@@ -45,9 +45,10 @@ internal static class BaseObjectSerializationUtilities
 
       //To allow for backwards compatibility saving deserialization target types.
       //We also check a ".Deprecated" prefixed namespace
-      var type = GetKitType(typeName) ??
-                 GetKitType(GetTypeByLegacyName(typeName)) ?? 
-                 GetKitType(GetDeprecatedTypeName(typeName));
+      var type =
+        GetKitType(typeName)
+        ?? GetKitType(GetTypeByLegacyName(typeName))
+        ?? GetKitType(GetDeprecatedTypeName(typeName));
       if (type is not null)
       {
         return type;
@@ -56,7 +57,7 @@ internal static class BaseObjectSerializationUtilities
 
     return typeof(Base);
   }
-  
+
   internal static string GetTypeByLegacyName(string typeName)
   {
     if (!typeName.StartsWith("Speckle."))

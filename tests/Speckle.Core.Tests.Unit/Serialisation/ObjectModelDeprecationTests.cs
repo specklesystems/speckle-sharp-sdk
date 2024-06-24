@@ -26,7 +26,7 @@ namespace Speckle.Core.Tests.Unit.Serialisation
       var actual = BaseObjectSerializationUtilities.GetDeprecatedTypeName(input);
       Assert.That(actual, Is.EqualTo(expected));
     }
-    
+
     [Test]
     [TestCase("Objects.Geometry.Mesh", "Speckle.Objects.Geometry.Mesh")]
     [TestCase("Objects.Mesh", "Speckle.Objects.Mesh")]
