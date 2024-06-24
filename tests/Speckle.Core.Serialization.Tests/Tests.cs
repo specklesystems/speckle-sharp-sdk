@@ -13,12 +13,14 @@ namespace Speckle.Core.Serialization.Tests;
 public class SerializationTests
 {
   private readonly Assembly _assembly = Assembly.GetExecutingAssembly();
+
   private async Task<string> ReadJson(string fullName)
   {
     await using var stream = _assembly.GetManifestResourceStream(fullName).NotNull();
     using var reader = new StreamReader(stream);
     return await reader.ReadToEndAsync();
   }
+
   private async Task<Dictionary<string, string>> ReadAsObjects(string fullName)
   {
     var jsonObjects = new Dictionary<string, string>();
@@ -33,6 +35,7 @@ public class SerializationTests
     }
     return jsonObjects;
   }
+
   [Test]
   [TestCase("RevitObject.json")]
   public async Task Basic_Namespace_Validation(string fileName)
@@ -44,25 +47,24 @@ public class SerializationTests
       ReadTransport = new TestTransport(closure),
       CancellationToken = default
     };
-    foreach(var (id, objJson) in closure)
+    foreach (var (id, objJson) in closure)
     {
       var jObject = JObject.Parse(objJson);
       var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
-      var starts = oldSpeckleType.StartsWith("Speckle.Core.") ||
-                   oldSpeckleType.StartsWith("Objects.");
+      var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
       starts.Should().BeTrue($"{oldSpeckleType} isn't expected");
-      
+
       var baseType = deserializer.Deserialize(objJson);
       id.Should().Be(baseType.id);
-      
-      starts = baseType.speckle_type.StartsWith("Speckle.Core.") ||
-        baseType.speckle_type.StartsWith("Speckle.Objects.");
+
+      starts =
+        baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Speckle.Objects.");
       starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
-      
+
       var type = BaseObjectSerializationUtilities.GetAtomicType(baseType.speckle_type);
       type.Should().NotBeNull();
       var name = type.FullName.NotNull();
-      starts =name.StartsWith("Speckle.Core") || name.StartsWith("Speckle.Objects");
+      starts = name.StartsWith("Speckle.Core") || name.StartsWith("Speckle.Objects");
       starts.Should().BeTrue($"{name} isn't expected");
     }
   }

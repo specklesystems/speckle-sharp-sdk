@@ -11,5 +11,6 @@ public class TestKit : ISpeckleKit
   public string Name { get; }
   public string Author { get; }
   public string WebsiteOrEmail { get; }
+
   public ISpeckleConverter LoadConverter(string app) => throw new NotImplementedException();
 }
