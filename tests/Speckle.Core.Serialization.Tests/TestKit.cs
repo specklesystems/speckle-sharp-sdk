@@ -1,5 +1,5 @@
-﻿using Speckle.Core.Kits;
-using Speckle.Objects.BuiltElements.Revit;
+﻿using Objects.BuiltElements.Revit;
+using Speckle.Core.Kits;
 
 namespace Speckle.Core.Serialization.Tests;
 

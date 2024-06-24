@@ -58,13 +58,13 @@ public class SerializationTests
       id.Should().Be(baseType.id);
 
       starts =
-        baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Speckle.Objects.");
+        baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
       starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
 
       var type = BaseObjectSerializationUtilities.GetAtomicType(baseType.speckle_type);
       type.Should().NotBeNull();
       var name = type.FullName.NotNull();
-      starts = name.StartsWith("Speckle.Core") || name.StartsWith("Speckle.Objects");
+      starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
       starts.Should().BeTrue($"{name} isn't expected");
     }
   }
