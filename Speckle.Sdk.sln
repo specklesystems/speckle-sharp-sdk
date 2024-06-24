@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "build", "build\build.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Transports.MongoDB", "src\Speckle.Transports.MongoDB\Speckle.Transports.MongoDB.csproj", "{68078752-7C54-471A-9CB6-E8AEF34A9EFF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Core.Serialization.Tests", "tests\Speckle.Core.Serialization.Tests\Speckle.Core.Serialization.Tests.csproj", "{AA1E1E51-49AE-4F71-84B1-938E19695BE0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +70,10 @@ Global
 		{68078752-7C54-471A-9CB6-E8AEF34A9EFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68078752-7C54-471A-9CB6-E8AEF34A9EFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68078752-7C54-471A-9CB6-E8AEF34A9EFF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA1E1E51-49AE-4F71-84B1-938E19695BE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA1E1E51-49AE-4F71-84B1-938E19695BE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA1E1E51-49AE-4F71-84B1-938E19695BE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA1E1E51-49AE-4F71-84B1-938E19695BE0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A413E196-3696-4F48-B635-04B5F76BF9C9} = {5CB96C27-FC5B-4A41-86B6-951AF99B8116}
@@ -77,5 +83,6 @@ Global
 		{A0338FC0-3011-498F-AD09-01230FABD3ED} = {35047EE7-AD1D-4741-80A7-8F0E874718E9}
 		{9B8DDEB5-37C7-49B5-984D-C65DE5FCB7B7} = {58D37DA9-F948-48CA-9A73-F5BBBD533DBF}
 		{68078752-7C54-471A-9CB6-E8AEF34A9EFF} = {5CB96C27-FC5B-4A41-86B6-951AF99B8116}
+		{AA1E1E51-49AE-4F71-84B1-938E19695BE0} = {35047EE7-AD1D-4741-80A7-8F0E874718E9}
 	EndGlobalSection
 EndGlobal

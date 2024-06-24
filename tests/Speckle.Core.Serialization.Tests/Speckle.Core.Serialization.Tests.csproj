@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="JunitXml.TestLogger" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk"  />
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Speckle.Core\Speckle.Core.csproj" />
+    <ProjectReference Include="..\..\src\Speckle.Objects\Speckle.Objects.csproj" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Remove="RevitObject.json" />
+    <EmbeddedResource Include="RevitObject.json" />
+  </ItemGroup>
+
+</Project>
