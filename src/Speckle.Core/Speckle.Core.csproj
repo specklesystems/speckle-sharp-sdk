@@ -15,6 +15,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Speckle.Core.Tests.Unit"/>
     <InternalsVisibleTo Include="Speckle.Core.Tests.Integration"/>
+    <InternalsVisibleTo Include="Speckle.Core.Serialization.Tests"/>
   </ItemGroup>
 
   <ItemGroup>
