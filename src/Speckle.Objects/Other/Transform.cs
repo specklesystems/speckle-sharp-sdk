@@ -2,9 +2,9 @@ using Objects.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Vector = Objects.Geometry.Vector;
-using Speckle.DoubleNumerics;
 
 namespace Objects.Other;
 

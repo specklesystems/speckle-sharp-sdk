@@ -1,8 +1,8 @@
 using System.Collections;
-using Speckle.DoubleNumerics;
 using System.Drawing;
 using System.Globalization;
 using Speckle.Core.Logging;
+using Speckle.DoubleNumerics;
 using Numerics = System.Numerics;
 
 namespace Speckle.Core.Serialisation.SerializationUtilities;
