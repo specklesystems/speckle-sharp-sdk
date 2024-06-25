@@ -22,7 +22,7 @@ Comprehensive developer and user documentation can be found in our:
 
 ### Building
 
-Make sure you clone this repository together with its submodules: `git clone https://github.com/specklesystems/Core.git -recursive`.
+Make sure you clone this repository together with its submodules: `git clone https://github.com/specklesystems/speckle-sharp-sdk.git -recursive`.
 Afterwards, just restore all the NuGet packages and hit Build!
 
 ### Developing

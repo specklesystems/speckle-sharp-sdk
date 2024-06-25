@@ -29,8 +29,4 @@
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="PolySharp" PrivateAssets="All"/>
-    <PackageReference Include="MinVer" PrivateAssets="All"/>
-  </ItemGroup>
 </Project>

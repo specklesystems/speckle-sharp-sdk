@@ -16,6 +16,7 @@ using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports;
+using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Core.Api;
 
@@ -196,7 +197,7 @@ public static class Helpers
     {
       using HttpClient client = Http.GetHttpProxyClient();
       var response = await client.GetStringAsync($"{FEEDS_ENDPOINT}/{slug}.json").ConfigureAwait(false);
-      var connector = JsonSerializer.Deserialize<Connector>(response);
+      var connector = JsonConvert.DeserializeObject<Connector>(response);
 
       var os = Os.Win; //TODO: This won't work for linux
       if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

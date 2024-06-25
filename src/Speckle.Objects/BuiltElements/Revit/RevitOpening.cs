@@ -29,7 +29,7 @@ public class RevitWallOpening : RevitOpening
   {
     if (outline is not Polyline)
     {
-      throw new SpeckleException("Outline should be a rectangular-shaped polyline", false);
+      throw new SpeckleException("Outline should be a rectangular-shaped polyline");
     }
 
     this.outline = outline;
