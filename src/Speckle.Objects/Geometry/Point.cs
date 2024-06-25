@@ -241,5 +241,5 @@ public class Point : Base, ITransformable<Point>
     return this == (Point)obj;
   }
 
-  public override int GetHashCode() => HashCode.Of(units).And(x).And(y).And(y).GetHashCode();
+  public override int GetHashCode() => HashCode.Of(units).And(x).And(y).And(y);
 }
