@@ -44,37 +44,32 @@ internal static class BaseObjectSerializationUtilities
     var objectTypes = objFullType.Split(':').Reverse();
     foreach (var typeName in objectTypes)
     {
-      //TODO: rather than getting the type from the first loaded kit that has it, maybe we get it from a specific Kit
-      Type? GetKitType(string name) => KitManager.Types.FirstOrDefault(tp => tp.FullName == name);
+      //TODO: rather than getting the type from the first loaded kit that has it, maybe
+      //we get it from a specific Kit
+      var type = KitManager.Types.FirstOrDefault(tp => tp.FullName == typeName);
+      if (type != null)
+      {
+        return type;
+      }
 
       //To allow for backwards compatibility saving deserialization target types.
       //We also check a ".Deprecated" prefixed namespace
-      var type =
-        GetKitType(typeName)
-        ?? GetKitType(GetTypeByLegacyName(typeName))
-        ?? GetKitType(GetDeprecatedTypeName(typeName));
-      if (type is not null)
+      string deprecatedTypeName = GetDeprecatedTypeName(typeName);
+
+      var deprecatedType = KitManager.Types.FirstOrDefault(tp => tp.FullName == deprecatedTypeName);
+      if (deprecatedType != null)
       {
-        return type;
+        return deprecatedType;
       }
     }
 
     return typeof(Base);
   }
 
-  internal static string GetTypeByLegacyName(string typeName)
-  {
-    if (!typeName.StartsWith("Speckle."))
-    {
-      return "Speckle." + typeName;
-    }
-    return typeName;
-  }
-
-  internal static string GetDeprecatedTypeName(string typeName)
+  internal static string GetDeprecatedTypeName(string typeName, string deprecatedSubstring = "Deprecated.")
   {
     int lastDotIndex = typeName.LastIndexOf('.');
-    return typeName.Insert(lastDotIndex + 1, "Deprecated.");
+    return typeName.Insert(lastDotIndex + 1, deprecatedSubstring);
   }
 
   internal static Dictionary<string, PropertyInfo> GetTypeProperties(string objFullType)

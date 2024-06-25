@@ -57,8 +57,7 @@ public class SerializationTests
       var baseType = deserializer.Deserialize(objJson);
       id.Should().Be(baseType.id);
 
-      starts =
-        baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
+      starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
       starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
 
       var type = BaseObjectSerializationUtilities.GetAtomicType(baseType.speckle_type);
