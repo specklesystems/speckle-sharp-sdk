@@ -1,12 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.DoubleNumerics;
 using Objects.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 using Vector = Objects.Geometry.Vector;
+using Speckle.DoubleNumerics;
 
 namespace Objects.Other;
 
