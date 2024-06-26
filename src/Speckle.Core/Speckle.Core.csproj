@@ -32,9 +32,9 @@
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.Seq" />
     <PackageReference Include="SerilogTimings" />
+    <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json"/>
     <PackageReference Include="Microsoft.Data.Sqlite" />
-    <PackageReference Include="System.DoubleNumerics" />
   </ItemGroup>
   
 </Project>

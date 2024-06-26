@@ -1,17 +1,13 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.DoubleNumerics;
 using System.Drawing;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports;
+using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Utilities = Speckle.Core.Models.Utilities;
 
