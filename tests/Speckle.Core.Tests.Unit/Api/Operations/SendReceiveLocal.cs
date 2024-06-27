@@ -214,36 +214,7 @@ public sealed class SendReceiveLocal : IDisposable
     progress.NotNull();
     Assert.That(progress.Keys, Has.Count.GreaterThanOrEqualTo(1));
   }
-
-  [Test(Description = "Should dispose of transports after a send or receive operation if so specified.")]
-  [Obsolete("Send overloads that perform disposal are deprecated")]
-  public async Task ShouldDisposeTransports()
-  {
-    var @base = new Base();
-    @base["test"] = "the best";
-
-    var myLocalTransport = new SQLiteTransport();
-    var id = await Core.Api.Operations.Send(
-      @base,
-      new List<ITransport> { myLocalTransport },
-      false,
-      disposeTransports: true
-    );
-
-    // Send
-    Assert.ThrowsAsync<ObjectDisposedException>(
-      async () =>
-        await Core.Api.Operations.Send(@base, new List<ITransport> { myLocalTransport }, false, disposeTransports: true)
-    );
-
-    myLocalTransport = myLocalTransport.Clone() as SQLiteTransport;
-    _ = await Core.Api.Operations.Receive(id, null, myLocalTransport, disposeTransports: true);
-
-    Assert.ThrowsAsync<InvalidOperationException>(
-      async () => await Core.Api.Operations.Receive(id, null, myLocalTransport)
-    );
-  }
-
+  
   [Test(Description = "Should not dispose of transports if so specified.")]
   public async Task ShouldNotDisposeTransports()
   {
@@ -257,30 +228,6 @@ public sealed class SendReceiveLocal : IDisposable
     _ = await Core.Api.Operations.Receive(id, null, myLocalTransport);
     await Core.Api.Operations.Receive(id, null, myLocalTransport);
   }
-
-  //[Test]
-  //public async Task DiskTransportTest()
-  //{
-  //  var myObject = new Base();
-  //  myObject["@items"] = new List<Base>();
-  //  myObject["test"] = "random";
-
-  //  var rand = new Random();
-
-  //  for (int i = 0; i < 100; i++)
-  //  {
-  //    ((List<Base>)myObject["@items"]).Add(new Point(i, i, i) { applicationId = i + "-___/---" });
-  //  }
-
-  //  var dt = new Speckle.Core.Transports.Speckle.Speckle.Core.Transports();
-  //  var id = await Operations.Send(myObject, new List<ITransport>() { dt }, false);
-
-  //  Assert.IsNotNull(id);
-
-  //  var rebase = await Operations.Receive(id, dt);
-
-  //  Assert.AreEqual(rebase.GetId(true), id);
-  //}
 
   public void Dispose()
   {
