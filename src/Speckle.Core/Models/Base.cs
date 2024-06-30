@@ -286,23 +286,4 @@ public class Base : DynamicBase
 
     return myDuplicate;
   }
-
-  #region Obsolete
-  /// <inheritdoc cref="GetId(bool)"/>
-  [Obsolete("Serializer v1 is deprecated, use other overload(s)", true)]
-  public string GetId(SerializerVersion serializerVersion)
-  {
-    return GetId(false, serializerVersion);
-  }
-
-  /// <inheritdoc cref="GetId(bool)"/>
-  [Obsolete("Serializer v1 is deprecated, use other overload(s)", true)]
-  public string GetId(bool decompose, SerializerVersion serializerVersion)
-  {
-    throw new NotImplementedException(
-      "Overload has been deprecated along with SerializerV1, use other overload (uses SerializerV2)"
-    );
-  }
-
-  #endregion
 }

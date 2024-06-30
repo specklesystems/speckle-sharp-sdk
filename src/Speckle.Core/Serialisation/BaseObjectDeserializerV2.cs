@@ -6,16 +6,18 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Speckle.Core.Common;
+using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation.SerializationUtilities;
+using Speckle.Core.Serialisation.TypeCache;
 using Speckle.Core.Transports;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 
 namespace Speckle.Core.Serialisation;
 
-public sealed class BaseObjectDeserializerV2
+public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
@@ -44,6 +46,15 @@ public sealed class BaseObjectDeserializerV2
 
   public static int DefaultNumberThreads => Math.Min(Environment.ProcessorCount, 6); //6 threads seems the sweet spot, see performance test project
   public int WorkerThreadCount { get; set; } = DefaultNumberThreads;
+
+  private readonly ITypeCache _typeCache;
+
+  // POC: inject the TypeCacheManager, and interface out
+  public BaseObjectDeserializerV2(ITypeCache typeCache)
+  {
+    _typeCache = typeCache;
+    _typeCache.EnsureCacheIsBuilt();
+  }
 
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
   /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="rootObjectJson"/></returns>
@@ -341,21 +352,29 @@ public sealed class BaseObjectDeserializerV2
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
     string typeName = (string)dictObj[TYPE_DISCRIMINATOR]!;
-    Type type = BaseObjectSerializationUtilities.GetType(typeName);
-    Base baseObj = (Base)Activator.CreateInstance(type);
+    
+    // TODO: get the version
+
+    // we find the type
+    CachedTypeInfo cachedTypeInfo = _typeCache.GetType(typeName);
+
+    // let's figure out whether to deserialise into this type or a legacy type
+    
+    Base baseObj = (Base) Activator.CreateInstance(cachedTypeInfo.Type);
 
     dictObj.Remove(TYPE_DISCRIMINATOR);
     dictObj.Remove("__closure");
 
-    Dictionary<string, PropertyInfo> staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
-    List<MethodInfo> onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
+    var props = cachedTypeInfo.Props;
+
+    var onDeserializedCallbacks = cachedTypeInfo.Callbacks;
 
     foreach (var entry in dictObj)
     {
       string lowerPropertyName = entry.Key.ToLower();
-      if (staticProperties.TryGetValue(lowerPropertyName, out PropertyInfo? value) && value.CanWrite)
+      if (props.TryGetValue(lowerPropertyName, out PropertyInfo? value) && value.CanWrite)
       {
-        PropertyInfo property = staticProperties[lowerPropertyName];
+        PropertyInfo property = props[lowerPropertyName];
         if (entry.Value == null)
         {
           // Check for JsonProperty(NullValueHandling = NullValueHandling.Ignore) attribute
@@ -391,6 +410,8 @@ public sealed class BaseObjectDeserializerV2
     {
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
+    
+    // TODO: perform any versioning we need to
 
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {
@@ -399,10 +420,4 @@ public sealed class BaseObjectDeserializerV2
 
     return baseObj;
   }
-
-  [Obsolete("Use nameof(Base.speckle_type)")]
-  public string TypeDiscriminator => TYPE_DISCRIMINATOR;
-
-  [Obsolete("OnErrorAction unused, deserializer will throw exceptions instead")]
-  public Action<string, Exception>? OnErrorAction { get; set; }
 }

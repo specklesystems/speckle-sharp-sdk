@@ -15,6 +15,7 @@ using Speckle.Core.Helpers;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.Core.Serialisation.TypeCache;
 using Speckle.Core.Transports;
 using Speckle.Newtonsoft.Json;
 
@@ -35,6 +36,7 @@ public static class Helpers
   /// <returns></returns>
   public static async Task<Base> Receive(
     string stream,
+    ITypeCache typeCache,
     Account account = null,
     Action<ConcurrentDictionary<string, int>> onProgressAction = null,
     Action<int> onTotalChildrenCountKnown = null
@@ -107,6 +109,7 @@ public static class Helpers
     var receiveRes = await Operations
       .Receive(
         objectId,
+        typeCache,
         transport,
         onProgressAction: onProgressAction,
         onTotalChildrenCountKnown: onTotalChildrenCountKnown
