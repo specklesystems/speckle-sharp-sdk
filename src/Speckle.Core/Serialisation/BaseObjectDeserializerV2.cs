@@ -15,7 +15,7 @@ using Speckle.Newtonsoft.Json.Linq;
 
 namespace Speckle.Core.Serialisation;
 
-public sealed class BaseObjectDeserializerV2
+public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
@@ -399,10 +399,4 @@ public sealed class BaseObjectDeserializerV2
 
     return baseObj;
   }
-
-  [Obsolete("Use nameof(Base.speckle_type)")]
-  public string TypeDiscriminator => TYPE_DISCRIMINATOR;
-
-  [Obsolete("OnErrorAction unused, deserializer will throw exceptions instead")]
-  public Action<string, Exception>? OnErrorAction { get; set; }
 }
