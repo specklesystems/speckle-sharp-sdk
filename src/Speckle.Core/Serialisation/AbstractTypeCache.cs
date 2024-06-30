@@ -5,13 +5,13 @@ using Speckle.Core.Models;
 
 namespace Speckle.Core.Serialisation;
 
-public class CachedType
+public class CachedTypeInfo
 {
   public string Key { get; private set; }
   public Type Type { get; private set; }
   public ImmutableDictionary<string, PropertyInfo> Props { get; private set; }
 
-  public CachedType(string key, Type type, Dictionary<string, PropertyInfo> props)
+  public CachedTypeInfo(string key, Type type, Dictionary<string, PropertyInfo> props)
   {
     Key = key;
     Type = type;
@@ -19,50 +19,74 @@ public class CachedType
   }
 }
 
-public abstract class AbstractTypeCache
+public class TypeCacheManager
 {
-  private readonly Assembly _assemblyToCache;
   private readonly Type _baseType;
-  private readonly Dictionary<string, CachedType> _cachedTypes = new();
+  private readonly Dictionary<string, CachedTypeInfo> _cachedTypes = new();
 
-  private CachedType? _defaultCachedType = null;
+  public CachedTypeInfo? FallbackType { get; private set; }
 
-  protected AbstractTypeCache(Assembly assemblyToCache, Type baseType)
+  public TypeCacheManager(Type baseType)
   {
-    _assemblyToCache = assemblyToCache;
     _baseType = baseType;
   }
 
   public void EnsureCacheIsBuilt()
   {
-    var foundTypes = _assemblyToCache.DefinedTypes.Where(x => x.IsSubclassOf(_baseType));
-
-    foreach (var type in foundTypes)
+    // POC: need a way to pick our own objects and not the DUI2 objects plus this is a touch weak :pain
+    foreach (
+      var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(x => x.FullName.ToLower().Contains("objects"))
+    )
     {
-      _cachedTypes.Add(type.FullName, new CachedType(type.FullName.NotNull(), type, GetPropertyInfo(type)));
+      try
+      {
+        var foundTypes = assembly.DefinedTypes.Where(x => x.IsSubclassOf(_baseType) && !x.IsAbstract);
+
+        foreach (var type in foundTypes)
+        {
+          var typeName = type.FullName;
+
+          // POC: I am not convinced we should have duplicates | plus the original Objects.Dll could be loaded at the same time
+          if (!_cachedTypes.ContainsKey(typeName))
+          {
+            try
+            {
+              _cachedTypes.Add(typeName, new CachedTypeInfo(typeName.NotNull(), type, GetPropertyInfo(type)));
+            }
+            catch (TypeLoadException)
+            {
+              // POC: guard against loading things that cause explosions
+            }
+          }
+        }
+      }
+      catch (TypeLoadException)
+      {
+        // POC: guard against loading things that cause explosions
+      }
     }
 
-    _defaultCachedType = new CachedType(_baseType.FullName.NotNull(), _baseType, GetPropertyInfo(_baseType));
+    FallbackType = new CachedTypeInfo(_baseType.FullName.NotNull(), _baseType, GetPropertyInfo(_baseType));
   }
 
-  public CachedType GetType(string speckleType)
+  public CachedTypeInfo GetType(string speckleType)
   {
     int length = speckleType.Length;
     int end = length - 1;
     int start;
 
     // _defaultCachedType should be created by now otherwise we should explode
-    CachedType cachedType = _defaultCachedType.NotNull();
+    CachedTypeInfo cachedType = FallbackType.NotNull();
 
     do
     {
       string typeName;
 
-      start = speckleType.LastIndexOf(':', 0, end);
+      start = speckleType.LastIndexOf(':', end);
       if (start < 0)
       {
         // we didn't find a :
-        typeName = speckleType.Substring(0, end);
+        typeName = speckleType.Substring(0, 1 + end);
       }
       else
       {
@@ -76,7 +100,7 @@ public abstract class AbstractTypeCache
       }
 
       var lastPeriod = typeName.LastIndexOf('.');
-      typeName = speckleType.Insert(lastPeriod, "Deprecated.");
+      typeName = typeName.Insert(1 + lastPeriod, "Deprecated.");
       if (_cachedTypes.TryGetValue(typeName, out cachedType))
       {
         return cachedType;
@@ -99,10 +123,4 @@ public abstract class AbstractTypeCache
 
     return propertyMap;
   }
-}
-
-public class SpeckleBaseTypeCache : AbstractTypeCache
-{
-  public SpeckleBaseTypeCache()
-    : base(Assembly.GetExecutingAssembly(), typeof(Base)) { }
 }

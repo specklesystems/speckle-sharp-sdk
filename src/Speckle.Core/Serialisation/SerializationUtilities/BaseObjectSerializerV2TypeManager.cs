@@ -15,12 +15,23 @@ internal static class BaseObjectSerializationUtilities
 
   private static readonly Dictionary<string, List<MethodInfo>> s_onDeserializedCallbacks = new();
 
+  private static TypeCacheManager s_typeCache = new TypeCacheManager(typeof(Base));
+
   internal static Type GetType(string objFullType)
   {
     lock (s_cachedTypes)
     {
-      SpeckleObjectSchema.TypeCache?.EnsureCacheIsBuilt();
-      var typeCache = SpeckleObjectSchema.TypeCache?.GetType(objFullType);
+      s_typeCache.EnsureCacheIsBuilt();
+      var typeCache = s_typeCache.GetType(objFullType);
+
+      var revitWall = s_typeCache.GetType("Objects.BuiltElements.Wall:Objects.BuiltElements.Revit.RevitWall");
+      var wall = s_typeCache.GetType("Objects.BuiltElements.Wall:Objects.BuiltElements.Revit.NotARevitWall");
+      var wall3deep = s_typeCache.GetType(
+        "Objects.BuiltElements.Wall:Objects.BuiltElements.Level2:Objects.BuiltElements.Revit.NotARevitWall"
+      );
+      var wall2deep = s_typeCache.GetType(
+        "Objects.BuiltElements.NotAUsefulName:Objects.BuiltElements.Wall:Objects.BuiltElements.Revit.NotARevitWall"
+      );
 
       if (s_cachedTypes.TryGetValue(objFullType, out Type? type1))
       {

@@ -3,7 +3,6 @@ using Speckle.Core.Helpers;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
-using Speckle.Objects;
 
 namespace Objects;
 
@@ -17,14 +16,6 @@ public class ObjectsKit : ISpeckleKit
   private readonly Dictionary<string, Type> _loadedConverters = new();
 
   private List<string>? _converters;
-
-  public SpeckleBaseTypeCache Cache { get; set; }
-
-  public ObjectsKit()
-  {
-    Cache = new SpeckleBaseTypeCache();
-    Cache.EnsureCacheIsBuilt();
-  }
 
   /// <summary>
   /// Local installations store objects in C:\Users\USERNAME\AppData\Roaming\Speckle\Kits\Objects

@@ -45,6 +45,14 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
   public static int DefaultNumberThreads => Math.Min(Environment.ProcessorCount, 6); //6 threads seems the sweet spot, see performance test project
   public int WorkerThreadCount { get; set; } = DefaultNumberThreads;
 
+  private readonly TypeCacheManager _typeCacheManager = new(typeof(Base));
+
+  // POC: inject the TypeCacheManager, and interface out
+  public BaseObjectDeserializerV2()
+  {
+    _typeCacheManager.EnsureCacheIsBuilt();
+  }
+
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
   /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="rootObjectJson"/></returns>
   /// <exception cref="InvalidOperationException">Thrown when <see cref="_isBusy"/></exception>
@@ -341,21 +349,36 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
     string typeName = (string)dictObj[TYPE_DISCRIMINATOR]!;
-    Type type = BaseObjectSerializationUtilities.GetType(typeName);
-    Base baseObj = (Base)Activator.CreateInstance(type);
+
+    CachedTypeInfo cachedTypeInfo = _typeCacheManager.GetType(typeName);
+
+    var originalType = BaseObjectSerializationUtilities.GetType(typeName);
+
+    // if (cachedTypeInfo.Type.FullName.StartsWith("Speckle.Connectors.Utils"))
+    // {
+    //   cachedTypeInfo = _typeCacheManager.FallbackType.NotNull();
+    // }
+
+    Debug.WriteLine($"\t{cachedTypeInfo.Type.FullName} | {originalType.FullName}");
+    Base baseObj = (Base)Activator.CreateInstance(cachedTypeInfo.Type);
 
     dictObj.Remove(TYPE_DISCRIMINATOR);
     dictObj.Remove("__closure");
 
-    Dictionary<string, PropertyInfo> staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
+    var props = cachedTypeInfo.Props;
+    //var props = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
+
+    //Dictionary<string, PropertyInfo> staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
+
+
     List<MethodInfo> onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
 
     foreach (var entry in dictObj)
     {
       string lowerPropertyName = entry.Key.ToLower();
-      if (staticProperties.TryGetValue(lowerPropertyName, out PropertyInfo? value) && value.CanWrite)
+      if (props.TryGetValue(lowerPropertyName, out PropertyInfo? value) && value.CanWrite)
       {
-        PropertyInfo property = staticProperties[lowerPropertyName];
+        PropertyInfo property = props[lowerPropertyName];
         if (entry.Value == null)
         {
           // Check for JsonProperty(NullValueHandling = NullValueHandling.Ignore) attribute
