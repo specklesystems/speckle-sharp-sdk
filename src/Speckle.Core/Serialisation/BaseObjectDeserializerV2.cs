@@ -6,9 +6,11 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Speckle.Core.Common;
+using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation.SerializationUtilities;
+using Speckle.Core.Serialisation.TypeCache;
 using Speckle.Core.Transports;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
@@ -45,12 +47,13 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
   public static int DefaultNumberThreads => Math.Min(Environment.ProcessorCount, 6); //6 threads seems the sweet spot, see performance test project
   public int WorkerThreadCount { get; set; } = DefaultNumberThreads;
 
-  private readonly TypeCacheManager _typeCacheManager = new(typeof(Base));
+  private readonly ITypeCache _typeCache;
 
   // POC: inject the TypeCacheManager, and interface out
-  public BaseObjectDeserializerV2()
+  public BaseObjectDeserializerV2(ITypeCache typeCache)
   {
-    _typeCacheManager.EnsureCacheIsBuilt();
+    _typeCache = typeCache;
+    _typeCache.EnsureCacheIsBuilt();
   }
 
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
@@ -349,29 +352,22 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
     string typeName = (string)dictObj[TYPE_DISCRIMINATOR]!;
+    
+    // TODO: get the version
 
-    CachedTypeInfo cachedTypeInfo = _typeCacheManager.GetType(typeName);
+    // we find the type
+    CachedTypeInfo cachedTypeInfo = _typeCache.GetType(typeName);
 
-    var originalType = BaseObjectSerializationUtilities.GetType(typeName);
-
-    // if (cachedTypeInfo.Type.FullName.StartsWith("Speckle.Connectors.Utils"))
-    // {
-    //   cachedTypeInfo = _typeCacheManager.FallbackType.NotNull();
-    // }
-
-    Debug.WriteLine($"\t{cachedTypeInfo.Type.FullName} | {originalType.FullName}");
-    Base baseObj = (Base)Activator.CreateInstance(cachedTypeInfo.Type);
+    // let's figure out whether to deserialise into this type or a legacy type
+    
+    Base baseObj = (Base) Activator.CreateInstance(cachedTypeInfo.Type);
 
     dictObj.Remove(TYPE_DISCRIMINATOR);
     dictObj.Remove("__closure");
 
     var props = cachedTypeInfo.Props;
-    //var props = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
 
-    //Dictionary<string, PropertyInfo> staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
-
-
-    List<MethodInfo> onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
+    var onDeserializedCallbacks = cachedTypeInfo.Callbacks;
 
     foreach (var entry in dictObj)
     {
@@ -414,6 +410,8 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
     {
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
+    
+    // TODO: perform any versioning we need to
 
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {

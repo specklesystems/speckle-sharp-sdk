@@ -1,46 +1,36 @@
 ﻿using System.Collections.Immutable;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Speckle.Core.Common;
 using Speckle.Core.Models;
 
-namespace Speckle.Core.Serialisation;
+namespace Speckle.Core.Serialisation.TypeCache;
 
-public class CachedTypeInfo
+public abstract class AbstractTypeCache : ITypeCache
 {
-  public string Key { get; private set; }
-  public Type Type { get; private set; }
-  public ImmutableDictionary<string, PropertyInfo> Props { get; private set; }
-
-  public CachedTypeInfo(string key, Type type, Dictionary<string, PropertyInfo> props)
-  {
-    Key = key;
-    Type = type;
-    Props = props.ToImmutableDictionary();
-  }
-}
-
-public class TypeCacheManager
-{
+  private readonly IList<Assembly> _assemblies;
   private readonly Type _baseType;
   private readonly Dictionary<string, CachedTypeInfo> _cachedTypes = new();
 
   public CachedTypeInfo? FallbackType { get; private set; }
 
-  public TypeCacheManager(Type baseType)
+  protected AbstractTypeCache(IEnumerable<Assembly> assemblies, Type baseType)
   {
+    _assemblies = assemblies.ToList();
     _baseType = baseType;
+    
+    // POC: manually including core, not sure of the wisdom of this...
+    _assemblies.Add(typeof(AbstractTypeCache).Assembly);
   }
 
   public void EnsureCacheIsBuilt()
   {
     // POC: need a way to pick our own objects and not the DUI2 objects plus this is a touch weak :pain
-    foreach (
-      var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(x => x.FullName.ToLower().Contains("objects"))
-    )
+    foreach (var assembly in _assemblies)
     {
       try
       {
-        var foundTypes = assembly.DefinedTypes.Where(x => x.IsSubclassOf(_baseType) && !x.IsAbstract);
+        var foundTypes = assembly.GetTypes().Where(x => x.IsSubclassOf(_baseType) && !x.IsAbstract);
 
         foreach (var type in foundTypes)
         {
@@ -51,7 +41,13 @@ public class TypeCacheManager
           {
             try
             {
-              _cachedTypes.Add(typeName, new CachedTypeInfo(typeName.NotNull(), type, GetPropertyInfo(type)));
+              _cachedTypes.Add(
+                            typeName,
+                            new CachedTypeInfo(
+                                typeName.NotNull(),
+                                type,
+                                GetPropertyInfo(type),
+                                GetCallbacks(type)));
             }
             catch (TypeLoadException)
             {
@@ -66,7 +62,11 @@ public class TypeCacheManager
       }
     }
 
-    FallbackType = new CachedTypeInfo(_baseType.FullName.NotNull(), _baseType, GetPropertyInfo(_baseType));
+    FallbackType = new CachedTypeInfo(
+                        _baseType.FullName.NotNull(),
+                        _baseType,
+                        GetPropertyInfo(_baseType),
+                        GetCallbacks(_baseType));
   }
 
   public CachedTypeInfo GetType(string speckleType)
@@ -76,7 +76,7 @@ public class TypeCacheManager
     int start;
 
     // _defaultCachedType should be created by now otherwise we should explode
-    CachedTypeInfo cachedType = FallbackType.NotNull();
+    CachedTypeInfo? cachedType;
 
     do
     {
@@ -96,19 +96,19 @@ public class TypeCacheManager
 
       if (_cachedTypes.TryGetValue(typeName, out cachedType))
       {
-        return cachedType;
+        return cachedType.NotNull();
       }
 
       var lastPeriod = typeName.LastIndexOf('.');
       typeName = typeName.Insert(1 + lastPeriod, "Deprecated.");
       if (_cachedTypes.TryGetValue(typeName, out cachedType))
       {
-        return cachedType;
+        return cachedType.NotNull();
       }
     } while (start >= 0);
 
     // why the hell is this moaning about it being null?
-    return cachedType;
+    return FallbackType.NotNull();
   }
 
   private Dictionary<string, PropertyInfo> GetPropertyInfo(Type type)
@@ -122,5 +122,24 @@ public class TypeCacheManager
     }
 
     return propertyMap;
+  }
+
+  private List<MethodInfo> GetCallbacks(Type type)
+  {
+    List<MethodInfo> callbacks = new();
+
+    MethodInfo[] methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+    foreach (MethodInfo method in methods)
+    {
+      List<OnDeserializedAttribute> onDeserializedAttributes = method
+        .GetCustomAttributes<OnDeserializedAttribute>(true)
+        .ToList();
+      if (onDeserializedAttributes.Count > 0)
+      {
+        callbacks.Add(method);
+      }
+    }
+
+    return callbacks;
   }
 }

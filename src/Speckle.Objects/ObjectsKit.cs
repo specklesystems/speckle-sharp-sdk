@@ -41,8 +41,13 @@ public class ObjectsKit : ISpeckleKit
   public string WebsiteOrEmail => "https://speckle.systems";
 
   /// <inheritdoc/>
-  public IEnumerable<Type> Types =>
-    Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Base)) && !t.IsAbstract);
+  public IEnumerable<Type> Types
+  {
+    get
+    {
+      return  Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Base)) && !t.IsAbstract);
+    }
+  }
 
   /// <inheritdoc/>
   public IEnumerable<string> Converters => _converters ??= GetAvailableConverters();
