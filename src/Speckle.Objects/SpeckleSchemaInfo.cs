@@ -1,6 +1,6 @@
 ﻿namespace Objects;
 
-public class SpeckleSchemaInfo
+public static class SpeckleSchemaInfo
 {
-  public readonly Version Version = new(3, 0, 0);
+  public static readonly Version Version = new(0, 2, 0);
 }

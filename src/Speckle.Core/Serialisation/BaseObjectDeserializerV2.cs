@@ -25,11 +25,6 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
   // id -> Base if already deserialized or id -> Task<object> if was handled by a bg thread
   private Dictionary<string, object?>? _deserializedObjects;
 
-  /// <summary>
-  /// Property that describes the type of the object.
-  /// </summary>
-  private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
-
   private DeserializationWorkerThreads? _workerThreads;
 
   public CancellationToken CancellationToken { get; set; }
@@ -136,12 +131,12 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
       List<(string, int)> closureList = new();
       JObject doc1 = JObject.Parse(rootObjectJson);
 
-      if (!doc1.ContainsKey("__closure"))
+      if (!doc1.ContainsKey(SerializationConstants.CLOSURE_PROPERTY_NAME))
       {
         return new List<(string, int)>();
       }
 
-      foreach (JToken prop in doc1["__closure"].NotNull())
+      foreach (JToken prop in doc1[SerializationConstants.CLOSURE_PROPERTY_NAME].NotNull())
       {
         string childId = ((JProperty)prop).Name;
         int childMinDepth = (int)((JProperty)prop).Value;
@@ -280,7 +275,7 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
         foreach (JToken propJToken in jObject)
         {
           JProperty prop = (JProperty)propJToken;
-          if (prop.Name == "__closure")
+          if (prop.Name == SerializationConstants.CLOSURE_PROPERTY_NAME)
           {
             continue;
           }
@@ -288,7 +283,7 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
           dict[prop.Name] = ConvertJsonElement(prop.Value);
         }
 
-        if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
+        if (!dict.TryGetValue(SerializationConstants.TYPE_DISCRIMINATOR, out object? speckleType))
         {
           return dict;
         }
@@ -351,19 +346,19 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
 
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
-    string typeName = (string)dictObj[TYPE_DISCRIMINATOR]!;
+    string typeName = (string)dictObj[SerializationConstants.TYPE_DISCRIMINATOR]!;
     
-    // TODO: get the version
-
-    // we find the type
-    CachedTypeInfo cachedTypeInfo = _typeCache.GetType(typeName);
-
-    // let's figure out whether to deserialise into this type or a legacy type
+    // TODO: pass the version IN
+    Version schemaVersion = _typeCache.LoadedSchemaVersion;
+    
+    // here we're getting the actual type to deserialise into, this won't be the type we return
+    CachedTypeInfo cachedTypeInfo = _typeCache.GetMatchedTypeOrLater(typeName, schemaVersion);
     
     Base baseObj = (Base) Activator.CreateInstance(cachedTypeInfo.Type);
 
-    dictObj.Remove(TYPE_DISCRIMINATOR);
-    dictObj.Remove("__closure");
+    dictObj.Remove(SerializationConstants.TYPE_DISCRIMINATOR);
+    dictObj.Remove(SerializationConstants.CLOSURE_PROPERTY_NAME);
+    dictObj.Remove(SerializationConstants.SCHEMA_VERSION);
 
     var props = cachedTypeInfo.Props;
 
@@ -411,7 +406,7 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
     
-    // TODO: perform any versioning we need to
+    // TODO: perform any versioning we need to, to upgrade the type
 
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {

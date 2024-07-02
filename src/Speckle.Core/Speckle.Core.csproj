@@ -36,9 +36,5 @@
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="System.DoubleNumerics" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Serialisation\SerializationUtilities\BaseObjectSerializerV2TypeManager.cs" />
-  </ItemGroup>
   
 </Project>
