@@ -4,6 +4,7 @@ using System.Text;
 using System.Web;
 using Newtonsoft.Json;
 using Speckle.Core.Api;
+using Speckle.Core.Common;
 using Speckle.Core.Credentials;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
@@ -50,7 +51,7 @@ public static class Fixtures
         // $"{Server.url}/auth/local/register?challenge=challengingchallenge",
         new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, MediaTypeNames.Application.Json)
       );
-      redirectUrl = response.Headers.Location!.AbsoluteUri;
+      redirectUrl = response.Headers.Location.NotNull().AbsoluteUri;
     }
     catch (Exception e)
     {
@@ -74,13 +75,13 @@ public static class Fixtures
       "/auth/token",
       new StringContent(JsonConvert.SerializeObject(tokenBody), Encoding.UTF8, MediaTypeNames.Application.Json)
     );
-    var deserialised = JsonConvert.DeserializeObject<Dictionary<string, string>>(
-      await tokenResponse.Content.ReadAsStringAsync()
-    );
+    var deserialised = JsonConvert
+      .DeserializeObject<Dictionary<string, string>>(await tokenResponse.Content.ReadAsStringAsync())
+      .NotNull();
 
     var acc = new Account
     {
-      token = deserialised["token"]!,
+      token = deserialised["token"],
       userInfo = new UserInfo
       {
         id = user["name"],
