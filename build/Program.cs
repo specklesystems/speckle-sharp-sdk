@@ -55,7 +55,7 @@ Target(
   }
 );
 
-Target(PACK, DependsOn(BUILD), () => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build"));
+Target(PACK, DependsOn(TEST), () => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build"));
 
 Target("default", DependsOn(FORMAT, TEST), () => Console.WriteLine("Done!"));
 
