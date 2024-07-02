@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using BenchmarkDotNet.Attributes;
+using Speckle.Core.Common;
 using Speckle.Core.Models;
 
 namespace Speckle.Core.Tests.Performance.Api.Operations;
@@ -28,7 +29,7 @@ public class ReceiveFromSQLite : IDisposable
       .ConfigureAwait(false);
 
     Trace.Assert(b is not null);
-    return b;
+    return b.NotNull();
   }
 
   [GlobalCleanup]
