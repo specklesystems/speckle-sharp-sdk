@@ -4,7 +4,7 @@ using Objects.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Objects.Versions.V_0_1_0;
+namespace Objects.Versions.V_0_1_0.BuiltElements;
 
 public class Wall : Base, IDisplayValue<List<Mesh>>
 {

@@ -207,6 +207,10 @@ public class Commit
   public int totalChildrenCount { get; set; }
   public List<string> parents { get; set; }
 
+  // should be nullable but is currently disabled here
+  // null schema == this is old AF
+  public string SchemaVersion { get; set; }
+  
   public override string ToString()
   {
     return $"Commit ({message} | {id})";

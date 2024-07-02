@@ -10,8 +10,14 @@ namespace Speckle.Core.Serialisation.TypeCache;
 internal class VersionCache(string type)
 {
   public string Type { get; private set; } = type;
-  public List<(Version, CachedTypeInfo)> Versions => new ();
+  public List<(Version, CachedTypeInfo)> Versions { get; private set; } = new();
   public CachedTypeInfo? LatestVersion;
+
+  public void SortVersions()
+  {
+    // for some reason I can't get the tuple deconstructed (but it IS rather late)
+    Versions = Versions.OrderBy(v => v.Item1).ToList();
+  }
 }
 
 public abstract class AbstractTypeCache : ITypeCache
@@ -19,6 +25,8 @@ public abstract class AbstractTypeCache : ITypeCache
   private readonly IList<Assembly> _assemblies;
   private readonly Type _baseType;
   private readonly Dictionary<string, VersionCache> _cachedTypes = new();
+
+  private bool _cacheBuilt = false;
 
   public Version LoadedSchemaVersion { get; private set; }
   
@@ -46,6 +54,13 @@ public abstract class AbstractTypeCache : ITypeCache
   // could build in constructor..  but throwing from constructors generally frowned upon
   public void EnsureCacheIsBuilt()
   {
+    if (_cacheBuilt)
+    {
+      return;
+    }
+
+    _cacheBuilt = true;
+    
     // POC: need a way to pick our own objects and not the DUI2 objects plus this is a touch weak :pain
     foreach (var assembly in _assemblies)
     {
@@ -79,10 +94,26 @@ public abstract class AbstractTypeCache : ITypeCache
       }
     }
 
-    // TODO: if we load versions but no latest, then this is an error
     // future incarnations may permit mutating the type
-    // i.e. decorate a new type with the name of the legacy name
-    
+    // so the return type is something other than base, they may also allow moving namespaces
+    // this is not currently possible because of the way the namespace has been used historically and how we are using it here
+    // we can probably tweak this to allow for namespace remapping - it would be nice if things began with Speckle :P
+    foreach (var typeVersions in _cachedTypes.Values)
+    {
+      if (typeVersions.LatestVersion == null)
+      {
+        // we cannot have non-matching types atm
+        // .i.e. a versioned Objects.Versions.V_1_2.0.Wall must have a corresponding Objects.Wall
+        // I imagine it would be possible to add some annotation somewhere to allow for this but now is not the time...
+        var versionNames = string.Join(",", typeVersions.Versions
+          .Select((v, typeCache) => v.Item1.ToString())).ToList();
+        throw new ArgumentException(
+          $"The type {typeVersions.Type} has no latest - we have the following versions of this type: '{versionNames}'");
+      }
+      
+      // sort the versions
+      typeVersions.SortVersions();
+    }
     
     // TODO: order versioned cache by their version to save sorting every version look up
     

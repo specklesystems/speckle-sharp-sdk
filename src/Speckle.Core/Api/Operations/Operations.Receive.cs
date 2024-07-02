@@ -40,6 +40,7 @@ public static partial class Operations
   public static async Task<Base> Receive(
     string objectId,
     ITypeCache typeCache,
+    System.Version schemaVersion,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
     Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
@@ -64,7 +65,7 @@ public static partial class Operations
 
     // Setup Serializer
     BaseObjectDeserializerV2 serializerV2 =
-      new(typeCache)
+      new(typeCache, schemaVersion)
       {
         ReadTransport = localTransport,
         OnProgressAction = internalProgressAction,

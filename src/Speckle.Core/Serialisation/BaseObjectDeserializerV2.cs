@@ -43,12 +43,15 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
   public int WorkerThreadCount { get; set; } = DefaultNumberThreads;
 
   private readonly ITypeCache _typeCache;
+  private readonly Version _payloadSchemaVersion;
 
   // POC: inject the TypeCacheManager, and interface out
-  public BaseObjectDeserializerV2(ITypeCache typeCache)
+  public BaseObjectDeserializerV2(ITypeCache typeCache, Version payloadSchemaVersion)
   {
     _typeCache = typeCache;
     _typeCache.EnsureCacheIsBuilt();
+
+    _payloadSchemaVersion = payloadSchemaVersion;
   }
 
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
@@ -348,17 +351,13 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
   {
     string typeName = (string)dictObj[SerializationConstants.TYPE_DISCRIMINATOR]!;
     
-    // TODO: pass the version IN
-    Version schemaVersion = _typeCache.LoadedSchemaVersion;
-    
     // here we're getting the actual type to deserialise into, this won't be the type we return
-    CachedTypeInfo cachedTypeInfo = _typeCache.GetMatchedTypeOrLater(typeName, schemaVersion);
+    CachedTypeInfo cachedTypeInfo = _typeCache.GetMatchedTypeOrLater(typeName, _payloadSchemaVersion);
     
     Base baseObj = (Base) Activator.CreateInstance(cachedTypeInfo.Type);
 
     dictObj.Remove(SerializationConstants.TYPE_DISCRIMINATOR);
     dictObj.Remove(SerializationConstants.CLOSURE_PROPERTY_NAME);
-    dictObj.Remove(SerializationConstants.SCHEMA_VERSION);
 
     var props = cachedTypeInfo.Props;
 

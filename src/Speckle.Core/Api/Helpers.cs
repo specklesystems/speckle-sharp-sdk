@@ -37,6 +37,7 @@ public static class Helpers
   public static async Task<Base> Receive(
     string stream,
     ITypeCache typeCache,
+    System.Version schemaVersion,
     Account account = null,
     Action<ConcurrentDictionary<string, int>> onProgressAction = null,
     Action<int> onTotalChildrenCountKnown = null
@@ -110,6 +111,7 @@ public static class Helpers
       .Receive(
         objectId,
         typeCache,
+        schemaVersion,
         transport,
         onProgressAction: onProgressAction,
         onTotalChildrenCountKnown: onTotalChildrenCountKnown
