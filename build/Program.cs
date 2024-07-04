@@ -48,7 +48,7 @@ Target(BUILD, DependsOn(RESTORE), () => RunAsync("dotnet", "build Speckle.Sdk.sl
 Target(
   TEST,
   DependsOn(BUILD),
-  Glob.Files(".", "**/*.Tests.Unit.csproj"),
+  Glob.Files(".", "**/*.Tests.Unit.csproj").Concat(Glob.Files(".", "**/*.Tests.csproj")),
   async file =>
   {
     await RunAsync("dotnet", $"test {file} -c Release --no-build --verbosity=normal");
