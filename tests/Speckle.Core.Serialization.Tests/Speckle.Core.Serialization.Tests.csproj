@@ -8,8 +8,8 @@
 
 
   <ItemGroup>
+    <PackageReference Include="altcover" />
     <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="JunitXml.TestLogger" />
     <PackageReference Include="Microsoft.NET.Test.Sdk"  />
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit3TestAdapter" />

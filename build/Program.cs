@@ -51,7 +51,7 @@ Target(
   Glob.Files(".", "**/*.Tests.Unit.csproj").Concat(Glob.Files(".", "**/*.Tests.csproj")),
   async file =>
   {
-    await RunAsync("dotnet", $"test {file} -c Release --no-build --verbosity=normal");
+    await RunAsync("dotnet", $"test {file} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true");
   }
 );
 
