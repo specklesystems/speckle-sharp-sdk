@@ -33,8 +33,7 @@ jobs:
         uses: codecov/codecov-action@v4.2.0
         with:
           files: tests/**/coverage.xml
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Push to nuget.org
         run: dotnet nuget push output/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${{secrets.CONNECTORS_NUGET_TOKEN }} --skip-duplicate
