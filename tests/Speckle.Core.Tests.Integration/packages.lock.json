@@ -306,12 +306,12 @@
       "speckle.core.tests.unit": {
         "type": "Project",
         "dependencies": {
-          "JunitXml.TestLogger": "[3.0.124, )",
           "Microsoft.NET.Test.Sdk": "[17.10.0, )",
           "NUnit": "[4.1.0, )",
           "NUnit3TestAdapter": "[4.5.0, )",
           "Speckle.Core": "[1.0.0, )",
-          "Speckle.Transports.Disk": "[1.0.0, )"
+          "Speckle.Transports.Disk": "[1.0.0, )",
+          "altcover": "[8.8.74, )"
         }
       },
       "speckle.transports.disk": {
@@ -319,6 +319,12 @@
         "dependencies": {
           "Speckle.Core": "[1.0.0, )"
         }
+      },
+      "altcover": {
+        "type": "CentralTransitive",
+        "requested": "[8.8.74, )",
+        "resolved": "8.8.74",
+        "contentHash": "e8RZNE0vZnuBk/gOAWu9K5wm3S7dOrOlZje3PHI9PJUHqvP1cxVJD1eXAAmddFVlixowB7C7/zvC16GnunC2LQ=="
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",
@@ -330,12 +336,6 @@
           "GraphQL.Client.Abstractions.Websocket": "6.0.0",
           "System.Reactive": "5.0.0"
         }
-      },
-      "JunitXml.TestLogger": {
-        "type": "CentralTransitive",
-        "requested": "[3.0.124, )",
-        "resolved": "3.0.124",
-        "contentHash": "QTZhSNm/xjj24W1yterf6eABv6KO+Y9jBqpau5RzPehdXTXkZcGQaLf/i50nTl+qnSwpbKkrC+bSyvLRE1ZNAg=="
       },
       "Microsoft.CSharp": {
         "type": "CentralTransitive",
