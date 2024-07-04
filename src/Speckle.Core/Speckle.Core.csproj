@@ -34,7 +34,7 @@
     <PackageReference Include="SerilogTimings" />
     <PackageReference Include="Speckle.Newtonsoft.Json"/>
     <PackageReference Include="Microsoft.Data.Sqlite" />
-    <PackageReference Include="System.DoubleNumerics" />
+    <PackageReference Include="Speckle.DoubleNumerics" />
   </ItemGroup>
   
 </Project>
