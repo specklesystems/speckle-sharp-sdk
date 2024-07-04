@@ -1,8 +1,8 @@
 using System.Collections;
-using Speckle.DoubleNumerics;
 using NUnit.Framework;
 using Objects.Other;
 using Speckle.Core.Kits;
+using Speckle.DoubleNumerics;
 
 namespace Objects.Tests.Unit.Geometry;
 
