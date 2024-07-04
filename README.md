@@ -2,9 +2,11 @@
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/SpeckleSystems?style=social)](https://twitter.com/SpeckleSystems) [![Community forum users](https://img.shields.io/discourse/users?server=https%3A%2F%2Fdiscourse.speckle.works&style=flat-square&logo=discourse&logoColor=white)](https://discourse.speckle.works) [![website](https://img.shields.io/badge/https://-speckle.systems-royalblue?style=flat-square)](https://speckle.systems) [![docs](https://img.shields.io/badge/docs-speckle.guide-orange?style=flat-square&logo=read-the-docs&logoColor=white)](https://speckle.guide/dev/)
 
+[![codecov](https://codecov.io/gh/specklesystems/speckle-sharp-sdk/graph/badge.svg?token=TTM5OGr38m)](https://codecov.io/gh/specklesystems/speckle-sharp-sdk)
+
 ## **Disclaimer**
 
-This is an early alpha release, not meant for use in production! We're working to stabilise the 2.0 API, and until then there will be breaking changes. You have been warned!
+This is an early alpha release, not meant for use in production! We're working to stabilise the 3.0 API, and until then there will be breaking changes. You have been warned!
 
 ## Introduction
 
