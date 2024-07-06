@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using Speckle.Core.Common;
 using Speckle.Core.Models;
+using Speckle.Core.Reflection;
 
 namespace Speckle.Core.Serialisation.TypeCache;
 
@@ -30,6 +31,7 @@ public abstract class AbstractTypeCache : ITypeCache
 
   public Version LoadedSchemaVersion { get; private set; }
   
+  private readonly ITypeFinder _typeFinder;
   private readonly string _namespacePrefix;
   private readonly string _versionNamespacePrefix;
   
@@ -39,13 +41,18 @@ public abstract class AbstractTypeCache : ITypeCache
                 IEnumerable<Assembly> assemblies,
                 Type baseType,
                 Version loadedSchemaVersion,
-                string namespacePrefix)
+                string namespacePrefix,
+                ITypeFinder typeFinder)
   {
     _assemblies = assemblies.ToList();
     _baseType = baseType;
     LoadedSchemaVersion = loadedSchemaVersion;
+    
+    // FUTURE: we may need to associate the prefix with each assembly as the prefix may change
+    // better yet detach the namespaces & assemblies from the type naming
     _namespacePrefix = namespacePrefix;
     _versionNamespacePrefix = $"{_namespacePrefix}.Versions.";
+    _typeFinder = typeFinder;
     
     // POC: manually including core, not sure of the wisdom of this...
     _assemblies.Add(typeof(AbstractTypeCache).Assembly);
@@ -60,44 +67,32 @@ public abstract class AbstractTypeCache : ITypeCache
     }
 
     _cacheBuilt = true;
-    
-    // POC: need a way to pick our own objects and not the DUI2 objects plus this is a touch weak :pain
-    foreach (var assembly in _assemblies)
+
+    foreach (Type type in _typeFinder.GetTypesWhereSubclassOf(_assemblies, _baseType))
     {
       try
       {
-        var foundTypes = assembly.GetTypes().Where(x => x.IsSubclassOf(_baseType) && !x.IsAbstract);
+        (string typeName, Version? version) = GetTypeNameAndVersion(type.FullName.NotNull());
 
-        foreach (var type in foundTypes)
-        {
-          (string typeName, Version? version) = GetTypeNameAndVersion(type.FullName.NotNull());
+        var typeCacheInfo = new CachedTypeInfo(
+          typeName.NotNull(),
+          type,
+          GetPropertyInfo(type),
+          GetCallbacks(type));
 
-          try
-          {
-            var typeCacheInfo = new CachedTypeInfo(
-              typeName.NotNull(),
-              type,
-              GetPropertyInfo(type),
-              GetCallbacks(type));
-
-            CacheType(typeName, version, typeCacheInfo);
-          }
-          catch (TypeLoadException)
-          {
-            // POC: guard against loading things that cause explosions
-          }
-        }
+        CacheType(typeName, version, typeCacheInfo);
       }
       catch (TypeLoadException)
       {
         // POC: guard against loading things that cause explosions
-      }
+      }      
     }
 
     // future incarnations may permit mutating the type
     // so the return type is something other than base, they may also allow moving namespaces
     // this is not currently possible because of the way the namespace has been used historically and how we are using it here
-    // we can probably tweak this to allow for namespace remapping - it would be nice if things began with Speckle :P
+    // we can probably tweak this to allow for namespace remapping - it would be nice if things began with Speckle :)
+    // object version may also be able to retype things...
     foreach (var typeVersions in _cachedTypes.Values)
     {
       if (typeVersions.LatestVersion == null)
@@ -114,9 +109,6 @@ public abstract class AbstractTypeCache : ITypeCache
       // sort the versions
       typeVersions.SortVersions();
     }
-    
-    // TODO: order versioned cache by their version to save sorting every version look up
-    
 
     FallbackType = new CachedTypeInfo(
                         _baseType.FullName.NotNull(),
