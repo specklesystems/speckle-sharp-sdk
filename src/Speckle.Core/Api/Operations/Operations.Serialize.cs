@@ -1,5 +1,6 @@
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.Core.SchemaVersioning;
 using Speckle.Core.Serialisation;
 using Speckle.Core.Serialisation.TypeCache;
 using Speckle.Newtonsoft.Json;
@@ -37,9 +38,9 @@ public static partial class Operations
   /// <exception cref="JsonReaderException "><paramref name="value"/> was not valid JSON</exception>
   /// <exception cref="SpeckleException"><paramref name="value"/> cannot be deserialised to type <see cref="Base"/></exception>
   /// <exception cref="Speckle.Core.Transports.TransportException"><paramref name="value"/> contains closure references (see Remarks)</exception>
-  public static Base Deserialize(string value, ITypeCache typeCache, System.Version payloadSchemaVersion, CancellationToken cancellationToken = default)
+  public static Base Deserialize(string value, ITypeCache typeCache, ISchemaObjectUpgradeManager<Base, Base> objectUpgradeManager, System.Version payloadSchemaVersion, CancellationToken cancellationToken = default)
   {
-    var deserializer = new BaseObjectDeserializerV2(typeCache, payloadSchemaVersion) { CancellationToken = cancellationToken };
+    var deserializer = new BaseObjectDeserializerV2(typeCache, objectUpgradeManager, payloadSchemaVersion) { CancellationToken = cancellationToken };
     return deserializer.Deserialize(value);
   }
 }

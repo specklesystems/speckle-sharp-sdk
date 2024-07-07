@@ -9,6 +9,7 @@ using Speckle.Core.Common;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.Core.SchemaVersioning;
 using Speckle.Core.Serialisation.SerializationUtilities;
 using Speckle.Core.Serialisation.TypeCache;
 using Speckle.Core.Transports;
@@ -44,14 +45,16 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
 
   private readonly ITypeCache _typeCache;
   private readonly Version _payloadSchemaVersion;
+  private readonly ISchemaObjectUpgradeManager<Base, Base> _objectUpgradeManager;
 
   // POC: inject the TypeCacheManager, and interface out
-  public BaseObjectDeserializerV2(ITypeCache typeCache, Version payloadSchemaVersion)
+  public BaseObjectDeserializerV2(ITypeCache typeCache, ISchemaObjectUpgradeManager<Base, Base> objectUpgradeManager, Version payloadSchemaVersion)
   {
     _typeCache = typeCache;
-    _typeCache.EnsureCacheIsBuilt();
-
+    _objectUpgradeManager = objectUpgradeManager;
     _payloadSchemaVersion = payloadSchemaVersion;
+
+    _typeCache.EnsureCacheIsBuilt();
   }
 
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
@@ -349,10 +352,10 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
 
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
-    string typeName = (string)dictObj[SerializationConstants.TYPE_DISCRIMINATOR]!;
+    string typeName = (string) dictObj[SerializationConstants.TYPE_DISCRIMINATOR]!;
     
     // here we're getting the actual type to deserialise into, this won't be the type we return
-    CachedTypeInfo cachedTypeInfo = _typeCache.GetMatchedTypeOrLater(typeName, _payloadSchemaVersion);
+    (Version objectVersion, CachedTypeInfo cachedTypeInfo) = _typeCache.GetMatchedTypeOrLater(typeName, _payloadSchemaVersion);
     
     Base baseObj = (Base) Activator.CreateInstance(cachedTypeInfo.Type);
 
@@ -405,7 +408,8 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
     
-    // TODO: perform any versioning we need to, to upgrade the type
+    // version the object
+    baseObj = _objectUpgradeManager.UpgradeObject(baseObj, cachedTypeInfo.Type.FullName, objectVersion, _payloadSchemaVersion);
 
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {

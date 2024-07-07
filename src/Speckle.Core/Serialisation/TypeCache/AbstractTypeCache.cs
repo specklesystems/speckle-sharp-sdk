@@ -1,13 +1,11 @@
-﻿using System.Collections.Immutable;
-using System.Collections.Specialized;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.Serialization;
 using Speckle.Core.Common;
-using Speckle.Core.Models;
 using Speckle.Core.Reflection;
 
 namespace Speckle.Core.Serialisation.TypeCache;
 
+// POC: could move
 internal class VersionCache(string type)
 {
   public string Type { get; private set; } = type;
@@ -117,13 +115,12 @@ public abstract class AbstractTypeCache : ITypeCache
                         GetCallbacks(_baseType));
   }
 
-  public CachedTypeInfo GetMatchedTypeOrLater(string speckleType, Version versionToMatch)
+  public (Version version, CachedTypeInfo cachedTypeInfo) GetMatchedTypeOrLater(string speckleType, Version versionToMatch)
   {
     int length = speckleType.Length;
     int end = length - 1;
     int start;
 
-    // _defaultCachedType should be created by now otherwise we should explode
     VersionCache? cachedVersions;
 
     do
@@ -155,15 +152,15 @@ public abstract class AbstractTypeCache : ITypeCache
       }
     } while (start >= 0);
 
-    // why the hell is this moaning about it being null?
-    return FallbackType.NotNull();
+    // FallbackType should exist
+    return (LoadedSchemaVersion, FallbackType.NotNull());
   }
 
-  private CachedTypeInfo MatchOrLater(Version versionToMatch, VersionCache versionCache)
+  private (Version version, CachedTypeInfo cachedTypeInfo) MatchOrLater(Version versionToMatch, VersionCache versionCache)
   {
     if (versionToMatch == LoadedSchemaVersion)
     {
-      return versionCache.LatestVersion.NotNull();
+      return (LoadedSchemaVersion, versionCache.LatestVersion.NotNull());
     }
     
     // we could search or we can walk. We might be able to optomise this
@@ -172,12 +169,12 @@ public abstract class AbstractTypeCache : ITypeCache
       // if it's a match or comes later, then use this
       if (cachedVersion.version >= versionToMatch)
       {
-        return cachedVersion.cachedTypeInfo;
+        return (cachedVersion.version, cachedVersion.cachedTypeInfo);
       }
     }
     
     // if we get here just use the latest version
-    return versionCache.LatestVersion.NotNull();
+    return (LoadedSchemaVersion, versionCache.LatestVersion.NotNull());
   }
 
   private void CacheType(string typeName, Version version, CachedTypeInfo typeCacheInfo)
