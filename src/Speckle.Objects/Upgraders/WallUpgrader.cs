@@ -1,7 +1,9 @@
 using Objects.BuiltElements;
-using Objects.BuiltElements.Revit;
 using Speckle.Core.Reflection;
 using Speckle.Core.SchemaVersioning;
+
+using SourceWall = Objects.Versions.V_0_1_0.BuiltElements.Wall;
+using DestinationWall = Objects.BuiltElements.Wall;
 
 namespace Speckle.Objects.Upgraders;
 
@@ -9,14 +11,20 @@ namespace Speckle.Objects.Upgraders;
 // the type passed in is a bit janky, if we want to move from say RevitWall to Wall,
 // then we would need to have some care about where the type name came from, as in this example
 // POC: the version could come from some constant tbh and then it won't be wrong...
-[NamedType(typeof(Wall), "0.1.0")]
-public sealed class WallUpgrader : AbstractSchemaObjectBaseUpgrader<RevitWall, RevitWall>
+// is the typename off the source or destination :pained face:
+[NamedType(typeof(SourceWall), "0.1.0")]
+public sealed class WallUpgrader : AbstractSchemaObjectBaseUpgrader<SourceWall, DestinationWall>
 {
-  // edits should be done on the input, over creating copies for speed
-  public override RevitWall Upgrade(RevitWall input)
+  public override DestinationWall Upgrade(SourceWall input)
   {
+    // we need to clone the source and make a new destination
     
     
-    return input;
+    
+    
+    // we need to fixup or add or otherwise
+    
+    
+    return new DestinationWall();
   }
 }
