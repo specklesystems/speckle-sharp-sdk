@@ -1,12 +1,12 @@
-using System;
-using System.Collections.Generic;
+using Objects;
+using Objects.Geometry;
 using Objects.Other;
 using Speckle.Core.Common;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 
-namespace Objects.Geometry;
+namespace Objects.Versions.V_0_1_0.Geometry;
 
 /// <summary>
 /// A 3-dimensional point

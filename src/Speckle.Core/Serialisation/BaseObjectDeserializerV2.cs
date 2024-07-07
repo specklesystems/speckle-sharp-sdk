@@ -409,8 +409,10 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
     }
     
     // version the object
-    baseObj = _objectUpgradeManager.UpgradeObject(baseObj, cachedTypeInfo.Type.FullName, objectVersion, _payloadSchemaVersion);
+    baseObj = _objectUpgradeManager.UpgradeObject(baseObj, cachedTypeInfo.Type.FullName.NotNull(), objectVersion, _payloadSchemaVersion);
 
+    // POC: what are these callback methods? are they used?
+    // Do they need calling on the object BEFORE upgrading it? Do they need calling AGAIN after upgrading it?
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {
       onDeserialized.Invoke(baseObj, new object?[] { null });

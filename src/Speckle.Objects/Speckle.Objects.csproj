@@ -17,4 +17,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Core\Speckle.Core.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Versions\V_0_1_0\BuiltElements\" />
+  </ItemGroup>
 </Project>
