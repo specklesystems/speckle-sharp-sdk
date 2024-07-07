@@ -1,4 +1,5 @@
 using System.Reflection;
+using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Reflection;
 
@@ -18,13 +19,13 @@ public class SchemaObjectUpgradeManager<TInputType, TOutputType> : ISchemaObject
 
   public TOutputType UpgradeObject(TInputType input, string typeName, Version inputVersion, Version schemaVersion)
   {
-    TOutputType upgraded;
+    TOutputType? upgraded = null;
     
     // we try and upgrade while-ever the versions don't match
     while (inputVersion < schemaVersion)
     {
-      // building this must be done consistently - maybe some helper?
-      string typeKey = $"{typeName}{inputVersion}";
+      // building this must be done consistently
+      string typeKey = NamedTypeAttribute.CreateTypeNameWithKeySuffix(typeName, inputVersion.ToString());
 
       if (!_typeInstanceResolver.TryResolve(typeKey, out ISchemaObjectUpgrader<TInputType, TOutputType> upgrader))
       {
@@ -36,6 +37,22 @@ public class SchemaObjectUpgradeManager<TInputType, TOutputType> : ISchemaObject
       inputVersion = upgrader.UpgradeTo;
     }
 
-    return null!;//input;
+    // if we didn't do any upgrading, then we should be pass the input directly to the output
+    // BUT in cases where there is a conversion 
+    if (upgraded is null)
+    {
+      upgraded = input as TOutputType;
+      if (upgraded is null)
+      {
+        // POC: we'll want some exception type here because we probably want this to explode always
+        // even if we change from Base to an IBase, it will be easy to do in a big bang, because Base can IBase cam implement
+        // I *think* this means we can neatly use this same class with different input and output types
+        // to nicely migrate to a different base if we wished to
+        throw new SpeckleException(
+          ($"Failed to convert '{input.GetType().FullName}' to '{typeof(TOutputType).FullName}'"));
+      }
+    }
+
+    return upgraded;
   }
 }

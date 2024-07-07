@@ -10,10 +10,13 @@ namespace Speckle.Objects.Upgraders;
 // then we would need to have some care about where the type name came from, as in this example
 // POC: the version could come from some constant tbh and then it won't be wrong...
 [NamedType(typeof(Wall), "0.1.0")]
-public sealed class WallUpgrader : AbstractSchemaObjectBaseUpgrader<Wall, RevitWall>
+public sealed class WallUpgrader : AbstractSchemaObjectBaseUpgrader<RevitWall, RevitWall>
 {
-  public override RevitWall Upgrade(Wall input)
+  // edits should be done on the input, over creating copies for speed
+  public override RevitWall Upgrade(RevitWall input)
   {
-    return Upgrade((Wall)input);
+    
+    
+    return input;
   }
 }
