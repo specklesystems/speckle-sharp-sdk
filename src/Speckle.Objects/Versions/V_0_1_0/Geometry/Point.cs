@@ -1,12 +1,12 @@
-using Objects;
-using Objects.Geometry;
+using System;
+using System.Collections.Generic;
 using Objects.Other;
 using Speckle.Core.Common;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 
-namespace Speckle.Objects.Geometry;
+namespace Objects.Geometry;
 
 /// <summary>
 /// A 3-dimensional point
@@ -14,38 +14,37 @@ namespace Speckle.Objects.Geometry;
 /// <remarks>
 /// TODO: The Point class does not override the Equality operator, which means that there may be cases where `Equals` is used instead of `==`, as the comparison will be done by reference, not value.
 /// </remarks>
-public class Point_new : Base, ITransformable<Point_new>
+public class Point : Base, ITransformable<Point>
 {
   /// <inheritdoc/>
-  public Point_new() { }
+  public Point() { }
 
   /// <summary>
-  /// Constructs a new <see cref="Point_new"/> from a set of coordinates and it's units.
+  /// Constructs a new <see cref="Point"/> from a set of coordinates and it's units.
   /// </summary>
   /// <param name="x">The x coordinate</param>
   /// <param name="y">The y coordinate</param>
   /// <param name="z">The z coordinate</param>
   /// <param name="units">The units of the point's coordinates. Defaults to Meters. </param>
   /// <param name="applicationId">The object's unique application ID</param>
-  public Point_new(double x, double y, double z = 0d, double w = 1d, string units = Units.Meters, string? applicationId = null)
+  public Point(double x, double y, double z = 0d, string units = Units.Meters, string? applicationId = null)
   {
     this.x = x;
     this.y = y;
     this.z = z;
-    this.w = w;
     this.applicationId = applicationId;
     this.units = units;
   }
 
   /// <summary>
-  /// Constructs a new <see cref="Point_new"/> from a <see cref="Vector"/>
+  /// Constructs a new <see cref="Point"/> from a <see cref="Vector"/>
   /// </summary>
   /// <param name="vector">The Vector whose coordinates will be used for the Point</param>
-  public Point_new(Vector vector)
-    : this(vector.x, vector.y, vector.z, 1d, vector.units, vector.applicationId) { }
+  public Point(Vector vector)
+    : this(vector.x, vector.y, vector.z, vector.units, vector.applicationId) { }
 
   /// <summary>
-  /// Gets or sets the coordinates of the <see cref="Point_new"/>
+  /// Gets or sets the coordinates of the <see cref="Point"/>
   /// </summary>
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore), Obsolete("Use x,y,z properties instead", true)]
   public List<double> value
@@ -73,14 +72,9 @@ public class Point_new : Base, ITransformable<Point_new>
   /// The z coordinate of the point.
   /// </summary>
   public double z { get; set; }
-  
-  /// <summary>
-  /// The w coordinate of the point.
-  /// </summary>
-  public double w { get; set; }
 
   /// <summary>
-  /// The units this <see cref="Point_new"/> is in.
+  /// The units this <see cref="Point"/> is in.
   /// This should be one of the units specified in <see cref="Speckle.Core.Kits.Units"/>
   /// </summary>
   public string units { get; set; } = Units.None;
@@ -89,7 +83,7 @@ public class Point_new : Base, ITransformable<Point_new>
   public Box? bbox { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Point_new transformed)
+  public bool TransformTo(Transform transform, out Point transformed)
   {
     var matrix = transform.matrix;
 
@@ -99,20 +93,20 @@ public class Point_new : Base, ITransformable<Point_new>
     var y = (this.x * matrix.M21 + this.y * matrix.M22 + this.z * matrix.M23 + unitFactor * matrix.M24) / divisor;
     var z = (this.x * matrix.M31 + this.y * matrix.M32 + this.z * matrix.M33 + unitFactor * matrix.M34) / divisor;
 
-    transformed = new Point_new(x, y, z) { units = units, applicationId = applicationId };
+    transformed = new Point(x, y, z) { units = units, applicationId = applicationId };
     return true;
   }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out ITransformable transformed)
   {
-    var res = TransformTo(transform, out Point_new pt);
+    var res = TransformTo(transform, out Point pt);
     transformed = pt;
     return res;
   }
 
   /// <summary>
-  /// Returns the coordinates of this <see cref="Point_new"/> as a list of numbers
+  /// Returns the coordinates of this <see cref="Point"/> as a list of numbers
   /// </summary>
   /// <returns>A list of coordinates {x, y, z} </returns>
   public List<double> ToList()
@@ -121,18 +115,18 @@ public class Point_new : Base, ITransformable<Point_new>
   }
 
   /// <summary>
-  /// Creates a new <see cref="Point_new"/> based on a list of coordinates and the unit they're drawn in.
+  /// Creates a new <see cref="Point"/> based on a list of coordinates and the unit they're drawn in.
   /// </summary>
   /// <param name="list">The list of coordinates {x, y, z}</param>
   /// <param name="units">The units the coordinates are in</param>
-  /// <returns>A new <see cref="Point_new"/> with the provided coordinates.</returns>
-  public static Point_new FromList(IList<double> list, string units)
+  /// <returns>A new <see cref="Point"/> with the provided coordinates.</returns>
+  public static Point FromList(IList<double> list, string units)
   {
-    return new Point_new(list[0], list[1], list[2], 1d, units);
+    return new Point(list[0], list[1], list[2], units);
   }
 
   /// <summary>
-  /// Deconstructs a <see cref="Point_new"/> into it's coordinates and units
+  /// Deconstructs a <see cref="Point"/> into it's coordinates and units
   /// </summary>
   /// <param name="x">The x coordinate</param>
   /// <param name="y">The y coordinate</param>
@@ -145,7 +139,7 @@ public class Point_new : Base, ITransformable<Point_new>
   }
 
   /// <summary>
-  /// Deconstructs a <see cref="Point_new"/> into it's coordinates and units
+  /// Deconstructs a <see cref="Point"/> into it's coordinates and units
   /// </summary>
   /// <param name="x">The x coordinate</param>
   /// <param name="y">The y coordinate</param>
@@ -157,22 +151,22 @@ public class Point_new : Base, ITransformable<Point_new>
     z = this.z;
   }
 
-  public static Point_new operator +(Point_new point1, Point_new point2) =>
-    new(point1.x + point2.x, point1.y + point2.y, point1.z + point2.z, 1d, point1.units);
+  public static Point operator +(Point point1, Point point2) =>
+    new(point1.x + point2.x, point1.y + point2.y, point1.z + point2.z, point1.units);
 
-  public static Point_new operator -(Point_new point1, Point_new point2) =>
-    new(point1.x - point2.x, point1.y - point2.y, point1.z - point2.z, 1d, point1.units);
+  public static Point operator -(Point point1, Point point2) =>
+    new(point1.x - point2.x, point1.y - point2.y, point1.z - point2.z, point1.units);
 
-  public static Point_new operator *(Point_new point1, Point_new point2) =>
-    new(point1.x * point2.x, point1.y * point2.y, point1.z * point2.z, 1d, point1.units);
+  public static Point operator *(Point point1, Point point2) =>
+    new(point1.x * point2.x, point1.y * point2.y, point1.z * point2.z, point1.units);
 
-  public static Point_new operator *(Point_new pointNew, double val) =>
-    new(pointNew.x * val, pointNew.y * val, pointNew.z * val, 1d, pointNew.units);
+  public static Point operator *(Point point, double val) =>
+    new(point.x * val, point.y * val, point.z * val, point.units);
 
-  public static Point_new operator /(Point_new pointNew, double val) =>
-    new(pointNew.x / val, pointNew.y / val, pointNew.z / val, 1d, pointNew.units);
+  public static Point operator /(Point point, double val) =>
+    new(point.x / val, point.y / val, point.z / val, point.units);
 
-  public static bool operator ==(Point_new? point1, Point_new? point2)
+  public static bool operator ==(Point? point1, Point? point2)
   {
     if (point1 is null && point2 is null)
     {
@@ -186,7 +180,7 @@ public class Point_new : Base, ITransformable<Point_new>
     return point1.units == point2.units && point1.x == point2.x && point1.y == point2.y && point1.z == point2.z;
   }
 
-  public static bool operator !=(Point_new? point1, Point_new? point2) => !(point1 == point2);
+  public static bool operator !=(Point? point1, Point? point2) => !(point1 == point2);
 
   /// <summary>
   /// Computes a point equidistant from two points.
@@ -194,13 +188,12 @@ public class Point_new : Base, ITransformable<Point_new>
   /// <param name="point1">First point.</param>
   /// <param name="point2">Second point.</param>
   /// <returns>A point at the same distance from <paramref name="point1"/> and <paramref name="point2"/></returns>
-  public static Point_new Midpoint(Point_new point1, Point_new point2)
+  public static Point Midpoint(Point point1, Point point2)
   {
-    return new Point_new(
+    return new Point(
       0.5 * (point1.x + point2.x),
       0.5 * (point1.y + point2.y),
       0.5 * (point1.z + point2.z),
-      1d,
       point1.units
     );
   }
@@ -211,7 +204,7 @@ public class Point_new : Base, ITransformable<Point_new>
   /// <param name="point1">First point.</param>
   /// <param name="point2">Second point.</param>
   /// <returns>The distance from <paramref name="point1"/> to <paramref name="point2"/></returns>
-  public static double Distance(Point_new point1, Point_new point2)
+  public static double Distance(Point point1, Point point2)
   {
     return Math.Sqrt(
       Math.Pow(point1.x - point2.x, 2) + Math.Pow(point1.y - point2.y, 2) + Math.Pow(point1.z - point2.z, 2)
@@ -221,14 +214,14 @@ public class Point_new : Base, ITransformable<Point_new>
   /// <summary>
   /// Computes the distance between two points.
   /// </summary>
-  /// <param name="pointNew">point for distance measurement</param>
+  /// <param name="point">point for distance measurement</param>
   /// <returns>The length of the line between this and the other point</returns>
-  public double DistanceTo(Point_new pointNew)
+  public double DistanceTo(Point point)
   {
-    return Math.Sqrt(Math.Pow(x - pointNew.x, 2) + Math.Pow(y - pointNew.y, 2) + Math.Pow(z - pointNew.z, 2));
+    return Math.Sqrt(Math.Pow(x - point.x, 2) + Math.Pow(y - point.y, 2) + Math.Pow(z - point.z, 2));
   }
 
-  public static Point_new Add(Point_new left, Point_new right)
+  public static Point Add(Point left, Point right)
   {
     throw new NotImplementedException();
   }
@@ -245,7 +238,7 @@ public class Point_new : Base, ITransformable<Point_new>
       return false;
     }
 
-    return this == (Point_new)obj;
+    return this == (Point)obj;
   }
 
   public override int GetHashCode() => HashCode.Of(units).And(x).And(y).And(y);
