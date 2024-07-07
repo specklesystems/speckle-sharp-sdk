@@ -19,6 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Versions\V_0_1_0\BuiltElements\" />
+    <Folder Include="Versions\V_0_0_0\" />
   </ItemGroup>
 </Project>

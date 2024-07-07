@@ -1,6 +1,4 @@
-using System.Reflection;
 using Speckle.Core.Logging;
-using Speckle.Core.Models;
 using Speckle.Core.Reflection;
 
 namespace Speckle.Core.SchemaVersioning;
@@ -17,16 +15,17 @@ public class SchemaObjectUpgradeManager<TInputType, TOutputType> : ISchemaObject
     _typeInstanceResolver = typeInstanceResolver;
   }
 
-  public TOutputType UpgradeObject(TInputType input, string typeName, Version inputVersion, Version schemaVersion)
+  public TOutputType UpgradeObject(TInputType input, string typeName, Version inputSchemaVersion, Version loadedSchemaVersion)
   {
     TOutputType? upgraded = null;
     
     // we try and upgrade while-ever the versions don't match
-    while (inputVersion < schemaVersion)
+    while (inputSchemaVersion < loadedSchemaVersion)
     {
       // building this must be done consistently
-      string typeKey = NamedTypeAttribute.CreateTypeNameWithKeySuffix(typeName, inputVersion.ToString());
+      string typeKey = NamedTypeAttribute.CreateTypeNameWithKeySuffix(typeName, inputSchemaVersion.ToString());
 
+      // POC: do we expect there must always be types?
       if (!_typeInstanceResolver.TryResolve(typeKey, out ISchemaObjectUpgrader<TInputType, TOutputType> upgrader))
       {
         // there's no upgrader for this
@@ -34,7 +33,7 @@ public class SchemaObjectUpgradeManager<TInputType, TOutputType> : ISchemaObject
       }
 
       upgraded = upgrader.Upgrade(input);
-      inputVersion = upgrader.UpgradeTo;
+      inputSchemaVersion = upgrader.UpgradeTo;
     }
 
     // if we didn't do any upgrading, then we should be pass the input directly to the output

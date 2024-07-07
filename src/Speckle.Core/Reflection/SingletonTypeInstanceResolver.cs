@@ -12,7 +12,7 @@ public class SingletonTypeInstanceResolver<TType> : ITypeInstanceResolver<TType>
     
     // POC: not wild about evaluating this during construction but... is that still a thing?
     // could be done on the fly... it will require some locking semantics if used during deserialisation
-    var foundTypes = _typeFinder.GetTypesWhereSubclassOf(AppDomain.CurrentDomain.GetAssemblies(), typeof(TType));
+    var foundTypes = _typeFinder.GetTypesWhereImplementing(AppDomain.CurrentDomain.GetAssemblies(), typeof(TType));
     
     // let's make an instance of each of these
     // could also be done on the fly

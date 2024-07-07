@@ -9,5 +9,5 @@ namespace Speckle.Core;
 public class SpeckleObjectSchema
 {
   // POC: I'm not sure about using the Version object ATM, strings may be just as a straight-forward...
-  public static readonly Version Version = new Version(3, 0, 0);
+  public static readonly Version Version = new Version(0, 2, 0);
 }

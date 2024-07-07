@@ -80,7 +80,8 @@ public abstract class AbstractTypeCache : ITypeCache
 
         CacheType(typeName, version, typeCacheInfo);
       }
-      catch (TypeLoadException)
+      // POC: right one? more?
+      catch (ReflectionTypeLoadException)
       {
         // POC: guard against loading things that cause explosions
       }      

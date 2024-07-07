@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Speckle.Core.Common;
-using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.SchemaVersioning;
@@ -355,17 +349,17 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
     string typeName = (string) dictObj[SerializationConstants.TYPE_DISCRIMINATOR]!;
     
     // here we're getting the actual type to deserialise into, this won't be the type we return
+    // POC: is there any guarantee this can't happen? probably not ATM
+    // it's almost certainly a bug if the type returned is a version and not the latest!
     (Version objectVersion, CachedTypeInfo cachedTypeInfo) = _typeCache.GetMatchedTypeOrLater(typeName, _payloadSchemaVersion);
     
     Base baseObj = (Base) Activator.CreateInstance(cachedTypeInfo.Type);
+    var props = cachedTypeInfo.Props;
+    var onDeserializedCallbacks = cachedTypeInfo.Callbacks;
 
     dictObj.Remove(SerializationConstants.TYPE_DISCRIMINATOR);
     dictObj.Remove(SerializationConstants.CLOSURE_PROPERTY_NAME);
-
-    var props = cachedTypeInfo.Props;
-
-    var onDeserializedCallbacks = cachedTypeInfo.Callbacks;
-
+    
     foreach (var entry in dictObj)
     {
       string lowerPropertyName = entry.Key.ToLower();
@@ -407,9 +401,20 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
     {
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
+
+
+    // if (cachedTypeInfo.Type.FullName.NotNull().ToLower().Contains("point"))
+    // {
+    //   Debug.WriteLine("breakpoint :p");
+    // }
     
     // version the object
-    baseObj = _objectUpgradeManager.UpgradeObject(baseObj, cachedTypeInfo.Type.FullName.NotNull(), objectVersion, _payloadSchemaVersion);
+    // POC: we need to cache the right name here, because reflecting to get the mame is meh
+    baseObj = _objectUpgradeManager.UpgradeObject(
+                        baseObj,
+                        cachedTypeInfo.Type.FullName.NotNull(),
+                        _payloadSchemaVersion,
+                        _typeCache.LoadedSchemaVersion);
 
     // POC: what are these callback methods? are they used?
     // Do they need calling on the object BEFORE upgrading it? Do they need calling AGAIN after upgrading it?
@@ -418,6 +423,7 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
       onDeserialized.Invoke(baseObj, new object?[] { null });
     }
 
+    // POC: we need to be returning the latest version
     return baseObj;
   }
 }
