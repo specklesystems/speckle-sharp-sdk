@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.DoubleNumerics;
 using System.Drawing;
 using System.Linq;
 using NUnit.Framework;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation;
+using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 
 namespace Objects.Tests.Unit;
