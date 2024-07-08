@@ -37,51 +37,51 @@ public sealed class CommentResource
   {
     //language=graphql
     const string QUERY = """
-                         query CommentThreads($projectId: String!, $cursor: String, $limit: Int!, $filter: ProjectCommentsFilter, $repliesLimit: Int, $repliesCursor: String) {
-                           project(id: $projectId) {
-                             commentThreads(cursor: $cursor, limit: $limit, filter: $filter) {
-                               cursor
-                               totalArchivedCount
-                               totalCount
-                               items {
-                                 archived
-                                 authorId
-                                 createdAt
-                                 hasParent
-                                 id
-                                 rawText
-                                 replies(limit: $repliesLimit, cursor: $repliesCursor) {
-                                   cursor
-                                   items {
-                                     archived
-                                     authorId
-                                     createdAt
-                                     hasParent
-                                     id
-                                     rawText
-                                     updatedAt
-                                     viewedAt
-                                   }
-                                   totalCount
-                                 }
-                                 resources {
-                                   resourceId
-                                   resourceType
-                                 }
-                                 screenshot
-                                 updatedAt
-                                 viewedAt
-                                 viewerResources {
-                                   modelId
-                                   objectId
-                                   versionId
-                                 }
-                                 data
-                               }
-                             }
-                           }
-                         }
-                         """;
+      query CommentThreads($projectId: String!, $cursor: String, $limit: Int!, $filter: ProjectCommentsFilter, $repliesLimit: Int, $repliesCursor: String) {
+        project(id: $projectId) {
+          commentThreads(cursor: $cursor, limit: $limit, filter: $filter) {
+            cursor
+            totalArchivedCount
+            totalCount
+            items {
+              archived
+              authorId
+              createdAt
+              hasParent
+              id
+              rawText
+              replies(limit: $repliesLimit, cursor: $repliesCursor) {
+                cursor
+                items {
+                  archived
+                  authorId
+                  createdAt
+                  hasParent
+                  id
+                  rawText
+                  updatedAt
+                  viewedAt
+                }
+                totalCount
+              }
+              resources {
+                resourceId
+                resourceType
+              }
+              screenshot
+              updatedAt
+              viewedAt
+              viewerResources {
+                modelId
+                objectId
+                versionId
+              }
+              data
+            }
+          }
+        }
+      }
+      """;
 
     GraphQLRequest request =
       new()
@@ -117,32 +117,32 @@ public sealed class CommentResource
   {
     //language=graphql
     const string QUERY = """
-                         mutation Mutation($input: CreateCommentInput!) {
-                           data:commentMutations {
-                             create(input: $input) {
-                               archived
-                               authorId
-                               createdAt
-                               hasParent
-                               id
-                               rawText
-                               resources {
-                                 resourceId
-                                 resourceType
-                               }
-                               screenshot
-                               updatedAt
-                               viewedAt
-                               viewerResources {
-                                 modelId
-                                 objectId
-                                 versionId
-                               }
-                               data
-                             }
-                           }
-                         }
-                         """;
+      mutation Mutation($input: CreateCommentInput!) {
+        data:commentMutations {
+          create(input: $input) {
+            archived
+            authorId
+            createdAt
+            hasParent
+            id
+            rawText
+            resources {
+              resourceId
+              resourceType
+            }
+            screenshot
+            updatedAt
+            viewedAt
+            viewerResources {
+              modelId
+              objectId
+              versionId
+            }
+            data
+          }
+        }
+      }
+      """;
     GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
       .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
@@ -159,32 +159,32 @@ public sealed class CommentResource
   {
     //language=graphql
     const string QUERY = """
-                         mutation Mutation($input: EditCommentInput!) {
-                           data:commentMutations {
-                             edit(input: $input) {
-                               archived
-                               authorId
-                               createdAt
-                               hasParent
-                               id
-                               rawText
-                               resources {
-                                 resourceId
-                                 resourceType
-                               }
-                               screenshot
-                               updatedAt
-                               viewedAt
-                               viewerResources {
-                                 modelId
-                                 objectId
-                                 versionId
-                               }
-                               data
-                             }
-                           }
-                         }
-                         """;
+      mutation Mutation($input: EditCommentInput!) {
+        data:commentMutations {
+          edit(input: $input) {
+            archived
+            authorId
+            createdAt
+            hasParent
+            id
+            rawText
+            resources {
+              resourceId
+              resourceType
+            }
+            screenshot
+            updatedAt
+            viewedAt
+            viewerResources {
+              modelId
+              objectId
+              versionId
+            }
+            data
+          }
+        }
+      }
+      """;
     GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
       .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
@@ -201,12 +201,12 @@ public sealed class CommentResource
   {
     //language=graphql
     const string QUERY = """
-                         mutation Mutation($commentId: String!, $archive: Boolean!) {
-                           data:commentMutations {
-                              archive(commentId: $commentId, archived: $archive)
-                           }
-                         }
-                         """;
+      mutation Mutation($commentId: String!, $archive: Boolean!) {
+        data:commentMutations {
+           archive(commentId: $commentId, archived: $archive)
+        }
+      }
+      """;
     GraphQLRequest request = new(QUERY, variables: new { commentId, archive });
     var res = await _client
       .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
@@ -222,12 +222,12 @@ public sealed class CommentResource
   {
     //language=graphql
     const string QUERY = """
-                         mutation Mutation($commentId: String!) {
-                           data:commentMutations {
-                             markViewed(commentId: $commentId)
-                           }
-                         }
-                         """;
+      mutation Mutation($commentId: String!) {
+        data:commentMutations {
+          markViewed(commentId: $commentId)
+        }
+      }
+      """;
     GraphQLRequest request = new(QUERY, variables: new { commentId });
     var res = await _client
       .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
@@ -244,32 +244,32 @@ public sealed class CommentResource
   {
     //language=graphql
     const string QUERY = """
-                         mutation Mutation($input: CreateCommentReplyInput!) {
-                           data:commentMutations {
-                             reply(input: $input) {
-                               archived
-                               authorId
-                               createdAt
-                               hasParent
-                               id
-                               rawText
-                               resources {
-                                 resourceId
-                                 resourceType
-                               }
-                               screenshot
-                               updatedAt
-                               viewedAt
-                               viewerResources {
-                                 modelId
-                                 objectId
-                                 versionId
-                               }
-                               data
-                             }
-                           }
-                         }
-                         """;
+      mutation Mutation($input: CreateCommentReplyInput!) {
+        data:commentMutations {
+          reply(input: $input) {
+            archived
+            authorId
+            createdAt
+            hasParent
+            id
+            rawText
+            resources {
+              resourceId
+              resourceType
+            }
+            screenshot
+            updatedAt
+            viewedAt
+            viewerResources {
+              modelId
+              objectId
+              versionId
+            }
+            data
+          }
+        }
+      }
+      """;
     GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
       .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
