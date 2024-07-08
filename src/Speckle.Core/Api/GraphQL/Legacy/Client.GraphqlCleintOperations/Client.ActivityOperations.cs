@@ -8,6 +8,7 @@ namespace Speckle.Core.Api;
 
 public partial class Client
 {
+  //TODO: API gap
   /// <summary>
   /// Gets the activity of a stream
   /// </summary>
@@ -25,7 +26,7 @@ public partial class Client
     DateTime? before = null,
     DateTime? cursor = null,
     string actionType = "",
-    int limit = 25,
+    int limit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
     CancellationToken cancellationToken = default
   )
   {
