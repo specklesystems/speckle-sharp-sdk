@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Speckle.Core.Api;
 using Speckle.Core.Api.GraphQL.Inputs;
 using Speckle.Core.Api.GraphQL.Models;
+using Speckle.Core.Common;
 using Speckle.Core.Credentials;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
@@ -105,7 +106,7 @@ public static class Fixtures
 
     var acc = new Account
     {
-      token = deserialised["token"]!,
+      token = deserialised.NotNull()["token"].NotNull(),
       userInfo = new UserInfo
       {
         id = user["name"],

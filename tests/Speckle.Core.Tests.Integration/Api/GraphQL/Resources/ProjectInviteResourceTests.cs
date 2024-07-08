@@ -66,7 +66,7 @@ public class ProjectInviteResourceTests
       collaborator,
       Has.Property(nameof(PendingStreamCollaborator.inviteId)).EqualTo(_createdInvite.inviteId)
     );
-    Assert.That(collaborator.user.id, Is.EqualTo(_createdInvite.user.id));
+    Assert.That(collaborator!.user.id, Is.EqualTo(_createdInvite.user.id));
   }
 
   [Test]

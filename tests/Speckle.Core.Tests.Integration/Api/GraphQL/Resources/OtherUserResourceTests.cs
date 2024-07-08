@@ -22,7 +22,8 @@ public class OtherUserResourceTests
   public async Task OtherUserGet()
   {
     var res = await Sut.Get(_testData.userInfo.id);
-    Assert.That(res.name, Is.EqualTo(_testData.userInfo.name));
+    Assert.That(res, Is.Not.Null);
+    Assert.That(res!.name, Is.EqualTo(_testData.userInfo.name));
   }
 
   [Test]

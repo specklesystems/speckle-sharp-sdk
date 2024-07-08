@@ -48,7 +48,7 @@ public class LegacyAPITests : IDisposable
   public async Task ActiveUserGet()
   {
     var res = await _myClient.ActiveUserGet();
-    Assert.That(res.id, Is.EqualTo(_myClient.Account.userInfo.id));
+    Assert.That(res!.id, Is.EqualTo(_myClient.Account.userInfo.id));
   }
 
   [Test]

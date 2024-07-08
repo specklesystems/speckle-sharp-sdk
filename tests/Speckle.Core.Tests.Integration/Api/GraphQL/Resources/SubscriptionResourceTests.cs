@@ -28,7 +28,7 @@ public class SubscriptionResourceTests
   [Test]
   public async Task UserProjectsUpdated_SubscriptionIsCalled()
   {
-    UserProjectsUpdatedMessage subscriptionMessage = null;
+    UserProjectsUpdatedMessage? subscriptionMessage = null;
 
     using var sub = Sut.CreateUserProjectsUpdatedSubscription();
     sub.Listeners += (_, message) => subscriptionMessage = message;
@@ -40,13 +40,13 @@ public class SubscriptionResourceTests
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage.id, Is.EqualTo(created.id));
+    Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
   }
 
   [Test]
   public async Task ProjectModelsUpdated_SubscriptionIsCalled()
   {
-    ProjectModelsUpdatedMessage subscriptionMessage = null;
+    ProjectModelsUpdatedMessage? subscriptionMessage = null;
 
     using var sub = Sut.CreateProjectModelsUpdatedSubscription(_testProject.id);
     sub.Listeners += (_, message) => subscriptionMessage = message;
@@ -59,13 +59,13 @@ public class SubscriptionResourceTests
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage.id, Is.EqualTo(created.id));
+    Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
   }
 
   [Test]
   public async Task ProjectUpdated_SubscriptionIsCalled()
   {
-    ProjectUpdatedMessage subscriptionMessage = null;
+    ProjectUpdatedMessage? subscriptionMessage = null;
 
     using var sub = Sut.CreateProjectUpdatedSubscription(_testProject.id);
     sub.Listeners += (_, message) => subscriptionMessage = message;
@@ -78,13 +78,13 @@ public class SubscriptionResourceTests
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage.id, Is.EqualTo(created.id));
+    Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
   }
 
   [Test]
   public async Task ProjectVersionsUpdated_SubscriptionIsCalled()
   {
-    ProjectVersionsUpdatedMessage subscriptionMessage = null;
+    ProjectVersionsUpdatedMessage? subscriptionMessage = null;
 
     using var sub = Sut.CreateProjectVersionsUpdatedSubscription(_testProject.id);
     sub.Listeners += (_, message) => subscriptionMessage = message;
@@ -96,14 +96,14 @@ public class SubscriptionResourceTests
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage.id, Is.EqualTo(created));
+    Assert.That(subscriptionMessage!.id, Is.EqualTo(created));
   }
 
   [Test]
   public async Task ProjectCommentsUpdated_SubscriptionIsCalled()
   {
     string resourceIdString = $"{_testProject.id},{_testModel.id},{_testVersion}";
-    ProjectCommentsUpdatedMessage subscriptionMessage = null;
+    ProjectCommentsUpdatedMessage? subscriptionMessage = null;
 
     using var sub = Sut.CreateProjectCommentsUpdatedSubscription(new(_testProject.id, resourceIdString));
     sub.Listeners += (_, message) => subscriptionMessage = message;
@@ -115,6 +115,6 @@ public class SubscriptionResourceTests
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage.id, Is.EqualTo(created.id));
+    Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
   }
 }

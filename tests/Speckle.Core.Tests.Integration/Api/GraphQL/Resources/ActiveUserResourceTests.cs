@@ -20,7 +20,8 @@ public class ActiveUserResourceTests
   public async Task ActiveUserGet()
   {
     var res = await Sut.Get();
-    Assert.That(res.id, Is.EqualTo(_testUser.Account.userInfo.id));
+    Assert.That(res, Is.Not.Null);
+    Assert.That(res!.id, Is.EqualTo(_testUser.Account.userInfo.id));
   }
 
   [Test]
