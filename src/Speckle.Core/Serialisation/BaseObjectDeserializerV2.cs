@@ -151,7 +151,7 @@ public sealed class BaseObjectDeserializerV2
       return null;
     }
     // Try background work
-    Task<object?>? bgResult = _workerThreads!.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
+    Task<object?>? bgResult = _workerThreads?.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
     if (bgResult != null)
     {
       return bgResult;
@@ -340,7 +340,7 @@ public sealed class BaseObjectDeserializerV2
 
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
-    string typeName = (string)dictObj[TYPE_DISCRIMINATOR]!;
+    string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();
     Type type = BaseObjectSerializationUtilities.GetType(typeName);
     Base baseObj = (Base)Activator.CreateInstance(type);
 

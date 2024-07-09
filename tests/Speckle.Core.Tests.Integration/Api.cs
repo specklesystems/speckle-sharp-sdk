@@ -1,3 +1,4 @@
+using Shouldly;
 using Speckle.Core.Api;
 using Speckle.Core.Credentials;
 using Speckle.Core.Models;
@@ -54,7 +55,8 @@ public class Api : IDisposable
   public async Task OtherUserGet()
   {
     var res = await _myClient.OtherUserGet(_secondUserAccount.userInfo.id);
-    Assert.That(res!.name, Is.EqualTo(_secondUserAccount.userInfo.name));
+    res.ShouldNotBeNull();
+    Assert.That(res.name, Is.EqualTo(_secondUserAccount.userInfo.name));
   }
 
   [Test]

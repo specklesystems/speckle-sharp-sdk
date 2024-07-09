@@ -1,4 +1,4 @@
-using System.Collections;
+using Shouldly;
 using Speckle.Core.Api;
 using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
@@ -85,8 +85,9 @@ public class ServerTransportTests : IDisposable
 
     // Check that there are three downloaded blobs!
     Assert.That(blobPaths, Has.Count.EqualTo(3));
-
-    var blobs = ((IList<object>)receivedObject["blobs"]!).Cast<Blob>().ToList();
+    var objectBlobs = receivedObject["blobs"] as IList<object>;
+    objectBlobs.ShouldNotBeNull();
+    var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs
     Assert.That(blobs, Has.Count.EqualTo(3));
     // Check that received blobs point to local path (where they were received)
@@ -117,7 +118,9 @@ public class ServerTransportTests : IDisposable
     // Check that there are three downloaded blobs!
     Assert.That(blobPaths, Has.Count.EqualTo(3));
 
-    var blobs = ((IList<object>)receivedObject["blobs"]!).Cast<Blob>().ToList();
+    var objectBlobs = receivedObject["blobs"] as IList<object>;
+    objectBlobs.ShouldNotBeNull();
+    var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs
     Assert.That(blobs, Has.Count.EqualTo(3));
     // Check that received blobs point to local path (where they were received)
@@ -150,7 +153,9 @@ public class ServerTransportTests : IDisposable
     // Check that there are three downloaded blobs!
     Assert.That(blobPaths.Count, Is.EqualTo(3));
 
-    var blobs = ((IList)receivedObject!["blobs"]!).Cast<Blob>().ToList();
+    var objectBlobs = receivedObject["blobs"] as IList<object>;
+    objectBlobs.ShouldNotBeNull();
+    var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs
     Assert.That(blobs, Has.Count.EqualTo(3));
     // Check that received blobs point to local path (where they were received)
