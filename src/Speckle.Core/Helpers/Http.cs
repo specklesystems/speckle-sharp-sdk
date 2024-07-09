@@ -12,6 +12,7 @@ using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 using Polly.Retry;
 using Serilog.Context;
+using Speckle.Core.Common;
 using Speckle.Core.Credentials;
 using Speckle.Core.Logging;
 
@@ -165,7 +166,7 @@ public static class Http
   {
     if (!string.IsNullOrEmpty(authToken))
     {
-      bearerHeader = authToken!.ToLowerInvariant().Contains("bearer") ? authToken : $"Bearer {authToken}";
+      bearerHeader = authToken.NotNull().ToLowerInvariant().Contains("bearer") ? authToken : $"Bearer {authToken}";
       return true;
     }
 
@@ -236,7 +237,7 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
         );
       if (policyResult.Outcome == OutcomeType.Successful)
       {
-        return policyResult.Result!;
+        return policyResult.Result.NotNull();
       }
 
       // if the policy failed due to a cancellation, AND it was our cancellation token, then don't wrap the exception, and rethrow an new cancellation

@@ -49,7 +49,7 @@ public class Point : Base, ITransformable<Point>
   [JsonProperty(NullValueHandling = NullValueHandling.Ignore), Obsolete("Use x,y,z properties instead", true)]
   public List<double> value
   {
-    get => null!;
+    get => new();
     set
     {
       x = value[0];

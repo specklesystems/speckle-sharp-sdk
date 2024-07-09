@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
@@ -76,9 +77,9 @@ public class ObjectsKit : ISpeckleKit
 
   private static ISpeckleConverter LoadConverterFromDisk(string app)
   {
-    var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+    var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location).NotNull();
 
-    var path = Path.Combine(basePath!, $"Objects.Converter.{app}.dll");
+    var path = Path.Combine(basePath, $"Objects.Converter.{app}.dll");
 
     //fallback to the default folder, in case the Objects.dll was loaded in the app domain for other reasons
     if (!File.Exists(path))
@@ -126,8 +127,8 @@ public class ObjectsKit : ISpeckleKit
 
   public List<string> GetAvailableConverters()
   {
-    var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-    var allConverters = Directory.EnumerateFiles(basePath!, "Objects.Converter.*.dll").ToArray();
+    var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location).NotNull();
+    var allConverters = Directory.EnumerateFiles(basePath, "Objects.Converter.*.dll").ToArray();
 
     //fallback to the default folder, in case the Objects.dll was loaded in the app domain for other reasons
     if (allConverters.Length == 0)
