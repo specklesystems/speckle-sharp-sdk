@@ -1,5 +1,5 @@
 ﻿using GraphQL.Client.Http;
-using Speckle.Core.Api;
+using Speckle.Core.Api.GraphQL.Models;
 using Speckle.Core.Credentials;
 
 namespace Speckle.Core.Tests.Integration.Credentials;
@@ -20,7 +20,7 @@ public class UserServerInfoTests
     ServerInfo? result = await AccountManager.GetServerInfo("https://app.speckle.systems/");
 
     Assert.That(result, Is.Not.Null);
-    Assert.That(result?.frontend2, Is.True);
+    Assert.That(result!.frontend2, Is.True);
   }
 
   [Test]
@@ -29,7 +29,7 @@ public class UserServerInfoTests
     ServerInfo? result = await AccountManager.GetServerInfo("https://speckle.xyz/");
 
     Assert.That(result, Is.Not.Null);
-    Assert.That(result?.frontend2, Is.False);
+    Assert.That(result!.frontend2, Is.False);
   }
 
   /// <remarks>
