@@ -79,6 +79,6 @@ Target(
 
 Target(PACK, DependsOn(TEST), () => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build"));
 
-Target("default", DependsOn(FORMAT, TEST), () => Console.WriteLine("Done!"));
+Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
 
 await RunTargetsAndExitAsync(args).ConfigureAwait(true);
