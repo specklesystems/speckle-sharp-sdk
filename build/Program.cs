@@ -9,6 +9,7 @@ const string RESTORE_TOOLS = "restore-tools";
 const string RESTORE = "restore";
 const string BUILD = "build";
 const string TEST = "test";
+const string INTEGRATION = "integration";
 const string PACK = "pack";
 
 Target(
@@ -55,6 +56,24 @@ Target(
       "dotnet",
       $"test {file} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
     );
+  }
+);
+
+Target(
+  INTEGRATION,
+  DependsOn(BUILD),
+  async () =>
+  {
+    await RunAsync("docker", "compose -f docker-compose.yml up --wait");
+    foreach (var test in Glob.Files(".", "**/*.Tests.Integration.csproj").Concat(Glob.Files(".", "**/*.Tests.csproj")))
+    {
+      await RunAsync(
+        "dotnet",
+        $"test {test} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
+      );
+    }
+
+    await RunAsync("docker", "compose down");
   }
 );
 
