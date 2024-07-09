@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Speckle.Core.Common;
 using Speckle.Core.Transports;
 
 namespace Speckle.Core.Tests.Unit.Transports;
@@ -7,7 +8,7 @@ namespace Speckle.Core.Tests.Unit.Transports;
 [TestOf(nameof(DiskTransport))]
 public sealed class DiskTransportTests : TransportTests
 {
-  protected override ITransport Sut => _diskTransport!;
+  protected override ITransport Sut => _diskTransport.NotNull();
 
   private DiskTransport _diskTransport;
 
