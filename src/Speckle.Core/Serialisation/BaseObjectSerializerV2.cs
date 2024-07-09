@@ -2,17 +2,19 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.DoubleNumerics;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using Speckle.Core.Helpers;
+using Sentry;
+using Speckle.Core.Common;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports;
+using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
+using Constants = Speckle.Core.Helpers.Constants;
 using Utilities = Speckle.Core.Models.Utilities;
 
 namespace Speckle.Core.Serialisation;
@@ -87,14 +89,19 @@ public class BaseObjectSerializerV2
       IDictionary<string, object?> converted;
       try
       {
-        converted = PreserializeBase(baseObj, true)!;
+        var x = PreserializeBase(baseObj, true);
+        if (x is null)
+        {
+          throw new SpeckleSerializeException("Already serialized");
+        }
+        converted = x;
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
         throw new SpeckleSerializeException($"Failed to extract (pre-serialize) properties from the {baseObj}", ex);
       }
       string serialized = Dict2Json(converted);
-      StoreObject((string)converted["id"]!, serialized);
+      StoreObject((string)converted["id"].NotNull(), serialized);
       return serialized;
     }
     finally
@@ -239,7 +246,7 @@ public class BaseObjectSerializerV2
     }
   }
 
-  public IDictionary<string, object?>? PreserializeBase(
+  private IDictionary<string, object?>? PreserializeBase(
     Base baseObj,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
@@ -332,8 +339,8 @@ public class BaseObjectSerializerV2
 
     if (inheritedDetachInfo.IsDetachable && WriteTransports.Count > 0)
     {
-      string json = Dict2Json(convertedBase);
-      string id = (string)convertedBase["id"]!;
+      var json = Dict2Json(convertedBase);
+      var id = (string)convertedBase["id"].NotNull();
       StoreObject(id, json);
       ObjectReference objRef = new() { referencedId = id };
       var objRefConverted = (IDictionary<string, object?>?)PreserializeObject(objRef);
@@ -413,6 +420,10 @@ public class BaseObjectSerializerV2
 
   private static string Dict2Json(IDictionary<string, object?>? obj)
   {
+    if (obj is null)
+    {
+      return string.Empty;
+    }
     string serialized = JsonConvert.SerializeObject(obj);
     return serialized;
   }

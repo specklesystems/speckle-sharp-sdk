@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using NUnit.Framework;
+using Speckle.Core.Common;
 using Speckle.Core.Transports;
 
 namespace Speckle.Core.Tests.Unit.Transports;
@@ -8,7 +9,7 @@ namespace Speckle.Core.Tests.Unit.Transports;
 [TestOf(nameof(MemoryTransport))]
 public sealed class MemoryTransportTests : TransportTests
 {
-  protected override ITransport Sut => _memoryTransport!;
+  protected override ITransport Sut => _memoryTransport.NotNull();
 
   private MemoryTransport _memoryTransport;
 

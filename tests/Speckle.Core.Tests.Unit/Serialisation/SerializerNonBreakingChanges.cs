@@ -1,9 +1,9 @@
-using System.DoubleNumerics;
 using System.Drawing;
 using NUnit.Framework;
 using Speckle.Core.Api;
 using Speckle.Core.Helpers;
 using Speckle.Core.Models;
+using Speckle.DoubleNumerics;
 
 namespace Speckle.Core.Tests.Unit.Serialisation;
 
@@ -84,6 +84,42 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     var from = new ListDoubleValueMock { value = testCase.ToList() };
 
     var res = from.SerializeAsTAndDeserialize<ArrayDoubleValueMock>();
+    Assert.That(res.value, Is.EquivalentTo(testCase));
+  }
+
+  [Test, TestCaseSource(nameof(s_arrayTestCases))]
+  public void ListToIList(double[] testCase)
+  {
+    var from = new ListDoubleValueMock { value = testCase.ToList() };
+
+    var res = from.SerializeAsTAndDeserialize<IReadOnlyListDoubleValueMock>();
+    Assert.That(res.value, Is.EquivalentTo(testCase));
+  }
+
+  [Test, TestCaseSource(nameof(s_arrayTestCases))]
+  public void ListToIReadOnlyList(double[] testCase)
+  {
+    var from = new ListDoubleValueMock { value = testCase.ToList() };
+
+    var res = from.SerializeAsTAndDeserialize<IListDoubleValueMock>();
+    Assert.That(res.value, Is.EquivalentTo(testCase));
+  }
+
+  [Test, TestCaseSource(nameof(s_arrayTestCases))]
+  public void IListToList(double[] testCase)
+  {
+    var from = new IListDoubleValueMock { value = testCase.ToList() };
+
+    var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
+    Assert.That(res.value, Is.EquivalentTo(testCase));
+  }
+
+  [Test, TestCaseSource(nameof(s_arrayTestCases))]
+  public void IReadOnlyListToList(double[] testCase)
+  {
+    var from = new IReadOnlyListDoubleValueMock { value = testCase.ToList() };
+
+    var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
     Assert.That(res.value, Is.EquivalentTo(testCase));
   }
 
@@ -169,6 +205,16 @@ public class TValueMock<T> : SerializerMock
 public class ListDoubleValueMock : SerializerMock
 {
   public List<double> value { get; set; }
+}
+
+public class IListDoubleValueMock : SerializerMock
+{
+  public IList<double> value { get; set; }
+}
+
+public class IReadOnlyListDoubleValueMock : SerializerMock
+{
+  public IReadOnlyList<double> value { get; set; }
 }
 
 public class ArrayDoubleValueMock : SerializerMock

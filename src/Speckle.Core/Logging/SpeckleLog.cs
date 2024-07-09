@@ -8,6 +8,7 @@ using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Exceptions;
+using Speckle.Core.Common;
 using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
 
@@ -104,7 +105,7 @@ public static class SpeckleLog
         Initialize("Speckle.Core", "unknown");
       }
 
-      return s_logger!;
+      return s_logger.NotNull();
     }
   }
 

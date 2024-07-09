@@ -43,19 +43,22 @@ Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --c
 
 Target(RESTORE, () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
 
-Target(BUILD, DependsOn(RESTORE), () => RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore"));
+Target(BUILD, DependsOn(RESTORE), () => RunAsync("dotnet", "build Speckle.Sdk.sln -c Release --no-restore"));
 
 Target(
   TEST,
   DependsOn(BUILD),
-  Glob.Files(".", "**/*.Tests.Unit.csproj"),
+  Glob.Files(".", "**/*.Tests.Unit.csproj").Concat(Glob.Files(".", "**/*.Tests.csproj")),
   async file =>
   {
-    await RunAsync("dotnet", $"test {file} -c Release --no-build --verbosity=normal");
+    await RunAsync(
+      "dotnet",
+      $"test {file} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
+    );
   }
 );
 
-Target(PACK, DependsOn(BUILD), () => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build"));
+Target(PACK, DependsOn(TEST), () => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build"));
 
 Target("default", DependsOn(FORMAT, TEST), () => Console.WriteLine("Done!"));
 
