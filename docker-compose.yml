@@ -52,13 +52,6 @@ services:
   ####
   # Speckle Server
   #######
-  speckle-frontend:
-    image: speckle/speckle-frontend:latest
-    restart: always
-    ports:
-      - "0.0.0.0:8080:8080"
-    environment:
-      FILE_SIZE_LIMIT_MB: 100
 
   speckle-server:
     image: speckle/speckle-server:latest
@@ -111,45 +104,6 @@ services:
       POSTGRES_PASSWORD: "speckle"
       POSTGRES_DB: "speckle"
       ENABLE_MP: "false"
-
-  preview-service:
-    image: speckle/speckle-preview-service:latest
-    restart: always
-    depends_on:
-      speckle-server:
-        condition: service_healthy
-    environment:
-      DEBUG: "preview-service:*"
-      PG_CONNECTION_STRING: "postgres://speckle:speckle@postgres/speckle"
-
-  webhook-service:
-    image: speckle/speckle-webhook-service:latest
-    restart: always
-    depends_on:
-      speckle-server:
-        condition: service_healthy
-    environment:
-      DEBUG: "webhook-service:*"
-      PG_CONNECTION_STRING: "postgres://speckle:speckle@postgres/speckle"
-      WAIT_HOSTS: postgres:5432
-
-  fileimport-service:
-    image: speckle/speckle-fileimport-service:latest
-    restart: always
-    depends_on:
-      speckle-server:
-        condition: service_healthy
-    environment:
-      DEBUG: "fileimport-service:*"
-      PG_CONNECTION_STRING: "postgres://speckle:speckle@postgres/speckle"
-      WAIT_HOSTS: postgres:5432
-
-      S3_ENDPOINT: "http://minio:9000"
-      S3_ACCESS_KEY: "minioadmin"
-      S3_SECRET_KEY: "minioadmin"
-      S3_BUCKET: "speckle-server"
-
-      SPECKLE_SERVER_URL: "http://speckle-server:3000"
 
 networks:
   default:
