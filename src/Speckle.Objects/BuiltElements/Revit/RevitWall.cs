@@ -56,7 +56,7 @@ public class RevitWall : Wall
     get => base.level;
     set => base.level = value;
   }
-  
+
   #region Schema Info Constructors
 
   [SchemaInfo(
