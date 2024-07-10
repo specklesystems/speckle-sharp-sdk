@@ -1,4 +1,4 @@
-﻿using GlobExpressions;
+using GlobExpressions;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
 
@@ -9,6 +9,7 @@ const string RESTORE_TOOLS = "restore-tools";
 const string RESTORE = "restore";
 const string BUILD = "build";
 const string TEST = "test";
+const string INTEGRATION = "integration";
 const string PACK = "pack";
 
 Target(
@@ -58,8 +59,26 @@ Target(
   }
 );
 
+Target(
+  INTEGRATION,
+  DependsOn(BUILD),
+  async () =>
+  {
+    await RunAsync("docker", "compose -f docker-compose.yml up --wait");
+    foreach (var test in Glob.Files(".", "**/*.Tests.Integration.csproj"))
+    {
+      await RunAsync(
+        "dotnet",
+        $"test {test} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
+      );
+    }
+
+    await RunAsync("docker", "compose down");
+  }
+);
+
 Target(PACK, DependsOn(TEST), () => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build"));
 
-Target("default", DependsOn(FORMAT, TEST), () => Console.WriteLine("Done!"));
+Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
 
 await RunTargetsAndExitAsync(args).ConfigureAwait(true);
