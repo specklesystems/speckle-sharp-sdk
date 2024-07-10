@@ -3,6 +3,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Web;
 using Newtonsoft.Json;
+using Serilog.Events;
 using Speckle.Core.Api;
 using Speckle.Core.Api.GraphQL.Inputs;
 using Speckle.Core.Api.GraphQL.Models;
@@ -20,8 +21,12 @@ public class SetUp
   [OneTimeSetUp]
   public void BeforeAll()
   {
-    SpeckleLog.Initialize("Core", "Testing", new SpeckleLogConfiguration(logToFile: false, logToSeq: false));
-    SpeckleLog.Logger.Information("Initialized logger for testing");
+    SpeckleLog.Initialize(
+      "Core",
+      "Testing",
+      new SpeckleLogConfiguration(logToFile: false, logToSeq: false, minimumLevel: LogEventLevel.Warning)
+    );
+    SpeckleLog.Logger.Warning("Initialized logger for testing");
   }
 }
 

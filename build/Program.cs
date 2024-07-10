@@ -65,7 +65,7 @@ Target(
   async () =>
   {
     await RunAsync("docker", "compose -f docker-compose.yml up --wait");
-    foreach (var test in Glob.Files(".", "**/*.Tests.Integration.csproj").Concat(Glob.Files(".", "**/*.Tests.csproj")))
+    foreach (var test in Glob.Files(".", "**/*.Tests.Integration.csproj"))
     {
       await RunAsync(
         "dotnet",
