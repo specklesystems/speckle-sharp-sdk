@@ -39,15 +39,15 @@
   <PropertyGroup> 
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <MinVerDefaultPreReleaseIdentifiers>alpha</MinVerDefaultPreReleaseIdentifiers>
+    <MinVerDefaultPreReleaseIdentifiers>dev</MinVerDefaultPreReleaseIdentifiers>
   </PropertyGroup>  
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
     <None
       Condition="'$(IsPackable)' == 'true'"
-      Include="$(RepositoryRoot)logo.png"
+      Include="..\..\logo.png"
       Pack="true"
-      PackagePath=""
+      PackagePath="\"
       Visible="false"/>
   </ItemGroup>
 </Project>
