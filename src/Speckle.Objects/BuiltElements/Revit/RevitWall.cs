@@ -51,6 +51,12 @@ public class RevitWall : Wall
   public Base? parameters { get; set; }
   public string? elementId { get; set; }
 
+  public new Level? level
+  {
+    get => base.level;
+    set => base.level = value;
+  }
+  
   #region Schema Info Constructors
 
   [SchemaInfo(
