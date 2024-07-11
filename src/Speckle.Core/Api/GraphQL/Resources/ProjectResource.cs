@@ -136,7 +136,6 @@ public sealed class ProjectResource
           team {
             role
             user {
-              totalOwnedStreamsFavorites
               id
               name
               bio
@@ -151,13 +150,10 @@ public sealed class ProjectResource
             inviteId
             projectId
             projectName
-            streamId
-            streamName
             title
             role
             token
             user {
-              totalOwnedStreamsFavorites
               id
               name
               bio
@@ -167,7 +163,6 @@ public sealed class ProjectResource
               role
             }
             invitedBy {
-              totalOwnedStreamsFavorites
               id
               name
               bio
@@ -294,7 +289,6 @@ public sealed class ProjectResource
             team {
               role
               user {
-                totalOwnedStreamsFavorites
                 id
                 name
                 bio
@@ -309,13 +303,10 @@ public sealed class ProjectResource
               inviteId
               projectId
               projectName
-              streamId
-              streamName
               title
               role
               token
               user {
-                totalOwnedStreamsFavorites
                 id
                 name
                 bio
@@ -325,7 +316,6 @@ public sealed class ProjectResource
                 role
               }
               invitedBy {
-                totalOwnedStreamsFavorites
                 id
                 name
                 bio

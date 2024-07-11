@@ -119,7 +119,6 @@ public sealed class SubscriptionResource : IDisposable
               id
               name
               role
-              totalOwnedStreamsFavorites
               verified
             }
           }
@@ -186,7 +185,6 @@ public sealed class SubscriptionResource : IDisposable
             createdAt
             previewUrl
             authorUser {
-              totalOwnedStreamsFavorites
               id
               name
               bio

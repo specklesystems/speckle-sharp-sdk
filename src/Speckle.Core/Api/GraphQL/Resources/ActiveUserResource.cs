@@ -132,8 +132,6 @@ public sealed class ActiveUserResource
             projectId
             projectName
             role
-            streamId
-            streamName
             title
             token
             user {

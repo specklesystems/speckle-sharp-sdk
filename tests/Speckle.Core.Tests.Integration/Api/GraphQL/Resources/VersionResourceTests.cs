@@ -24,7 +24,7 @@ public class VersionResourceTests
     _model1 = await _testUser.Model.Create(new("Test Model 1", "", _project.id));
     _model2 = await _testUser.Model.Create(new("Test Model 2", "", _project.id));
 
-    string versionId = await Fixtures.CreateVersion(_testUser, _project.id, "Test Model 1");
+    string versionId = await Fixtures.CreateVersion(_testUser, _project.id, _model1.id);
 
     _version = await Sut.Get(versionId, _model1.id, _project.id);
   }
@@ -51,14 +51,7 @@ public class VersionResourceTests
   [Test]
   public async Task VersionReceived()
   {
-    CommitReceivedInput input =
-      new()
-      {
-        commitId = _version.id,
-        message = "we receieved it",
-        sourceApplication = "Integration test",
-        streamId = _project.id
-      };
+    MarkReceivedVersionInput input = new(_version.id, _project.id, "Integration test");
     var result = await Sut.Received(input);
 
     Assert.That(result, Is.True);

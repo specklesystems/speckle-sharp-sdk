@@ -21,7 +21,7 @@ public class CommentResourceTests
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new("Test project", "", null));
     _model = await _testUser.Model.Create(new("Test Model 1", "", _project.id));
-    _versionId = await Fixtures.CreateVersion(_testUser, _project.id, _model.name);
+    _versionId = await Fixtures.CreateVersion(_testUser, _project.id, _model.id);
     _comment = await CreateComment();
   }
 

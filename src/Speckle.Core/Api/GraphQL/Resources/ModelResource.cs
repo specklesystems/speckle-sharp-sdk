@@ -43,7 +43,6 @@ public sealed class ModelResource
               id
               name
               role
-              totalOwnedStreamsFavorites
               verified
             }
           }
@@ -95,7 +94,6 @@ public sealed class ModelResource
                 createdAt
                 previewUrl
                 authorUser {
-                  totalOwnedStreamsFavorites
                   id
                   name
                   bio
@@ -117,7 +115,6 @@ public sealed class ModelResource
               id
               name
               role
-              totalOwnedStreamsFavorites
               verified
             }
           }
@@ -224,7 +221,6 @@ public sealed class ModelResource
               id
               name
               role
-              totalOwnedStreamsFavorites
               verified
             }
           }
@@ -290,7 +286,6 @@ public sealed class ModelResource
               id
               name
               role
-              totalOwnedStreamsFavorites
               verified
             }
           }
