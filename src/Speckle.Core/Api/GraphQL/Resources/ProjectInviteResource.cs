@@ -44,7 +44,6 @@ public sealed class ProjectInviteResource
               team {
                 role
                 user {
-                  totalOwnedStreamsFavorites
                   id
                   name
                   bio
@@ -59,13 +58,10 @@ public sealed class ProjectInviteResource
                 inviteId
                 projectId
                 projectName
-                streamName
                 title
                 role
-                streamId
                 token
                 user {
-                  totalOwnedStreamsFavorites
                   id
                   name
                   bio
@@ -75,7 +71,6 @@ public sealed class ProjectInviteResource
                   role
                 }
                 invitedBy {
-                  totalOwnedStreamsFavorites
                   id
                   name
                   bio
@@ -147,14 +142,11 @@ public sealed class ProjectInviteResource
             id
             name
             role
-            totalOwnedStreamsFavorites
             verified
           }
           projectId
           projectName
           role
-          streamId
-          streamName
           title
           token
           user {
@@ -164,7 +156,6 @@ public sealed class ProjectInviteResource
             id
             name
             role
-            totalOwnedStreamsFavorites
             verified
           }
         }
@@ -203,7 +194,6 @@ public sealed class ProjectInviteResource
               team {
                 role
                 user {
-                  totalOwnedStreamsFavorites
                   id
                   name
                   bio
@@ -218,13 +208,10 @@ public sealed class ProjectInviteResource
                 inviteId
                 projectId
                 projectName
-                streamName
                 title
                 role
-                streamId
                 token
                 user {
-                  totalOwnedStreamsFavorites
                   id
                   name
                   bio
@@ -234,7 +221,6 @@ public sealed class ProjectInviteResource
                   role
                 }
                 invitedBy {
-                  totalOwnedStreamsFavorites
                   id
                   name
                   bio

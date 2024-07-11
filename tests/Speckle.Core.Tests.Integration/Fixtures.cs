@@ -41,18 +41,11 @@ public static class Fixtures
     return new Client(await SeedUser());
   }
 
-  public static async Task<string> CreateVersion(Client client, string projectId, string branchName)
+  public static async Task<string> CreateVersion(Client client, string projectId, string modelId)
   {
     using ServerTransport remote = new(client.Account, projectId);
     var objectId = await Operations.Send(new() { applicationId = "ASDF" }, remote, false);
-    CommitCreateInput input =
-      new()
-      {
-        branchName = branchName,
-        message = "test version",
-        objectId = objectId,
-        streamId = projectId
-      };
+    CreateVersionInput input = new(objectId, modelId, projectId);
     return await client.Version.Create(input);
   }
 

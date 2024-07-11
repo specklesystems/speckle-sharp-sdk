@@ -22,7 +22,7 @@ public class SubscriptionResourceTests
     _testUser = await Fixtures.SeedUserWithClient();
     _testProject = await _testUser.Project.Create(new("test project123", "desc", null));
     _testModel = await _testUser.Model.Create(new("test model", "desc", _testProject.id));
-    _testVersion = await Fixtures.CreateVersion(_testUser, _testProject.id, _testModel.name);
+    _testVersion = await Fixtures.CreateVersion(_testUser, _testProject.id, _testModel.id);
   }
 
   [Test]
@@ -91,7 +91,7 @@ public class SubscriptionResourceTests
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
-    var created = await Fixtures.CreateVersion(_testUser, _testProject.id, _testModel.name);
+    var created = await Fixtures.CreateVersion(_testUser, _testProject.id, _testModel.id);
 
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 

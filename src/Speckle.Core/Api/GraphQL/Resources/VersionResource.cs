@@ -43,7 +43,6 @@ public sealed class VersionResource
               createdAt
               previewUrl
               authorUser {
-                totalOwnedStreamsFavorites
                 id
                 name
                 bio
@@ -105,7 +104,6 @@ public sealed class VersionResource
                 createdAt
                 previewUrl
                 authorUser {
-                  totalOwnedStreamsFavorites
                   id
                   name
                   bio
@@ -143,13 +141,29 @@ public sealed class VersionResource
     return response.project.model.versions;
   }
 
+  /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
-  /// <returns></returns>
+  /// <returns>id of the created <see cref="Version"/></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<string> Create(CommitCreateInput input, CancellationToken cancellationToken = default)
+  public async Task<string> Create(CreateVersionInput input, CancellationToken cancellationToken = default)
   {
-    //TODO: Implement on server
-    return await ((Client)_client).CommitCreate(input, cancellationToken).ConfigureAwait(false);
+    //language=graphql
+    const string QUERY = """
+      mutation Create($input: CreateVersionInput!) {
+        versionMutations {
+          create(input: $input) {
+            id
+          }
+        }
+      }
+      """;
+
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
+
+    var response = await _client
+      .ExecuteGraphQLRequest<VersionMutationResponse>(request, cancellationToken)
+      .ConfigureAwait(false);
+    return response.versionMutations.create.id;
   }
 
   /// <param name="input"></param>
@@ -169,7 +183,6 @@ public sealed class VersionResource
             createdAt
             previewUrl
             authorUser {
-              totalOwnedStreamsFavorites
               id
               name
               bio
@@ -190,7 +203,6 @@ public sealed class VersionResource
     return response.versionMutations.update;
   }
 
-  //TODO: Would we rather return the full model here? with or with out versions?
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
@@ -215,6 +227,7 @@ public sealed class VersionResource
     return response.versionMutations.moveToModel.id;
   }
 
+  /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
@@ -237,16 +250,26 @@ public sealed class VersionResource
     return response.versionMutations.delete;
   }
 
-  /// <param name="commitReceivedInput"></param>
+  /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<bool> Received(
-    CommitReceivedInput commitReceivedInput,
-    CancellationToken cancellationToken = default
-  )
+  public async Task<bool> Received(MarkReceivedVersionInput input, CancellationToken cancellationToken = default)
   {
-    //TODO: Implement on server
-    return await ((Client)_client).CommitReceived(commitReceivedInput, cancellationToken).ConfigureAwait(false);
+    //language=graphql
+    const string QUERY = """
+      mutation MarkReceived($input: MarkReceivedVersionInput!) {
+        versionMutations {
+          markReceived(input: $input)
+        }
+      }
+      """;
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
+
+    var response = await _client
+      .ExecuteGraphQLRequest<VersionMutationResponse>(request, cancellationToken)
+      .ConfigureAwait(false);
+
+    return response.versionMutations.markReceived;
   }
 }

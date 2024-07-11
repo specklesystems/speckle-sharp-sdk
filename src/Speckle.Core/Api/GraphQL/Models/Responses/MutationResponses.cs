@@ -27,7 +27,9 @@ internal sealed class ModelMutation
 
 internal sealed class VersionMutation
 {
+  public Version create { get; init; }
   public bool delete { get; init; }
+  public bool markReceived { get; init; }
   public Model moveToModel { get; init; }
   public Version update { get; init; }
 }

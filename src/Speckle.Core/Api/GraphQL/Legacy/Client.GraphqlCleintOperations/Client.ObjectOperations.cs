@@ -6,7 +6,6 @@ namespace Speckle.Core.Api;
 
 public partial class Client
 {
-  //TODO: API Gap
   /// <summary>
   /// Gets data about the requested Speckle object from a stream.
   /// </summary>
