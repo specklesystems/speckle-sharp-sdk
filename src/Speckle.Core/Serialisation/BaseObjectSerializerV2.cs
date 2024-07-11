@@ -96,7 +96,7 @@ public class BaseObjectSerializerV2
         }
         converted = x;
       }
-      catch (Exception ex) when (!ex.IsFatal())
+      catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
         throw new SpeckleSerializeException($"Failed to extract (pre-serialize) properties from the {baseObj}", ex);
       }
