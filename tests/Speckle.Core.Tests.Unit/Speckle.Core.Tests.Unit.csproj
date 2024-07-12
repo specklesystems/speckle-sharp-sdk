@@ -2,11 +2,9 @@
   
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
-    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit;System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
+    <IsTestProject>true</IsTestProject>    
+    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit</PolySharpExcludeGeneratedTypes>
   </PropertyGroup>
-  
   
   <ItemGroup>
     <PackageReference Include="altcover" />
@@ -14,7 +12,6 @@
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit3TestAdapter" />
   </ItemGroup>
-  
   
   <ItemGroup>
     <ProjectReference Include="..\..\src\Speckle.Core\Speckle.Core.csproj" />
