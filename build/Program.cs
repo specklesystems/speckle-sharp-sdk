@@ -45,14 +45,20 @@ Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --c
 
 Target(RESTORE, () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
 
-Target(BUILD, DependsOn(RESTORE), async () =>
-{
-  var version = Environment.GetEnvironmentVariable("GitVersion_FullSemVer") ?? "3.0.0-localBuild";
-  var fileVersion = Environment.GetEnvironmentVariable("GitVersion_AssemblySemFileVer") ?? "3.0.0.0";
-  Console.WriteLine($"Version: {version} & {fileVersion}");
-  await RunAsync("dotnet",
-    $"build Speckle.Sdk.sln -c Release --no-restore -p:Version={version} -p:FileVersion={fileVersion} -v:m");
-});
+Target(
+  BUILD,
+  DependsOn(RESTORE),
+  async () =>
+  {
+    var version = Environment.GetEnvironmentVariable("GitVersion_FullSemVer") ?? "3.0.0-localBuild";
+    var fileVersion = Environment.GetEnvironmentVariable("GitVersion_AssemblySemFileVer") ?? "3.0.0.0";
+    Console.WriteLine($"Version: {version} & {fileVersion}");
+    await RunAsync(
+      "dotnet",
+      $"build Speckle.Sdk.sln -c Release --no-restore -p:Version={version} -p:FileVersion={fileVersion} -v:m"
+    );
+  }
+);
 
 Target(
   TEST,
