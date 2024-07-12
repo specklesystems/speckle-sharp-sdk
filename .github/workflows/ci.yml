@@ -21,7 +21,7 @@ jobs:
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
         
     - name: ⚒️ Run GitVersion
-      run: ./build.ps1 build-server-version
+      run: ./build.sh build-server-version
 
     - name: 🔫 Build All
       run: ./build.sh

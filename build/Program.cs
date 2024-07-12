@@ -7,7 +7,6 @@ const string FORMAT = "format";
 const string RESTORE_TOOLS = "restore-tools";
 const string BUILD_SERVER_VERSION = "build-server-version";
 
-
 const string RESTORE = "restore";
 const string BUILD = "build";
 const string TEST = "test";
@@ -81,7 +80,6 @@ Target(
         $"test {test} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
       );
     }
-
     await RunAsync("docker", "compose down");
   }
 );
