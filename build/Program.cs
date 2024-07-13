@@ -1,4 +1,4 @@
-﻿using GlobExpressions;
+using GlobExpressions;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
 
@@ -9,6 +9,7 @@ const string RESTORE_TOOLS = "restore-tools";
 const string RESTORE = "restore";
 const string BUILD = "build";
 const string TEST = "test";
+const string INTEGRATION = "integration";
 const string PACK = "pack";
 
 Target(
@@ -43,20 +44,41 @@ Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --c
 
 Target(RESTORE, () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
 
-Target(BUILD, DependsOn(RESTORE), () => RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore"));
+Target(BUILD, DependsOn(RESTORE), () => RunAsync("dotnet", "build Speckle.Sdk.sln -c Release --no-restore"));
 
 Target(
   TEST,
   DependsOn(BUILD),
-  Glob.Files(".", "**/*.Tests.Unit.csproj"),
+  Glob.Files(".", "**/*.Tests.Unit.csproj").Concat(Glob.Files(".", "**/*.Tests.csproj")),
   async file =>
   {
-    await RunAsync("dotnet", $"test {file} -c Release --no-build --verbosity=normal");
+    await RunAsync(
+      "dotnet",
+      $"test {file} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
+    );
   }
 );
 
-Target(PACK, DependsOn(BUILD), () => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build"));
+Target(
+  INTEGRATION,
+  DependsOn(BUILD),
+  async () =>
+  {
+    await RunAsync("docker", "compose -f docker-compose.yml up --wait");
+    foreach (var test in Glob.Files(".", "**/*.Tests.Integration.csproj"))
+    {
+      await RunAsync(
+        "dotnet",
+        $"test {test} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
+      );
+    }
 
-Target("default", DependsOn(FORMAT, TEST), () => Console.WriteLine("Done!"));
+    await RunAsync("docker", "compose down");
+  }
+);
+
+Target(PACK, DependsOn(TEST), () => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build"));
+
+Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
 
 await RunTargetsAndExitAsync(args).ConfigureAwait(true);

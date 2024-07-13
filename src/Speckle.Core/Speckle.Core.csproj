@@ -9,8 +9,7 @@
     <Description>Core is the .NET SDK for Speckle</Description>
     <PackageTags>$(PackageTags) core</PackageTags>
     <IsPackable>true</IsPackable>
-    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit;System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,7 +34,7 @@
     <PackageReference Include="SerilogTimings" />
     <PackageReference Include="Speckle.Newtonsoft.Json"/>
     <PackageReference Include="Microsoft.Data.Sqlite" />
-    <PackageReference Include="System.DoubleNumerics" />
+    <PackageReference Include="Speckle.DoubleNumerics" />
   </ItemGroup>
   
 </Project>

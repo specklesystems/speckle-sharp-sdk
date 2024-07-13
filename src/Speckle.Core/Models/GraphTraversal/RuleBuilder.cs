@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Speckle.Core.Common;
 
 namespace Speckle.Core.Models.GraphTraversal;
 
@@ -52,7 +53,7 @@ public sealed class TraversalRule : ITraversalBuilderReturn, ITraversalBuilderTr
 
   IEnumerable<string> ITraversalRule.MembersToTraverse(Base o)
   {
-    return _membersToTraverse!(o).Distinct(); //TODO distinct is expensive, there may be a better way for us to avoid duplicates
+    return _membersToTraverse.NotNull()(o).Distinct(); //TODO distinct is expensive, there may be a better way for us to avoid duplicates
   }
 
   /// <returns>a new Traversal Rule to be initialised using the Builder Pattern interfaces</returns>

@@ -15,6 +15,8 @@ using GraphQL;
 using GraphQL.Client.Http;
 using Speckle.Core.Api;
 using Speckle.Core.Api.GraphQL;
+using Speckle.Core.Api.GraphQL.Models;
+using Speckle.Core.Api.GraphQL.Models.Responses;
 using Speckle.Core.Api.GraphQL.Serializer;
 using Speckle.Core.Common;
 using Speckle.Core.Helpers;
@@ -115,22 +117,29 @@ public static class AccountManager
       new NewtonsoftJsonSerializer(),
       httpClient
     );
-
     //language=graphql
-    var request = new GraphQLRequest { Query = " query { activeUser { name email id company } }" };
+    const string QUERY = """
+      query { 
+        data:activeUser {
+          name 
+          email 
+          id 
+          company
+        } 
+      }
+      """;
+    var request = new GraphQLRequest { Query = QUERY };
 
-    var response = await gqlClient.SendQueryAsync<ActiveUserResponse>(request, cancellationToken).ConfigureAwait(false);
+    var response = await gqlClient
+      .SendQueryAsync<RequiredResponse<UserInfo>>(request, cancellationToken)
+      .ConfigureAwait(false);
 
     if (response.Errors != null)
     {
-      throw new SpeckleGraphQLException<ActiveUserResponse>(
-        $"GraphQL request {nameof(GetUserInfo)} failed",
-        request,
-        response
-      );
+      throw new SpeckleGraphQLException($"GraphQL request {nameof(GetUserInfo)} failed", request, response);
     }
 
-    return response.Data.activeUser;
+    return response.Data.data;
   }
 
   /// <summary>
@@ -272,21 +281,25 @@ public static class AccountManager
     await s_accountStorage.WriteComplete().ConfigureAwait(false);
   }
 
+  public static IEnumerable<Account> GetAccounts(string serverUrl)
+  {
+    return GetAccounts(new Uri(serverUrl));
+  }
+
   /// <summary>
   /// Returns all unique accounts matching the serverUrl provided. If an account exists on more than one server,
   /// typically because it has been migrated, then only the upgraded account (and therefore server) are returned.
   /// Accounts are deemed to be the same when the Account.Id matches.
   /// </summary>
-  /// <param name="serverUrl"></param>
-  /// <returns></returns>
-  public static IEnumerable<Account> GetAccounts(string serverUrl)
+  /// <param name="serverUrl">Uri for server.</param>
+  public static IEnumerable<Account> GetAccounts(Uri serverUrl)
   {
     var accounts = GetAccounts().ToList();
     List<Account> filtered = new();
 
     foreach (var acc in accounts)
     {
-      if (acc.serverInfo?.migration?.movedFrom == new Uri(serverUrl))
+      if (acc.serverInfo?.migration?.movedFrom == serverUrl)
       {
         filtered.Add(acc);
       }
@@ -296,7 +309,7 @@ public static class AccountManager
     {
       // we use the userInfo to detect the same account rather than the account.id
       // which should NOT match for essentially the same accounts but on different servers - i.e. FE1 & FE2
-      if (acc.serverInfo.url == serverUrl && !filtered.Any(x => x.userInfo.id == acc.userInfo.id))
+      if (new Uri(acc.serverInfo.url) == serverUrl && !filtered.Any(x => x.userInfo.id == acc.userInfo.id))
       {
         filtered.Add(acc);
       }

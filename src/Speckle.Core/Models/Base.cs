@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Speckle.Core.Api;
+using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
@@ -65,7 +66,7 @@ public class Base : DynamicBase
       if (_type == null)
       {
         List<string> bases = new();
-        Type myType = GetType();
+        var myType = GetType().NotNull();
 
         while (myType.Name != nameof(Base))
         {
@@ -74,7 +75,7 @@ public class Base : DynamicBase
             bases.Add(myType.FullName);
           }
 
-          myType = myType.BaseType!;
+          myType = myType.BaseType;
         }
 
         if (bases.Count == 0)
@@ -104,11 +105,11 @@ public class Base : DynamicBase
   /// <returns>the resulting id (hash)</returns>
   public string GetId(bool decompose = false)
   {
-    var transports = decompose ? new[] { new MemoryTransport() } : Array.Empty<ITransport>();
+    var transports = decompose ? [new MemoryTransport()] : Array.Empty<ITransport>();
     var serializer = new BaseObjectSerializerV2(transports);
 
     string obj = serializer.Serialize(this);
-    return JObject.Parse(obj).GetValue(nameof(id))!.ToString();
+    return JObject.Parse(obj).GetValue(nameof(id))?.ToString() ?? string.Empty;
   }
 
   /// <summary>

@@ -157,7 +157,7 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
       return null;
     }
     // Try background work
-    Task<object?>? bgResult = _workerThreads!.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
+    Task<object?>? bgResult = _workerThreads?.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
     if (bgResult != null)
     {
       return bgResult;
@@ -356,6 +356,17 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
     Base baseObj = (Base) Activator.CreateInstance(cachedTypeInfo.Type);
     var props = cachedTypeInfo.Props;
     var onDeserializedCallbacks = cachedTypeInfo.Callbacks;
+// =======
+//     string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();
+//     Type type = BaseObjectSerializationUtilities.GetType(typeName);
+//     Base baseObj = (Base)Activator.CreateInstance(type);
+//
+//     dictObj.Remove(TYPE_DISCRIMINATOR);
+//     dictObj.Remove("__closure");
+//
+//     Dictionary<string, PropertyInfo> staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
+//     List<MethodInfo> onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
+// >>>>>>> dev
 
     dictObj.Remove(SerializationConstants.TYPE_DISCRIMINATOR);
     dictObj.Remove(SerializationConstants.CLOSURE_PROPERTY_NAME);
