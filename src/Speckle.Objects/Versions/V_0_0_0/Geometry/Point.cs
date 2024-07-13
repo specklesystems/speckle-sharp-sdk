@@ -1,4 +1,3 @@
-using Objects;
 using Objects.Geometry;
 using Objects.Other;
 using Speckle.Core.Common;

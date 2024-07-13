@@ -401,12 +401,6 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
     {
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
-
-
-    // if (cachedTypeInfo.Type.FullName.NotNull().ToLower().Contains("point"))
-    // {
-    //   Debug.WriteLine("breakpoint :p");
-    // }
     
     // version the object
     // POC: we need to cache the right name here, because reflecting to get the mame is meh
