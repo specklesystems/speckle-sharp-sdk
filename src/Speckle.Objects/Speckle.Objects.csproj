@@ -8,6 +8,7 @@
     <Description>Objects is the default object model for Speckle</Description>
     <PackageTags>$(PackageTags), objects</PackageTags>
     <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit;System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,10 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Speckle.Core\Speckle.Core.csproj" />
+    <Folder Include="Versions\V_0_0_0\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Versions\V_0_0_0\" />
+    <ProjectReference Include="..\Speckle.Core\Speckle.Core.csproj" />
   </ItemGroup>
 </Project>
