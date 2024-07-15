@@ -5,6 +5,7 @@ using static SimpleExec.Command;
 const string CLEAN = "clean";
 const string FORMAT = "format";
 const string RESTORE_TOOLS = "restore-tools";
+const string BUILD_SERVER_VERSION = "build-server-version";
 
 const string RESTORE = "restore";
 const string BUILD = "build";
@@ -44,7 +45,20 @@ Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --c
 
 Target(RESTORE, () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
 
-Target(BUILD, DependsOn(RESTORE), () => RunAsync("dotnet", "build Speckle.Sdk.sln -c Release --no-restore"));
+Target(
+  BUILD,
+  DependsOn(RESTORE),
+  async () =>
+  {
+    var version = Environment.GetEnvironmentVariable("GitVersion_FullSemVer") ?? "3.0.0-localBuild";
+    var fileVersion = Environment.GetEnvironmentVariable("GitVersion_AssemblySemFileVer") ?? "3.0.0.0";
+    Console.WriteLine($"Version: {version} & {fileVersion}");
+    await RunAsync(
+      "dotnet",
+      $"build Speckle.Sdk.sln -c Release --no-restore -p:Version={version} -p:FileVersion={fileVersion} -v:m"
+    );
+  }
+);
 
 Target(
   TEST,
@@ -72,8 +86,16 @@ Target(
         $"test {test} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
       );
     }
-
     await RunAsync("docker", "compose down");
+  }
+);
+
+Target(
+  BUILD_SERVER_VERSION,
+  DependsOn(RESTORE_TOOLS),
+  () =>
+  {
+    Run("dotnet", "tool run dotnet-gitversion /output json /output buildserver");
   }
 );
 
