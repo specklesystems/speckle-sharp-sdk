@@ -5,7 +5,7 @@ using Speckle.Core.Models;
 
 namespace Objects.BuiltElements;
 
-public class Beam : Base, IDisplayValue<IReadOnlyList<Base>>
+public class Beam : Base, IDisplayValue<IReadOnlyList<IBasicGeometryType>>
 {
   public Beam() { }
 
@@ -14,7 +14,24 @@ public class Beam : Base, IDisplayValue<IReadOnlyList<Base>>
     this.baseLine = baseLine;
     this.level = level;
     this.units = units;
-    this.displayValue = ((IReadOnlyList<Base>?)displayValue) ?? new[] { (Base)baseLine };
+    IReadOnlyList<IBasicGeometryType>? calculatedDisplayValue = displayValue;
+    if (displayValue is null)
+    {
+      switch (baseLine)
+      {
+        case Line l:
+          calculatedDisplayValue = new[] { l };
+          break;
+        case Curve c:
+          calculatedDisplayValue = c.displayValue;
+          break;
+      }
+    }
+
+    if (calculatedDisplayValue is not null)
+    {
+      this.displayValue = calculatedDisplayValue;
+    }
   }
 
   public ICurve baseLine { get; set; }
@@ -24,7 +41,7 @@ public class Beam : Base, IDisplayValue<IReadOnlyList<Base>>
   public string? units { get; set; }
 
   [DetachProperty]
-  public IReadOnlyList<Base> displayValue { get; set; }
+  public IReadOnlyList<IBasicGeometryType> displayValue { get; set; }
 
   #region Schema Info Constructors
   [SchemaInfo("Beam", "Creates a Speckle beam", "BIM", "Structure")]

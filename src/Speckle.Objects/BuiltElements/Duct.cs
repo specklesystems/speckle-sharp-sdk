@@ -7,7 +7,7 @@ using Speckle.Newtonsoft.Json;
 
 namespace Objects.BuiltElements;
 
-public class Duct : Base, IDisplayValue<IReadOnlyList<Base>>
+public class Duct : Base, IDisplayValue<IReadOnlyList<IBasicGeometryType>>
 {
   public Duct() { }
 
@@ -29,7 +29,24 @@ public class Duct : Base, IDisplayValue<IReadOnlyList<Base>>
     this.length = length;
     this.units = units;
     this.velocity = velocity;
-    this.displayValue = ((IReadOnlyList<Base>?)displayValue) ?? new[] { (Base)baseCurve };
+    IReadOnlyList<IBasicGeometryType>? calculatedDisplayValue = displayValue;
+    if (displayValue is null)
+    {
+      switch (baseCurve)
+      {
+        case Line l:
+          calculatedDisplayValue = new[] { l };
+          break;
+        case Curve c:
+          calculatedDisplayValue = c.displayValue;
+          break;
+      }
+    }
+
+    if (calculatedDisplayValue is not null)
+    {
+      this.displayValue = calculatedDisplayValue;
+    }
   }
 
   [JsonIgnore, Obsolete("Replaced with baseCurve property")]
@@ -45,7 +62,7 @@ public class Duct : Base, IDisplayValue<IReadOnlyList<Base>>
   public string? units { get; set; }
 
   [DetachProperty]
-  public IReadOnlyList<Base> displayValue { get; set; }
+  public IReadOnlyList<IBasicGeometryType> displayValue { get; set; }
 
   #region Schema Info Constructors
   /// <summary>

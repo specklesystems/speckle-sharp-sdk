@@ -11,7 +11,7 @@ namespace Objects.BuiltElements;
 /// <remarks>
 /// This class is not suitable for freeform rebar, which can have multiple shapes.
 /// </remarks>
-public class RebarGroup<T> : Base, IHasVolume, IDisplayValue<List<ICurve>>
+public class RebarGroup<T> : Base, IHasVolume, IDisplayValue<List<Line>>
   where T : RebarShape
 {
   public RebarGroup() { }
@@ -68,7 +68,7 @@ public class RebarGroup<T> : Base, IHasVolume, IDisplayValue<List<ICurve>>
   /// The display representation of the rebar group as centerline curves
   /// </summary>
   [DetachProperty]
-  public List<ICurve> displayValue { get; set; }
+  public List<Line> displayValue { get; set; }
 
   /// <summary>
   /// The total volume of the rebar group.

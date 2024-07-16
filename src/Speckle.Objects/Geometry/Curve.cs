@@ -9,7 +9,7 @@ using Speckle.Core.Models;
 
 namespace Objects.Geometry;
 
-public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Curve>, IDisplayValue<Polyline>
+public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Curve>, IDisplayValue<List<Polyline>>
 {
   /// <summary>
   /// Constructs an empty <see cref="Curve"/> instance.
@@ -24,7 +24,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   /// <param name="applicationId">The unique ID of this curve in a specific application</param>
   public Curve(Polyline poly, string units = Units.Meters, string? applicationId = null)
   {
-    displayValue = poly;
+    displayValue = new() { poly };
     this.applicationId = applicationId;
     this.units = units;
   }
@@ -68,7 +68,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
 
   /// <inheritdoc/>
   [DetachProperty]
-  public Polyline displayValue { get; set; }
+  public List<Polyline> displayValue { get; set; }
 
   /// <inheritdoc/>
   public double area { get; set; }
@@ -86,8 +86,15 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
       point.TransformTo(transform, out Point transformedPoint);
       transformedPoints.Add(transformedPoint);
     }
+    List<Polyline> transformedDisplay = new();
+    bool result = true;
+    foreach (Polyline poly in displayValue)
+    {
+      bool polyResult = poly.TransformTo(transform, out ITransformable transformedPoly);
+      transformedDisplay.Add((Polyline)transformedPoly);
+      result = false ? false : polyResult;
+    }
 
-    var result = displayValue.TransformTo(transform, out ITransformable polyline);
     transformed = new Curve
     {
       degree = degree,
@@ -96,7 +103,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
       points = transformedPoints.SelectMany(o => o.ToList()).ToList(),
       weights = weights,
       knots = knots,
-      displayValue = (Polyline)polyline,
+      displayValue = transformedDisplay,
       closed = closed,
       units = units,
       applicationId = applicationId,

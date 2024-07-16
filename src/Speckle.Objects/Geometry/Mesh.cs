@@ -9,7 +9,7 @@ using Speckle.Newtonsoft.Json;
 
 namespace Objects.Geometry;
 
-public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<Mesh>
+public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<Mesh>, IBasicGeometryType
 {
   public Mesh() { }
 

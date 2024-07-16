@@ -10,7 +10,7 @@ using Speckle.Newtonsoft.Json;
 
 namespace Objects.Geometry;
 
-public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
+public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>, IBasicGeometryType
 {
   public Line() { }
 

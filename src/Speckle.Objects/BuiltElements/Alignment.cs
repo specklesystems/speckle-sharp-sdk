@@ -6,7 +6,7 @@ using Speckle.Newtonsoft.Json;
 
 namespace Objects.BuiltElements;
 
-public class Alignment : Base, IDisplayValue<Polyline>
+public class Alignment : Base, IDisplayValue<List<Polyline>>
 {
   [JsonIgnore, Obsolete("Use curves property")]
   public ICurve baseCurve { get; set; }
@@ -34,5 +34,5 @@ public class Alignment : Base, IDisplayValue<Polyline>
   public string units { get; set; }
 
   [DetachProperty]
-  public Polyline displayValue { get; set; }
+  public List<Polyline> displayValue { get; set; }
 }

@@ -6,7 +6,7 @@ using Speckle.Core.Models;
 
 namespace Objects.Structural.Geometry;
 
-public class Element1D : Base, IDisplayValue<IReadOnlyList<Base>>
+public class Element1D : Base, IDisplayValue<IReadOnlyList<IBasicGeometryType>>
 {
   public Element1D() { }
 
@@ -38,7 +38,16 @@ public class Element1D : Base, IDisplayValue<IReadOnlyList<Base>>
     this.localAxis = localAxis;
     this.orientationNode = orientationNode;
     this.orientationAngle = orientationAngle;
-    this.displayValue = ((IReadOnlyList<Base>?)displayValue) ?? new[] { (Base)baseLine };
+    IReadOnlyList<IBasicGeometryType>? calculatedDisplayValue = displayValue;
+    if (displayValue is null)
+    {
+      calculatedDisplayValue = new[] { baseLine };
+    }
+
+    if (calculatedDisplayValue is not null)
+    {
+      this.displayValue = calculatedDisplayValue;
+    }
   }
 
   public string? name { get; set; } //add unique id as base identifier, name can change too easily
@@ -71,7 +80,7 @@ public class Element1D : Base, IDisplayValue<IReadOnlyList<Base>>
   public string? units { get; set; }
 
   [DetachProperty]
-  public IReadOnlyList<Base> displayValue { get; set; }
+  public IReadOnlyList<IBasicGeometryType> displayValue { get; set; }
 
   #region Schema Info Constructors
   [SchemaInfo(

@@ -6,7 +6,7 @@ using Speckle.Core.Models;
 
 namespace Objects.BuiltElements.AdvanceSteel;
 
-public class AsteelPlate : Area, IDisplayValue<List<Mesh>>, IHasArea, IHasVolume, IAsteelObject
+public class AsteelPlate : Area, IHasArea, IHasVolume, IAsteelObject
 {
   [DetachProperty]
   public StructuralMaterial? material { get; set; }

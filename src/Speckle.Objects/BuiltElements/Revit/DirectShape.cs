@@ -6,7 +6,7 @@ using Speckle.Core.Models;
 
 namespace Objects.BuiltElements.Revit;
 
-public class DirectShape : Base, IDisplayValue<List<Base>>
+public class DirectShape : Base, IDisplayValue<List<IBasicGeometryType>>
 {
   public DirectShape() { }
 
@@ -52,7 +52,7 @@ public class DirectShape : Base, IDisplayValue<List<Base>>
   public string units { get; set; }
 
   [DetachProperty]
-  public List<Base> displayValue { get; set; }
+  public List<IBasicGeometryType> displayValue { get; set; }
 
   public bool IsValidObject(Base @base)
   {

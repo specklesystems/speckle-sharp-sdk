@@ -4,7 +4,7 @@ using Speckle.Core.Models;
 
 namespace Objects.BuiltElements;
 
-public class GridLine : Base, IDisplayValue<List<Base>>
+public class GridLine : Base, IDisplayValue<IEnumerable<IBasicGeometryType>>
 {
   public GridLine() { }
 
@@ -32,5 +32,5 @@ public class GridLine : Base, IDisplayValue<List<Base>>
   public string units { get; set; }
 
   [DetachProperty]
-  public List<Base> displayValue { get; set; }
+  public IEnumerable<IBasicGeometryType> displayValue { get; set; }
 }
