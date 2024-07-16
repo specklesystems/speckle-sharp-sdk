@@ -11,4 +11,6 @@ public class InstanceDefinitionProxy : Base, IInstanceComponent
   public List<string> Objects { get; set; } // source app application ids for the objects
 
   public int MaxDepth { get; set; }
+
+  public string Name { get; set; }
 }
