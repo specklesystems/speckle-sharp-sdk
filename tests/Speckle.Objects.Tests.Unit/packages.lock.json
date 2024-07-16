@@ -8,6 +8,12 @@
         "resolved": "8.8.74",
         "contentHash": "e8RZNE0vZnuBk/gOAWu9K5wm3S7dOrOlZje3PHI9PJUHqvP1cxVJD1eXAAmddFVlixowB7C7/zvC16GnunC2LQ=="
       },
+      "GitVersion.MsBuild": {
+        "type": "Direct",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "dJuigXycpJNOiLT9or7mkHSkGFHgGW3/p6cNNYEKZBa7Hhp1FdX/cvqYWWYhRLpfoZOedeA7aRbYiOB3vW/dvA=="
+      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[17.10.0, )",
@@ -27,12 +33,6 @@
           "Microsoft.Build.Tasks.Git": "8.0.0",
           "Microsoft.SourceLink.Common": "8.0.0"
         }
-      },
-      "MinVer": {
-        "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "ybkgpQMtt0Fo91l5rYtE3TZtD+Nmy5Ko091xvfXXOosQdMi30XO2EZ2+ShZt89gdu7RMmJqZaJ+e1q6d+6+KNw=="
       },
       "NUnit": {
         "type": "Direct",
@@ -305,7 +305,7 @@
           "Serilog.Sinks.Console": "[4.1.0, )",
           "Serilog.Sinks.Seq": "[5.2.2, )",
           "SerilogTimings": "[3.0.1, )",
-          "Speckle.DoubleNumerics": "[4.0.1-alpha.3, )",
+          "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )"
         }
       },
@@ -437,9 +437,9 @@
       },
       "Speckle.DoubleNumerics": {
         "type": "CentralTransitive",
-        "requested": "[4.0.1-alpha.3, )",
-        "resolved": "4.0.1-alpha.3",
-        "contentHash": "7/lg9LDI3TZLiI7FhI2IhRrTzsZyDrQw1rG/S3kRtx0IU3raWzRHL4W5zvHV8LdWkqJEztS/9dUgLNYHV70o5Q=="
+        "requested": "[4.0.1, )",
+        "resolved": "4.0.1",
+        "contentHash": "MzEQ1Im0zTja+tEsdRIk/WlPiKqb22NmTOJcR1ZKm/mz46pezyyID3/wRz6vJUELMpSLnG7LhsxBL+nxbr7V0w=="
       },
       "Speckle.Newtonsoft.Json": {
         "type": "CentralTransitive",

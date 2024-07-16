@@ -44,7 +44,14 @@ Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --c
 
 Target(RESTORE, () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
 
-Target(BUILD, DependsOn(RESTORE), () => RunAsync("dotnet", "build Speckle.Sdk.sln -c Release --no-restore"));
+Target(
+  BUILD,
+  DependsOn(RESTORE),
+  async () =>
+  {
+    await RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore");
+  }
+);
 
 Target(
   TEST,
@@ -72,7 +79,6 @@ Target(
         $"test {test} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
       );
     }
-
     await RunAsync("docker", "compose down");
   }
 );
