@@ -85,6 +85,11 @@ public interface ITransformable
   bool TransformTo(Transform transform, out ITransformable transformed);
 }
 
+/// <summary>
+/// Indicates when a geometry is considered a basic type, to be used for displayvalues
+/// </summary>
+public interface IBasicGeometryType { }
+
 #endregion
 
 #region Built elements
@@ -100,13 +105,14 @@ public interface ITransformable
 /// </example>
 /// <typeparam name="T">
 /// Type of display value.
-/// Expected to be either a <see cref="Base"/> type or a <see cref="List{T}"/> of <see cref="Base"/>s,
+/// Expected to be either a <see cref="IBasicGeometryType"/> type or a <see cref="List{T}"/> of <see cref="IBasicGeometryType"/>s,
 /// most likely <see cref="Mesh"/> or <see cref="Polyline"/>.
 /// </typeparam>
 public interface IDisplayValue<out T>
+  where T : IEnumerable<IBasicGeometryType>
 {
   /// <summary>
-  /// <see cref="displayValue"/> <see cref="Base"/>(s) will be used to display this <see cref="Base"/>
+  /// <see cref="displayValue"/> <see cref="IBasicGeometryType"/>(s) will be used to display this <see cref="Base"/>
   /// if a native displayable object cannot be converted.
   /// </summary>
   T displayValue { get; }

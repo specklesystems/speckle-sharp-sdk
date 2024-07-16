@@ -17,7 +17,7 @@ public enum SpiralType
   Unknown
 }
 
-public class Spiral : Base, ICurve, IHasBoundingBox, IDisplayValue<Polyline>
+public class Spiral : Base, ICurve, IHasBoundingBox, IDisplayValue<List<Polyline>>
 {
   public Point startPoint { get; set; }
   public Point endPoint { get; set; }
@@ -34,7 +34,7 @@ public class Spiral : Base, ICurve, IHasBoundingBox, IDisplayValue<Polyline>
   public Interval domain { get; set; }
 
   [DetachProperty]
-  public Polyline displayValue { get; set; }
+  public List<Polyline> displayValue { get; set; }
 
   public Box bbox { get; set; }
 }

@@ -7,7 +7,7 @@ namespace Objects.Other;
 /// <summary>
 /// Dimension class
 /// </summary>
-public class Dimension : Base, IDisplayValue<List<ICurve>>
+public class Dimension : Base, IDisplayValue<List<Polyline>>
 {
   /// <summary>
   /// The measurement of the dimension.
@@ -39,7 +39,7 @@ public class Dimension : Base, IDisplayValue<List<ICurve>>
   /// <summary>
   /// Curves representing the annotation
   /// </summary>
-  public List<ICurve> displayValue { get; set; } = new();
+  public List<Polyline> displayValue { get; set; } = new();
 }
 
 /// <summary>

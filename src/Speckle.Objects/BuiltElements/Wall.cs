@@ -5,7 +5,7 @@ using Speckle.Core.Models;
 
 namespace Objects.BuiltElements;
 
-public class Wall : Base, IDisplayValue<IReadOnlyList<Base>>
+public class Wall : Base, IDisplayValue<IReadOnlyList<IBasicGeometryType>>
 {
   public Wall() { }
 
@@ -22,7 +22,25 @@ public class Wall : Base, IDisplayValue<IReadOnlyList<Base>>
     this.units = units;
     this.baseLine = baseLine;
     this.level = level;
-    this.displayValue = ((IReadOnlyList<Base>?)displayValue) ?? new[] { (Base)baseLine };
+    IReadOnlyList<IBasicGeometryType>? calculatedDisplayValue = displayValue;
+    if (displayValue is null)
+    {
+      switch (baseLine)
+      {
+        case Line l:
+          calculatedDisplayValue = new[] { l };
+          break;
+        case Curve c:
+          calculatedDisplayValue = c.displayValue;
+          break;
+      }
+    }
+
+    if (calculatedDisplayValue is not null)
+    {
+      this.displayValue = calculatedDisplayValue;
+    }
+
     this.elements = elements;
   }
 
@@ -36,7 +54,7 @@ public class Wall : Base, IDisplayValue<IReadOnlyList<Base>>
   public List<Base>? elements { get; set; }
 
   [DetachProperty]
-  public IReadOnlyList<Base> displayValue { get; set; }
+  public IReadOnlyList<IBasicGeometryType> displayValue { get; set; }
 
   #region SchemaInfo Ctors
 

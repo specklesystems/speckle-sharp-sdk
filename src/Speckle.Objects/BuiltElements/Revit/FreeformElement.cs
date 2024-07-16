@@ -9,7 +9,7 @@ using Speckle.Newtonsoft.Json;
 
 namespace Objects.BuiltElements.Revit;
 
-public class FreeformElement : Base, IDisplayValue<List<Base>>
+public class FreeformElement : Base, IDisplayValue<List<Mesh>>
 {
   public FreeformElement() { }
 
@@ -74,7 +74,7 @@ public class FreeformElement : Base, IDisplayValue<List<Base>>
   public string units { get; set; }
 
   [DetachProperty]
-  public List<Base> displayValue { get; set; }
+  public List<Mesh> displayValue { get; set; }
 
   public bool IsValid()
   {

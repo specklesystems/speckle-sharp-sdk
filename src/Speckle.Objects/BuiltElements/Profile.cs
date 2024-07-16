@@ -4,7 +4,7 @@ using Speckle.Core.Models;
 
 namespace Objects.BuiltElements;
 
-public class Profile : Base, IDisplayValue<Polyline>
+public class Profile : Base, IDisplayValue<List<Polyline>>
 {
   public List<ICurve> curves { get; set; }
 
@@ -17,5 +17,5 @@ public class Profile : Base, IDisplayValue<Polyline>
   public string units { get; set; }
 
   [DetachProperty]
-  public Polyline displayValue { get; set; }
+  public List<Polyline> displayValue { get; set; }
 }

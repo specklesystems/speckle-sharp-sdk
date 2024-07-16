@@ -13,7 +13,7 @@ namespace Objects.Geometry;
 /// <summary>
 /// A polyline curve, defined by a set of vertices.
 /// </summary>
-public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, IConvertible, ITransformable
+public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, IConvertible, ITransformable, IBasicGeometryType
 {
   /// <summary>
   /// Constructs an empty <see cref="Polyline"/>
