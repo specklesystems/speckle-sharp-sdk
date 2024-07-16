@@ -5,5 +5,21 @@ namespace Speckle.Core.Models;
 /// </summary>
 public class Layer : Collection
 {
-  public int Color { get; set; }
+  public Layer() { }
+
+  /// <summary>
+  /// Constructor for a basic Layer.
+  /// </summary>
+  /// <param name="name">The human-readable name of this collection</param>
+  /// <param name="color"></param>
+  public Layer(string name, int color)
+  {
+    this.name = name;
+    this.color = color;
+  }
+
+  /// <summary>
+  /// The argb int value of the layer color
+  /// </summary>
+  public int color { get; set; }
 }
