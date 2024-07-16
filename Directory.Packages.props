@@ -29,5 +29,6 @@
     <PackageVersion Include="MongoDB.Driver" Version="2.19.2" />
     <GlobalPackageReference Include="PolySharp" Version="1.14.1" />
     <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+    <GlobalPackageReference Include="GitVersion.MsBuild" Version="5.12.0" />
   </ItemGroup>
 </Project>
