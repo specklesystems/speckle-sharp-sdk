@@ -33,8 +33,9 @@ public class Collection : Base
   public string name { get; set; }
 
   /// <summary>
-  /// The type of this collection
+  /// The type of this collection. Note: Claire and Dim would propose we deprecate this prop. Do not use, please! 
   /// </summary>
+  [Obsolete("Note: Claire and Dim would propose we deprecate this prop. Do not use, please! Let's have a discussion about subclassing for your needs if nothing exists already.")]
   public string collectionType { get; set; }
 
   /// <summary>
