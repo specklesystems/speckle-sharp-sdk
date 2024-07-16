@@ -24,8 +24,8 @@ public class DisplayValueTests
     var listOfBase = new List<object> { s_displayValue }; //This is what our deserializer will output
     var listOfMesh = new List<Base> { s_displayValue };
     yield return new Base { ["@displayValue"] = s_displayValue };
-    yield return new Base { ["@displayValue"] = s_displayValue };
-    yield return new Base { ["displayValue"] = listOfBase };
+    yield return new Base { ["displayValue"] = s_displayValue };
+    yield return new Base { ["@displayValue"] = listOfBase };
     yield return new Base { ["displayValue"] = listOfBase };
     yield return new TypedDisplayValue { displayValue = s_displayValue };
     yield return new TypedDisplayValueList { displayValue = listOfMesh };
