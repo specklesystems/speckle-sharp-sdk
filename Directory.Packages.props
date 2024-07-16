@@ -16,7 +16,7 @@
     <PackageVersion Include="SerilogTimings" Version="3.0.1" />
     <PackageVersion Include="Shouldly" Version="4.2.1" />
     <PackageVersion Include="Speckle.Newtonsoft.Json" Version="13.0.2" />
-    <PackageVersion Include="Speckle.DoubleNumerics" Version="4.0.1-alpha.3" />
+    <PackageVersion Include="Speckle.DoubleNumerics" Version="4.0.1" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.6" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
