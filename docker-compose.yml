@@ -67,7 +67,7 @@ services:
       retries: 3
       start_period: 90s
     ports:
-      - "0.0.0.0:3000:3000"
+      - "3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -116,13 +116,17 @@ services:
     # Use the ToxiProxy API to simulate network conditions as necessary
     ###
     image: ghcr.io/shopify/toxiproxy:2.9.0
-    command: |
-      toxiproxy-cli -config /config/toxiproxy.json
     volumes:
+      # This mounts the toxiproxy.json file into the container at /config/toxiproxy.json
       - ./toxiproxy.json:/config/toxiproxy.json
+    # This command starts toxiproxy with the configuration file
+    entrypoint: /toxiproxy -config /config/toxiproxy.json
     ports:
-      # open ports need to match the 'listen' ports in the toxiproxy.json file
-       - "0.0.0.0:3001:3001" # Speckle server
+      # open ports to match the 'listen' ports in the toxiproxy.json file
+      - 8474:8474 # Toxiproxy API
+      - 3001:3001 # Speckle server
+    environment:
+      - LOG_LEVEL=trace
 
 
 networks:
