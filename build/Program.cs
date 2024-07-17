@@ -11,6 +11,7 @@ const string BUILD = "build";
 const string TEST = "test";
 const string INTEGRATION = "integration";
 const string PACK = "pack";
+const string PACK_LOCAL = "pack-local";
 
 Target(
   CLEAN,
@@ -83,7 +84,10 @@ Target(
   }
 );
 
-Target(PACK, DependsOn(TEST), () => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build"));
+static Task RunRestore() => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build");
+
+Target(PACK, DependsOn(TEST), RunRestore);
+Target(PACK_LOCAL, DependsOn(BUILD), RunRestore);
 
 Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
 
