@@ -104,6 +104,27 @@ services:
       POSTGRES_DB: "speckle"
       ENABLE_MP: "false"
 
+  ####
+  # Testing and development tools
+  #######
+
+  toxiproxy:
+    ###
+    # Toxiproxy is a tool to simulate network conditions https://github.com/Shopify/toxiproxy
+    # Instead of connecting to speckle-server on port 3000, connect to ToxiProxy on port 3001
+    # Toxiproxy will forward the connection to speckle-server
+    # Use the ToxiProxy API to simulate network conditions as necessary
+    ###
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    command: |
+      toxiproxy-cli -config /config/toxiproxy.json
+    volumes:
+      - ./toxiproxy.json:/config/toxiproxy.json
+    ports:
+      # open ports need to match the 'listen' ports in the toxiproxy.json file
+       - "0.0.0.0:3001:3001" # Speckle server
+
+
 networks:
   default:
     name: speckle-server
