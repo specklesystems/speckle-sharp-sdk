@@ -1,5 +1,5 @@
 next-version: 3.0.0
-mode: ContinuousDelivery
+mode: ContinuousDeployment
 assembly-informational-format: "{Major}.{Minor}.{Patch}-{PreReleaseTag}"
 branches:
   main:
