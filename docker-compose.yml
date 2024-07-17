@@ -125,9 +125,6 @@ services:
       # open ports to match the 'listen' ports in the toxiproxy.json file
       - 8474:8474 # Toxiproxy API
       - 3001:3001 # Speckle server
-    environment:
-      - LOG_LEVEL=trace
-
 
 networks:
   default:
