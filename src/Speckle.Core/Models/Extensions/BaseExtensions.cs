@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Speckle.Core.Models.Collections;
 
 namespace Speckle.Core.Models.Extensions;
 

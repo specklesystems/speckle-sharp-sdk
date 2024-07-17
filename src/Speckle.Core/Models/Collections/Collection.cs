@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Speckle.Core.Models;
+namespace Speckle.Core.Models.Collections;
 
 /// <summary>
 /// A simple container for organising objects within a model and preserving object hierarchy.
