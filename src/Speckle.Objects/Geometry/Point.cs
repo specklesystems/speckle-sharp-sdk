@@ -44,20 +44,6 @@ public class Point : Base, ITransformable<Point>
     : this(vector.x, vector.y, vector.z, vector.units, vector.applicationId) { }
 
   /// <summary>
-  /// Gets or sets the coordinates of the <see cref="Point"/>
-  /// </summary>
-  [Obsolete("Use x,y,z properties instead", true)]
-  public List<double> value
-  {
-    set
-    {
-      x = value[0];
-      y = value[1];
-      z = value.Count > 2 ? value[2] : 0;
-    }
-  }
-
-  /// <summary>
   /// The x coordinate of the point.
   /// </summary>
   public double x { get; set; }
