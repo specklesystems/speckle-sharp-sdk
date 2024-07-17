@@ -67,7 +67,7 @@ services:
       retries: 3
       start_period: 90s
     ports:
-      - "3000:3000"
+      - "0.0.0.0:3000:3000"
     depends_on:
       postgres:
         condition: service_healthy
