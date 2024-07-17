@@ -42,7 +42,7 @@ public static partial class Operations
     string objectId,
     ITypeCache typeCache,
     ISchemaObjectUpgradeManager<Base, Base> objectUpgradeManager,
-    System.Version schemaVersion,
+    System.Version payloadSchemaVersion,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
     Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
@@ -67,7 +67,7 @@ public static partial class Operations
 
     // Setup Serializer
     BaseObjectDeserializerV2 serializerV2 =
-      new(typeCache, objectUpgradeManager, schemaVersion)
+      new(typeCache, objectUpgradeManager, payloadSchemaVersion)
       {
         ReadTransport = localTransport,
         OnProgressAction = internalProgressAction,

@@ -6,11 +6,16 @@ using Speckle.Core.Reflection;
 namespace Speckle.Core.Serialisation.TypeCache;
 
 // POC: could move
-internal class VersionCache(string type)
+internal class VersionCache
 {
-  public string Type { get; private set; } = type;
+  public string Type { get; private set; }
   public List<(Version, CachedTypeInfo)> Versions { get; private set; } = new();
   public CachedTypeInfo? LatestVersion;
+
+  public VersionCache(string type)
+  {
+    Type = type;
+  }
 
   public void SortVersions()
   {
