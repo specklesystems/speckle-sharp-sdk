@@ -52,6 +52,12 @@
         "resolved": "1.14.1",
         "contentHash": "mOOmFYwad3MIOL14VCjj02LljyF1GNw1wP0YVlxtcPvqdxjGGMNdNJJxHptlry3MOd8b40Flm8RPOM8JOlN2sQ=="
       },
+      "Speckle.InterfaceGenerator": {
+        "type": "Direct",
+        "requested": "[0.9.5, )",
+        "resolved": "0.9.5",
+        "contentHash": "oU/L7pN1R7q8KkbrpQ3WJnHirPHqn+9DEA7asOcUiggV5dzVg1A/VYs7GOSusD24njxXh03tE3a2oTLOjt3cVg=="
+      },
       "GraphQL.Client.Abstractions": {
         "type": "Transitive",
         "resolved": "6.0.0",
