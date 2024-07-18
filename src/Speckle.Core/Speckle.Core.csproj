@@ -10,6 +10,7 @@
     <PackageTags>$(PackageTags) core</PackageTags>
     <IsPackable>true</IsPackable>
     <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
+    <Configurations>Debug;Release;Local</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
