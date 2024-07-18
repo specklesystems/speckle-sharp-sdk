@@ -6,5 +6,6 @@ namespace Speckle.Core.Transports;
 [GenerateAutoInterface]
 public class ServiceTransportFactory : IServiceTransportFactory
 {
-  public IServerTransport Create(Account account, string streamId, int timeoutSeconds, string? blobStorageFolder) => new ServerTransport(account, streamId, timeoutSeconds, blobStorageFolder);
+  public IServerTransport Create(Account account, string streamId, int timeoutSeconds, string? blobStorageFolder) =>
+    new ServerTransport(account, streamId, timeoutSeconds, blobStorageFolder);
 }
