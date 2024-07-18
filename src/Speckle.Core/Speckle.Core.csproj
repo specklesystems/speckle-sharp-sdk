@@ -10,18 +10,19 @@
     <PackageTags>$(PackageTags) core</PackageTags>
     <IsPackable>true</IsPackable>
     <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
+    <Configurations>Debug;Release;Local</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Speckle.Core.Tests.Unit"/>
-    <InternalsVisibleTo Include="Speckle.Core.Tests.Integration"/>
-    <InternalsVisibleTo Include="Speckle.Core.Serialization.Tests"/>
+    <InternalsVisibleTo Include="Speckle.Core.Tests.Unit" />
+    <InternalsVisibleTo Include="Speckle.Core.Tests.Integration" />
+    <InternalsVisibleTo Include="Speckle.Core.Serialization.Tests" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="GraphQL.Client" />
     <PackageReference Include="Microsoft.CSharp" />
-    <PackageReference Include="Polly"/>
+    <PackageReference Include="Polly" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" />
     <PackageReference Include="Polly.Extensions.Http" />
     <PackageReference Include="Sentry" />
@@ -32,7 +33,7 @@
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.Seq" />
     <PackageReference Include="SerilogTimings" />
-    <PackageReference Include="Speckle.Newtonsoft.Json"/>
+    <PackageReference Include="Speckle.Newtonsoft.Json" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Speckle.DoubleNumerics" />
   </ItemGroup>
