@@ -62,6 +62,12 @@
           "EmptyFiles": "4.4.0"
         }
       },
+      "Speckle.InterfaceGenerator": {
+        "type": "Direct",
+        "requested": "[0.9.5, )",
+        "resolved": "0.9.5",
+        "contentHash": "oU/L7pN1R7q8KkbrpQ3WJnHirPHqn+9DEA7asOcUiggV5dzVg1A/VYs7GOSusD24njxXh03tE3a2oTLOjt3cVg=="
+      },
       "DiffEngine": {
         "type": "Transitive",
         "resolved": "11.3.0",
