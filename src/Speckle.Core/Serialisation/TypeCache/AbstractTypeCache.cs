@@ -99,16 +99,16 @@ public abstract class AbstractTypeCache : ITypeCache
     // object version may also be able to retype things...
     foreach (var typeVersions in _cachedTypes.Values)
     {
-      if (typeVersions.LatestVersion == null)
-      {
-        // we cannot have non-matching types atm
-        // .i.e. a versioned Objects.Versions.V_1_2.0.Wall must have a corresponding Objects.Wall
-        // I imagine it would be possible to add some annotation somewhere to allow for this but now is not the time...
-        var versionNames = string.Join(",", typeVersions.Versions
-          .Select((v, typeCache) => v.Item1.ToString())).ToList();
-        throw new ArgumentException(
-          $"The type {typeVersions.Type} has no latest - we have the following versions of this type: '{versionNames}'");
-      }
+      // if (typeVersions.LatestVersion == null)
+      // {
+      //   // we cannot have non-matching types atm
+      //   // .i.e. a versioned Objects.Versions.V_1_2.0.Wall must have a corresponding Objects.Wall
+      //   // I imagine it would be possible to add some annotation somewhere to allow for this but now is not the time...
+      //   var versionNames = string.Join(",", typeVersions.Versions
+      //     .Select((v, typeCache) => v.Item1.ToString())).ToList();
+      //   throw new ArgumentException(
+      //     $"The type {typeVersions.Type} has no latest - we have the following versions of this type: '{versionNames}'");
+      // }
       
       // sort the versions
       typeVersions.SortVersions();
