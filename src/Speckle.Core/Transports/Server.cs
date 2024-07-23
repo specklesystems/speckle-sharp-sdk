@@ -65,7 +65,7 @@ public sealed class ServerTransportV1 : IDisposable, ICloneable, ITransport
 
   public object Clone()
   {
-    return new ServerTransport(Account, StreamId)
+    return new ServerTransportV1(Account, StreamId)
     {
       OnErrorAction = OnErrorAction,
       OnProgressAction = OnProgressAction,
