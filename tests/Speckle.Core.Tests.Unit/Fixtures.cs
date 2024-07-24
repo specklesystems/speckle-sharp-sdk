@@ -10,8 +10,7 @@ namespace Speckle.Core.Tests.Unit;
 [SetUpFixture]
 public class SetUp
 {
-  public static SpeckleLogConfiguration TestLogConfig { get; } =
-    new(logToFile: false, logToSeq: false);
+  public static SpeckleLogConfiguration TestLogConfig { get; } = new(logToFile: false, logToSeq: false);
 
   [OneTimeSetUp]
   public void BeforeAll()
