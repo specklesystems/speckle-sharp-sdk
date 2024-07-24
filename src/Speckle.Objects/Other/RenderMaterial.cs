@@ -58,3 +58,25 @@ public class RenderMaterial : Base
     set => diffuse = value.ToArgb();
   }
 }
+
+/// <summary>
+/// Used to store render material to object relationships in root collections
+/// </summary>
+public class RenderMaterialProxy : Base
+{
+  public RenderMaterialProxy(RenderMaterial renderMaterial, List<string>? objects)
+  {
+    value = renderMaterial;
+    objects = objects ?? new();
+  }
+
+  /// <summary>
+  /// The list of application ids of objects that use this render material
+  /// </summary>
+  public List<string> objects { get; set; }
+
+  /// <summary>
+  /// The render material used by <see cref="objects"/>
+  /// </summary>
+  public RenderMaterial value { get; set; }
+}
