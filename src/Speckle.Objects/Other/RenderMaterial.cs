@@ -1,6 +1,7 @@
 using System.Drawing;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Core.Models.Instances;
 using Speckle.Newtonsoft.Json;
 
 namespace Objects.Other;
@@ -62,7 +63,7 @@ public class RenderMaterial : Base
 /// <summary>
 /// Used to store render material to object relationships in root collections
 /// </summary>
-public class RenderMaterialProxy : Base
+public class RenderMaterialProxy : Base, IProxyCollection
 {
   public RenderMaterialProxy() { }
 

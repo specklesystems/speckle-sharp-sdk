@@ -12,5 +12,8 @@ public class InstanceDefinitionProxy : Base, IInstanceComponent, IProxyCollectio
 
   public int maxDepth { get; set; }
 
+  /// <summary>
+  /// Name of the instance definition proxy collection which is unique for rhino, autocad and sketchup
+  /// </summary>
   public string name { get; set; }
 }
