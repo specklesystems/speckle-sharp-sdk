@@ -64,10 +64,12 @@ public class RenderMaterial : Base
 /// </summary>
 public class RenderMaterialProxy : Base
 {
-  public RenderMaterialProxy(RenderMaterial renderMaterial, List<string>? objects)
+  public RenderMaterialProxy() { }
+
+  public RenderMaterialProxy(RenderMaterial renderMaterial, List<string> objects)
   {
     value = renderMaterial;
-    objects = objects ?? new();
+    this.objects = objects;
   }
 
   /// <summary>
