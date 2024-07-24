@@ -81,6 +81,5 @@ public class RenderMaterialProxy : Base, IProxyCollection
   /// <summary>
   /// The render material used by <see cref="objects"/>
   /// </summary>
-  [DetachProperty]
   public RenderMaterial value { get; set; }
 }
