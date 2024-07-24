@@ -107,7 +107,7 @@ public class SpeckleLogTests : IDisposable
     const string TEST_MESSAGE = "This is my test message";
 
     SpeckleLogConfiguration config =
-      new(logToConsole: shouldWrite, logToSeq: false, logToSentry: false, logToFile: false);
+      new(logToConsole: shouldWrite, logToSeq: false, logToFile: false);
     using var logger = SpeckleLog.CreateConfiguredLogger("My Test Host App!!", null, config);
 
     logger.Fatal(TEST_MESSAGE);

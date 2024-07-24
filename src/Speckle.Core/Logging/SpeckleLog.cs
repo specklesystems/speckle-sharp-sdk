@@ -1,9 +1,6 @@
-using System;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Sentry;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -38,11 +35,6 @@ public sealed class SpeckleLogConfiguration
   public bool LogToFile { get; }
 
   /// <summary>
-  /// Flag to enable Sentry sink
-  /// </summary>
-  public bool LogToSentry { get; }
-
-  /// <summary>
   /// Flag to enable Seq sink
   /// </summary>
   public bool LogToSeq { get; }
@@ -66,14 +58,12 @@ public sealed class SpeckleLogConfiguration
   /// <param name="minimumLevel">Log events bellow this level are silently dropped</param>
   /// <param name="logToConsole">Flag to enable console log sink</param>
   /// <param name="logToSeq">Flag to enable Seq log sink</param>
-  /// <param name="logToSentry">Flag to enable Sentry log sink</param>
   /// <param name="logToFile">Flag to enable File log sink</param>
   /// <param name="enhancedLogContext">Flag to enable enhanced context on every log event</param>
   public SpeckleLogConfiguration(
     LogEventLevel minimumLevel = LogEventLevel.Debug,
     bool logToConsole = true,
     bool logToSeq = true,
-    bool logToSentry = true,
     bool logToFile = true,
     bool enhancedLogContext = true,
     string sentryDns = DEFAULT_SENTRY_DNS
@@ -82,7 +72,6 @@ public sealed class SpeckleLogConfiguration
     MinimumLevel = minimumLevel;
     LogToConsole = logToConsole;
     LogToSeq = logToSeq;
-    LogToSentry = logToSentry;
     LogToFile = logToFile;
     EnhancedLogContext = enhancedLogContext;
     SentryDns = sentryDns;
@@ -139,17 +128,6 @@ public static class SpeckleLog
     var id = GetUserIdFromDefaultAccount();
     s_logger = s_logger.ForContext("id", id).ForContext("isMachineId", s_isMachineIdUsed);
 
-    // Configure scope after logger created.
-    SentrySdk.ConfigureScope(scope =>
-    {
-      scope.User = new User { Id = id };
-    });
-
-    SentrySdk.ConfigureScope(scope =>
-    {
-      scope.SetTag("hostApplication", hostApplicationName);
-    });
-
     Logger
       .ForContext("userApplicationDataPath", SpecklePathProvider.UserApplicationDataPath())
       .ForContext("installApplicationDataPath", SpecklePathProvider.InstallApplicationDataPath)
@@ -196,8 +174,9 @@ public static class SpeckleLog
     if (logConfiguration.EnhancedLogContext)
     {
       serilogLogConfiguration = serilogLogConfiguration
-        .Enrich.WithClientAgent()
+        .Enrich.WithRequestHeader("User-Agent")
         .Enrich.WithClientIp()
+        .Enrich.WithCorrelationId()
         .Enrich.WithExceptionDetails();
     }
 
@@ -221,35 +200,6 @@ public static class SpeckleLog
         "https://seq.speckle.systems",
         apiKey: "agZqxG4jQELxQQXh0iZQ"
       );
-    }
-
-    if (logConfiguration.LogToSentry)
-    {
-      const string ENV =
-#if DEBUG
-        "dev";
-#else
-        "production";
-#endif
-
-      serilogLogConfiguration = serilogLogConfiguration.WriteTo.Sentry(o =>
-      {
-        o.Dsn = logConfiguration.SentryDns;
-        o.Debug = false;
-        o.Environment = ENV;
-        o.Release = "SpeckleCore@" + Assembly.GetExecutingAssembly().GetName().Version;
-        o.AttachStacktrace = true;
-        o.StackTraceMode = StackTraceMode.Enhanced;
-        // Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-        // We recommend adjusting this value in production.
-        o.TracesSampleRate = 1.0;
-        // Enable Global Mode if running in a client app
-        o.IsGlobalModeEnabled = true;
-        // Debug and higher are stored as breadcrumbs (default is Information)
-        o.MinimumBreadcrumbLevel = LogEventLevel.Debug;
-        // Warning and higher is sent as event (default is Error)
-        o.MinimumEventLevel = LogEventLevel.Error;
-      });
     }
 
     var logger = serilogLogConfiguration.CreateLogger();

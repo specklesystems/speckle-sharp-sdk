@@ -1,13 +1,8 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
-using Sentry;
 using Speckle.Core.Common;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;

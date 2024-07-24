@@ -12,6 +12,21 @@ const string TEST = "test";
 const string INTEGRATION = "integration";
 const string PACK = "pack";
 const string PACK_LOCAL = "pack-local";
+const string CLEAN_LOCKS = "clean-locks";
+
+Target(
+  CLEAN_LOCKS,
+  () =>
+  {
+    foreach (var f in Glob.Files(".", "**/*.lock.json"))
+    {
+      Console.WriteLine("Found and will delete: " + f);
+      File.Delete(f);
+    }
+    Console.WriteLine("Running restore now.");
+    Run("dotnet", "restore .\\Speckle.Sdk.sln");
+  }
+);
 
 Target(
   CLEAN,
