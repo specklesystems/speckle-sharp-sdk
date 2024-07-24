@@ -1,4 +1,4 @@
-﻿namespace Speckle.Core.Models.Instances;
+namespace Speckle.Core.Models.Instances;
 
 /// <summary>
 /// Grouped objects with a meaningful way for host application so use this proxy if you want to group object references for any purpose.
@@ -8,5 +8,8 @@ public class GroupProxy : Base, IProxyCollection
 {
   public List<string> objects { get; set; }
 
+  /// <summary>
+  /// Name of the group proxy collection which is unique for rhino, autocad and sketchup
+  /// </summary>
   public string name { get; set; }
 }

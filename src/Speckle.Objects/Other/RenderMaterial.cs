@@ -1,6 +1,7 @@
 using System.Drawing;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Core.Models.Instances;
 using Speckle.Newtonsoft.Json;
 
 namespace Objects.Other;
@@ -57,4 +58,28 @@ public class RenderMaterial : Base
     get => Color.FromArgb(emissive);
     set => diffuse = value.ToArgb();
   }
+}
+
+/// <summary>
+/// Used to store render material to object relationships in root collections
+/// </summary>
+public class RenderMaterialProxy : Base, IProxyCollection
+{
+  public RenderMaterialProxy() { }
+
+  public RenderMaterialProxy(RenderMaterial renderMaterial, List<string> objects)
+  {
+    value = renderMaterial;
+    this.objects = objects;
+  }
+
+  /// <summary>
+  /// The list of application ids of objects that use this render material
+  /// </summary>
+  public List<string> objects { get; set; }
+
+  /// <summary>
+  /// The render material used by <see cref="objects"/>
+  /// </summary>
+  public RenderMaterial value { get; set; }
 }
