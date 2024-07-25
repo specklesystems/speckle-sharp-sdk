@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using Serilog.Context;
 using Serilog.Events;
 using Speckle.Core.Logging;

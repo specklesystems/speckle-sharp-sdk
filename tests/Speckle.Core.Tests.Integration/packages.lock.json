@@ -357,6 +357,7 @@
           "Microsoft.NET.Test.Sdk": "[17.10.0, )",
           "NUnit": "[4.1.0, )",
           "NUnit3TestAdapter": "[4.5.0, )",
+          "Shouldly": "[4.2.1, )",
           "Speckle.Core": "[1.0.0, )",
           "Speckle.Transports.Disk": "[1.0.0, )",
           "altcover": "[8.8.74, )"
