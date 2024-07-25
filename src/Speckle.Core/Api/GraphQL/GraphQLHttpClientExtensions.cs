@@ -14,7 +14,7 @@ public static class GraphQLHttpClientExtensions
   /// Gets the version of the current server. Useful for guarding against unsupported api calls on newer or older servers.
   /// </summary>
   /// <param name="cancellationToken">[Optional] defaults to an empty cancellation token</param>
-  /// <returns><see cref="Version"/> object excluding any strings (eg "2.7.2-alpha.6995" becomes "2.7.2.6995")</returns>
+  /// <returns><see cref="System.Version"/> object excluding any strings (eg "2.7.2-alpha.6995" becomes "2.7.2.6995")</returns>
   /// <exception cref="SpeckleGraphQLException{ServerInfoResponse}"></exception>
   public static async Task<System.Version> GetServerVersion(
     this GraphQLHttpClient client,

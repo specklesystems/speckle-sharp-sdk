@@ -5,6 +5,8 @@ using Speckle.Core.Serialisation.SerializationUtilities;
 
 namespace Speckle.Core.Tests.Unit.Serialisation
 {
+  
+  // POC: REPLACE with tests for type cache
   [TestFixture]
   [TestOf(typeof(BaseObjectSerializationUtilities))]
   public class ObjectModelDeprecationTests

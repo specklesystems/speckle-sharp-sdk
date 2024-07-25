@@ -17,7 +17,4 @@ public sealed class Version
   public string sourceApplication { get; init; }
   
   public System.Version SchemaVersion { get; init; }
-  
-  // POC: is this the right place for a const?
-  public const string EARLIEST_SCHEMA_VERSION_STRING = "0.0.0";
 }

@@ -21,6 +21,7 @@ using Speckle.Core.SchemaVersioning;
 using Speckle.Core.Serialisation.TypeCache;
 using Speckle.Core.Transports;
 using Speckle.Newtonsoft.Json;
+using Version = System.Version;
 
 namespace Speckle.Core.Api;
 
@@ -116,7 +117,6 @@ public static class Helpers
         objectId,
         typeCache,
         objectUpgradeManager,
-        schemaVersion,
         transport,
         onProgressAction: onProgressAction,
         onTotalChildrenCountKnown: onTotalChildrenCountKnown

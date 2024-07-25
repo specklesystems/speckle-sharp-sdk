@@ -7,6 +7,7 @@ using Speckle.Core.Transports;
 
 namespace Speckle.Core.Tests.Integration;
 
+// POC: for now fix up by adding missing, configured dependencies
 public class ServerTransportTests : IDisposable
 {
   private string _basePath;

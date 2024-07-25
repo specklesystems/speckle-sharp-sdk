@@ -5,25 +5,6 @@ using Speckle.Core.Reflection;
 
 namespace Speckle.Core.Serialisation.TypeCache;
 
-// POC: could move
-internal class VersionCache
-{
-  public string Type { get; private set; }
-  public List<(Version, CachedTypeInfo)> Versions { get; private set; } = new();
-  public CachedTypeInfo? LatestVersion;
-
-  public VersionCache(string type)
-  {
-    Type = type;
-  }
-
-  public void SortVersions()
-  {
-    // for some reason I can't get the tuple deconstructed (but it IS rather late)
-    Versions = Versions.OrderBy(v => v.Item1).ToList();
-  }
-}
-
 public abstract class AbstractTypeCache : ITypeCache
 {
   private readonly IList<Assembly> _assemblies;
@@ -92,24 +73,10 @@ public abstract class AbstractTypeCache : ITypeCache
       }      
     }
 
-    // future incarnations may permit mutating the type
-    // so the return type is something other than base, they may also allow moving namespaces
-    // this is not currently possible because of the way the namespace has been used historically and how we are using it here
-    // we can probably tweak this to allow for namespace remapping - it would be nice if things began with Speckle :)
-    // object version may also be able to retype things...
+    // we're just sorting the versions
+    // as of this point it is not illegal to NOT have a Latest version
     foreach (var typeVersions in _cachedTypes.Values)
     {
-      // if (typeVersions.LatestVersion == null)
-      // {
-      //   // we cannot have non-matching types atm
-      //   // .i.e. a versioned Objects.Versions.V_1_2.0.Wall must have a corresponding Objects.Wall
-      //   // I imagine it would be possible to add some annotation somewhere to allow for this but now is not the time...
-      //   var versionNames = string.Join(",", typeVersions.Versions
-      //     .Select((v, typeCache) => v.Item1.ToString())).ToList();
-      //   throw new ArgumentException(
-      //     $"The type {typeVersions.Type} has no latest - we have the following versions of this type: '{versionNames}'");
-      // }
-      
       // sort the versions
       typeVersions.SortVersions();
     }
@@ -121,16 +88,21 @@ public abstract class AbstractTypeCache : ITypeCache
                         GetCallbacks(_baseType));
   }
 
-  public (Version version, CachedTypeInfo cachedTypeInfo) GetMatchedTypeOrLater(string speckleType, Version versionToMatch)
+  // we are looking for something that can decode the type specified
+  // to the version we are looking to decode to, or the nearest later version
+  // we expect to find a type and a matching version or fallback to base
+  // if a version mutates a type, this will be a breaking change, so....
+  //   we may have RevitWall, if this became SpeckleWall, it would subsequently be written as SpeckleWall
+  //   we should not try to return anything because RevitWall -> SpeckleWall is a breaking change for serialisation
+  public CachedTypeInfo GetMatchedTypeOrLater(string speckleType, Version versionToMatch)
   {
     int length = speckleType.Length;
     int end = length - 1;
     int start;
 
-    VersionCache? cachedVersions;
-
     do
     {
+      VersionCache? cachedVersions;
       string typeName;
 
       start = speckleType.LastIndexOf(':', end);
@@ -159,28 +131,29 @@ public abstract class AbstractTypeCache : ITypeCache
     } while (start >= 0);
 
     // FallbackType should exist
-    return (LoadedSchemaVersion, FallbackType.NotNull());
+    return FallbackType.NotNull();
   }
 
-  private (Version version, CachedTypeInfo cachedTypeInfo) MatchOrLater(Version versionToMatch, VersionCache versionCache)
+  private CachedTypeInfo MatchOrLater(Version versionToMatch, VersionCache versionCache)
   {
     if (versionToMatch == LoadedSchemaVersion)
     {
-      return (LoadedSchemaVersion, versionCache.LatestVersion.NotNull());
+      return versionCache.LatestVersion.NotNull();
     }
     
     // we could search or we can walk. We might be able to optomise this
-    foreach ((Version version, CachedTypeInfo cachedTypeInfo) cachedVersion in versionCache.Versions)
+    foreach ((Version version, CachedTypeInfo cachedTypeInfo) in versionCache.Versions)
     {
       // if it's a match or comes later, then use this
-      if (cachedVersion.version >= versionToMatch)
+      if (version >= versionToMatch)
       {
-        return (cachedVersion.version, cachedVersion.cachedTypeInfo);
+        return cachedTypeInfo;
       }
     }
     
     // if we get here just use the latest version
-    return (LoadedSchemaVersion, versionCache.LatestVersion.NotNull());
+    // if this type does NOT have one, then this is an error, assuming we did not upgrade
+    return versionCache.LatestVersion.NotNull();
   }
 
   private void CacheType(string typeName, Version version, CachedTypeInfo typeCacheInfo)

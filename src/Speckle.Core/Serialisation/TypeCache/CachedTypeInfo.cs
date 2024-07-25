@@ -3,6 +3,7 @@ using System.Reflection;
 
 namespace Speckle.Core.Serialisation.TypeCache;
 
+// this can probably become a record tbf
 public sealed class CachedTypeInfo
 {
   public string UnversionedTypeName { get; private set; }

@@ -38,15 +38,16 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
   public int WorkerThreadCount { get; set; } = DefaultNumberThreads;
 
   private readonly ITypeCache _typeCache;
-  private readonly Version _payloadSchemaVersion;
   private readonly ISchemaObjectUpgradeManager<Base, Base> _objectUpgradeManager;
-
+  
+  // if there's no version found we use this (and we don't make one every object) 
+  private static readonly System.Version s_noPayloadSchemaVersion = new Version("0.0.0");
+  
   // POC: inject the TypeCacheManager, and interface out
-  public BaseObjectDeserializerV2(ITypeCache typeCache, ISchemaObjectUpgradeManager<Base, Base> objectUpgradeManager, Version payloadSchemaVersion)
+  public BaseObjectDeserializerV2(ITypeCache typeCache, ISchemaObjectUpgradeManager<Base, Base> objectUpgradeManager)
   {
     _typeCache = typeCache;
     _objectUpgradeManager = objectUpgradeManager;
-    _payloadSchemaVersion = payloadSchemaVersion;
 
     _typeCache.EnsureCacheIsBuilt();
   }
@@ -343,15 +344,24 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
         throw new ArgumentException("Json value not supported: " + doc.Type, nameof(doc));
     }
   }
-
+  
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
     string typeName = (string) dictObj[SerializationConstants.TYPE_DISCRIMINATOR]!;
     
+    // get payload schema version...
+    var payloadSchemaVersion = s_noPayloadSchemaVersion;
+    if(!dictObj.TryGetValue(SerializationConstants.PAYLOAD_SCHEMA_VERSION, 
+          out object? foundPayloadSchemaVersion) && foundPayloadSchemaVersion is not null)
+    {
+      payloadSchemaVersion = (System.Version) foundPayloadSchemaVersion;
+    }
+    
+    var payloadSchemaVersionString = (string) dictObj[SerializationConstants.PAYLOAD_SCHEMA_VERSION]!;
+    
     // here we're getting the actual type to deserialise into, this won't be the type we return
-    // POC: is there any guarantee this can't happen? probably not ATM
-    // it's almost certainly a bug if the type returned is a version and not the latest!
-    (Version objectVersion, CachedTypeInfo cachedTypeInfo) = _typeCache.GetMatchedTypeOrLater(typeName, _payloadSchemaVersion);
+    // we should not return versioned types
+    CachedTypeInfo cachedTypeInfo = _typeCache.GetMatchedTypeOrLater(typeName, payloadSchemaVersion);
     
     Base baseObj = (Base) Activator.CreateInstance(cachedTypeInfo.Type);
     var props = cachedTypeInfo.Props;
@@ -359,6 +369,7 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
 
     dictObj.Remove(SerializationConstants.TYPE_DISCRIMINATOR);
     dictObj.Remove(SerializationConstants.CLOSURE_PROPERTY_NAME);
+    dictObj.Remove(SerializationConstants.PAYLOAD_SCHEMA_VERSION);
     
     foreach (var entry in dictObj)
     {
@@ -407,17 +418,21 @@ public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
     baseObj = _objectUpgradeManager.UpgradeObject(
                         baseObj,
                         cachedTypeInfo.Type.FullName.NotNull(),
-                        _payloadSchemaVersion,
+                        payloadSchemaVersion,
                         _typeCache.LoadedSchemaVersion);
 
-    // POC: what are these callback methods? are they used?
-    // Do they need calling on the object BEFORE upgrading it? Do they need calling AGAIN after upgrading it?
+    // mainly this was added some time back for fixing up Breps after deserialisation
+    // this means that any version of something, such as Brep, will NOT carry these callbacks
+    // we could perhaps simplify the version structure in this case but it's not urgent
+    // i.e. the callbacks only live on the type
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {
       onDeserialized.Invoke(baseObj, new object?[] { null });
     }
 
-    // POC: we need to be returning the latest version
+    // POC: related to https://spockle.atlassian.net/browse/DUI3-502
+    // it may be fine to return fall back type, provide we iterated correctly on the types
+    // we should NOT be returning versioned types however
     return baseObj;
   }
 }

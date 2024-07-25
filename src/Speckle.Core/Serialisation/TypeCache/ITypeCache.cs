@@ -4,7 +4,7 @@ public interface ITypeCache
 {
   void EnsureCacheIsBuilt();
 
-  (Version version, CachedTypeInfo cachedTypeInfo)  GetMatchedTypeOrLater(string speckleType, Version versionToMatch);
+  CachedTypeInfo GetMatchedTypeOrLater(string speckleType, Version versionToMatch);
   
   Version LoadedSchemaVersion { get; }
 }
