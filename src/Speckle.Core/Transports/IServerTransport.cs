@@ -4,7 +4,7 @@ public interface IServerTransport : IDisposable, ITransport, IBlobCapableTranspo
 {
   int TotalSentBytes { get; }
   Credentials.Account Account { get; }
-  string BaseUri { get; }
+  Uri BaseUri { get; }
   string StreamId { get; }
   int TimeoutSeconds { get; set; }
 }
