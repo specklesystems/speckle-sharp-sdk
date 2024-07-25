@@ -174,9 +174,8 @@ public static class SpeckleLog
     if (logConfiguration.EnhancedLogContext)
     {
       serilogLogConfiguration = serilogLogConfiguration
-        .Enrich.WithRequestHeader("User-Agent")
+        .Enrich.WithClientAgent()
         .Enrich.WithClientIp()
-        .Enrich.WithCorrelationId()
         .Enrich.WithExceptionDetails();
     }
 
