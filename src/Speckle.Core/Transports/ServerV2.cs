@@ -46,7 +46,7 @@ public sealed class ServerTransport : IDisposable, ICloneable, ITransport, IBlob
     }
 
     Account = account;
-    BaseUri = account.serverInfo.url;
+    BaseUri = new(account.serverInfo.url);
     StreamId = streamId;
     AuthorizationToken = account.token;
     TimeoutSeconds = timeoutSeconds;
@@ -59,7 +59,7 @@ public sealed class ServerTransport : IDisposable, ICloneable, ITransport, IBlob
   public int TotalSentBytes { get; private set; }
 
   public Account Account { get; }
-  public string BaseUri { get; }
+  public Uri BaseUri { get; }
   public string StreamId { get; internal set; }
 
   public int TimeoutSeconds { get; set; }
