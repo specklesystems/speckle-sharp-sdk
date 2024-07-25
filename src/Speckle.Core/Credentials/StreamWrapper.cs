@@ -371,7 +371,7 @@ public class StreamWrapper
   /// Verifies that the state of the stream wrapper represents a valid Speckle resource e.g. points to a valid stream/branch etc.
   /// </summary>
   /// <param name="acc">The account to use to verify the current state of the stream wrapper</param>
-  /// <exception cref="ArgumentException">The <see cref="ServerInfo"/> of the provided <paramref name="acc"/> is invalid or does not match the <see cref="StreamWrapper"/>'s <see cref="ServerUrl"/></exception>
+  /// <exception cref="ArgumentException">The <see cref="Speckle.Core.Api.GraphQL.Models.ServerInfo"/> of the provided <paramref name="acc"/> is invalid or does not match the <see cref="StreamWrapper"/>'s <see cref="ServerUrl"/></exception>
   /// <exception cref="HttpRequestException">You are not connected to the internet</exception>
   /// <exception cref="SpeckleException">Verification of the current state of the stream wrapper with provided <paramref name="acc"/> was unsuccessful. The <paramref name="acc"/> could be invalid, or lack permissions for the <see cref="StreamId"/>, or the <see cref="StreamId"/> or <see cref="BranchName"/> are invalid</exception>
   public async Task ValidateWithAccount(Account acc)

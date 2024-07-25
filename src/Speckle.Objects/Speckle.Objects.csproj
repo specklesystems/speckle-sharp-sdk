@@ -7,11 +7,12 @@
     <Product>Speckle.Objects</Product>
     <Description>Objects is the default object model for Speckle</Description>
     <PackageTags>$(PackageTags), objects</PackageTags>
-    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit;System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
+    <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
+    <Configurations>Debug;Release;Local</Configurations>
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Speckle.Objects.Tests.Unit"/>
+    <InternalsVisibleTo Include="Speckle.Objects.Tests.Unit" />
   </ItemGroup>
 
   <ItemGroup>

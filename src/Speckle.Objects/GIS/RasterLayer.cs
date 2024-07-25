@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Speckle.Core.Models;
+using Speckle.Core.Models.Collections;
 
 namespace Objects.GIS;
 

@@ -1,15 +1,9 @@
 #nullable disable
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Threading.Tasks;
 using Speckle.Core.Api.GraphQL;
 using Speckle.Core.Api.GraphQL.Models;
 using Speckle.Core.Credentials;
@@ -36,6 +30,7 @@ public static class Helpers
   /// <param name="onTotalChildrenCountKnown">Action invoked once the total count of objects is known.</param>
   /// <returns></returns>
   public static async Task<Base> Receive(
+    this IServerTransportFactory serverTransportFactory,
     string stream,
     Account account = null,
     Action<ConcurrentDictionary<string, int>> onProgressAction = null,
@@ -65,7 +60,7 @@ public static class Helpers
     }
 
     using var client = new Client(account);
-    using var transport = new ServerTransport(client.Account, sw.StreamId);
+    using var transport = serverTransportFactory.Create(client.Account, sw.StreamId);
 
     string objectId = "";
     Commit commit = null;
@@ -146,6 +141,7 @@ public static class Helpers
   /// <param name="onProgressAction">Action invoked on progress iterations.</param>
   /// <returns></returns>
   public static async Task<string> Send(
+    this IServerTransportFactory serverTransportFactory,
     string stream,
     Base data,
     string message = "No message",
@@ -160,7 +156,7 @@ public static class Helpers
 
     using var client = new Client(account ?? await sw.GetAccount().ConfigureAwait(false));
 
-    using ServerTransport transport = new(client.Account, sw.StreamId);
+    using var transport = serverTransportFactory.Create(client.Account, sw.StreamId);
     var branchName = string.IsNullOrEmpty(sw.BranchName) ? "main" : sw.BranchName;
 
     var objectId = await Operations.Send(data, transport, useDefaultCache, onProgressAction).ConfigureAwait(false);
