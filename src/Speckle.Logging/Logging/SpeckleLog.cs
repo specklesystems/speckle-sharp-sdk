@@ -66,7 +66,7 @@ public sealed class SpeckleLogConfiguration
     string sentryDns = DEFAULT_SENTRY_DNS
   )
   {
-    MinimumLevel = LogLevel.Warning;
+    MinimumLevel = LogLevel.Debug;
     LogToConsole = logToConsole;
     LogToSeq = logToSeq;
     LogToFile = logToFile;

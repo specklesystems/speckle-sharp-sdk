@@ -5,8 +5,8 @@
     </PropertyGroup>
   <PropertyGroup>
     <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
-    <ILRepackPerformInternalize>false</ILRepackPerformInternalize>
-    <ILRepackExcludeAssemblies>$(TargetDir)System.Numerics.Vectors.dll;$(TargetDir)Microsoft.Extensions.Logging.Abstractions.dll;$(TargetDir)Microsoft.Extensions.Logging.dll</ILRepackExcludeAssemblies>
+    <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
+    <ILRepackExcludeAssemblies>C:\Users\adam\Git\speckle-sharp-sdk\src\Speckle.Logging\bin\Debug\netstandard2.0\System.Numerics.Vectors.dll;C:\Users\adam\Git\speckle-sharp-sdk\src\Speckle.Logging\bin\Debug\netstandard2.0\Microsoft.Extensions.Logging.Abstractions.dll</ILRepackExcludeAssemblies>
   </PropertyGroup>
 <ItemGroup>
   <PackageReference Include="ILRepack.FullAuto">
@@ -21,4 +21,7 @@
   <PackageReference Include="Serilog.Sinks.Seq"  PrivateAssets="all"/>
   <PackageReference Include="SerilogTimings"  PrivateAssets="all"/>
 </ItemGroup>
+  <Target BeforeTargets="CopyFilesToOutputDirectory"  Name="AfterBuildAutoCAD" >
+    <Message Text="$(TargetDir)System.Numerics.Vectors.dll" Importance="high"/>
+  </Target>
 </Project>
