@@ -117,10 +117,8 @@ public class ObjectsKit : ISpeckleKit
     }
 
     SpeckleLog
-      .Logger.ForContext<ObjectsKit>()
-      .ForContext("basePath", basePath)
-      .ForContext("app", app)
-      .Information("Converter {converterName} successfully loaded from {path}", converterInstance.Name, path);
+      .Logger
+      .Information("Converter {converterName} successfully loaded from {path} with {app} and {basePath}", converterInstance.Name, path, app, basePath);
 
     return converterInstance;
   }

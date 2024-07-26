@@ -305,7 +305,8 @@ public class StreamWrapper
     List<Exception> err = new();
     try
     {
-      await ValidateWithAccount(defAcc.NotNull()).ConfigureAwait(false);
+      defAcc.NotNull();
+      await ValidateWithAccount(defAcc).ConfigureAwait(false);
       _account = defAcc;
       return defAcc;
     }

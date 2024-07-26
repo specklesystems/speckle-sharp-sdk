@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+    </PropertyGroup>
+  <PropertyGroup>
+    <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
+    <ILRepackPerformInternalize>false</ILRepackPerformInternalize>
+    <ILRepackExcludeAssemblies>$(TargetDir)System.Numerics.Vectors.dll;$(TargetDir)Microsoft.Extensions.Logging.Abstractions.dll;$(TargetDir)Microsoft.Extensions.Logging.dll</ILRepackExcludeAssemblies>
+  </PropertyGroup>
+<ItemGroup>
+  <PackageReference Include="ILRepack.FullAuto">
+    <PrivateAssets>all</PrivateAssets>
+    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+  </PackageReference>
+  <PackageReference Include="Serilog"  PrivateAssets="all"/>
+  <PackageReference Include="Serilog.Extensions.Logging" PrivateAssets="all"/>
+  <PackageReference Include="Serilog.Enrichers.ClientInfo"  PrivateAssets="all"/>
+  <PackageReference Include="Serilog.Exceptions"  PrivateAssets="all"/>
+  <PackageReference Include="Serilog.Sinks.Console"  PrivateAssets="all"/>
+  <PackageReference Include="Serilog.Sinks.Seq"  PrivateAssets="all"/>
+  <PackageReference Include="SerilogTimings"  PrivateAssets="all"/>
+</ItemGroup>
+</Project>

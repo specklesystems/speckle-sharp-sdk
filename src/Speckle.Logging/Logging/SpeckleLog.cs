@@ -2,12 +2,11 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Serilog;
-using Serilog.Core;
-using Serilog.Events;
 using Serilog.Exceptions;
 using Speckle.Core.Common;
-using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
+using Microsoft.Extensions.Logging;
+using Serilog.Extensions.Logging;
 
 namespace Speckle.Core.Logging;
 
@@ -42,7 +41,7 @@ public sealed class SpeckleLogConfiguration
   /// <summary>
   /// Log events bellow this level are silently dropped
   /// </summary>
-  public LogEventLevel MinimumLevel { get; }
+  public LogLevel MinimumLevel { get; }
 
   /// <summary>
   /// Flag to override the default Sentry DNS
@@ -55,13 +54,11 @@ public sealed class SpeckleLogConfiguration
   /// Default SpeckleLogConfiguration constructor.
   /// These are the sane defaults we should be using across connectors.
   /// </summary>
-  /// <param name="minimumLevel">Log events bellow this level are silently dropped</param>
   /// <param name="logToConsole">Flag to enable console log sink</param>
   /// <param name="logToSeq">Flag to enable Seq log sink</param>
   /// <param name="logToFile">Flag to enable File log sink</param>
   /// <param name="enhancedLogContext">Flag to enable enhanced context on every log event</param>
   public SpeckleLogConfiguration(
-    LogEventLevel minimumLevel = LogEventLevel.Debug,
     bool logToConsole = true,
     bool logToSeq = true,
     bool logToFile = true,
@@ -69,7 +66,7 @@ public sealed class SpeckleLogConfiguration
     string sentryDns = DEFAULT_SENTRY_DNS
   )
   {
-    MinimumLevel = minimumLevel;
+    MinimumLevel = LogLevel.Warning;
     LogToConsole = logToConsole;
     LogToSeq = logToSeq;
     LogToFile = logToFile;
@@ -81,11 +78,12 @@ public sealed class SpeckleLogConfiguration
 /// <summary>
 /// Configurator class for a standardized logging system across Speckle (sharp).
 /// </summary>
-public static class SpeckleLog
+public sealed class SpeckleLog
 {
-  private static ILogger? s_logger;
+  public static ILoggerProvider GetProvider() => new SerilogLoggerProvider(Serilog.Log.Logger);
+  private static Microsoft.Extensions.Logging.ILogger? s_logger;
 
-  public static ILogger Logger
+  public static  Microsoft.Extensions.Logging.ILogger Logger
   {
     get
     {
@@ -115,7 +113,7 @@ public static class SpeckleLog
   {
     if (s_initialized)
     {
-      Logger
+      Log.Logger
         .ForContext("hostApplicationVersion", hostApplicationVersion)
         .ForContext("hostApplicationName", hostApplicationName)
         .Information("Setup was already initialized");
@@ -125,10 +123,8 @@ public static class SpeckleLog
     logConfiguration ??= new SpeckleLogConfiguration();
 
     s_logger = CreateConfiguredLogger(hostApplicationName, hostApplicationVersion, logConfiguration);
-    var id = GetUserIdFromDefaultAccount();
-    s_logger = s_logger.ForContext("id", id).ForContext("isMachineId", s_isMachineIdUsed);
 
-    Logger
+    Log.Logger
       .ForContext("userApplicationDataPath", SpecklePathProvider.UserApplicationDataPath())
       .ForContext("installApplicationDataPath", SpecklePathProvider.InstallApplicationDataPath)
       .ForContext("speckleLogConfiguration", logConfiguration)
@@ -146,7 +142,7 @@ public static class SpeckleLog
   /// <param name="hostApplicationVersion">Public version slug of the application using this SDK ie.: "2023"</param>
   /// <param name="logConfiguration">Input configuration object.</param>
   /// <returns>Logger instance</returns>
-  public static Logger CreateConfiguredLogger(
+  private static Microsoft.Extensions.Logging.ILogger CreateConfiguredLogger(
     string hostApplicationName,
     string? hostApplicationVersion,
     SpeckleLogConfiguration logConfiguration
@@ -161,7 +157,6 @@ public static class SpeckleLog
 
     var fileVersionInfo = GetFileVersionInfo();
     var serilogLogConfiguration = new LoggerConfiguration()
-      .MinimumLevel.Is(logConfiguration.MinimumLevel)
       .Enrich.FromLogContext()
       .Enrich.WithProperty("version", fileVersionInfo.FileVersion)
       .Enrich.WithProperty("productVersion", fileVersionInfo.ProductVersion)
@@ -174,7 +169,7 @@ public static class SpeckleLog
     if (logConfiguration.EnhancedLogContext)
     {
       serilogLogConfiguration = serilogLogConfiguration
-        .Enrich.WithClientAgent()
+        .Enrich.WithRequestHeader("User-Agent")
         .Enrich.WithClientIp()
         .Enrich.WithExceptionDetails();
     }
@@ -212,20 +207,12 @@ public static class SpeckleLog
     {
       logger.Warning("Cannot set user id for the global log context.");
     }
+    var id = GetUserIdFromDefaultAccount();
+    var l = logger.ForContext("id", id).ForContext("isMachineId", s_isMachineIdUsed);
 
-    return logger;
-  }
-
-  public static void OpenCurrentLogFolder()
-  {
-    try
-    {
-      Process.Start(s_logFolderPath);
-    }
-    catch (FileNotFoundException ex)
-    {
-      Logger.Error(ex, "Unable to open log file folder at the following path, {path}", s_logFolderPath);
-    }
+    Serilog.Log.Logger = l;
+    var factory = new LoggerFactory(Array.Empty<ILoggerProvider>(), new LoggerFilterOptions() { MinLevel = logConfiguration.MinimumLevel }).AddSerilog(Log.Logger);
+    return factory.CreateLogger<SpeckleLog>();
   }
 
   private static string GetUserIdFromDefaultAccount()
@@ -235,15 +222,16 @@ public static class SpeckleLog
     var id = Crypt.Md5($"{machineName}:{userName}", "X2");
     try
     {
+      /*
       var defaultAccount = AccountManager.GetDefaultAccount();
       if (defaultAccount != null)
       {
         id = defaultAccount.GetHashedEmail();
       }
       else
-      {
+      {*/
         s_isMachineIdUsed = true;
-      }
+      //}
     }
     catch (Exception ex) when (!ex.IsFatal())
     {

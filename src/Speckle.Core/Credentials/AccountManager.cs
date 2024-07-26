@@ -353,7 +353,8 @@ public static class AccountManager
 
     foreach (var acc in sqlAccounts)
     {
-      if (IsInvalid(acc.NotNull()))
+      acc.NotNull();
+      if (IsInvalid(acc))
       {
         RemoveAccount(acc.id);
       }

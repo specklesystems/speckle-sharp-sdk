@@ -244,7 +244,7 @@ public class Matrix64ValueMock : SerializerMock
 
 public class Matrix32ValueMock : SerializerMock
 {
-  public System.Numerics.Matrix4x4 value { get; set; }
+  public Matrix4x4 value { get; set; }
 }
 
 public class ColorValueMock : SerializerMock

@@ -138,11 +138,11 @@ public static partial class Operations
       transports.Insert(0, sqLiteTransport);
     }
 
-    var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
+  // var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
 
     // make sure all logs in the operation have the proper context
-    using (LogContext.PushProperty("transportContext", transportContext))
-    using (LogContext.PushProperty("correlationId", Guid.NewGuid().ToString()))
+    //using (LogContext.PushProperty("transportContext", transportContext))
+    //using (LogContext.PushProperty("correlationId", Guid.NewGuid().ToString()))
     {
       var sendTimer = Stopwatch.StartNew();
       SpeckleLog.Logger.Information("Starting send operation");
@@ -225,10 +225,9 @@ public static partial class Operations
       var hash = idToken.ToString();
 
       sendTimer.Stop();
-      SpeckleLog
-        .Logger.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
+      SpeckleLog.Logger/*.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
         .ForContext("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...")
-        .ForContext("serializerElapsed", serializerV2?.Elapsed)
+        .ForContext("serializerElapsed", serializerV2?.Elapsed)*/
         .Information(
           "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
           transports.Max(t => t.SavedObjectCount),

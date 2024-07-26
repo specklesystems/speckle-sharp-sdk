@@ -1,21 +1,12 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
-using System.Linq;
-using System.Net.Http;
 using System.Net.WebSockets;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using GraphQL;
 using GraphQL.Client.Http;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using Serilog.Context;
-using Serilog.Core;
-using Serilog.Core.Enrichers;
-using Serilog.Events;
 using Speckle.Core.Api.GraphQL;
 using Speckle.Core.Api.GraphQL.Resources;
 using Speckle.Core.Api.GraphQL.Serializer;
@@ -124,7 +115,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
-    using IDisposable context0 = LogContext.Push(CreateEnrichers<T>(request));
+   // using IDisposable context0 = LogContext.Push(CreateEnrichers<T>(request));
     var timer = Stopwatch.StartNew();
 
     Exception? exception = null;
@@ -147,22 +138,54 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     }
     finally
     {
-      LogEventLevel logLevel = exception switch
+      if (exception is null)
       {
-        null => LogEventLevel.Information,
-        OperationCanceledException
-          => cancellationToken.IsCancellationRequested ? LogEventLevel.Debug : LogEventLevel.Error,
-        SpeckleException => LogEventLevel.Warning,
-        _ => LogEventLevel.Error,
-      };
-      SpeckleLog.Logger.Write(
-        logLevel,
-        exception,
-        "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-        typeof(T).Name,
-        exception is null,
-        timer.Elapsed.TotalSeconds
-      );
+        SpeckleLog.Logger.Information(
+          "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+          typeof(T).Name,
+          exception is null,
+          timer.Elapsed.TotalSeconds
+        );
+      }
+      else if (exception is OperationCanceledException oce)
+      {
+        if (cancellationToken.IsCancellationRequested)
+        {
+          SpeckleLog.Logger.Debug(
+            "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+            typeof(T).Name,
+            exception is null,
+            timer.Elapsed.TotalSeconds
+          );
+        }
+        else
+        {
+          SpeckleLog.Logger.Error(
+            "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+            typeof(T).Name,
+            exception is null,
+            timer.Elapsed.TotalSeconds
+          );
+        }
+      }
+      else if (exception is SpeckleException)
+      {
+        SpeckleLog.Logger.Warning(
+          "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+          typeof(T).Name,
+          exception is null,
+          timer.Elapsed.TotalSeconds
+        );
+      }
+      else
+      {
+        SpeckleLog.Logger.Error(
+          "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+          typeof(T).Name,
+          exception is null,
+          timer.Elapsed.TotalSeconds
+        );
+      }
     }
   }
 
@@ -230,7 +253,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     return variables;
   }
 
-  private ILogEventEnricher[] CreateEnrichers<T>(GraphQLRequest request)
+ /* private ILogEventEnricher[] CreateEnrichers<T>(GraphQLRequest request)
   {
     // i know this is double  (de)serializing, but we need a recursive convert to
     // dict<str, object> here
@@ -243,7 +266,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       new PropertyEnricher("graphqlVariables", variables),
       new PropertyEnricher("resultType", typeof(T).Name)
     };
-  }
+  }*/
 
   IDisposable ISpeckleGraphQLClient.SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback) =>
     SubscribeTo(request, callback);
@@ -251,7 +274,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   /// <inheritdoc cref="ISpeckleGraphQLClient.SubscribeTo{T}"/>
   internal IDisposable SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback)
   {
-    using (LogContext.Push(CreateEnrichers<T>(request)))
+    //using (LogContext.Push(CreateEnrichers<T>(request)))
     {
       try
       {
@@ -269,9 +292,8 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
               }
               else
               {
-                SpeckleLog
-                  .Logger.ForContext("graphqlResponse", response)
-                  .Error("Cannot execute graphql callback for {resultType}, the response has no data.", typeof(T).Name);
+               // Serilog.Log.ForContext("graphqlResponse", response)
+               SpeckleLog.Logger .Error("Cannot execute graphql callback for {resultType}, the response has no data.", typeof(T).Name);
               }
             }
             // we catch forbidden to rethrow, making sure its not logged.
@@ -282,11 +304,10 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
             // anything else related to graphql gets logged
             catch (SpeckleGraphQLException<T> gqlException)
             {
-              SpeckleLog
-                .Logger.ForContext("graphqlResponse", gqlException.Response)
+             /* Speckle.Core.Logging..ForContext("graphqlResponse", gqlException.Response)
                 .ForContext("graphqlExtensions", gqlException.Extensions)
-                .ForContext("graphqlErrorMessages", gqlException.ErrorMessages.ToList())
-                .Warning(
+                .ForContext("graphqlErrorMessages", gqlException.ErrorMessages.ToList())*/
+              SpeckleLog.Logger.Warning(
                   gqlException,
                   "Execution of the graphql request to get {resultType} failed with {graphqlExceptionType} {exceptionMessage}.",
                   typeof(T).Name,

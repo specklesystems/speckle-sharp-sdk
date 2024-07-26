@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net.Mime;
 using System.Text;
 using System.Web;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Serilog.Events;
 using Speckle.Core.Api;
@@ -24,7 +25,7 @@ public class SetUp
     SpeckleLog.Initialize(
       "Core",
       "Testing",
-      new SpeckleLogConfiguration(logToFile: false, logToSeq: false, minimumLevel: LogEventLevel.Warning)
+      new SpeckleLogConfiguration(logToFile: false, logToSeq: false)
     );
     SpeckleLog.Logger.Warning("Initialized logger for testing");
   }

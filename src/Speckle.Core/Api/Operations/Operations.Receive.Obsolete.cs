@@ -344,9 +344,9 @@ public static partial class Operations
   {
     var hasUserProvidedLocalTransport = localTransport != null;
     localTransport ??= new SQLiteTransport();
-    using (LogContext.PushProperty("remoteTransportContext", remoteTransport?.TransportContext))
+   /* using (LogContext.PushProperty("remoteTransportContext", remoteTransport?.TransportContext))
     using (LogContext.PushProperty("localTransportContext", localTransport.TransportContext))
-    using (LogContext.PushProperty("objectId", objectId))
+    using (LogContext.PushProperty("objectId", objectId))*/
     {
       var timer = Stopwatch.StartNew();
       SpeckleLog.Logger.Information(
@@ -425,14 +425,14 @@ public static partial class Operations
         }
 
         timer.Stop();
-        SpeckleLog
-          .Logger.ForContext("deserializerElapsed", serializerV2?.Elapsed)
+        SpeckleLog.Logger
+          /*.Log.ForContext("deserializerElapsed", serializerV2?.Elapsed)
           .ForContext(
             "transportElapsedBreakdown",
             new[] { localTransport, remoteTransport }
               .Where(t => t != null)
               .ToDictionary(t => t!.TransportName, t => t!.Elapsed)
-          )
+          )*/
           .Information(
             "Finished receiving {objectId} from {source} in {elapsed} seconds",
             objectId,
@@ -481,14 +481,14 @@ public static partial class Operations
         dr.Dispose();
       }
 
-      SpeckleLog
-        .Logger.ForContext("deserializerElapsed", serializerV2?.Elapsed)
+      SpeckleLog.Logger
+       /* .Log.ForContext("deserializerElapsed", serializerV2?.Elapsed)
         .ForContext(
           "transportElapsedBreakdown",
           new[] { localTransport, remoteTransport }
             .Where(t => t != null)
             .ToDictionary(t => t.TransportName, t => t.Elapsed)
-        )
+        )*/
         .Information(
           "Finished receiving {objectId} from {source} in {elapsed} seconds",
           objectId,

@@ -1,17 +1,11 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 using Polly.Retry;
-using Serilog.Context;
 using Speckle.Core.Common;
 using Speckle.Core.Credentials;
 using Speckle.Core.Logging;
@@ -68,7 +62,8 @@ public static class Http
     }
     catch (HttpRequestException ex)
     {
-      SpeckleLog.Logger.ForContext("defaultServer", defaultServer).Warning(ex, "Failed to ping internet");
+      //.Log.ForContext("defaultServer", defaultServer)
+      SpeckleLog.Logger.Warning(ex, "Failed to ping internet");
 
       return false;
     }
@@ -202,9 +197,9 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
     // this is a preliminary client server correlation implementation
     // refactor this, when we have a better observability stack
     var context = new Context();
-    using (LogContext.PushProperty("correlationId", context.CorrelationId))
+   /* using (LogContext.PushProperty("correlationId", context.CorrelationId))
     using (LogContext.PushProperty("targetUrl", request.RequestUri))
-    using (LogContext.PushProperty("httpMethod", request.Method))
+    using (LogContext.PushProperty("httpMethod", request.Method))*/
     {
       SpeckleLog.Logger.Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
       var timer = new Stopwatch();
@@ -223,8 +218,8 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
       timer.Stop();
       var status = policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed";
       context.TryGetValue("retryCount", out var retryCount);
-      SpeckleLog
-        .Logger.ForContext("ExceptionType", policyResult.FinalException?.GetType())
+      SpeckleLog.Logger
+       // .Log.ForContext("ExceptionType", policyResult.FinalException?.GetType())
         .Information(
           "Execution of http request to {httpScheme}://{hostUrl}/{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries",
           request.RequestUri.Scheme,

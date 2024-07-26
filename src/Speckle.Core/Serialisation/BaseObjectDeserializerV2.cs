@@ -286,7 +286,8 @@ public sealed class BaseObjectDeserializerV2
         {
           var objId = (string)referencedId.NotNull();
           object? deserialized = null;
-          lock (_deserializedObjects.NotNull())
+          _deserializedObjects.NotNull();
+          lock (_deserializedObjects)
           {
             if (_deserializedObjects.TryGetValue(objId, out object? o))
             {

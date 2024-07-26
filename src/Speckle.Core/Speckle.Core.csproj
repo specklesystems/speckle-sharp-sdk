@@ -21,21 +21,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GraphQL.Client" />
+    <PackageReference Include="GraphQL.Client"/>
     <PackageReference Include="Microsoft.CSharp" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Polly" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" />
-    <PackageReference Include="Polly.Extensions.Http" />
-    <PackageReference Include="Serilog" />
-    <PackageReference Include="Serilog.Enrichers.ClientInfo" />
-    <PackageReference Include="Serilog.Exceptions" />
-    <PackageReference Include="Serilog.Sinks.Console" />
-    <PackageReference Include="Serilog.Sinks.Seq" />
-    <PackageReference Include="SerilogTimings" />
-    <PackageReference Include="Speckle.Newtonsoft.Json" />
-    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Polly.Extensions.Http"  />
     <PackageReference Include="Speckle.DoubleNumerics" />
-    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="Speckle.Newtonsoft.Json" />
+    <PackageReference Include="System.Text.Json"  PrivateAssets="all"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Speckle.Logging\Speckle.Logging.csproj" />
   </ItemGroup>
   
 </Project>

@@ -1,6 +1,5 @@
 ﻿#nullable disable
 
-using System;
 using Speckle.Core.Api.GraphQL.Enums;
 
 namespace Speckle.Core.Api.GraphQL.Models;
