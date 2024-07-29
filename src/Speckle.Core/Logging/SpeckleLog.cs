@@ -1,6 +1,12 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Sentry;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Serilog.Exceptions;
+using Speckle.Core.Common;
 using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
 
@@ -134,7 +140,7 @@ public static class SpeckleLog
     // Configure scope after logger created.
     SentrySdk.ConfigureScope(scope =>
     {
-      scope.User = new User { Id = id };
+      scope.User = new Sentry.User { Id = id };
     });
 
     SentrySdk.ConfigureScope(scope =>
