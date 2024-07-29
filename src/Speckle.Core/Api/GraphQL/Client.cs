@@ -99,13 +99,15 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
         delay,
         (ex, timeout, _) =>
         {
-          SpeckleLog.Create().Debug(
-            ex,
-            "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
-            typeof(T).Name,
-            ex.Message,
-            timeout
-          );
+          SpeckleLog
+            .Create()
+            .Debug(
+              ex,
+              "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
+              typeof(T).Name,
+              ex.Message,
+              timeout
+            );
         }
       );
 
@@ -115,7 +117,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
-   // using IDisposable context0 = LogContext.Push(CreateEnrichers<T>(request));
+    // using IDisposable context0 = LogContext.Push(CreateEnrichers<T>(request));
     var timer = Stopwatch.StartNew();
 
     Exception? exception = null;
@@ -140,51 +142,61 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     {
       if (exception is null)
       {
-        SpeckleLog.Create().Information(
-          "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-          typeof(T).Name,
-          exception is null,
-          timer.Elapsed.TotalSeconds
-        );
+        SpeckleLog
+          .Create()
+          .Information(
+            "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+            typeof(T).Name,
+            exception is null,
+            timer.Elapsed.TotalSeconds
+          );
       }
       else if (exception is OperationCanceledException oce)
       {
         if (cancellationToken.IsCancellationRequested)
         {
-          SpeckleLog.Create().Debug(
-            "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-            typeof(T).Name,
-            exception is null,
-            timer.Elapsed.TotalSeconds
-          );
+          SpeckleLog
+            .Create()
+            .Debug(
+              "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+              typeof(T).Name,
+              exception is null,
+              timer.Elapsed.TotalSeconds
+            );
         }
         else
         {
-          SpeckleLog.Create().Error(
-            "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-            typeof(T).Name,
-            exception is null,
-            timer.Elapsed.TotalSeconds
-          );
+          SpeckleLog
+            .Create()
+            .Error(
+              "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+              typeof(T).Name,
+              exception is null,
+              timer.Elapsed.TotalSeconds
+            );
         }
       }
       else if (exception is SpeckleException)
       {
-        SpeckleLog.Create().Warning(
-          "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-          typeof(T).Name,
-          exception is null,
-          timer.Elapsed.TotalSeconds
-        );
+        SpeckleLog
+          .Create()
+          .Warning(
+            "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+            typeof(T).Name,
+            exception is null,
+            timer.Elapsed.TotalSeconds
+          );
       }
       else
       {
-        SpeckleLog.Create().Error(
-          "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-          typeof(T).Name,
-          exception is null,
-          timer.Elapsed.TotalSeconds
-        );
+        SpeckleLog
+          .Create()
+          .Error(
+            "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+            typeof(T).Name,
+            exception is null,
+            timer.Elapsed.TotalSeconds
+          );
       }
     }
   }
@@ -253,20 +265,20 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     return variables;
   }
 
- /* private ILogEventEnricher[] CreateEnrichers<T>(GraphQLRequest request)
-  {
-    // i know this is double  (de)serializing, but we need a recursive convert to
-    // dict<str, object> here
-    var expando = JsonConvert.DeserializeObject<ExpandoObject>(JsonConvert.SerializeObject(request.Variables));
-    var variables = request.Variables != null && expando != null ? ConvertExpandoToDict(expando) : null;
-    return new ILogEventEnricher[]
-    {
-      new PropertyEnricher("serverUrl", ServerUrl),
-      new PropertyEnricher("graphqlQuery", request.Query),
-      new PropertyEnricher("graphqlVariables", variables),
-      new PropertyEnricher("resultType", typeof(T).Name)
-    };
-  }*/
+  /* private ILogEventEnricher[] CreateEnrichers<T>(GraphQLRequest request)
+   {
+     // i know this is double  (de)serializing, but we need a recursive convert to
+     // dict<str, object> here
+     var expando = JsonConvert.DeserializeObject<ExpandoObject>(JsonConvert.SerializeObject(request.Variables));
+     var variables = request.Variables != null && expando != null ? ConvertExpandoToDict(expando) : null;
+     return new ILogEventEnricher[]
+     {
+       new PropertyEnricher("serverUrl", ServerUrl),
+       new PropertyEnricher("graphqlQuery", request.Query),
+       new PropertyEnricher("graphqlVariables", variables),
+       new PropertyEnricher("resultType", typeof(T).Name)
+     };
+   }*/
 
   IDisposable ISpeckleGraphQLClient.SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback) =>
     SubscribeTo(request, callback);
@@ -292,8 +304,10 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
               }
               else
               {
-               // Serilog.Log.ForContext("graphqlResponse", response)
-               SpeckleLog.Create() .Error("Cannot execute graphql callback for {resultType}, the response has no data.", typeof(T).Name);
+                // Serilog.Log.ForContext("graphqlResponse", response)
+                SpeckleLog
+                  .Create()
+                  .Error("Cannot execute graphql callback for {resultType}, the response has no data.", typeof(T).Name);
               }
             }
             // we catch forbidden to rethrow, making sure its not logged.
@@ -304,10 +318,12 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
             // anything else related to graphql gets logged
             catch (SpeckleGraphQLException<T> gqlException)
             {
-             /* Speckle.Core.Logging..ForContext("graphqlResponse", gqlException.Response)
-                .ForContext("graphqlExtensions", gqlException.Extensions)
-                .ForContext("graphqlErrorMessages", gqlException.ErrorMessages.ToList())*/
-              SpeckleLog.Create().Warning(
+              /* Speckle.Core.Logging..ForContext("graphqlResponse", gqlException.Response)
+                 .ForContext("graphqlExtensions", gqlException.Extensions)
+                 .ForContext("graphqlErrorMessages", gqlException.ErrorMessages.ToList())*/
+              SpeckleLog
+                .Create()
+                .Warning(
                   gqlException,
                   "Execution of the graphql request to get {resultType} failed with {graphqlExceptionType} {exceptionMessage}.",
                   typeof(T).Name,
@@ -325,12 +341,14 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
           {
             // we're logging this as an error for now, to keep track of failures
             // so far we've swallowed these errors
-            SpeckleLog.Create().Error(
-              ex,
-              "Subscription for {resultType} terminated unexpectedly with {exceptionMessage}",
-              typeof(T).Name,
-              ex.Message
-            );
+            SpeckleLog
+              .Create()
+              .Error(
+                ex,
+                "Subscription for {resultType} terminated unexpectedly with {exceptionMessage}",
+                typeof(T).Name,
+                ex.Message
+              );
             // we could be throwing like this:
             // throw ex;
           }
@@ -338,12 +356,14 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Create().Warning(
-          ex,
-          "Subscribing to graphql {resultType} failed without a graphql response. Cause {exceptionMessage}",
-          typeof(T).Name,
-          ex.Message
-        );
+        SpeckleLog
+          .Create()
+          .Warning(
+            ex,
+            "Subscribing to graphql {resultType} failed without a graphql response. Cause {exceptionMessage}",
+            typeof(T).Name,
+            ex.Message
+          );
         throw new SpeckleGraphQLException<T>(
           "The graphql request failed without a graphql response",
           request,

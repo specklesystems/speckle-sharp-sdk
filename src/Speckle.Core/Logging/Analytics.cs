@@ -246,8 +246,7 @@ public static class Analytics
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Create()
-          .Warning(ex, "Analytics event failed {exceptionMessage}", ex.Message);
+        SpeckleLog.Create().Warning(ex, "Analytics event failed {exceptionMessage}", ex.Message);
       }
     });
   }

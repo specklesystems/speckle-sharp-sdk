@@ -76,7 +76,7 @@ public static partial class Operations
       throw new ArgumentException("Expected at least on transport to be specified", nameof(transports));
     }
 
-   // var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
+    // var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
 
     // make sure all logs in the operation have the proper context
     //using (LogContext.PushProperty("transportContext", transportContext))
@@ -103,11 +103,9 @@ public static partial class Operations
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Create().Information(
-          ex,
-          "Send operation failed after {elapsed} seconds",
-          sendTimer.Elapsed.TotalSeconds
-        );
+        SpeckleLog
+          .Create()
+          .Information(ex, "Send operation failed after {elapsed} seconds", sendTimer.Elapsed.TotalSeconds);
         if (ex is OperationCanceledException or SpeckleException)
         {
           throw;
@@ -124,7 +122,8 @@ public static partial class Operations
       }
 
       sendTimer.Stop();
-      SpeckleLog.Create()/*.Log.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
+      SpeckleLog
+        .Create() /*.Log.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
         .ForContext("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...")
         .ForContext("serializerElapsed", serializerV2.Elapsed)*/
         .Information(

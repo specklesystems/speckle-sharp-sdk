@@ -13,7 +13,6 @@ using Speckle.Core.Transports;
 
 namespace Speckle.Core.Tests.Integration;
 
-
 public static class Fixtures
 {
   public static readonly ServerInfo Server = new() { url = "http://localhost:3000", name = "Docker Server" };

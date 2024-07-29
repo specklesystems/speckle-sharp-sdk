@@ -536,10 +536,9 @@ public static class AccountManager
     if (string.IsNullOrEmpty(localUrl))
     {
       localUrl = GetDefaultServerUrl();
-      SpeckleLog.Create().Debug(
-        "The provided server url was null or empty. Changed to the default url {serverUrl}",
-        localUrl
-      );
+      SpeckleLog
+        .Create()
+        .Debug("The provided server url was null or empty. Changed to the default url {serverUrl}", localUrl);
     }
     return localUrl.TrimEnd('/');
   }
@@ -600,28 +599,30 @@ public static class AccountManager
     // this is means the task timed out
     if (completedTask != task)
     {
-      SpeckleLog.Create().Warning(
-        "Local auth flow failed to complete within the timeout window. Access code is {accessCode}",
-        accessCode
-      );
+      SpeckleLog
+        .Create()
+        .Warning(
+          "Local auth flow failed to complete within the timeout window. Access code is {accessCode}",
+          accessCode
+        );
       throw new Exception("Local auth flow failed to complete within the timeout window");
     }
 
     if (task.IsFaulted)
     {
-      SpeckleLog.Create().Error(
-        task.Exception,
-        "Getting access code flow failed with {exceptionMessage}",
-        task.Exception.Message
-      );
+      SpeckleLog
+        .Create()
+        .Error(task.Exception, "Getting access code flow failed with {exceptionMessage}", task.Exception.Message);
       throw new Exception($"Auth flow failed: {task.Exception.Message}", task.Exception);
     }
 
     // task completed within timeout
-    SpeckleLog.Create().Information(
-      "Local auth flow completed successfully within the timeout window. Access code is {accessCode}",
-      accessCode
-    );
+    SpeckleLog
+      .Create()
+      .Information(
+        "Local auth flow completed successfully within the timeout window. Access code is {accessCode}",
+        accessCode
+      );
     return accessCode;
   }
 
@@ -855,12 +856,9 @@ public static class AccountManager
     }
     catch (SpeckleGraphQLException<ActiveUserResponse> ex)
     {
-      SpeckleLog.Create().Warning(
-        ex,
-        "Swallowing exception in {methodName}: {exceptionMessage}",
-        nameof(GetServerInfo),
-        ex.Message
-      );
+      SpeckleLog
+        .Create()
+        .Warning(ex, "Swallowing exception in {methodName}: {exceptionMessage}", nameof(GetServerInfo), ex.Message);
       return null;
     }
   }
@@ -875,12 +873,9 @@ public static class AccountManager
     }
     catch (SpeckleGraphQLException<ActiveUserResponse> ex)
     {
-      SpeckleLog.Create().Warning(
-        ex,
-        "Swallowing exception in {methodName}: {exceptionMessage}",
-        nameof(GetUserInfo),
-        ex.Message
-      );
+      SpeckleLog
+        .Create()
+        .Warning(ex, "Swallowing exception in {methodName}: {exceptionMessage}", nameof(GetUserInfo), ex.Message);
       return null;
     }
   }

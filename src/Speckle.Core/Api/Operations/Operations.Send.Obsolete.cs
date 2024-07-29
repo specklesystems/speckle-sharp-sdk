@@ -133,9 +133,9 @@ public static partial class Operations
       transports.Insert(0, sqLiteTransport);
     }
 
-   var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
+    var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
 
-  using var activity = SpeckleActivityFactory.Start();
+    using var activity = SpeckleActivityFactory.Start();
     // make sure all logs in the operation have the proper context
     activity?.SetTag("transportContext", transportContext);
     {
@@ -182,10 +182,9 @@ public static partial class Operations
 
       if (cancellationToken.IsCancellationRequested)
       {
-        SpeckleLog.Create().Information(
-          "Send operation cancelled after {elapsed} seconds",
-          sendTimer.Elapsed.TotalSeconds
-        );
+        SpeckleLog
+          .Create()
+          .Information("Send operation cancelled after {elapsed} seconds", sendTimer.Elapsed.TotalSeconds);
         cancellationToken.ThrowIfCancellationRequested();
       }
 
@@ -220,7 +219,8 @@ public static partial class Operations
       var hash = idToken.ToString();
 
       sendTimer.Stop();
-      SpeckleLog.Create()/*.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
+      SpeckleLog
+        .Create() /*.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
         .ForContext("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...")
         .ForContext("serializerElapsed", serializerV2?.Elapsed)*/
         .Information(

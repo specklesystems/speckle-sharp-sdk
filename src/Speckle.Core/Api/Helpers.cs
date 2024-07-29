@@ -287,11 +287,13 @@ public static class Helpers
 
     if (timestamp <= new DateTime(1800, 1, 1))
     {
-      SpeckleLog.Create().Warning(
-        "Tried to calculate {functionName} of a DateTime value that was way in the past: {dateTimeValue}",
-        nameof(TimeAgo),
-        timestamp
-      );
+      SpeckleLog
+        .Create()
+        .Warning(
+          "Tried to calculate {functionName} of a DateTime value that was way in the past: {dateTimeValue}",
+          nameof(TimeAgo),
+          timestamp
+        );
       // We assume this was an error, Likely a non-nullable DateTime was initialized/deserialized to the default
       // Instead of potentially lying to the user, lets tell them we don't know what happened.
       return "Unknown";

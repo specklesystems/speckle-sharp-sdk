@@ -47,16 +47,15 @@ public static class Setup
 
   public static IDisposable Initialize(
     string hostApplicationName,
-    string hostApplicationVersion, SpeckleLogConfiguration? logConfiguration = null
+    string hostApplicationVersion,
+    SpeckleLogConfiguration? logConfiguration = null
   )
   {
     if (s_initialized)
     {
-      SpeckleLog.Create("Speckle.Core.Setup")
-        .Information(
-          "Setup was already initialized with {currentHostApp}",
-          hostApplicationName
-        );
+      SpeckleLog
+        .Create("Speckle.Core.Setup")
+        .Information("Setup was already initialized with {currentHostApp}", hostApplicationName);
       throw new InvalidOperationException();
     }
 
@@ -70,14 +69,14 @@ public static class Setup
     Mutex = new Mutex(false, "SpeckleConnector-" + hostApplicationName);
 
     var traceProvider = TraceBuilder.Initialize(hostApplicationName, logConfiguration);
-    SpeckleLog.Initialize(GetUserIdFromDefaultAccount(), hostApplicationName,hostApplicationVersion,logConfiguration );
+    SpeckleLog.Initialize(GetUserIdFromDefaultAccount(), hostApplicationName, hostApplicationVersion, logConfiguration);
 
     foreach (var account in AccountManager.GetAccounts())
     {
       Analytics.AddConnectorToProfile(account.GetHashedEmail(), hostApplicationName);
       Analytics.IdentifyProfile(account.GetHashedEmail(), hostApplicationName);
     }
-    
+
     SpeckleActivityFactory.Initialize(hostApplicationName, hostApplicationVersion);
 
     return traceProvider;
@@ -90,7 +89,7 @@ public static class Setup
     get => Mutex;
     set => Mutex = value;
   }
-  
+
   private static string GetUserIdFromDefaultAccount()
   {
     var machineName = Environment.MachineName;

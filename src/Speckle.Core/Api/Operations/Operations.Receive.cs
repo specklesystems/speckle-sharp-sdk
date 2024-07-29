@@ -1,4 +1,3 @@
-
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Speckle.Core.Models;
@@ -72,12 +71,14 @@ public static partial class Operations
     var timer = Stopwatch.StartNew();
 
     // Receive Json
-    SpeckleLog.Create().Information(
-      "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
-      objectId,
-      localTransport.TransportName,
-      remoteTransport?.TransportName
-    );
+    SpeckleLog
+      .Create()
+      .Information(
+        "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
+        objectId,
+        localTransport.TransportName,
+        remoteTransport?.TransportName
+      );
 
     // Try Local Receive
     string? objString = LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
@@ -95,11 +96,13 @@ public static partial class Operations
         throw ex;
       }
 
-      SpeckleLog.Create().Debug(
-        "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
-        objectId,
-        remoteTransport.TransportName
-      );
+      SpeckleLog
+        .Create()
+        .Debug(
+          "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
+          objectId,
+          remoteTransport.TransportName
+        );
 
       objString = await RemoteReceive(objectId, remoteTransport, localTransport, onTotalChildrenCountKnown)
         .ConfigureAwait(false);
@@ -110,7 +113,8 @@ public static partial class Operations
     Base res = serializerV2.Deserialize(objString);
 
     timer.Stop();
-    SpeckleLog.Create("Deserialize")
+    SpeckleLog
+      .Create("Deserialize")
       .Information(
         "Finished receiving {objectId} from {source} in {elapsed} seconds",
         objectId,

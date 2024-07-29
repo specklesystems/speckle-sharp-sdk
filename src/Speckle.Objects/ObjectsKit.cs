@@ -117,8 +117,15 @@ public class ObjectsKit : ISpeckleKit
       throw new SpeckleException($"No suitable converter instance found for {app}");
     }
 
-    SpeckleLog.Create()
-      .Information("Converter {converterName} successfully loaded from {path} with {app} and {basePath}", converterInstance.Name, path, app, basePath);
+    SpeckleLog
+      .Create()
+      .Information(
+        "Converter {converterName} successfully loaded from {path} with {app} and {basePath}",
+        converterInstance.Name,
+        path,
+        app,
+        basePath
+      );
 
     return converterInstance;
   }

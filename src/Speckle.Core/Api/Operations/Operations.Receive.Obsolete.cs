@@ -345,12 +345,14 @@ public static partial class Operations
     activity?.SetTag("objectId", objectId);
     {
       var timer = Stopwatch.StartNew();
-      SpeckleLog.Create("Operations.Receive").Information(
-        "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
-        objectId,
-        localTransport.TransportName,
-        remoteTransport?.TransportName
-      );
+      SpeckleLog
+        .Create("Operations.Receive")
+        .Information(
+          "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
+          objectId,
+          localTransport.TransportName,
+          remoteTransport?.TransportName
+        );
 
       BaseObjectSerializer? serializer = null;
       JsonSerializerSettings? settings = null;
@@ -429,7 +431,8 @@ public static partial class Operations
             .Where(t => t != null)
             .ToDictionary(t => t!.TransportName, t => t!.Elapsed)
         );
-        SpeckleLog.Create("Operations.Receive")
+        SpeckleLog
+          .Create("Operations.Receive")
           .Information(
             "Finished receiving {objectId} from {source} in {elapsed} seconds",
             objectId,
@@ -445,7 +448,9 @@ public static partial class Operations
           $"Could not find specified object using the local transport {localTransport.TransportName}, and you didn't provide a fallback remote from which to pull it."
         );
 
-        SpeckleLog.Create("Operations.Receive").Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
+        SpeckleLog
+          .Create("Operations.Receive")
+          .Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
         throw ex;
       }
 
@@ -454,10 +459,12 @@ public static partial class Operations
       remoteTransport.OnProgressAction = internalProgressAction;
       remoteTransport.CancellationToken = cancellationToken;
 
-      SpeckleLog.Create("Operations.Receive").Debug(
-        "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
-        remoteTransport.TransportName
-      );
+      SpeckleLog
+        .Create("Operations.Receive")
+        .Debug(
+          "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
+          remoteTransport.TransportName
+        );
       objString = await remoteTransport
         .CopyObjectAndChildren(objectId, localTransport, onTotalChildrenCountKnown)
         .ConfigureAwait(false);
@@ -478,14 +485,15 @@ public static partial class Operations
         dr.Dispose();
       }
 
-      SpeckleLog.Create("Operations.Receive")
-       /* .Log.ForContext("deserializerElapsed", serializerV2?.Elapsed)
-        .ForContext(
-          "transportElapsedBreakdown",
-          new[] { localTransport, remoteTransport }
-            .Where(t => t != null)
-            .ToDictionary(t => t.TransportName, t => t.Elapsed)
-        )*/
+      SpeckleLog
+        .Create("Operations.Receive")
+        /* .Log.ForContext("deserializerElapsed", serializerV2?.Elapsed)
+         .ForContext(
+           "transportElapsedBreakdown",
+           new[] { localTransport, remoteTransport }
+             .Where(t => t != null)
+             .ToDictionary(t => t.TransportName, t => t.Elapsed)
+         )*/
         .Information(
           "Finished receiving {objectId} from {source} in {elapsed} seconds",
           objectId,

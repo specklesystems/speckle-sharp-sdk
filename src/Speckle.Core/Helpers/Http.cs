@@ -119,11 +119,13 @@ public static class Http
       return true;
     }
 
-    SpeckleLog.Create().Warning(
-      policyResult.FinalException,
-      "Failed to ping {hostnameOrAddress} cause: {exceptionMessage}",
-      policyResult.FinalException.Message
-    );
+    SpeckleLog
+      .Create()
+      .Warning(
+        policyResult.FinalException,
+        "Failed to ping {hostnameOrAddress} cause: {exceptionMessage}",
+        policyResult.FinalException.Message
+      );
     return false;
   }
 
@@ -218,8 +220,9 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
       timer.Stop();
       var status = policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed";
       context.TryGetValue("retryCount", out var retryCount);
-      SpeckleLog.Create()
-       // .Log.ForContext("ExceptionType", policyResult.FinalException?.GetType())
+      SpeckleLog
+        .Create()
+        // .Log.ForContext("ExceptionType", policyResult.FinalException?.GetType())
         .Information(
           "Execution of http request to {httpScheme}://{hostUrl}/{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries",
           request.RequestUri.Scheme,

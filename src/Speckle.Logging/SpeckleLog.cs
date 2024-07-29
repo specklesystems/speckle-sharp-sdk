@@ -20,23 +20,30 @@ public static class SpeckleLog
   private static string s_logFolderPath;
 
   public static ILoggerFactory GetLoggerFactory() => _loggerFactory ?? _nullLoggerFactory;
-  public static void Initialize(string userId,  string hostApplicationName,
-    string? hostApplicationVersion,SpeckleLogConfiguration logConfiguration)
+
+  public static void Initialize(
+    string userId,
+    string hostApplicationName,
+    string? hostApplicationVersion,
+    SpeckleLogConfiguration logConfiguration
+  )
   {
     if (_loggerFactory is null)
     {
-      
       logConfiguration ??= new SpeckleLogConfiguration();
 
-    var logger = CreateConfiguredLogger(userId, hostApplicationName, hostApplicationVersion, logConfiguration);
+      var logger = CreateConfiguredLogger(userId, hostApplicationName, hostApplicationVersion, logConfiguration);
 
-    Log.Logger = logger;
+      Log.Logger = logger;
       _loggerFactory = new SerilogLoggerFactory();
     }
   }
-  public static ILogger Create<T>() =>  GetLoggerFactory().CreateLogger<T>();
-  public static ILogger Create([CallerMemberName]string category = "SpeckleLog") =>  GetLoggerFactory().CreateLogger(category);
-  
+
+  public static ILogger Create<T>() => GetLoggerFactory().CreateLogger<T>();
+
+  public static ILogger Create([CallerMemberName] string category = "SpeckleLog") =>
+    GetLoggerFactory().CreateLogger(category);
+
   private static Serilog.ILogger CreateConfiguredLogger(
     string userId,
     string hostApplicationName,
@@ -99,12 +106,14 @@ public static class SpeckleLog
       logger.Warning("Log to file is enabled, but cannot write to {LogFilePath}", logFilePath);
     }
     return logger;
-  } 
+  }
+
   private static FileVersionInfo GetFileVersionInfo()
   {
     var assembly = Assembly.GetExecutingAssembly().Location;
     return FileVersionInfo.GetVersionInfo(assembly);
   }
+
   private static string DetermineHostOsSlug()
   {
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

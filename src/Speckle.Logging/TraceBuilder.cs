@@ -7,16 +7,13 @@ public class TraceBuilder(IDisposable? traceProvider) : IDisposable
 {
   public static IDisposable Initialize(string application, SpeckleLogConfiguration logConfiguration)
   {
-    var tracerProviderBuilder = Sdk.CreateTracerProviderBuilder()
-      .AddSource(application)
-      .AddZipkinExporter();
+    var tracerProviderBuilder = Sdk.CreateTracerProviderBuilder().AddSource(application).AddZipkinExporter();
 
     if (logConfiguration.LogToConsole)
     {
       tracerProviderBuilder = tracerProviderBuilder.AddConsoleExporter();
     }
-      
-      
+
     return new TraceBuilder(tracerProviderBuilder.Build());
   }
 

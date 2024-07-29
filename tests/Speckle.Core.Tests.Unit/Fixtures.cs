@@ -7,7 +7,6 @@ using Speckle.Core.Transports;
 
 namespace Speckle.Core.Tests.Unit;
 
-
 public abstract class Fixtures
 {
   private static readonly SQLiteTransport s_accountStorage = new(scope: "Accounts");
