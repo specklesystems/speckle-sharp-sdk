@@ -1,11 +1,11 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.Extensions.Logging;
 using Speckle.Core.Credentials;
+using Speckle.Core.Helpers;
 using Speckle.Core.Kits;
-using Speckle.Core.Logging;
+using Speckle.Logging;
 
-namespace Speckle.Logging;
+namespace Speckle.Core.Logging;
 
 /// <summary>
 ///  Anonymous telemetry to help us understand how to make a better Speckle.
@@ -45,8 +45,9 @@ public static class Setup
   /// </summary>
   internal static string VersionedHostApplication { get; private set; } = HostApplications.Other.Slug;
 
-  public static void Init(
-    string application, ILoggerFactory loggerFactory
+  public static IDisposable Initialize(
+    string hostApplicationName,
+    string? hostApplicationVersion
   )
   {
     if (s_initialized)
@@ -54,25 +55,28 @@ public static class Setup
       SpeckleLogger.Create("Speckle.Core.Setup")
         .Information(
           "Setup was already initialized with {currentHostApp}",
-          application
+          hostApplicationName
         );
-      return;
+      throw new InvalidOperationException();
     }
 
     s_initialized = true;
 
-    HostApplication = application;
+    HostApplication = hostApplicationName;
 
     //start mutex so that Manager can detect if this process is running
-    Mutex = new Mutex(false, "SpeckleConnector-" + application);
+    Mutex = new Mutex(false, "SpeckleConnector-" + hostApplicationName);
 
-    SpeckleLogger.Initialize(loggerFactory);
+    var traceProvider = OpenTelemetryBuilder.Initialize(hostApplicationName);
+    SpeckleLogger.Initialize(GetUserIdFromDefaultAccount(), hostApplicationName,hostApplicationVersion );
 
     foreach (var account in AccountManager.GetAccounts())
     {
-      Analytics.AddConnectorToProfile(account.GetHashedEmail(), application);
-      Analytics.IdentifyProfile(account.GetHashedEmail(), application);
+      Analytics.AddConnectorToProfile(account.GetHashedEmail(), hostApplicationName);
+      Analytics.IdentifyProfile(account.GetHashedEmail(), hostApplicationName);
     }
+
+    return traceProvider;
   }
 
   [Obsolete("Use " + nameof(Mutex))]
@@ -81,5 +85,25 @@ public static class Setup
   {
     get => Mutex;
     set => Mutex = value;
+  }
+  
+  private static string GetUserIdFromDefaultAccount()
+  {
+    var machineName = Environment.MachineName;
+    var userName = Environment.UserName;
+    var id = Crypt.Md5($"{machineName}:{userName}", "X2");
+    try
+    {
+      var defaultAccount = AccountManager.GetDefaultAccount();
+      if (defaultAccount != null)
+      {
+        id = defaultAccount.GetHashedEmail();
+      }
+    }
+    catch (Exception ex) when (!ex.IsFatal())
+    {
+      // To log it after Logger initialized as deferred action.
+    }
+    return id;
   }
 }
