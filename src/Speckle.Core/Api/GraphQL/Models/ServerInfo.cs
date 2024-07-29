@@ -7,11 +7,11 @@ namespace Speckle.Core.Api.GraphQL.Models;
 [ComVisible(true)]
 public sealed class ServerInfo
 {
-  public string name { get; set; }
-  public string company { get; set; }
-  public string version { get; set; }
-  public string adminContact { get; set; }
-  public string description { get; set; }
+  public string name { get; init; }
+  public string company { get; init; }
+  public string version { get; init; }
+  public string adminContact { get; init; }
+  public string description { get; init; }
 
   /// <remarks>
   /// This field is not returned from the GQL API,
