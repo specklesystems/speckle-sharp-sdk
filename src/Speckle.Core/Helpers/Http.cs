@@ -197,7 +197,7 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
     var context = new Context();
     using var activity = SpeckleActivityFactory.Start();
     {
-      SpeckleLog.Logger.Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
+      SpeckleLog.Create().Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
       var timer = Stopwatch.StartNew();
 
       context.Add("retryCount", 0);
