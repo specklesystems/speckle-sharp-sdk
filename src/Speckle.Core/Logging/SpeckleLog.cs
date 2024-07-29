@@ -1,14 +1,6 @@
-using System;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Sentry;
-using Serilog;
-using Serilog.Core;
-using Serilog.Events;
-using Serilog.Exceptions;
-using Speckle.Core.Common;
 using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
 

@@ -1,7 +1,5 @@
 ﻿#nullable disable
-using System;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Runtime.Serialization;
 using Speckle.Newtonsoft.Json;
 
