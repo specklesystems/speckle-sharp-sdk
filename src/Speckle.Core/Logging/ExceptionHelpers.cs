@@ -1,6 +1,4 @@
-using System;
 using System.Diagnostics.Contracts;
-using System.Threading;
 
 namespace Speckle.Core.Logging;
 

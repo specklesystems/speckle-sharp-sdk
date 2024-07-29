@@ -21,7 +21,7 @@ public sealed class MemoryTransport : ITransport, ICloneable
   public MemoryTransport(IDictionary<string, string> objects)
   {
     Objects = objects;
-    SpeckleLog.Logger.Debug("Creating a new Memory Transport");
+    SpeckleLogger.Create().Debug("Creating a new Memory Transport");
   }
 
   public object Clone()

@@ -99,7 +99,7 @@ public abstract class CommitObjectBuilder<TNativeObjectData>
       catch (Exception ex) when (!ex.IsFatal())
       {
         // This should never happen, we should be ensuring that at least one of the parents is valid.
-        SpeckleLog.Logger.Fatal(ex, "Failed to add object {speckleType} to commit object", c?.GetType());
+        SpeckleLogger.Create().Fatal(ex, "Failed to add object {speckleType} to commit object", c?.GetType());
       }
     }
   }
@@ -151,7 +151,7 @@ public abstract class CommitObjectBuilder<TNativeObjectData>
       catch (Exception ex) when (!ex.IsFatal())
       {
         // A parent was found, but it was invalid (Likely because of a type mismatch on a `elements` property)
-        SpeckleLog.Logger.Warning(ex, "Failed to add object {speckleType} to a converted parent", current.GetType());
+        SpeckleLogger.Create().Warning(ex, "Failed to add object {speckleType} to a converted parent", current.GetType());
       }
     }
 

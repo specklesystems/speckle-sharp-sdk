@@ -1,8 +1,8 @@
-#nullable disable
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using Speckle.Core.Credentials;
 using Speckle.Core.Kits;
 
@@ -47,38 +47,32 @@ public static class Setup
   internal static string VersionedHostApplication { get; private set; } = HostApplications.Other.Slug;
 
   public static void Init(
-    string versionedHostApplication,
-    string hostApplication,
-    SpeckleLogConfiguration logConfiguration = null
+    string application, ILoggerFactory loggerFactory
   )
   {
     if (s_initialized)
     {
-      SpeckleLog
-        .Logger//.ForContext("newVersionedHostApplication", versionedHostApplication)
-        //.ForContext("newHostApplication", hostApplication)
+      SpeckleLogger.Create("Speckle.Core.Setup")
         .Information(
-          "Setup was already initialized with {currentHostApp} {currentVersionedHostApp}",
-          hostApplication,
-          versionedHostApplication
+          "Setup was already initialized with {currentHostApp}",
+          application
         );
       return;
     }
 
     s_initialized = true;
 
-    HostApplication = hostApplication;
-    VersionedHostApplication = versionedHostApplication;
+    HostApplication = application;
 
     //start mutex so that Manager can detect if this process is running
-    Mutex = new Mutex(false, "SpeckleConnector-" + hostApplication);
+    Mutex = new Mutex(false, "SpeckleConnector-" + application);
 
-    SpeckleLog.Initialize(hostApplication, versionedHostApplication, logConfiguration);
+    SpeckleLogger.Initialize(loggerFactory);
 
     foreach (var account in AccountManager.GetAccounts())
     {
-      Analytics.AddConnectorToProfile(account.GetHashedEmail(), hostApplication);
-      Analytics.IdentifyProfile(account.GetHashedEmail(), hostApplication);
+      Analytics.AddConnectorToProfile(account.GetHashedEmail(), application);
+      Analytics.IdentifyProfile(account.GetHashedEmail(), application);
     }
   }
 

@@ -16,6 +16,7 @@
     <PackageVersion Include="NUnit" Version="4.1.0" />
     <PackageVersion Include="NUnit.Analyzers" Version="4.2.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.Zipkin" version="1.5.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" version="1.5.1-beta.1" />
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />

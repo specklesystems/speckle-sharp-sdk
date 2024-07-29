@@ -20,5 +20,10 @@
   <PackageReference Include="Serilog.Sinks.Console"  PrivateAssets="all"/>
   <PackageReference Include="Serilog.Sinks.Seq"  PrivateAssets="all"/>
   <PackageReference Include="SerilogTimings"  PrivateAssets="all"/>
+  <PackageReference Include="OpenTelemetry.Exporter.Zipkin"  PrivateAssets="all"/>
+  <PackageReference Include="OpenTelemetry.Instrumentation.Http" NoWarn="NU1902"  PrivateAssets="all"/>
 </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Speckle.Core\Speckle.Core.csproj" />
+  </ItemGroup>
 </Project>

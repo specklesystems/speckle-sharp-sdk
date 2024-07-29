@@ -308,7 +308,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
           }
           catch (Exception ex) when (!ex.IsFatal())
           {
-            SpeckleLog.Logger.Warning(ex, "Failed to get computed member: {name}", attr.Name);
+            SpeckleLogger.Create().Warning(ex, "Failed to get computed member: {name}", attr.Name);
             dic[attr.Name] = null;
           }
         });

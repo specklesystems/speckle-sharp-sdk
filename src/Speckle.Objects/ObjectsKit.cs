@@ -70,7 +70,7 @@ public class ObjectsKit : ISpeckleKit
     }
     catch (Exception ex)
     {
-      SpeckleLog.Logger.Fatal(ex, "Failed to load converter for app {app}", app);
+      SpeckleLogger.Create().Fatal(ex, "Failed to load converter for app {app}", app);
       throw new KitException($"Failed to load converter for app {app}:\n\n{ex.Message}", this, ex);
     }
   }
@@ -116,8 +116,7 @@ public class ObjectsKit : ISpeckleKit
       throw new SpeckleException($"No suitable converter instance found for {app}");
     }
 
-    SpeckleLog
-      .Logger
+    SpeckleLogger.Create()
       .Information("Converter {converterName} successfully loaded from {path} with {app} and {basePath}", converterInstance.Name, path, app, basePath);
 
     return converterInstance;

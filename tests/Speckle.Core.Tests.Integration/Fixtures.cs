@@ -2,34 +2,17 @@ using System.Globalization;
 using System.Net.Mime;
 using System.Text;
 using System.Web;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Serilog.Events;
 using Speckle.Core.Api;
 using Speckle.Core.Api.GraphQL.Inputs;
 using Speckle.Core.Api.GraphQL.Models;
 using Speckle.Core.Common;
 using Speckle.Core.Credentials;
-using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports;
 
 namespace Speckle.Core.Tests.Integration;
 
-[SetUpFixture]
-public class SetUp
-{
-  [OneTimeSetUp]
-  public void BeforeAll()
-  {
-    SpeckleLog.Initialize(
-      "Core",
-      "Testing",
-      new SpeckleLogConfiguration(logToFile: false, logToSeq: false)
-    );
-    SpeckleLog.Logger.Warning("Initialized logger for testing");
-  }
-}
 
 public static class Fixtures
 {

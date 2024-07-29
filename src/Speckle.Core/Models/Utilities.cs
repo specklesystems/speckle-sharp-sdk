@@ -122,7 +122,7 @@ public static class Utilities
     }
     catch (Exception ex) when (!ex.IsFatal())
     {
-      SpeckleLog.Logger.Warning(ex, "Failed to get application properties");
+      SpeckleLogger.Create().Warning(ex, "Failed to get application properties");
     }
 
     return appProps;

@@ -32,9 +32,5 @@
     <PackageReference Include="Speckle.Newtonsoft.Json" />
     <PackageReference Include="System.Text.Json"  PrivateAssets="all"/>
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Speckle.Logging\Speckle.Logging.csproj" />
-  </ItemGroup>
   
 </Project>

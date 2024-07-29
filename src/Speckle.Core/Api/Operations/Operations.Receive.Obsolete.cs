@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Serilog.Context;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation;
@@ -344,12 +338,13 @@ public static partial class Operations
   {
     var hasUserProvidedLocalTransport = localTransport != null;
     localTransport ??= new SQLiteTransport();
-   /* using (LogContext.PushProperty("remoteTransportContext", remoteTransport?.TransportContext))
-    using (LogContext.PushProperty("localTransportContext", localTransport.TransportContext))
-    using (LogContext.PushProperty("objectId", objectId))*/
+    using var activity = SpeckleActivityFactory.Start("Operations.Receive");
+    activity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
+    activity?.SetTag("localTransportContext", localTransport.TransportContext);
+    activity?.SetTag("objectId", objectId);
     {
       var timer = Stopwatch.StartNew();
-      SpeckleLog.Logger.Information(
+      SpeckleLogger.Create("Operations.Receive").Information(
         "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
         objectId,
         localTransport.TransportName,
@@ -425,14 +420,15 @@ public static partial class Operations
         }
 
         timer.Stop();
-        SpeckleLog.Logger
-          /*.Log.ForContext("deserializerElapsed", serializerV2?.Elapsed)
-          .ForContext(
-            "transportElapsedBreakdown",
-            new[] { localTransport, remoteTransport }
-              .Where(t => t != null)
-              .ToDictionary(t => t!.TransportName, t => t!.Elapsed)
-          )*/
+        using var elapsed = SpeckleActivityFactory.Start("Operations.Receive");
+        elapsed?.SetTag("deserializerElapsed", serializerV2?.Elapsed);
+        elapsed?.SetTag(
+          "transportElapsedBreakdown",
+          new[] { localTransport, remoteTransport }
+            .Where(t => t != null)
+            .ToDictionary(t => t!.TransportName, t => t!.Elapsed)
+        );
+        SpeckleLogger.Create("Operations.Receive")
           .Information(
             "Finished receiving {objectId} from {source} in {elapsed} seconds",
             objectId,
@@ -448,7 +444,7 @@ public static partial class Operations
           $"Could not find specified object using the local transport {localTransport.TransportName}, and you didn't provide a fallback remote from which to pull it."
         );
 
-        SpeckleLog.Logger.Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
+        SpeckleLogger.Create("Operations.Receive").Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
         throw ex;
       }
 
@@ -457,7 +453,7 @@ public static partial class Operations
       remoteTransport.OnProgressAction = internalProgressAction;
       remoteTransport.CancellationToken = cancellationToken;
 
-      SpeckleLog.Logger.Debug(
+      SpeckleLogger.Create("Operations.Receive").Debug(
         "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
         remoteTransport.TransportName
       );
@@ -481,7 +477,7 @@ public static partial class Operations
         dr.Dispose();
       }
 
-      SpeckleLog.Logger
+      SpeckleLogger.Create("Operations.Receive")
        /* .Log.ForContext("deserializerElapsed", serializerV2?.Elapsed)
         .ForContext(
           "transportElapsedBreakdown",

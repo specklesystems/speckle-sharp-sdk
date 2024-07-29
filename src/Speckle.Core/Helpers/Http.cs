@@ -62,8 +62,9 @@ public static class Http
     }
     catch (HttpRequestException ex)
     {
-      //.Log.ForContext("defaultServer", defaultServer)
-      SpeckleLog.Logger.Warning(ex, "Failed to ping internet");
+      using var activity = SpeckleActivityFactory.Start();
+      activity?.SetTag("defaultServer", defaultServer);
+      SpeckleLogger.Create().Warning(ex, "Failed to ping internet");
 
       return false;
     }
@@ -76,7 +77,7 @@ public static class Http
   /// <returns>True if the the status code is 200, false otherwise.</returns>
   public static async Task<bool> Ping(string hostnameOrAddress)
   {
-    SpeckleLog.Logger.Information("Pinging {hostnameOrAddress}", hostnameOrAddress);
+    SpeckleLogger.Create().Information("Pinging {hostnameOrAddress}", hostnameOrAddress);
     var policy = Policy
       .Handle<PingException>()
       .Or<SocketException>()
@@ -117,7 +118,7 @@ public static class Http
       return true;
     }
 
-    SpeckleLog.Logger.Warning(
+    SpeckleLogger.Create().Warning(
       policyResult.FinalException,
       "Failed to ping {hostnameOrAddress} cause: {exceptionMessage}",
       policyResult.FinalException.Message
@@ -137,12 +138,12 @@ public static class Http
       using var httpClient = GetHttpProxyClient();
       HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
       response.EnsureSuccessStatusCode();
-      SpeckleLog.Logger.Information("Successfully pinged {uri}", uri);
+      SpeckleLogger.Create().Information("Successfully pinged {uri}", uri);
       return response;
     }
     catch (HttpRequestException ex)
     {
-      SpeckleLog.Logger.Warning(ex, "Ping to {uri} was unsuccessful: {message}", uri, ex.Message);
+      SpeckleLogger.Create().Warning(ex, "Ping to {uri} was unsuccessful: {message}", uri, ex.Message);
       throw new HttpRequestException($"Ping to {uri} was unsuccessful", ex);
     }
   }
@@ -197,11 +198,9 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
     // this is a preliminary client server correlation implementation
     // refactor this, when we have a better observability stack
     var context = new Context();
-   /* using (LogContext.PushProperty("correlationId", context.CorrelationId))
-    using (LogContext.PushProperty("targetUrl", request.RequestUri))
-    using (LogContext.PushProperty("httpMethod", request.Method))*/
+    using var activity = SpeckleActivityFactory.Start();
     {
-      SpeckleLog.Logger.Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
+      SpeckleLogger.Create().Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
       var timer = new Stopwatch();
       timer.Start();
       context.Add("retryCount", 0);
@@ -218,7 +217,7 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
       timer.Stop();
       var status = policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed";
       context.TryGetValue("retryCount", out var retryCount);
-      SpeckleLog.Logger
+      SpeckleLogger.Create()
        // .Log.ForContext("ExceptionType", policyResult.FinalException?.GetType())
         .Information(
           "Execution of http request to {httpScheme}://{hostUrl}/{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries",

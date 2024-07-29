@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Serilog.Context;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation;
@@ -145,7 +139,7 @@ public static partial class Operations
     //using (LogContext.PushProperty("correlationId", Guid.NewGuid().ToString()))
     {
       var sendTimer = Stopwatch.StartNew();
-      SpeckleLog.Logger.Information("Starting send operation");
+      SpeckleLogger.Create().Information("Starting send operation");
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
@@ -187,7 +181,7 @@ public static partial class Operations
 
       if (cancellationToken.IsCancellationRequested)
       {
-        SpeckleLog.Logger.Information(
+        SpeckleLogger.Create().Information(
           "Send operation cancelled after {elapsed} seconds",
           sendTimer.Elapsed.TotalSeconds
         );
@@ -212,7 +206,7 @@ public static partial class Operations
 
       if (cancellationToken.IsCancellationRequested)
       {
-        SpeckleLog.Logger.Information("Send operation cancelled after {elapsed}", sendTimer.Elapsed.TotalSeconds);
+        SpeckleLogger.Create().Information("Send operation cancelled after {elapsed}", sendTimer.Elapsed.TotalSeconds);
         cancellationToken.ThrowIfCancellationRequested();
       }
 
@@ -225,7 +219,7 @@ public static partial class Operations
       var hash = idToken.ToString();
 
       sendTimer.Stop();
-      SpeckleLog.Logger/*.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
+      SpeckleLogger.Create()/*.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
         .ForContext("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...")
         .ForContext("serializerElapsed", serializerV2?.Elapsed)*/
         .Information(

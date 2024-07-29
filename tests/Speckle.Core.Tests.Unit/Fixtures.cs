@@ -7,18 +7,6 @@ using Speckle.Core.Transports;
 
 namespace Speckle.Core.Tests.Unit;
 
-[SetUpFixture]
-public class SetUp
-{
-  public static SpeckleLogConfiguration TestLogConfig { get; } = new(logToFile: false, logToSeq: false);
-
-  [OneTimeSetUp]
-  public void BeforeAll()
-  {
-    SpeckleLog.Initialize("Speckle.Core", "Testing", TestLogConfig);
-    SpeckleLog.Logger.Information("Initialized logger for testing");
-  }
-}
 
 public abstract class Fixtures
 {

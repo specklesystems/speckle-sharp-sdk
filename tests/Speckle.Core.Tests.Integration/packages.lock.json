@@ -217,7 +217,6 @@
           "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
           "Polly.Extensions.Http": "[3.0.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
-          "Speckle.Logging": "[1.0.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )"
         }
       },
@@ -232,9 +231,6 @@
           "Speckle.Transports.Disk": "[1.0.0, )",
           "altcover": "[8.8.74, )"
         }
-      },
-      "speckle.logging": {
-        "type": "Project"
       },
       "speckle.transports.disk": {
         "type": "Project",
