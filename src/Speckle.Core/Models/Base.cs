@@ -271,14 +271,15 @@ public class Base : DynamicBase
       {
         // avoids any last ditch unsettable or strange props.
         SpeckleLog
-          .Create() //.ForContext("canWrite", propertyInfo?.CanWrite)
-          //.ForContext("canRead", propertyInfo?.CanRead)
+          .Create()
           .Warning(
-            "Shallow copy of {type} failed to copy {propertyName} of type {propertyType} with value {valueType}",
+            "Shallow copy of {type} failed to copy {propertyName} of type {propertyType} with value {valueType} - CanWrite / CanRead",
             type,
             kvp.Key,
             propertyInfo?.PropertyType,
-            kvp.Value?.GetType()
+            kvp.Value?.GetType(),
+            propertyInfo?.CanWrite,
+            propertyInfo?.CanRead
           );
       }
     }

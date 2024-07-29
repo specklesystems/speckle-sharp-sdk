@@ -65,9 +65,10 @@ public static partial class Operations
       };
 
     // Setup Logging
-    /*using IDisposable d2 = LogContext.PushProperty("remoteTransportContext", remoteTransport?.TransportContext);
-    using IDisposable d3 = LogContext.PushProperty("localTransportContext", localTransport.TransportContext);
-    using IDisposable d4 = LogContext.PushProperty("objectId", objectId);*/
+    using var receiveActivity = SpeckleActivityFactory.Start();
+    receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
+    receiveActivity?.SetTag("localTransportContext", localTransport.TransportContext);
+    receiveActivity?.SetTag("objectId", objectId);
     var timer = Stopwatch.StartNew();
 
     // Receive Json

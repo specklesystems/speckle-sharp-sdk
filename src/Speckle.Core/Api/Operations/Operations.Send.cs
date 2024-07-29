@@ -76,11 +76,12 @@ public static partial class Operations
       throw new ArgumentException("Expected at least on transport to be specified", nameof(transports));
     }
 
-    // var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
+    var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
 
     // make sure all logs in the operation have the proper context
-    //using (LogContext.PushProperty("transportContext", transportContext))
-    //using (LogContext.PushProperty("correlationId", Guid.NewGuid().ToString()))
+    using var activity = SpeckleActivityFactory.Start();
+    activity?.SetTag("transportContext", transportContext);
+    activity?.SetTag("correlationId", Guid.NewGuid().ToString());
     {
       var sendTimer = Stopwatch.StartNew();
       SpeckleLog.Create().Information("Starting send operation");
@@ -122,10 +123,11 @@ public static partial class Operations
       }
 
       sendTimer.Stop();
+      activity?.SetTag("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed));
+      activity?.SetTag("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...");
+      activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
       SpeckleLog
-        .Create() /*.Log.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
-        .ForContext("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...")
-        .ForContext("serializerElapsed", serializerV2.Elapsed)*/
+        .Create()
         .Information(
           "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
           transports.Max(t => t.SavedObjectCount),
