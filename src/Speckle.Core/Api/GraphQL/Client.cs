@@ -99,7 +99,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
         delay,
         (ex, timeout, _) =>
         {
-          SpeckleLogger.Create().Debug(
+          SpeckleLog.Create().Debug(
             ex,
             "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
             typeof(T).Name,
@@ -140,7 +140,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     {
       if (exception is null)
       {
-        SpeckleLogger.Create().Information(
+        SpeckleLog.Create().Information(
           "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
           typeof(T).Name,
           exception is null,
@@ -151,7 +151,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       {
         if (cancellationToken.IsCancellationRequested)
         {
-          SpeckleLogger.Create().Debug(
+          SpeckleLog.Create().Debug(
             "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
             typeof(T).Name,
             exception is null,
@@ -160,7 +160,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
         }
         else
         {
-          SpeckleLogger.Create().Error(
+          SpeckleLog.Create().Error(
             "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
             typeof(T).Name,
             exception is null,
@@ -170,7 +170,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       }
       else if (exception is SpeckleException)
       {
-        SpeckleLogger.Create().Warning(
+        SpeckleLog.Create().Warning(
           "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
           typeof(T).Name,
           exception is null,
@@ -179,7 +179,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       }
       else
       {
-        SpeckleLogger.Create().Error(
+        SpeckleLog.Create().Error(
           "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
           typeof(T).Name,
           exception is null,
@@ -293,7 +293,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
               else
               {
                // Serilog.Log.ForContext("graphqlResponse", response)
-               SpeckleLogger.Create() .Error("Cannot execute graphql callback for {resultType}, the response has no data.", typeof(T).Name);
+               SpeckleLog.Create() .Error("Cannot execute graphql callback for {resultType}, the response has no data.", typeof(T).Name);
               }
             }
             // we catch forbidden to rethrow, making sure its not logged.
@@ -307,7 +307,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
              /* Speckle.Core.Logging..ForContext("graphqlResponse", gqlException.Response)
                 .ForContext("graphqlExtensions", gqlException.Extensions)
                 .ForContext("graphqlErrorMessages", gqlException.ErrorMessages.ToList())*/
-              SpeckleLogger.Create().Warning(
+              SpeckleLog.Create().Warning(
                   gqlException,
                   "Execution of the graphql request to get {resultType} failed with {graphqlExceptionType} {exceptionMessage}.",
                   typeof(T).Name,
@@ -325,7 +325,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
           {
             // we're logging this as an error for now, to keep track of failures
             // so far we've swallowed these errors
-            SpeckleLogger.Create().Error(
+            SpeckleLog.Create().Error(
               ex,
               "Subscription for {resultType} terminated unexpectedly with {exceptionMessage}",
               typeof(T).Name,
@@ -338,7 +338,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLogger.Create().Warning(
+        SpeckleLog.Create().Warning(
           ex,
           "Subscribing to graphql {resultType} failed without a graphql response. Cause {exceptionMessage}",
           typeof(T).Name,

@@ -257,7 +257,7 @@ internal static class ValueConverter
     #region BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
     if (type == typeof(Numerics.Matrix4x4) && value is IReadOnlyList<object> lMatrix)
     {
-      SpeckleLogger.Create().Warning(
+      SpeckleLog.Create().Warning(
         "This kept for backwards compatibility, no one should be using {this}",
         "ValueConverter deserialize to System.Numerics.Matrix4x4"
       );

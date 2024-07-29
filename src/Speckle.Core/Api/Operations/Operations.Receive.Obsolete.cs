@@ -345,7 +345,7 @@ public static partial class Operations
     activity?.SetTag("objectId", objectId);
     {
       var timer = Stopwatch.StartNew();
-      SpeckleLogger.Create("Operations.Receive").Information(
+      SpeckleLog.Create("Operations.Receive").Information(
         "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
         objectId,
         localTransport.TransportName,
@@ -429,7 +429,7 @@ public static partial class Operations
             .Where(t => t != null)
             .ToDictionary(t => t!.TransportName, t => t!.Elapsed)
         );
-        SpeckleLogger.Create("Operations.Receive")
+        SpeckleLog.Create("Operations.Receive")
           .Information(
             "Finished receiving {objectId} from {source} in {elapsed} seconds",
             objectId,
@@ -445,7 +445,7 @@ public static partial class Operations
           $"Could not find specified object using the local transport {localTransport.TransportName}, and you didn't provide a fallback remote from which to pull it."
         );
 
-        SpeckleLogger.Create("Operations.Receive").Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
+        SpeckleLog.Create("Operations.Receive").Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
         throw ex;
       }
 
@@ -454,7 +454,7 @@ public static partial class Operations
       remoteTransport.OnProgressAction = internalProgressAction;
       remoteTransport.CancellationToken = cancellationToken;
 
-      SpeckleLogger.Create("Operations.Receive").Debug(
+      SpeckleLog.Create("Operations.Receive").Debug(
         "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
         remoteTransport.TransportName
       );
@@ -478,7 +478,7 @@ public static partial class Operations
         dr.Dispose();
       }
 
-      SpeckleLogger.Create("Operations.Receive")
+      SpeckleLog.Create("Operations.Receive")
        /* .Log.ForContext("deserializerElapsed", serializerV2?.Elapsed)
         .ForContext(
           "transportElapsedBreakdown",

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
+using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports.ServerUtils;
 using Speckle.Logging;
@@ -293,7 +294,7 @@ public sealed class ServerTransport : IServerTransport
 
   private void Initialize(string baseUri)
   {
-    SpeckleLogger.Create().Information("Initializing a new Remote Transport for {baseUri}", baseUri);
+    SpeckleLog.Create().Information("Initializing a new Remote Transport for {baseUri}", baseUri);
 
     Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds)
     {

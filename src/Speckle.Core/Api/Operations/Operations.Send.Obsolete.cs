@@ -140,7 +140,7 @@ public static partial class Operations
     activity?.SetTag("transportContext", transportContext);
     {
       var sendTimer = Stopwatch.StartNew();
-      SpeckleLogger.Create().Information("Starting send operation");
+      SpeckleLog.Create().Information("Starting send operation");
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
@@ -182,7 +182,7 @@ public static partial class Operations
 
       if (cancellationToken.IsCancellationRequested)
       {
-        SpeckleLogger.Create().Information(
+        SpeckleLog.Create().Information(
           "Send operation cancelled after {elapsed} seconds",
           sendTimer.Elapsed.TotalSeconds
         );
@@ -207,7 +207,7 @@ public static partial class Operations
 
       if (cancellationToken.IsCancellationRequested)
       {
-        SpeckleLogger.Create().Information("Send operation cancelled after {elapsed}", sendTimer.Elapsed.TotalSeconds);
+        SpeckleLog.Create().Information("Send operation cancelled after {elapsed}", sendTimer.Elapsed.TotalSeconds);
         cancellationToken.ThrowIfCancellationRequested();
       }
 
@@ -220,7 +220,7 @@ public static partial class Operations
       var hash = idToken.ToString();
 
       sendTimer.Stop();
-      SpeckleLogger.Create()/*.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
+      SpeckleLog.Create()/*.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
         .ForContext("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...")
         .ForContext("serializerElapsed", serializerV2?.Elapsed)*/
         .Information(

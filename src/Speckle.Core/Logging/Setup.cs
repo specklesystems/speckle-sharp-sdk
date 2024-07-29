@@ -47,12 +47,12 @@ public static class Setup
 
   public static IDisposable Initialize(
     string hostApplicationName,
-    string? hostApplicationVersion
+    string hostApplicationVersion, SpeckleLogConfiguration? logConfiguration = null
   )
   {
     if (s_initialized)
     {
-      SpeckleLogger.Create("Speckle.Core.Setup")
+      SpeckleLog.Create("Speckle.Core.Setup")
         .Information(
           "Setup was already initialized with {currentHostApp}",
           hostApplicationName
@@ -62,19 +62,23 @@ public static class Setup
 
     s_initialized = true;
 
+    logConfiguration ??= new SpeckleLogConfiguration();
     HostApplication = hostApplicationName;
+    VersionedHostApplication = hostApplicationVersion;
 
     //start mutex so that Manager can detect if this process is running
     Mutex = new Mutex(false, "SpeckleConnector-" + hostApplicationName);
 
-    var traceProvider = OpenTelemetryBuilder.Initialize(hostApplicationName);
-    SpeckleLogger.Initialize(GetUserIdFromDefaultAccount(), hostApplicationName,hostApplicationVersion );
+    var traceProvider = TraceBuilder.Initialize(hostApplicationName, logConfiguration);
+    SpeckleLog.Initialize(GetUserIdFromDefaultAccount(), hostApplicationName,hostApplicationVersion,logConfiguration );
 
     foreach (var account in AccountManager.GetAccounts())
     {
       Analytics.AddConnectorToProfile(account.GetHashedEmail(), hostApplicationName);
       Analytics.IdentifyProfile(account.GetHashedEmail(), hostApplicationName);
     }
+    
+    SpeckleActivityFactory.Initialize(hostApplicationName, hostApplicationVersion);
 
     return traceProvider;
   }

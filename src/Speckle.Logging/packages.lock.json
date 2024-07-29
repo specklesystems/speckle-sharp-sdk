@@ -42,6 +42,17 @@
           "Microsoft.NETCore.Platforms": "1.1.0"
         }
       },
+      "OpenTelemetry.Exporter.Console": {
+        "type": "Direct",
+        "requested": "[1.5.1, )",
+        "resolved": "1.5.1",
+        "contentHash": "l9ULCfv7Ye6At3djIbufbG0fkIZHCNaPbnRyQXDi1xUAlKo0HFfPe2WtQ2kUeExlqR8FiMVnLLR//wCxGl7SSg==",
+        "dependencies": {
+          "OpenTelemetry": "1.5.1",
+          "System.Text.Encodings.Web": "4.7.2",
+          "System.Text.Json": "4.7.2"
+        }
+      },
       "OpenTelemetry.Exporter.Zipkin": {
         "type": "Direct",
         "requested": "[1.5.1, )",

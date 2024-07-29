@@ -12,7 +12,7 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Speckle.Logging;
 
-public static class SpeckleLogger
+public static class SpeckleLog
 {
   private static ILoggerFactory _nullLoggerFactory = new NullLoggerFactory();
   private static ILoggerFactory? _loggerFactory;
@@ -20,8 +20,8 @@ public static class SpeckleLogger
   private static string s_logFolderPath;
 
   public static ILoggerFactory GetLoggerFactory() => _loggerFactory ?? _nullLoggerFactory;
-  public static ILoggerFactory Initialize(string userId,  string hostApplicationName,
-    string? hostApplicationVersion,SpeckleLogConfiguration? logConfiguration = null)
+  public static void Initialize(string userId,  string hostApplicationName,
+    string? hostApplicationVersion,SpeckleLogConfiguration logConfiguration)
   {
     if (_loggerFactory is null)
     {
@@ -33,13 +33,9 @@ public static class SpeckleLogger
     Log.Logger = logger;
       _loggerFactory = new SerilogLoggerFactory();
     }
-    
-    
-    
-    return _loggerFactory;
   }
   public static ILogger Create<T>() =>  GetLoggerFactory().CreateLogger<T>();
-  public static ILogger Create([CallerMemberName]string category = "SpeckleLogger") =>  GetLoggerFactory().CreateLogger(category);
+  public static ILogger Create([CallerMemberName]string category = "SpeckleLog") =>  GetLoggerFactory().CreateLogger(category);
   
   private static Serilog.ILogger CreateConfiguredLogger(
     string userId,

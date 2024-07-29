@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using Speckle.Core.Common;
+using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation.SerializationUtilities;
 using Speckle.Core.Transports;
@@ -216,7 +217,7 @@ public sealed class BaseObjectDeserializerV2
         catch (OverflowException ex)
         {
           var v = (object)(double)doc;
-          SpeckleLogger.Create().Debug(
+          SpeckleLog.Create().Debug(
             ex,
             "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
             doc.Type,

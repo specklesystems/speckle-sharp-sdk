@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using Speckle.Core.Common;
 using Speckle.Core.Helpers;
+using Speckle.Core.Logging;
 using Speckle.Logging;
 
 namespace Speckle.Core.Models;
@@ -118,7 +119,7 @@ public static class Utilities
     }
     catch (Exception ex) when (!ex.IsFatal())
     {
-      SpeckleLogger.Create().Warning(ex, "Failed to get application properties");
+      SpeckleLog.Create().Warning(ex, "Failed to get application properties");
     }
 
     return appProps;

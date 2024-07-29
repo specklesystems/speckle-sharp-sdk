@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Speckle.Core.Common;
+using Speckle.Core.Logging;
 using Speckle.Core.Serialisation.SerializationUtilities;
 using Speckle.Logging;
 

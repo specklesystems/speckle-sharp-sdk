@@ -45,7 +45,7 @@ public sealed class SpeckleLogConfiguration
   /// <param name="logToFile">Flag to enable File log sink</param>
   /// <param name="enhancedLogContext">Flag to enable enhanced context on every log event</param>
   public SpeckleLogConfiguration(
-    LogLevel minimumLevel = LogLevel.Debug,
+    LogLevel minimumLevel = LogLevel.Warning,
     bool logToConsole = true,
     bool logToSeq = true,
     bool logToFile = true,

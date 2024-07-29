@@ -7,6 +7,7 @@ using Speckle.Core.Api;
 using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Kits;
+using Speckle.Core.Logging;
 using Speckle.Core.Serialisation;
 using Speckle.Core.Transports;
 using Speckle.Logging;
@@ -269,7 +270,7 @@ public class Base : DynamicBase
       catch (Exception ex) when (!ex.IsFatal())
       {
         // avoids any last ditch unsettable or strange props.
-        SpeckleLogger.Create()//.ForContext("canWrite", propertyInfo?.CanWrite)
+        SpeckleLog.Create()//.ForContext("canWrite", propertyInfo?.CanWrite)
           //.ForContext("canRead", propertyInfo?.CanRead)
           .Warning(
             "Shallow copy of {type} failed to copy {propertyName} of type {propertyType} with value {valueType}",

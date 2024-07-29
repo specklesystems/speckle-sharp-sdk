@@ -223,7 +223,7 @@ public static class Helpers
     catch (Exception ex) when (!ex.IsFatal())
     {
       //.Log.ForContext("slug", slug)
-      SpeckleLogger.Create().Warning(ex, "Failed to check for connector updates");
+      SpeckleLog.Create().Warning(ex, "Failed to check for connector updates");
     }
 
     return false;
@@ -287,7 +287,7 @@ public static class Helpers
 
     if (timestamp <= new DateTime(1800, 1, 1))
     {
-      SpeckleLogger.Create().Warning(
+      SpeckleLog.Create().Warning(
         "Tried to calculate {functionName} of a DateTime value that was way in the past: {dateTimeValue}",
         nameof(TimeAgo),
         timestamp

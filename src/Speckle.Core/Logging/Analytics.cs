@@ -246,7 +246,7 @@ public static class Analytics
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLogger.Create()
+        SpeckleLog.Create()
           .Warning(ex, "Analytics event failed {exceptionMessage}", ex.Message);
       }
     });
@@ -285,7 +285,7 @@ public static class Analytics
       catch (Exception ex) when (!ex.IsFatal())
       {
         //.ForContext("connector", connector)
-        SpeckleLogger.Create().Warning(ex, "Failed add connector to profile");
+        SpeckleLog.Create().Warning(ex, "Failed add connector to profile");
       }
     });
   }
@@ -317,7 +317,7 @@ public static class Analytics
       catch (Exception ex) when (!ex.IsFatal())
       {
         //.ForContext("connector", connector)
-        SpeckleLogger.Create().Warning(ex, "Failed identify profile");
+        SpeckleLog.Create().Warning(ex, "Failed identify profile");
       }
     });
   }

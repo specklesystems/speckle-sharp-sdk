@@ -83,7 +83,7 @@ public static partial class Operations
     //using (LogContext.PushProperty("correlationId", Guid.NewGuid().ToString()))
     {
       var sendTimer = Stopwatch.StartNew();
-      SpeckleLogger.Create().Information("Starting send operation");
+      SpeckleLog.Create().Information("Starting send operation");
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
@@ -103,7 +103,7 @@ public static partial class Operations
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLogger.Create().Information(
+        SpeckleLog.Create().Information(
           ex,
           "Send operation failed after {elapsed} seconds",
           sendTimer.Elapsed.TotalSeconds
@@ -124,7 +124,7 @@ public static partial class Operations
       }
 
       sendTimer.Stop();
-      SpeckleLogger.Create()/*.Log.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
+      SpeckleLog.Create()/*.Log.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
         .ForContext("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...")
         .ForContext("serializerElapsed", serializerV2.Elapsed)*/
         .Information(

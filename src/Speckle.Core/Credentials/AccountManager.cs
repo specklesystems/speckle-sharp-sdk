@@ -327,7 +327,7 @@ public static class AccountManager
     var firstAccount = GetAccounts().FirstOrDefault();
     if (firstAccount == null)
     {
-      SpeckleLogger.Create().Information("No Speckle accounts found. Visit the Speckle web app to create one");
+      SpeckleLog.Create().Information("No Speckle accounts found. Visit the Speckle web app to create one");
     }
 
     return firstAccount;
@@ -401,7 +401,7 @@ public static class AccountManager
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLogger.Create().Warning(ex, "Failed to load json account at {filePath}", file);
+        SpeckleLog.Create().Warning(ex, "Failed to load json account at {filePath}", file);
       }
     }
 
@@ -536,7 +536,7 @@ public static class AccountManager
     if (string.IsNullOrEmpty(localUrl))
     {
       localUrl = GetDefaultServerUrl();
-      SpeckleLogger.Create().Debug(
+      SpeckleLog.Create().Debug(
         "The provided server url was null or empty. Changed to the default url {serverUrl}",
         localUrl
       );
@@ -548,7 +548,7 @@ public static class AccountManager
   {
     if (!HttpListener.IsSupported)
     {
-      SpeckleLogger.Create().Error("HttpListener not supported");
+      SpeckleLog.Create().Error("HttpListener not supported");
       throw new PlatformNotSupportedException("Your operating system is not supported");
     }
   }
@@ -557,7 +557,7 @@ public static class AccountManager
   {
     EnsureGetAccessCodeFlowIsSupported();
 
-    SpeckleLogger.Create().Debug("Starting auth process for {server}/authn/verify/sca/{challenge}", server, challenge);
+    SpeckleLog.Create().Debug("Starting auth process for {server}/authn/verify/sca/{challenge}", server, challenge);
 
     var accessCode = "";
 
@@ -569,14 +569,14 @@ public static class AccountManager
       var localUrl = "http://localhost:29363/";
       listener.Prefixes.Add(localUrl);
       listener.Start();
-      SpeckleLogger.Create().Debug("Listening for auth redirects on {localUrl}", localUrl);
+      SpeckleLog.Create().Debug("Listening for auth redirects on {localUrl}", localUrl);
       // Note: The GetContext method blocks while waiting for a request.
       HttpListenerContext context = listener.GetContext();
       HttpListenerRequest request = context.Request;
       HttpListenerResponse response = context.Response;
 
       accessCode = request.QueryString["access_code"];
-      SpeckleLogger.Create().Debug("Got access code {accessCode}", accessCode);
+      SpeckleLog.Create().Debug("Got access code {accessCode}", accessCode);
 
       string message =
         accessCode != null
@@ -590,7 +590,7 @@ public static class AccountManager
       Stream output = response.OutputStream;
       output.Write(buffer, 0, buffer.Length);
       output.Close();
-      SpeckleLogger.Create().Debug("Processed finished processing the access code");
+      SpeckleLog.Create().Debug("Processed finished processing the access code");
       listener.Stop();
       listener.Close();
     });
@@ -600,7 +600,7 @@ public static class AccountManager
     // this is means the task timed out
     if (completedTask != task)
     {
-      SpeckleLogger.Create().Warning(
+      SpeckleLog.Create().Warning(
         "Local auth flow failed to complete within the timeout window. Access code is {accessCode}",
         accessCode
       );
@@ -609,7 +609,7 @@ public static class AccountManager
 
     if (task.IsFaulted)
     {
-      SpeckleLogger.Create().Error(
+      SpeckleLog.Create().Error(
         task.Exception,
         "Getting access code flow failed with {exceptionMessage}",
         task.Exception.Message
@@ -618,7 +618,7 @@ public static class AccountManager
     }
 
     // task completed within timeout
-    SpeckleLogger.Create().Information(
+    SpeckleLog.Create().Information(
       "Local auth flow completed successfully within the timeout window. Access code is {accessCode}",
       accessCode
     );
@@ -640,7 +640,7 @@ public static class AccountManager
         serverInfo = userResponse.serverInfo,
         userInfo = userResponse.activeUser
       };
-      SpeckleLogger.Create().Information("Successfully created account for {serverUrl}", server);
+      SpeckleLog.Create().Information("Successfully created account for {serverUrl}", server);
 
       return account;
     }
@@ -706,7 +706,7 @@ public static class AccountManager
   /// <returns></returns>
   public static async Task AddAccount(string server = "")
   {
-    SpeckleLogger.Create().Debug("Starting to add account for {serverUrl}", server);
+    SpeckleLog.Create().Debug("Starting to add account for {serverUrl}", server);
 
     server = EnsureCorrectServerUrl(server);
 
@@ -729,17 +729,17 @@ public static class AccountManager
 
       //if the account already exists it will not be added again
       s_accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
-      SpeckleLogger.Create().Debug("Finished adding account {accountId} for {serverUrl}", account.id, server);
+      SpeckleLog.Create().Debug("Finished adding account {accountId} for {serverUrl}", account.id, server);
     }
     catch (SpeckleAccountManagerException ex)
     {
-      SpeckleLogger.Create().Fatal(ex, "Failed to add account: {exceptionMessage}", ex.Message);
+      SpeckleLog.Create().Fatal(ex, "Failed to add account: {exceptionMessage}", ex.Message);
       // rethrowing any known errors
       throw;
     }
     catch (Exception ex) when (!ex.IsFatal())
     {
-      SpeckleLogger.Create().Fatal(ex, "Failed to add account: {exceptionMessage}", ex.Message);
+      SpeckleLog.Create().Fatal(ex, "Failed to add account: {exceptionMessage}", ex.Message);
       throw new SpeckleAccountManagerException($"Failed to add account: {ex.Message}", ex);
     }
     finally
@@ -855,7 +855,7 @@ public static class AccountManager
     }
     catch (SpeckleGraphQLException<ActiveUserResponse> ex)
     {
-      SpeckleLogger.Create().Warning(
+      SpeckleLog.Create().Warning(
         ex,
         "Swallowing exception in {methodName}: {exceptionMessage}",
         nameof(GetServerInfo),
@@ -875,7 +875,7 @@ public static class AccountManager
     }
     catch (SpeckleGraphQLException<ActiveUserResponse> ex)
     {
-      SpeckleLogger.Create().Warning(
+      SpeckleLog.Create().Warning(
         ex,
         "Swallowing exception in {methodName}: {exceptionMessage}",
         nameof(GetUserInfo),

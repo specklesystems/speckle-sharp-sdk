@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using System.Reflection;
 using Speckle.Core.Common;
+using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports;
 using Speckle.DoubleNumerics;
@@ -213,7 +214,7 @@ public class BaseObjectSerializerV2
         };
       //BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
       case System.Numerics.Matrix4x4 ms:
-        SpeckleLogger.Create().Warning(
+        SpeckleLog.Create().Warning(
           "This kept for backwards compatibility, no one should be using {this}",
           "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
         );
