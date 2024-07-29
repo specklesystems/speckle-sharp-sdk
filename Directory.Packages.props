@@ -6,8 +6,6 @@
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
-    <PackageVersion Include="Sentry" Version="3.33.0" />
-    <PackageVersion Include="Sentry.Serilog" Version="3.33.0" />
     <PackageVersion Include="Serilog" Version="2.12.0" />
     <PackageVersion Include="Serilog.Enrichers.ClientInfo" Version="1.3.0" />
     <PackageVersion Include="Serilog.Exceptions" Version="8.4.0" />
@@ -28,6 +26,8 @@
     <PackageVersion Include="Glob" Version="1.1.9" />
     <PackageVersion Include="SimpleExec" Version="12.0.0" />
     <PackageVersion Include="MongoDB.Driver" Version="2.19.2" />
+    <!-- this was the previous version used -->
+    <PackageVersion Include="System.Text.Json" Version="5.0.2" />
     <GlobalPackageReference Include="PolySharp" Version="1.14.1" />
     <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <GlobalPackageReference Include="GitVersion.MsBuild" Version="5.12.0" />

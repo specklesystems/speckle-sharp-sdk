@@ -1,4 +1,4 @@
-using System;
+using ObsoleteAttribute = System.ObsoleteAttribute;
 
 namespace Speckle.Core.Models;
 
