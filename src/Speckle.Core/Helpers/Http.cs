@@ -9,6 +9,7 @@ using Polly.Retry;
 using Speckle.Core.Common;
 using Speckle.Core.Credentials;
 using Speckle.Core.Logging;
+using Speckle.Logging;
 
 namespace Speckle.Core.Helpers;
 

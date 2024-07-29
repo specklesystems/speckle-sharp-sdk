@@ -1,7 +1,6 @@
-using System;
 using System.Diagnostics;
 
-namespace Speckle.Core.Logging;
+namespace Speckle.Logging;
 
 internal static class LoggingHelpers
 {

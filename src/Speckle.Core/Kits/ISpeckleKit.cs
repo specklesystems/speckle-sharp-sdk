@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Speckle.Core.Kits;
 
 /// <summary>

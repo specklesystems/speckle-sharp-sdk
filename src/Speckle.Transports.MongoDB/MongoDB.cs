@@ -9,6 +9,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Speckle.Core.Common;
 using Speckle.Core.Logging;
+using Speckle.Logging;
 using Timer = System.Timers.Timer;
 
 namespace Speckle.Core.Transports;

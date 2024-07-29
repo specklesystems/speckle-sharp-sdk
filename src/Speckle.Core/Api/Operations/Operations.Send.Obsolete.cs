@@ -5,6 +5,7 @@ using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation;
 using Speckle.Core.Transports;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 
@@ -132,11 +133,11 @@ public static partial class Operations
       transports.Insert(0, sqLiteTransport);
     }
 
-  // var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
+   var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
 
+  using var activity = SpeckleActivityFactory.Start();
     // make sure all logs in the operation have the proper context
-    //using (LogContext.PushProperty("transportContext", transportContext))
-    //using (LogContext.PushProperty("correlationId", Guid.NewGuid().ToString()))
+    activity?.SetTag("transportContext", transportContext);
     {
       var sendTimer = Stopwatch.StartNew();
       SpeckleLogger.Create().Information("Starting send operation");

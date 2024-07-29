@@ -4,7 +4,6 @@ using System.Net.WebSockets;
 using System.Reflection;
 using GraphQL;
 using GraphQL.Client.Http;
-using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Speckle.Core.Api.GraphQL;
@@ -13,6 +12,7 @@ using Speckle.Core.Api.GraphQL.Serializer;
 using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Core.Api;

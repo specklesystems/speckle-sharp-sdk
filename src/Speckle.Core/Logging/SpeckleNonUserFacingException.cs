@@ -1,5 +1,3 @@
-using System;
-
 namespace Speckle.Core.Logging;
 
 /// <summary>

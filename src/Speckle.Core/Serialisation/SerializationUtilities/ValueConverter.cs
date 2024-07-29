@@ -1,11 +1,9 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
-using Speckle.Core.Logging;
 using Speckle.DoubleNumerics;
+using Speckle.Logging;
 using Numerics = global::Speckle.DoubleNumerics;
 
 namespace Speckle.Core.Serialisation.SerializationUtilities;

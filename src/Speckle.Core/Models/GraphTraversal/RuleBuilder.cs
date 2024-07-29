@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Linq;
 using Speckle.Core.Common;
 
 namespace Speckle.Core.Models.GraphTraversal;

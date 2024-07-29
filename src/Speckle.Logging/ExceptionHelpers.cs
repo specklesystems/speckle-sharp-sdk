@@ -1,6 +1,6 @@
 using System.Diagnostics.Contracts;
 
-namespace Speckle.Core.Logging;
+namespace Speckle.Logging;
 
 public static class ExceptionHelpers
 {

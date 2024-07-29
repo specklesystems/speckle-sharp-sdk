@@ -12,6 +12,7 @@ using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Core.Api;

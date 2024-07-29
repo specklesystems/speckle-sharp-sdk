@@ -1,12 +1,11 @@
-using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 using Speckle.Core.Credentials;
 using Speckle.Core.Kits;
+using Speckle.Core.Logging;
 
-namespace Speckle.Core.Logging;
+namespace Speckle.Logging;
 
 /// <summary>
 ///  Anonymous telemetry to help us understand how to make a better Speckle.

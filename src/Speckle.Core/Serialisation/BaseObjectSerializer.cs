@@ -1,9 +1,6 @@
 #nullable disable
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Runtime.Serialization;
-using System.Threading;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;

@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Speckle.Core.Logging;
+namespace Speckle.Logging;
 
 public static class SpeckleLogger
 {

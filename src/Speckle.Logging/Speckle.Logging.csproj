@@ -22,8 +22,6 @@
   <PackageReference Include="SerilogTimings"  PrivateAssets="all"/>
   <PackageReference Include="OpenTelemetry.Exporter.Zipkin"  PrivateAssets="all"/>
   <PackageReference Include="OpenTelemetry.Instrumentation.Http" NoWarn="NU1902"  PrivateAssets="all"/>
+  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
 </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Speckle.Core\Speckle.Core.csproj" />
-  </ItemGroup>
 </Project>

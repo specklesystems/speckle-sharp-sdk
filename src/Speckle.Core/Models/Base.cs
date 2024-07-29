@@ -1,18 +1,15 @@
 #nullable disable
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Speckle.Core.Api;
 using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Kits;
-using Speckle.Core.Logging;
 using Speckle.Core.Serialisation;
 using Speckle.Core.Transports;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 

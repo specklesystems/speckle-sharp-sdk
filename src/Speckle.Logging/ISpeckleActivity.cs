@@ -1,4 +1,4 @@
-namespace Speckle.Core.Logging;
+namespace Speckle.Logging;
 
 public interface ISpeckleActivity: IDisposable
 {
