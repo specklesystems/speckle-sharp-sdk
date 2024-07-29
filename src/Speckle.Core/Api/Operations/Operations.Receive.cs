@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 using Serilog.Context;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.Core.SchemaVersioning;
 using Speckle.Core.Serialisation;
+using Speckle.Core.Serialisation.TypeCache;
 using Speckle.Core.Transports;
 
 namespace Speckle.Core.Api;
@@ -38,6 +40,9 @@ public static partial class Operations
   /// <returns>The requested Speckle Object</returns>
   public static async Task<Base> Receive(
     string objectId,
+    ITypeCache typeCache,
+    ISchemaObjectUpgradeManager<Base, Base> objectUpgradeManager,
+    System.Version payloadSchemaVersion,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
     Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
@@ -62,7 +67,7 @@ public static partial class Operations
 
     // Setup Serializer
     BaseObjectDeserializerV2 serializerV2 =
-      new()
+      new(typeCache, objectUpgradeManager, payloadSchemaVersion)
       {
         ReadTransport = localTransport,
         OnProgressAction = internalProgressAction,

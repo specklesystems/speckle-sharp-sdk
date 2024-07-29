@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Objects.Other;
 using Speckle.Core.Common;
 using Speckle.Core.Kits;
@@ -27,11 +25,12 @@ public class Point : Base, ITransformable<Point>
   /// <param name="z">The z coordinate</param>
   /// <param name="units">The units of the point's coordinates. Defaults to Meters. </param>
   /// <param name="applicationId">The object's unique application ID</param>
-  public Point(double x, double y, double z = 0d, string units = Units.Meters, string? applicationId = null)
+  public Point(double x, double y, double z = 0d, string units = Units.Meters, string? applicationId = null, double w = 1d)
   {
     this.x = x;
     this.y = y;
     this.z = z;
+    this.w = w;
     this.applicationId = applicationId;
     this.units = units;
   }
@@ -72,6 +71,11 @@ public class Point : Base, ITransformable<Point>
   /// The z coordinate of the point.
   /// </summary>
   public double z { get; set; }
+  
+  /// <summary>
+  /// The w coordinate of the point.
+  /// </summary>
+  public double w { get; set; }
 
   /// <summary>
   /// The units this <see cref="Point"/> is in.

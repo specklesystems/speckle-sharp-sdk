@@ -90,6 +90,8 @@ public class CommitCreateInput
   public string sourceApplication { get; set; } = ".net";
   public int totalChildrenCount { get; set; }
   public List<string> parents { get; set; }
+  
+  public string SchemaVersion { get; set; }
 
   [Obsolete("Please use the parents property. This property will be removed in later versions")]
   public List<string> previousCommitIds { get; set; }
@@ -218,6 +220,10 @@ public class Commit
   public int totalChildrenCount { get; set; }
   public List<string> parents { get; set; }
 
+  // should be nullable but is currently disabled here
+  // null schema == this is old AF
+  public string SchemaVersion { get; set; }
+  
   public override string ToString()
   {
     return $"Commit ({message} | {id})";

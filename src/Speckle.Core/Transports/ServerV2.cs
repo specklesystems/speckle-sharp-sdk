@@ -3,6 +3,7 @@ using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.Core.Serialisation;
 using Speckle.Core.Transports.ServerUtils;
 using Speckle.Newtonsoft.Json.Linq;
 
@@ -316,7 +317,7 @@ public sealed class ServerTransport : IServerTransport
     List<string> childrenIds = new();
 
     JObject doc1 = JObject.Parse(json);
-    JToken? closures = doc1["__closure"];
+    JToken? closures = doc1[SerializationConstants.CLOSURE_PROPERTY_NAME];
     if (closures == null)
     {
       return Array.Empty<string>();

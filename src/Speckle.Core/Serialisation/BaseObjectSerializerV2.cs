@@ -140,7 +140,7 @@ public class BaseObjectSerializerV2
           {
             ["speckle_type"] = r.speckle_type,
             ["referencedId"] = r.referencedId,
-            ["__closure"] = r.closure
+            [SerializationConstants.CLOSURE_PROPERTY_NAME] = r.closure
           };
         if (r.closure is not null)
         {
@@ -315,7 +315,7 @@ public class BaseObjectSerializerV2
 
     if (closure.Count > 0)
     {
-      convertedBase["__closure"] = closure;
+      convertedBase[SerializationConstants.CLOSURE_PROPERTY_NAME] = closure;
     }
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)

@@ -11,8 +11,11 @@ using Speckle.Core.Helpers;
 using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.Core.SchemaVersioning;
+using Speckle.Core.Serialisation.TypeCache;
 using Speckle.Core.Transports;
 using Speckle.Newtonsoft.Json;
+using Version = System.Version;
 
 namespace Speckle.Core.Api;
 
@@ -32,6 +35,9 @@ public static class Helpers
   public static async Task<Base> Receive(
     this IServerTransportFactory serverTransportFactory,
     string stream,
+    ITypeCache typeCache,
+    ISchemaObjectUpgradeManager<Base, Base> objectUpgradeManager,
+    System.Version schemaVersion,
     Account account = null,
     Action<ConcurrentDictionary<string, int>> onProgressAction = null,
     Action<int> onTotalChildrenCountKnown = null
@@ -104,6 +110,8 @@ public static class Helpers
     var receiveRes = await Operations
       .Receive(
         objectId,
+        typeCache,
+        objectUpgradeManager,
         transport,
         onProgressAction: onProgressAction,
         onTotalChildrenCountKnown: onTotalChildrenCountKnown

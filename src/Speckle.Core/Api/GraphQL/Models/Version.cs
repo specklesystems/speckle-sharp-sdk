@@ -15,4 +15,6 @@ public sealed class Version
   public Uri previewUrl { get; init; }
   public string referencedObject { get; init; }
   public string sourceApplication { get; init; }
+  
+  public System.Version SchemaVersion { get; init; }
 }

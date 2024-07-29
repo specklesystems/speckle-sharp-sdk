@@ -15,7 +15,7 @@ public class GenericTests
   public static IEnumerable<Type> AvailableTypesInKit()
   {
     // Get all types in the Objects assembly that inherit from Base
-    return Assembly.GetAssembly(typeof(ObjectsKit)).NotNull().GetTypes().Where(t => typeof(Base).IsAssignableFrom(t));
+    return Assembly.GetAssembly(typeof(SpeckleSchemaInfo)).NotNull().GetTypes().Where(t => typeof(Base).IsAssignableFrom(t));
   }
 
   public static IEnumerable<Type> NonAbstractTypesInKit()

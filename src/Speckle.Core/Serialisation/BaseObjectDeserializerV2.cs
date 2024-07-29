@@ -1,32 +1,24 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Speckle.Core.Common;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.Core.SchemaVersioning;
 using Speckle.Core.Serialisation.SerializationUtilities;
+using Speckle.Core.Serialisation.TypeCache;
 using Speckle.Core.Transports;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 
 namespace Speckle.Core.Serialisation;
 
-public sealed class BaseObjectDeserializerV2
+public sealed class BaseObjectDeserializerV2 : ISpeckleDeserializer<Base>
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
 
   // id -> Base if already deserialized or id -> Task<object> if was handled by a bg thread
   private Dictionary<string, object?>? _deserializedObjects;
-
-  /// <summary>
-  /// Property that describes the type of the object.
-  /// </summary>
-  private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
 
   private DeserializationWorkerThreads? _workerThreads;
 
@@ -44,6 +36,21 @@ public sealed class BaseObjectDeserializerV2
 
   public static int DefaultNumberThreads => Math.Min(Environment.ProcessorCount, 6); //6 threads seems the sweet spot, see performance test project
   public int WorkerThreadCount { get; set; } = DefaultNumberThreads;
+
+  private readonly ITypeCache _typeCache;
+  private readonly ISchemaObjectUpgradeManager<Base, Base> _objectUpgradeManager;
+  
+  // if there's no version found we use this (and we don't make one every object) 
+  private static readonly System.Version s_noPayloadSchemaVersion = new Version("0.0.0");
+  
+  // POC: inject the TypeCacheManager, and interface out
+  public BaseObjectDeserializerV2(ITypeCache typeCache, ISchemaObjectUpgradeManager<Base, Base> objectUpgradeManager)
+  {
+    _typeCache = typeCache;
+    _objectUpgradeManager = objectUpgradeManager;
+
+    _typeCache.EnsureCacheIsBuilt();
+  }
 
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
   /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="rootObjectJson"/></returns>
@@ -125,12 +132,12 @@ public sealed class BaseObjectDeserializerV2
       List<(string, int)> closureList = new();
       JObject doc1 = JObject.Parse(rootObjectJson);
 
-      if (!doc1.ContainsKey("__closure"))
+      if (!doc1.ContainsKey(SerializationConstants.CLOSURE_PROPERTY_NAME))
       {
         return new List<(string, int)>();
       }
 
-      foreach (JToken prop in doc1["__closure"].NotNull())
+      foreach (JToken prop in doc1[SerializationConstants.CLOSURE_PROPERTY_NAME].NotNull())
       {
         string childId = ((JProperty)prop).Name;
         int childMinDepth = (int)((JProperty)prop).Value;
@@ -269,7 +276,7 @@ public sealed class BaseObjectDeserializerV2
         foreach (JToken propJToken in jObject)
         {
           JProperty prop = (JProperty)propJToken;
-          if (prop.Name == "__closure")
+          if (prop.Name == SerializationConstants.CLOSURE_PROPERTY_NAME)
           {
             continue;
           }
@@ -277,7 +284,7 @@ public sealed class BaseObjectDeserializerV2
           dict[prop.Name] = ConvertJsonElement(prop.Value);
         }
 
-        if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
+        if (!dict.TryGetValue(SerializationConstants.TYPE_DISCRIMINATOR, out object? speckleType))
         {
           return dict;
         }
@@ -337,25 +344,39 @@ public sealed class BaseObjectDeserializerV2
         throw new ArgumentException("Json value not supported: " + doc.Type, nameof(doc));
     }
   }
-
+  
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
-    string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();
-    Type type = BaseObjectSerializationUtilities.GetType(typeName);
-    Base baseObj = (Base)Activator.CreateInstance(type);
+    string typeName = (string) dictObj[SerializationConstants.TYPE_DISCRIMINATOR]!;
+    
+    // get payload schema version...
+    var payloadSchemaVersion = s_noPayloadSchemaVersion;
+    if(!dictObj.TryGetValue(SerializationConstants.PAYLOAD_SCHEMA_VERSION, 
+          out object? foundPayloadSchemaVersion) && foundPayloadSchemaVersion is not null)
+    {
+      payloadSchemaVersion = (System.Version) foundPayloadSchemaVersion;
+    }
+    
+    var payloadSchemaVersionString = (string) dictObj[SerializationConstants.PAYLOAD_SCHEMA_VERSION]!;
+    
+    // here we're getting the actual type to deserialise into, this won't be the type we return
+    // we should not return versioned types
+    CachedTypeInfo cachedTypeInfo = _typeCache.GetMatchedTypeOrLater(typeName, payloadSchemaVersion);
+    
+    Base baseObj = (Base) Activator.CreateInstance(cachedTypeInfo.Type);
+    var props = cachedTypeInfo.Props;
+    var onDeserializedCallbacks = cachedTypeInfo.Callbacks;
 
-    dictObj.Remove(TYPE_DISCRIMINATOR);
-    dictObj.Remove("__closure");
-
-    Dictionary<string, PropertyInfo> staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
-    List<MethodInfo> onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
-
+    dictObj.Remove(SerializationConstants.TYPE_DISCRIMINATOR);
+    dictObj.Remove(SerializationConstants.CLOSURE_PROPERTY_NAME);
+    dictObj.Remove(SerializationConstants.PAYLOAD_SCHEMA_VERSION);
+    
     foreach (var entry in dictObj)
     {
       string lowerPropertyName = entry.Key.ToLower();
-      if (staticProperties.TryGetValue(lowerPropertyName, out PropertyInfo? value) && value.CanWrite)
+      if (props.TryGetValue(lowerPropertyName, out PropertyInfo? value) && value.CanWrite)
       {
-        PropertyInfo property = staticProperties[lowerPropertyName];
+        PropertyInfo property = props[lowerPropertyName];
         if (entry.Value == null)
         {
           // Check for JsonProperty(NullValueHandling = NullValueHandling.Ignore) attribute
@@ -391,18 +412,27 @@ public sealed class BaseObjectDeserializerV2
     {
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
+    
+    // version the object
+    // POC: we need to cache the right name here, because reflecting to get the mame is meh
+    baseObj = _objectUpgradeManager.UpgradeObject(
+                        baseObj,
+                        cachedTypeInfo.Type.FullName.NotNull(),
+                        payloadSchemaVersion,
+                        _typeCache.LoadedSchemaVersion);
 
+    // mainly this was added some time back for fixing up Breps after deserialisation
+    // this means that any version of something, such as Brep, will NOT carry these callbacks
+    // we could perhaps simplify the version structure in this case but it's not urgent
+    // i.e. the callbacks only live on the type
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {
       onDeserialized.Invoke(baseObj, new object?[] { null });
     }
 
+    // POC: related to https://spockle.atlassian.net/browse/DUI3-502
+    // it may be fine to return fall back type, provide we iterated correctly on the types
+    // we should NOT be returning versioned types however
     return baseObj;
   }
-
-  [Obsolete("Use nameof(Base.speckle_type)")]
-  public string TypeDiscriminator => TYPE_DISCRIMINATOR;
-
-  [Obsolete("OnErrorAction unused, deserializer will throw exceptions instead")]
-  public Action<string, Exception>? OnErrorAction { get; set; }
 }
