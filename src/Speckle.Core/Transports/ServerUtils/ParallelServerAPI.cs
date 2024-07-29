@@ -23,14 +23,14 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 {
   private readonly string _authToken;
 
-  private readonly string _baseUri;
+  private readonly Uri _baseUri;
 
   private readonly object _callbackLock = new();
 
   private readonly int _timeoutSeconds;
 
   public ParallelServerApi(
-    string baseUri,
+    Uri baseUri,
     string authorizationToken,
     string blobStorageFolder,
     int timeoutSeconds,
