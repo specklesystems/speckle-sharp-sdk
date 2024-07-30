@@ -140,7 +140,7 @@ public static partial class Operations
     activity?.SetTag("transportContext", transportContext);
     {
       var sendTimer = Stopwatch.StartNew();
-      SpeckleLog.Create().Information("Starting send operation");
+      SpeckleLog.Logger.Information("Starting send operation");
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
@@ -182,9 +182,10 @@ public static partial class Operations
 
       if (cancellationToken.IsCancellationRequested)
       {
-        SpeckleLog
-          .Create()
-          .Information("Send operation cancelled after {elapsed} seconds", sendTimer.Elapsed.TotalSeconds);
+        SpeckleLog.Logger.Information(
+          "Send operation cancelled after {elapsed} seconds",
+          sendTimer.Elapsed.TotalSeconds
+        );
         cancellationToken.ThrowIfCancellationRequested();
       }
 
@@ -206,7 +207,7 @@ public static partial class Operations
 
       if (cancellationToken.IsCancellationRequested)
       {
-        SpeckleLog.Create().Information("Send operation cancelled after {elapsed}", sendTimer.Elapsed.TotalSeconds);
+        SpeckleLog.Logger.Information("Send operation cancelled after {elapsed}", sendTimer.Elapsed.TotalSeconds);
         cancellationToken.ThrowIfCancellationRequested();
       }
 
@@ -219,16 +220,15 @@ public static partial class Operations
       var hash = idToken.ToString();
 
       sendTimer.Stop();
-      SpeckleLog
-        .Create() /*.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
+      SpeckleLog.Logger /*.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
         .ForContext("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...")
         .ForContext("serializerElapsed", serializerV2?.Elapsed)*/
-        .Information(
-          "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
-          transports.Max(t => t.SavedObjectCount),
-          sendTimer.Elapsed.TotalSeconds,
-          hash
-        );
+      .Information(
+        "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
+        transports.Max(t => t.SavedObjectCount),
+        sendTimer.Elapsed.TotalSeconds,
+        hash
+      );
       return hash;
     }
   }

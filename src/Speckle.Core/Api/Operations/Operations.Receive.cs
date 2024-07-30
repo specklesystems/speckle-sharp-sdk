@@ -72,14 +72,12 @@ public static partial class Operations
     var timer = Stopwatch.StartNew();
 
     // Receive Json
-    SpeckleLog
-      .Create()
-      .Information(
-        "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
-        objectId,
-        localTransport.TransportName,
-        remoteTransport?.TransportName
-      );
+    SpeckleLog.Logger.Information(
+      "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
+      objectId,
+      localTransport.TransportName,
+      remoteTransport?.TransportName
+    );
 
     // Try Local Receive
     string? objString = LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
@@ -93,17 +91,15 @@ public static partial class Operations
           $"Could not find specified object using the local transport {localTransport.TransportName}, and you didn't provide a fallback remote from which to pull it."
         );
 
-        SpeckleLog.Create().Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
+        SpeckleLog.Logger.Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
         throw ex;
       }
 
-      SpeckleLog
-        .Create()
-        .Debug(
-          "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
-          objectId,
-          remoteTransport.TransportName
-        );
+      SpeckleLog.Logger.Debug(
+        "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
+        objectId,
+        remoteTransport.TransportName
+      );
 
       objString = await RemoteReceive(objectId, remoteTransport, localTransport, onTotalChildrenCountKnown)
         .ConfigureAwait(false);
@@ -114,14 +110,12 @@ public static partial class Operations
     Base res = serializerV2.Deserialize(objString);
 
     timer.Stop();
-    SpeckleLog
-      .Create("Deserialize")
-      .Information(
-        "Finished receiving {objectId} from {source} in {elapsed} seconds",
-        objectId,
-        remoteTransport?.TransportName,
-        timer.Elapsed.TotalSeconds
-      );
+    SpeckleLog.Logger.Information(
+      "Finished receiving {objectId} from {source} in {elapsed} seconds",
+      objectId,
+      remoteTransport?.TransportName,
+      timer.Elapsed.TotalSeconds
+    );
 
     return res;
   }

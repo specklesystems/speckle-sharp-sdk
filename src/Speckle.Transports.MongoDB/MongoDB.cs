@@ -45,7 +45,7 @@ public class MongoDBTransport : IDisposable, ITransport
     string scope = "Objects"
   )
   {
-    SpeckleLog.Create().Information("Creating new MongoDB Transport");
+    SpeckleLog.Logger.Information("Creating new MongoDB Transport");
 
     ConnectionString = connectionString;
     Client = new MongoClient(ConnectionString);

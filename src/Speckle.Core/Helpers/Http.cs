@@ -59,7 +59,7 @@ public static class Http
     {
       using var activity = SpeckleActivityFactory.Start();
       activity?.SetTag("defaultServer", defaultServer);
-      SpeckleLog.Create().Warning(ex, "Failed to ping internet");
+      SpeckleLog.Logger.Warning(ex, "Failed to ping internet");
 
       return false;
     }
@@ -72,7 +72,7 @@ public static class Http
   /// <returns>True if the the status code is 200, false otherwise.</returns>
   public static async Task<bool> Ping(string hostnameOrAddress)
   {
-    SpeckleLog.Create().Information("Pinging {hostnameOrAddress}", hostnameOrAddress);
+    SpeckleLog.Logger.Information("Pinging {hostnameOrAddress}", hostnameOrAddress);
     var policy = Policy
       .Handle<PingException>()
       .Or<SocketException>()
@@ -113,13 +113,11 @@ public static class Http
       return true;
     }
 
-    SpeckleLog
-      .Create()
-      .Warning(
-        policyResult.FinalException,
-        "Failed to ping {hostnameOrAddress} cause: {exceptionMessage}",
-        policyResult.FinalException.Message
-      );
+    SpeckleLog.Logger.Warning(
+      policyResult.FinalException,
+      "Failed to ping {hostnameOrAddress} cause: {exceptionMessage}",
+      policyResult.FinalException.Message
+    );
     return false;
   }
 
@@ -135,12 +133,12 @@ public static class Http
       using var httpClient = GetHttpProxyClient();
       HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
       response.EnsureSuccessStatusCode();
-      SpeckleLog.Create().Information("Successfully pinged {uri}", uri);
+      SpeckleLog.Logger.Information("Successfully pinged {uri}", uri);
       return response;
     }
     catch (HttpRequestException ex)
     {
-      SpeckleLog.Create().Warning(ex, "Ping to {uri} was unsuccessful: {message}", uri, ex.Message);
+      SpeckleLog.Logger.Warning(ex, "Ping to {uri} was unsuccessful: {message}", uri, ex.Message);
       throw new HttpRequestException($"Ping to {uri} was unsuccessful", ex);
     }
   }
@@ -197,7 +195,7 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
     var context = new Context();
     using var activity = SpeckleActivityFactory.Start();
     {
-      SpeckleLog.Create().Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
+      SpeckleLog.Logger.Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
       var timer = Stopwatch.StartNew();
 
       context.Add("retryCount", 0);
@@ -216,20 +214,19 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
       timer.Stop();
       var status = policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed";
       context.TryGetValue("retryCount", out var retryCount);
-      SpeckleLog
-        .Create()
-        // .Log.ForContext("ExceptionType", policyResult.FinalException?.GetType())
-        .Information(
-          "Execution of http request to {httpScheme}://{hostUrl}{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries. Request correlation ID: {correlationId}",
-          request.RequestUri.Scheme,
-          request.RequestUri.Host,
-          request.RequestUri.PathAndQuery,
-          status,
-          policyResult.Result?.StatusCode,
-          timer.Elapsed.TotalSeconds,
-          retryCount ?? 0,
-          context.CorrelationId.ToString()
-        );
+      SpeckleLog.Logger
+      // .Log.ForContext("ExceptionType", policyResult.FinalException?.GetType())
+      .Information(
+        "Execution of http request to {httpScheme}://{hostUrl}{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries. Request correlation ID: {correlationId}",
+        request.RequestUri.Scheme,
+        request.RequestUri.Host,
+        request.RequestUri.PathAndQuery,
+        status,
+        policyResult.Result?.StatusCode,
+        timer.Elapsed.TotalSeconds,
+        retryCount ?? 0,
+        context.CorrelationId.ToString()
+      );
       if (policyResult.Outcome == OutcomeType.Successful)
       {
         return policyResult.Result.NotNull();

@@ -108,7 +108,7 @@ public static class KitManager
   {
     if (s_initialized)
     {
-      SpeckleLog.Create().Error("{objectType} is already initialised", typeof(KitManager));
+      SpeckleLog.Logger.Error("{objectType} is already initialised", typeof(KitManager));
       throw new SpeckleException(
         "The kit manager has already been initialised. Make sure you call this method earlier in your code!"
       );
@@ -132,7 +132,7 @@ public static class KitManager
 
   private static void Load()
   {
-    SpeckleLog.Create().Information("Initializing Kit Manager in {KitsFolder}", SpecklePathProvider.KitsFolderPath);
+    SpeckleLog.Logger.Information("Initializing Kit Manager in {KitsFolder}", SpecklePathProvider.KitsFolderPath);
 
     GetLoadedSpeckleReferencingAssemblies();
     LoadSpeckleReferencingAssemblies();

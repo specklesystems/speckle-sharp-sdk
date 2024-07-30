@@ -134,7 +134,7 @@ public static class SpecklePathProvider
     catch (SystemException ex) when (ex is PlatformNotSupportedException or ArgumentException)
     {
       //Adding this log just so we confidently know which Exception type to catch here.
-      SpeckleLog.Create().Warning(ex, "Falling back to user profile path");
+      SpeckleLog.Logger.Warning(ex, "Falling back to user profile path");
 
       // on server linux, there might not be a user setup, things can run under root
       // in that case, the appdata variable is most probably not set up

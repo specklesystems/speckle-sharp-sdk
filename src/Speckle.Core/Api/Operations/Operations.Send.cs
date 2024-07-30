@@ -84,7 +84,7 @@ public static partial class Operations
     activity?.SetTag("correlationId", Guid.NewGuid().ToString());
     {
       var sendTimer = Stopwatch.StartNew();
-      SpeckleLog.Create().Information("Starting send operation");
+      SpeckleLog.Logger.Information("Starting send operation");
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
@@ -104,9 +104,11 @@ public static partial class Operations
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog
-          .Create()
-          .Information(ex, "Send operation failed after {elapsed} seconds", sendTimer.Elapsed.TotalSeconds);
+        SpeckleLog.Logger.Information(
+          ex,
+          "Send operation failed after {elapsed} seconds",
+          sendTimer.Elapsed.TotalSeconds
+        );
         if (ex is OperationCanceledException or SpeckleException)
         {
           throw;
@@ -126,14 +128,12 @@ public static partial class Operations
       activity?.SetTag("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed));
       activity?.SetTag("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...");
       activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
-      SpeckleLog
-        .Create()
-        .Information(
-          "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
-          transports.Max(t => t.SavedObjectCount),
-          sendTimer.Elapsed.TotalSeconds,
-          hash
-        );
+      SpeckleLog.Logger.Information(
+        "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
+        transports.Max(t => t.SavedObjectCount),
+        sendTimer.Elapsed.TotalSeconds,
+        hash
+      );
       return hash;
     }
   }

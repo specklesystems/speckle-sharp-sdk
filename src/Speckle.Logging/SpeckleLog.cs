@@ -19,7 +19,7 @@ public static class SpeckleLog
 
   private static string s_logFolderPath;
 
-  public static ILoggerFactory GetLoggerFactory() => _loggerFactory ?? _nullLoggerFactory;
+  private static ILoggerFactory GetLoggerFactory() => _loggerFactory ?? _nullLoggerFactory;
 
   public static void Initialize(
     string userId,
@@ -30,19 +30,13 @@ public static class SpeckleLog
   {
     if (_loggerFactory is null)
     {
-      logConfiguration ??= new SpeckleLogConfiguration();
-
       var logger = CreateConfiguredLogger(userId, hostApplicationName, hostApplicationVersion, logConfiguration);
-
       Log.Logger = logger;
       _loggerFactory = new SerilogLoggerFactory();
     }
   }
 
-  public static ILogger Create<T>() => GetLoggerFactory().CreateLogger<T>();
-
-  public static ILogger Create([CallerMemberName] string category = "SpeckleLog") =>
-    GetLoggerFactory().CreateLogger(category);
+  public static ILogger Logger => GetLoggerFactory().CreateLogger("SpeckleLog");
 
   private static Serilog.ILogger CreateConfiguredLogger(
     string userId,

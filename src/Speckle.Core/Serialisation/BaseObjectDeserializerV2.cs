@@ -217,16 +217,14 @@ public sealed class BaseObjectDeserializerV2
         catch (OverflowException ex)
         {
           var v = (object)(double)doc;
-          SpeckleLog
-            .Create()
-            .Debug(
-              ex,
-              "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
-              doc.Type,
-              v,
-              typeof(long),
-              typeof(double)
-            );
+          SpeckleLog.Logger.Debug(
+            ex,
+            "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
+            doc.Type,
+            v,
+            typeof(long),
+            typeof(double)
+          );
           return v;
         }
       case JTokenType.Float:

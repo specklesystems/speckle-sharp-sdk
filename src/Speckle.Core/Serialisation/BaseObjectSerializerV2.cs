@@ -214,12 +214,10 @@ public class BaseObjectSerializerV2
         };
       //BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
       case System.Numerics.Matrix4x4 ms:
-        SpeckleLog
-          .Create()
-          .Warning(
-            "This kept for backwards compatibility, no one should be using {this}",
-            "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
-          );
+        SpeckleLog.Logger.Warning(
+          "This kept for backwards compatibility, no one should be using {this}",
+          "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
+        );
         return new List<double>
         {
           ms.M11,

@@ -53,9 +53,7 @@ public static class Setup
   {
     if (s_initialized)
     {
-      SpeckleLog
-        .Create("Speckle.Core.Setup")
-        .Information("Setup was already initialized with {currentHostApp}", hostApplicationName);
+      SpeckleLog.Logger.Information("Setup was already initialized with {currentHostApp}", hostApplicationName);
       throw new InvalidOperationException();
     }
 
