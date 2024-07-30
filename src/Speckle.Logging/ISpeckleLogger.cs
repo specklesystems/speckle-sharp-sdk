@@ -8,11 +8,7 @@ public interface ISpeckleLogger
   void Warning(Exception exception, string message, params object?[] arguments);
   void Information(string message, params object?[] arguments);
 
-  void Information(
-    Exception exception,
-    string message,
-    params object?[] arguments
-  );
+  void Information(Exception exception, string message, params object?[] arguments);
 
   void Error(string message, params object?[] arguments);
   void Error(Exception exception, string message, params object?[] arguments);
