@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
 using Speckle.Logging;
-using Numerics = global::Speckle.DoubleNumerics;
+using Numerics = System.Numerics;
 
 namespace Speckle.Core.Serialisation.SerializationUtilities;
 
