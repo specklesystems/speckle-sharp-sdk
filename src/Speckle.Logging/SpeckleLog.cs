@@ -19,7 +19,7 @@ public static class SpeckleLog
 
   private static string s_logFolderPath;
 
-  private static ILoggerFactory GetLoggerFactory() => _loggerFactory ?? _nullLoggerFactory;
+  public static ILoggerFactory GetLoggerFactory() => _loggerFactory ?? _nullLoggerFactory;
 
   public static void Initialize(
     string userId,
