@@ -1,25 +1,19 @@
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
+using Serilog.Core;
 using Serilog.Exceptions;
-using Serilog.Extensions.Logging;
 using Speckle.Core.Helpers;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Speckle.Logging;
 
 public static class SpeckleLog
 {
-  private static ILoggerFactory _nullLoggerFactory = new NullLoggerFactory();
-  private static ILoggerFactory? _loggerFactory;
-
   private static string s_logFolderPath;
 
-  public static ILoggerFactory GetLoggerFactory() => _loggerFactory ?? _nullLoggerFactory;
+  private static readonly object _lock = new object();
+  private static bool initialized = false;
 
   public static void Initialize(
     string userId,
@@ -28,15 +22,21 @@ public static class SpeckleLog
     SpeckleLogConfiguration logConfiguration
   )
   {
-    if (_loggerFactory is null)
+    if (!initialized)
     {
-      var logger = CreateConfiguredLogger(userId, hostApplicationName, hostApplicationVersion, logConfiguration);
-      Log.Logger = logger;
-      _loggerFactory = new SerilogLoggerFactory();
+      lock (_lock)
+      {
+        if (!initialized)
+        {
+          var logger = CreateConfiguredLogger(userId, hostApplicationName, hostApplicationVersion, logConfiguration);
+          Log.Logger = logger;
+        }
+      }
     }
   }
 
-  public static ILogger Logger => GetLoggerFactory().CreateLogger("SpeckleLog");
+  public static ISpeckleLogger Logger => new SpeckleLogger(Serilog.Log.Logger);
+  public static ISpeckleLogger Create(string name) => new SpeckleLogger(Log.Logger.ForContext(Constants.SourceContextPropertyName, name));
 
   private static Serilog.ILogger CreateConfiguredLogger(
     string userId,
