@@ -1,7 +1,4 @@
 ﻿#nullable disable
-using System;
-using System.Collections.Generic;
-
 namespace Speckle.Core.Api.GraphQL.Models;
 
 public sealed class Model
