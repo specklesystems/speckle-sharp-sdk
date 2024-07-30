@@ -7,7 +7,6 @@ using Microsoft.Data.Sqlite;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
-using Speckle.Logging;
 using Timer = System.Timers.Timer;
 
 namespace Speckle.Core.Transports;

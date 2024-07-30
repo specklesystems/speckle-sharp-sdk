@@ -4,7 +4,6 @@ using Speckle.Core.Api;
 using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
-using Speckle.Logging;
 
 namespace Speckle.Core.Credentials;
 

@@ -3,7 +3,6 @@ using System.Diagnostics;
 using Speckle.Core.Common;
 using Speckle.Core.Logging;
 using Speckle.Core.Serialisation.SerializationUtilities;
-using Speckle.Logging;
 
 namespace Speckle.Core.Transports.ServerUtils;
 

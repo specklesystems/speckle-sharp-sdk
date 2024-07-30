@@ -4,7 +4,6 @@ using System.Text;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
-using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 

@@ -1,5 +1,4 @@
 using Speckle.Core.Logging;
-using Speckle.Logging;
 
 namespace Speckle.Core.Serialisation.SerializationUtilities;
 
