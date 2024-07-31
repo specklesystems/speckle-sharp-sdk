@@ -19,7 +19,7 @@ public class RevitInstance : Instance<RevitSymbolElementType>
 
   protected override IEnumerable<Base> GetTransformableGeometry()
   {
-    var allChildren = typedDefinition.elements ?? new List<Base>();
+    var allChildren = typedDefinition.elements ?? new List<Base>(); // TODO: this is a bug, should be copying elements list instead of using the reference
     if (typedDefinition.displayValue.Count != 0)
     {
       allChildren.AddRange(typedDefinition.displayValue);
