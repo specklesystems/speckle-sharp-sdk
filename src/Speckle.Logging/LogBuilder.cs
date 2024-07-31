@@ -14,7 +14,7 @@ public static class LogBuilder
 
   private static readonly object s_lock = new();
   private static bool s_initialized;
-  
+
   public static void Initialize(
     string userId,
     string hostApplicationName,
@@ -63,8 +63,7 @@ public static class LogBuilder
 
     if (logConfiguration.EnhancedLogContext)
     {
-      serilogLogConfiguration = serilogLogConfiguration
-        .Enrich.WithExceptionDetails();
+      serilogLogConfiguration = serilogLogConfiguration.Enrich.WithExceptionDetails();
     }
 
     if (logConfiguration.LogToFile && canLogToFile)
