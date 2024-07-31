@@ -135,9 +135,12 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   }
 
   /// <summary>
-  /// Returns the values of this <see cref="Curve"/> as a list of numbers
+  /// Returns the values of this <see cref="Curve"/> as a list of numbers.
   /// </summary>
   /// <returns>A list of values representing the <see cref="Curve"/></returns>
+  /// <remarks>
+  /// This is currently only used for encoding optimization in curves in breps!
+  /// </remarks>
   public List<double> ToList()
   {
     var list = new List<double>();
@@ -168,6 +171,9 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   /// </summary>
   /// <param name="list">The list of values representing this <see cref="Curve"/></param>
   /// <returns>A new <see cref="Curve"/> with the provided values.</returns>
+  /// <remarks>
+  /// This is currently being used only for deserialization of Brep curves!
+  /// </remarks>
   public static Curve FromList(List<double> list)
   {
     if (list[0] != list.Count - 1)
@@ -180,13 +186,15 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
       throw new Exception($"Wrong curve type. Expected {CurveTypeEncoding.Curve}, got {list[1]}.");
     }
 
+    string units = Units.GetUnitFromEncoding(list[list.Count - 1]);
     var curve = new Curve
     {
       degree = (int)list[2],
       periodic = list[3] == 1,
       rational = list[4] == 1,
       closed = list[5] == 1,
-      domain = new Interval(list[6], list[7])
+      domain = new Interval(list[6], list[7]),
+      displayValue = new Polyline() { units = units } // this is unique to breps, so we do not create curves with null displayValues
     };
 
     var pointsCount = (int)list[8];
@@ -196,8 +204,8 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
     curve.points = list.GetRange(11, pointsCount);
     curve.weights = list.GetRange(11 + pointsCount, weightsCount);
     curve.knots = list.GetRange(11 + pointsCount + weightsCount, knotsCount);
+    curve.units = units;
 
-    curve.units = Units.GetUnitFromEncoding(list[list.Count - 1]);
     return curve;
   }
 }
