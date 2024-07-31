@@ -1,7 +1,5 @@
 ﻿#nullable disable
 
-using System.Collections.Generic;
-
 namespace Speckle.Core.Api.GraphQL.Models;
 
 public class ViewerResourceGroup

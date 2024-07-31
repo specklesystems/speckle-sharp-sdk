@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using Serilog.Context;
 using Serilog.Events;
 using Speckle.Core.Logging;
@@ -106,8 +106,7 @@ public class SpeckleLogTests : IDisposable
   {
     const string TEST_MESSAGE = "This is my test message";
 
-    SpeckleLogConfiguration config =
-      new(logToConsole: shouldWrite, logToSeq: false, logToSentry: false, logToFile: false);
+    SpeckleLogConfiguration config = new(logToConsole: shouldWrite, logToSeq: false, logToFile: false);
     using var logger = SpeckleLog.CreateConfiguredLogger("My Test Host App!!", null, config);
 
     logger.Fatal(TEST_MESSAGE);

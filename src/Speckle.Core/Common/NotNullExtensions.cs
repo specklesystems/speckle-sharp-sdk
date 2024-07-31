@@ -52,4 +52,13 @@ public static class NotNullExtensions
     }
     return obj.Value;
   }
+
+  public static IEnumerable<T> Empty<T>(this IEnumerable<T>? obj)
+  {
+    if (obj is null)
+    {
+      return Enumerable.Empty<T>();
+    }
+    return obj;
+  }
 }
