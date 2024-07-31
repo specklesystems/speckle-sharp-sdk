@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Speckle.Core.Logging;
 using Speckle.Core.Models.Collections;
 using Speckle.Core.Models.Extensions;
+using Speckle.Logging;
 
 namespace Speckle.Core.Models;
 

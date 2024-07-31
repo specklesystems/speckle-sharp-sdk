@@ -2,6 +2,7 @@ using System.Reflection;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
+using Speckle.Logging;
 
 namespace Speckle.Core.Kits;
 

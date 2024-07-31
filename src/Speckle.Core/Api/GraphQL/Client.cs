@@ -6,16 +6,13 @@ using GraphQL;
 using GraphQL.Client.Http;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using Serilog.Context;
-using Serilog.Core;
-using Serilog.Core.Enrichers;
-using Serilog.Events;
 using Speckle.Core.Api.GraphQL;
 using Speckle.Core.Api.GraphQL.Resources;
 using Speckle.Core.Api.GraphQL.Serializer;
 using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Core.Api;
@@ -109,7 +106,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
-    using IDisposable context0 = LogContext.Push(CreateEnrichers<T>(request));
+    // using IDisposable context0 = LogContext.Push(CreateEnrichers<T>(request));
     var timer = Stopwatch.StartNew();
 
     Exception? exception = null;
@@ -132,13 +129,13 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     }
     finally
     {
-      LogEventLevel logLevel = exception switch
+      SpeckleLogLevel logLevel = exception switch
       {
-        null => LogEventLevel.Information,
+        null => SpeckleLogLevel.Information,
         OperationCanceledException
-          => cancellationToken.IsCancellationRequested ? LogEventLevel.Debug : LogEventLevel.Error,
-        SpeckleException => LogEventLevel.Warning,
-        _ => LogEventLevel.Error,
+          => cancellationToken.IsCancellationRequested ? SpeckleLogLevel.Debug : SpeckleLogLevel.Error,
+        SpeckleException => SpeckleLogLevel.Warning,
+        _ => SpeckleLogLevel.Error,
       };
       SpeckleLog.Logger.Write(
         logLevel,
@@ -215,20 +212,20 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     return variables;
   }
 
-  private ILogEventEnricher[] CreateEnrichers<T>(GraphQLRequest request)
-  {
-    // i know this is double  (de)serializing, but we need a recursive convert to
-    // dict<str, object> here
-    var expando = JsonConvert.DeserializeObject<ExpandoObject>(JsonConvert.SerializeObject(request.Variables));
-    var variables = request.Variables != null && expando != null ? ConvertExpandoToDict(expando) : null;
-    return new ILogEventEnricher[]
-    {
-      new PropertyEnricher("serverUrl", ServerUrl),
-      new PropertyEnricher("graphqlQuery", request.Query),
-      new PropertyEnricher("graphqlVariables", variables),
-      new PropertyEnricher("resultType", typeof(T).Name)
-    };
-  }
+  /* private ILogEventEnricher[] CreateEnrichers<T>(GraphQLRequest request)
+   {
+     // i know this is double  (de)serializing, but we need a recursive convert to
+     // dict<str, object> here
+     var expando = JsonConvert.DeserializeObject<ExpandoObject>(JsonConvert.SerializeObject(request.Variables));
+     var variables = request.Variables != null && expando != null ? ConvertExpandoToDict(expando) : null;
+     return new ILogEventEnricher[]
+     {
+       new PropertyEnricher("serverUrl", ServerUrl),
+       new PropertyEnricher("graphqlQuery", request.Query),
+       new PropertyEnricher("graphqlVariables", variables),
+       new PropertyEnricher("resultType", typeof(T).Name)
+     };
+   }*/
 
   IDisposable ISpeckleGraphQLClient.SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback) =>
     SubscribeTo(request, callback);
@@ -236,7 +233,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   /// <inheritdoc cref="ISpeckleGraphQLClient.SubscribeTo{T}"/>
   internal IDisposable SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback)
   {
-    using (LogContext.Push(CreateEnrichers<T>(request)))
+    //using (LogContext.Push(CreateEnrichers<T>(request)))
     {
       try
       {
@@ -254,9 +251,11 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
               }
               else
               {
-                SpeckleLog
-                  .Logger.ForContext("graphqlResponse", response)
-                  .Error("Cannot execute graphql callback for {resultType}, the response has no data.", typeof(T).Name);
+                // Serilog.Log.ForContext("graphqlResponse", response)
+                SpeckleLog.Logger.Error(
+                  "Cannot execute graphql callback for {resultType}, the response has no data.",
+                  typeof(T).Name
+                );
               }
             }
             // we catch forbidden to rethrow, making sure its not logged.
@@ -267,17 +266,16 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
             // anything else related to graphql gets logged
             catch (SpeckleGraphQLException<T> gqlException)
             {
-              SpeckleLog
-                .Logger.ForContext("graphqlResponse", gqlException.Response)
-                .ForContext("graphqlExtensions", gqlException.Extensions)
-                .ForContext("graphqlErrorMessages", gqlException.ErrorMessages.ToList())
-                .Warning(
-                  gqlException,
-                  "Execution of the graphql request to get {resultType} failed with {graphqlExceptionType} {exceptionMessage}.",
-                  typeof(T).Name,
-                  gqlException.GetType().Name,
-                  gqlException.Message
-                );
+              /* Speckle.Core.Logging..ForContext("graphqlResponse", gqlException.Response)
+                 .ForContext("graphqlExtensions", gqlException.Extensions)
+                 .ForContext("graphqlErrorMessages", gqlException.ErrorMessages.ToList())*/
+              SpeckleLog.Logger.Warning(
+                gqlException,
+                "Execution of the graphql request to get {resultType} failed with {graphqlExceptionType} {exceptionMessage}.",
+                typeof(T).Name,
+                gqlException.GetType().Name,
+                gqlException.Message
+              );
               throw;
             }
             // we're not handling the bare Exception type here,

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Core.Logging;
+using Speckle.Logging;
 
 namespace Speckle.Core.Transports;
 

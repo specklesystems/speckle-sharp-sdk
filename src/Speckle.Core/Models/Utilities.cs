@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
+using Speckle.Logging;
 
 namespace Speckle.Core.Models;
 

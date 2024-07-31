@@ -4,6 +4,7 @@ using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports.ServerUtils;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json.Linq;
 
 namespace Speckle.Core.Transports;

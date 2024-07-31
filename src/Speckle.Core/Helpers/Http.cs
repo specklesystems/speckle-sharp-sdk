@@ -6,10 +6,10 @@ using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 using Polly.Retry;
-using Serilog.Context;
 using Speckle.Core.Common;
 using Speckle.Core.Credentials;
 using Speckle.Core.Logging;
+using Speckle.Logging;
 
 namespace Speckle.Core.Helpers;
 
@@ -57,7 +57,9 @@ public static class Http
     }
     catch (HttpRequestException ex)
     {
-      SpeckleLog.Logger.ForContext("defaultServer", defaultServer).Warning(ex, "Failed to ping internet");
+      using var activity = SpeckleActivityFactory.Start();
+      activity?.SetTag("defaultServer", defaultServer);
+      SpeckleLog.Logger.Warning(ex, "Failed to ping internet");
 
       return false;
     }
@@ -191,9 +193,7 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
     // this is a preliminary client server correlation implementation
     // refactor this, when we have a better observability stack
     var context = new Context();
-    using (LogContext.PushProperty("correlationId", context.CorrelationId))
-    using (LogContext.PushProperty("targetUrl", request.RequestUri))
-    using (LogContext.PushProperty("httpMethod", request.Method))
+    using var activity = SpeckleActivityFactory.Start();
     {
       SpeckleLog.Logger.Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
       var timer = Stopwatch.StartNew();
@@ -214,19 +214,19 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
       timer.Stop();
       var status = policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed";
       context.TryGetValue("retryCount", out var retryCount);
-      SpeckleLog
-        .Logger.ForContext("ExceptionType", policyResult.FinalException?.GetType())
-        .Information(
-          "Execution of http request to {httpScheme}://{hostUrl}{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries. Request correlation ID: {correlationId}",
-          request.RequestUri.Scheme,
-          request.RequestUri.Host,
-          request.RequestUri.PathAndQuery,
-          status,
-          policyResult.Result?.StatusCode,
-          timer.Elapsed.TotalSeconds,
-          retryCount ?? 0,
-          context.CorrelationId.ToString()
-        );
+      SpeckleLog.Logger
+      // .Log.ForContext("ExceptionType", policyResult.FinalException?.GetType())
+      .Information(
+        "Execution of http request to {httpScheme}://{hostUrl}{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries. Request correlation ID: {correlationId}",
+        request.RequestUri.Scheme,
+        request.RequestUri.Host,
+        request.RequestUri.PathAndQuery,
+        status,
+        policyResult.Result?.StatusCode,
+        timer.Elapsed.TotalSeconds,
+        retryCount ?? 0,
+        context.CorrelationId.ToString()
+      );
       if (policyResult.Outcome == OutcomeType.Successful)
       {
         return policyResult.Result.NotNull();

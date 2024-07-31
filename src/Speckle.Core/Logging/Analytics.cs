@@ -8,6 +8,7 @@ using System.Text;
 using System.Web;
 using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Core.Logging;
@@ -199,6 +200,9 @@ public static class Analytics
 
     Task.Run(async () =>
     {
+      using var activity = SpeckleActivityFactory.Start();
+      activity?.SetTag("isAction", isAction);
+      activity?.SetTag("eventName", eventName.ToString());
       try
       {
         var executingAssembly = Assembly.GetExecutingAssembly();
@@ -242,10 +246,7 @@ public static class Analytics
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog
-          .Logger.ForContext("eventName", eventName.ToString())
-          .ForContext("isAction", isAction)
-          .Warning(ex, "Analytics event failed {exceptionMessage}", ex.Message);
+        SpeckleLog.Logger.Warning(ex, "Analytics event failed {exceptionMessage}", ex.Message);
       }
     });
   }
@@ -282,7 +283,8 @@ public static class Analytics
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Logger.ForContext("connector", connector).Warning(ex, "Failed add connector to profile");
+        //.ForContext("connector", connector)
+        SpeckleLog.Logger.Warning(ex, "Failed add connector to profile");
       }
     });
   }
@@ -313,7 +315,8 @@ public static class Analytics
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Logger.ForContext("connector", connector).Warning(ex, "Failed identify profile");
+        //.ForContext("connector", connector)
+        SpeckleLog.Logger.Warning(ex, "Failed identify profile");
       }
     });
   }

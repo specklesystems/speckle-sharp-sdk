@@ -8,6 +8,7 @@ using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports;
 using Speckle.DoubleNumerics;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Constants = Speckle.Core.Helpers.Constants;
 using Utilities = Speckle.Core.Models.Utilities;

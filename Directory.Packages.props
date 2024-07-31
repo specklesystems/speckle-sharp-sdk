@@ -1,36 +1,39 @@
 <Project>
   <ItemGroup>
     <PackageVersion Include="altcover" Version="8.8.74" />
+    <PackageVersion Include="Bullseye" Version="5.0.0" />
     <PackageVersion Include="GraphQL.Client" Version="6.0.0" />
+    <PackageVersion Include="Glob" Version="1.1.9" />
+    <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageVersion Include="Polly" Version="7.2.3" />
-    <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
-    <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
-    <PackageVersion Include="Serilog" Version="2.12.0" />
-    <PackageVersion Include="Serilog.Enrichers.ClientInfo" Version="1.3.0" />
-    <PackageVersion Include="Serilog.Exceptions" Version="8.4.0" />
-    <PackageVersion Include="Serilog.Sinks.Console" Version="4.1.0" />
-    <PackageVersion Include="Serilog.Sinks.Seq" Version="5.2.2" />
-    <PackageVersion Include="SerilogTimings" Version="3.0.1" />
-    <PackageVersion Include="Shouldly" Version="4.2.1" />
-    <PackageVersion Include="Speckle.Newtonsoft.Json" Version="13.0.2" />
-    <PackageVersion Include="Speckle.DoubleNumerics" Version="4.0.1" />
     <!-- Keep at 7 for side by side -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="7.0.7" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
-    <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageVersion Include="MongoDB.Driver" Version="2.19.2" />
     <PackageVersion Include="Moq" Version="4.20.70" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="NUnit" Version="4.1.0" />
     <PackageVersion Include="NUnit.Analyzers" Version="4.2.0" />
-    <PackageVersion Include="Bullseye" Version="5.0.0" />
-    <PackageVersion Include="Glob" Version="1.1.9" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" version="1.9.0" />
+    <PackageVersion Include="Polly" Version="7.2.3" />
+    <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
+    <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
+    <PackageVersion Include="Serilog" Version="4.0.1" />
+    <PackageVersion Include="Serilog.Exceptions" Version="8.4.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Seq" Version="8.0.0" />
+    <PackageVersion Include="Shouldly" Version="4.2.1" />
+    <PackageVersion Include="Speckle.Newtonsoft.Json" Version="13.0.2" />
+    <PackageVersion Include="Speckle.DoubleNumerics" Version="4.0.1" />
     <PackageVersion Include="SimpleExec" Version="12.0.0" />
-    <PackageVersion Include="MongoDB.Driver" Version="2.19.2" />
     <!-- this was the previous version used -->
     <PackageVersion Include="System.Text.Json" Version="5.0.2" />
     <GlobalPackageReference Include="PolySharp" Version="1.14.1" />
     <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <GlobalPackageReference Include="GitVersion.MsBuild" Version="5.12.0" />
-    <GlobalPackageReference Include="Speckle.InterfaceGenerator" Version="0.9.5" />
+    <GlobalPackageReference Include="Speckle.InterfaceGenerator" Version="0.9.6" />
   </ItemGroup>
 </Project>

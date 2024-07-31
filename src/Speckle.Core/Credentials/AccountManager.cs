@@ -15,6 +15,7 @@ using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Transports;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Stream = System.IO.Stream;
 
@@ -346,7 +347,8 @@ public static class AccountManager
 
     foreach (var acc in sqlAccounts)
     {
-      if (IsInvalid(acc.NotNull()))
+      acc.NotNull();
+      if (IsInvalid(acc))
       {
         RemoveAccount(acc.id);
       }
