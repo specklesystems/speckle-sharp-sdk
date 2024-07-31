@@ -13,13 +13,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"  PrivateAssets="all"/>
     <PackageReference Include="Serilog"  PrivateAssets="all"/>
-    <PackageReference Include="Serilog.Enrichers.ClientInfo"  PrivateAssets="all"/>
     <PackageReference Include="Serilog.Exceptions"  PrivateAssets="all"/>
     <PackageReference Include="Serilog.Sinks.Console"  PrivateAssets="all"/>
+    <PackageReference Include="Serilog.Sinks.OpenTelemetry"  PrivateAssets="all"/>
     <PackageReference Include="Serilog.Sinks.Seq"  PrivateAssets="all"/>
     <PackageReference Include="OpenTelemetry.Exporter.Console"  PrivateAssets="all"/>
-    <PackageReference Include="OpenTelemetry.Exporter.Zipkin"  PrivateAssets="all"/>
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" NoWarn="NU1902"  PrivateAssets="all"/>
   </ItemGroup>
 </Project>

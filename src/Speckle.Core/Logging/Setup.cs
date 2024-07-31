@@ -67,7 +67,7 @@ public static class Setup
     Mutex = new Mutex(false, "SpeckleConnector-" + hostApplicationName);
 
     var traceProvider = TraceBuilder.Initialize(hostApplicationName, logConfiguration);
-    SpeckleLog.Initialize(GetUserIdFromDefaultAccount(), hostApplicationName, hostApplicationVersion, logConfiguration);
+    LogBuilder.Initialize(GetUserIdFromDefaultAccount(), hostApplicationName, hostApplicationVersion, logConfiguration);
 
     foreach (var account in AccountManager.GetAccounts())
     {
@@ -78,14 +78,6 @@ public static class Setup
     SpeckleActivityFactory.Initialize(hostApplicationName, hostApplicationVersion);
 
     return traceProvider;
-  }
-
-  [Obsolete("Use " + nameof(Mutex))]
-  [SuppressMessage("Style", "IDE1006:Naming Styles")]
-  public static Mutex mutex
-  {
-    get => Mutex;
-    set => Mutex = value;
   }
 
   private static string GetUserIdFromDefaultAccount()
