@@ -2,6 +2,9 @@
 
 public interface ISpeckleLogger
 {
+  void Write(SpeckleLogLevel speckleLogLevel, string message, params object?[] arguments);
+  void Write(SpeckleLogLevel speckleLogLevel, Exception? exception, string message, params object?[] arguments);
+
   void Debug(string message, params object?[] arguments);
   void Debug(Exception exception, string message, params object?[] arguments);
   void Warning(string message, params object?[] arguments);

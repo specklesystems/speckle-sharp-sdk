@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using Serilog.Events;
 
 namespace Speckle.Logging;
 
@@ -10,6 +11,28 @@ internal class SpeckleLogger : ISpeckleLogger
   {
     _logger = logger;
   }
+
+  private static LogEventLevel GetLevel(SpeckleLogLevel speckleLogLevel) =>
+    speckleLogLevel switch
+    {
+      SpeckleLogLevel.Debug => LogEventLevel.Debug,
+      SpeckleLogLevel.Verbose => LogEventLevel.Verbose,
+      SpeckleLogLevel.Information => LogEventLevel.Information,
+      SpeckleLogLevel.Warning => LogEventLevel.Warning,
+      SpeckleLogLevel.Error => LogEventLevel.Error,
+      SpeckleLogLevel.Fatal => LogEventLevel.Fatal,
+      _ => throw new ArgumentOutOfRangeException(nameof(speckleLogLevel), speckleLogLevel, null)
+    };
+
+  public void Write(SpeckleLogLevel speckleLogLevel, string message, params object?[] arguments) =>
+    _logger.Write(GetLevel(speckleLogLevel), message, arguments);
+
+  public void Write(
+    SpeckleLogLevel speckleLogLevel,
+    Exception? exception,
+    string message,
+    params object?[] arguments
+  ) => _logger.Write(GetLevel(speckleLogLevel), exception, message, arguments);
 
   public void Debug(string message, params object?[] arguments) => _logger.Debug(message, arguments);
 

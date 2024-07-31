@@ -129,54 +129,22 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     }
     finally
     {
-      if (exception is null)
+      SpeckleLogLevel logLevel = exception switch
       {
-        SpeckleLog.Logger.Information(
-          "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-          typeof(T).Name,
-          exception is null,
-          timer.Elapsed.TotalSeconds
-        );
-      }
-      else if (exception is OperationCanceledException oce)
-      {
-        if (cancellationToken.IsCancellationRequested)
-        {
-          SpeckleLog.Logger.Debug(
-            "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-            typeof(T).Name,
-            exception is null,
-            timer.Elapsed.TotalSeconds
-          );
-        }
-        else
-        {
-          SpeckleLog.Logger.Error(
-            "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-            typeof(T).Name,
-            exception is null,
-            timer.Elapsed.TotalSeconds
-          );
-        }
-      }
-      else if (exception is SpeckleException)
-      {
-        SpeckleLog.Logger.Warning(
-          "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-          typeof(T).Name,
-          exception is null,
-          timer.Elapsed.TotalSeconds
-        );
-      }
-      else
-      {
-        SpeckleLog.Logger.Error(
-          "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-          typeof(T).Name,
-          exception is null,
-          timer.Elapsed.TotalSeconds
-        );
-      }
+        null => SpeckleLogLevel.Information,
+        OperationCanceledException
+          => cancellationToken.IsCancellationRequested ? SpeckleLogLevel.Debug : SpeckleLogLevel.Error,
+        SpeckleException => SpeckleLogLevel.Warning,
+        _ => SpeckleLogLevel.Error,
+      };
+      SpeckleLog.Logger.Write(
+        logLevel,
+        exception,
+        "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
+        typeof(T).Name,
+        exception is null,
+        timer.Elapsed.TotalSeconds
+      );
     }
   }
 
