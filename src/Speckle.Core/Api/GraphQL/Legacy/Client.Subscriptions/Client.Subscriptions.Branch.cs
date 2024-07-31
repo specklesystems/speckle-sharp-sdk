@@ -1,5 +1,4 @@
 #nullable disable
-using System;
 using GraphQL;
 using Speckle.Core.Api.SubscriptionModels;
 

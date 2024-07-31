@@ -1,6 +1,4 @@
 #nullable disable
-using System;
-
 namespace Speckle.Core.Helpers;
 
 public class State<T> : IDisposable

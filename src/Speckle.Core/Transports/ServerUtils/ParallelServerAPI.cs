@@ -1,10 +1,5 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Speckle.Core.Common;
 using Speckle.Core.Logging;
 using Speckle.Core.Serialisation.SerializationUtilities;
@@ -27,14 +22,14 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 {
   private readonly string _authToken;
 
-  private readonly string _baseUri;
+  private readonly Uri _baseUri;
 
   private readonly object _callbackLock = new();
 
   private readonly int _timeoutSeconds;
 
   public ParallelServerApi(
-    string baseUri,
+    Uri baseUri,
     string authorizationToken,
     string blobStorageFolder,
     int timeoutSeconds,

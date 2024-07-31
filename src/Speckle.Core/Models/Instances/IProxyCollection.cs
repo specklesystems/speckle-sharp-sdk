@@ -1,4 +1,4 @@
-﻿namespace Speckle.Core.Models.Instances;
+namespace Speckle.Core.Models.Instances;
 
 /// <summary>
 /// Collection to proxy objects that lies in definitions, groups or whatever logic in the host app.
@@ -10,9 +10,4 @@ public interface IProxyCollection
   /// On receive, they will be mapped to corresponding newly created definition ids.
   /// </summary>
   public List<string> objects { get; set; }
-
-  /// <summary>
-  /// Name of the proxy collection which is unique for rhino, autocad and sketchup
-  /// </summary>
-  public string name { get; set; }
 }

@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
-using System.Linq;
-using System.Net.Http;
 using System.Net.WebSockets;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using GraphQL;
 using GraphQL.Client.Http;
 using Polly;
@@ -92,15 +86,6 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
 
   internal async Task<T> ExecuteWithResiliencePolicies<T>(Func<Task<T>> func)
   {
-    // TODO: handle these in the HttpClient factory with a custom RequestHandler class
-    // 408 Request Timeout
-    // 425 Too Early
-    // 429 Too Many Requests
-    // 500 Internal Server Error
-    // 502 Bad Gateway
-    // 503 Service Unavailable
-    // 504 Gateway Timeout
-
     var delay = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 5);
     var graphqlRetry = Policy
       .Handle<SpeckleGraphQLInternalErrorException>()

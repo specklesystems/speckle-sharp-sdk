@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using Speckle.Core.Kits;
 
 namespace Speckle.Core.Models.GraphTraversal;
