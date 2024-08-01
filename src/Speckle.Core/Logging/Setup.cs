@@ -43,39 +43,35 @@ public static class Setup
   /// <summary>
   /// Set from the connectors, defines which current host application we're running on - includes the version.
   /// </summary>
-  internal static string VersionedHostApplication { get; private set; } = HostApplications.Other.Slug;
+  internal static string Slug { get; private set; } = HostApplications.Other.Slug;
 
-  public static IDisposable Initialize(
-    string hostApplicationName,
-    string hostApplicationVersion,
-    SpeckleLogConfiguration? logConfiguration = null
+  public static IDisposable? Initialize(
+    SpeckleConfiguration configuration
   )
   {
     if (s_initialized)
     {
-      SpeckleLog.Logger.Information("Setup was already initialized with {currentHostApp}", hostApplicationName);
+      SpeckleLog.Logger.Information("Setup was already initialized with {currentHostApp}", configuration.Application);
       throw new InvalidOperationException();
     }
 
     s_initialized = true;
-
-    logConfiguration ??= new SpeckleLogConfiguration();
-    HostApplication = hostApplicationName;
-    VersionedHostApplication = hostApplicationVersion;
+    HostApplication = configuration.Application;
+    Slug = configuration.Slug ?? string.Empty;
 
     //start mutex so that Manager can detect if this process is running
-    Mutex = new Mutex(false, "SpeckleConnector-" + hostApplicationName);
+    Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
 
-    var traceProvider = TraceBuilder.Initialize(hostApplicationName, logConfiguration);
-    LogBuilder.Initialize(GetUserIdFromDefaultAccount(), hostApplicationName, hostApplicationVersion, logConfiguration);
+    var traceProvider = TraceBuilder.Initialize(configuration.Application, configuration.Slug, configuration.Tracing);
+    LogBuilder.Initialize(GetUserIdFromDefaultAccount(), configuration.Application, configuration.Slug, configuration.Logging);
 
     foreach (var account in AccountManager.GetAccounts())
     {
-      Analytics.AddConnectorToProfile(account.GetHashedEmail(), hostApplicationName);
-      Analytics.IdentifyProfile(account.GetHashedEmail(), hostApplicationName);
+      Analytics.AddConnectorToProfile(account.GetHashedEmail(), configuration.Application);
+      Analytics.IdentifyProfile(account.GetHashedEmail(), configuration.Application);
     }
 
-    SpeckleActivityFactory.Initialize(hostApplicationName, hostApplicationVersion);
+    SpeckleActivityFactory.Initialize(configuration.Application, Slug);
 
     return traceProvider;
   }

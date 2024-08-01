@@ -212,7 +212,7 @@ public static class Analytics
           { "server_id", hashedServer },
           { "token", MIXPANEL_TOKEN },
           { "hostApp", Setup.HostApplication },
-          { "hostAppVersion", Setup.VersionedHostApplication },
+          { "hostAppVersion", Setup.Slug },
           {
             "core_version",
             FileVersionInfo.GetVersionInfo(executingAssembly.Location).ProductVersion
