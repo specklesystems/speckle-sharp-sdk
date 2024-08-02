@@ -681,7 +681,7 @@ public static class AccountManager
       }
     }
 
-    var lockId = Setup.HostApplication + "@" + DateTime.Now.Add(timespan).ToString("o");
+    var lockId = Setup.ApplicationVersion + "@" + DateTime.Now.Add(timespan).ToString("o");
 
     // using the lock release time as an id and value
     // for ease of deletion and retrieval

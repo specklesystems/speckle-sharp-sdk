@@ -211,8 +211,8 @@ public static class Analytics
           { "distinct_id", hashedEmail },
           { "server_id", hashedServer },
           { "token", MIXPANEL_TOKEN },
-          { "hostApp", Setup.HostApplication },
-          { "hostAppVersion", Setup.Slug },
+          { "hostApp", Setup.Application },
+          { "hostAppVersion", Setup.Version },
           {
             "core_version",
             FileVersionInfo.GetVersionInfo(executingAssembly.Location).ProductVersion

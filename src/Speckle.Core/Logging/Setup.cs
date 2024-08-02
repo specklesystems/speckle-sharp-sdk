@@ -27,18 +27,20 @@ public static class Setup
     //Set fallback values
     try
     {
-      HostApplication = Process.GetCurrentProcess().ProcessName;
+      Application = Process.GetCurrentProcess().ProcessName;
     }
     catch (InvalidOperationException)
     {
-      HostApplication = "other (.NET)";
+      Application = "other (.NET)";
     }
   }
 
   /// <summary>
   /// Set from the connectors, defines which current host application we're running on.
   /// </summary>
-  internal static string HostApplication { get; private set; }
+  internal static string Application { get; private set; }
+  internal static string Version { get; private set; }
+  internal static string ApplicationVersion => $"{Application} {Version}";
 
   /// <summary>
   /// Set from the connectors, defines which current host application we're running on - includes the version.
@@ -54,8 +56,9 @@ public static class Setup
     }
 
     s_initialized = true;
-    HostApplication = configuration.Application;
-    Slug = configuration.Slug ?? string.Empty;
+    Application = configuration.Application;
+    Version = configuration.Version;
+    Slug = configuration.Slug;
 
     //start mutex so that Manager can detect if this process is running
     Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
@@ -74,7 +77,7 @@ public static class Setup
       Analytics.IdentifyProfile(account.GetHashedEmail(), configuration.Application);
     }
 
-    SpeckleActivityFactory.Initialize(configuration.Application, Slug);
+    SpeckleActivityFactory.Initialize(configuration.Slug, configuration.Version);
 
     return traceProvider;
   }
