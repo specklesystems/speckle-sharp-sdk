@@ -1,3 +1,5 @@
+using Speckle.Core.Models.Proxies;
+
 namespace Speckle.Core.Models.Instances;
 
 /// <summary>
