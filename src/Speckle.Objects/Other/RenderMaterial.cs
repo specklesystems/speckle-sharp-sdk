@@ -1,7 +1,7 @@
 using System.Drawing;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
-using Speckle.Core.Models.Instances;
+using Speckle.Core.Models.Proxies;
 using Speckle.Newtonsoft.Json;
 
 namespace Objects.Other;

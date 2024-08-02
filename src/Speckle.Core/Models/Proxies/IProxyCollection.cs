@@ -1,4 +1,4 @@
-namespace Speckle.Core.Models.Instances;
+namespace Speckle.Core.Models.Proxies;
 
 /// <summary>
 /// Collection to proxy objects that lies in definitions, groups or whatever logic in the host app.
