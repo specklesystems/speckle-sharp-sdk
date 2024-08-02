@@ -16,15 +16,6 @@ public class TraceBuilder(IDisposable? traceProvider) : IDisposable
     }
 
     {
-      Uri GetUri()
-      {
-        if (logConfiguration.Otel?.Endpoint is null)
-        {
-          return new Uri("https://seq.speckle.systems/ingest/otlp/v1/traces");
-        }
-
-        return new Uri(logConfiguration.Otel.Endpoint);
-      }
       var tracerProviderBuilder = Sdk.CreateTracerProviderBuilder()
         .AddSource(application)
         .ConfigureResource(r =>
@@ -43,7 +34,7 @@ public class TraceBuilder(IDisposable? traceProvider) : IDisposable
         tracerProviderBuilder = tracerProviderBuilder.AddOtlpExporter(x =>
         {
           x.Protocol = OtlpExportProtocol.HttpProtobuf;
-          x.Endpoint = GetUri();
+          x.Endpoint = new Uri(logConfiguration.Otel.Endpoint);
           x.Headers = string.Join(";", logConfiguration.Otel?.Headers?.Select((k,v) => k + " " + v) ?? []);
         });
       }
