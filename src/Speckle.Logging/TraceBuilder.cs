@@ -9,13 +9,22 @@ public class TraceBuilder(IDisposable? traceProvider) : IDisposable
 {
   public static IDisposable? Initialize(string application, string? slug, SpeckleTracing? logConfiguration)
   {
-    logConfiguration ??= new();
-    if (logConfiguration is { Otel: false, Console: false, Seq: false })
+    if (!(logConfiguration?.Console ?? false) 
+        || (logConfiguration.Otel?.Enabled ?? false))
     {
       return null;
     }
 
     {
+      Uri GetUri()
+      {
+        if (logConfiguration.Otel?.Endpoint is null)
+        {
+          return new Uri("https://seq.speckle.systems/ingest/otlp/v1/traces");
+        }
+
+        return new Uri(logConfiguration.Otel.Endpoint);
+      }
       var tracerProviderBuilder = Sdk.CreateTracerProviderBuilder()
         .AddSource(application)
         .ConfigureResource(r =>
@@ -29,13 +38,13 @@ public class TraceBuilder(IDisposable? traceProvider) : IDisposable
           );
         })
         .AddHttpClientInstrumentation();
-      if (logConfiguration.Otel || logConfiguration.Seq)
+      if (logConfiguration.Otel is not null)
       {
         tracerProviderBuilder = tracerProviderBuilder.AddOtlpExporter(x =>
         {
           x.Protocol = OtlpExportProtocol.HttpProtobuf;
-          x.Endpoint = new Uri("https://seq.speckle.systems/ingest/otlp/v1/traces");
-          x.Headers = "X-Seq-ApiKey=agZqxG4jQELxQQXh0iZQ";
+          x.Endpoint = GetUri();
+          x.Headers = string.Join(";", logConfiguration.Otel?.Headers?.Select((k,v) => k + " " + v) ?? []);
         });
       }
 

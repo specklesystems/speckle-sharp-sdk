@@ -7,9 +7,13 @@ namespace Speckle.Logging;
 public record SpeckleLogging(
   SpeckleLogLevel MinimumLevel = SpeckleLogLevel.Warning,
   bool Console = true,
-  bool Seq = true,
-  bool File = true,
-  bool Otel = true
+  SpeckleFileLogging? File = null,
+  SpeckleOtelLogging? Otel = null
+  
 );
 
-public record SpeckleTracing(bool Console = false, bool Seq = true, bool Otel = false);
+public record SpeckleFileLogging(string? Path = null, bool Enabled = true);
+public record SpeckleOtelLogging(string Endpoint, bool Enabled = true, Dictionary<string, string>? Headers = null);
+
+public record SpeckleTracing(bool Console = false, SpeckleOtelTracing? Otel = null);
+public record SpeckleOtelTracing(string Endpoint, bool Enabled = true, Dictionary<string, string>? Headers = null);

@@ -10,21 +10,11 @@ namespace Speckle.Logging;
 
 public static class LogBuilder
 {
-  private static string s_logFolderPath;
-
-  public static void Initialize(string userId, string hostApplication, string? slug, SpeckleLogging? logConfiguration)
+  public static void Initialize(string userId, string hostApplication, string? slug, SpeckleLogging? speckleLogging)
   {
-    logConfiguration ??= new();
-    // TODO: check if we have write permissions to the file.
-    // if not, disable file sink, even if its enabled in the config
-    // show a warning about that...
-    var canLogToFile = true;
-    s_logFolderPath = SpecklePathProvider.LogFolderPath(hostApplication, slug);
-    var logFilePath = Path.Combine(s_logFolderPath, "SpeckleCoreLog.txt");
-
     var fileVersionInfo = GetFileVersionInfo();
     var serilogLogConfiguration = new LoggerConfiguration()
-      .MinimumLevel.Is(SpeckleLogger.GetLevel(logConfiguration.MinimumLevel))
+      .MinimumLevel.Is(SpeckleLogger.GetLevel(speckleLogging?.MinimumLevel ?? SpeckleLogLevel.Warning))
       .Enrich.FromLogContext()
       .Enrich.WithProperty("id", userId)
       .Enrich.WithProperty("version", fileVersionInfo.FileVersion)
@@ -35,8 +25,11 @@ public static class LogBuilder
       .Enrich.WithProperty("runtime", RuntimeInformation.FrameworkDescription)
       .Enrich.WithExceptionDetails();
 
-    if (logConfiguration.File && canLogToFile)
+    if (speckleLogging?.File is not null)
     {
+      // TODO: check if we have write permissions to the file.
+      var logFilePath = SpecklePathProvider.LogFolderPath(hostApplication, slug);
+      logFilePath = Path.Combine(logFilePath, speckleLogging.File.Path ?? "SpeckleCoreLog.txt");
       serilogLogConfiguration = serilogLogConfiguration.WriteTo.File(
         logFilePath,
         rollingInterval: RollingInterval.Day,
@@ -44,25 +37,18 @@ public static class LogBuilder
       );
     }
 
-    if (logConfiguration.Console)
+    if (speckleLogging?.Console ?? false)
     {
       serilogLogConfiguration = serilogLogConfiguration.WriteTo.Console();
     }
 
-    if (logConfiguration.Seq)
-    {
-      serilogLogConfiguration = serilogLogConfiguration.WriteTo.Seq(
-        "https://seq.speckle.systems",
-        apiKey: "agZqxG4jQELxQQXh0iZQ"
-      );
-    }
-    if (logConfiguration.Otel)
+    if (speckleLogging?.Otel is not null)
     {
       serilogLogConfiguration = serilogLogConfiguration.WriteTo.OpenTelemetry(o =>
       {
         o.Protocol = OtlpProtocol.HttpProtobuf;
-        o.LogsEndpoint = "https://seq.speckle.systems/ingest/otlp/v1/logs";
-        o.Headers = new Dictionary<string, string> { { "X-Seq-ApiKey", "agZqxG4jQELxQQXh0iZQ" } };
+        o.LogsEndpoint = speckleLogging.Otel.Endpoint;
+        o.Headers = speckleLogging.Otel.Headers ?? o.Headers;
         o.ResourceAttributes = new Dictionary<string, object>
         {
           [Consts.SERVICE_NAME] = hostApplication,
@@ -71,11 +57,6 @@ public static class LogBuilder
       });
     }
     var logger = serilogLogConfiguration.CreateLogger();
-
-    if (logConfiguration.File && !canLogToFile)
-    {
-      logger.Warning("Log to file is enabled, but cannot write to {LogFilePath}", logFilePath);
-    }
     Log.Logger = logger;
   }
 
