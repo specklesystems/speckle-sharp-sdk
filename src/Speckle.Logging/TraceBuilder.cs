@@ -20,11 +20,13 @@ public class TraceBuilder(IDisposable? traceProvider) : IDisposable
         .AddSource(application)
         .ConfigureResource(r =>
         {
-          r.AddAttributes(new List<KeyValuePair<string, object>>
-          {
-            new(Consts.SERVICE_NAME, application),
-            new(Consts.SERVICE_SLUG, slug ?? string.Empty)
-          });
+          r.AddAttributes(
+            new List<KeyValuePair<string, object>>
+            {
+              new(Consts.SERVICE_NAME, application),
+              new(Consts.SERVICE_SLUG, slug ?? string.Empty)
+            }
+          );
         })
         .AddHttpClientInstrumentation();
       if (logConfiguration.Otel || logConfiguration.Seq)

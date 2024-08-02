@@ -45,9 +45,7 @@ public static class Setup
   /// </summary>
   internal static string Slug { get; private set; } = HostApplications.Other.Slug;
 
-  public static IDisposable? Initialize(
-    SpeckleConfiguration configuration
-  )
+  public static IDisposable? Initialize(SpeckleConfiguration configuration)
   {
     if (s_initialized)
     {
@@ -63,7 +61,12 @@ public static class Setup
     Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
 
     var traceProvider = TraceBuilder.Initialize(configuration.Application, configuration.Slug, configuration.Tracing);
-    LogBuilder.Initialize(GetUserIdFromDefaultAccount(), configuration.Application, configuration.Slug, configuration.Logging);
+    LogBuilder.Initialize(
+      GetUserIdFromDefaultAccount(),
+      configuration.Application,
+      configuration.Slug,
+      configuration.Logging
+    );
 
     foreach (var account in AccountManager.GetAccounts())
     {

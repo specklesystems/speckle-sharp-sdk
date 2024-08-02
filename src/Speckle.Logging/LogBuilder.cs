@@ -12,12 +12,7 @@ public static class LogBuilder
 {
   private static string s_logFolderPath;
 
-  public static void Initialize(
-    string userId,
-    string hostApplication,
-    string? slug,
-    SpeckleLogging? logConfiguration
-  )
+  public static void Initialize(string userId, string hostApplication, string? slug, SpeckleLogging? logConfiguration)
   {
     logConfiguration ??= new();
     // TODO: check if we have write permissions to the file.
@@ -29,6 +24,7 @@ public static class LogBuilder
 
     var fileVersionInfo = GetFileVersionInfo();
     var serilogLogConfiguration = new LoggerConfiguration()
+      .MinimumLevel.Is(SpeckleLogger.GetLevel(logConfiguration.MinimumLevel))
       .Enrich.FromLogContext()
       .Enrich.WithProperty("id", userId)
       .Enrich.WithProperty("version", fileVersionInfo.FileVersion)
@@ -66,12 +62,11 @@ public static class LogBuilder
       {
         o.Protocol = OtlpProtocol.HttpProtobuf;
         o.LogsEndpoint = "https://seq.speckle.systems/ingest/otlp/v1/logs";
-        o.Headers = new Dictionary<string, string> {
-          { "X-Seq-ApiKey", "agZqxG4jQELxQQXh0iZQ"}};
+        o.Headers = new Dictionary<string, string> { { "X-Seq-ApiKey", "agZqxG4jQELxQQXh0iZQ" } };
         o.ResourceAttributes = new Dictionary<string, object>
         {
           [Consts.SERVICE_NAME] = hostApplication,
-              [Consts.SERVICE_SLUG] = slug ?? string.Empty
+          [Consts.SERVICE_SLUG] = slug ?? string.Empty
         };
       });
     }
