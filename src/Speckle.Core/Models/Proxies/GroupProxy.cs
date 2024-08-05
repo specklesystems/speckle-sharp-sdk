@@ -1,4 +1,4 @@
-namespace Speckle.Core.Models.Instances;
+namespace Speckle.Core.Models.Proxies;
 
 /// <summary>
 /// Grouped objects with a meaningful way for host application so use this proxy if you want to group object references for any purpose.
