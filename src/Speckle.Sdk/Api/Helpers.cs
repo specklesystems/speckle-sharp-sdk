@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Speckle.Sdk.Transports;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
@@ -12,6 +11,7 @@ using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
@@ -100,8 +100,8 @@ public static class Helpers
       }
     );
 
-    var receiveRes = await Operations.Operations
-      .Receive(
+    var receiveRes = await Operations
+      .Operations.Receive(
         objectId,
         transport,
         onProgressAction: onProgressAction,
@@ -158,7 +158,9 @@ public static class Helpers
     using var transport = serverTransportFactory.Create(client.Account, sw.StreamId);
     var branchName = string.IsNullOrEmpty(sw.BranchName) ? "main" : sw.BranchName;
 
-    var objectId = await Operations.Operations.Send(data, transport, useDefaultCache, onProgressAction).ConfigureAwait(false);
+    var objectId = await Operations
+      .Operations.Send(data, transport, useDefaultCache, onProgressAction)
+      .ConfigureAwait(false);
 
     Analytics.TrackEvent(client.Account, Analytics.Events.Send);
 

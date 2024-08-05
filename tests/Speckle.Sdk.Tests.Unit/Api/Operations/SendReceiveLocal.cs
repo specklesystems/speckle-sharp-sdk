@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using NUnit.Framework;
-using Speckle.Sdk.Tests.Unit.Kits;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Tests.Unit.Kits;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;

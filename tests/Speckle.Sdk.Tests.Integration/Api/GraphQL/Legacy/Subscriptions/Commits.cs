@@ -1,8 +1,8 @@
-using Speckle.Sdk.Tests.Unit.Kits;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.Operations;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Tests.Unit.Kits;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Integration.Api.GraphQL.Legacy.Subscriptions;

@@ -8,7 +8,8 @@ public class TraceBuilder(IDisposable? traceProvider) : IDisposable
 {
   public static IDisposable Initialize(string application, SpeckleLogConfiguration logConfiguration)
   {
-    var tracerProviderBuilder = OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+    var tracerProviderBuilder = OpenTelemetry
+      .Sdk.CreateTracerProviderBuilder()
       .AddSource(application)
       .ConfigureResource(r =>
       {
