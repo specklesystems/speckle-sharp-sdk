@@ -276,7 +276,8 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   /// Awaits untill write completion (ie, the current queue is fully consumed).
   /// </summary>
   /// <returns></returns>
-  public async Task WriteComplete() => await Utilities.WaitUntil(() => WriteCompletionStatus, 500).ConfigureAwait(false);
+  public async Task WriteComplete() =>
+    await Utilities.WaitUntil(() => WriteCompletionStatus, 500).ConfigureAwait(false);
 
   /// <summary>
   /// Returns true if the current write queue is empty and comitted.

@@ -12,9 +12,9 @@ public static class Utilities
   /// <returns></returns>
   public static async Task WaitUntil(Func<bool> condition, int frequency = 25)
   {
-      while (!condition())
-      {
-        await Task.Delay(frequency).ConfigureAwait(false);
-      }
+    while (!condition())
+    {
+      await Task.Delay(frequency).ConfigureAwait(false);
+    }
   }
 }
