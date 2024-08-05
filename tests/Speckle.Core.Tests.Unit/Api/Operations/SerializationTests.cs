@@ -1,5 +1,6 @@
 using System.Drawing;
 using NUnit.Framework;
+using Speckle.Core.Host;
 using Speckle.Core.Models;
 using Speckle.Core.Tests.Unit.Kits;
 using Point = Speckle.Core.Tests.Unit.Kits.Point;
@@ -10,6 +11,13 @@ namespace Speckle.Core.Tests.Unit.Api.Operations;
 [TestOf(typeof(Core.Api.Operations))]
 public class ObjectSerialization
 {
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly, typeof(ColorMock).Assembly);
+  }
+
   [Test]
   public void SimpleSerialization()
   {

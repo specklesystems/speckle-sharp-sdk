@@ -1,5 +1,4 @@
 using System.Reflection;
-using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
 namespace Speckle.Core.Host;
@@ -36,9 +35,16 @@ public static class TypeLoader
     }
   }
 
+  //Don't use unless you're testing
+  public static void Reset()
+  {
+    s_availableTypes = new();
+    s_initialized = false;
+  }
+
   private static void Load(Assembly[] assemblies)
   {
-    foreach (var assembly in assemblies)
+    foreach (var assembly in assemblies.Distinct())
     {
       if (assembly.IsDynamic || assembly.ReflectionOnly)
       {

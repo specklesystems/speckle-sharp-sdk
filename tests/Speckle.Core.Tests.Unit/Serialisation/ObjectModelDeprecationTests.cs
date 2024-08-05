@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Speckle.Core.Host;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation.Deprecated;
 using Speckle.Core.Serialisation.SerializationUtilities;
@@ -9,6 +10,13 @@ namespace Speckle.Core.Tests.Unit.Serialisation
   [TestOf(typeof(BaseObjectSerializationUtilities))]
   public class ObjectModelDeprecationTests
   {
+    [SetUp]
+    public void Setup()
+    {
+      TypeLoader.Reset();
+      TypeLoader.Initialize(typeof(MySpeckleBase).Assembly);
+    }
+
     [Test]
     public void GetDeprecatedAtomicType()
     {
