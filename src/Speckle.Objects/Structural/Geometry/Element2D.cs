@@ -1,7 +1,6 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Geometry;
 

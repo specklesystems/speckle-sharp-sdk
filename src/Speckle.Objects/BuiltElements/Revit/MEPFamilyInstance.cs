@@ -1,4 +1,3 @@
-using Speckle.Core.Models;
 using Speckle.Objects.BuiltElements.Revit.Interfaces;
 using Speckle.Objects.Other.Revit;
 

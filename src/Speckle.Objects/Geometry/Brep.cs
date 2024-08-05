@@ -1,9 +1,9 @@
 using System.Runtime.Serialization;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 
@@ -49,7 +49,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// The unit's this object's coordinates are in.
   /// </summary>
   /// <remarks>
-  /// This should be one of <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of <see cref="Speckle.Sdk.Kits.Units"/>
   /// </remarks>
   public string units { get; set; }
 

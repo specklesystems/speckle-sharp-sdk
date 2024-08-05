@@ -1,4 +1,3 @@
-using Speckle.Core.Kits;
 using Speckle.Objects.Structural.Properties;
 
 namespace Speckle.Objects.Structural.CSI.Properties;

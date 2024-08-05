@@ -1,6 +1,6 @@
 using NUnit.Framework;
-using Speckle.Core.Credentials;
-using Speckle.Core.Logging;
+using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Logging;
 
 namespace Speckle.Core.Tests.Unit.Credentials;
 

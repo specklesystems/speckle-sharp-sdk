@@ -1,6 +1,6 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Objects.Other;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 
@@ -62,7 +62,7 @@ public class Plane : Base, ITransformable<Plane>
 
   /// <summary>
   /// The unit's this <see cref="Plane"/> is in.
-  /// This should be one of <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of <see cref="Speckle.Sdk.Kits.Units"/>
   /// </summary>
   public string units { get; set; }
 

@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Speckle.Core.Serialisation;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Core.Tests.Unit.Serialisation;
 

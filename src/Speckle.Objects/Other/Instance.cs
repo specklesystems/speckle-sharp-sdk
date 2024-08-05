@@ -1,8 +1,7 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
-using Speckle.Core.Models.GraphTraversal;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.GraphTraversal;
 
 namespace Speckle.Objects.Other;
 

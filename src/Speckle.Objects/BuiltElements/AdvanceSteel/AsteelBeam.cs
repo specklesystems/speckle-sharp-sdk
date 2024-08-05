@@ -1,7 +1,6 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Objects.Structural.Materials;
 using Speckle.Objects.Structural.Properties.Profiles;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 

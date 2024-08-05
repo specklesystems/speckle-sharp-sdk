@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 

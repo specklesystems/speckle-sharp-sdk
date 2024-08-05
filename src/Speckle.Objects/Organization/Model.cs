@@ -1,5 +1,5 @@
-using Speckle.Core.Models;
 using Speckle.Objects.Other;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Organization;
 

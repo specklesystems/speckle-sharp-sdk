@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 using TestModels;
 
 namespace Speckle.Core.Tests.Unit.Models

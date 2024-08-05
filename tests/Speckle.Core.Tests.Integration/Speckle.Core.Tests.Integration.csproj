@@ -15,7 +15,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Speckle.Core\Speckle.Core.csproj" />
+    <ProjectReference Include="..\..\src\Speckle.Sdk\Speckle.Sdk.csproj" />
     <ProjectReference Include="..\Speckle.Core.Tests.Unit\Speckle.Core.Tests.Unit.csproj" />
   </ItemGroup>
 

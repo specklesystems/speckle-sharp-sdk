@@ -1,5 +1,5 @@
-using Speckle.Core.Models;
 using Speckle.Objects.BuiltElements.Revit.Interfaces;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 

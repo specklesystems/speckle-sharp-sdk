@@ -1,10 +1,13 @@
 using Shouldly;
-using Speckle.Core.Api;
-using Speckle.Core.Api.GraphQL;
-using Speckle.Core.Credentials;
-using Speckle.Core.Models;
 using Speckle.Core.Tests.Unit.Kits;
 using Speckle.Core.Transports;
+using Speckle.Sdk.Api;
+using Speckle.Sdk.Api.GraphQL;
+using Speckle.Sdk.Api.GraphQL.Legacy;
+using Speckle.Sdk.Api.Operations;
+using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Core.Tests.Integration.Api.GraphQL.Legacy;
 

@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using Speckle.Core.Credentials;
+using Speckle.Sdk.Credentials;
 
 namespace Speckle.Core.Tests.Unit.Credentials;
 

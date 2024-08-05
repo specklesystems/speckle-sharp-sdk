@@ -1,9 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Logging;
-using Speckle.Core.Models;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models;
 using Vector = Speckle.Objects.Geometry.Vector;
 
 namespace Speckle.Objects.Other;

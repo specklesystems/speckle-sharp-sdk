@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 using Shouldly;
-using Speckle.Core.Common;
+using Speckle.Sdk.Common;
 
 namespace Speckle.Core.Tests.Unit.Common;
 

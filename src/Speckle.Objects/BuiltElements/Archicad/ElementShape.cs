@@ -1,8 +1,8 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Archicad;
 

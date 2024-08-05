@@ -194,7 +194,10 @@
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
         }
       },
-      "speckle.core": {
+      "speckle.logging": {
+        "type": "Project"
+      },
+      "speckle.sdk": {
         "type": "Project",
         "dependencies": {
           "GraphQL.Client": "[6.0.0, )",
@@ -208,9 +211,6 @@
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
           "System.Text.Json": "[5.0.2, )"
         }
-      },
-      "speckle.logging": {
-        "type": "Project"
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",

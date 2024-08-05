@@ -1,8 +1,9 @@
 #nullable enable
 using NUnit.Framework;
-using Speckle.Core.Common;
 using Speckle.Core.Transports;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Core.Tests.Unit.Transports;
 

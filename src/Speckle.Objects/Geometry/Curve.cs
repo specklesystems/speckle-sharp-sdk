@@ -1,8 +1,8 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Logging;
-using Speckle.Core.Models;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 

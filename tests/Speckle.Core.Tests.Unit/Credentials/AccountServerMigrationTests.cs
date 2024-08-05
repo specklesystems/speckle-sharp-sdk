@@ -1,6 +1,6 @@
 using NUnit.Framework;
-using Speckle.Core.Api.GraphQL.Models;
-using Speckle.Core.Credentials;
+using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Credentials;
 
 namespace Speckle.Core.Tests.Unit.Credentials;
 

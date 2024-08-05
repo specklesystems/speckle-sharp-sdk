@@ -1,5 +1,5 @@
-using Speckle.Core.Models;
 using Speckle.Objects.Structural.Materials;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.TeklaStructures;
 

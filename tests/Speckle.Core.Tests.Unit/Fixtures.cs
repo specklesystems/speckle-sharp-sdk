@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
-using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
-using Speckle.Core.Logging;
 using Speckle.Core.Transports;
+using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Core.Tests.Unit;
 

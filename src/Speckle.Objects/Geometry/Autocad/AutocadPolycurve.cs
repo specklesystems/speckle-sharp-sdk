@@ -1,5 +1,3 @@
-using Speckle.Core.Models;
-
 namespace Speckle.Objects.Geometry.Autocad;
 
 /// <summary>

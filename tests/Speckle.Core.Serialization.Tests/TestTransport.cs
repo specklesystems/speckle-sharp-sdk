@@ -1,4 +1,5 @@
 using Speckle.Core.Transports;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Core.Serialization.Tests;
 

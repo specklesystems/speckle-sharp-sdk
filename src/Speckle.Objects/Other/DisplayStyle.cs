@@ -1,5 +1,5 @@
 using System.Drawing;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Other;
 

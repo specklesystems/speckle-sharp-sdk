@@ -1,5 +1,7 @@
 ﻿using NUnit.Framework;
 using Speckle.Core.Helpers;
+using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Core.Tests.Unit.Models;
 
@@ -56,10 +58,10 @@ public sealed class UtilitiesTests
       new() // obj 4
     };
 
-    var parentTestEnumFlattened = Core.Models.Utilities.FlattenToHostConversionResult(testEnum);
-    var singleObjectFlattened = Core.Models.Utilities.FlattenToHostConversionResult(singleObject);
-    var nestedObjectsFlattened = Core.Models.Utilities.FlattenToHostConversionResult(nestedObjects);
-    var nestedObjectsWithEnumerableInheritedFlattened = Core.Models.Utilities.FlattenToHostConversionResult(
+    var parentTestEnumFlattened = Utilities.FlattenToHostConversionResult(testEnum);
+    var singleObjectFlattened = Utilities.FlattenToHostConversionResult(singleObject);
+    var nestedObjectsFlattened = Utilities.FlattenToHostConversionResult(nestedObjects);
+    var nestedObjectsWithEnumerableInheritedFlattened = Utilities.FlattenToHostConversionResult(
       nestedObjectsWithEnumerableInherited
     );
 

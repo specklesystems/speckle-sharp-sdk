@@ -1,7 +1,7 @@
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Archicad;
 

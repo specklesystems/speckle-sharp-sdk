@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using NUnit.Framework;
-using Speckle.Core.Host;
-using Speckle.Core.Models;
-using Speckle.Core.Serialisation;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 
 namespace Objects.Tests.Unit;
 
@@ -25,7 +25,7 @@ public class ModelPropertySupportedTypes
   /// </summary>
   /// <remarks>
   /// If you're tempted to add to this list, please ensure both our serializer and deserializer support properties of this type
-  /// Check the <see cref="Speckle.Core.Serialisation.SerializationUtilities.ValueConverter"/>
+  /// Check the <see cref="Speckle.Sdk.Serialisation.SerializationUtilities.ValueConverter"/>
   /// Check the <see cref="BaseObjectSerializerV2"/>
   /// (or is an interface where all concrete types are supported)
   /// You should also consider adding a test in SerializerNonBreakingChanges

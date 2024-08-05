@@ -1,7 +1,6 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Objects.BuiltElements.Revit;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 

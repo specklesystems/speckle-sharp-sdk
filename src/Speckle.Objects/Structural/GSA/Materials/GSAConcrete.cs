@@ -1,4 +1,3 @@
-using Speckle.Core.Kits;
 using Speckle.Objects.Structural.Materials;
 
 namespace Speckle.Objects.Structural.GSA.Materials;

@@ -1,6 +1,5 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Objects.Structural.GSA.Geometry;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Bridge;
 

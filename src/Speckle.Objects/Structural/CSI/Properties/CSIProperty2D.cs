@@ -1,4 +1,3 @@
-using Speckle.Core.Kits;
 using Speckle.Objects.Structural.CSI.Analysis;
 using Speckle.Objects.Structural.Materials;
 using Speckle.Objects.Structural.Properties;

@@ -1,8 +1,8 @@
-using Speckle.Core.Models;
 using Speckle.Objects.BuiltElements;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects;
 

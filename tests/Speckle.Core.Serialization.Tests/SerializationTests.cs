@@ -1,13 +1,12 @@
 ﻿using System.Reflection;
 using NUnit.Framework;
 using Shouldly;
-using Speckle.Core.Common;
-using Speckle.Core.Host;
-using Speckle.Core.Models;
-using Speckle.Core.Serialisation;
-using Speckle.Core.Serialisation.SerializationUtilities;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.BuiltElements;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Core.Serialization.Tests;
 
@@ -61,19 +60,19 @@ public class SerializationTests
     {
       var jObject = JObject.Parse(objJson);
       var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
-      var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
+      var starts = oldSpeckleType.StartsWith("Speckle.Sdk.") || oldSpeckleType.StartsWith("Objects.");
       starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
 
       var baseType = deserializer.Deserialize(objJson);
       id.ShouldBe(baseType.id);
 
-      starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
+      starts = baseType.speckle_type.StartsWith("Speckle.Sdk.") || baseType.speckle_type.StartsWith("Objects.");
       starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
 
       var type = BaseObjectSerializationUtilities.GetAtomicType(baseType.speckle_type);
       type.ShouldNotBeNull();
       var name = type.FullName.NotNull();
-      starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
+      starts = name.StartsWith("Speckle.Sdk") || name.StartsWith("Objects");
       starts.ShouldBeTrue($"{name} isn't expected");
     }
   }

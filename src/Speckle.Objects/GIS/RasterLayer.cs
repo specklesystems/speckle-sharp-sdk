@@ -1,4 +1,4 @@
-using Speckle.Core.Models.Collections;
+using Speckle.Sdk.Models.Collections;
 
 namespace Speckle.Objects.GIS;
 

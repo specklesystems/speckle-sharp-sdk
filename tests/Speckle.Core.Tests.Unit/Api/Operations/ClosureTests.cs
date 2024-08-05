@@ -1,14 +1,15 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
-using Speckle.Core.Common;
-using Speckle.Core.Models;
 using Speckle.Core.Tests.Unit.Kits;
 using Speckle.Core.Transports;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Core.Tests.Unit.Api.Operations;
 
 [TestFixture]
-[TestOf(typeof(Core.Api.Operations))]
+[TestOf(typeof(Sdk.Api.Operations.Operations))]
 public class Closures
 {
   [Test(Description = "Checks whether closures are generated correctly by the serialiser.")]
@@ -37,9 +38,9 @@ public class Closures
 
     var transport = new MemoryTransport();
 
-    var result = Core.Api.Operations.Send(d1, transport, false).Result;
+    var result = Sdk.Api.Operations.Operations.Send(d1, transport, false).Result;
 
-    var test = Core.Api.Operations.Receive(result, localTransport: transport).Result;
+    var test = Sdk.Api.Operations.Operations.Receive(result, localTransport: transport).Result;
 
     test.id.NotNull();
     Assert.That(d1.GetId(true), Is.EqualTo(test.id));

@@ -1,5 +1,3 @@
-using Speckle.Core.Kits;
-
 namespace Speckle.Objects.Structural.Properties;
 
 public class PropertyDamper : Property

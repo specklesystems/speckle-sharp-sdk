@@ -1,6 +1,6 @@
-using Speckle.Core.Api;
-using Speckle.Core.Api.SubscriptionModels;
-using Speckle.Core.Credentials;
+using Speckle.Sdk.Api.GraphQL;
+using Speckle.Sdk.Api.GraphQL.Legacy;
+using Speckle.Sdk.Credentials;
 
 namespace Speckle.Core.Tests.Integration.Api.GraphQL.Legacy.Subscriptions;
 

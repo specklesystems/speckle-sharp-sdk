@@ -1,9 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Logging;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 
@@ -53,7 +53,7 @@ public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, IConvertible, I
 
   /// <summary>
   /// The unit's this <see cref="Polyline"/> is in.
-  /// This should be one of <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of <see cref="Speckle.Sdk.Kits.Units"/>
   /// </summary>
   public string units { get; set; }
 

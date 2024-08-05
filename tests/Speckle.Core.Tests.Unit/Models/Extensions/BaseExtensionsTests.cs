@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using Speckle.Core.Models;
-using Speckle.Core.Models.Collections;
-using Speckle.Core.Models.Extensions;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.Collections;
+using Speckle.Sdk.Models.Extensions;
 
 namespace Speckle.Core.Tests.Unit.Models.Extensions;
 
@@ -44,11 +44,11 @@ public class BaseExtensionsTests
     var basePaths = collection.TraverseWithPath((obj => obj is not Collection)).ToList();
 
     Assert.That(basePaths.Count, Is.EqualTo(3));
-    Assert.That(basePaths[0].Item2.speckle_type, Is.EqualTo("Speckle.Core.Models.Collections.Collection"));
+    Assert.That(basePaths[0].Item2.speckle_type, Is.EqualTo("Speckle.Sdk.Models.Collections.Collection"));
     Assert.That(basePaths[0].Item2["name"], Is.EqualTo("collection"));
     Assert.That(basePaths[0].Item1, Is.EqualTo(new List<string>()));
 
-    Assert.That(basePaths[1].Item2.speckle_type, Is.EqualTo("Speckle.Core.Models.Collections.Collection"));
+    Assert.That(basePaths[1].Item2.speckle_type, Is.EqualTo("Speckle.Sdk.Models.Collections.Collection"));
     Assert.That(basePaths[1].Item2["name"], Is.EqualTo("subCollection"));
     Assert.That(basePaths[1].Item1, Is.EqualTo(new List<string>() { "collection" }));
 

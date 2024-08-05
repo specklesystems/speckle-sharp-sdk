@@ -1,8 +1,8 @@
 ﻿using NUnit.Framework;
-using Speckle.Core.Common;
-using Speckle.Core.Models;
-using Speckle.Core.Models.Collections;
-using Speckle.Core.Models.GraphTraversal;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.Collections;
+using Speckle.Sdk.Models.GraphTraversal;
 
 namespace Speckle.Core.Tests.Unit.Models.GraphTraversal;
 

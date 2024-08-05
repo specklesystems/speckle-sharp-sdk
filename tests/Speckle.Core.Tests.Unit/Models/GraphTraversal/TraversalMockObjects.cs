@@ -1,4 +1,4 @@
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Core.Tests.Unit.Models.GraphTraversal;
 

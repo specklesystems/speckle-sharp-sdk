@@ -1,6 +1,6 @@
-﻿using Speckle.Core.Api;
-using Speckle.Core.Api.GraphQL.Resources;
-using Speckle.Core.Credentials;
+﻿using Speckle.Sdk.Api.GraphQL;
+using Speckle.Sdk.Api.GraphQL.Resources;
+using Speckle.Sdk.Credentials;
 
 namespace Speckle.Core.Tests.Integration.API.GraphQL.Resources;
 

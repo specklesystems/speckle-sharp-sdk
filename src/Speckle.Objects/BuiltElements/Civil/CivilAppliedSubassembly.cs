@@ -1,6 +1,6 @@
-using Speckle.Core.Models;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other.Civil;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Civil;
 

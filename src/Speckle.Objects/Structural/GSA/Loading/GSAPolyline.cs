@@ -1,5 +1,3 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Structural.GSA.Geometry;
 

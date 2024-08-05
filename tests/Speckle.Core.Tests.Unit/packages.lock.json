@@ -212,7 +212,10 @@
         "resolved": "1.6.0",
         "contentHash": "COC1aiAJjCoA5GBF+QKL2uLqEBew4JsCkQmoHKbN3TlOZKa2fKLz5CpiRQKDz0RsAOEGsVKqOD5bomsXq/4STQ=="
       },
-      "speckle.core": {
+      "speckle.logging": {
+        "type": "Project"
+      },
+      "speckle.sdk": {
         "type": "Project",
         "dependencies": {
           "GraphQL.Client": "[6.0.0, )",
@@ -225,15 +228,6 @@
           "Speckle.Logging": "[1.0.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
           "System.Text.Json": "[5.0.2, )"
-        }
-      },
-      "speckle.logging": {
-        "type": "Project"
-      },
-      "speckle.transports.disk": {
-        "type": "Project",
-        "dependencies": {
-          "Speckle.Core": "[1.0.0, )"
         }
       },
       "GraphQL.Client": {

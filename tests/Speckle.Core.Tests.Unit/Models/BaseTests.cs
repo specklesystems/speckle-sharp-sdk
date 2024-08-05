@@ -1,7 +1,6 @@
 using NUnit.Framework;
-using Speckle.Core.Common;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Core.Tests.Unit.Models;
 

@@ -3,7 +3,7 @@ using NUnit.Framework;
 namespace Speckle.Core.Tests.Unit.Api;
 
 [TestFixture]
-[TestOf(typeof(Speckle.Core.Api.Helpers))]
+[TestOf(typeof(Sdk.Api.Helpers))]
 public class HelpersTests
 {
   [Test]
@@ -28,7 +28,7 @@ public class HelpersTests
     dateTime = dateTime.Subtract(new TimeSpan(0, 0, secondsAgo));
 
     // Get the timeAgo text representation
-    var actual = Speckle.Core.Api.Helpers.TimeAgo(dateTime);
+    var actual = Sdk.Api.Helpers.TimeAgo(dateTime);
 
     Assert.That(actual, Is.EqualTo(expectedText));
   }

@@ -1,8 +1,7 @@
-using Speckle.Core.Common;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 
@@ -73,7 +72,7 @@ public class Point : Base, ITransformable<Point>
 
   /// <summary>
   /// The units this <see cref="Point"/> is in.
-  /// This should be one of the units specified in <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of the units specified in <see cref="Speckle.Sdk.Kits.Units"/>
   /// </summary>
   public string units { get; set; } = Units.None;
 

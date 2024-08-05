@@ -1,8 +1,7 @@
 using NUnit.Framework;
-using Speckle.Core.Host;
-using Speckle.Core.Models;
 using Speckle.Core.Serialisation.Deprecated;
-using Speckle.Core.Serialisation.SerializationUtilities;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Core.Tests.Unit.Serialisation
 {
@@ -20,7 +19,7 @@ namespace Speckle.Core.Tests.Unit.Serialisation
     [Test]
     public void GetDeprecatedAtomicType()
     {
-      string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
+      string destinationType = $"Speckle.Sdk.Serialisation.{nameof(MySpeckleBase)}";
 
       var result = BaseObjectSerializationUtilities.GetAtomicType(destinationType);
       Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));

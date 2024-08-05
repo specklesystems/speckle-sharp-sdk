@@ -1,16 +1,16 @@
 using System.Collections;
 using NUnit.Framework;
-using Speckle.Core.Models;
-using Speckle.Core.Models.GraphTraversal;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.GraphTraversal;
 
 namespace Speckle.Core.Tests.Unit.Models.GraphTraversal;
 
-[TestFixture, TestOf(typeof(Core.Models.GraphTraversal.GraphTraversal))]
+[TestFixture, TestOf(typeof(Sdk.Models.GraphTraversal.GraphTraversal))]
 public class GraphTraversalTests
 {
   private static IEnumerable<TraversalContext> Traverse(Base testCase, params ITraversalRule[] rules)
   {
-    var sut = new Core.Models.GraphTraversal.GraphTraversal(rules);
+    var sut = new Sdk.Models.GraphTraversal.GraphTraversal(rules);
     return sut.Traverse(testCase);
   }
 

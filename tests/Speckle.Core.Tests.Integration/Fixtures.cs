@@ -3,13 +3,15 @@ using System.Net.Mime;
 using System.Text;
 using System.Web;
 using Newtonsoft.Json;
-using Speckle.Core.Api;
-using Speckle.Core.Api.GraphQL.Inputs;
-using Speckle.Core.Api.GraphQL.Models;
-using Speckle.Core.Common;
-using Speckle.Core.Credentials;
-using Speckle.Core.Models;
 using Speckle.Core.Transports;
+using Speckle.Sdk.Api.GraphQL;
+using Speckle.Sdk.Api.GraphQL.Inputs;
+using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Api.Operations;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Core.Tests.Integration;
 

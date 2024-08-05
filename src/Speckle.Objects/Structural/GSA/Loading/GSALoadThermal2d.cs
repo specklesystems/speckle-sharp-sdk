@@ -1,4 +1,3 @@
-using Speckle.Core.Models;
 using Speckle.Objects.Structural.Geometry;
 using Speckle.Objects.Structural.Loading;
 
