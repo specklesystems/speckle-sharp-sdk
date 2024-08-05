@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
-using Objects.Structural.Loading;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Loading;
 
-namespace Objects.Structural.GSA.Loading;
+namespace Speckle.Objects.Structural.GSA.Loading;
 
 public class GSALoadThermal2d : Load
 {

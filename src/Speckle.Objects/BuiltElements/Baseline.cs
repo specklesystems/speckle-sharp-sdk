@@ -1,7 +1,7 @@
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
 public abstract class Baseline : Base
 {

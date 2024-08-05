@@ -1,8 +1,8 @@
-using Objects.Geometry;
-using Objects.Structural.CSI.Properties;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.CSI.Properties;
 
-namespace Objects.Structural.CSI.Geometry;
+namespace Speckle.Objects.Structural.CSI.Geometry;
 
 public class CSITendon : CSIElement1D
 {

@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
-using Objects.Geometry;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Geometry;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
 public class RevitRebarGroup : RebarGroup<RevitRebarShape>
 {

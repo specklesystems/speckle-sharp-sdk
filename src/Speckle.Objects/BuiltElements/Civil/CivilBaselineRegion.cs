@@ -1,7 +1,6 @@
-using System.Collections.Generic;
 using Speckle.Core.Models;
 
-namespace Objects.BuiltElements.Civil;
+namespace Speckle.Objects.BuiltElements.Civil;
 
 public class CivilBaselineRegion : Base
 {

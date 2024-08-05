@@ -4,7 +4,7 @@ using Speckle.Core.Models;
 using Speckle.Core.Models.Proxies;
 using Speckle.Newtonsoft.Json;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 /// <summary>
 /// Minimal physically based material DTO class. Based on references from

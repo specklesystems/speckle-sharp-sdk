@@ -1,9 +1,9 @@
-using Objects.Structural.Materials;
-using Objects.Structural.Properties;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties;
 
-namespace Objects.Structural.GSA.Properties;
+namespace Speckle.Objects.Structural.GSA.Properties;
 
 public class GSAProperty2D : Property2D
 {

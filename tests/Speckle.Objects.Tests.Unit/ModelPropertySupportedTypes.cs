@@ -8,6 +8,7 @@ using Speckle.Core.Models;
 using Speckle.Core.Serialisation;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects;
 
 namespace Objects.Tests.Unit;
 

@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 [Obsolete("Unused")]
 [SuppressMessage("Design", "CA1051:Do not declare visible instance fields", Justification = "Obsolete")]

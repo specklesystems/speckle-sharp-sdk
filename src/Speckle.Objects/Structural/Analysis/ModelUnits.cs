@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Objects.Structural.Analysis;
+namespace Speckle.Objects.Structural.Analysis;
 
 public class ModelUnits : Base
 {

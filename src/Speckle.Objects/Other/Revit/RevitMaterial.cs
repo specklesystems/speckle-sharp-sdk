@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using Objects.BuiltElements.Revit;
-using Objects.Utils;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit;
+using Speckle.Objects.Utils;
 
-namespace Objects.Other.Revit;
+namespace Speckle.Objects.Other.Revit;
 
 /// <summary>
 /// Material in Revit defininf all revit properties from Autodesk.Revit.DB.Material

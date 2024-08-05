@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Utils;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
 public class RevitToposolid : Base, IDisplayValue<List<Mesh>>
 {

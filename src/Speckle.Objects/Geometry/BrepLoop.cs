@@ -1,9 +1,7 @@
-using System.Collections.Generic;
-using System.Linq;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// Represents a UV Trim Closed Loop on one of the <see cref="Brep"/>'s surfaces.

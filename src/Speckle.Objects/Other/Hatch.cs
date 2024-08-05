@@ -1,8 +1,6 @@
-using System;
-using System.Collections.Generic;
 using Speckle.Core.Models;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 public class Hatch : Base
 {

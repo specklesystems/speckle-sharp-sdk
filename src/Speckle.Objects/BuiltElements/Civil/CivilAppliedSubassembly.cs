@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Other.Civil;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Other.Civil;
 
-namespace Objects.BuiltElements.Civil;
+namespace Speckle.Objects.BuiltElements.Civil;
 
 public class CivilAppliedSubassembly : Base
 {

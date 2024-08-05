@@ -1,9 +1,9 @@
-using Objects.Structural.Materials;
-using Objects.Structural.Properties.Profiles;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties.Profiles;
 
-namespace Objects.BuiltElements.AdvanceSteel;
+namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
 public class AsteelBeam : Beam, IHasVolume, IHasArea, IAsteelObject
 {

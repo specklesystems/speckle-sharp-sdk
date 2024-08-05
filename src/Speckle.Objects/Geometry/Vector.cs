@@ -1,11 +1,9 @@
-using System;
-using System.Collections.Generic;
-using Objects.Other;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Other;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// A 3-dimensional vector

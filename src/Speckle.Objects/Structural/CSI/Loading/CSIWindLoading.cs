@@ -1,7 +1,7 @@
-using Objects.Structural.CSI.Analysis;
-using Objects.Structural.Loading;
+using Speckle.Objects.Structural.CSI.Analysis;
+using Speckle.Objects.Structural.Loading;
 
-namespace Objects.Structural.CSI.Loading;
+namespace Speckle.Objects.Structural.CSI.Loading;
 
 public class CSIWindLoadingFace : LoadFace
 {

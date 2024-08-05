@@ -1,7 +1,6 @@
-using System.Collections.Generic;
-using Objects.Geometry;
+using Speckle.Objects.Geometry;
 
-namespace Objects.BuiltElements.Civil;
+namespace Speckle.Objects.BuiltElements.Civil;
 
 public class CivilProfile : Profile
 {

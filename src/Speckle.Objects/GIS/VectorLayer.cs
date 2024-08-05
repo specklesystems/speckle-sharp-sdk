@@ -1,8 +1,7 @@
-using System.Collections.Generic;
 using Speckle.Core.Models;
 using Speckle.Core.Models.Collections;
 
-namespace Objects.GIS;
+namespace Speckle.Objects.GIS;
 
 public class VectorLayer : Collection
 {

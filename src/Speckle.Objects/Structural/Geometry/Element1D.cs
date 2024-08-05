@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Structural.Properties;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Properties;
 
-namespace Objects.Structural.Geometry;
+namespace Speckle.Objects.Structural.Geometry;
 
 public class Element1D : Base, IDisplayValue<IReadOnlyList<Base>>
 {

@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Objects.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 using Speckle.Core.Models.GraphTraversal;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Geometry;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 public abstract class Instance : Base
 {

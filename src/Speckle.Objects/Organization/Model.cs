@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.Other;
 using Speckle.Core.Models;
+using Speckle.Objects.Other;
 
-namespace Objects.Organization;
+namespace Speckle.Objects.Organization;
 
 /// <summary>
 /// Basic model info class

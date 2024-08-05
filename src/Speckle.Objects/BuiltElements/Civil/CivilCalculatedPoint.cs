@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.Geometry;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
 
-namespace Objects.BuiltElements.Civil;
+namespace Speckle.Objects.BuiltElements.Civil;
 
 public class CivilCalculatedPoint : Base, ICivilCalculatedObject
 {

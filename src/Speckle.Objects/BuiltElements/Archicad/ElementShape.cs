@@ -1,11 +1,10 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Primitive;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Primitive;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 public sealed class ElementShape : Base
 {

@@ -1,6 +1,6 @@
-using Objects.Geometry;
+using Speckle.Objects.Geometry;
 
-namespace Objects.BuiltElements.TeklaStructures;
+namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
 public class Fitting : Plane
 {

@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 public class AssemblySegment : Base
 {

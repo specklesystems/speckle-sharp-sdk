@@ -1,8 +1,7 @@
-using System.Collections.Generic;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Objects.Structural.Properties.Profiles;
+namespace Speckle.Objects.Structural.Properties.Profiles;
 
 public class SectionProfile : Base //section profile description
 {

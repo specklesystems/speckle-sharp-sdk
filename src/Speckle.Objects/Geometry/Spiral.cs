@@ -1,7 +1,7 @@
-using Objects.Primitive;
 using Speckle.Core.Models;
+using Speckle.Objects.Primitive;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 public enum SpiralType
 {

@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-using Objects.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 public class ArchicadOpening : Opening
 {

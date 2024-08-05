@@ -1,7 +1,7 @@
-using Objects.BuiltElements.Revit;
 using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 public class MappedBlockWrapper : Base
 {

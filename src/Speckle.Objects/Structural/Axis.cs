@@ -1,4 +1,4 @@
-namespace Objects.Structural;
+namespace Speckle.Objects.Structural;
 
 public enum AxisType
 {

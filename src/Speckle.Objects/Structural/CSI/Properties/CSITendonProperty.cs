@@ -1,6 +1,6 @@
-using Objects.Structural.Properties;
+using Speckle.Objects.Structural.Properties;
 
-namespace Objects.Structural.CSI.Properties;
+namespace Speckle.Objects.Structural.CSI.Properties;
 
 public class CSITendonProperty : Property1D
 {

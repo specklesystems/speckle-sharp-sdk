@@ -1,6 +1,6 @@
 using Speckle.Core.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
 public class RevitZone : Zone
 {

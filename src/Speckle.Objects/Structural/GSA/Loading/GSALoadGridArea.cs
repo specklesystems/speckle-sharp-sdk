@@ -1,9 +1,9 @@
-using Objects.Geometry;
-using Objects.Structural.Geometry;
-using Objects.Structural.GSA.Geometry;
-using Objects.Structural.Loading;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.GSA.Geometry;
+using Speckle.Objects.Structural.Loading;
 
-namespace Objects.Structural.GSA.Loading;
+namespace Speckle.Objects.Structural.GSA.Loading;
 
 public class GSALoadGridArea : GSALoadGrid
 {

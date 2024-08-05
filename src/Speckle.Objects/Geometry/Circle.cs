@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-using Objects.Primitive;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Primitive;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// Represents a circular curve based on a base <see cref="Plane"/> and a <see cref="double"/> as radius.

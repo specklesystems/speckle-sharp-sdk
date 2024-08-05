@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
-using Objects.Structural.Loading;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Loading;
 
-namespace Objects.Structural.Results;
+namespace Speckle.Objects.Structural.Results;
 
 public class ResultSet2D : Result
 {

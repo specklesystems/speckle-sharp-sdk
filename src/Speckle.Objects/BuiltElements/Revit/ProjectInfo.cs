@@ -1,6 +1,6 @@
-using Objects.Organization;
+using Speckle.Objects.Organization;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
 public class ProjectInfo : BIMModelInfo
 {

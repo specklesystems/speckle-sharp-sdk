@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using NUnit.Framework;
-using Objects.BuiltElements;
 using Shouldly;
 using Speckle.Core.Common;
 using Speckle.Core.Host;
@@ -8,6 +7,7 @@ using Speckle.Core.Models;
 using Speckle.Core.Serialisation;
 using Speckle.Core.Serialisation.SerializationUtilities;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Objects.BuiltElements;
 
 namespace Speckle.Core.Serialization.Tests;
 

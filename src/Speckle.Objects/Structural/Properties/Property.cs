@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Objects.Structural.Properties;
+namespace Speckle.Objects.Structural.Properties;
 
 public class Property : Base
 {

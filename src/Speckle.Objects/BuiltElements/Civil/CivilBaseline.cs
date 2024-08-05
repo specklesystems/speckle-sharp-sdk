@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace Objects.BuiltElements.Civil;
+namespace Speckle.Objects.BuiltElements.Civil;
 
 public class CivilBaseline : Baseline<CivilAlignment, CivilProfile>
 {

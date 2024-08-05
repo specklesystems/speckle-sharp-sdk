@@ -1,9 +1,8 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
 
-namespace Objects.Structural.Loading;
+namespace Speckle.Objects.Structural.Loading;
 
 public class LoadBeam : Load
 {

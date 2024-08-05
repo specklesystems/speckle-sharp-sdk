@@ -1,7 +1,7 @@
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 public class Classification : Base
 {

@@ -1,8 +1,8 @@
-using Objects.Geometry;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
 
-namespace Objects.Structural.Geometry;
+namespace Speckle.Objects.Structural.Geometry;
 
 public class Axis : Base
 {

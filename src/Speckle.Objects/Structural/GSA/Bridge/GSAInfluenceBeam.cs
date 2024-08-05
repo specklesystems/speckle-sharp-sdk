@@ -1,9 +1,9 @@
-using Objects.Structural.GSA.Geometry;
-using Objects.Structural.Loading;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Structural.GSA.Geometry;
+using Speckle.Objects.Structural.Loading;
 
-namespace Objects.Structural.GSA.Bridge;
+namespace Speckle.Objects.Structural.GSA.Bridge;
 
 public class GSAInfluenceBeam : GSAInfluence
 {

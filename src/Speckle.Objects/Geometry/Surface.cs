@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using Objects.Other;
-using Objects.Primitive;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Objects.Other;
+using Speckle.Objects.Primitive;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// A Surface in NURBS form.
