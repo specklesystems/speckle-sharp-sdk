@@ -147,18 +147,7 @@ public class MongoDBTransport : IDisposable, ITransport
   /// Awaits until write completion (ie, the current queue is fully consumed).
   /// </summary>
   /// <returns></returns>
-  public async Task WriteComplete()
-  {
-    await Utilities
-      .WaitUntil(
-        () =>
-        {
-          return GetWriteCompletionStatus();
-        },
-        500
-      )
-      .ConfigureAwait(false);
-  }
+  public async Task WriteComplete() => await Utilities.WaitUntil(GetWriteCompletionStatus, 500).ConfigureAwait(false);
 
   /// <summary>
   /// Returns true if the current write queue is empty and committed.
