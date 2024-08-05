@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Speckle.Logging\Speckle.Logging.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk.Logging\Speckle.Sdk.Logging.csproj" />
   </ItemGroup>
   
 </Project>

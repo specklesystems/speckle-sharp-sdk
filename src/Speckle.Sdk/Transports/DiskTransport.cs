@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Text;
-using Speckle.Logging;
+using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Transports;
 

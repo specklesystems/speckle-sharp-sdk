@@ -1,15 +1,14 @@
-using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-namespace Speckle.Logging;
+namespace Speckle.Sdk.Logging;
 
 public class TraceBuilder(IDisposable? traceProvider) : IDisposable
 {
   public static IDisposable Initialize(string application, SpeckleLogConfiguration logConfiguration)
   {
-    var tracerProviderBuilder = Sdk.CreateTracerProviderBuilder()
+    var tracerProviderBuilder = OpenTelemetry.Sdk.CreateTracerProviderBuilder()
       .AddSource(application)
       .ConfigureResource(r =>
       {

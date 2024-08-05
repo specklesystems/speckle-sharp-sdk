@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Security.Cryptography;
-using Speckle.Logging;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;

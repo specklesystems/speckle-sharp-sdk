@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
-using Speckle.Logging;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit;

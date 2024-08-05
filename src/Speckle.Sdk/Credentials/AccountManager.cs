@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using GraphQL;
 using GraphQL.Client.Http;
-using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;

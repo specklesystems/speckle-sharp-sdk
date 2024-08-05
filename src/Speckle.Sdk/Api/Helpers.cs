@@ -5,7 +5,6 @@ using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Speckle.Sdk.Transports;
-using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;

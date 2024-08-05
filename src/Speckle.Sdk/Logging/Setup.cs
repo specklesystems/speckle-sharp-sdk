@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Logging;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;

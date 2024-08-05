@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
-using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;

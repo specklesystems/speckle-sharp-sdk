@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Speckle.Logging;
+namespace Speckle.Sdk.Logging;
 
 public static class LogExtensions
 {

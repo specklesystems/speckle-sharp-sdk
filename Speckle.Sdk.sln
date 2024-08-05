@@ -38,7 +38,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\ci.yml = .github\workflows\ci.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Logging", "src\Speckle.Logging\Speckle.Logging.csproj", "{156313B4-B588-4363-A0ED-5AB3A55AA4E8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Logging", "src\Speckle.Sdk.Logging\Speckle.Sdk.Logging.csproj", "{156313B4-B588-4363-A0ED-5AB3A55AA4E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

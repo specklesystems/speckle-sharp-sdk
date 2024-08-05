@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Logging;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.Extensions;

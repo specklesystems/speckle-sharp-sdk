@@ -5,7 +5,7 @@ using Serilog;
 using Serilog.Exceptions;
 using Serilog.Sinks.OpenTelemetry;
 
-namespace Speckle.Logging;
+namespace Speckle.Sdk.Logging;
 
 public static class LogBuilder
 {

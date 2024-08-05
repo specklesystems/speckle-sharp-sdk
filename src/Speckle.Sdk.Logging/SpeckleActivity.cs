@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Speckle.Logging;
+namespace Speckle.Sdk.Logging;
 
 public class SpeckleActivity(Activity activity) : ISpeckleActivity
 {

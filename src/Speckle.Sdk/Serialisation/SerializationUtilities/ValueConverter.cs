@@ -3,7 +3,7 @@ using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
-using Speckle.Logging;
+using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Serialisation.SerializationUtilities;
 

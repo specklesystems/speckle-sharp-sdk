@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Reflection;
-using Speckle.Logging;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 

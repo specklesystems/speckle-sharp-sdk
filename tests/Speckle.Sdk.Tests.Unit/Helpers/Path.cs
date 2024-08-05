@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using NUnit.Framework;
-using Speckle.Logging;
+using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Tests.Unit.Helpers;
 

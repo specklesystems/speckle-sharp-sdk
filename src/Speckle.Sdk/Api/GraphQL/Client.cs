@@ -6,7 +6,6 @@ using GraphQL;
 using GraphQL.Client.Http;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Resources;

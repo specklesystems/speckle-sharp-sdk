@@ -1,4 +1,4 @@
-namespace Speckle.Logging;
+namespace Speckle.Sdk.Logging;
 
 /// <summary>
 /// Configuration object for the Speckle logging system.

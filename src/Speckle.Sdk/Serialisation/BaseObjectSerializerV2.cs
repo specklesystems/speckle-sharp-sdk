@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Globalization;
 using System.Reflection;
 using Speckle.DoubleNumerics;
-using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;

@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using Speckle.Logging;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;

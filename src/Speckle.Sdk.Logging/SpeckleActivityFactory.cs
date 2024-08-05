@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Speckle.Logging;
+namespace Speckle.Sdk.Logging;
 
 public static class SpeckleActivityFactory
 {

@@ -1,10 +1,10 @@
 using System.Reflection;
 using Shouldly;
-using Speckle.Logging;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.Operations;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 

@@ -1,7 +1,7 @@
 ﻿using Serilog;
 using Serilog.Events;
 
-namespace Speckle.Logging;
+namespace Speckle.Sdk.Logging;
 
 internal class SpeckleLogger : ISpeckleLogger
 {

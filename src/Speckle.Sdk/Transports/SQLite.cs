@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Timers;
 using Microsoft.Data.Sqlite;
-using Speckle.Logging;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Timer = System.Timers.Timer;
