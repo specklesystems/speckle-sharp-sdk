@@ -12,7 +12,6 @@ namespace Speckle.Core.Api;
 /// </summary>
 public static partial class Operations
 {
-
   /// <summary>
   /// Factory for progress actions used internally inside send and receive methods.
   /// </summary>

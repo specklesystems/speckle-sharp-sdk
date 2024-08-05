@@ -108,5 +108,4 @@ public static class DefaultTraversal
   }
 
   #endregion
-  
 }

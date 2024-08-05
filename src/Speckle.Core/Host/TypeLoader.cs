@@ -5,9 +5,10 @@ using Speckle.Core.Models;
 namespace Speckle.Core.Host;
 
 public static class TypeLoader
-{  
+{
   private static bool s_initialized;
   private static List<Type> s_availableTypes = new();
+
   /// <summary>
   /// Returns a list of all the types found in all the kits on this user's device.
   /// </summary>
@@ -19,7 +20,8 @@ public static class TypeLoader
       return s_availableTypes;
     }
   }
-  private static void Initialize()
+
+  public static void Initialize(params Assembly[] assemblies)
   {
     if (!s_initialized)
     {
@@ -27,17 +29,15 @@ public static class TypeLoader
       {
         if (!s_initialized)
         {
-          Load();
+          Load(assemblies);
           s_initialized = true;
         }
       }
     }
   }
 
-  private static void Load()
+  private static void Load(Assembly[] assemblies)
   {
-    List<Assembly> assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
-
     foreach (var assembly in assemblies)
     {
       if (assembly.IsDynamic || assembly.ReflectionOnly)
@@ -45,7 +45,7 @@ public static class TypeLoader
         continue;
       }
 
-      foreach (var type in assembly.GetTypes(). Where(t => t.IsSubclassOf(typeof(Base)) && !t.IsAbstract))
+      foreach (var type in assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Base)) && !t.IsAbstract))
       {
         s_availableTypes.Add(type);
       }

@@ -4,7 +4,6 @@ using Speckle.Core.Models;
 
 namespace Speckle.Core.Tests.Unit.Kits;
 
-
 public class FakeMesh : Base
 {
   [DetachProperty, Chunkable]
