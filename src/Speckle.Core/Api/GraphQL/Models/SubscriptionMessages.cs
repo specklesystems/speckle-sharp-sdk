@@ -1,5 +1,4 @@
-﻿using System;
-using Speckle.Core.Api.GraphQL.Enums;
+﻿using Speckle.Core.Api.GraphQL.Enums;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Core.Api.GraphQL.Models;

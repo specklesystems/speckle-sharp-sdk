@@ -1,7 +1,5 @@
-using System;
-using System.IO;
 using System.Reflection;
-using Speckle.Core.Logging;
+using Speckle.Logging;
 
 namespace Speckle.Core.Helpers;
 

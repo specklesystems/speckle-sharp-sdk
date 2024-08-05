@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Speckle.Core.Logging;
@@ -58,11 +56,6 @@ public class CumulativeTimer
 
   private readonly Dictionary<string, TimeSpan> _operationTimings = new();
 
-  public IDisposable Begin(string operationNameTemplate, params object[] args)
-  {
-    return new Operation(this, string.Format(operationNameTemplate, args));
-  }
-
   public void AddTimer(string operationName, TimeSpan time)
   {
     if (_operationTimings.TryGetValue(operationName, out TimeSpan prevTimings))
@@ -72,14 +65,6 @@ public class CumulativeTimer
     else
     {
       _operationTimings.Add(operationName, time);
-    }
-  }
-
-  public void EnrichSerilogOperation(SerilogTimings.Operation operation)
-  {
-    foreach (var timing in _operationTimings)
-    {
-      operation.EnrichWith(timing.Key, timing.Value.TotalMilliseconds);
     }
   }
 }

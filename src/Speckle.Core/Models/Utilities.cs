@@ -1,15 +1,12 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
+using Speckle.Logging;
 
 namespace Speckle.Core.Models;
 

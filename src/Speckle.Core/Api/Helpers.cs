@@ -12,6 +12,7 @@ using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Core.Api;
@@ -221,7 +222,8 @@ public static class Helpers
     }
     catch (Exception ex) when (!ex.IsFatal())
     {
-      SpeckleLog.Logger.ForContext("slug", slug).Warning(ex, "Failed to check for connector updates");
+      //.Log.ForContext("slug", slug)
+      SpeckleLog.Logger.Warning(ex, "Failed to check for connector updates");
     }
 
     return false;

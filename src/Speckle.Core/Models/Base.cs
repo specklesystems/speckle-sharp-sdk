@@ -1,9 +1,6 @@
 #nullable disable
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Speckle.Core.Api;
@@ -13,6 +10,7 @@ using Speckle.Core.Kits;
 using Speckle.Core.Logging;
 using Speckle.Core.Serialisation;
 using Speckle.Core.Transports;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 
@@ -272,38 +270,18 @@ public class Base : DynamicBase
       catch (Exception ex) when (!ex.IsFatal())
       {
         // avoids any last ditch unsettable or strange props.
-        SpeckleLog
-          .Logger.ForContext("canWrite", propertyInfo?.CanWrite)
-          .ForContext("canRead", propertyInfo?.CanRead)
-          .Warning(
-            "Shallow copy of {type} failed to copy {propertyName} of type {propertyType} with value {valueType}",
-            type,
-            kvp.Key,
-            propertyInfo?.PropertyType,
-            kvp.Value?.GetType()
-          );
+        SpeckleLog.Logger.Warning(
+          "Shallow copy of {type} failed to copy {propertyName} of type {propertyType} with value {valueType} - CanWrite / CanRead",
+          type,
+          kvp.Key,
+          propertyInfo?.PropertyType,
+          kvp.Value?.GetType(),
+          propertyInfo?.CanWrite,
+          propertyInfo?.CanRead
+        );
       }
     }
 
     return myDuplicate;
   }
-
-  #region Obsolete
-  /// <inheritdoc cref="GetId(bool)"/>
-  [Obsolete("Serializer v1 is deprecated, use other overload(s)", true)]
-  public string GetId(SerializerVersion serializerVersion)
-  {
-    return GetId(false, serializerVersion);
-  }
-
-  /// <inheritdoc cref="GetId(bool)"/>
-  [Obsolete("Serializer v1 is deprecated, use other overload(s)", true)]
-  public string GetId(bool decompose, SerializerVersion serializerVersion)
-  {
-    throw new NotImplementedException(
-      "Overload has been deprecated along with SerializerV1, use other overload (uses SerializerV2)"
-    );
-  }
-
-  #endregion
 }

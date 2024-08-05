@@ -1,16 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using GraphQL;
 using GraphQL.Client.Http;
 using Speckle.Core.Api;
@@ -22,6 +15,7 @@ using Speckle.Core.Common;
 using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Transports;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Stream = System.IO.Stream;
 
@@ -353,7 +347,8 @@ public static class AccountManager
 
     foreach (var acc in sqlAccounts)
     {
-      if (IsInvalid(acc.NotNull()))
+      acc.NotNull();
+      if (IsInvalid(acc))
       {
         RemoveAccount(acc.id);
       }

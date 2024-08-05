@@ -1,15 +1,10 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Serilog.Context;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation;
 using Speckle.Core.Transports;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json.Linq;
 
 namespace Speckle.Core.Api;
@@ -84,8 +79,9 @@ public static partial class Operations
     var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
 
     // make sure all logs in the operation have the proper context
-    using (LogContext.PushProperty("transportContext", transportContext))
-    using (LogContext.PushProperty("correlationId", Guid.NewGuid().ToString()))
+    using var activity = SpeckleActivityFactory.Start();
+    activity?.SetTag("transportContext", transportContext);
+    activity?.SetTag("correlationId", Guid.NewGuid().ToString());
     {
       var sendTimer = Stopwatch.StartNew();
       SpeckleLog.Logger.Information("Starting send operation");
@@ -129,16 +125,15 @@ public static partial class Operations
       }
 
       sendTimer.Stop();
-      SpeckleLog
-        .Logger.ForContext("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed))
-        .ForContext("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...")
-        .ForContext("serializerElapsed", serializerV2.Elapsed)
-        .Information(
-          "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
-          transports.Max(t => t.SavedObjectCount),
-          sendTimer.Elapsed.TotalSeconds,
-          hash
-        );
+      activity?.SetTag("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed));
+      activity?.SetTag("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...");
+      activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
+      SpeckleLog.Logger.Information(
+        "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
+        transports.Max(t => t.SavedObjectCount),
+        sendTimer.Elapsed.TotalSeconds,
+        hash
+      );
       return hash;
     }
   }

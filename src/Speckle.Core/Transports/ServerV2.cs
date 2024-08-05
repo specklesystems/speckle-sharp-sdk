@@ -4,6 +4,7 @@ using Speckle.Core.Helpers;
 using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Transports.ServerUtils;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json.Linq;
 
 namespace Speckle.Core.Transports;
@@ -36,7 +37,7 @@ public sealed class ServerTransport : IServerTransport
     }
 
     Account = account;
-    BaseUri = account.serverInfo.url;
+    BaseUri = new(account.serverInfo.url);
     StreamId = streamId;
     AuthorizationToken = account.token;
     TimeoutSeconds = timeoutSeconds;
@@ -49,7 +50,7 @@ public sealed class ServerTransport : IServerTransport
   public int TotalSentBytes { get; private set; }
 
   public Account Account { get; }
-  public string BaseUri { get; }
+  public Uri BaseUri { get; }
   public string StreamId { get; internal set; }
 
   public int TimeoutSeconds { get; set; }

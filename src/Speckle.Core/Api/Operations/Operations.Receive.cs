@@ -1,15 +1,9 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Serilog.Context;
-using Speckle.Core.Logging;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation;
 using Speckle.Core.Transports;
+using Speckle.Logging;
 
 namespace Speckle.Core.Api;
 
@@ -71,9 +65,10 @@ public static partial class Operations
       };
 
     // Setup Logging
-    using IDisposable d2 = LogContext.PushProperty("remoteTransportContext", remoteTransport?.TransportContext);
-    using IDisposable d3 = LogContext.PushProperty("localTransportContext", localTransport.TransportContext);
-    using IDisposable d4 = LogContext.PushProperty("objectId", objectId);
+    using var receiveActivity = SpeckleActivityFactory.Start();
+    receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
+    receiveActivity?.SetTag("localTransportContext", localTransport.TransportContext);
+    receiveActivity?.SetTag("objectId", objectId);
     var timer = Stopwatch.StartNew();
 
     // Receive Json
@@ -110,25 +105,17 @@ public static partial class Operations
         .ConfigureAwait(false);
     }
 
+    using var activity = SpeckleActivityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
     Base res = serializerV2.Deserialize(objString);
 
     timer.Stop();
-    SpeckleLog
-      .Logger.ForContext("deserializerElapsed", serializerV2.Elapsed)
-      .ForContext(
-        "transportElapsedBreakdown",
-        new[] { localTransport, remoteTransport }
-          .Where(t => t != null)
-          .Select(t => new KeyValuePair<string, TimeSpan>(t!.TransportName, t.Elapsed))
-          .ToArray()
-      )
-      .Information(
-        "Finished receiving {objectId} from {source} in {elapsed} seconds",
-        objectId,
-        remoteTransport?.TransportName,
-        timer.Elapsed.TotalSeconds
-      );
+    SpeckleLog.Logger.Information(
+      "Finished receiving {objectId} from {source} in {elapsed} seconds",
+      objectId,
+      remoteTransport?.TransportName,
+      timer.Elapsed.TotalSeconds
+    );
 
     return res;
   }

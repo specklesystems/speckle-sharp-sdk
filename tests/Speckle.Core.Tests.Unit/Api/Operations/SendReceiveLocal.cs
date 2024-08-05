@@ -215,35 +215,6 @@ public sealed class SendReceiveLocal : IDisposable
     Assert.That(progress.Keys, Has.Count.GreaterThanOrEqualTo(1));
   }
 
-  [Test(Description = "Should dispose of transports after a send or receive operation if so specified.")]
-  [Obsolete("Send overloads that perform disposal are deprecated")]
-  public async Task ShouldDisposeTransports()
-  {
-    var @base = new Base();
-    @base["test"] = "the best";
-
-    var myLocalTransport = new SQLiteTransport();
-    var id = await Core.Api.Operations.Send(
-      @base,
-      new List<ITransport> { myLocalTransport },
-      false,
-      disposeTransports: true
-    );
-
-    // Send
-    Assert.ThrowsAsync<ObjectDisposedException>(
-      async () =>
-        await Core.Api.Operations.Send(@base, new List<ITransport> { myLocalTransport }, false, disposeTransports: true)
-    );
-
-    myLocalTransport = myLocalTransport.Clone() as SQLiteTransport;
-    _ = await Core.Api.Operations.Receive(id, null, myLocalTransport, disposeTransports: true);
-
-    Assert.ThrowsAsync<InvalidOperationException>(
-      async () => await Core.Api.Operations.Receive(id, null, myLocalTransport)
-    );
-  }
-
   [Test(Description = "Should not dispose of transports if so specified.")]
   public async Task ShouldNotDisposeTransports()
   {

@@ -15,6 +15,9 @@ public static class CurveTypeEncoding
   public const double PolyCurve = 6;
 }
 
+/// <summary>
+/// This class is a helper class for Brep curve encoding!!
+/// </summary>
 public static class CurveArrayEncodingExtensions
 {
   public static List<double> ToArray(List<ICurve> curves)

@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Speckle.Core.Api.GraphQL.Inputs;
+﻿namespace Speckle.Core.Api.GraphQL.Inputs;
 
 public sealed record CreateModelInput(string name, string? description, string projectId);
 

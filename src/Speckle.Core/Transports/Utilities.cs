@@ -1,3 +1,5 @@
+using Speckle.Core.Logging;
+
 namespace Speckle.Core.Transports;
 
 public static class Utilities

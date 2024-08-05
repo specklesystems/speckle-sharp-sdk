@@ -1,10 +1,9 @@
-#nullable disable
-using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
 using Speckle.Core.Credentials;
+using Speckle.Core.Helpers;
 using Speckle.Core.Kits;
+using Speckle.Logging;
 
 namespace Speckle.Core.Logging;
 
@@ -46,47 +45,58 @@ public static class Setup
   /// </summary>
   internal static string VersionedHostApplication { get; private set; } = HostApplications.Other.Slug;
 
-  public static void Init(
-    string versionedHostApplication,
-    string hostApplication,
-    SpeckleLogConfiguration logConfiguration = null
+  public static IDisposable Initialize(
+    string hostApplicationName,
+    string hostApplicationVersion,
+    SpeckleLogConfiguration? logConfiguration = null
   )
   {
     if (s_initialized)
     {
-      SpeckleLog
-        .Logger.ForContext("newVersionedHostApplication", versionedHostApplication)
-        .ForContext("newHostApplication", hostApplication)
-        .Information(
-          "Setup was already initialized with {currentHostApp} {currentVersionedHostApp}",
-          hostApplication,
-          versionedHostApplication
-        );
-      return;
+      SpeckleLog.Logger.Information("Setup was already initialized with {currentHostApp}", hostApplicationName);
+      throw new InvalidOperationException();
     }
 
     s_initialized = true;
 
-    HostApplication = hostApplication;
-    VersionedHostApplication = versionedHostApplication;
+    logConfiguration ??= new SpeckleLogConfiguration();
+    HostApplication = hostApplicationName;
+    VersionedHostApplication = hostApplicationVersion;
 
     //start mutex so that Manager can detect if this process is running
-    Mutex = new Mutex(false, "SpeckleConnector-" + hostApplication);
+    Mutex = new Mutex(false, "SpeckleConnector-" + hostApplicationName);
 
-    SpeckleLog.Initialize(hostApplication, versionedHostApplication, logConfiguration);
+    var traceProvider = TraceBuilder.Initialize(hostApplicationName, logConfiguration);
+    LogBuilder.Initialize(GetUserIdFromDefaultAccount(), hostApplicationName, hostApplicationVersion, logConfiguration);
 
     foreach (var account in AccountManager.GetAccounts())
     {
-      Analytics.AddConnectorToProfile(account.GetHashedEmail(), hostApplication);
-      Analytics.IdentifyProfile(account.GetHashedEmail(), hostApplication);
+      Analytics.AddConnectorToProfile(account.GetHashedEmail(), hostApplicationName);
+      Analytics.IdentifyProfile(account.GetHashedEmail(), hostApplicationName);
     }
+
+    SpeckleActivityFactory.Initialize(hostApplicationName, hostApplicationVersion);
+
+    return traceProvider;
   }
 
-  [Obsolete("Use " + nameof(Mutex))]
-  [SuppressMessage("Style", "IDE1006:Naming Styles")]
-  public static Mutex mutex
+  private static string GetUserIdFromDefaultAccount()
   {
-    get => Mutex;
-    set => Mutex = value;
+    var machineName = Environment.MachineName;
+    var userName = Environment.UserName;
+    var id = Crypt.Md5($"{machineName}:{userName}", "X2");
+    try
+    {
+      var defaultAccount = AccountManager.GetDefaultAccount();
+      if (defaultAccount != null)
+      {
+        id = defaultAccount.GetHashedEmail();
+      }
+    }
+    catch (Exception ex) when (!ex.IsFatal())
+    {
+      // To log it after Logger initialized as deferred action.
+    }
+    return id;
   }
 }

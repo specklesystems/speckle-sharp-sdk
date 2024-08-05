@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Web;
 using Speckle.Core.Api;
 using Speckle.Core.Common;
@@ -305,7 +300,8 @@ public class StreamWrapper
     List<Exception> err = new();
     try
     {
-      await ValidateWithAccount(defAcc.NotNull()).ConfigureAwait(false);
+      defAcc.NotNull();
+      await ValidateWithAccount(defAcc).ConfigureAwait(false);
       _account = defAcc;
       return defAcc;
     }

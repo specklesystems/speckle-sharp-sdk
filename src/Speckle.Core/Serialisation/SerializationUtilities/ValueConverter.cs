@@ -1,12 +1,9 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
-using Speckle.Core.Logging;
 using Speckle.DoubleNumerics;
-using Numerics = System.Numerics;
+using Speckle.Logging;
 
 namespace Speckle.Core.Serialisation.SerializationUtilities;
 
@@ -257,13 +254,13 @@ internal static class ValueConverter
     }
 
     #region BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
-    if (type == typeof(Numerics.Matrix4x4) && value is IReadOnlyList<object> lMatrix)
+    if (type == typeof(System.Numerics.Matrix4x4) && value is IReadOnlyList<object> lMatrix)
     {
       SpeckleLog.Logger.Warning(
         "This kept for backwards compatibility, no one should be using {this}",
         "ValueConverter deserialize to System.Numerics.Matrix4x4"
       );
-      convertedValue = new Numerics.Matrix4x4(
+      convertedValue = new System.Numerics.Matrix4x4(
         I(0),
         I(1),
         I(2),
