@@ -5,6 +5,7 @@ namespace Speckle.Sdk.Models.Instances;
 /// <summary>
 /// A proxy class for an instance definition.
 /// </summary>
+[SpeckleType("Speckle.Core.Models.Instances.InstanceDefinitionProxy")]
 public class InstanceDefinitionProxy : Base, IInstanceComponent, IProxyCollection
 {
   /// <summary>

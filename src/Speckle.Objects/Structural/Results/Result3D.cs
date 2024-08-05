@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.ResultSet3D")]
 public class ResultSet3D : Result
 {
   public ResultSet3D() { }
@@ -19,6 +20,7 @@ public class ResultSet3D : Result
   public List<Result3D> results3D { get; set; }
 }
 
+[SpeckleType("Objects.Structural.Results.Result3D")]
 public class Result3D : Result
 {
   public Result3D() { }

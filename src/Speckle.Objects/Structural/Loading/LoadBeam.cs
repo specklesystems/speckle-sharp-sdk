@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Loading;
 
+[SpeckleType("Objects.Structural.Loading.LoadBeam")]
 public class LoadBeam : Load
 {
   public LoadBeam() { }

@@ -37,20 +37,20 @@ internal static class BaseObjectSerializationUtilities
     {
       //TODO: rather than getting the type from the first loaded kit that has it, maybe
       //we get it from a specific Kit
-      var type = TypeLoader.Types.FirstOrDefault(tp => tp.FullName == typeName);
+      var type = TypeLoader.Types.FirstOrDefault(tp => tp.Name == typeName);
       if (type != null)
       {
-        return type;
+        return type.Type;
       }
 
       //To allow for backwards compatibility saving deserialization target types.
       //We also check a ".Deprecated" prefixed namespace
       string deprecatedTypeName = GetDeprecatedTypeName(typeName);
 
-      var deprecatedType = TypeLoader.Types.FirstOrDefault(tp => tp.FullName == deprecatedTypeName);
+      var deprecatedType = TypeLoader.Types.FirstOrDefault(tp => tp.Name == deprecatedTypeName);
       if (deprecatedType != null)
       {
-        return deprecatedType;
+        return deprecatedType.Type;
       }
     }
 

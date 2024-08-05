@@ -2,9 +2,11 @@ using Speckle.Objects.Geometry;
 using Speckle.Objects.Structural.Geometry;
 using Speckle.Objects.Structural.Properties;
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Geometry;
 
+[SpeckleType("Objects.Structural.GSA.Geometry.GSAElement1D")]
 public class GSAElement1D : Element1D
 {
   public GSAElement1D() { }

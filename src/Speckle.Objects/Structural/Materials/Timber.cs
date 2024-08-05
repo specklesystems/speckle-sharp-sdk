@@ -1,7 +1,9 @@
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Materials;
 
+[SpeckleType("Objects.Structural.Materials.Timber")]
 public class Timber : StructuralMaterial
 {
   public Timber() { }

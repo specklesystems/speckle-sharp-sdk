@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Properties;
 
+[SpeckleType("Objects.Structural.Properties.Property1D")]
 public class Property1D : Property //SectionProperty as alt class name
 {
   public Property1D() { }

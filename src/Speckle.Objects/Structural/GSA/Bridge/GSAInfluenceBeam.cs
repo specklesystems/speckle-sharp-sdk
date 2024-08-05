@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Bridge;
 
+[SpeckleType("Objects.Structural.GSA.Bridge.GSAInfluenceBeam")]
 public class GSAInfluenceBeam : GSAInfluence
 {
   public GSAInfluenceBeam() { }

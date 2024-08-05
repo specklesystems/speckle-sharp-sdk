@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Loading;
 
+[SpeckleType("Objects.Structural.Loading.LoadCase")]
 public class LoadCase : Base // or LoadPattern? (per CSI)
 {
   public LoadCase() { }

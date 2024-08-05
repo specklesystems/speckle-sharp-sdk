@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.ResultSetAll")]
 public class ResultSetAll : Base
 {
   public ResultSetAll() { }

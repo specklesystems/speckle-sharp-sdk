@@ -2,9 +2,11 @@ using Speckle.Objects.Geometry;
 using Speckle.Objects.Structural.Geometry;
 using Speckle.Objects.Structural.GSA.Geometry;
 using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Loading;
 
+[SpeckleType("Objects.Structural.GSA.Loading.GSALoadGridLine")]
 public class GSALoadGridLine : GSALoadGrid
 {
   public GSALoadGridLine() { }

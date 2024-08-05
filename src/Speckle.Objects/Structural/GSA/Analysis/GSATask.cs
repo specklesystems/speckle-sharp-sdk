@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Analysis;
 
+[SpeckleType("Objects.Structural.GSA.Analysis.GSATask")]
 public class GSATask : Base
 {
   public GSATask() { }

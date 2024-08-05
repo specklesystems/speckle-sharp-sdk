@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Properties;
 
+[SpeckleType("Objects.Structural.Properties.Property")]
 public class Property : Base
 {
   public Property() { }

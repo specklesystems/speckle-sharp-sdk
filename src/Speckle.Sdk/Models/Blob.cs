@@ -5,6 +5,7 @@ using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Models;
 
+[SpeckleType("Speckle.Core.Models.Blob")]
 public class Blob : Base
 {
   [JsonIgnore]

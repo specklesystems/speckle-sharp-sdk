@@ -1,8 +1,10 @@
 using Speckle.Objects.Structural.Loading;
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Loading;
 
+[SpeckleType("Objects.Structural.GSA.Loading.GSALoadCase")]
 public class GSALoadCase : LoadCase
 {
   public GSALoadCase() { }

@@ -1,7 +1,9 @@
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Properties;
 
+[SpeckleType("Objects.Structural.Properties.PropertyMass")]
 public class PropertyMass : Property // nodal constraint axis of the node assumed to be mass property axis
 {
   public PropertyMass() { }

@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Loading;
 
+[SpeckleType("Objects.Structural.GSA.Loading.GSALoadBeam")]
 public class GSALoadBeam : LoadBeam
 {
   public GSALoadBeam() { }

@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Geometry;
 
+[SpeckleType("Objects.Structural.GSA.Geometry.GSAGeneralisedRestraint")]
 public class GSAGeneralisedRestraint : Base
 {
   public GSAGeneralisedRestraint() { }

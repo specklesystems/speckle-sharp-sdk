@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.ResultGlobal")]
 public class ResultGlobal : Result
 {
   public ResultGlobal() { }

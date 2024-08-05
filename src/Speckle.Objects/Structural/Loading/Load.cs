@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Loading;
 
+[SpeckleType("Objects.Structural.Loading.Load")]
 public class Load : Base
 {
   public Load() { }

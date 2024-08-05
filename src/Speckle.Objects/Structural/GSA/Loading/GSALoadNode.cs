@@ -2,9 +2,11 @@ using Speckle.Objects.Structural.Geometry;
 using Speckle.Objects.Structural.GSA.Geometry;
 using Speckle.Objects.Structural.Loading;
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Loading;
 
+[SpeckleType("Objects.Structural.GSA.Loading.GSALoadNode")]
 public class GSALoadNode : LoadNode
 {
   public GSALoadNode() { }

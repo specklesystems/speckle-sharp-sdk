@@ -12,6 +12,7 @@ namespace Speckle.Sdk.Models;
 /// <para>- Your class needs to have a void constructor.</para>
 /// <para>- Probably more. File a bug!</para>
 /// </summary>
+[SpeckleType("Speckle.Core.Models.Abstract")]
 public class Abstract : Base
 {
   private object _base;
@@ -51,11 +52,13 @@ public class Abstract : Base
 /// <para>In short, this helps you chunk big things into smaller things.</para>
 /// See the following <see href="https://pics.me.me/chunky-boi-57848570.png">reference.</see>
 /// </summary>
+[SpeckleType("Speckle.Core.Models.DataChunk")]
 public class DataChunk : Base
 {
   public List<object> data { get; set; } = new();
 }
 
+[SpeckleType("Speckle.Core.Models.ObjectReference")]
 public class ObjectReference : Base
 {
   public new string speckle_type = "reference";

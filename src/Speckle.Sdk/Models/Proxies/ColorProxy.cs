@@ -3,6 +3,7 @@ namespace Speckle.Sdk.Models.Proxies;
 /// <summary>
 /// Represents a color that is found on objects and collections in a root collection
 /// </summary>
+[SpeckleType("Speckle.Core.Models.Proxies.ColorProxy")]
 public class ColorProxy : Base, IProxyCollection
 {
   public ColorProxy() { }

@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Loading;
 
+[SpeckleType("Objects.Structural.GSA.Loading.GSALoadThermal2d")]
 public class GSALoadThermal2d : Load
 {
   public GSALoadThermal2d() { }

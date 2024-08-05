@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Loading;
 
+[SpeckleType("Objects.Structural.GSA.Loading.GSALoadGravity")]
 public class GSALoadGravity : LoadGravity
 {
   public GSALoadGravity() { }

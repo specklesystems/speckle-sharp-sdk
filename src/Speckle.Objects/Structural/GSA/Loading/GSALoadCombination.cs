@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Loading;
 
+[SpeckleType("Objects.Structural.GSA.Loading.GSALoadCombination")]
 public class GSALoadCombination : LoadCombination
 {
   public GSALoadCombination() { }

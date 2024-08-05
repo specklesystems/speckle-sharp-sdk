@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Properties.Profiles;
 
+[SpeckleType("Objects.Structural.Properties.Profiles.SectionProfile")]
 public class SectionProfile : Base //section profile description
 {
   public SectionProfile() { }

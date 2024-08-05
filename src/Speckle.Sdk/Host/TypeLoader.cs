@@ -3,15 +3,16 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Host;
 
+public record LoadedType(string Name, Type Type);
 public static class TypeLoader
 {
   private static bool s_initialized;
-  private static List<Type> s_availableTypes = new();
+  private static List<LoadedType> s_availableTypes = new();
 
   /// <summary>
   /// Returns a list of all the types found in all the kits on this user's device.
   /// </summary>
-  public static IReadOnlyList<Type> Types
+  public static IReadOnlyList<LoadedType> Types
   {
     get
     {
@@ -53,7 +54,12 @@ public static class TypeLoader
 
       foreach (var type in assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Base)) && !t.IsAbstract))
       {
-        s_availableTypes.Add(type);
+        var speckleType = type.GetCustomAttribute<SpeckleTypeAttribute>();
+        if (speckleType is null)
+        {
+          throw new InvalidOperationException($"{type.FullName} inherits from Base has no SpeckleTypeAttribute");
+        }
+        s_availableTypes.Add(new LoadedType(speckleType.Name, type));
       }
     }
   }

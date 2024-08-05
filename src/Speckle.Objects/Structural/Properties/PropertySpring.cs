@@ -1,7 +1,9 @@
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Properties;
 
+[SpeckleType("Objects.Structural.Properties.PropertySpring")]
 public class PropertySpring : Property
 {
   public PropertySpring() { }

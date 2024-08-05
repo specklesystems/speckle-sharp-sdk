@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Analysis;
 
+[SpeckleType("Objects.Structural.GSA.Analysis.GSAAnalysisCase")]
 public class GSAAnalysisCase : Base
 {
   public GSAAnalysisCase() { }

@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Loading;
 
+[SpeckleType("Objects.Structural.Loading.LoadCombination")]
 public class LoadCombination : Base //combination case
 {
   public LoadCombination() { }

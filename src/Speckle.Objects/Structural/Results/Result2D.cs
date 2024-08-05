@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.ResultSet2D")]
 public class ResultSet2D : Result
 {
   public ResultSet2D() { }
@@ -19,6 +20,7 @@ public class ResultSet2D : Result
   public List<Result2D> results2D { get; set; }
 }
 
+[SpeckleType("Objects.Structural.Results.Result2D")]
 public class Result2D : Result //result at a single position within a 2D element, ie. 2D element contains multiple Result2D objects to describe result at node 1, node 2, node 3, node4 and centre of 4-node quad element
 {
   public Result2D() { }

@@ -11,6 +11,7 @@ public enum CaseType
   Combination
 }
 
+[SpeckleType("Objects.Structural.Results.ResultSetNode")]
 public class ResultSetNode : Result
 {
   public ResultSetNode() { }
@@ -25,6 +26,7 @@ public class ResultSetNode : Result
   public List<ResultNode> resultsNode { get; set; }
 }
 
+[SpeckleType("Objects.Structural.Results.ResultNode")]
 public class ResultNode : Result
 {
   public ResultNode() { }

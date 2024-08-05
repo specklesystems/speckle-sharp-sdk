@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Geometry;
 
+[SpeckleType("Objects.Structural.GSA.Geometry.GSARigidConstraint")]
 public class GSARigidConstraint : Base
 {
   public GSARigidConstraint() { }

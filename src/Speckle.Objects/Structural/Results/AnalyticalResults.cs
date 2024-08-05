@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.AnalyticalResults")]
 public class AnalyticalResults : Base
 {
   public string? lengthUnits { get; set; }

@@ -6,6 +6,7 @@ namespace Speckle.Sdk.Models.Instances;
 /// <summary>
 /// A proxy class for an instance (e.g, a rhino block, or an autocad block reference).
 /// </summary>
+[SpeckleType("Speckle.Core.Models.Instances.InstanceProxy")]
 public class InstanceProxy : Base, IInstanceComponent
 {
   /// <summary>

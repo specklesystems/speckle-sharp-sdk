@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.ResultSet1D")]
 public class ResultSet1D : Result
 {
   public ResultSet1D() { }
@@ -19,6 +20,7 @@ public class ResultSet1D : Result
   public List<Result1D> results1D { get; set; }
 }
 
+[SpeckleType("Objects.Structural.Results.Result1D")]
 public class Result1D : Result //result at a single position along a 1D element, ie. 1D element contains multiple Result1D objects to describe result at end 1, mid-span, end 2
 {
   public Result1D() { }
