@@ -4,28 +4,6 @@ using Speckle.Core.Models;
 
 namespace Speckle.Core.Tests.Unit.Kits;
 
-/// <summary>
-/// Simple speckle kit (no conversions) used in tests.
-/// </summary>
-public class TestKit : ISpeckleKit
-{
-  public IEnumerable<Type> Types => GetType().Assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(Base)));
-
-  public string Description => "Simple object model for with some types for tests.";
-
-  public string Name => nameof(TestKit);
-
-  public string Author => "Dimitrie";
-
-  public string WebsiteOrEmail => "hello@Speckle.Core.works";
-
-  public IEnumerable<string> Converters => new List<string>();
-
-  public ISpeckleConverter LoadConverter(string app)
-  {
-    throw new KitException("This is the test kit");
-  }
-}
 
 public class FakeMesh : Base
 {

@@ -230,18 +230,11 @@
           "Shouldly": "[4.2.1, )",
           "Speckle.Core": "[1.0.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
-          "Speckle.Transports.Disk": "[1.0.0, )",
           "altcover": "[8.8.74, )"
         }
       },
       "speckle.logging": {
         "type": "Project"
-      },
-      "speckle.transports.disk": {
-        "type": "Project",
-        "dependencies": {
-          "Speckle.Core": "[1.0.0, )"
-        }
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",

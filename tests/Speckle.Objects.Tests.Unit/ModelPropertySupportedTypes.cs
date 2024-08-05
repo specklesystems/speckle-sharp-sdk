@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using NUnit.Framework;
+using Speckle.Core.Host;
 using Speckle.Core.Models;
 using Speckle.Core.Serialisation;
 using Speckle.DoubleNumerics;
@@ -59,7 +60,7 @@ public class ModelPropertySupportedTypes
     };
 
   [Test]
-  [TestCaseSource(typeof(GenericTests), nameof(GenericTests.AvailableTypesInKit))]
+  [TestCaseSource(typeof(TypeLoader), nameof(TypeLoader.Types))]
   public void TestObjects(Type t)
   {
     var members = DynamicBase.GetInstanceMembers(t).Where(p => !p.IsDefined(typeof(JsonIgnoreAttribute), true));

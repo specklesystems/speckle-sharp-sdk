@@ -12,24 +12,6 @@ namespace Speckle.Core.Api;
 /// </summary>
 public static partial class Operations
 {
-  /// <summary>
-  /// Convenience method to instantiate an instance of the default object serializer and settings pre-populated with it.
-  /// </summary>
-  [Obsolete("V1 Serializer is deprecated. Use " + nameof(BaseObjectSerializerV2))]
-  public static (BaseObjectSerializer, JsonSerializerSettings) GetSerializerInstance()
-  {
-    var serializer = new BaseObjectSerializer();
-    var settings = new JsonSerializerSettings
-    {
-      NullValueHandling = NullValueHandling.Ignore,
-      ContractResolver = new CamelCasePropertyNamesContractResolver(),
-      Formatting = Formatting.None,
-      ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-      Converters = new List<JsonConverter> { serializer }
-    };
-
-    return (serializer, settings);
-  }
 
   /// <summary>
   /// Factory for progress actions used internally inside send and receive methods.

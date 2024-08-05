@@ -3,35 +3,6 @@ using Speckle.Core.Logging;
 namespace Speckle.Core.Kits;
 
 /// <summary>
-/// Exception thrown when an <see cref="ISpeckleKit"/> fails to load/initialise
-/// </summary>
-/// <remarks>
-/// Does NOT inherit from <see cref="SpeckleException"/>, because this usage of this exception is not dependent on Speckle Data (user data)
-/// Ideally, this exception should contain a meaningful message, and a reference to the <see cref="ISpeckleKit"/>
-/// </remarks>
-public class KitException : Exception
-{
-  /// <summary>
-  /// A reference to the <see cref="ISpeckleKit"/> that failed to perform
-  /// </summary>
-  public ISpeckleKit? Kit { get; }
-
-  public KitException(string? message, ISpeckleKit? kit, Exception? innerException = null)
-    : base(message, innerException)
-  {
-    Kit = kit;
-  }
-
-  public KitException() { }
-
-  public KitException(string? message)
-    : base(message) { }
-
-  public KitException(string? message, Exception? innerException)
-    : base(message, innerException) { }
-}
-
-/// <summary>
 /// Exception thrown when conversion of an object was not successful
 /// </summary>
 /// <remarks>
