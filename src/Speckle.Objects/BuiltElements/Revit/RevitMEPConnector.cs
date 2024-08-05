@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitMEPConnector")]
 public class RevitMEPConnector : Base
 {
   public double angle { get; set; }

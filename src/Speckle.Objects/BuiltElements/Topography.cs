@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Topography")]
 public class Topography : Base, IDisplayValue<List<Mesh>>
 {
   public Topography()

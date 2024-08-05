@@ -1,7 +1,9 @@
+using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 
 namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.RasterLayer")]
 public class RasterLayer : Collection
 {
   public CRS? crs { get; set; }

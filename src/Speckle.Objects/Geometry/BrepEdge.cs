@@ -7,6 +7,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents an edge of the <see cref="Brep"/>.
 /// </summary>
+[SpeckleType("Objects.Geometry.BrepEdge")]
 public class BrepEdge : Base
 {
   public BrepEdge() { }

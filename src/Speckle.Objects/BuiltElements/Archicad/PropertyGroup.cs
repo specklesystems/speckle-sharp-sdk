@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.PropertyGroup")]
 public class PropertyGroup : Base
 {
   public PropertyGroup() { }

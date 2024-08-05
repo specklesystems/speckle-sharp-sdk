@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Other.Revit;
 
+[SpeckleType("Objects.Other.Revit.RevitInstance")]
 public class RevitInstance : Instance<RevitSymbolElementType>
 {
   public Level level { get; set; }

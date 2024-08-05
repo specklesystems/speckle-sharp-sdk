@@ -1,5 +1,8 @@
+using Speckle.Sdk.Models;
+
 namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilAlignment")]
 public class CivilAlignment : Alignment
 {
   public string type { get; set; }

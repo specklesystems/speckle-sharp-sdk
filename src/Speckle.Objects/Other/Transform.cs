@@ -11,6 +11,7 @@ namespace Speckle.Objects.Other;
 /// <summary>
 /// Generic transform class
 /// </summary>
+[SpeckleType("Objects.Other.Transform")]
 public class Transform : Base
 {
   public Transform() { }

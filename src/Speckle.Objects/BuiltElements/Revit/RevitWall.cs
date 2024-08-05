@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitWall")]
 public class RevitWall : Wall
 {
   public RevitWall() { }
@@ -126,6 +127,7 @@ public class RevitWall : Wall
   #endregion
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitFaceWall")]
 public class RevitFaceWall : Wall
 {
   public RevitFaceWall() { }
@@ -178,6 +180,7 @@ public class RevitFaceWall : Wall
   public string elementId { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitProfileWall")]
 public class RevitProfileWall : Wall
 {
   public RevitProfileWall() { }

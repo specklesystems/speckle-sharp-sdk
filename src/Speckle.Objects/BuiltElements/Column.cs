@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Column")]
 public class Column : Base, IDisplayValue<IReadOnlyList<Base>>
 {
   public Column() { }

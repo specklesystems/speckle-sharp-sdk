@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Profile")]
 public class Profile : Base, IDisplayValue<Polyline>
 {
   public List<ICurve> curves { get; set; }

@@ -9,6 +9,7 @@ namespace Speckle.Objects.BuiltElements.Archicad;
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_beamtype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadBeam")]
 public class ArchicadBeam : Beam
 {
   [SchemaInfo("ArchicadBeam", "Creates an Archicad beam by curve.", "Archicad", "Structure")]
@@ -115,6 +116,7 @@ public class ArchicadBeam : Beam
   public double? coverFillTransformationYAxisX { get; set; }
   public double? coverFillTransformationYAxisY { get; set; }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadBeam+BeamSegment")]
   public class BeamSegment : Base
   {
     // Segment override materials

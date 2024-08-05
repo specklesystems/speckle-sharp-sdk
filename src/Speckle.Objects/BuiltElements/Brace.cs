@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Brace")]
 public class Brace : Base, IDisplayValue<IReadOnlyList<Base>>
 {
   public Brace() { }

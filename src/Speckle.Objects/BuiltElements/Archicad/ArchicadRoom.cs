@@ -7,6 +7,7 @@ namespace Speckle.Objects.BuiltElements.Archicad;
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_zonetype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadRoom")]
 public class ArchicadRoom : Room
 {
   // Element base

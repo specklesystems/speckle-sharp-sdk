@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.TeklaContourPlate")]
 public class TeklaContourPlate : Area
 {
   [SchemaInfo("ContourPlate", "Creates a TeklaStructures contour plate.", "Tekla", "Structure")]
@@ -53,6 +54,7 @@ public class TeklaContourPlate : Area
   public List<TeklaContourPoint> contour { get; set; } // Use for ToNative to Tekla. Other programs can use Area.outline.
 }
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.TeklaContourPoint")]
 public class TeklaContourPoint : Point
 {
   public TeklaContourPoint() { }

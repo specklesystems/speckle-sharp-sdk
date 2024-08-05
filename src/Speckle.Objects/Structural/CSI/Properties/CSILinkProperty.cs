@@ -1,8 +1,10 @@
 using Speckle.Objects.Structural.Properties;
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.CSI.Properties;
 
+[SpeckleType("Objects.Structural.CSI.Properties.CSILinkProperty")]
 public class CSILinkProperty : Property1D
 {
   [SchemaInfo("CSILink", "Create an CSI Link Property", "CSI", "Properties")]

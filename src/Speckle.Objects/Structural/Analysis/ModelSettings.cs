@@ -6,6 +6,7 @@ namespace Speckle.Objects.Structural.Analysis;
 /// <summary>
 /// Codes and standards references, model units, design settings, analysis settings, precision and tolerances
 /// </summary>
+[SpeckleType("Objects.Structural.Analysis.ModelSettings")]
 public class ModelSettings : Base
 {
   public ModelSettings() { }

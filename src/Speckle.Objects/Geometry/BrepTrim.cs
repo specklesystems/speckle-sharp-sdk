@@ -7,6 +7,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents a UV Trim curve for one of the <see cref="Brep"/>'s surfaces.
 /// </summary>
+[SpeckleType("Objects.Geometry.BrepTrim")]
 public class BrepTrim : Base
 {
   public BrepTrim() { }

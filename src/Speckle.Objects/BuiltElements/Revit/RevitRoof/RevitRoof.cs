@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit.RevitRoof;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRoof.RevitRoof")]
 public class RevitRoof : Roof
 {
   public string family { get; set; }
@@ -19,6 +20,7 @@ public class RevitRoof : Roof
   }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRoof.RevitExtrusionRoof")]
 public class RevitExtrusionRoof : RevitRoof
 {
   public RevitExtrusionRoof() { }
@@ -62,6 +64,7 @@ public class RevitExtrusionRoof : RevitRoof
   public Line referenceLine { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRoof.RevitFootprintRoof")]
 public class RevitFootprintRoof : RevitRoof
 {
   public RevitFootprintRoof() { }

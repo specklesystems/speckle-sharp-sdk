@@ -17,6 +17,7 @@ public enum SpiralType
   Unknown
 }
 
+[SpeckleType("Objects.Geometry.Spiral")]
 public class Spiral : Base, ICurve, IHasBoundingBox, IDisplayValue<Polyline>
 {
   public Point startPoint { get; set; }

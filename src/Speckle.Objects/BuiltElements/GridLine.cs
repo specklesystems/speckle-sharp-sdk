@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.GridLine")]
 public class GridLine : Base, IDisplayValue<List<Base>>
 {
   public GridLine() { }

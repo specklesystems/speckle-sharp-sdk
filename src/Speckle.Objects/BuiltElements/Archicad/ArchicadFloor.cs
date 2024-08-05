@@ -7,6 +7,7 @@ namespace Speckle.Objects.BuiltElements.Archicad;
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_slabtype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadFloor")]
 public sealed class ArchicadFloor : Floor
 {
   // Element base
@@ -86,6 +87,7 @@ public sealed class ArchicadFloor : Floor
   public string? botMat { get; set; }
   public bool? materialsChained { get; set; }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadFloor+Visibility")]
   public class Visibility : Base
   {
     public bool? showOnHome { get; set; }

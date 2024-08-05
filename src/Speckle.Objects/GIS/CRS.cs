@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.CRS")]
 public class CRS : Base
 {
   public string? name { get; set; }

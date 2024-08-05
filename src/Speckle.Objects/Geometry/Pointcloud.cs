@@ -9,6 +9,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// A collection of points, with color and size support.
 /// </summary>
+[SpeckleType("Objects.Geometry.Pointcloud")]
 public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
 {
   /// <summary>

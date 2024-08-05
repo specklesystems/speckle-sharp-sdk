@@ -6,6 +6,7 @@ namespace Speckle.Objects.Other;
 /// <summary>
 /// Text class for Rhino and AutoCAD
 /// </summary>
+[SpeckleType("Objects.Other.Text")]
 public class Text : Base, IDisplayValue<List<Polyline>>
 {
   public Plane plane { get; set; } // origin should be center

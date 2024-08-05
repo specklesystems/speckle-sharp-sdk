@@ -7,6 +7,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents a 3-dimensional box oriented on a plane.
 /// </summary>
+[SpeckleType("Objects.Geometry.Box")]
 public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
 {
   /// <inheritdoc/>

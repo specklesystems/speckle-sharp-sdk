@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRebarGroup")]
 public class RevitRebarGroup : RebarGroup<RevitRebarShape>
 {
   public RevitRebarGroup() { }
@@ -49,6 +50,7 @@ public class RevitRebarGroup : RebarGroup<RevitRebarShape>
   public string elementId { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRebarShape")]
 public class RevitRebarShape : RebarShape
 {
   public RevitRebarShape() { }
@@ -57,6 +59,7 @@ public class RevitRebarShape : RebarShape
   public string elementId { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRebarHook")]
 public class RevitRebarHook : RebarHook
 {
   public RevitRebarHook() { }
@@ -69,6 +72,7 @@ public class RevitRebarHook : RebarHook
 
 #region Obsolete
 [Obsolete("Deprecated in 2.17: Use RevitRebarGroup class instead")]
+[SpeckleType("Objects.BuiltElements.Revit.RevitRebar")]
 public class RevitRebar : Rebar
 {
   public string family { get; set; }

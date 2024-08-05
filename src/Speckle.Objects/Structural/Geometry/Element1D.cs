@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Geometry;
 
+[SpeckleType("Objects.Structural.Geometry.Element1D")]
 public class Element1D : Base, IDisplayValue<IReadOnlyList<Base>>
 {
   public Element1D() { }

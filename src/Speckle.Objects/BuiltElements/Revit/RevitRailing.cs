@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRailing")]
 public class RevitRailing : Base, IDisplayValue<List<Mesh>>
 {
   public RevitRailing() { }
@@ -34,6 +35,7 @@ public class RevitRailing : Base, IDisplayValue<List<Mesh>>
 
 // Used only to transfer parameters of the top railing
 // its display mesh will live in the main railing element
+[SpeckleType("Objects.BuiltElements.Revit.RevitTopRail")]
 public class RevitTopRail : Base
 {
   //public string family { get; set; }

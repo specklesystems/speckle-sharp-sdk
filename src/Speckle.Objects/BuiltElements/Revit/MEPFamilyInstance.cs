@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitMEPFamilyInstance")]
 public class RevitMEPFamilyInstance : RevitInstance, IHasMEPConnectors
 {
   public string RevitPartType { get; set; }

@@ -7,6 +7,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.CSI.Geometry;
 
+[SpeckleType("Objects.Structural.CSI.Geometry.CSIElement2D")]
 public class CSIElement2D : Element2D
 {
   [SchemaInfo(

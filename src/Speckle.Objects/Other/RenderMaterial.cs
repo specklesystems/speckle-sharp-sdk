@@ -14,6 +14,7 @@ namespace Speckle.Objects.Other;
 /// See: https://docs.unrealengine.com/en-US/RenderingAndGraphics/Materials/PhysicallyBased/index.html
 /// And: https://blogs.unity3d.com/2014/10/29/physically-based-shading-in-unity-5-a-primer/
 /// </summary>
+[SpeckleType("Objects.Other.RenderMaterial")]
 public class RenderMaterial : Base
 {
   public RenderMaterial() { }
@@ -63,6 +64,7 @@ public class RenderMaterial : Base
 /// <summary>
 /// Used to store render material to object relationships in root collections
 /// </summary>
+[SpeckleType("Objects.Other.RenderMaterialProxy")]
 public class RenderMaterialProxy : Base, IProxyCollection
 {
   public RenderMaterialProxy() { }

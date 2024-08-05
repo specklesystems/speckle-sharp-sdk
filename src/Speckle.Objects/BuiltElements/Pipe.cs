@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Pipe")]
 public class Pipe : Base, IDisplayValue<List<Mesh>>
 {
   public Pipe() { }

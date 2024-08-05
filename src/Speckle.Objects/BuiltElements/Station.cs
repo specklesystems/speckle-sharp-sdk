@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Station")]
 public class Station : Base
 {
   public double number { get; set; }

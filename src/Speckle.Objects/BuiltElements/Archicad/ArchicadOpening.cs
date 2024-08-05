@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadOpening")]
 public class ArchicadOpening : Opening
 {
   [SchemaInfo("ArchicadOpening", "Creates an Archicad opening.", "Archicad", "Structure")]

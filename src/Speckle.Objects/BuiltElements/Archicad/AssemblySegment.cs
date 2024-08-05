@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.AssemblySegment")]
 public class AssemblySegment : Base
 {
   public bool circleBased { get; set; }
@@ -27,6 +28,7 @@ public class AssemblySegment : Base
   public string buildingMaterial { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Archicad.AssemblySegmentScheme")]
 public class AssemblySegmentScheme : Base
 {
   public string lengthType { get; set; }
@@ -36,6 +38,7 @@ public class AssemblySegmentScheme : Base
   public double lengthProportion { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Archicad.AssemblySegmentCut")]
 public class AssemblySegmentCut : Base
 {
   public string cutType { get; set; }
@@ -43,6 +46,7 @@ public class AssemblySegmentCut : Base
   public double customAngle { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Archicad.Hole")]
 public class Hole : Base
 {
   public string holeType { get; set; }

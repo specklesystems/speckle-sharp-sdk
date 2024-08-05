@@ -11,6 +11,7 @@ namespace Speckle.Objects.Geometry;
 /// <remarks>
 /// TODO: The Point class does not override the Equality operator, which means that there may be cases where `Equals` is used instead of `==`, as the comparison will be done by reference, not value.
 /// </remarks>
+[SpeckleType("Objects.Geometry.Point")]
 public class Point : Base, ITransformable<Point>
 {
   /// <inheritdoc/>

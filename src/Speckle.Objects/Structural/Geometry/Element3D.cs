@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Geometry;
 
+[SpeckleType("Objects.Structural.Geometry.Element3D")]
 public class Element3D : Base
 {
   public Element3D() { }

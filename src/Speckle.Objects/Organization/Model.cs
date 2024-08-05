@@ -8,6 +8,7 @@ namespace Speckle.Objects.Organization;
 /// It contains general information about the model and can be extended or subclassed to include more application-specific
 /// information.
 /// </summary>
+[SpeckleType("Objects.Organization.ModelInfo")]
 public class ModelInfo : Base
 {
   /// <summary>

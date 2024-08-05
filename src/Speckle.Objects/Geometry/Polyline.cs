@@ -10,6 +10,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// A polyline curve, defined by a set of vertices.
 /// </summary>
+[SpeckleType("Objects.Geometry.Polyline")]
 public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, IConvertible, ITransformable
 {
   /// <summary>

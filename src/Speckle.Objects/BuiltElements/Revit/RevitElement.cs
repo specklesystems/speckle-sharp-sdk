@@ -6,6 +6,7 @@ namespace Speckle.Objects.BuiltElements.Revit;
 /// <summary>
 /// A generic Revit element for which we don't have direct conversions
 /// </summary>
+[SpeckleType("Objects.BuiltElements.Revit.RevitElement")]
 public class RevitElement : Base, IDisplayValue<List<Mesh>>
 {
   public string family { get; set; }

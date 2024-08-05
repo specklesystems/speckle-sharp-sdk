@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilBaselineRegion")]
 public class CivilBaselineRegion : Base
 {
   public CivilBaselineRegion() { }

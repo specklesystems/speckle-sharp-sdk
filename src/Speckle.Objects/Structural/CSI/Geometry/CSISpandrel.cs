@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.CSI.Geometry;
 
+[SpeckleType("Objects.Structural.CSI.Geometry.CSISpandrel")]
 public class CSISpandrel : Base
 {
   public CSISpandrel(

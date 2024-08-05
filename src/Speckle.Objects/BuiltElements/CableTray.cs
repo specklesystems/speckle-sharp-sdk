@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.CableTray")]
 public class CableTray : Base, IDisplayValue<List<Mesh>>
 {
   public ICurve baseCurve { get; set; }

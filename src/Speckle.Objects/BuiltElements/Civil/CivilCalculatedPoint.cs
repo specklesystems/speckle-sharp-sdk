@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilCalculatedPoint")]
 public class CivilCalculatedPoint : Base, ICivilCalculatedObject
 {
   public CivilCalculatedPoint() { }

@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Space")]
 public class Space : Base, IHasArea, IHasVolume, IDisplayValue<List<Mesh>>
 {
   public Space() { }

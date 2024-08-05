@@ -8,6 +8,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// A Surface in NURBS form.
 /// </summary>
+[SpeckleType("Objects.Geometry.Surface")]
 public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
 {
   /// <summary>

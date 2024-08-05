@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
+[SpeckleType("Objects.BuiltElements.AdvanceSteel.AsteelPlate")]
 public class AsteelPlate : Area, IDisplayValue<List<Mesh>>, IHasArea, IHasVolume, IAsteelObject
 {
   [DetachProperty]

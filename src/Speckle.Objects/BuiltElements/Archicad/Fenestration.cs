@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadFenestration")]
 public class ArchicadFenestration : Base, IDisplayValue<List<Mesh>>
 {
   public string parentApplicationId { get; set; }

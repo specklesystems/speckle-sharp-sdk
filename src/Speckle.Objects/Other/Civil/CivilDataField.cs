@@ -1,5 +1,8 @@
+using Speckle.Sdk.Models;
+
 namespace Speckle.Objects.Other.Civil;
 
+[SpeckleType("Objects.Other.Civil.CivilDataField")]
 public class CivilDataField : DataField
 {
   public CivilDataField() { }

@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Room")]
 public class Room : Base, IHasArea, IHasVolume, IDisplayValue<List<Mesh>>
 {
   public Room() { }

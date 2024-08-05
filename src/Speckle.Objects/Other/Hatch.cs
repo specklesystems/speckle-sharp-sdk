@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Other;
 
+[SpeckleType("Objects.Other.Hatch")]
 public class Hatch : Base
 {
   [Obsolete("Use Loops instead")]
@@ -16,6 +17,7 @@ public class Hatch : Base
 /// <summary>
 /// Represents a Hatch Loop from a <see cref="Hatch"/>'s curve.
 /// </summary>
+[SpeckleType("Objects.Other.HatchLoop")]
 public class HatchLoop : Base
 {
   public HatchLoop() { }

@@ -9,6 +9,7 @@ namespace Speckle.Objects.BuiltElements;
 /// <remarks>
 /// This class is not suitable for freeform rebar, which can have multiple shapes.
 /// </remarks>
+[SpeckleType("Objects.BuiltElements.RebarGroup")]
 public class RebarGroup<T> : Base, IHasVolume, IDisplayValue<List<ICurve>>
   where T : RebarShape
 {
@@ -79,6 +80,7 @@ public class RebarGroup<T> : Base, IHasVolume, IDisplayValue<List<ICurve>>
 /// <summary>
 /// The shape describing the geometry and geometry parameters of a reinforcing bar
 /// </summary>
+[SpeckleType("Objects.BuiltElements.RebarShape")]
 public class RebarShape : Base
 {
   public RebarShape() { }
@@ -109,6 +111,7 @@ public class RebarShape : Base
   public string units { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.RebarHook")]
 public class RebarHook : Base
 {
   public RebarHook() { }
@@ -142,6 +145,7 @@ public enum RebarType
 
 #region Obsolete
 [Obsolete("Deprecated in 2.17: Use the RebarGroup class instead")]
+[SpeckleType("Objects.BuiltElements.Rebar")]
 public class Rebar : Base, IHasVolume, IDisplayValue<List<Mesh>>
 {
   public List<ICurve> curves { get; set; } = new();

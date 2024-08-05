@@ -9,6 +9,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents a sub-curve of a three-dimensional circle.
 /// </summary>
+[SpeckleType("Objects.Geometry.Arc")]
 public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
 {
   /// <inheritdoc/>

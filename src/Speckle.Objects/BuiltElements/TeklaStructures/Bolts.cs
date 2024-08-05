@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.Bolts")]
 public class Bolts : Base
 {
   [DetachProperty]
@@ -21,6 +22,7 @@ public class Bolts : Base
   public List<string> boltedPartsIds { get; set; } = new(); // First guid is PartToBeBolted, second guid is PartToBoltTo, any others are OtherPartsToBolt
 }
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.BoltsXY")]
 public class BoltsXY : Bolts
 {
   // Lists of XY positions of bolts for Tekla
@@ -28,6 +30,7 @@ public class BoltsXY : Bolts
   public List<double> yPosition { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.BoltsArray")]
 public class BoltsArray : Bolts
 {
   // Lists of XY distances between bolts for Tekla
@@ -35,6 +38,7 @@ public class BoltsArray : Bolts
   public List<double> yDistance { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.BoltsCircle")]
 public class BoltsCircle : Bolts
 {
   public int boltCount { get; set; }

@@ -1,10 +1,12 @@
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
 [Obsolete(
   "Networks are no longer used to assemble MEP systems in Revit. See the RevitCommitBuilder for MEP systems conversion."
 )]
+[SpeckleType("Objects.BuiltElements.Revit.RevitNetworkElement")]
 public class RevitNetworkElement : NetworkElement
 {
   public RevitNetworkElement() { }
@@ -26,6 +28,7 @@ public class RevitNetworkElement : NetworkElement
 [Obsolete(
   "Networks are no longer used to assemble MEP systems in Revit. See the RevitCommitBuilder for MEP systems conversion."
 )]
+[SpeckleType("Objects.BuiltElements.Revit.RevitNetworkLink")]
 public class RevitNetworkLink : NetworkLink
 {
   public double height { get; set; }

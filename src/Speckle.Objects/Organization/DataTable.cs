@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Organization;
 
+[SpeckleType("Objects.Organization.DataTable")]
 public class DataTable : Base
 {
   public DataTable() { }

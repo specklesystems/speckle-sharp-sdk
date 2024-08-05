@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
+[SpeckleType("Objects.BuiltElements.AdvanceSteel.AsteelSpecialPart")]
 public class AsteelSpecialPart : Base, IAsteelObject
 {
   [DetachProperty]

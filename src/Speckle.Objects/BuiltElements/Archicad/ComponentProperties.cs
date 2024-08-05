@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.ComponentProperties")]
 public class ComponentProperties : Base
 {
   public ComponentProperties() { }

@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilCalculatedLink")]
 public class CivilCalculatedLink : Base, ICivilCalculatedObject
 {
   public CivilCalculatedLink() { }

@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Geometry;
 
+[SpeckleType("Objects.Structural.Geometry.Element2D")]
 public class Element2D : Base, IDisplayValue<List<Mesh>>
 {
   public Element2D() { }

@@ -1,5 +1,8 @@
+using Speckle.Sdk.Models;
+
 namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilBaseline")]
 public class CivilBaseline : Baseline<CivilAlignment, CivilProfile>
 {
   public CivilBaseline() { }

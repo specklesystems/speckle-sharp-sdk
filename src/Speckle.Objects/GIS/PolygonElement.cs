@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 namespace Speckle.Objects.GIS;
 
 [Obsolete("PolygonElement was replaced by a more generic class, \"GisFeature\", which contains more information")]
+[SpeckleType("Objects.GIS.PolygonElement")]
 public class PolygonElement : Base
 {
   [DetachProperty]

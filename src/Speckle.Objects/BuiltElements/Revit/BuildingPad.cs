@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.BuildingPad")]
 public class BuildingPad : Base, IDisplayValue<List<Mesh>>
 {
   public ICurve outline { get; set; }

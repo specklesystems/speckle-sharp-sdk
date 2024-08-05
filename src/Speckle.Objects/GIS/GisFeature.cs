@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.GisFeature")]
 public class GisFeature : Base
 {
   public GisFeature()

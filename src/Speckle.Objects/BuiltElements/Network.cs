@@ -10,6 +10,7 @@ namespace Speckle.Objects.BuiltElements;
 /// Network <see cref="elements"/> may need to be created first in native applications before they are linked.
 /// </remarks>
 [Obsolete("Networks are no longer used in any connector to assemble MEP systems.")]
+[SpeckleType("Objects.BuiltElements.Network")]
 public class Network : Base
 {
   public Network() { }
@@ -28,6 +29,7 @@ public class Network : Base
 }
 
 [Obsolete("Networks are no longer used in any connector to assemble MEP systems.")]
+[SpeckleType("Objects.BuiltElements.NetworkElement")]
 public class NetworkElement : Base
 {
   public NetworkElement() { }
@@ -61,6 +63,7 @@ public class NetworkElement : Base
 }
 
 [Obsolete("Networks are no longer used in any connector to assemble MEP systems.")]
+[SpeckleType("Objects.BuiltElements.NetworkLink")]
 public class NetworkLink : Base
 {
   public NetworkLink() { }

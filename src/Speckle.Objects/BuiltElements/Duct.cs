@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Duct")]
 public class Duct : Base, IDisplayValue<IReadOnlyList<Base>>
 {
   public Duct() { }

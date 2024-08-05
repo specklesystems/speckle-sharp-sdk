@@ -8,6 +8,7 @@ namespace Speckle.Objects.Other.Revit;
 /// <summary>
 /// Material in Revit defininf all revit properties from Autodesk.Revit.DB.Material
 /// </summary>
+[SpeckleType("Objects.Other.Revit.RevitMaterial")]
 public class RevitMaterial : Material
 {
   public RevitMaterial() { }

@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Analysis;
 
+[SpeckleType("Objects.Structural.Analysis.ModelInfo")]
 public class ModelInfo : Base //titles
 {
   public ModelInfo() { }

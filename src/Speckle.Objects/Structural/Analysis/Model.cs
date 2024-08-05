@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Analysis;
 
+[SpeckleType("Objects.Structural.Analysis.Model")]
 public class Model : Base
 {
   public Model() { }

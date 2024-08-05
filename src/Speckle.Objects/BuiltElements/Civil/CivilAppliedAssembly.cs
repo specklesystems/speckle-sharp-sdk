@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilAppliedAssembly")]
 public class CivilAppliedAssembly : Base
 {
   public CivilAppliedAssembly() { }

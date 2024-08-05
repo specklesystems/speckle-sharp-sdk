@@ -6,6 +6,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents a face on a <see cref="Brep"/>
 /// </summary>
+[SpeckleType("Objects.Geometry.BrepFace")]
 public class BrepFace : Base
 {
   public BrepFace() { }

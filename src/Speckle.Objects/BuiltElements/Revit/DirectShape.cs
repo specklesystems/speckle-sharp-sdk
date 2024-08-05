@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.DirectShape")]
 public class DirectShape : Base, IDisplayValue<List<Base>>
 {
   public DirectShape() { }

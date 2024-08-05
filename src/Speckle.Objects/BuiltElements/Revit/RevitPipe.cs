@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitPipe")]
 public class RevitPipe : Pipe, IHasMEPConnectors
 {
   public RevitPipe() { }
@@ -42,6 +43,7 @@ public class RevitPipe : Pipe, IHasMEPConnectors
   public List<RevitMEPConnector> Connectors { get; set; } = new();
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitFlexPipe")]
 public class RevitFlexPipe : RevitPipe
 {
   public RevitFlexPipe() { }

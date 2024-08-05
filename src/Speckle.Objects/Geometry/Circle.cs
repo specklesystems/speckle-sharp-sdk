@@ -7,6 +7,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents a circular curve based on a base <see cref="Plane"/> and a <see cref="double"/> as radius.
 /// </summary>
+[SpeckleType("Objects.Geometry.Circle")]
 public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
 {
   /// <summary>

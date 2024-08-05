@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.RasterElement")]
 public class RasterElement : Base
 {
   public int band_count { get; set; }

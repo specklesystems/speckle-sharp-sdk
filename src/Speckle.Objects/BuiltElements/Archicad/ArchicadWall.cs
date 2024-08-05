@@ -9,6 +9,7 @@ namespace Speckle.Objects.BuiltElements.Archicad;
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_walltype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadWall")]
 public class ArchicadWall : Wall
 {
   [SchemaInfo("ArchicadWall", "Creates an Archicad wall.", "Archicad", "Structure")]

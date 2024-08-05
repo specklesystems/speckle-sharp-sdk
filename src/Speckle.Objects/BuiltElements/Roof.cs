@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Roof")]
 public class Roof : Base, IDisplayValue<List<Mesh>>
 {
   public Roof() { }

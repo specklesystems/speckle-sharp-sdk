@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.FreeformElement")]
 public class FreeformElement : Base, IDisplayValue<List<Base>>
 {
   public FreeformElement() { }

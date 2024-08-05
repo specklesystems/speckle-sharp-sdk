@@ -6,14 +6,17 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitOpening")]
 public class RevitOpening : Opening
 {
   public Base? parameters { get; set; }
   public string elementId { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitVerticalOpening")]
 public class RevitVerticalOpening : RevitOpening { }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitWallOpening")]
 public class RevitWallOpening : RevitOpening
 {
   public RevitWallOpening() { }
@@ -54,6 +57,7 @@ public class RevitWallOpening : RevitOpening
   public RevitWall? host { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitShaft")]
 public class RevitShaft : RevitOpening
 {
   public RevitShaft() { }

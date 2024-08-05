@@ -6,6 +6,7 @@ namespace Speckle.Objects.Other;
 /// <summary>
 /// Dimension class
 /// </summary>
+[SpeckleType("Objects.Other.Dimension")]
 public class Dimension : Base, IDisplayValue<List<ICurve>>
 {
   /// <summary>
@@ -44,6 +45,7 @@ public class Dimension : Base, IDisplayValue<List<ICurve>>
 /// <summary>
 /// Dimension class measuring a distance
 /// </summary>
+[SpeckleType("Objects.Other.DistanceDimension")]
 public class DistanceDimension : Dimension
 {
   /// <summary>
@@ -70,6 +72,7 @@ public class DistanceDimension : Dimension
 /// <summary>
 /// Dimension class measuring a length
 /// </summary>
+[SpeckleType("Objects.Other.LengthDimension")]
 public class LengthDimension : Dimension
 {
   /// <summary>
@@ -84,6 +87,7 @@ public class LengthDimension : Dimension
 /// <summary>
 /// Dimension class measuring an angle
 /// </summary>
+[SpeckleType("Objects.Other.AngleDimension")]
 public class AngleDimension : Dimension
 {
   /// <summary>

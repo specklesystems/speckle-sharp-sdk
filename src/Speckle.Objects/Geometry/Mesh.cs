@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 
+[SpeckleType("Objects.Geometry.Mesh")]
 public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<Mesh>
 {
   public Mesh() { }

@@ -2,12 +2,14 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.CSI.Analysis;
 
+[SpeckleType("Objects.Structural.CSI.Analysis.CSIAnalysis")]
 public class CSIAnalysis : Base
 {
   public ActiveDOFs activeDOFs { get; set; }
   public FloorMeshSettings floorMeshSettings { get; set; }
 }
 
+[SpeckleType("Objects.Structural.CSI.Analysis.ActiveDOFs")]
 public class ActiveDOFs : Base
 {
   public ActiveDOFs() { }
@@ -30,6 +32,7 @@ public class ActiveDOFs : Base
   public bool RZ { get; set; }
 }
 
+[SpeckleType("Objects.Structural.CSI.Analysis.FloorMeshSettings")]
 public class FloorMeshSettings : Base
 {
   public FloorMeshSettings() { }
@@ -44,6 +47,7 @@ public class FloorMeshSettings : Base
   public double maximumMeshSize { get; set; }
 }
 
+[SpeckleType("Objects.Structural.CSI.Analysis.WallMeshSettings")]
 public class WallMeshSettings : Base
 {
   public WallMeshSettings() { }
@@ -56,6 +60,7 @@ public class WallMeshSettings : Base
   public double maximumMeshSize { get; set; }
 }
 
+[SpeckleType("Objects.Structural.CSI.Analysis.CrackingAnalysisOptions")]
 public class CrackingAnalysisOptions : Base
 {
   public CrackingAnalysisOptions() { }
@@ -72,6 +77,7 @@ public class CrackingAnalysisOptions : Base
   public double minCompressionRatio { get; set; }
 }
 
+[SpeckleType("Objects.Structural.CSI.Analysis.SAPFireOptions")]
 public class SAPFireOptions : Base
 {
   public SAPFireOptions() { }

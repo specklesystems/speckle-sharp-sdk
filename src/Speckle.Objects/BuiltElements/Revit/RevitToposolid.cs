@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitToposolid")]
 public class RevitToposolid : Base, IDisplayValue<List<Mesh>>
 {
   public RevitToposolid() { }

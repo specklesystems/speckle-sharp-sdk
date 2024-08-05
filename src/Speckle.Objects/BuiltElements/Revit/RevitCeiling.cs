@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitCeiling")]
 public class RevitCeiling : Ceiling
 {
   public RevitCeiling() { }

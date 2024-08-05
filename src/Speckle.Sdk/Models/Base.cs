@@ -10,6 +10,7 @@ using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.SerializationUtilities;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Models;
@@ -61,30 +62,8 @@ public class Base : DynamicBase
     {
       if (_type == null)
       {
-        List<string> bases = new();
-        var myType = GetType().NotNull();
-
-        while (myType.Name != nameof(Base))
-        {
-          if (!myType.IsAbstract)
-          {
-            bases.Add(myType.FullName);
-          }
-
-          myType = myType.BaseType;
-        }
-
-        if (bases.Count == 0)
-        {
-          _type = nameof(Base);
-        }
-        else
-        {
-          bases.Reverse();
-          _type = string.Join(":", bases);
-        }
+        _type = BaseObjectSerializationUtilities.GetFullTypeString(GetType());
       }
-
       return _type;
     }
   }

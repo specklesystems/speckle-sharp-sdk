@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.CSI.Analysis;
 
+[SpeckleType("Objects.Structural.CSI.Analysis.CSIStories")]
 public class CSIStories : Base
 {
   public double BaseElevation { get; set; }
@@ -12,6 +13,7 @@ public class CSIStories : Base
   public List<CSIStorey> CSIStory { get; set; }
 }
 
+[SpeckleType("Objects.Structural.CSI.Analysis.CSIStorey")]
 public class CSIStorey : Storey
 {
   public CSIStorey(

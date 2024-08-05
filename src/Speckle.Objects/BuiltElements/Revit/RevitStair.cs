@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitStair")]
 public class RevitStair : Base, IDisplayValue<List<Mesh>>
 {
   public string family { get; set; }
@@ -30,6 +31,7 @@ public class RevitStair : Base, IDisplayValue<List<Mesh>>
   public List<Mesh> displayValue { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitStairRun")]
 public class RevitStairRun : Base
 {
   public string family { get; set; }
@@ -53,6 +55,7 @@ public class RevitStairRun : Base
   public string units { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitStairLanding")]
 public class RevitStairLanding : Base
 {
   public string family { get; set; }
@@ -67,6 +70,7 @@ public class RevitStairLanding : Base
   public string units { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitStairSupport")]
 public class RevitStairSupport : Base
 {
   public string family { get; set; }

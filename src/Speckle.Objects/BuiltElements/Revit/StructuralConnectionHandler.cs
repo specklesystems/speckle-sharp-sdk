@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.StructuralConnectionHandler")]
 public class StructuralConnectionHandler : Base, IDisplayValue<List<Mesh>>
 {
   public string family { get; set; }

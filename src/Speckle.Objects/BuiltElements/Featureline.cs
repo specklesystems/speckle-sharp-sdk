@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Featureline")]
 public class Featureline : Base, IDisplayValue<List<Polyline>>
 {
   /// <summary>

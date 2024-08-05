@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitElementType")]
 public class RevitElementType : Base
 {
   public string family { get; set; }
@@ -12,6 +13,7 @@ public class RevitElementType : Base
   public string category { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitMepElementType")]
 public class RevitMepElementType : RevitElementType
 {
   public string shape { get; set; }
@@ -20,6 +22,7 @@ public class RevitMepElementType : RevitElementType
 /// <summary>
 /// Represents the FamilySymbol subclass of ElementType in Revit
 /// </summary>
+[SpeckleType("Objects.BuiltElements.Revit.RevitSymbolElementType")]
 public class RevitSymbolElementType : RevitElementType, IDisplayValue<List<Mesh>>
 {
   /// <summary>

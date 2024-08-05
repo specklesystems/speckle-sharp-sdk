@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Primitive;
 
+[SpeckleType("Objects.Primitive.Interval")]
 public class Interval : Base
 {
   public Interval() { }

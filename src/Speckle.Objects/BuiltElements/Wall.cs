@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Wall")]
 public class Wall : Base, IDisplayValue<IReadOnlyList<Base>>
 {
   public Wall() { }

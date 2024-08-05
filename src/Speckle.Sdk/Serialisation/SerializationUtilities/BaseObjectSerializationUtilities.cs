@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.Serialization;
 using Speckle.Sdk.Host;
@@ -10,6 +11,7 @@ internal static class BaseObjectSerializationUtilities
   #region Getting Types
 
   private static Dictionary<string, Type> s_cachedTypes = new();
+  private static ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
 
   private static readonly Dictionary<string, Dictionary<string, PropertyInfo>> s_typeProperties = new();
 
@@ -28,6 +30,40 @@ internal static class BaseObjectSerializationUtilities
       s_cachedTypes[objFullType] = type;
       return type;
     }
+  }
+  
+  internal static string GetFullTypeString(Type type) =>
+    s_fullTypeStrings.GetOrAdd(type, t =>
+    {
+      Stack<string> bases = new();
+      Type? myType = t;
+
+      do
+      {
+        if (!myType.IsAbstract)
+        {
+          bases.Push(GetTypeString(myType));
+        }
+
+        myType = myType.BaseType;
+      } while (myType is not null && myType.Name != nameof(Base));
+
+      if (bases.Count == 0)
+      {
+        return nameof(Base);
+      }
+      return string.Join(":", bases);
+    });
+
+  internal static string GetTypeString(Type type)
+  {
+    var typeInfo = TypeLoader.Types.FirstOrDefault(tp => tp.Type == type);
+    if (typeInfo != null)
+    {
+      return typeInfo.Name;
+    }
+
+    throw new InvalidOperationException($"Type {type.FullName} has no attribute");
   }
 
   internal static Type GetAtomicType(string objFullType)

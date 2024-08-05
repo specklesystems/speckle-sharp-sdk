@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.ElementShape")]
 public sealed class ElementShape : Base
 {
   public ElementShape() { }
@@ -23,6 +24,7 @@ public sealed class ElementShape : Base
   /// <remarks>
   /// This class is only used for Archicad interop
   /// </remarks>
+  [SpeckleType("Objects.BuiltElements.Archicad.ElementShape+PolylineSegment")]
   public sealed class PolylineSegment : Base, ICurve
   {
     public PolylineSegment() { }
@@ -48,7 +50,8 @@ public sealed class ElementShape : Base
 
   /// <remarks>
   /// This class is only used for Archicad interop
-  /// </remarks>
+  /// </remarks>>
+  [SpeckleType("Objects.BuiltElements.Archicad.ElementShape+Polyline")]
   public sealed class Polyline : Base, ICurve
   {
     public Polyline() { }

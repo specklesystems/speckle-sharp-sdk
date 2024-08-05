@@ -113,6 +113,7 @@ public abstract class Instance<T> : Instance
 /// <summary>
 /// Block instance class
 /// </summary>
+[SpeckleType("Objects.Other.BlockInstance")]
 public class BlockInstance : Instance<BlockDefinition>
 {
   public BlockInstance() { }

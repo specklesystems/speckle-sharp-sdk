@@ -7,6 +7,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 
+[SpeckleType("Objects.Geometry.Line")]
 public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
 {
   public Line() { }

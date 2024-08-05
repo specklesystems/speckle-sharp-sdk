@@ -8,6 +8,7 @@ namespace Speckle.Objects.Other;
 /// <summary>
 /// Block definition class
 /// </summary>
+[SpeckleType("Objects.Other.BlockDefinition")]
 public class BlockDefinition : Base
 {
   public BlockDefinition() { }

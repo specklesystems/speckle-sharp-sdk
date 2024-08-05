@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 
+[SpeckleType("Objects.Geometry.Curve")]
 public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Curve>, IDisplayValue<Polyline>
 {
   /// <summary>

@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitConduit")]
 public class RevitConduit : Conduit, IHasMEPConnectors
 {
   public string family { get; set; }

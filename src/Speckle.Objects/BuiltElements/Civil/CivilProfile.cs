@@ -1,7 +1,9 @@
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilProfile")]
 public class CivilProfile : Profile
 {
   public string type { get; set; }

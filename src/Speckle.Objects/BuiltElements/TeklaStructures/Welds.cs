@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.Welds")]
 public class Welds : Base
 {
   [DetachProperty]
@@ -23,6 +24,7 @@ public class Welds : Base
   public TeklaWeldIntermittentType intermittentType { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.PolygonWelds")]
 public class PolygonWelds : Welds
 {
   public Polyline polyline { get; set; }

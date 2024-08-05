@@ -5,6 +5,7 @@ namespace Speckle.Objects.Other;
 /// <summary>
 /// Generic class for a data field
 /// </summary>
+[SpeckleType("Objects.Other.DataField")]
 public class DataField : Base
 {
   public DataField() { }

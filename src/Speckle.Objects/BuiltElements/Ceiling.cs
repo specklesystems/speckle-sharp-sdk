@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Ceiling")]
 public class Ceiling : Base, IDisplayValue<List<Mesh>>
 {
   public Ceiling() { }

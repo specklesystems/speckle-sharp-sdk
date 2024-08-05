@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Zone")]
 public class Zone : Base, IHasArea, IHasVolume
 {
   public Zone() { }

@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.PolygonGeometry")]
 public class PolygonGeometry : Base
 {
   public string units { get; set; }

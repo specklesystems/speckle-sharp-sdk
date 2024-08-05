@@ -8,6 +8,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// A curve that is comprised of multiple curves connected.
 /// </summary>
+[SpeckleType("Objects.Geometry.Polycurve")]
 public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
 {
   /// <summary>

@@ -2,9 +2,11 @@ using Speckle.Objects.Structural.CSI.Analysis;
 using Speckle.Objects.Structural.Materials;
 using Speckle.Objects.Structural.Properties;
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.CSI.Properties;
 
+[SpeckleType("Objects.Structural.CSI.Properties.CSIOpening")]
 public class CSIOpening : Property2D
 {
   [SchemaInfo("Opening", "Create an CSI Opening", "CSI", "Properties")]
@@ -18,6 +20,7 @@ public class CSIOpening : Property2D
   public bool isOpening { get; set; }
 }
 
+[SpeckleType("Objects.Structural.CSI.Properties.CSIProperty2D")]
 public class CSIProperty2D : Property2D
 {
   public CSIPropertyType2D type2D { get; set; }

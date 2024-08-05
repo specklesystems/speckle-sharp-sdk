@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Alignment")]
 public class Alignment : Base, IDisplayValue<Polyline>
 {
   [JsonIgnore, Obsolete("Use curves property")]

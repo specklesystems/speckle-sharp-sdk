@@ -1,7 +1,9 @@
 using Speckle.Objects.Structural.Materials;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.CSI.Materials;
 
+[SpeckleType("Objects.Structural.CSI.Materials.CSISteel")]
 public class CSISteel : Steel
 {
   public int SSHysType { get; set; }

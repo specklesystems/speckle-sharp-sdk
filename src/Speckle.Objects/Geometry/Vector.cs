@@ -8,6 +8,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// A 3-dimensional vector
 /// </summary>
+[SpeckleType("Objects.Geometry.Vector")]
 public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
 {
   /// <inheritdoc/>

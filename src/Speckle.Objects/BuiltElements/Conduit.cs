@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Conduit")]
 public class Conduit : Base, IDisplayValue<List<Mesh>>
 {
   public ICurve baseCurve { get; set; }

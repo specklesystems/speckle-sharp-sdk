@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
+[SpeckleType("Objects.BuiltElements.AdvanceSteel.AsteelBeam")]
 public class AsteelBeam : Beam, IHasVolume, IHasArea, IAsteelObject
 {
   [DetachProperty]

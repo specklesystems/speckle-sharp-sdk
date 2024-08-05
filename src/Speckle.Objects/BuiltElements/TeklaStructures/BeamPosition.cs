@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.TeklaPosition")]
 public class TeklaPosition : Base
 {
   public TeklaDepthEnum Depth { get; set; }

@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Other;
 
+[SpeckleType("Objects.Other.MaterialQuantity")]
 public class MaterialQuantity : Base
 {
   public MaterialQuantity() { }

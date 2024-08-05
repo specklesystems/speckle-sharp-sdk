@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.AdaptiveComponent")]
 public class AdaptiveComponent : Base, IDisplayValue<List<Mesh>>
 {
   public AdaptiveComponent() { }

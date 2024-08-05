@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Other;
 
+[SpeckleType("Objects.Other.MappedBlockWrapper")]
 public class MappedBlockWrapper : Base
 {
   public string category { get; set; } = RevitCategory.GenericModel.ToString();

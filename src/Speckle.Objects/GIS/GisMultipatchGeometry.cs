@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.GisMultipatchGeometry")]
 public class GisMultipatchGeometry : Base
 {
   public string units { get; set; }

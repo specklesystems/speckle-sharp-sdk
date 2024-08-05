@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.TeklaBeam")]
 public class TeklaBeam : Beam, IHasVolume, IHasArea
 {
   public TeklaBeam() { }
@@ -47,6 +48,7 @@ public class TeklaBeam : Beam, IHasVolume, IHasArea
   public double volume { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.SpiralBeam")]
 public class SpiralBeam : TeklaBeam
 {
   public Point startPoint { get; set; }

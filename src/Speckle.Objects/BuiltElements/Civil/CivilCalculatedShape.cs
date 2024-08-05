@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilCalculatedShape")]
 public class CivilCalculatedShape : Base, ICivilCalculatedObject
 {
   public CivilCalculatedShape() { }

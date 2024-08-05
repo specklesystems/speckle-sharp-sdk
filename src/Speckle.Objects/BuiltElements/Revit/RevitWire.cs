@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitWire")]
 public class RevitWire : Wire, IHasMEPConnectors
 {
   public RevitWire() { }

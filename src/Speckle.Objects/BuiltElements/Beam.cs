@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Beam")]
 public class Beam : Base, IDisplayValue<IReadOnlyList<Base>>
 {
   public Beam() { }

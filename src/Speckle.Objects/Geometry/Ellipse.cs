@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 
+[SpeckleType("Objects.Geometry.Ellipse")]
 public class Ellipse : Base, ICurve, IHasArea
 {
   /// <summary>

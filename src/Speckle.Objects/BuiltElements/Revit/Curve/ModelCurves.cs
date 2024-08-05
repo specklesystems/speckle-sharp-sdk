@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit.Curve;
 
+[SpeckleType("Objects.BuiltElements.Revit.Curve.ModelCurve")]
 public class ModelCurve : Base
 {
   public ModelCurve() { }
@@ -24,6 +25,7 @@ public class ModelCurve : Base
   public string units { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.Curve.DetailCurve")]
 public class DetailCurve : Base
 {
   public DetailCurve() { }
@@ -44,6 +46,7 @@ public class DetailCurve : Base
   public string units { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.Curve.RoomBoundaryLine")]
 public class RoomBoundaryLine : Base
 {
   public RoomBoundaryLine() { }
@@ -62,6 +65,7 @@ public class RoomBoundaryLine : Base
   public string units { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.Curve.SpaceSeparationLine")]
 public class SpaceSeparationLine : Base
 {
   public SpaceSeparationLine() { }

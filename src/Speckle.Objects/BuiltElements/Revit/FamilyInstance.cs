@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.FamilyInstance")]
 public class FamilyInstance : Base, IDisplayValue<List<Mesh>>
 {
   public FamilyInstance() { }
