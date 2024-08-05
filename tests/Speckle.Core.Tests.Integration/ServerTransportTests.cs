@@ -1,7 +1,9 @@
+using System.Reflection;
 using Shouldly;
 using Speckle.Core.Api;
 using Speckle.Core.Credentials;
 using Speckle.Core.Helpers;
+using Speckle.Core.Host;
 using Speckle.Core.Models;
 using Speckle.Core.Transports;
 
@@ -36,6 +38,8 @@ public class ServerTransportTests : IDisposable
     // need to recreate the server transport object for each test
     // to make sure all folders are properly initialized
     _transport = new ServerTransport(_account, _streamId);
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
 
   [TearDown]
