@@ -1,7 +1,5 @@
 using Newtonsoft.Json;
-using NUnit.Framework;
 using Speckle.Core.Helpers;
-using Speckle.Core.Transports;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Transports;
 

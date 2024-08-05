@@ -1,4 +1,5 @@
 using Speckle.Objects.BuiltElements;
+using Speckle.Sdk.Host;
 
 namespace Speckle.Objects.Structural.GSA.Geometry;
 

@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Core.Tests.Unit.Models;

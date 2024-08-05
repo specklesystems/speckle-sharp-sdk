@@ -1,5 +1,6 @@
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Structural.CSI.Properties;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.CSI.Geometry;
 

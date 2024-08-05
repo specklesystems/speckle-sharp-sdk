@@ -1,7 +1,6 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
 using Speckle.Core.Tests.Unit.Kits;
-using Speckle.Core.Transports;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;

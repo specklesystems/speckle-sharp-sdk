@@ -72,7 +72,7 @@ public class Point : Base, ITransformable<Point>
 
   /// <summary>
   /// The units this <see cref="Point"/> is in.
-  /// This should be one of the units specified in <see cref="Speckle.Sdk.Kits.Units"/>
+  /// This should be one of the units specified in <see cref="Units"/>
   /// </summary>
   public string units { get; set; } = Units.None;
 

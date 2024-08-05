@@ -1,3 +1,4 @@
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.Materials;

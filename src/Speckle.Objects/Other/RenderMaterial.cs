@@ -1,5 +1,6 @@
 using System.Drawing;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Proxies;
 

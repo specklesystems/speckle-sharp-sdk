@@ -1,6 +1,7 @@
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Structural.Materials;
 using Speckle.Objects.Structural.Properties.Profiles;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.TeklaStructures;

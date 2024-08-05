@@ -1,4 +1,5 @@
 using Speckle.Objects.Structural.Materials;
+using Speckle.Sdk.Host;
 
 namespace Speckle.Objects.Structural.GSA.Materials;
 

@@ -62,7 +62,7 @@ public class Plane : Base, ITransformable<Plane>
 
   /// <summary>
   /// The unit's this <see cref="Plane"/> is in.
-  /// This should be one of <see cref="Speckle.Sdk.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </summary>
   public string units { get; set; }
 

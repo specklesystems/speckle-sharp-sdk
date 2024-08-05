@@ -1,3 +1,5 @@
+using Speckle.Sdk.Host;
+
 namespace Speckle.Objects.Structural.Materials;
 
 public class Steel : StructuralMaterial

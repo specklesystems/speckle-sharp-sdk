@@ -1,4 +1,6 @@
 using Speckle.Objects.Other;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
@@ -45,7 +47,7 @@ public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
 
   /// <summary>
   /// The unit's this <see cref="Pointcloud"/> is in.
-  /// This should be one of <see cref="Speckle.Sdk.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </summary>
   public string units { get; set; }
 

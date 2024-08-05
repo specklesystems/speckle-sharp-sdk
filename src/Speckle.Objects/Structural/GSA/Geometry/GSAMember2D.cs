@@ -1,5 +1,6 @@
 using Speckle.Objects.Structural.Geometry;
 using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Host;
 
 namespace Speckle.Objects.Structural.GSA.Geometry;
 

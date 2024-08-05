@@ -92,7 +92,7 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
 
   /// <summary>
   /// The unit's this <see cref="Surface"/> is in.
-  /// This should be one of <see cref="Speckle.Sdk.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </summary>
   public string units { get; set; }
 

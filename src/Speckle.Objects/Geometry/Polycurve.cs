@@ -39,7 +39,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
 
   /// <summary>
   /// The unit's this <see cref="Polycurve"/> is in.
-  /// This should be one of <see cref="Speckle.Sdk.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </summary>
   public string units { get; set; }
 

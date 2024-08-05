@@ -1,5 +1,6 @@
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements;

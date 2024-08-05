@@ -76,7 +76,7 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
 
   /// <summary>
   /// The unit's this <see cref="Vector"/> is in.
-  /// This should be one of <see cref="Speckle.Sdk.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </summary>
   public string units { get; set; } = Units.None;
 

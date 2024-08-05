@@ -1,4 +1,5 @@
 using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Loading;

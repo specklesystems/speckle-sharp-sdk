@@ -1,4 +1,4 @@
-﻿using Speckle.Sdk.Api.GraphQL;
+﻿using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;

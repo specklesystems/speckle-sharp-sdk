@@ -62,7 +62,7 @@ public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
   /// The units this object's coordinates are in.
   /// </summary>
   /// <remarks>
-  /// This should be one of <see cref="Speckle.Sdk.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </remarks>
   public string units { get; set; }
 

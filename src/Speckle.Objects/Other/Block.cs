@@ -1,5 +1,6 @@
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Other;

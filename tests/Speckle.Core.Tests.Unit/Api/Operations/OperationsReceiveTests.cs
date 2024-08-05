@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using Speckle.Core.Transports;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 

@@ -2,6 +2,7 @@ using NUnit.Framework;
 using Speckle.Core.Serialisation.Deprecated;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.SerializationUtilities;
 
 namespace Speckle.Core.Tests.Unit.Serialisation
 {

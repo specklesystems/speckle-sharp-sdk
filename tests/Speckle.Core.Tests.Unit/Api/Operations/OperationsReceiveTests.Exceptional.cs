@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using Speckle.Core.Transports;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Core.Tests.Unit.Api.Operations;
