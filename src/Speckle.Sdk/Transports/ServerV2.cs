@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Speckle.Core.Helpers;
 using Speckle.Logging;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Credentials;

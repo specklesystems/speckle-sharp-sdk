@@ -1,7 +1,6 @@
 using System.Reflection;
-using Speckle.Logging;
 
-namespace Speckle.Core.Helpers;
+namespace Speckle.Logging;
 
 /// <summary>
 /// Helper class dedicated for Speckle specific Path operations.

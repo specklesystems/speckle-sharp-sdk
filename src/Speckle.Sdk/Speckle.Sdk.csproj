@@ -14,9 +14,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Speckle.Core.Tests.Unit" />
-    <InternalsVisibleTo Include="Speckle.Core.Tests.Integration" />
-    <InternalsVisibleTo Include="Speckle.Core.Serialization.Tests" />
+    <InternalsVisibleTo Include="Speckle.Sdk.Tests.Unit" />
+    <InternalsVisibleTo Include="Speckle.Sdk.Tests.Integration" />
+    <InternalsVisibleTo Include="Speckle.Sdk.Serialization.Tests" />
   </ItemGroup>
 
   <ItemGroup>

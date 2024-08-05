@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Serilog;
 using Serilog.Exceptions;
 using Serilog.Sinks.OpenTelemetry;
-using Speckle.Core.Helpers;
 
 namespace Speckle.Logging;
 

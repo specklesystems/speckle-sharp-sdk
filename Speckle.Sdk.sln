@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk", "src\Speckle.Sdk\Speckle.Sdk.csproj", "{A413E196-3696-4F48-B635-04B5F76BF9C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Core.Tests.Unit", "tests\Speckle.Core.Tests.Unit\Speckle.Core.Tests.Unit.csproj", "{99AE2273-12C5-4A9D-9FDD-19F8B394B5E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Tests.Unit", "tests\Speckle.Sdk.Tests.Unit\Speckle.Sdk.Tests.Unit.csproj", "{99AE2273-12C5-4A9D-9FDD-19F8B394B5E2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Objects", "src\Speckle.Objects\Speckle.Objects.csproj", "{181F50AA-DD2A-4541-98EF-B868E2D06B9A}"
 EndProject
@@ -28,9 +28,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{58D37DA9
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "build", "build\build.csproj", "{9B8DDEB5-37C7-49B5-984D-C65DE5FCB7B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Core.Serialization.Tests", "tests\Speckle.Core.Serialization.Tests\Speckle.Core.Serialization.Tests.csproj", "{AA1E1E51-49AE-4F71-84B1-938E19695BE0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Serialization.Tests", "tests\Speckle.Sdk.Serialization.Tests\Speckle.Sdk.Serialization.Tests.csproj", "{AA1E1E51-49AE-4F71-84B1-938E19695BE0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Core.Tests.Integration", "tests\Speckle.Core.Tests.Integration\Speckle.Core.Tests.Integration.csproj", "{4FB41A6D-D139-4111-8115-E3F9F6BEAF24}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Tests.Integration", "tests\Speckle.Sdk.Tests.Integration\Speckle.Sdk.Tests.Integration.csproj", "{4FB41A6D-D139-4111-8115-E3F9F6BEAF24}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{B623BD21-5CAA-43F9-A539-1835276C220E}"
 	ProjectSection(SolutionItems) = preProject
