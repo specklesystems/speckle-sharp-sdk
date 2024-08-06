@@ -2,56 +2,6 @@ using System.Diagnostics.Contracts;
 
 namespace Speckle.Core.Kits;
 
-public enum HostAppVersion
-{
-  v,
-  v3,
-  v6,
-  v7,
-  v8,
-  v2019,
-  v2020,
-  v2021,
-  v2022,
-  v2023,
-  v2024,
-  v2025,
-  vSandbox,
-  vRevit,
-  vRevit2021,
-  vRevit2022,
-  vRevit2023,
-  vRevit2024,
-  vRevit2025,
-  v25,
-  v26,
-  v715,
-  v716,
-  v717
-}
-
-public readonly struct HostApplication
-{
-  public string Name { get; }
-  public string Slug { get; }
-
-  public HostApplication(string name, string slug)
-  {
-    Name = name;
-    Slug = slug;
-  }
-
-  /// <summary>
-  /// Returns the versioned app name given a specific version
-  /// </summary>
-  /// <param name="version"></param>
-  /// <returns></returns>
-  public string GetVersion(HostAppVersion version)
-  {
-    return Name.Replace(" ", "") + version.ToString().TrimStart('v');
-  }
-}
-
 /// <summary>
 /// List of Host Applications - their slugs should match our ghost tags and ci/cd slugs
 /// </summary>

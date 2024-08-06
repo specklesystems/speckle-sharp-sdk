@@ -56,28 +56,28 @@ public static class Setup
     }
 
     s_initialized = true;
-    Application = configuration.Application;
-    Version = configuration.Version;
-    Slug = configuration.Slug;
+    Application = configuration.Application.Name;
+    Version = configuration.Application.GetVersion(configuration.Version);
+    Slug = configuration.Application.Slug;
 
     //start mutex so that Manager can detect if this process is running
     Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
 
-    var traceProvider = TraceBuilder.Initialize(configuration.Application, configuration.Slug, configuration.Tracing);
+    var traceProvider = TraceBuilder.Initialize(Application, Slug, configuration.Tracing);
     LogBuilder.Initialize(
       GetUserIdFromDefaultAccount(),
-      configuration.Application,
-      configuration.Slug,
+      Application,
+      Slug,
       configuration.Logging
     );
 
     foreach (var account in AccountManager.GetAccounts())
     {
-      Analytics.AddConnectorToProfile(account.GetHashedEmail(), configuration.Application);
-      Analytics.IdentifyProfile(account.GetHashedEmail(), configuration.Application);
+      Analytics.AddConnectorToProfile(account.GetHashedEmail(), Application);
+      Analytics.IdentifyProfile(account.GetHashedEmail(), Application);
     }
 
-    SpeckleActivityFactory.Initialize(configuration.Slug, configuration.Version);
+    SpeckleActivityFactory.Initialize(Slug, Version);
 
     return traceProvider;
   }

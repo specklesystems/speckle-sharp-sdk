@@ -1,11 +1,11 @@
-﻿using Speckle.Logging;
+﻿using Speckle.Core.Kits;
+using Speckle.Logging;
 
 namespace Speckle.Core.Logging;
 
 public record SpeckleConfiguration(
-  string Application,
-  string Version,
-  string Slug,
+  HostApplication Application,
+  HostAppVersion Version,
   SpeckleLogging? Logging = null,
   SpeckleTracing? Tracing = null
 );
