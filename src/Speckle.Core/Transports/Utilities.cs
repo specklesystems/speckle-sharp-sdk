@@ -9,21 +9,12 @@ public static class Utilities
   /// </summary>
   /// <param name="condition"></param>
   /// <param name="frequency"></param>
-  /// <param name="timeout"></param>
   /// <returns></returns>
-  public static async Task WaitUntil(Func<bool> condition, int frequency = 25, int timeout = -1)
+  public static async Task WaitUntil(Func<bool> condition, int frequency = 25)
   {
-    var waitTask = Task.Run(async () =>
+    while (!condition())
     {
-      while (!condition())
-      {
-        await Task.Delay(frequency).ConfigureAwait(false);
-      }
-    });
-
-    if (waitTask != await Task.WhenAny(waitTask, Task.Delay(timeout)).ConfigureAwait(false))
-    {
-      throw new SpeckleException("Process timed out", new TimeoutException());
+      await Task.Delay(frequency).ConfigureAwait(false);
     }
   }
 }
