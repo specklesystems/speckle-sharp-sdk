@@ -195,11 +195,11 @@ public sealed class ServerTransport : IServerTransport
     return rootObjectJson;
   }
 
-  public string GetObject(string id)
+  public async Task<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
     var stopwatch = Stopwatch.StartNew();
-    var result = Api.DownloadSingleObject(StreamId, id).Result;
+    var result = await Api.DownloadSingleObject(StreamId, id);
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
     return result;
@@ -224,9 +224,9 @@ public sealed class ServerTransport : IServerTransport
     }
   }
 
-  public void SaveObject(string id, ITransport sourceTransport)
+  public async Task SaveObject(string id, ITransport sourceTransport)
   {
-    var objectData = sourceTransport.GetObject(id);
+    var objectData = await sourceTransport.GetObject(id);
 
     if (objectData is null)
     {

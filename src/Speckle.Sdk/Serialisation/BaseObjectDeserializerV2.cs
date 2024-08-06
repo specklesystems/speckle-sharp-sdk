@@ -46,7 +46,7 @@ public sealed class BaseObjectDeserializerV2
   /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public Base Deserialize(string rootObjectJson)
+  public async Task<Base> Deserialize(string rootObjectJson)
   {
     if (_isBusy)
     {
@@ -70,13 +70,13 @@ public sealed class BaseObjectDeserializerV2
         string objId = closure.Item1;
         // pausing for getting object from the transport
         stopwatch.Stop();
-        string? objJson = ReadTransport.GetObject(objId);
+        string? objJson = await ReadTransport.GetObject(objId);
 
         //TODO: We should fail loudly when a closure can't be found (objJson is null)
         //but adding throw here breaks blobs tests, see CNX-8541
 
         stopwatch.Start();
-        object? deserializedOrPromise = DeserializeTransportObjectProxy(objJson);
+        object? deserializedOrPromise = await DeserializeTransportObjectProxy(objJson);
         lock (_deserializedObjects)
         {
           _deserializedObjects[objId] = deserializedOrPromise;
@@ -86,7 +86,7 @@ public sealed class BaseObjectDeserializerV2
       object? ret;
       try
       {
-        ret = DeserializeTransportObject(rootObjectJson);
+        ret = await DeserializeTransportObject(rootObjectJson);
       }
       catch (JsonReaderException ex)
       {
@@ -139,7 +139,7 @@ public sealed class BaseObjectDeserializerV2
     }
   }
 
-  private object? DeserializeTransportObjectProxy(string? objectJson)
+  private async Task<object?> DeserializeTransportObjectProxy(string? objectJson)
   {
     if (objectJson is null)
     {
@@ -149,11 +149,11 @@ public sealed class BaseObjectDeserializerV2
     Task<object?>? bgResult = _workerThreads?.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
     if (bgResult != null)
     {
-      return bgResult;
+      return await bgResult;
     }
 
     // SyncS
-    return DeserializeTransportObject(objectJson);
+    return await DeserializeTransportObject(objectJson);
   }
 
   /// <param name="objectJson"></param>
@@ -161,7 +161,7 @@ public sealed class BaseObjectDeserializerV2
   /// <exception cref="ArgumentNullException"><paramref name="objectJson"/> was null</exception>
   /// <exception cref="JsonReaderException "><paramref name="objectJson"/> was not valid JSON</exception>
   /// <exception cref="SpeckleDeserializeException">Failed to deserialize <see cref="JObject"/> to the target type</exception>
-  public object? DeserializeTransportObject(string objectJson)
+  public async Task<object?> DeserializeTransportObject(string objectJson)
   {
     if (objectJson is null)
     {
@@ -181,7 +181,7 @@ public sealed class BaseObjectDeserializerV2
     object? converted;
     try
     {
-      converted = ConvertJsonElement(doc1);
+      converted = await ConvertJsonElement(doc1);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -196,7 +196,7 @@ public sealed class BaseObjectDeserializerV2
     return converted;
   }
 
-  public object? ConvertJsonElement(JToken doc)
+  public async Task<object?> ConvertJsonElement(JToken doc)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
@@ -238,7 +238,7 @@ public sealed class BaseObjectDeserializerV2
         int retListCount = 0;
         foreach (JToken value in docAsArray)
         {
-          object? convertedValue = ConvertJsonElement(value);
+          object? convertedValue = await ConvertJsonElement(value);
           retListCount += convertedValue is DataChunk chunk ? chunk.data.Count : 1;
           jsonList.Add(convertedValue);
         }
@@ -269,7 +269,7 @@ public sealed class BaseObjectDeserializerV2
             continue;
           }
 
-          dict[prop.Name] = ConvertJsonElement(prop.Value);
+          dict[prop.Name] = await ConvertJsonElement(prop.Value);
         }
 
         if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
@@ -312,7 +312,7 @@ public sealed class BaseObjectDeserializerV2
           }
 
           // This reference was not already deserialized. Do it now in sync mode
-          string? objectJson = ReadTransport.GetObject(objId);
+          string? objectJson = await ReadTransport.GetObject(objId);
           if (objectJson is null)
           {
             throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
