@@ -7,8 +7,7 @@ public static class SpeckleActivityFactory
 {
   private static ActivitySource? s_activitySource;
 
-  public static void Initialize(string application, string version) =>
-    s_activitySource = new ActivitySource(application, version);
+  public static void Initialize(string slug, string version) => s_activitySource = new ActivitySource(slug, version);
 
   public static ISpeckleActivity? Start([CallerMemberName] string name = "SpeckleActivityFactory")
   {
