@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using NUnit.Framework;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Kits;
 using Speckle.Sdk.Transports;
@@ -10,15 +11,22 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 [TestFixture]
 public sealed class SendReceiveLocal : IDisposable
 {
-  private string _objId01,
-    _commitId02;
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+  }
+
+  private string? _objId01;
+  private string? _commitId02;
 
   private const int NUM_OBJECTS = 3001;
 
   private readonly SQLiteTransport _sut = new();
 
   [Test(Description = "Pushing a commit locally"), Order(1)]
-  public void LocalUpload()
+  public async Task LocalUpload()
   {
     var myObject = new Base();
     var rand = new Random();
@@ -33,23 +41,23 @@ public sealed class SendReceiveLocal : IDisposable
     }
 
     using SQLiteTransport localTransport = new();
-    _objId01 = Sdk.Api.Operations.Operations.Send(myObject, localTransport, false).Result;
+    _objId01 = await Sdk.Api.Operations.Operations.Send(myObject, localTransport, false);
 
     Assert.That(_objId01, Is.Not.Null);
     TestContext.Out.WriteLine($"Written {NUM_OBJECTS + 1} objects. Commit id is {_objId01}");
   }
 
   [Test(Description = "Pulling a commit locally"), Order(2)]
-  public void LocalDownload()
+  public async Task LocalDownload()
   {
-    var commitPulled = Sdk.Api.Operations.Operations.Receive(_objId01).Result;
+    var commitPulled = await Sdk.Api.Operations.Operations.Receive(_objId01!);
 
     Assert.That(((List<object>)commitPulled["@items"].NotNull())[0], Is.TypeOf<Point>());
     Assert.That(((List<object>)commitPulled["@items"].NotNull()), Has.Count.EqualTo(NUM_OBJECTS));
   }
 
   [Test(Description = "Pushing and Pulling a commit locally")]
-  public void LocalUploadDownload()
+  public async Task LocalUploadDownload()
   {
     var myObject = new Base();
     myObject["@items"] = new List<Base>();
@@ -63,9 +71,9 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    _objId01 = Sdk.Api.Operations.Operations.Send(myObject, _sut, false).Result;
+    _objId01 = await Sdk.Api.Operations.Operations.Send(myObject, _sut, false);
 
-    var commitPulled = Sdk.Api.Operations.Operations.Receive(_objId01).Result;
+    var commitPulled = await Sdk.Api.Operations.Operations.Receive(_objId01);
     List<object> items = (List<object>)commitPulled["@items"].NotNull();
 
     Assert.That(items, Has.All.TypeOf<Point>());
@@ -205,7 +213,7 @@ public sealed class SendReceiveLocal : IDisposable
   {
     ConcurrentDictionary<string, int>? progress = null;
     var pulledCommit = await Sdk.Api.Operations.Operations.Receive(
-      _commitId02,
+      _commitId02!,
       onProgressAction: dict =>
       {
         progress = dict;
