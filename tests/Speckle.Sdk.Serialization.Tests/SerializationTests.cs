@@ -72,7 +72,7 @@ public class SerializationTests
 
       var type = BaseObjectSerializationUtilities.GetAtomicType(baseType.speckle_type);
       type.ShouldNotBeNull();
-      var name = BaseObjectSerializationUtilities.GetTypeString(type);
+      var name = BaseObjectSerializationUtilities.GetTypeString(type) ?? throw new ArgumentNullException();
       starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
       starts.ShouldBeTrue($"{name} isn't expected");
     }
