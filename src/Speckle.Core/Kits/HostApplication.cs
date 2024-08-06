@@ -10,6 +10,4 @@ public readonly struct HostApplication
     Name = name;
     Slug = slug;
   }
-
-  public string GetVersion(HostAppVersion version) => version.ToString().TrimStart('v');
 }

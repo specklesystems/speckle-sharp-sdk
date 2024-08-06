@@ -7,6 +7,8 @@ namespace Speckle.Core.Kits;
 /// </summary>
 public static class HostApplications
 {
+  public static string GetVersion(HostAppVersion version) => version.ToString().TrimStart('v');
+
   public static readonly HostApplication Rhino = new("Rhino", "rhino"),
     Grasshopper = new("Grasshopper", "grasshopper"),
     Revit = new("Revit", "revit"),

@@ -57,19 +57,14 @@ public static class Setup
 
     s_initialized = true;
     Application = configuration.Application.Name;
-    Version = configuration.Application.GetVersion(configuration.Version);
+    Version = HostApplications.GetVersion(configuration.Version);
     Slug = configuration.Application.Slug;
 
     //start mutex so that Manager can detect if this process is running
     Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
 
     var traceProvider = TraceBuilder.Initialize(Application, Slug, configuration.Tracing);
-    LogBuilder.Initialize(
-      GetUserIdFromDefaultAccount(),
-      Application,
-      Slug,
-      configuration.Logging
-    );
+    LogBuilder.Initialize(GetUserIdFromDefaultAccount(), Application, Slug, configuration.Logging);
 
     foreach (var account in AccountManager.GetAccounts())
     {
