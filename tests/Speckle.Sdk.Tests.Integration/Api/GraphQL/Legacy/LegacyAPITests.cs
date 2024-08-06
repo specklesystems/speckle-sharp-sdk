@@ -3,6 +3,7 @@ using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.Operations;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Kits;
 using Speckle.Sdk.Transports;
@@ -11,6 +12,13 @@ namespace Speckle.Sdk.Tests.Integration.Api.GraphQL.Legacy;
 
 public class LegacyAPITests : IDisposable
 {
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly);
+  }
+
   private string _branchId = "";
   private string _branchName = "";
   private string _commitId = "";
@@ -29,8 +37,10 @@ public class LegacyAPITests : IDisposable
   private string _streamId = "";
 
   [OneTimeSetUp]
-  public async Task Setup()
+  public async Task OneTimeSetup()
   {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly);
     _firstUserAccount = await Fixtures.SeedUser();
     _secondUserAccount = await Fixtures.SeedUser();
 
