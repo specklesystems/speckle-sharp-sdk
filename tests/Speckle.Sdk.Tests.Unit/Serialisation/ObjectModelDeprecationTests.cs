@@ -38,6 +38,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
 }
 
 namespace Speckle.Sdk.Serialisation.Deprecated
-{ [SpeckleType("Speckle.Core.Serialisation.Deprecated.MySpeckleBase")]
+{
+  [SpeckleType("Speckle.Core.Serialisation.Deprecated.MySpeckleBase")]
   public class MySpeckleBase : Base { }
 }

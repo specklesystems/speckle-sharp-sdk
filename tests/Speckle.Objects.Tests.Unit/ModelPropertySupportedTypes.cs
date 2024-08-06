@@ -20,12 +20,14 @@ namespace Objects.Tests.Unit;
 /// but still not work / are not defined behaviour. This test will just catch many types that definitely won't work
 /// </summary>
 public class ModelPropertySupportedTypes
-{  [SetUp]
+{
+  [SetUp]
   public void Setup()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Speckle.Objects.Geometry.Arc).Assembly);
   }
+
   /// <summary>
   /// Set of types that we support in Base objects
   /// If it's not in the list, or is commented out, it's not supported by our serializer!
@@ -72,7 +74,6 @@ public class ModelPropertySupportedTypes
   {
     foreach ((string? _, Type? type) in TypeLoader.Types)
     {
-      
       var members = DynamicBase.GetInstanceMembers(type).Where(p => !p.IsDefined(typeof(JsonIgnoreAttribute), true));
 
       foreach (var prop in members)

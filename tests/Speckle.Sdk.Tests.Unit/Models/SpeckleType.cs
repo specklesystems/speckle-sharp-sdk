@@ -8,7 +8,8 @@ namespace Speckle.Sdk.Tests.Unit.Models
   [TestFixture]
   [TestOf(typeof(Base))]
   public class SpeckleTypeTests
-  {  [SetUp]
+  {
+    [SetUp]
     public void Setup()
     {
       TypeLoader.Reset();

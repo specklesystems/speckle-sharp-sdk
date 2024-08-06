@@ -5,7 +5,6 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
 
-
 [SpeckleType("Objects.BuiltElements.Revit.RevitBrace")]
 public class RevitBrace : Brace
 {

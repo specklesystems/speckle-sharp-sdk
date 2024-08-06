@@ -16,12 +16,14 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 [TestFixture]
 [Description("For certain types, changing property from one type to another should be implicitly backwards compatible")]
 public class SerializerNonBreakingChanges : PrimitiveTestFixture
-{  [SetUp]
+{
+  [SetUp]
   public void Setup()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(StringValueMock).Assembly);
   }
+
   [Test, TestCaseSource(nameof(Int8TestCases)), TestCaseSource(nameof(Int32TestCases))]
   public void IntToColor(int argb)
   {
@@ -202,6 +204,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     Assert.That(backAgain.value, Is.EquivalentTo(testCase));
   }
 }
+
 [SpeckleType("Speckle.Core.Tests.Unit.Serialisation.TValueMock")]
 public class TValueMock<T> : SerializerMock
 {

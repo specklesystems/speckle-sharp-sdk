@@ -12,8 +12,8 @@ internal static class BaseObjectSerializationUtilities
 
   private static Dictionary<string, Type> s_cachedTypes = new();
   private static ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
-  private static  Dictionary<string, Dictionary<string, PropertyInfo>> s_typeProperties = new();
-  private static  Dictionary<string, List<MethodInfo>> s_onDeserializedCallbacks = new();
+  private static Dictionary<string, Dictionary<string, PropertyInfo>> s_typeProperties = new();
+  private static Dictionary<string, List<MethodInfo>> s_onDeserializedCallbacks = new();
 
   internal static Type GetType(string objFullType)
   {
@@ -29,34 +29,37 @@ internal static class BaseObjectSerializationUtilities
       return type;
     }
   }
-  
+
   internal static string GetFullTypeString(Type type) =>
-    s_fullTypeStrings.GetOrAdd(type, t =>
-    {
-      Stack<string> bases = new();
-      Type? myType = t;
-
-      do
+    s_fullTypeStrings.GetOrAdd(
+      type,
+      t =>
       {
-        if (!myType.IsAbstract)
+        Stack<string> bases = new();
+        Type? myType = t;
+
+        do
         {
-          var typeString = GetTypeString(myType);
-          if (typeString is null)
+          if (!myType.IsAbstract)
           {
-            break;
+            var typeString = GetTypeString(myType);
+            if (typeString is null)
+            {
+              break;
+            }
+            bases.Push(typeString);
           }
-          bases.Push(typeString);
+
+          myType = myType.BaseType;
+        } while (myType is not null && myType.Name != nameof(Base));
+
+        if (bases.Count == 0)
+        {
+          return nameof(Base);
         }
-
-        myType = myType.BaseType;
-      } while (myType is not null && myType.Name != nameof(Base));
-
-      if (bases.Count == 0)
-      {
-        return nameof(Base);
+        return string.Join(":", bases);
       }
-      return string.Join(":", bases);
-    });
+    );
 
   internal static string? GetTypeString(Type type)
   {
@@ -173,10 +176,10 @@ internal static class BaseObjectSerializationUtilities
   {
     lock (s_cachedTypes)
     {
-      s_cachedTypes = new ();
+      s_cachedTypes = new();
       s_fullTypeStrings = new();
-  s_typeProperties = new();
-  s_onDeserializedCallbacks = new();
+      s_typeProperties = new();
+      s_onDeserializedCallbacks = new();
     }
   }
 

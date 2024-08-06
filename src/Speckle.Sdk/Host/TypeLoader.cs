@@ -5,6 +5,7 @@ using Speckle.Sdk.Serialisation.SerializationUtilities;
 namespace Speckle.Sdk.Host;
 
 public record LoadedType(string Name, Type Type);
+
 public static class TypeLoader
 {
   private static bool s_initialized;
