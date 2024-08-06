@@ -3,6 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Unit.Kits;
 
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.FakeMesh")]
 public class FakeMesh : Base
 {
   [DetachProperty, Chunkable]
@@ -18,6 +19,7 @@ public class FakeMesh : Base
   public List<Tabletop> Tables { get; set; } = new();
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.DiningTable")]
 public class DiningTable : Base
 {
   public DiningTable()
@@ -51,6 +53,7 @@ public class DiningTable : Base
   public string TableModel { get; set; } = "Sample Table";
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.Tabletop")]
 public class Tabletop : Base
 {
   public double length { get; set; }
@@ -58,6 +61,7 @@ public class Tabletop : Base
   public double thickness { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.TableLeg")]
 public class TableLeg : Base
 {
   public double height { get; set; }
@@ -67,11 +71,13 @@ public class TableLeg : Base
   public TableLegFixture fixture { get; set; } = new();
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.TableLegFixture")]
 public class TableLegFixture : Base
 {
   public string nails { get; set; } = "MANY NAILS WOW ";
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.Point")]
 public class Point : Base
 {
   public Point() { }
@@ -88,11 +94,13 @@ public class Point : Base
   public double Z { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.SuperPoint")]
 public class SuperPoint : Point
 {
   public double W { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.Mesh")]
 public class Mesh : Base
 {
   public List<int> Faces = new();
@@ -121,6 +129,7 @@ public interface ICurve
 /// <summary>
 /// Store individual points in a list structure for developer ergonomics. Nevertheless, for performance reasons (hashing, serialisation and storage) expose the same list of points as a typed array.
 /// </summary>
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.Polyline")]
 public class Polyline : Base, ICurve
 {
   [JsonIgnore]
@@ -139,6 +148,7 @@ public class Polyline : Base, ICurve
   }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.Line")]
 public class Line : Base, ICurve
 {
   public Point Start { get; set; }
@@ -148,6 +158,7 @@ public class Line : Base, ICurve
 /// <summary>
 /// This class exists to purely test some weird cases in which Intefaces might trash serialisation.
 /// </summary>
+[SpeckleType("Speckle.Core.Tests.Unit.Kits.PolygonalFeline")]
 public class PolygonalFeline : Base
 {
   public List<ICurve> Whiskers { get; set; } = new();

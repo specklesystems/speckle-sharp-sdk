@@ -14,13 +14,13 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
     public void Setup()
     {
       TypeLoader.Reset();
-      TypeLoader.Initialize(typeof(MySpeckleBase).Assembly);
+      TypeLoader.Initialize(typeof(Base).Assembly, typeof(MySpeckleBase).Assembly);
     }
 
     [Test]
     public void GetDeprecatedAtomicType()
     {
-      string destinationType = $"Speckle.Sdk.Serialisation.{nameof(MySpeckleBase)}";
+      string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
 
       var result = BaseObjectSerializationUtilities.GetAtomicType(destinationType);
       Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));
@@ -38,6 +38,6 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
 }
 
 namespace Speckle.Sdk.Serialisation.Deprecated
-{
+{ [SpeckleType("Speckle.Core.Serialisation.Deprecated.MySpeckleBase")]
   public class MySpeckleBase : Base { }
 }

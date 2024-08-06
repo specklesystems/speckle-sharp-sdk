@@ -218,6 +218,7 @@ public class ObjectSerialization
     Assert.That(isCorrect, Is.EqualTo(true));
   }
 
+  [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+DateMock")]
   private class DateMock : Base
   {
     public DateTime TestField { get; set; }
@@ -235,6 +236,7 @@ public class ObjectSerialization
     Assert.That(test.TestField, Is.EqualTo(date));
   }
 
+  [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+GUIDMock")]
   private class GUIDMock : Base
   {
     public Guid TestField { get; set; }
@@ -252,6 +254,7 @@ public class ObjectSerialization
     Assert.That(test.TestField, Is.EqualTo(guid));
   }
 
+  [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+ColorMock")]
   private class ColorMock : Base
   {
     public Color TestField { get; set; }
@@ -269,6 +272,7 @@ public class ObjectSerialization
     Assert.That(test.TestField, Is.EqualTo(color));
   }
 
+  [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+StringDateTimeRegressionMock")]
   private class StringDateTimeRegressionMock : Base
   {
     public string TestField { get; set; }

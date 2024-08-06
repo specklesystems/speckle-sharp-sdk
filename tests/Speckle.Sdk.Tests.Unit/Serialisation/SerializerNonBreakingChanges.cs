@@ -3,6 +3,7 @@ using NUnit.Framework;
 using Speckle.DoubleNumerics;
 using Speckle.Sdk.Api.Operations;
 using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
@@ -15,7 +16,12 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 [TestFixture]
 [Description("For certain types, changing property from one type to another should be implicitly backwards compatible")]
 public class SerializerNonBreakingChanges : PrimitiveTestFixture
-{
+{  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(StringValueMock).Assembly);
+  }
   [Test, TestCaseSource(nameof(Int8TestCases)), TestCaseSource(nameof(Int32TestCases))]
   public void IntToColor(int argb)
   {
@@ -196,62 +202,73 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     Assert.That(backAgain.value, Is.EquivalentTo(testCase));
   }
 }
-
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.TValueMock")]
 public class TValueMock<T> : SerializerMock
 {
   public T value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.ListDoubleValueMock")]
 public class ListDoubleValueMock : SerializerMock
 {
   public List<double> value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.IListDoubleValueMock")]
 public class IListDoubleValueMock : SerializerMock
 {
   public IList<double> value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.IReadOnlyListDoubleValueMock")]
 public class IReadOnlyListDoubleValueMock : SerializerMock
 {
   public IReadOnlyList<double> value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.ArrayDoubleValueMock")]
 public class ArrayDoubleValueMock : SerializerMock
 {
   public double[] value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.IntValueMock")]
 public class IntValueMock : SerializerMock
 {
   public long value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.StringValueMock")]
 public class StringValueMock : SerializerMock
 {
   public string value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.DoubleValueMock")]
 public class DoubleValueMock : SerializerMock
 {
   public double value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.Matrix64ValueMock")]
 public class Matrix64ValueMock : SerializerMock
 {
   public Matrix4x4 value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.Matrix32ValueMock")]
 public class Matrix32ValueMock : SerializerMock
 {
   public System.Numerics.Matrix4x4 value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.ColorValueMock")]
 public class ColorValueMock : SerializerMock
 {
   public Color value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.EnumValueMock")]
 public class EnumValueMock : SerializerMock
 {
   public MyEnum value { get; set; }

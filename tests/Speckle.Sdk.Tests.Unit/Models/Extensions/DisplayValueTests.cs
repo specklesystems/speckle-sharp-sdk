@@ -31,11 +31,13 @@ public class DisplayValueTests
     yield return new TypedDisplayValueList { displayValue = listOfMesh };
   }
 
+  [SpeckleType("Speckle.Core.Tests.Unit.Models.Extensions.DisplayValueTests+TypedDisplayValue")]
   private class TypedDisplayValue : Base
   {
     public Base displayValue { get; set; }
   }
 
+  [SpeckleType("Speckle.Core.Tests.Unit.Models.Extensions.DisplayValueTests+TypedDisplayValueList")]
   private class TypedDisplayValueList : Base
   {
     public List<Base> displayValue { get; set; }

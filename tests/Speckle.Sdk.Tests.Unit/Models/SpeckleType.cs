@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using TestModels;
 
@@ -7,7 +8,13 @@ namespace Speckle.Sdk.Tests.Unit.Models
   [TestFixture]
   [TestOf(typeof(Base))]
   public class SpeckleTypeTests
-  {
+  {  [SetUp]
+    public void Setup()
+    {
+      TypeLoader.Reset();
+      TypeLoader.Initialize(typeof(Base).Assembly, typeof(Foo).Assembly);
+    }
+
     [Test, TestCaseSource(nameof(s_cases))]
     public void SpeckleTypeIsProperlyBuilt(Base foo, string expectedType)
     {
@@ -26,9 +33,12 @@ namespace Speckle.Sdk.Tests.Unit.Models
 
 namespace TestModels
 {
+  [SpeckleType("TestModels.Foo")]
   public class Foo : Base { }
 
+  [SpeckleType("TestModels.Bar")]
   public class Bar : Foo { }
 
+  [SpeckleType("TestModels.Baz")]
   public class Baz : Bar { }
 }

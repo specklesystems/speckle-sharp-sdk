@@ -16,7 +16,7 @@ public static class TypeLoader
   {
     get
     {
-      Initialize();
+      Initialize(typeof(Base).Assembly);
       return s_availableTypes;
     }
   }

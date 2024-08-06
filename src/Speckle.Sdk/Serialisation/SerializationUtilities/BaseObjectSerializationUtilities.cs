@@ -12,9 +12,7 @@ internal static class BaseObjectSerializationUtilities
 
   private static Dictionary<string, Type> s_cachedTypes = new();
   private static ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
-
   private static readonly Dictionary<string, Dictionary<string, PropertyInfo>> s_typeProperties = new();
-
   private static readonly Dictionary<string, List<MethodInfo>> s_onDeserializedCallbacks = new();
 
   internal static Type GetType(string objFullType)
@@ -42,7 +40,12 @@ internal static class BaseObjectSerializationUtilities
       {
         if (!myType.IsAbstract)
         {
-          bases.Push(GetTypeString(myType));
+          var typeString = GetTypeString(myType);
+          if (typeString is null)
+          {
+            break;
+          }
+          bases.Push(typeString);
         }
 
         myType = myType.BaseType;
@@ -55,15 +58,14 @@ internal static class BaseObjectSerializationUtilities
       return string.Join(":", bases);
     });
 
-  internal static string GetTypeString(Type type)
+  internal static string? GetTypeString(Type type)
   {
     var typeInfo = TypeLoader.Types.FirstOrDefault(tp => tp.Type == type);
     if (typeInfo != null)
     {
       return typeInfo.Name;
     }
-
-    throw new InvalidOperationException($"Type {type.FullName} has no attribute");
+    return null;
   }
 
   internal static Type GetAtomicType(string objFullType)

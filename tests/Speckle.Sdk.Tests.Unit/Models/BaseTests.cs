@@ -205,6 +205,7 @@ public class BaseTests
     Assert.That(copyMembers.Values, Is.EquivalentTo(sampleMembers.Values));
   }
 
+  [SpeckleType("Speckle.Core.Tests.Unit.Models.BaseTests+SampleObject")]
   public class SampleObject : Base
   {
     [Chunkable, DetachProperty]
@@ -232,6 +233,7 @@ public class BaseTests
     public string name { get; set; }
   }
 
+  [SpeckleType("Speckle.Core.Tests.Unit.Models.BaseTests+ObjectWithItemProp")]
   public class ObjectWithItemProp : Base
   {
     public string Item { get; set; } = "Item";
