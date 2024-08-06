@@ -7,45 +7,45 @@ namespace Speckle.Logging;
 
 public class TraceBuilder(IDisposable? traceProvider) : IDisposable
 {
-  public static IDisposable? Initialize(string application, string? slug, SpeckleTracing? logConfiguration)
+  public static IDisposable? Initialize(string application, string slug, SpeckleTracing? logConfiguration)
   {
-    if (!(logConfiguration?.Console ?? false) 
-        || (logConfiguration.Otel?.Enabled ?? false))
+    var consoleEnabled = logConfiguration?.Console ?? false;
+    var otelEnabled = logConfiguration?.Otel?.Enabled ?? false;
+    if (!consoleEnabled && !otelEnabled)
     {
       return null;
     }
 
+    var tracerProviderBuilder = Sdk.CreateTracerProviderBuilder()
+      .AddSource(slug)
+      .ConfigureResource(r =>
+      {
+        r.AddAttributes(
+          new List<KeyValuePair<string, object>>
+          {
+            new(Consts.SERVICE_NAME, application),
+            new(Consts.SERVICE_SLUG, slug)
+          }
+        );
+      })
+      .AddHttpClientInstrumentation();
+    if (otelEnabled)
     {
-      var tracerProviderBuilder = Sdk.CreateTracerProviderBuilder()
-        .AddSource(application)
-        .ConfigureResource(r =>
-        {
-          r.AddAttributes(
-            new List<KeyValuePair<string, object>>
-            {
-              new(Consts.SERVICE_NAME, application),
-              new(Consts.SERVICE_SLUG, slug ?? string.Empty)
-            }
-          );
-        })
-        .AddHttpClientInstrumentation();
-      if (logConfiguration.Otel is not null)
+      var headers = string.Join(",", logConfiguration?.Otel?.Headers?.Select(x => x.Key + "=" + x.Value) ?? []);
+      tracerProviderBuilder = tracerProviderBuilder.AddOtlpExporter(x =>
       {
-        tracerProviderBuilder = tracerProviderBuilder.AddOtlpExporter(x =>
-        {
-          x.Protocol = OtlpExportProtocol.HttpProtobuf;
-          x.Endpoint = new Uri(logConfiguration.Otel.Endpoint);
-          x.Headers = string.Join(";", logConfiguration.Otel?.Headers?.Select((k,v) => k + " " + v) ?? []);
-        });
-      }
-
-      if (logConfiguration.Console)
-      {
-        tracerProviderBuilder = tracerProviderBuilder.AddConsoleExporter();
-      }
-
-      return new TraceBuilder(tracerProviderBuilder.Build());
+        x.Protocol = OtlpExportProtocol.HttpProtobuf;
+        x.Endpoint = new Uri(logConfiguration!.Otel!.Endpoint);
+        x.Headers = headers;
+      });
     }
+
+    if (consoleEnabled)
+    {
+      tracerProviderBuilder = tracerProviderBuilder.AddConsoleExporter();
+    }
+
+    return new TraceBuilder(tracerProviderBuilder.Build());
   }
 
   public void Dispose() => traceProvider?.Dispose();
