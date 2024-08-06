@@ -10,6 +10,13 @@ namespace Speckle.Sdk.Tests.Unit.Models;
 [TestOf(typeof(DynamicBase))]
 public class BaseTests
 {
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly);
+  }
+
   [Test]
   public void CanGetSetDynamicItemProp()
   {

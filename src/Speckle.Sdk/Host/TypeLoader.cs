@@ -4,7 +4,7 @@ using Speckle.Sdk.Serialisation.SerializationUtilities;
 
 namespace Speckle.Sdk.Host;
 
-public record LoadedType(string Name, Type Type);
+public record LoadedType(string Name, Type Type, List<string> DeprecatedNames);
 
 public static class TypeLoader
 {
@@ -18,7 +18,18 @@ public static class TypeLoader
   {
     get
     {
-      Initialize(typeof(Base).Assembly);
+      if (!s_initialized)
+      {
+        lock (s_availableTypes)
+        {
+          if (!s_initialized)
+          {
+            throw new InvalidOperationException(
+              "Initialize with an assembly list has not be called.  Please use Initialize"
+            );
+          }
+        }
+      }
       return s_availableTypes;
     }
   }
@@ -57,13 +68,19 @@ public static class TypeLoader
 
       foreach (var type in assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(Base)) && !t.IsAbstract))
       {
-        var speckleType = type.GetCustomAttribute<SpeckleTypeAttribute>();
-        if (speckleType is null)
-        {
-          throw new InvalidOperationException($"{type.FullName} inherits from Base has no SpeckleTypeAttribute");
-        }
-        s_availableTypes.Add(new LoadedType(speckleType.Name, type));
+        s_availableTypes.Add(ParseType(type));
       }
     }
+  }
+
+  public static LoadedType ParseType(Type type)
+  {
+    var speckleType = type.GetCustomAttribute<SpeckleTypeAttribute>();
+    if (speckleType is null)
+    {
+      throw new InvalidOperationException($"{type.FullName} inherits from Base has no SpeckleTypeAttribute");
+    }
+    var deprecatedSpeckleTypes = type.GetCustomAttributes<DeprecatedSpeckleTypeAttribute>();
+    return new LoadedType(speckleType.Name, type, deprecatedSpeckleTypes.Select(x => x.Name).ToList());
   }
 }

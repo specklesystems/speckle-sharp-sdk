@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Deprecated;
@@ -18,27 +19,31 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
     }
 
     [Test]
-    public void GetDeprecatedAtomicType()
+    public void TestThatTypeWithoutAttributeFails()
+    {
+      var e = Assert.Throws<InvalidOperationException>(() => TypeLoader.ParseType(typeof(string)));
+      e.ShouldNotBeNull();
+    }
+
+    [Test]
+    public void TestThatTypeWithoutMultipleAttributes()
     {
       string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
 
       var result = BaseObjectSerializationUtilities.GetAtomicType(destinationType);
       Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));
-    }
 
-    [Test]
-    [TestCase("Objects.Geometry.Mesh", "Objects.Geometry.Deprecated.Mesh")]
-    [TestCase("Objects.Mesh", "Objects.Deprecated.Mesh")]
-    public void GetDeprecatedTypeName(string input, string expected)
-    {
-      var actual = BaseObjectSerializationUtilities.GetDeprecatedTypeName(input);
-      Assert.That(actual, Is.EqualTo(expected));
+      destinationType = $"Speckle.Core.Serialisation.Deprecated.{nameof(MySpeckleBase)}";
+
+      result = BaseObjectSerializationUtilities.GetAtomicType(destinationType);
+      Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));
     }
   }
 }
 
 namespace Speckle.Sdk.Serialisation.Deprecated
 {
-  [SpeckleType("Speckle.Core.Serialisation.Deprecated.MySpeckleBase")]
+  [SpeckleType("Speckle.Core.Serialisation.MySpeckleBase")]
+  [DeprecatedSpeckleType("Speckle.Core.Serialisation.Deprecated.MySpeckleBase")]
   public class MySpeckleBase : Base { }
 }

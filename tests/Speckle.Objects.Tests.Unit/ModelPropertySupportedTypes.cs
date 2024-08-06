@@ -72,7 +72,7 @@ public class ModelPropertySupportedTypes
   [Test]
   public void TestObjects()
   {
-    foreach ((string? _, Type? type) in TypeLoader.Types)
+    foreach ((string _, Type type, List<string> _) in TypeLoader.Types)
     {
       var members = DynamicBase.GetInstanceMembers(type).Where(p => !p.IsDefined(typeof(JsonIgnoreAttribute), true));
 

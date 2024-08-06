@@ -3,7 +3,7 @@ namespace Speckle.Sdk.Models.Collections;
 /// <summary>
 /// A specialized collection that represents a CAD-app layer. We expect this to grow in the future with possibly other shared props.
 /// </summary>
-[SpeckleType("Speckle.Core.Models.Collections.Layer")]
+[SpeckleType("Speckle.Core.Models.Layer")]
 public class Layer : Collection
 {
   public Layer() { }

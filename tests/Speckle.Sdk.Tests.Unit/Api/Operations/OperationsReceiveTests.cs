@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
@@ -7,6 +8,12 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 [TestFixture, TestOf(nameof(Sdk.Api.Operations.Operations.Receive))]
 public sealed partial class OperationsReceiveTests
 {
+  static OperationsReceiveTests()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly);
+  }
+
   public static IEnumerable<string> TestCases => s_testObjects.Select(x => x.GetId(true));
 
   private static readonly Base[] s_testObjects =
@@ -25,6 +32,8 @@ public sealed partial class OperationsReceiveTests
   [OneTimeSetUp]
   public async Task GlobalSetup()
   {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly);
     _testCaseTransport = new MemoryTransport();
     foreach (var b in s_testObjects)
     {

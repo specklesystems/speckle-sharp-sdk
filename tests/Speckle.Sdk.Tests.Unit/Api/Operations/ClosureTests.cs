@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Kits;
 using Speckle.Sdk.Transports;
@@ -11,6 +12,13 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 [TestOf(typeof(Sdk.Api.Operations.Operations))]
 public class Closures
 {
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly);
+  }
+
   [Test(Description = "Checks whether closures are generated correctly by the serialiser.")]
   public void CorrectDecompositionTracking()
   {
