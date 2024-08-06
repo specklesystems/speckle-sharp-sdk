@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -18,7 +20,12 @@ namespace Objects.Tests.Unit;
 /// but still not work / are not defined behaviour. This test will just catch many types that definitely won't work
 /// </summary>
 public class ModelPropertySupportedTypes
-{
+{  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Speckle.Objects.Geometry.Arc).Assembly);
+  }
   /// <summary>
   /// Set of types that we support in Base objects
   /// If it's not in the list, or is commented out, it's not supported by our serializer!
@@ -30,7 +37,7 @@ public class ModelPropertySupportedTypes
   /// (or is an interface where all concrete types are supported)
   /// You should also consider adding a test in SerializerNonBreakingChanges
   /// </remarks>
-  private readonly HashSet<Type> _allowedTypes =
+  private static readonly HashSet<Type> _allowedTypes =
     new()
     {
       typeof(Boolean),
@@ -61,23 +68,26 @@ public class ModelPropertySupportedTypes
     };
 
   [Test]
-  [TestCaseSource(typeof(TypeLoader), nameof(TypeLoader.Types))]
-  public void TestObjects(Type t)
+  public void TestObjects()
   {
-    var members = DynamicBase.GetInstanceMembers(t).Where(p => !p.IsDefined(typeof(JsonIgnoreAttribute), true));
-
-    foreach (var prop in members)
+    foreach ((string? _, Type? type) in TypeLoader.Types)
     {
-      if (prop.PropertyType.IsAssignableTo(typeof(Base)))
-        continue;
-      if (prop.PropertyType.IsEnum)
-        continue;
-      if (prop.PropertyType.IsSZArray)
-        continue;
+      
+      var members = DynamicBase.GetInstanceMembers(type).Where(p => !p.IsDefined(typeof(JsonIgnoreAttribute), true));
 
-      Type propType = prop.PropertyType;
-      Type typeDef = propType.IsGenericType ? propType.GetGenericTypeDefinition() : propType;
-      Assert.That(_allowedTypes, Does.Contain(typeDef), $"{typeDef} was not in allowedTypes");
+      foreach (var prop in members)
+      {
+        if (prop.PropertyType.IsAssignableTo(typeof(Base)))
+          continue;
+        if (prop.PropertyType.IsEnum)
+          continue;
+        if (prop.PropertyType.IsSZArray)
+          continue;
+
+        Type propType = prop.PropertyType;
+        Type typeDef = propType.IsGenericType ? propType.GetGenericTypeDefinition() : propType;
+        Assert.That(_allowedTypes, Does.Contain(typeDef), $"{typeDef} was not in allowedTypes");
+      }
     }
   }
 }

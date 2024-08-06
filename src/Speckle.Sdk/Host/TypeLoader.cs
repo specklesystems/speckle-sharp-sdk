@@ -1,5 +1,6 @@
 using System.Reflection;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.SerializationUtilities;
 
 namespace Speckle.Sdk.Host;
 
@@ -40,6 +41,7 @@ public static class TypeLoader
   public static void Reset()
   {
     s_availableTypes = new();
+    BaseObjectSerializationUtilities.FlushCachedTypes();
     s_initialized = false;
   }
 

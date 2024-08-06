@@ -12,8 +12,8 @@ internal static class BaseObjectSerializationUtilities
 
   private static Dictionary<string, Type> s_cachedTypes = new();
   private static ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
-  private static readonly Dictionary<string, Dictionary<string, PropertyInfo>> s_typeProperties = new();
-  private static readonly Dictionary<string, List<MethodInfo>> s_onDeserializedCallbacks = new();
+  private static  Dictionary<string, Dictionary<string, PropertyInfo>> s_typeProperties = new();
+  private static  Dictionary<string, List<MethodInfo>> s_onDeserializedCallbacks = new();
 
   internal static Type GetType(string objFullType)
   {
@@ -173,7 +173,10 @@ internal static class BaseObjectSerializationUtilities
   {
     lock (s_cachedTypes)
     {
-      s_cachedTypes = new Dictionary<string, Type>();
+      s_cachedTypes = new ();
+      s_fullTypeStrings = new();
+  s_typeProperties = new();
+  s_onDeserializedCallbacks = new();
     }
   }
 
