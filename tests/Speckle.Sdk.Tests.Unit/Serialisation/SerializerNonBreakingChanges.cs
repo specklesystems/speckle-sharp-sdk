@@ -174,7 +174,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     //Test List -> Matrix
     var res = from.SerializeAsTAndDeserialize<Matrix64ValueMock>();
     Assert.That(res.value.M11, Is.EqualTo(testCase[0]));
-    Assert.That(res.value.M44, Is.EqualTo(testCase[^1]));
+    Assert.That(res.value.M44, Is.EqualTo(testCase[testCase.Count - 1]));
 
     //Test Matrix -> List
     var backAgain = res.SerializeAsTAndDeserialize<ListDoubleValueMock>();
@@ -196,7 +196,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     //Test List -> Matrix
     var res = from.SerializeAsTAndDeserialize<Matrix32ValueMock>();
     Assert.That(res.value.M11, Is.EqualTo(testCase[0]));
-    Assert.That(res.value.M44, Is.EqualTo(testCase[^1]));
+    Assert.That(res.value.M44, Is.EqualTo(testCase[testCase.Count - 1]));
 
     //Test Matrix -> List
     var backAgain = res.SerializeAsTAndDeserialize<ListDoubleValueMock>();

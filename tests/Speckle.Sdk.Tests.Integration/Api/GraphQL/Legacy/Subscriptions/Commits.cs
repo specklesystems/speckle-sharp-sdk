@@ -1,5 +1,6 @@
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
@@ -17,8 +18,15 @@ public class Commits : IDisposable
   private string _streamId;
   private Account _testUserAccount;
 
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+  }
+
   [OneTimeSetUp]
-  public async Task Setup()
+  public async Task OneTimeSetUp()
   {
     _testUserAccount = await Fixtures.SeedUser();
     _client = new Client(_testUserAccount);

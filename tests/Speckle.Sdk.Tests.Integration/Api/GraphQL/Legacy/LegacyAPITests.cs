@@ -15,7 +15,7 @@ public class LegacyAPITests : IDisposable
   public void Setup()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
   }
 
   private string _branchId = "";
