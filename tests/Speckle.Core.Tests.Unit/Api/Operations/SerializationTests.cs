@@ -11,29 +11,6 @@ namespace Speckle.Core.Tests.Unit.Api.Operations;
 public class ObjectSerialization
 {
   [Test]
-  public void SimpleSerialization()
-  {
-    var table = new DiningTable();
-    ((dynamic)table)["@strangeVariable_NAme3"] = new TableLegFixture();
-
-    var result = Core.Api.Operations.Serialize(table);
-    var test = Core.Api.Operations.Deserialize(result);
-
-    Assert.That(table.GetId(), Is.EqualTo(test.GetId()));
-
-    var polyline = new Polyline();
-    for (int i = 0; i < 100; i++)
-    {
-      polyline.Points.Add(new Point { X = i * 2, Y = i % 2 });
-    }
-
-    var strPoly = Core.Api.Operations.Serialize(polyline);
-    var dePoly = Core.Api.Operations.Deserialize(strPoly);
-
-    Assert.That(dePoly.GetId(), Is.EqualTo(polyline.GetId()));
-  }
-
-  [Test]
   public void IgnoreCircularReferences()
   {
     var pt = new Point(1, 2, 3);

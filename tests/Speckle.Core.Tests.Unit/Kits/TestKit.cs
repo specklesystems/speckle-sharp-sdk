@@ -1,6 +1,6 @@
-using Newtonsoft.Json;
 using Speckle.Core.Kits;
 using Speckle.Core.Models;
+using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Core.Tests.Unit.Kits;
 

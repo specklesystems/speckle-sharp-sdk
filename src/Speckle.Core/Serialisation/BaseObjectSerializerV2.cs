@@ -315,7 +315,7 @@ public class BaseObjectSerializerV2
     // Construct `allProperties`: Add typed properties
     foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)
     {
-      object baseValue = propertyInfo.GetValue(baseObj);
+      object? baseValue = propertyInfo.GetValue(baseObj);
       allProperties[propertyInfo.Name] = (baseValue, detachInfo);
     }
 
@@ -349,7 +349,7 @@ public class BaseObjectSerializerV2
   )
   {
     var allProperties = ExtractAllProperties(baseObj);
-    Dictionary<string, object?> convertedBase = new(allProperties.Count + 1);
+    Dictionary<string, object?> convertedBase = new(allProperties.Count + 2);
 
     // Convert all properties
     foreach (var prop in allProperties)
@@ -497,7 +497,7 @@ public class BaseObjectSerializerV2
         continue;
       }
 
-      bool jsonIgnore = Attribute.IsDefined(typedProperty, typeof(JsonIgnoreAttribute), false);
+      bool jsonIgnore = typedProperty.IsDefined(typeof(JsonIgnoreAttribute), false);
       if (jsonIgnore)
       {
         continue;
