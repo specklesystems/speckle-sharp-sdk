@@ -63,11 +63,11 @@ public sealed class MemoryTransport : ITransport, ICloneable
     Elapsed += stopwatch.Elapsed;
   }
 
-  public void SaveObject(string id, ITransport sourceTransport)
+  public async Task SaveObject(string id, ITransport sourceTransport)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
-    var serializedObject = sourceTransport.GetObject(id);
+    var serializedObject = await sourceTransport.GetObject(id);
 
     if (serializedObject is null)
     {
@@ -80,29 +80,29 @@ public sealed class MemoryTransport : ITransport, ICloneable
     SaveObject(id, serializedObject);
   }
 
-  public string? GetObject(string id)
+  public Task<string?> GetObject(string id)
   {
     var stopwatch = Stopwatch.StartNew();
     var ret = Objects.TryGetValue(id, out string o) ? o : null;
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-    return ret;
+    return Task.FromResult(ret);
   }
 
-  public Task<string> CopyObjectAndChildren(
+  public async Task<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
   )
   {
-    string res = TransportHelpers.CopyObjectAndChildrenSync(
+    string res = await TransportHelpers.CopyObjectAndChildrenSync(
       id,
       this,
       targetTransport,
       onTotalChildrenCountKnown,
       CancellationToken
     );
-    return Task.FromResult(res);
+    return res;
   }
 
   public Task WriteComplete()

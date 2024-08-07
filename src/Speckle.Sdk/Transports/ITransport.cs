@@ -70,7 +70,7 @@ public interface ITransport
   /// <param name="sourceTransport">The transport from where to retrieve it.</param>
   /// <exception cref="TransportException">Failed to save object</exception>
   /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
-  public void SaveObject(string id, ITransport sourceTransport);
+  public Task SaveObject(string id, ITransport sourceTransport);
 
   /// <summary>
   /// Awaitable method to figure out whether writing is completed.
@@ -81,7 +81,7 @@ public interface ITransport
   /// <param name="id">The object's hash.</param>
   /// <returns>The serialized object data, or <see langword="null"/> if the transport cannot find the object</returns>
   /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
-  public string? GetObject(string id);
+  public Task<string?> GetObject(string id);
 
   /// <summary>
   /// Copies the parent object and all its children to the provided transport.

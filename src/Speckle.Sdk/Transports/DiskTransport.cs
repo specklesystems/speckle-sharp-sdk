@@ -59,17 +59,17 @@ public class DiskTransport : ICloneable, ITransport
 
   public void EndWrite() { }
 
-  public string? GetObject(string id)
+  public Task<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
     var filePath = Path.Combine(RootPath, id);
     if (File.Exists(filePath))
     {
-      return File.ReadAllText(filePath, Encoding.UTF8);
+      return Task.FromResult<string?>(File.ReadAllText(filePath, Encoding.UTF8));
     }
 
-    return null;
+    return Task.FromResult<string?>(null);
   }
 
   public void SaveObject(string id, string serializedObject)
@@ -98,11 +98,11 @@ public class DiskTransport : ICloneable, ITransport
     Elapsed += stopwatch.Elapsed;
   }
 
-  public void SaveObject(string id, ITransport sourceTransport)
+  public async Task SaveObject(string id, ITransport sourceTransport)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
-    var serializedObject = sourceTransport.GetObject(id);
+    var serializedObject = await sourceTransport.GetObject(id);
 
     if (serializedObject is null)
     {
@@ -120,20 +120,20 @@ public class DiskTransport : ICloneable, ITransport
     return Task.CompletedTask;
   }
 
-  public Task<string> CopyObjectAndChildren(
+  public  async Task<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
   )
   {
-    string res = TransportHelpers.CopyObjectAndChildrenSync(
+    string res = await TransportHelpers.CopyObjectAndChildrenSync(
       id,
       this,
       targetTransport,
       onTotalChildrenCountKnown,
       CancellationToken
     );
-    return Task.FromResult(res);
+    return res;
   }
 
   public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)

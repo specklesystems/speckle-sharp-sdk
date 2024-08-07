@@ -80,7 +80,7 @@ public static partial class Operations
     );
 
     // Try Local Receive
-    string? objString = LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
+    string? objString = await LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
 
     if (objString is null)
     {
@@ -107,7 +107,7 @@ public static partial class Operations
 
     using var activity = SpeckleActivityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = serializerV2.Deserialize(objString);
+    Base res = await serializerV2.Deserialize(objString);
 
     timer.Stop();
     SpeckleLog.Logger.Information(
@@ -129,13 +129,13 @@ public static partial class Operations
   /// <param name="onTotalChildrenCountKnown"></param>
   /// <returns></returns>
   /// <exception cref="SpeckleDeserializeException"></exception>
-  internal static string? LocalReceive(
+  internal static async Task<string?> LocalReceive(
     string objectId,
     ITransport localTransport,
     Action<int>? onTotalChildrenCountKnown
   )
   {
-    string? objString = localTransport.GetObject(objectId);
+    string? objString = await localTransport.GetObject(objectId);
     if (objString is null)
     {
       return null;

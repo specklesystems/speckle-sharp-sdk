@@ -30,11 +30,11 @@ public class TestTransport : ITransport
 
   public void SaveObject(string id, string serializedObject) => Objects[id] = serializedObject;
 
-  public void SaveObject(string id, ITransport sourceTransport) => throw new NotImplementedException();
+  public Task SaveObject(string id, ITransport sourceTransport) => throw new NotImplementedException();
 
   public Task WriteComplete() => throw new NotImplementedException();
 
-  public string? GetObject(string id) => Objects.TryGetValue(id, out string? o) ? o : null;
+  public Task<string?> GetObject(string id) => Task.FromResult<string?>(Objects.TryGetValue(id, out string? o) ? o : null);
 
   public Task<string> CopyObjectAndChildren(
     string id,

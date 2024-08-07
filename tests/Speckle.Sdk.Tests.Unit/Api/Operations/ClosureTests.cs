@@ -20,7 +20,7 @@ public class Closures
   }
 
   [Test(Description = "Checks whether closures are generated correctly by the serialiser.")]
-  public void CorrectDecompositionTracking()
+  public async Task CorrectDecompositionTracking()
   {
     var d5 = new Base();
     ((dynamic)d5).name = "depth five"; // end v
@@ -45,9 +45,9 @@ public class Closures
 
     var transport = new MemoryTransport();
 
-    var result = Sdk.Api.Operations.Operations.Send(d1, transport, false).Result;
+    var result = await Sdk.Api.Operations.Operations.Send(d1, transport, false);
 
-    var test = Sdk.Api.Operations.Operations.Receive(result, localTransport: transport).Result;
+    var test = await Sdk.Api.Operations.Operations.Receive(result, localTransport: transport);
 
     test.id.NotNull();
     Assert.That(d1.GetId(true), Is.EqualTo(test.id));
