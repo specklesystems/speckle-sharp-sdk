@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Reflection;
 using Speckle.Core.Kits;
@@ -216,12 +215,12 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
   /// Gets the defined (typed) properties of this object.
   /// </summary>
   /// <returns></returns>
-  public IEnumerable<PropertyInfo> GetInstanceMembers()
+  public IReadOnlyList<PropertyInfo> GetInstanceMembers()
   {
     return GetInstanceMembers(GetType());
   }
 
-  public static IEnumerable<PropertyInfo> GetInstanceMembers(Type t)
+  public static IReadOnlyList<PropertyInfo> GetInstanceMembers(Type t)
   {
     PopulatePropInfoCache(t);
     var pinfos = s_propInfoCache[t];
@@ -319,15 +318,10 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
   /// Gets the dynamically added property names only.
   /// </summary>
   /// <returns></returns>
-  [Obsolete("Use GetMembers(DynamicBaseMemberType.Dynamic).Keys instead")]
-  public IEnumerable<string> GetDynamicMembers()
+  public IReadOnlyCollection<string> GetDynamicPropertyKeys()
   {
     return _properties.Keys;
   }
-
-  [Obsolete("Renamed to " + nameof(DEFAULT_INCLUDE_MEMBERS))]
-  [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Obsolete")]
-  public const DynamicBaseMemberType DefaultIncludeMembers = DEFAULT_INCLUDE_MEMBERS;
 }
 
 /// <summary>
