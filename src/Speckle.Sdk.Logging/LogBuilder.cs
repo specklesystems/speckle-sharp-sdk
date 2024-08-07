@@ -9,7 +9,12 @@ namespace Speckle.Sdk.Logging;
 
 public static class LogBuilder
 {
-  public static void Initialize(string userId, string hostApplication, string? slug, SpeckleLogging? speckleLogging)
+  public static void Initialize(
+    string userId,
+    string applicationAndVersion,
+    string? slug,
+    SpeckleLogging? speckleLogging
+  )
   {
     var fileVersionInfo = GetFileVersionInfo();
     var serilogLogConfiguration = new LoggerConfiguration()
@@ -27,7 +32,7 @@ public static class LogBuilder
     if (speckleLogging?.File is not null)
     {
       // TODO: check if we have write permissions to the file.
-      var logFilePath = SpecklePathProvider.LogFolderPath(hostApplication, slug);
+      var logFilePath = SpecklePathProvider.LogFolderPath(applicationAndVersion, slug);
       logFilePath = Path.Combine(logFilePath, speckleLogging.File.Path ?? "SpeckleCoreLog.txt");
       serilogLogConfiguration = serilogLogConfiguration.WriteTo.File(
         logFilePath,
@@ -50,7 +55,7 @@ public static class LogBuilder
         o.Headers = speckleLogging.Otel.Headers ?? o.Headers;
         o.ResourceAttributes = new Dictionary<string, object>
         {
-          [Consts.SERVICE_NAME] = hostApplication,
+          [Consts.SERVICE_NAME] = applicationAndVersion,
           [Consts.SERVICE_SLUG] = slug ?? string.Empty
         };
       });

@@ -63,8 +63,8 @@ public static class Setup
     //start mutex so that Manager can detect if this process is running
     Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
 
-    var traceProvider = TraceBuilder.Initialize(Application, Slug, configuration.Tracing);
-    LogBuilder.Initialize(GetUserIdFromDefaultAccount(), Application, Slug, configuration.Logging);
+    var traceProvider = TraceBuilder.Initialize(ApplicationVersion, Slug, configuration.Tracing);
+    LogBuilder.Initialize(GetUserIdFromDefaultAccount(), ApplicationVersion, Slug, configuration.Logging);
 
     foreach (var account in AccountManager.GetAccounts())
     {
