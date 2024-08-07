@@ -1,13 +1,22 @@
 using System.Collections;
 using NUnit.Framework;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.GraphTraversal;
+using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Models.GraphTraversal;
 
 [TestFixture, TestOf(typeof(Sdk.Models.GraphTraversal.GraphTraversal))]
 public class GraphTraversalTests
 {
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TraversalMock).Assembly);
+  }
+
   private static IEnumerable<TraversalContext> Traverse(Base testCase, params ITraversalRule[] rules)
   {
     var sut = new Sdk.Models.GraphTraversal.GraphTraversal(rules);

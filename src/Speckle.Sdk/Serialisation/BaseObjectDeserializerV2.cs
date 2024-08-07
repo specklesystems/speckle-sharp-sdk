@@ -3,6 +3,7 @@ using System.Reflection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.SerializationUtilities;
@@ -337,7 +338,7 @@ public sealed class BaseObjectDeserializerV2
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
     string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();
-    Type type = TypeNameMap.GetType(typeName);
+    Type type = TypeLoader.GetType(typeName);
     Base baseObj = (Base)Activator.CreateInstance(type);
 
     dictObj.Remove(TYPE_DISCRIMINATOR);

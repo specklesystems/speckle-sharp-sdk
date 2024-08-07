@@ -1,6 +1,6 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation.SerializationUtilities;
 
 namespace Speckle.Sdk.Host;
 
@@ -11,28 +11,10 @@ public static class TypeLoader
   private static bool s_initialized;
   private static List<LoadedType> s_availableTypes = new();
 
-  /// <summary>
-  /// Returns a list of all the types found in all the kits on this user's device.
-  /// </summary>
-  public static IReadOnlyList<LoadedType> Types
-  {
-    get
-    {
-      if (!s_initialized)
-      {
-        lock (s_availableTypes)
-        {
-          if (!s_initialized)
-          {
-            throw new InvalidOperationException(
-              "Initialize with an assembly list has not be called.  Please use Initialize"
-            );
-          }
-        }
-      }
-      return s_availableTypes;
-    }
-  }
+  private static ConcurrentDictionary<string, Type> s_cachedTypes = new();
+  private static ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
+
+  public static IEnumerable<LoadedType> Types => s_availableTypes;
 
   public static void Initialize(params Assembly[] assemblies)
   {
@@ -49,11 +31,80 @@ public static class TypeLoader
     }
   }
 
+  public static Type GetType(string fullTypeString) =>
+    s_cachedTypes.GetOrAdd(
+      fullTypeString,
+      typeString =>
+      {
+        var type = GetAtomicType(typeString);
+        s_cachedTypes[typeString] = type;
+        return type;
+      }
+    );
+
+  public static string GetFullTypeString(Type type) =>
+    s_fullTypeStrings.GetOrAdd(
+      type,
+      t =>
+      {
+        Stack<string> bases = new();
+        if (t == typeof(Base))
+        {
+          return nameof(Base);
+        }
+        Type? myType = t;
+
+        do
+        {
+          if (!myType.IsAbstract)
+          {
+            var typeString = GetTypeString(myType);
+            if (typeString is null)
+            {
+              throw new InvalidOperationException($"Type {t} is not registered with TypeLoader");
+            }
+            bases.Push(typeString);
+          }
+
+          myType = myType.BaseType;
+        } while (myType is not null && myType.Name != nameof(Base));
+        return string.Join(":", bases);
+      }
+    );
+
+  public static string? GetTypeString(Type type)
+  {
+    var typeInfo = s_availableTypes.FirstOrDefault(tp => tp.Type == type);
+    if (typeInfo != null)
+    {
+      return typeInfo.Name;
+    }
+    return null;
+  }
+
+  public static Type GetAtomicType(string objFullType)
+  {
+    var objectTypes = objFullType.Split(':').Reverse();
+    foreach (var typeName in objectTypes)
+    {
+      var type = s_availableTypes.FirstOrDefault(tp =>
+        tp.Name == typeName || tp.DeprecatedNames.Any(x => x == typeName)
+      );
+      if (type != null)
+      {
+        return type.Type;
+      }
+    }
+
+    return typeof(Base);
+  }
+
   //Don't use unless you're testing
   public static void Reset()
   {
     s_availableTypes = new();
-    TypeNameMap.Reset();
+    s_cachedTypes = new();
+    s_fullTypeStrings = new();
     s_initialized = false;
   }
 

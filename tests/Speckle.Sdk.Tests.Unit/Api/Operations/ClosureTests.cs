@@ -16,7 +16,7 @@ public class Closures
   public void Setup()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);
   }
 
   [Test(Description = "Checks whether closures are generated correctly by the serialiser.")]

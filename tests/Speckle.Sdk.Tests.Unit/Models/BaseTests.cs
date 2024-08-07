@@ -14,7 +14,7 @@ public class BaseTests
   public void Setup()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(BaseTests).Assembly);
   }
 
   [Test]

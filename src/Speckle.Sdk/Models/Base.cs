@@ -62,7 +62,7 @@ public class Base : DynamicBase
     {
       if (_type == null)
       {
-        _type = TypeNameMap.GetFullTypeString(GetType());
+        _type = TypeLoader.GetFullTypeString(GetType());
       }
       return _type;
     }

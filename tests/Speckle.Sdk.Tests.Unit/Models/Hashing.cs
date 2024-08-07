@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using NUnit.Framework;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 
@@ -9,6 +10,13 @@ namespace Speckle.Sdk.Tests.Unit.Models;
 [TestOf(typeof(Base))]
 public class Hashing
 {
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DiningTable).Assembly);
+  }
+
   [Test(Description = "Checks that hashing (as represented by object ids) actually works.")]
   public void HashChangeCheck()
   {

@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.Serialization;
+using Speckle.Sdk.Host;
 
 namespace Speckle.Sdk.Serialisation.SerializationUtilities;
 
@@ -19,7 +20,7 @@ internal static class BaseObjectSerializationUtilities
       }
 
       Dictionary<string, PropertyInfo> ret = new();
-      Type type = TypeNameMap.GetType(objFullType);
+      Type type = TypeLoader.GetType(objFullType);
       PropertyInfo[] properties = type.GetProperties();
       foreach (PropertyInfo prop in properties)
       {
@@ -44,7 +45,7 @@ internal static class BaseObjectSerializationUtilities
       }
 
       List<MethodInfo> ret = new();
-      Type type = TypeNameMap.GetType(objFullType);
+      Type type = TypeLoader.GetType(objFullType);
       MethodInfo[] methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
       foreach (MethodInfo method in methods)
       {
