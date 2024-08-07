@@ -6,10 +6,9 @@ namespace Speckle.Sdk.Serialisation.SerializationUtilities;
 
 public static class TypeNameMap
 {
-
   private static Dictionary<string, Type> s_cachedTypes = new();
   private static ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
-  
+
   public static Type GetType(string objFullType)
   {
     lock (s_cachedTypes)
@@ -82,7 +81,7 @@ public static class TypeNameMap
 
     return typeof(Base);
   }
-  
+
   public static void Reset()
   {
     lock (s_cachedTypes)

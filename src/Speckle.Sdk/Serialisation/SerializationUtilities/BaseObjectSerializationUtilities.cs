@@ -9,7 +9,6 @@ internal static class BaseObjectSerializationUtilities
   private static Dictionary<string, Dictionary<string, PropertyInfo>> s_typeProperties = new();
   private static Dictionary<string, List<MethodInfo>> s_onDeserializedCallbacks = new();
 
-
   internal static Dictionary<string, PropertyInfo> GetTypeProperties(string objFullType)
   {
     lock (s_typeProperties)
