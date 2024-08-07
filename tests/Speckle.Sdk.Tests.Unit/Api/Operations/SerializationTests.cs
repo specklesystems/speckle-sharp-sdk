@@ -2,8 +2,8 @@ using System.Drawing;
 using NUnit.Framework;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Tests.Unit.Kits;
-using Point = Speckle.Sdk.Tests.Unit.Kits.Point;
+using Speckle.Sdk.Tests.Unit.Host;
+using Point = Speckle.Sdk.Tests.Unit.Host.Point;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 

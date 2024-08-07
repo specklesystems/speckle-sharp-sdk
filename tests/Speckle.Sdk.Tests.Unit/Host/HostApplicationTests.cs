@@ -1,8 +1,8 @@
 ﻿using NUnit.Framework;
 using Shouldly;
-using Speckle.Core.Kits;
+using Speckle.Sdk.Host;
 
-namespace Speckle.Core.Tests.Unit.Kits;
+namespace Speckle.Sdk.Tests.Unit.Host;
 
 public class HostApplicationTests
 {

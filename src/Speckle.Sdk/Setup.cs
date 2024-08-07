@@ -3,8 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Logging;
 
-namespace Speckle.Sdk.Logging;
+namespace Speckle.Sdk;
 
 /// <summary>
 ///  Anonymous telemetry to help us understand how to make a better Speckle.

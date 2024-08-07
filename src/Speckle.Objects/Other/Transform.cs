@@ -1,6 +1,7 @@
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;

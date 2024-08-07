@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using NUnit.Framework;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Tests.Unit.Kits;
+using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 

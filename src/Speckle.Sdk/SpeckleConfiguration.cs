@@ -1,7 +1,7 @@
-﻿using Speckle.Core.Kits;
-using Speckle.Logging;
+﻿using Speckle.Sdk.Host;
+using Speckle.Sdk.Logging;
 
-namespace Speckle.Core.Logging;
+namespace Speckle.Sdk;
 
 public record SpeckleConfiguration(
   HostApplication Application,

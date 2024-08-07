@@ -1,4 +1,4 @@
-namespace Speckle.Sdk.Logging;
+namespace Speckle.Sdk;
 
 /// <summary>
 /// These are exceptions who's message is not user friendly

@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk.Tests.Unit.Kits;
+namespace Speckle.Sdk.Tests.Unit.Host;
 
 [SpeckleType("Speckle.Core.Tests.Unit.Kits.FakeMesh")]
 public class FakeMesh : Base

@@ -3,7 +3,7 @@ using NUnit.Framework;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Tests.Unit.Kits;
+using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;

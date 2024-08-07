@@ -1,5 +1,6 @@
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
+using Speckle.Sdk;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;

@@ -1,5 +1,6 @@
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
+using Speckle.Sdk;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;

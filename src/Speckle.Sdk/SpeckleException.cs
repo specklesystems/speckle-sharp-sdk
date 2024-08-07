@@ -1,4 +1,4 @@
-namespace Speckle.Sdk.Logging;
+namespace Speckle.Sdk;
 
 public class SpeckleException : Exception
 {

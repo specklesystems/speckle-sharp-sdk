@@ -1,4 +1,5 @@
 using Speckle.Objects.Other;
+using Speckle.Sdk;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
