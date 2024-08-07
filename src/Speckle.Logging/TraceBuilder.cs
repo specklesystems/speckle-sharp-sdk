@@ -7,7 +7,7 @@ namespace Speckle.Logging;
 
 public class TraceBuilder(IDisposable? traceProvider) : IDisposable
 {
-  public static IDisposable? Initialize(string application, string slug, SpeckleTracing? logConfiguration)
+  public static IDisposable? Initialize(string applicationAndVersion, string slug, SpeckleTracing? logConfiguration)
   {
     var consoleEnabled = logConfiguration?.Console ?? false;
     var otelEnabled = logConfiguration?.Otel?.Enabled ?? false;
@@ -23,7 +23,7 @@ public class TraceBuilder(IDisposable? traceProvider) : IDisposable
         r.AddAttributes(
           new List<KeyValuePair<string, object>>
           {
-            new(Consts.SERVICE_NAME, application),
+            new(Consts.SERVICE_NAME, applicationAndVersion),
             new(Consts.SERVICE_SLUG, slug)
           }
         );
