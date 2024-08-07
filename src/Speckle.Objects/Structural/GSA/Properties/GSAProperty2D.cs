@@ -5,6 +5,8 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Structural.GSA.Properties;
 
+
+[SpeckleType("Objects.Structural.GSA.Properties.Property2D")]
 public class GSAProperty2D : Property2D
 {
   public GSAProperty2D() { }
