@@ -9,7 +9,7 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 [TestFixture]
-[TestOf(typeof(Sdk.Api.Operations.Operations))]
+[TestOf(typeof(Sdk.Api.Operations))]
 public class Closures
 {
   [SetUp]
@@ -45,9 +45,9 @@ public class Closures
 
     var transport = new MemoryTransport();
 
-    var result = Sdk.Api.Operations.Operations.Send(d1, transport, false).Result;
+    var result = Sdk.Api.Operations.Send(d1, transport, false).Result;
 
-    var test = Sdk.Api.Operations.Operations.Receive(result, localTransport: transport).Result;
+    var test = Sdk.Api.Operations.Receive(result, localTransport: transport).Result;
 
     test.id.NotNull();
     Assert.That(d1.GetId(true), Is.EqualTo(test.id));

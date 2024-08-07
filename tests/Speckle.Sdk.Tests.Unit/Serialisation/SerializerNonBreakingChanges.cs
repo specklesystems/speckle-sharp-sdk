@@ -1,7 +1,7 @@
 using System.Drawing;
 using NUnit.Framework;
 using Speckle.DoubleNumerics;
-using Speckle.Sdk.Api.Operations;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;

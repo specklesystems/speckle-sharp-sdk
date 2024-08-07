@@ -12,7 +12,7 @@ public partial class OperationsReceiveTests
     MemoryTransport emptyTransport2 = new();
     Assert.ThrowsAsync<TransportException>(async () =>
     {
-      await Sdk.Api.Operations.Operations.Receive(id, emptyTransport1, emptyTransport2);
+      await Sdk.Api.Operations.Receive(id, emptyTransport1, emptyTransport2);
     });
   }
 
@@ -22,7 +22,7 @@ public partial class OperationsReceiveTests
     MemoryTransport emptyTransport = new();
     Assert.ThrowsAsync<TransportException>(async () =>
     {
-      await Sdk.Api.Operations.Operations.Receive(id, null, emptyTransport);
+      await Sdk.Api.Operations.Receive(id, null, emptyTransport);
     });
   }
 
@@ -35,12 +35,7 @@ public partial class OperationsReceiveTests
     MemoryTransport emptyTransport2 = new();
     Assert.CatchAsync<OperationCanceledException>(async () =>
     {
-      await Sdk.Api.Operations.Operations.Receive(
-        id,
-        _testCaseTransport,
-        emptyTransport2,
-        cancellationToken: ctc.Token
-      );
+      await Sdk.Api.Operations.Receive(id, _testCaseTransport, emptyTransport2, cancellationToken: ctc.Token);
     });
   }
 }
