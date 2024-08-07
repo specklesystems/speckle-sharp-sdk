@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace Speckle.Sdk.Api.Operations;
+namespace Speckle.Sdk.Api;
 
 /// <summary>
 /// Exposes several key methods for interacting with Speckle.Sdk.

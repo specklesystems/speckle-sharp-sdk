@@ -6,7 +6,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
 
-namespace Speckle.Sdk.Api.Operations;
+namespace Speckle.Sdk.Api;
 
 public static partial class Operations
 {

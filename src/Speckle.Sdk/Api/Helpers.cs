@@ -101,7 +101,7 @@ public static class Helpers
     );
 
     var receiveRes = await Operations
-      .Operations.Receive(
+      .Receive(
         objectId,
         transport,
         onProgressAction: onProgressAction,
@@ -158,9 +158,7 @@ public static class Helpers
     using var transport = serverTransportFactory.Create(client.Account, sw.StreamId);
     var branchName = string.IsNullOrEmpty(sw.BranchName) ? "main" : sw.BranchName;
 
-    var objectId = await Operations
-      .Operations.Send(data, transport, useDefaultCache, onProgressAction)
-      .ConfigureAwait(false);
+    var objectId = await Operations.Send(data, transport, useDefaultCache, onProgressAction).ConfigureAwait(false);
 
     Analytics.TrackEvent(client.Account, Analytics.Events.Send);
 

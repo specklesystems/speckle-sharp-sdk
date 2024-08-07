@@ -3,7 +3,7 @@ using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 
-namespace Speckle.Sdk.Api.Operations;
+namespace Speckle.Sdk.Api;
 
 public static partial class Operations
 {
