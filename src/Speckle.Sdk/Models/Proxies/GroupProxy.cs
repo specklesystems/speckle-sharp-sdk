@@ -5,6 +5,7 @@ namespace Speckle.Sdk.Models.Proxies;
 /// i.e. in rhino -> creating group make objects selectable/moveable/editable together.
 /// </summary>
 [SpeckleType("Speckle.Core.Models.Proxies.GroupProxy")]
+[DeprecatedSpeckleType("Speckle.Core.Models.Instances.GroupProxy")]
 public class GroupProxy : Base, IProxyCollection
 {
   public List<string> objects { get; set; }
