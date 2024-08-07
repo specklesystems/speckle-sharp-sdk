@@ -41,12 +41,6 @@ public class Base : DynamicBase
 #nullable enable //Starting nullability syntax here so that `id` null oblivious,
 
   /// <summary>
-  /// This property will only be populated if the object is retreieved from storage. Use <see cref="GetTotalChildrenCount"/> otherwise.
-  /// </summary>
-  [SchemaIgnore]
-  public virtual long totalChildrenCount { get; set; }
-
-  /// <summary>
   /// Secondary, ideally host application driven, object identifier.
   /// </summary>
   [SchemaIgnore]
@@ -162,7 +156,7 @@ public class Base : DynamicBase
       }
     }
 
-    var dynamicProps = @base.GetDynamicMembers();
+    var dynamicProps = @base.GetDynamicPropertyKeys();
     foreach (var propName in dynamicProps)
     {
       if (!propName.StartsWith("@"))
