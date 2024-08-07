@@ -353,7 +353,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     var httpClient = Http.GetHttpProxyClient(null, TimeSpan.FromSeconds(30));
     Http.AddAuthHeader(httpClient, account.token);
 
-    httpClient.DefaultRequestHeaders.Add("apollographql-client-name", Setup.HostApplication);
+    httpClient.DefaultRequestHeaders.Add("apollographql-client-name", Setup.ApplicationVersion);
     httpClient.DefaultRequestHeaders.Add(
       "apollographql-client-version",
       Assembly.GetExecutingAssembly().GetName().Version.ToString()

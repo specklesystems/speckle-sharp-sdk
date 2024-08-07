@@ -12,7 +12,7 @@ internal class SpeckleLogger : ISpeckleLogger
     _logger = logger;
   }
 
-  private static LogEventLevel GetLevel(SpeckleLogLevel speckleLogLevel) =>
+  internal static LogEventLevel GetLevel(SpeckleLogLevel speckleLogLevel) =>
     speckleLogLevel switch
     {
       SpeckleLogLevel.Debug => LogEventLevel.Debug,

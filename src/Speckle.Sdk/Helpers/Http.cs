@@ -192,7 +192,7 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
     // this is a preliminary client server correlation implementation
     // refactor this, when we have a better observability stack
     var context = new Context();
-    using var activity = SpeckleActivityFactory.Start();
+    using var activity = SpeckleActivityFactory.Start($"SendAsync to {request.RequestUri}");
     {
       SpeckleLog.Logger.Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
       var timer = Stopwatch.StartNew();

@@ -6,27 +6,44 @@ namespace Speckle.Sdk.Logging;
 
 public class TraceBuilder(IDisposable? traceProvider) : IDisposable
 {
-  public static IDisposable Initialize(string application, SpeckleLogConfiguration logConfiguration)
+  public static IDisposable? Initialize(string application, string slug, SpeckleTracing? logConfiguration)
   {
-    var tracerProviderBuilder = OpenTelemetry
-      .Sdk.CreateTracerProviderBuilder()
-      .AddSource(application)
+    var consoleEnabled = logConfiguration?.Console ?? false;
+    var otelEnabled = logConfiguration?.Otel?.Enabled ?? false;
+    if (!consoleEnabled && !otelEnabled)
+    {
+      return null;
+    }
+
+    var tracerProviderBuilder = Sdk.CreateTracerProviderBuilder()
+      .AddSource(slug)
       .ConfigureResource(r =>
       {
-        r.AddAttributes(new List<KeyValuePair<string, object>> { new("service.name", application) });
+        r.AddAttributes(
+          new List<KeyValuePair<string, object>>
+          {
+            new(Consts.SERVICE_NAME, application),
+            new(Consts.SERVICE_SLUG, slug)
+          }
+        );
       })
       .AddHttpClientInstrumentation();
-    if (logConfiguration.LogToOtel)
+    if (otelEnabled)
     {
+      var headers = string.Join(",", logConfiguration?.Otel?.Headers?.Select(x => x.Key + "=" + x.Value) ?? []);
       tracerProviderBuilder = tracerProviderBuilder.AddOtlpExporter(x =>
       {
         x.Protocol = OtlpExportProtocol.HttpProtobuf;
+        x.Endpoint = new Uri(logConfiguration!.Otel!.Endpoint);
+        x.Headers = headers;
       });
     }
-    if (logConfiguration.LogToConsole)
+
+    if (consoleEnabled)
     {
       tracerProviderBuilder = tracerProviderBuilder.AddConsoleExporter();
     }
+
     return new TraceBuilder(tracerProviderBuilder.Build());
   }
 

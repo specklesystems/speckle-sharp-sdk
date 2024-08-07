@@ -17,8 +17,8 @@
     <PackageReference Include="Serilog"  PrivateAssets="all"/>
     <PackageReference Include="Serilog.Exceptions"  PrivateAssets="all"/>
     <PackageReference Include="Serilog.Sinks.Console"  PrivateAssets="all"/>
+    <PackageReference Include="Serilog.Sinks.File"  PrivateAssets="all"/>
     <PackageReference Include="Serilog.Sinks.OpenTelemetry"  PrivateAssets="all"/>
-    <PackageReference Include="Serilog.Sinks.Seq"  PrivateAssets="all"/>
     <PackageReference Include="OpenTelemetry.Exporter.Console"  PrivateAssets="all"/>
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" NoWarn="NU1902"  PrivateAssets="all"/>
   </ItemGroup>
