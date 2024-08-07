@@ -62,7 +62,7 @@ public class Base : DynamicBase
     {
       if (_type == null)
       {
-        _type = BaseObjectSerializationUtilities.GetFullTypeString(GetType());
+        _type = TypeNameMap.GetFullTypeString(GetType());
       }
       return _type;
     }

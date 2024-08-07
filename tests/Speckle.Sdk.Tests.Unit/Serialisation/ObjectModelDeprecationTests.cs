@@ -30,12 +30,12 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
     {
       string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
 
-      var result = BaseObjectSerializationUtilities.GetAtomicType(destinationType);
+      var result = TypeNameMap.GetAtomicType(destinationType);
       Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));
 
       destinationType = $"Speckle.Core.Serialisation.Deprecated.{nameof(MySpeckleBase)}";
 
-      result = BaseObjectSerializationUtilities.GetAtomicType(destinationType);
+      result = TypeNameMap.GetAtomicType(destinationType);
       Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));
     }
   }

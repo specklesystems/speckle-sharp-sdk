@@ -337,7 +337,7 @@ public sealed class BaseObjectDeserializerV2
   private Base Dict2Base(Dictionary<string, object?> dictObj)
   {
     string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();
-    Type type = BaseObjectSerializationUtilities.GetType(typeName);
+    Type type = TypeNameMap.GetType(typeName);
     Base baseObj = (Base)Activator.CreateInstance(type);
 
     dictObj.Remove(TYPE_DISCRIMINATOR);

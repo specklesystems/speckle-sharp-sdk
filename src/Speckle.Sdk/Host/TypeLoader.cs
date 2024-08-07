@@ -53,7 +53,7 @@ public static class TypeLoader
   public static void Reset()
   {
     s_availableTypes = new();
-    BaseObjectSerializationUtilities.FlushCachedTypes();
+    TypeNameMap.Reset();
     s_initialized = false;
   }
 
