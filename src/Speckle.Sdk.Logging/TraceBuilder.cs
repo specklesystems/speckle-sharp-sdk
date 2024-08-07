@@ -15,7 +15,8 @@ public class TraceBuilder(IDisposable? traceProvider) : IDisposable
       return null;
     }
 
-    var tracerProviderBuilder = OpenTelemetry.Sdk.CreateTracerProviderBuilder()
+    var tracerProviderBuilder = OpenTelemetry
+      .Sdk.CreateTracerProviderBuilder()
       .AddSource(slug)
       .ConfigureResource(r =>
       {
