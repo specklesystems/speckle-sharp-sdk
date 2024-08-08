@@ -25,6 +25,7 @@ public sealed class JsonIgnoreRespected
   }
 }
 
+[SpeckleType("Speckle.Sdk.Tests.Unit.Serialisation.IgnoreTest")]
 public sealed class IgnoreTest : Base
 {
   [JsonIgnore]
