@@ -1,8 +1,10 @@
-using Objects.Structural.Properties;
-using Speckle.Core.Kits;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.CSI.Properties;
+namespace Speckle.Objects.Structural.CSI.Properties;
 
+[SpeckleType("Objects.Structural.CSI.Properties.CSISpringProperty")]
 public class CSISpringProperty : PropertySpring
 {
   public CSISpringProperty() { }
@@ -47,6 +49,7 @@ public class CSISpringProperty : PropertySpring
   public double period { get; set; }
 }
 
+[SpeckleType("Objects.Structural.CSI.Properties.CSILinearSpring")]
 public class CSILinearSpring : PropertySpring
 {
   public CSILinearSpring() { }
@@ -77,6 +80,7 @@ public class CSILinearSpring : PropertySpring
   public NonLinearOptions LinearOption2 { get; set; }
 }
 
+[SpeckleType("Objects.Structural.CSI.Properties.CSIAreaSpring")]
 public class CSIAreaSpring : PropertySpring
 {
   public CSIAreaSpring() { }

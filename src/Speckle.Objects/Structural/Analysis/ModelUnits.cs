@@ -1,8 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Analysis;
+namespace Speckle.Objects.Structural.Analysis;
 
+[SpeckleType("Objects.Structural.Analysis.ModelUnits")]
 public class ModelUnits : Base
 {
   public ModelUnits() { }

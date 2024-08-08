@@ -1,11 +1,11 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
-using Objects.Structural.GSA.Analysis;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.GSA.Analysis;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Geometry;
+namespace Speckle.Objects.Structural.GSA.Geometry;
 
+[SpeckleType("Objects.Structural.GSA.Geometry.GSAGeneralisedRestraint")]
 public class GSAGeneralisedRestraint : Base
 {
   public GSAGeneralisedRestraint() { }

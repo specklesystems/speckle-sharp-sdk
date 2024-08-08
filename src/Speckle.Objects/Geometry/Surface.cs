@@ -1,14 +1,14 @@
-using System.Collections.Generic;
-using Objects.Other;
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Other;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// A Surface in NURBS form.
 /// </summary>
+[SpeckleType("Objects.Geometry.Surface")]
 public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
 {
   /// <summary>
@@ -93,7 +93,7 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
 
   /// <summary>
   /// The unit's this <see cref="Surface"/> is in.
-  /// This should be one of <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </summary>
   public string units { get; set; }
 

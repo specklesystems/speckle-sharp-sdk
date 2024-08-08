@@ -1,10 +1,11 @@
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 /// <summary>
 /// Generic class for a data field
 /// </summary>
+[SpeckleType("Objects.Other.DataField")]
 public class DataField : Base
 {
   public DataField() { }

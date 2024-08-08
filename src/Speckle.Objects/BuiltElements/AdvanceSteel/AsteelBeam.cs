@@ -1,10 +1,11 @@
-using Objects.Structural.Materials;
-using Objects.Structural.Properties.Profiles;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties.Profiles;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.AdvanceSteel;
+namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
+[SpeckleType("Objects.BuiltElements.AdvanceSteel.AsteelBeam")]
 public class AsteelBeam : Beam, IHasVolume, IHasArea, IAsteelObject
 {
   [DetachProperty]

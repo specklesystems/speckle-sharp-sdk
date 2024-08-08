@@ -1,12 +1,13 @@
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// Represents a 3-dimensional box oriented on a plane.
 /// </summary>
+[SpeckleType("Objects.Geometry.Box")]
 public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
 {
   /// <inheritdoc/>
@@ -62,7 +63,7 @@ public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
   /// The units this object's coordinates are in.
   /// </summary>
   /// <remarks>
-  /// This should be one of <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </remarks>
   public string units { get; set; }
 

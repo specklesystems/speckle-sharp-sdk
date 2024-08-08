@@ -1,10 +1,12 @@
-using Objects.Geometry;
-using Objects.Structural.Geometry;
-using Objects.Structural.GSA.Geometry;
-using Objects.Structural.Loading;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.GSA.Geometry;
+using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Loading;
+namespace Speckle.Objects.Structural.GSA.Loading;
 
+[SpeckleType("Objects.Structural.GSA.Loading.GSALoadGridPoint")]
 public class GSALoadGridPoint : GSALoadGrid
 {
   public GSALoadGridPoint() { }

@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Objects.Geometry;
+using Speckle.Objects.Geometry;
 
-namespace Objects.Utils;
+namespace Speckle.Objects.Utils;
 
 /// <summary>
 /// Set of functions to triangulate n-gon faces (i.e. polygon faces with an arbitrary (n) number of vertices) in <see cref="Mesh"/>es.

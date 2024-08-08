@@ -1,8 +1,8 @@
-using System.Collections.Generic;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.TeklaStructures;
+namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.TeklaModel")]
 public class TeklaModel : Base
 {
   [DetachProperty]

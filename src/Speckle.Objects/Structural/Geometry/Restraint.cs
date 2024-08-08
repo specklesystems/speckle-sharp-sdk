@@ -1,8 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Geometry;
+namespace Speckle.Objects.Structural.Geometry;
 
+[SpeckleType("Objects.Structural.Geometry.Restraint")]
 public class Restraint : Base
 {
   public Restraint() { }

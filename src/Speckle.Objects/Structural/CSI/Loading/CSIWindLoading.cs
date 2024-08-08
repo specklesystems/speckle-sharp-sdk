@@ -1,8 +1,10 @@
-using Objects.Structural.CSI.Analysis;
-using Objects.Structural.Loading;
+using Speckle.Objects.Structural.CSI.Analysis;
+using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.CSI.Loading;
+namespace Speckle.Objects.Structural.CSI.Loading;
 
+[SpeckleType("Objects.Structural.CSI.Loading.CSIWindLoadingFace")]
 public class CSIWindLoadingFace : LoadFace
 {
   public double Cp { get; set; }

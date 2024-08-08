@@ -1,11 +1,11 @@
-using System.Collections.Generic;
-using Objects.BuiltElements.Revit.Interfaces;
-using Objects.Utils;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit.Interfaces;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitWire")]
 public class RevitWire : Wire, IHasMEPConnectors
 {
   public RevitWire() { }

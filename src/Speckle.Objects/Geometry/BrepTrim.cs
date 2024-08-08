@@ -1,12 +1,13 @@
-using Objects.Primitive;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// Represents a UV Trim curve for one of the <see cref="Brep"/>'s surfaces.
 /// </summary>
+[SpeckleType("Objects.Geometry.BrepTrim")]
 public class BrepTrim : Base
 {
   public BrepTrim() { }

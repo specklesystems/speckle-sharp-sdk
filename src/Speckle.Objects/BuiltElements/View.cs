@@ -1,13 +1,15 @@
-using Objects.Geometry;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.View")]
 public class View : Base
 {
   public string name { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.View3D")]
 public class View3D : View
 {
   public Point origin { get; set; }
@@ -20,6 +22,7 @@ public class View3D : View
   public string units { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.View2D")]
 public class View2D : View
 {
   //public Point topLeft { get; set; }

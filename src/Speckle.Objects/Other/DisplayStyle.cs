@@ -1,12 +1,13 @@
 using System.Drawing;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 /// <summary>
 /// Minimal display style class. Developed primarily for display styles in Rhino and AutoCAD.
 /// Rhino object attributes uses OpenNURBS definition for linetypes and lineweights
 /// </summary>
+[SpeckleType("Objects.Other.DisplayStyle")]
 public class DisplayStyle : Base
 {
   public string name { get; set; }

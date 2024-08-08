@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.Organization;
+namespace Speckle.Objects.Organization;
 
+[SpeckleType("Objects.Organization.DataTable")]
 public class DataTable : Base
 {
   public DataTable() { }

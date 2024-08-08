@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.GridLine")]
 public class GridLine : Base, IDisplayValue<List<Base>>
 {
   public GridLine() { }

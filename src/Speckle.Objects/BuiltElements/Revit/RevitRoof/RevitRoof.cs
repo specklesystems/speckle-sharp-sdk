@@ -1,11 +1,11 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Utils;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit.RevitRoof;
+namespace Speckle.Objects.BuiltElements.Revit.RevitRoof;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRoof.RevitRoof")]
 public class RevitRoof : Roof
 {
   public string family { get; set; }
@@ -20,6 +20,7 @@ public class RevitRoof : Roof
   }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRoof.RevitExtrusionRoof")]
 public class RevitExtrusionRoof : RevitRoof
 {
   public RevitExtrusionRoof() { }
@@ -63,6 +64,7 @@ public class RevitExtrusionRoof : RevitRoof
   public Line referenceLine { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitRoof.RevitFootprintRoof")]
 public class RevitFootprintRoof : RevitRoof
 {
   public RevitFootprintRoof() { }

@@ -1,7 +1,9 @@
-using Speckle.Core.Kits;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Properties;
+namespace Speckle.Objects.Structural.Properties;
 
+[SpeckleType("Objects.Structural.Properties.PropertyDamper")]
 public class PropertyDamper : Property
 {
   public PropertyDamper() { }

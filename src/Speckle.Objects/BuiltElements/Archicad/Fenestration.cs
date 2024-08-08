@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadFenestration")]
 public class ArchicadFenestration : Base, IDisplayValue<List<Mesh>>
 {
   public string parentApplicationId { get; set; }

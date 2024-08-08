@@ -1,7 +1,7 @@
-using Objects.Primitive;
-using Speckle.Core.Models;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 public enum SpiralType
 {
@@ -17,6 +17,7 @@ public enum SpiralType
   Unknown
 }
 
+[SpeckleType("Objects.Geometry.Spiral")]
 public class Spiral : Base, ICurve, IHasBoundingBox, IDisplayValue<Polyline>
 {
   public Point startPoint { get; set; }

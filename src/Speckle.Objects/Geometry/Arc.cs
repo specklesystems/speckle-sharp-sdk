@@ -1,16 +1,16 @@
-using System;
-using System.Collections.Generic;
-using Objects.Other;
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Logging;
-using Speckle.Core.Models;
+using Speckle.Objects.Other;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// Represents a sub-curve of a three-dimensional circle.
 /// </summary>
+[SpeckleType("Objects.Geometry.Arc")]
 public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
 {
   /// <inheritdoc/>

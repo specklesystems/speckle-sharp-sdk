@@ -1,13 +1,14 @@
-using Objects.Geometry;
-using Objects.Structural.CSI.Properties;
-using Objects.Structural.Geometry;
-using Objects.Structural.Properties;
-using Objects.Structural.Results;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.CSI.Properties;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Objects.Structural.Results;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.CSI.Geometry;
+namespace Speckle.Objects.Structural.CSI.Geometry;
 
+[SpeckleType("Objects.Structural.CSI.Geometry.CSIElement1D")]
 public class CSIElement1D : Element1D
 {
   /// <summary>

@@ -1,15 +1,14 @@
-using System;
-using System.Collections.Generic;
-using Objects.Other;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Other;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// A 3-dimensional vector
 /// </summary>
+[SpeckleType("Objects.Geometry.Vector")]
 public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
 {
   /// <inheritdoc/>
@@ -78,7 +77,7 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
 
   /// <summary>
   /// The unit's this <see cref="Vector"/> is in.
-  /// This should be one of <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </summary>
   public string units { get; set; } = Units.None;
 

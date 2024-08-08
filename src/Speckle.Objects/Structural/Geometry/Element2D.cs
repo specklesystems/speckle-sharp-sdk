@@ -1,11 +1,11 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Structural.Properties;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Geometry;
+namespace Speckle.Objects.Structural.Geometry;
 
+[SpeckleType("Objects.Structural.Geometry.Element2D")]
 public class Element2D : Base, IDisplayValue<List<Mesh>>
 {
   public Element2D() { }

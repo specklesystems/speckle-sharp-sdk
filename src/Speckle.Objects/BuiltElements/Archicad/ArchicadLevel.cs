@@ -1,9 +1,12 @@
-namespace Objects.BuiltElements.Archicad;
+using Speckle.Sdk.Models;
+
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 /*
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_storytype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadLevel")]
 public class ArchicadLevel : Level
 {
   public short index { get; set; }

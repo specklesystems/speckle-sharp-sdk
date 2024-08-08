@@ -1,4 +1,4 @@
-namespace Objects.Structural.Geometry;
+namespace Speckle.Objects.Structural.Geometry;
 
 public enum ElementType1D
 {

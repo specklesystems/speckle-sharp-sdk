@@ -1,7 +1,8 @@
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.AdvanceSteel;
+namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
+[SpeckleType("Objects.BuiltElements.AdvanceSteel.AsteelSectionProfile")]
 public class AsteelSectionProfile : Base
 {
   public string ProfSectionType { get; set; }

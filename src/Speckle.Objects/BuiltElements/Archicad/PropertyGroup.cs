@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.PropertyGroup")]
 public class PropertyGroup : Base
 {
   public PropertyGroup() { }

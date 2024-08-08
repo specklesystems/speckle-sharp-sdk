@@ -1,7 +1,9 @@
-using Objects.Organization;
+using Speckle.Objects.Organization;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.ProjectInfo")]
 public class ProjectInfo : BIMModelInfo
 {
   public string author { get; set; }

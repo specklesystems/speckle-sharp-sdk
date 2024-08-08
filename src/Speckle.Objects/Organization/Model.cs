@@ -1,14 +1,14 @@
-using System.Collections.Generic;
-using Objects.Other;
-using Speckle.Core.Models;
+using Speckle.Objects.Other;
+using Speckle.Sdk.Models;
 
-namespace Objects.Organization;
+namespace Speckle.Objects.Organization;
 
 /// <summary>
 /// Basic model info class
 /// It contains general information about the model and can be extended or subclassed to include more application-specific
 /// information.
 /// </summary>
+[SpeckleType("Objects.Organization.ModelInfo")]
 public class ModelInfo : Base
 {
   /// <summary>

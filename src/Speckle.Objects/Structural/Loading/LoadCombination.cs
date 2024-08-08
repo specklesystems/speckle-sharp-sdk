@@ -1,10 +1,9 @@
-using System;
-using System.Collections.Generic;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Loading;
+namespace Speckle.Objects.Structural.Loading;
 
+[SpeckleType("Objects.Structural.Loading.LoadCombination")]
 public class LoadCombination : Base //combination case
 {
   public LoadCombination() { }

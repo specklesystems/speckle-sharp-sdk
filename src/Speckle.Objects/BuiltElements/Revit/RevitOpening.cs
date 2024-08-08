@@ -1,21 +1,23 @@
-using System;
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Utils;
-using Speckle.Core.Kits;
-using Speckle.Core.Logging;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
+using Speckle.Sdk;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitOpening")]
 public class RevitOpening : Opening
 {
   public Base? parameters { get; set; }
   public string elementId { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitVerticalOpening")]
 public class RevitVerticalOpening : RevitOpening { }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitWallOpening")]
 public class RevitWallOpening : RevitOpening
 {
   public RevitWallOpening() { }
@@ -56,6 +58,7 @@ public class RevitWallOpening : RevitOpening
   public RevitWall? host { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitShaft")]
 public class RevitShaft : RevitOpening
 {
   public RevitShaft() { }

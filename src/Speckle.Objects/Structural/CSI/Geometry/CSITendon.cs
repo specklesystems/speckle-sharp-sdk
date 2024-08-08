@@ -1,9 +1,10 @@
-using Objects.Geometry;
-using Objects.Structural.CSI.Properties;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.CSI.Properties;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.CSI.Geometry;
+namespace Speckle.Objects.Structural.CSI.Geometry;
 
+[SpeckleType("Objects.Structural.CSI.Geometry.CSITendon")]
 public class CSITendon : CSIElement1D
 {
   public CSITendon(string name, Polycurve polycurve, CSITendonProperty CSITendonProperty)

@@ -1,11 +1,11 @@
-using System;
-using Objects.Structural.Materials;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.TeklaStructures;
+namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
 #region Obsolete
 [Obsolete("Deprecated in 2.17: Create a TeklaRebarGroup class instead")]
+[SpeckleType("Objects.BuiltElements.TeklaStructures.TeklaRebar")]
 public class TeklaRebar : Rebar
 {
   public string name { get; set; }
@@ -24,6 +24,7 @@ public class TeklaRebar : Rebar
 }
 
 [Obsolete("Deprecated in 2.17: Use a RebarHook class instead")]
+[SpeckleType("Objects.BuiltElements.TeklaStructures.Hook")]
 public class Hook : Base
 {
   public double angle { get; set; }

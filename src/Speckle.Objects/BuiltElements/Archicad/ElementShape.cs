@@ -1,12 +1,12 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.ElementShape")]
 public sealed class ElementShape : Base
 {
   public ElementShape() { }
@@ -24,6 +24,7 @@ public sealed class ElementShape : Base
   /// <remarks>
   /// This class is only used for Archicad interop
   /// </remarks>
+  [SpeckleType("Objects.BuiltElements.Archicad.ElementShape+PolylineSegment")]
   public sealed class PolylineSegment : Base, ICurve
   {
     public PolylineSegment() { }
@@ -49,7 +50,8 @@ public sealed class ElementShape : Base
 
   /// <remarks>
   /// This class is only used for Archicad interop
-  /// </remarks>
+  /// </remarks>>
+  [SpeckleType("Objects.BuiltElements.Archicad.ElementShape+Polyline")]
   public sealed class Polyline : Base, ICurve
   {
     public Polyline() { }

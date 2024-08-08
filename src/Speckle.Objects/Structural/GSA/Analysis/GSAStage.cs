@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Analysis;
+namespace Speckle.Objects.Structural.GSA.Analysis;
 
+[SpeckleType("Objects.Structural.GSA.Analysis.GSAStage")]
 public class GSAStage : Base
 {
   public GSAStage() { }

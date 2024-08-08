@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Objects.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
-using Speckle.Core.Models.GraphTraversal;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.GraphTraversal;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 public abstract class Instance : Base
 {
@@ -116,6 +113,7 @@ public abstract class Instance<T> : Instance
 /// <summary>
 /// Block instance class
 /// </summary>
+[SpeckleType("Objects.Other.BlockInstance")]
 public class BlockInstance : Instance<BlockDefinition>
 {
   public BlockInstance() { }

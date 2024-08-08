@@ -1,10 +1,11 @@
-using Objects.Structural.Analysis;
-using Objects.Structural.Loading;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Analysis;
+using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Results;
+namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.ResultGlobal")]
 public class ResultGlobal : Result
 {
   public ResultGlobal() { }

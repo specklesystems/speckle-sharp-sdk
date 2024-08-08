@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
-using Objects.BuiltElements.Revit;
-using Objects.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Space")]
 public class Space : Base, IHasArea, IHasVolume, IDisplayValue<List<Mesh>>
 {
   public Space() { }
