@@ -68,8 +68,13 @@ public static class Setup
       Analytics.AddConnectorToProfile(account.GetHashedEmail(), Application);
       Analytics.IdentifyProfile(account.GetHashedEmail(), Application);
     }
-    return 
-      LogBuilder.Initialize(GetUserIdFromDefaultAccount(), ApplicationVersion, Slug, configuration.Logging, configuration.Tracing);
+    return LogBuilder.Initialize(
+      GetUserIdFromDefaultAccount(),
+      ApplicationVersion,
+      Slug,
+      configuration.Logging,
+      configuration.Tracing
+    );
   }
 
   private static string GetUserIdFromDefaultAccount()

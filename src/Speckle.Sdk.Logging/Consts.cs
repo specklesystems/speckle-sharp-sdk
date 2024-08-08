@@ -9,12 +9,10 @@ public static class Consts
   public const string OS_NAME = "os.name";
   public const string OS_TYPE = "os.type";
   public const string RUNTIME_NAME = "runtime.name";
- 
-    
-  
+
   public static readonly string Application = "speckle-connectors";
   public static string Version => Assembly.GetExecutingAssembly().GetPackageVersion();
-  
+
   public static string GetPackageVersion(this Assembly assembly)
   {
     // MinVer https://github.com/adamralph/minver?tab=readme-ov-file#version-numbers
@@ -25,15 +23,15 @@ public static class Consts
     // The following parts are optional: pre-release label, pre-release version, git height, Git SHA of current commit
     // For package version, value of AssemblyInformationalVersionAttribute without commit hash is returned.
 
-    var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+    var informationalVersion = assembly
+      .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+      ?.InformationalVersion;
     if (informationalVersion is null)
     {
       return String.Empty;
     }
 
     var indexOfPlusSign = informationalVersion.IndexOf('+');
-    return indexOfPlusSign > 0
-      ? informationalVersion.Substring(0, indexOfPlusSign)
-      : informationalVersion;
+    return indexOfPlusSign > 0 ? informationalVersion.Substring(0, indexOfPlusSign) : informationalVersion;
   }
 }
