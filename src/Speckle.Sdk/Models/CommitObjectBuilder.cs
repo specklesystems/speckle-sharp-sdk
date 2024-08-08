@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.Extensions;
@@ -15,18 +14,13 @@ namespace Speckle.Sdk.Models;
 /// to give connectors flexibility in constructing their objects.
 /// Inheritors should also create some function to add
 /// </remarks>
-[SuppressMessage(
-  "Naming",
-  "CA1708:Identifiers should differ by more than case",
-  Justification = "Class contains obsolete members that are kept for backwards compatiblity"
-)]
 public abstract class CommitObjectBuilder<TNativeObjectData>
 {
   /// <summary>Special appId symbol for the root object</summary>
   protected const string ROOT = "__Root";
   private const string ELEMENTS = nameof(Collection.elements);
 
-  /// <summary>app id -> base</summary>
+  /// <summary>app id -> base</summary>s
   protected IDictionary<string, Base> Converted { get; }
 
   /// <summary>Base -> NestingInstructions ordered by priority</summary>
@@ -173,12 +167,4 @@ public abstract class CommitObjectBuilder<TNativeObjectData>
 
     elements.Add(child);
   }
-
-  [Obsolete("Renamed to " + nameof(ROOT))]
-  [SuppressMessage("Style", "IDE1006:Naming Styles")]
-  protected const string Root = ROOT;
-
-  [Obsolete("Renamed to " + nameof(Converted))]
-  [SuppressMessage("Style", "IDE1006:Naming Styles")]
-  protected IDictionary<string, Base> converted => Converted;
 }

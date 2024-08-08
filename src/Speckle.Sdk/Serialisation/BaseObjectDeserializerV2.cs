@@ -396,10 +396,4 @@ public sealed class BaseObjectDeserializerV2
 
     return baseObj;
   }
-
-  [Obsolete("Use nameof(Base.speckle_type)")]
-  public string TypeDiscriminator => TYPE_DISCRIMINATOR;
-
-  [Obsolete("OnErrorAction unused, deserializer will throw exceptions instead")]
-  public Action<string, Exception>? OnErrorAction { get; set; }
 }

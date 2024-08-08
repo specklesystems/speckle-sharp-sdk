@@ -422,13 +422,4 @@ public sealed class ServerTransport : IServerTransport
       }
     }
   }
-
-  [Obsolete("Transport will throw exceptions instead", true)]
-  public Action<string, Exception>? OnErrorAction { get; set; }
-}
-
-[Obsolete("Use " + nameof(ServerTransport), true)]
-public sealed class ServerTransportV2
-{
-  public ServerTransportV2(params object[] _) { }
 }

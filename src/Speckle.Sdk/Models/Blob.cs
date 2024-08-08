@@ -66,8 +66,4 @@ public class Blob : Base
     var fileName = Path.GetFileName(filePath);
     return Path.Combine(blobStorageFolder, $"{id.Substring(0, 10)}-{fileName}");
   }
-
-  [Obsolete("Renamed to " + nameof(GetLocalDestinationPath))]
-  [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Obsolete")]
-  public string getLocalDestinationPath(string blobStorageFolder) => GetLocalDestinationPath(blobStorageFolder);
 }

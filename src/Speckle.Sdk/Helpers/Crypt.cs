@@ -49,7 +49,4 @@ public static class Crypt
 
     return sb.ToString(startIndex, length);
   }
-
-  [Obsolete("Use Md5(input, \"X2\") instead")]
-  public static string Hash(string input) => Md5(input, "X2");
 }
