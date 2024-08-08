@@ -106,10 +106,9 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
     using var activity = SpeckleActivityFactory.Start();
-    // using IDisposable context0 = LogContext.Push(CreateEnrichers<T>(request));
     try
     {
-      return await ExecuteWithResiliencePolicies(async () =>
+      var ret = await ExecuteWithResiliencePolicies(async () =>
         {
           GraphQLResponse<T> result = await GQLClient
             .SendMutationAsync<T>(request, cancellationToken)
@@ -118,9 +117,12 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
           return result.Data;
         })
         .ConfigureAwait(false);
+      activity?.SetStatus(SpeckleActivityStatusCode.Ok);
+      return ret;
     }
     catch (Exception e)
     {
+      activity?.SetStatus(SpeckleActivityStatusCode.Error);
       activity?.RecordException(e);
       throw;
     }

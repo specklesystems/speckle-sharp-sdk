@@ -167,7 +167,8 @@ public static class LogBuilder
     {
       tracerProviderBuilder = tracerProviderBuilder.AddConsoleExporter();
     }
-    tracerProviderBuilder = tracerProviderBuilder.SetResourceBuilder(resourceBuilder);
+
+    tracerProviderBuilder = tracerProviderBuilder.SetResourceBuilder(resourceBuilder).SetSampler<AlwaysOnSampler>();
 
     return tracerProviderBuilder.Build();
   }
