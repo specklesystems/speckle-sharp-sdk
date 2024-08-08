@@ -1,11 +1,12 @@
-using Objects.Structural.Geometry;
-using Objects.Structural.Materials;
-using Objects.Structural.Properties.Profiles;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties.Profiles;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Properties;
+namespace Speckle.Objects.Structural.Properties;
 
+[SpeckleType("Objects.Structural.Properties.Property1D")]
 public class Property1D : Property //SectionProperty as alt class name
 {
   public Property1D() { }

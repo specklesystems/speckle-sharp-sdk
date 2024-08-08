@@ -1,7 +1,8 @@
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.GIS;
+namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.CRS")]
 public class CRS : Base
 {
   public string? name { get; set; }

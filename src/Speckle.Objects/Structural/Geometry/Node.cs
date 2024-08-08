@@ -1,10 +1,12 @@
-using Objects.Geometry;
-using Objects.Structural.Properties;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Geometry;
+namespace Speckle.Objects.Structural.Geometry;
 
+[SpeckleType("Objects.Structural.Geometry.Node")]
 public class Node : Base
 {
   public Node() { }

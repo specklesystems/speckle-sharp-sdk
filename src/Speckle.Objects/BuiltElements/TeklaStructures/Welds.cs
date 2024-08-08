@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.TeklaStructures;
+namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.Welds")]
 public class Welds : Base
 {
   [DetachProperty]
@@ -24,6 +24,7 @@ public class Welds : Base
   public TeklaWeldIntermittentType intermittentType { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.PolygonWelds")]
 public class PolygonWelds : Welds
 {
   public Polyline polyline { get; set; }

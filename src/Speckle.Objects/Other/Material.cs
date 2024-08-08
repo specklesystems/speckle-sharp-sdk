@@ -1,11 +1,12 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 /// <summary>
 /// Generic class for materials containing generic parameters
 /// </summary>
+[SpeckleType("Objects.Other.Material")]
 public class Material : Base
 {
   public Material() { }

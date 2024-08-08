@@ -1,7 +1,9 @@
-using Objects.Structural.Properties;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.CSI.Properties;
+namespace Speckle.Objects.Structural.CSI.Properties;
 
+[SpeckleType("Objects.Structural.CSI.Properties.CSITendonProperty")]
 public class CSITendonProperty : Property1D
 {
   public ModelingOption modelingOption { get; set; }

@@ -1,11 +1,10 @@
-using System;
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Alignment")]
 public class Alignment : Base, IDisplayValue<Polyline>
 {
   [JsonIgnore, Obsolete("Use curves property")]

@@ -1,15 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Objects.Other;
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Logging;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Other;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
+[SpeckleType("Objects.Geometry.Line")]
 public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
 {
   public Line() { }

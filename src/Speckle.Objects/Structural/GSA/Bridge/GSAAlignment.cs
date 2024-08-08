@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using Objects.Structural.GSA.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.GSA.Geometry;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Bridge;
+namespace Speckle.Objects.Structural.GSA.Bridge;
 
+[SpeckleType("Objects.Structural.GSA.Bridge.GSAAlignment")]
 public class GSAAlignment : Base
 {
   public GSAAlignment() { }

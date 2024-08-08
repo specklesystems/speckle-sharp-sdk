@@ -1,8 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Level")]
 public class Level : Base
 {
   //public List<Base> elements { get; set; }

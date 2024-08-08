@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Other.Civil;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Other.Civil;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Civil;
+namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilAppliedSubassembly")]
 public class CivilAppliedSubassembly : Base
 {
   public CivilAppliedSubassembly() { }

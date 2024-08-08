@@ -1,10 +1,12 @@
-using Objects.Geometry;
-using Objects.Structural.Geometry;
-using Objects.Structural.Properties;
-using Speckle.Core.Kits;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Geometry;
+namespace Speckle.Objects.Structural.GSA.Geometry;
 
+[SpeckleType("Objects.Structural.GSA.Geometry.GSAElement3D")]
 public class GSAElement3D : Element3D
 {
   public GSAElement3D() { }

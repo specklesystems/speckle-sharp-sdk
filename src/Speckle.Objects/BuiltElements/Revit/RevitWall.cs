@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Utils;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitWall")]
 public class RevitWall : Wall
 {
   public RevitWall() { }
@@ -128,6 +127,7 @@ public class RevitWall : Wall
   #endregion
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitFaceWall")]
 public class RevitFaceWall : Wall
 {
   public RevitFaceWall() { }
@@ -180,6 +180,7 @@ public class RevitFaceWall : Wall
   public string elementId { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitProfileWall")]
 public class RevitProfileWall : Wall
 {
   public RevitProfileWall() { }

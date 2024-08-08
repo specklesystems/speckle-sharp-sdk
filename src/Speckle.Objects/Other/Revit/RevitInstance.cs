@@ -1,13 +1,12 @@
-using System.Collections.Generic;
-using System.Linq;
-using Objects.BuiltElements;
-using Objects.BuiltElements.Revit;
-using Objects.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements;
+using Speckle.Objects.BuiltElements.Revit;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Other.Revit;
+namespace Speckle.Objects.Other.Revit;
 
+[SpeckleType("Objects.Other.Revit.RevitInstance")]
 public class RevitInstance : Instance<RevitSymbolElementType>
 {
   public Level level { get; set; }

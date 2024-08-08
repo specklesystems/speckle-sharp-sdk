@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using Objects.Other;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Other;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
+[SpeckleType("Objects.Geometry.ControlPoint")]
 public class ControlPoint : Point, ITransformable<ControlPoint>
 {
   public ControlPoint() { }

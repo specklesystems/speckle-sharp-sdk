@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Conduit")]
 public class Conduit : Base, IDisplayValue<List<Mesh>>
 {
   public ICurve baseCurve { get; set; }

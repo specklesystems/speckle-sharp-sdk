@@ -1,8 +1,9 @@
-using Objects.Structural.Loading;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Results;
+namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.Result")]
 public class Result : Base
 {
   public Result() { }

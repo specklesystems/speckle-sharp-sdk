@@ -1,11 +1,11 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Structural.Materials;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.AdvanceSteel;
+namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
+[SpeckleType("Objects.BuiltElements.AdvanceSteel.AsteelPlate")]
 public class AsteelPlate : Area, IDisplayValue<List<Mesh>>, IHasArea, IHasVolume, IAsteelObject
 {
   [DetachProperty]

@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
+[SpeckleType("Objects.Geometry.Ellipse")]
 public class Ellipse : Base, ICurve, IHasArea
 {
   /// <summary>

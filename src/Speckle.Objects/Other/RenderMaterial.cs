@@ -1,10 +1,10 @@
 using System.Drawing;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
-using Speckle.Core.Models.Proxies;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.Proxies;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 /// <summary>
 /// Minimal physically based material DTO class. Based on references from
@@ -14,6 +14,7 @@ namespace Objects.Other;
 /// See: https://docs.unrealengine.com/en-US/RenderingAndGraphics/Materials/PhysicallyBased/index.html
 /// And: https://blogs.unity3d.com/2014/10/29/physically-based-shading-in-unity-5-a-primer/
 /// </summary>
+[SpeckleType("Objects.Other.RenderMaterial")]
 public class RenderMaterial : Base
 {
   public RenderMaterial() { }
@@ -63,6 +64,7 @@ public class RenderMaterial : Base
 /// <summary>
 /// Used to store render material to object relationships in root collections
 /// </summary>
+[SpeckleType("Objects.Other.RenderMaterialProxy")]
 public class RenderMaterialProxy : Base, IProxyCollection
 {
   public RenderMaterialProxy() { }

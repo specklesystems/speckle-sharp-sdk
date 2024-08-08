@@ -1,8 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.CSI.Properties;
+namespace Speckle.Objects.Structural.CSI.Properties;
 
+[SpeckleType("Objects.Structural.CSI.Properties.CSIDiaphragm")]
 public class CSIDiaphragm : Base
 {
   [SchemaInfo("CSI Diaphragm", "Create an CSI Diaphragm", "CSI", "Properties")]

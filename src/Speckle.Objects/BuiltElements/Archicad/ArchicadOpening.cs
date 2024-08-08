@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadOpening")]
 public class ArchicadOpening : Opening
 {
   [SchemaInfo("ArchicadOpening", "Creates an Archicad opening.", "Archicad", "Structure")]

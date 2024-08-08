@@ -1,15 +1,16 @@
-using System.Collections.Generic;
-using System.Linq;
-using Objects.Other;
-using Speckle.Core.Kits;
-using Speckle.Core.Logging;
-using Speckle.Core.Models;
+using Speckle.Objects.Other;
+using Speckle.Sdk;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// A collection of points, with color and size support.
 /// </summary>
+[SpeckleType("Objects.Geometry.Pointcloud")]
 public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
 {
   /// <summary>
@@ -48,7 +49,7 @@ public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
 
   /// <summary>
   /// The unit's this <see cref="Pointcloud"/> is in.
-  /// This should be one of <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </summary>
   public string units { get; set; }
 

@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Profile")]
 public class Profile : Base, IDisplayValue<Polyline>
 {
   public List<ICurve> curves { get; set; }

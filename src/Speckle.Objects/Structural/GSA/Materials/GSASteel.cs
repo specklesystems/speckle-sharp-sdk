@@ -1,8 +1,10 @@
-using Objects.Structural.Materials;
-using Speckle.Core.Kits;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Materials;
+namespace Speckle.Objects.Structural.GSA.Materials;
 
+[SpeckleType("Objects.Structural.GSA.Materials.GSASteel")]
 public class GSASteel : Steel
 {
   public GSASteel() { }

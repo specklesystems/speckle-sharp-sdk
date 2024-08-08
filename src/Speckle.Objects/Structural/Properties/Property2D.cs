@@ -1,10 +1,11 @@
-using Objects.Structural.Geometry;
-using Objects.Structural.Materials;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Properties;
+namespace Speckle.Objects.Structural.Properties;
 
+[SpeckleType("Objects.Structural.Properties.Property2D")]
 public class Property2D : Property
 {
   public Property2D() { }

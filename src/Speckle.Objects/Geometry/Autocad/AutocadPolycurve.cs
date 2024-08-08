@@ -1,7 +1,6 @@
-using System.Collections.Generic;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry.Autocad;
+namespace Speckle.Objects.Geometry.Autocad;
 
 /// <summary>
 /// A curve that is comprised of line, arc and/or curve segments, representing the Autocad Polyline, Polyline2d, and Polyline3d classes.

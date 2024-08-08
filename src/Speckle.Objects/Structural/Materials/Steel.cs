@@ -1,7 +1,9 @@
-using Speckle.Core.Kits;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Materials;
+namespace Speckle.Objects.Structural.Materials;
 
+[SpeckleType("Objects.Structural.Materials.Steel")]
 public class Steel : StructuralMaterial
 {
   public Steel() { }

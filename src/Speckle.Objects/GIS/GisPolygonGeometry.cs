@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.GIS;
+namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.PolygonGeometry")]
 public class PolygonGeometry : Base
 {
   public string units { get; set; }

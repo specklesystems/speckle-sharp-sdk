@@ -1,8 +1,8 @@
-using System.Collections.Generic;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Civil;
+namespace Speckle.Objects.BuiltElements.Civil;
 
+[SpeckleType("Objects.BuiltElements.Civil.CivilCalculatedShape")]
 public class CivilCalculatedShape : Base, ICivilCalculatedObject
 {
   public CivilCalculatedShape() { }

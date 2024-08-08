@@ -1,8 +1,8 @@
-using System.Collections.Generic;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Results;
+namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.AnalyticalResults")]
 public class AnalyticalResults : Base
 {
   public string? lengthUnits { get; set; }

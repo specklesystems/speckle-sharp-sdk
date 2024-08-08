@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
-using Objects.Structural.Loading;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Loading;
+namespace Speckle.Objects.Structural.GSA.Loading;
 
+[SpeckleType("Objects.Structural.GSA.Loading.GSALoadThermal2d")]
 public class GSALoadThermal2d : Load
 {
   public GSALoadThermal2d() { }

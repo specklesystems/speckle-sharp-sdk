@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Bridge;
+namespace Speckle.Objects.Structural.GSA.Bridge;
 
+[SpeckleType("Objects.Structural.GSA.Bridge.GSAUserVehicle")]
 public class GSAUserVehicle : Base
 {
   public GSAUserVehicle() { }

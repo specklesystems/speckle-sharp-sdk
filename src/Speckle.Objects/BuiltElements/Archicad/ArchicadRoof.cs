@@ -1,18 +1,18 @@
-using System;
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Other;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Other;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 /*
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_shellbasetype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadShellBase")]
 public class ArchicadShellBase : BuiltElements.Roof
 {
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShellBase+Visibility")]
   public class Visibility : Base
   {
     public bool? showOnHome { get; set; }
@@ -107,20 +107,24 @@ public class ArchicadShellBase : BuiltElements.Roof
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_rooftype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadRoof")]
 public sealed class ArchicadRoof : ArchicadShellBase
 {
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadRoof+BaseLine")]
   public class BaseLine : Base
   {
     public Point begC { get; set; }
     public Point endC { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadRoof+RoofLevel")]
   public class RoofLevel : Base
   {
     public double? levelHeight { get; set; }
     public double? levelAngle { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadRoof+LevelEdge")]
   public class LevelEdge : Base
   {
     public double? edgeLevelAngle { get; set; }
@@ -131,6 +135,7 @@ public sealed class ArchicadRoof : ArchicadShellBase
     public string? angleType { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadRoof+PivotPolyEdge")]
   public class PivotPolyEdge : Base
   {
     public int? nLevelEdgeData { get; set; }
@@ -153,8 +158,10 @@ public sealed class ArchicadRoof : ArchicadShellBase
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_shelltype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell")]
 public sealed class ArchicadShell : ArchicadShellBase
 {
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+ShellContourEdgeData")]
   public class ShellContourEdgeData : Base
   {
     public string? sideTypeName { get; set; }
@@ -163,6 +170,7 @@ public sealed class ArchicadShell : ArchicadShellBase
     public string? edgeSideMaterial { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+ShellContourData")]
   public class ShellContourData : Base
   {
     public ElementShape? shellContourPoly { get; set; }
@@ -202,6 +210,7 @@ public sealed class ArchicadShell : ArchicadShellBase
   public string? morphingRuleName { get; set; }
 
   // Model
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+BegShapeEdge")]
   public class BegShapeEdge : Base
   {
     public string? begShapeEdgeTrimSideType { get; set; }
@@ -210,6 +219,7 @@ public sealed class ArchicadShell : ArchicadShellBase
     public string? begShapeEdgeType { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+EndShapeEdge")]
   public class EndShapeEdge : Base
   {
     public string? endShapeEdgeTrimSideType { get; set; }
@@ -218,6 +228,7 @@ public sealed class ArchicadShell : ArchicadShellBase
     public string? endShapeEdgeType { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+ExtrudedEdge1")]
   public class ExtrudedEdge1 : Base
   {
     public string? extrudedEdgeTrimSideType1 { get; set; }
@@ -226,6 +237,7 @@ public sealed class ArchicadShell : ArchicadShellBase
     public string? extrudedEdgeType1 { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+ExtrudedEdge2")]
   public class ExtrudedEdge2 : Base
   {
     public string? extrudedEdgeTrimSideType2 { get; set; }
@@ -234,6 +246,7 @@ public sealed class ArchicadShell : ArchicadShellBase
     public string? extrudedEdgeType2 { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+RevolvedEdge1")]
   public class RevolvedEdge1 : Base
   {
     public string? revolvedEdgeTrimSideType1 { get; set; }
@@ -242,6 +255,7 @@ public sealed class ArchicadShell : ArchicadShellBase
     public string? revolvedEdgeType1 { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+RevolvedEdge2")]
   public class RevolvedEdge2 : Base
   {
     public string? revolvedEdgeTrimSideType2 { get; set; }
@@ -250,6 +264,7 @@ public sealed class ArchicadShell : ArchicadShellBase
     public string? revolvedEdgeType2 { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+RuledEdge1")]
   public class RuledEdge1 : Base
   {
     public string? ruledEdgeTrimSideType1 { get; set; }
@@ -258,6 +273,7 @@ public sealed class ArchicadShell : ArchicadShellBase
     public string? ruledEdgeType1 { get; set; }
   }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadShell+RuledEdge2")]
   public class RuledEdge2 : Base
   {
     public string? ruledEdgeTrimSideType2 { get; set; }

@@ -1,12 +1,9 @@
-using System;
-using System.Collections.Generic;
-using Objects.Other;
-using Speckle.Core.Common;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Other;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// A 3-dimensional point
@@ -14,6 +11,7 @@ namespace Objects.Geometry;
 /// <remarks>
 /// TODO: The Point class does not override the Equality operator, which means that there may be cases where `Equals` is used instead of `==`, as the comparison will be done by reference, not value.
 /// </remarks>
+[SpeckleType("Objects.Geometry.Point")]
 public class Point : Base, ITransformable<Point>
 {
   /// <inheritdoc/>
@@ -75,7 +73,7 @@ public class Point : Base, ITransformable<Point>
 
   /// <summary>
   /// The units this <see cref="Point"/> is in.
-  /// This should be one of the units specified in <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of the units specified in <see cref="Units"/>
   /// </summary>
   public string units { get; set; } = Units.None;
 

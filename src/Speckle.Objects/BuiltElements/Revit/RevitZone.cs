@@ -1,7 +1,8 @@
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitZone")]
 public class RevitZone : Zone
 {
   public RevitZone() { }

@@ -1,11 +1,12 @@
-using Objects.Geometry;
-using Objects.Structural.Materials;
-using Objects.Structural.Properties.Profiles;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties.Profiles;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.TeklaStructures;
+namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.TeklaBeam")]
 public class TeklaBeam : Beam, IHasVolume, IHasArea
 {
   public TeklaBeam() { }
@@ -47,6 +48,7 @@ public class TeklaBeam : Beam, IHasVolume, IHasArea
   public double volume { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.SpiralBeam")]
 public class SpiralBeam : TeklaBeam
 {
   public Point startPoint { get; set; }

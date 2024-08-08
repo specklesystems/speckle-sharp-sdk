@@ -1,13 +1,13 @@
-using System.Collections.Generic;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 /*
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_zonetype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadRoom")]
 public class ArchicadRoom : Room
 {
   // Element base

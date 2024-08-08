@@ -1,8 +1,8 @@
-using System.Collections.Generic;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.GIS;
+namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.GisMultipatchGeometry")]
 public class GisMultipatchGeometry : Base
 {
   public string units { get; set; }

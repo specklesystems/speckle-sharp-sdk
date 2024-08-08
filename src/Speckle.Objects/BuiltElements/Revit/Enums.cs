@@ -1,4 +1,4 @@
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
 //This is an enum so that we can easily create a dropdown in GH for schema builder
 //NOTE: if edited the list in Objects.Converter.Revit.Categories should be updated too

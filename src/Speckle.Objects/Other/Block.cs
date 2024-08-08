@@ -1,13 +1,14 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 /// <summary>
 /// Block definition class
 /// </summary>
+[SpeckleType("Objects.Other.BlockDefinition")]
 public class BlockDefinition : Base
 {
   public BlockDefinition() { }

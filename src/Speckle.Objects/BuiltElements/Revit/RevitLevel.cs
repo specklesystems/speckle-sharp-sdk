@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using Objects.Utils;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitLevel")]
 public class RevitLevel : Level
 {
   public RevitLevel() { }

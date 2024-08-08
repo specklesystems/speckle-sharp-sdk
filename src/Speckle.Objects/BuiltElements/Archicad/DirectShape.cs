@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
+[SpeckleType("Objects.BuiltElements.Archicad.DirectShape")]
 public class DirectShape : Base
 {
   public DirectShape() { }
