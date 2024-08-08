@@ -121,18 +121,8 @@ public sealed class MemoryTransport : ITransport, ICloneable
     return Task.FromResult(ret);
   }
 
-  [Obsolete("No replacement required, memory transport is always sync")]
-  [SuppressMessage("Design", "CA1024:Use properties where appropriate")]
-  public bool GetWriteCompletionStatus()
-  {
-    return true; // can safely assume it's always true, as ops are atomic?
-  }
-
   public override string ToString()
   {
     return $"Memory Transport {TransportName}";
   }
-
-  [Obsolete("Transports will now throw exceptions", true)]
-  public Action<string, Exception>? OnErrorAction { get; set; }
 }

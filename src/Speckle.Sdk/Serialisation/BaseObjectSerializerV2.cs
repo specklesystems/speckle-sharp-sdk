@@ -1,11 +1,13 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
 using System.Reflection;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
@@ -406,10 +408,11 @@ public class BaseObjectSerializerV2
     }
   }
 
+  [Pure]
   private static string ComputeId(IDictionary<string, object?> obj)
   {
     string serialized = JsonConvert.SerializeObject(obj);
-    string hash = Utilities.HashString(serialized);
+    string hash = Crypt.Sha256(serialized, length: Utilities.HASH_LENGTH);
     return hash;
   }
 
@@ -528,15 +531,5 @@ public class BaseObjectSerializerV2
     public readonly bool IsChunkable;
     public readonly int ChunkSize;
     public readonly JsonPropertyAttribute? JsonPropertyInfo;
-  }
-
-  [Obsolete("OnErrorAction unused, serializer will throw exceptions instead")]
-  public Action<string, Exception>? OnErrorAction { get; set; }
-
-  [Obsolete("Set via constructor instead", true)]
-  public Action<string, int>? OnProgressAction
-  {
-    get => _onProgressAction;
-    set => _ = value;
   }
 }

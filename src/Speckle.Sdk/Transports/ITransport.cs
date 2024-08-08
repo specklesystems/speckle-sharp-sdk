@@ -38,12 +38,6 @@ public interface ITransport
   public Action<string, int>? OnProgressAction { get; set; }
 
   /// <summary>
-  /// Used to report errors during the transport's longer operations.
-  /// </summary>
-  [Obsolete("Transports will now throw exceptions", true)]
-  public Action<string, Exception>? OnErrorAction { get; set; }
-
-  /// <summary>
   /// Signals to the transport that writes are about to begin.
   /// </summary>
   public void BeginWrite();

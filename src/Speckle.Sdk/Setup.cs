@@ -11,11 +11,6 @@ namespace Speckle.Sdk;
 ///  Anonymous telemetry to help us understand how to make a better Speckle.
 ///  This really helps us to deliver a better open source project and product!
 /// </summary>
-[SuppressMessage(
-  "Naming",
-  "CA1708:Identifiers should differ by more than case",
-  Justification = "Class contains obsolete members that are kept for backwards compatiblity"
-)]
 public static class Setup
 {
   public static Mutex Mutex { get; set; }

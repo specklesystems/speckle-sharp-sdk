@@ -97,7 +97,7 @@ public static class Fixtures
       serverInfo = Server
     };
 
-    var user1 = await AccountManager.GetUserInfo(acc.token, acc.serverInfo.url);
+    var user1 = await AccountManager.GetUserInfo(acc.token, new(acc.serverInfo.url));
     acc.userInfo = user1;
     return acc;
   }

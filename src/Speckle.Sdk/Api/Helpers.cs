@@ -1,6 +1,5 @@
 #nullable disable
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -227,12 +226,6 @@ public static class Helpers
     return false;
   }
 
-  [Obsolete("Use DateTime overload")]
-  public static string TimeAgo(string timestamp)
-  {
-    return TimeAgo(DateTime.Parse(timestamp));
-  }
-
 #nullable enable
 
   /// <inheritdoc cref="TimeAgo(DateTime)"/>
@@ -300,8 +293,4 @@ public static class Helpers
 
   [Pure]
   public static string PluralS(int num) => num != 1 ? "s" : "";
-
-  [Obsolete("Renamed to " + nameof(RELEASES_URL))]
-  [SuppressMessage("Style", "IDE1006:Naming Styles")]
-  public const string ReleasesUrl = RELEASES_URL;
 }
