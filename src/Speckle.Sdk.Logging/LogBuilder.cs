@@ -30,7 +30,8 @@ public static class LogBuilder
           new(Consts.SERVICE_SLUG, slug),
           new(Consts.OS_NAME, Environment.OSVersion.ToString()),
           new(Consts.OS_TYPE, RuntimeInformation.ProcessArchitecture.ToString()),
-          new("runtime", RuntimeInformation.FrameworkDescription)
+          new(Consts.OS_SLUG, DetermineHostOsSlug()),
+          new(Consts.RUNTIME_NAME, RuntimeInformation.FrameworkDescription)
         }
       );
     var fileVersionInfo = GetFileVersionInfo();
@@ -40,6 +41,7 @@ public static class LogBuilder
       .Enrich.WithProperty("id", userId)
       .Enrich.WithProperty("version", fileVersionInfo.FileVersion)
       .Enrich.WithProperty("productVersion", fileVersionInfo.ProductVersion)
+      .Enrich.WithProperty("hostOs", DetermineHostOsSlug())
       .Enrich.WithProperty("hostOsVersion", Environment.OSVersion)
       .Enrich.WithProperty("hostOsArchitecture", RuntimeInformation.ProcessArchitecture.ToString())
       .Enrich.WithProperty("runtime", RuntimeInformation.FrameworkDescription)
@@ -76,6 +78,26 @@ public static class LogBuilder
   {
     var assembly = Assembly.GetExecutingAssembly().Location;
     return FileVersionInfo.GetVersionInfo(assembly);
+  }
+
+  private static string DetermineHostOsSlug()
+  {
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    {
+      return "Windows";
+    }
+
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+    {
+      return "MacOS";
+    }
+
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+    {
+      return "Linux";
+    }
+
+    return RuntimeInformation.OSDescription;
   }
 
   private static LoggerConfiguration InitializeOtelLogging(
