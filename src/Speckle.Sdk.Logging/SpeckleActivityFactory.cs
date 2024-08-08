@@ -5,13 +5,11 @@ namespace Speckle.Sdk.Logging;
 
 public static class SpeckleActivityFactory
 {
-  private static ActivitySource? s_activitySource;
+  private static readonly ActivitySource? s_activitySource = new(Consts.Application, Consts.Version);
 
-  public static void Initialize(string slug, string version) => s_activitySource = new ActivitySource(slug, version);
-
-  public static ISpeckleActivity? Start([CallerMemberName] string name = "SpeckleActivityFactory")
+  public static ISpeckleActivity? Start(string? name = null, [CallerMemberName] string source = "")
   {
-    var activity = s_activitySource?.StartActivity(name, ActivityKind.Client);
+    var activity = s_activitySource?.StartActivity(name ?? source, ActivityKind.Client);
     if (activity is null)
     {
       return null;
