@@ -73,7 +73,7 @@ public class Ellipse : Base, ICurve, IHasArea
   public Interval? trimDomain { get; set; }
 
   /// <inheritdoc />
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   public string units { get; set; }
 

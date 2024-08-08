@@ -71,7 +71,7 @@ public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; }
+  public Box? bbox { get; }
 
   /// <inheritdoc/>
   public double volume { get; set; }

@@ -16,7 +16,7 @@ public interface IHasBoundingBox
   /// <summary>
   /// The bounding box containing the object.
   /// </summary>
-  Box bbox { get; }
+  Box? bbox { get; }
 }
 
 /// <summary>

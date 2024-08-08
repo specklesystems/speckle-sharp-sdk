@@ -213,7 +213,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Arc transformed)

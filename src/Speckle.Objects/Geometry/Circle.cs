@@ -57,7 +57,7 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <summary>
   /// Returns the coordinates of this <see cref="Circle"/> as a list of numbers

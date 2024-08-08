@@ -101,7 +101,7 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Surface transformed)

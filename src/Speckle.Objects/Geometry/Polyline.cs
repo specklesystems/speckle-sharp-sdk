@@ -184,7 +184,7 @@ public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, IConvertible, I
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out ITransformable transformed)

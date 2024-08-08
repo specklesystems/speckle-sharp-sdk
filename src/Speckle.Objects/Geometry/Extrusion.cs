@@ -35,6 +35,6 @@ public class Extrusion : Base, IHasVolume, IHasArea, IHasBoundingBox
 
   public double area { get; set; }
 
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
   public double volume { get; set; }
 }

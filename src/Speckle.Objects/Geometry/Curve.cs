@@ -73,7 +73,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Curve transformed)

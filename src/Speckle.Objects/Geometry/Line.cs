@@ -84,7 +84,7 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
   public Interval domain { get; set; } = new(0, 1);
   public double length { get; set; }
 
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   public bool TransformTo(Transform transform, out Line transformed)
   {
