@@ -17,4 +17,8 @@ public record SpeckleOtelLogging(string Endpoint, bool Enabled = true, Dictionar
 
 public record SpeckleTracing(bool Console = false, SpeckleOtelTracing? Otel = null);
 
-public record SpeckleOtelTracing(string? Endpoint = null, bool Enabled = true, Dictionary<string, string>? Headers = null);
+public record SpeckleOtelTracing(
+  string? Endpoint = null,
+  bool Enabled = true,
+  Dictionary<string, string>? Headers = null
+);
