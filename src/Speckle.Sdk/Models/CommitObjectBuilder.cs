@@ -20,7 +20,7 @@ public abstract class CommitObjectBuilder<TNativeObjectData>
   protected const string ROOT = "__Root";
   private const string ELEMENTS = nameof(Collection.elements);
 
-  /// <summary>app id -> base</summary>s
+  /// <summary>app id -> base</summary>
   protected IDictionary<string, Base> Converted { get; }
 
   /// <summary>Base -> NestingInstructions ordered by priority</summary>
