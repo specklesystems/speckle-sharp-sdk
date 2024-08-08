@@ -2,7 +2,6 @@ using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
@@ -193,7 +192,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
       rational = list[4] == 1,
       closed = list[5] == 1,
       domain = new Interval(list[6], list[7]),
-      displayValue = new Polyline() { units = units } // this is unique to breps, so we do not create curves with null displayValues
+      displayValue = new Polyline { value = new(), units = units } // this is unique to breps, so we do not create curves with null displayValues
     };
 
     var pointsCount = (int)list[8];
