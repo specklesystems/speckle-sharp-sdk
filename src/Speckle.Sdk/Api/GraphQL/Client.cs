@@ -75,7 +75,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       CommitUpdatedSubscription?.Dispose();
       CommitDeletedSubscription?.Dispose();
       CommentActivitySubscription?.Dispose();
-      GQLClient?.Dispose();
+      GQLClient.Dispose();
     }
     catch (Exception ex) when (!ex.IsFatal()) { }
   }
@@ -105,10 +105,8 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
+    using var activity = SpeckleActivityFactory.Start();
     // using IDisposable context0 = LogContext.Push(CreateEnrichers<T>(request));
-    var timer = Stopwatch.StartNew();
-
-    Exception? exception = null;
     try
     {
       return await ExecuteWithResiliencePolicies(async () =>
@@ -121,29 +119,10 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
         })
         .ConfigureAwait(false);
     }
-    catch (Exception ex)
+    catch (Exception e)
     {
-      exception = ex;
+      activity?.RecordException(e);
       throw;
-    }
-    finally
-    {
-      SpeckleLogLevel logLevel = exception switch
-      {
-        null => SpeckleLogLevel.Information,
-        OperationCanceledException
-          => cancellationToken.IsCancellationRequested ? SpeckleLogLevel.Debug : SpeckleLogLevel.Error,
-        SpeckleException => SpeckleLogLevel.Warning,
-        _ => SpeckleLogLevel.Error,
-      };
-      SpeckleLog.Logger.Write(
-        logLevel,
-        exception,
-        "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-        typeof(T).Name,
-        exception is null,
-        timer.Elapsed.TotalSeconds
-      );
     }
   }
 
@@ -154,7 +133,6 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     var errors = response.Errors;
     if (errors != null && errors.Length != 0)
     {
-      var errorMessages = errors.Select(e => e.Message);
       if (
         errors.Any(e =>
           e.Extensions != null
