@@ -3,6 +3,13 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Speckle.Core.Common;
+using Speckle.Core.Helpers;
+using Speckle.Core.Kits;
+using Speckle.Core.Logging;
+using Speckle.Core.Serialisation;
+using Speckle.Core.Transports;
+using Speckle.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
@@ -38,12 +45,6 @@ public class Base : DynamicBase
   public virtual string id { get; set; }
 
 #nullable enable //Starting nullability syntax here so that `id` null oblivious,
-
-  /// <summary>
-  /// This property will only be populated if the object is retreieved from storage. Use <see cref="GetTotalChildrenCount"/> otherwise.
-  /// </summary>
-  [SchemaIgnore]
-  public virtual long totalChildrenCount { get; set; }
 
   /// <summary>
   /// Secondary, ideally host application driven, object identifier.
