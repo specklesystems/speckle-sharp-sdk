@@ -11,7 +11,7 @@ public static class SpeckleActivityFactory
 
   public static ISpeckleActivity? Start([CallerMemberName] string name = "SpeckleActivityFactory")
   {
-    var activity = s_activitySource?.StartActivity(name);
+    var activity = s_activitySource?.StartActivity(name, ActivityKind.Client);
     if (activity is null)
     {
       return null;
