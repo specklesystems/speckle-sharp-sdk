@@ -75,7 +75,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       CommitUpdatedSubscription?.Dispose();
       CommitDeletedSubscription?.Dispose();
       CommentActivitySubscription?.Dispose();
-      GQLClient?.Dispose();
+      GQLClient.Dispose();
     }
     catch (Exception ex) when (!ex.IsFatal()) { }
   }
@@ -105,13 +105,10 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
-    // using IDisposable context0 = LogContext.Push(CreateEnrichers<T>(request));
-    var timer = Stopwatch.StartNew();
-
-    Exception? exception = null;
+    using var activity = SpeckleActivityFactory.Start();
     try
     {
-      return await ExecuteWithResiliencePolicies(async () =>
+      var ret = await ExecuteWithResiliencePolicies(async () =>
         {
           GraphQLResponse<T> result = await GQLClient
             .SendMutationAsync<T>(request, cancellationToken)
@@ -120,30 +117,14 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
           return result.Data;
         })
         .ConfigureAwait(false);
+      activity?.SetStatus(SpeckleActivityStatusCode.Ok);
+      return ret;
     }
-    catch (Exception ex)
+    catch (Exception e)
     {
-      exception = ex;
+      activity?.SetStatus(SpeckleActivityStatusCode.Error);
+      activity?.RecordException(e);
       throw;
-    }
-    finally
-    {
-      SpeckleLogLevel logLevel = exception switch
-      {
-        null => SpeckleLogLevel.Information,
-        OperationCanceledException
-          => cancellationToken.IsCancellationRequested ? SpeckleLogLevel.Debug : SpeckleLogLevel.Error,
-        SpeckleException => SpeckleLogLevel.Warning,
-        _ => SpeckleLogLevel.Error,
-      };
-      SpeckleLog.Logger.Write(
-        logLevel,
-        exception,
-        "Execution of the graphql request to get {resultType} completed with success:{status} after {elapsed} seconds",
-        typeof(T).Name,
-        exception is null,
-        timer.Elapsed.TotalSeconds
-      );
     }
   }
 
@@ -154,7 +135,6 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     var errors = response.Errors;
     if (errors != null && errors.Length != 0)
     {
-      var errorMessages = errors.Select(e => e.Message);
       if (
         errors.Any(e =>
           e.Extensions != null

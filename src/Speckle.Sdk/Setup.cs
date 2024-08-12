@@ -63,18 +63,18 @@ public static class Setup
     //start mutex so that Manager can detect if this process is running
     Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
 
-    var traceProvider = TraceBuilder.Initialize(ApplicationVersion, Slug, configuration.Tracing);
-    LogBuilder.Initialize(GetUserIdFromDefaultAccount(), ApplicationVersion, Slug, configuration.Logging);
-
     foreach (var account in AccountManager.GetAccounts())
     {
       Analytics.AddConnectorToProfile(account.GetHashedEmail(), Application);
       Analytics.IdentifyProfile(account.GetHashedEmail(), Application);
     }
-
-    SpeckleActivityFactory.Initialize(Slug, Version);
-
-    return traceProvider;
+    return LogBuilder.Initialize(
+      GetUserIdFromDefaultAccount(),
+      ApplicationVersion,
+      Slug,
+      configuration.Logging,
+      configuration.Tracing
+    );
   }
 
   private static string GetUserIdFromDefaultAccount()

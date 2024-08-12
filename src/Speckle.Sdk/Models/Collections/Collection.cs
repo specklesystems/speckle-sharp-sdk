@@ -9,7 +9,8 @@ namespace Speckle.Sdk.Models.Collections;
 /// A <see cref="Collection"/> can be for example a Layer in Rhino/AutoCad, a collection in Blender, or a Category in Revit.
 /// The location of each collection in the hierarchy of collections in a commit will be retrieved through commit traversal.
 /// </remarks>
-[SpeckleType("Speckle.Core.Models.Collection")]
+[SpeckleType("Speckle.Core.Models.Collections.Collection")]
+[DeprecatedSpeckleType("Speckle.Core.Models.Collection")]
 [DeprecatedSpeckleType("Objects.Organization.Collection")]
 public class Collection : Base
 {
