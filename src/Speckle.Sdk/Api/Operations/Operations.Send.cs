@@ -19,9 +19,9 @@ public static partial class Operations
   /// <exception cref="ArgumentNullException">The <paramref name="transport"/> or <paramref name="value"/> was <see langword="null"/></exception>
   /// <example><code>
   /// using ServerTransport destination = new(account, streamId);
-  /// string objectId = await Send(mySpeckleObject, destination, true);
+  /// var (objectId, references) = await Send(mySpeckleObject, destination, true);
   /// </code></example>
-  public static async Task<string> Send(
+  public static async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     ITransport transport,
     bool useDefaultCache,
@@ -58,7 +58,7 @@ public static partial class Operations
   /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
   /// <exception cref="TransportException">One or more <paramref name="transports"/> failed to send</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
-  public static async Task<string> Send(
+  public static async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     IReadOnlyCollection<ITransport> transports,
     Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
@@ -87,7 +87,7 @@ public static partial class Operations
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
-      BaseObjectSerializerV2 serializerV2 = new(transports, internalProgressAction, false, cancellationToken);
+      BaseObjectSerializerV2 serializerV2 = new(transports, internalProgressAction, true, cancellationToken);
 
       foreach (var t in transports)
       {
@@ -96,10 +96,25 @@ public static partial class Operations
         t.BeginWrite();
       }
 
-      string hash;
       try
       {
-        hash = await SerializerSend(value, serializerV2, cancellationToken).ConfigureAwait(false);
+        var rootObjectId = await SerializerSend(value, serializerV2, cancellationToken).ConfigureAwait(false);
+
+        sendTimer.Stop();
+        activity?.SetTag("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed));
+        activity?.SetTag(
+          "note",
+          "the elapsed summary doesn't need to add up to the total elapsed... Threading magic..."
+        );
+        activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
+        SpeckleLog.Logger.Information(
+          "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
+          transports.Max(t => t.SavedObjectCount),
+          sendTimer.Elapsed.TotalSeconds,
+          rootObjectId
+        );
+
+        return (rootObjectId, serializerV2.ObjectReferences);
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
@@ -122,18 +137,6 @@ public static partial class Operations
           t.EndWrite();
         }
       }
-
-      sendTimer.Stop();
-      activity?.SetTag("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed));
-      activity?.SetTag("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...");
-      activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
-      SpeckleLog.Logger.Information(
-        "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
-        transports.Max(t => t.SavedObjectCount),
-        sendTimer.Elapsed.TotalSeconds,
-        hash
-      );
-      return hash;
     }
   }
 

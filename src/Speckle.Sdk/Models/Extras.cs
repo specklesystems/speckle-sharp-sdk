@@ -7,13 +7,13 @@ namespace Speckle.Sdk.Models;
 /// See the following <see href="https://pics.me.me/chunky-boi-57848570.png">reference.</see>
 /// </summary>
 [SpeckleType("Speckle.Core.Models.DataChunk")]
-public class DataChunk : Base
+public sealed class DataChunk : Base
 {
   public List<object> data { get; set; } = new();
 }
 
 [SpeckleType("Speckle.Core.Models.ObjectReference")]
-public class ObjectReference : Base
+public sealed class ObjectReference : Base
 {
   public new string speckle_type = "reference";
 
