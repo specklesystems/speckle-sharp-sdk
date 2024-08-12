@@ -158,7 +158,7 @@ public static class Helpers
     using var transport = serverTransportFactory.Create(client.Account, sw.StreamId);
     var branchName = string.IsNullOrEmpty(sw.BranchName) ? "main" : sw.BranchName;
 
-    var objectId = await Operations.Send(data, transport, useDefaultCache, onProgressAction).ConfigureAwait(false);
+    var (objectId, _) = await Operations.Send(data, transport, useDefaultCache, onProgressAction).ConfigureAwait(false);
 
     Analytics.TrackEvent(client.Account, Analytics.Events.Send);
 
