@@ -41,9 +41,11 @@ public sealed class SendReceiveLocal : IDisposable
     }
 
     using SQLiteTransport localTransport = new();
-    _objId01 = await Sdk.Api.Operations.Send(myObject, localTransport, false);
+    (_objId01, var references) = await Sdk.Api.Operations.Send(myObject, localTransport, false);
 
     Assert.That(_objId01, Is.Not.Null);
+    Assert.That(references, Has.Count.EqualTo(0));
+
     TestContext.Out.WriteLine($"Written {NUM_OBJECTS + 1} objects. Commit id is {_objId01}");
   }
 
@@ -71,7 +73,7 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    _objId01 = await Sdk.Api.Operations.Send(myObject, _sut, false);
+    (_objId01, _) = await Sdk.Api.Operations.Send(myObject, _sut, false);
 
     var commitPulled = await Sdk.Api.Operations.Receive(_objId01);
     List<object> items = (List<object>)commitPulled["@items"].NotNull();
@@ -95,7 +97,7 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    _objId01 = await Sdk.Api.Operations.Send(myObject, _sut, false);
+    (_objId01, _) = await Sdk.Api.Operations.Send(myObject, _sut, false);
 
     Assert.That(_objId01, Is.Not.Null);
     TestContext.Out.WriteLine($"Written {NUM_OBJECTS + 1} objects. Commit id is {_objId01}");
@@ -119,7 +121,7 @@ public sealed class SendReceiveLocal : IDisposable
     myObject["@dictionary"] = myDic;
     myObject["@list"] = myList;
 
-    _objId01 = await Sdk.Api.Operations.Send(myObject, _sut, false);
+    (_objId01, _) = await Sdk.Api.Operations.Send(myObject, _sut, false);
 
     Assert.That(_objId01, Is.Not.Null);
 
@@ -157,7 +159,7 @@ public sealed class SendReceiveLocal : IDisposable
       ((List<Base>)((dynamic)obj)["@LayerC"]).Add(new Point(i, i, i + rand.NextDouble()) { applicationId = i + "baz" });
     }
 
-    _objId01 = await Sdk.Api.Operations.Send(obj, _sut, false);
+    (_objId01, _) = await Sdk.Api.Operations.Send(obj, _sut, false);
 
     Assert.That(_objId01, Is.Not.Null);
     TestContext.Out.WriteLine($"Written {NUM_OBJECTS + 1} objects. Commit id is {_objId01}");
@@ -195,7 +197,7 @@ public sealed class SendReceiveLocal : IDisposable
     }
 
     ConcurrentDictionary<string, int>? progress = null;
-    _commitId02 = await Sdk.Api.Operations.Send(
+    (_commitId02, _) = await Sdk.Api.Operations.Send(
       myObject,
       _sut,
       false,
@@ -230,36 +232,12 @@ public sealed class SendReceiveLocal : IDisposable
     @base["test"] = "the best";
 
     SQLiteTransport myLocalTransport = new();
-    var id = await Sdk.Api.Operations.Send(@base, myLocalTransport, false);
+    var sendResult = await Sdk.Api.Operations.Send(@base, myLocalTransport, false);
     await Sdk.Api.Operations.Send(@base, myLocalTransport, false);
 
-    _ = await Sdk.Api.Operations.Receive(id, null, myLocalTransport);
-    await Sdk.Api.Operations.Receive(id, null, myLocalTransport);
+    _ = await Sdk.Api.Operations.Receive(sendResult.rootObjId, null, myLocalTransport);
+    await Sdk.Api.Operations.Receive(sendResult.rootObjId, null, myLocalTransport);
   }
-
-  //[Test]
-  //public async Task DiskTransportTest()
-  //{
-  //  var myObject = new Base();
-  //  myObject["@items"] = new List<Base>();
-  //  myObject["test"] = "random";
-
-  //  var rand = new Random();
-
-  //  for (int i = 0; i < 100; i++)
-  //  {
-  //    ((List<Base>)myObject["@items"]).Add(new Point(i, i, i) { applicationId = i + "-___/---" });
-  //  }
-
-  //  var dt = new Speckle.Sdk.Transports.Speckle.Speckle.Sdk.Transports();
-  //  var id = await Operations.Send(myObject, new List<ITransport>() { dt }, false);
-
-  //  Assert.IsNotNull(id);
-
-  //  var rebase = await Operations.Receive(id, dt);
-
-  //  Assert.AreEqual(rebase.GetId(true), id);
-  //}
 
   public void Dispose()
   {

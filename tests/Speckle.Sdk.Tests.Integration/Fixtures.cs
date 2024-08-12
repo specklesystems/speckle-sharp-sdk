@@ -27,7 +27,7 @@ public static class Fixtures
   public static async Task<string> CreateVersion(Client client, string projectId, string modelId)
   {
     using ServerTransport remote = new(client.Account, projectId);
-    var objectId = await Operations.Send(new() { applicationId = "ASDF" }, remote, false);
+    var (objectId, _) = await Operations.Send(new() { applicationId = "ASDF" }, remote, false);
     CreateVersionInput input = new(objectId, modelId, projectId);
     return await client.Version.Create(input);
   }
