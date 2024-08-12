@@ -18,6 +18,7 @@ public static class LogBuilder
     public void Dispose()
     {
       tracerProvider?.Dispose();
+      meterProvider?.Shutdown();
       meterProvider?.Dispose();
     }
   }
