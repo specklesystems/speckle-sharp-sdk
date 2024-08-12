@@ -83,7 +83,7 @@ public class BaseObjectSerializerV2
     {
       _stopwatch.Start();
       _isBusy = true;
-      IDictionary<string, object?> converted;
+      IReadOnlyDictionary<string, object?> converted;
       try
       {
         var x = PreserializeBase(baseObj, true);
@@ -243,7 +243,7 @@ public class BaseObjectSerializerV2
     }
   }
 
-  private IDictionary<string, object?>? PreserializeBase(
+  private IReadOnlyDictionary<string, object?>? PreserializeBase(
     Base baseObj,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
@@ -256,23 +256,67 @@ public class BaseObjectSerializerV2
       return null;
     }
 
-    Dictionary<string, object?> convertedBase = new();
     Dictionary<string, int> closure = new();
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
     {
       _parentClosures.Add(closure);
     }
 
-    List<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
-    IEnumerable<string> dynamicProperties = baseObj.GetDynamicMembers();
+    IReadOnlyDictionary<string, object?> convertedBase = PreserializeBaseProperties(baseObj, closure);
+
+    if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
+    {
+      _parentClosures.RemoveAt(_parentClosures.Count - 1);
+    }
+
+    _parentObjects.Remove(baseObj);
+
+    if (baseObj is Blob myBlob)
+    {
+      StoreBlob(myBlob);
+      UpdateParentClosures($"blob:{convertedBase["id"]}");
+      return convertedBase;
+    }
+
+    if (inheritedDetachInfo.IsDetachable && WriteTransports.Count > 0)
+    {
+      var json = Dict2Json(convertedBase);
+      var id = (string)convertedBase["id"].NotNull();
+      StoreObject(id, json);
+      ObjectReference objRef = new() { referencedId = id };
+      var objRefConverted = (IReadOnlyDictionary<string, object?>?)PreserializeObject(objRef);
+      UpdateParentClosures(id);
+      _onProgressAction?.Invoke("S", 1);
+
+      // add to obj refs to return
+      if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
+      {
+        ObjectReferences[baseObj.applicationId] = new ObjectReference()
+        {
+          referencedId = id,
+          applicationId = baseObj.applicationId,
+          closure = closure
+        };
+      }
+
+      return objRefConverted;
+    }
+    return convertedBase;
+  }
+
+  private IReadOnlyDictionary<string, (object?, PropertyAttributeInfo)> ExtractAllProperties(Base baseObj)
+  {
+    IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
+    IReadOnlyCollection<string> dynamicProperties = baseObj.GetDynamicPropertyKeys();
 
     // propertyName -> (originalValue, isDetachable, isChunkable, chunkSize)
-    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties = new();
+    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties =
+      new(typedProperties.Count + dynamicProperties.Count);
 
     // Construct `allProperties`: Add typed properties
     foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)
     {
-      object baseValue = propertyInfo.GetValue(baseObj);
+      object? baseValue = propertyInfo.GetValue(baseObj);
       allProperties[propertyInfo.Name] = (baseValue, detachInfo);
     }
 
@@ -292,10 +336,21 @@ public class BaseObjectSerializerV2
       if (Constants.ChunkPropertyNameRegex.IsMatch(propName))
       {
         var match = Constants.ChunkPropertyNameRegex.Match(propName);
-        isChunkable = int.TryParse(match.Groups[match.Groups.Count - 1].Value, out chunkSize);
+        isChunkable = int.TryParse(match.Groups[^1].Value, out chunkSize);
       }
       allProperties[propName] = (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null));
     }
+
+    return allProperties;
+  }
+
+  private IReadOnlyDictionary<string, object?> PreserializeBaseProperties(
+    Base baseObj,
+    IReadOnlyDictionary<string, int> closure
+  )
+  {
+    var allProperties = ExtractAllProperties(baseObj);
+    Dictionary<string, object?> convertedBase = new(allProperties.Count + 2);
 
     // Convert all properties
     foreach (var prop in allProperties)
@@ -320,43 +375,6 @@ public class BaseObjectSerializerV2
       convertedBase["__closure"] = closure;
     }
 
-    if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
-    {
-      _parentClosures.RemoveAt(_parentClosures.Count - 1);
-    }
-
-    _parentObjects.Remove(baseObj);
-
-    if (baseObj is Blob myBlob)
-    {
-      StoreBlob(myBlob);
-      UpdateParentClosures($"blob:{convertedBase["id"]}");
-      return convertedBase;
-    }
-
-    if (inheritedDetachInfo.IsDetachable && WriteTransports.Count > 0)
-    {
-      var json = Dict2Json(convertedBase);
-      var id = (string)convertedBase["id"].NotNull();
-      StoreObject(id, json);
-      ObjectReference objRef = new() { referencedId = id };
-      var objRefConverted = (IDictionary<string, object?>?)PreserializeObject(objRef);
-      UpdateParentClosures(id);
-      _onProgressAction?.Invoke("S", 1);
-
-      // add to obj refs to return
-      if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
-      {
-        ObjectReferences[baseObj.applicationId] = new ObjectReference()
-        {
-          referencedId = id,
-          applicationId = baseObj.applicationId,
-          closure = closure
-        };
-      }
-
-      return objRefConverted;
-    }
     return convertedBase;
   }
 
@@ -409,14 +427,14 @@ public class BaseObjectSerializerV2
   }
 
   [Pure]
-  private static string ComputeId(IDictionary<string, object?> obj)
+  private static string ComputeId(IReadOnlyDictionary<string, object?> obj)
   {
     string serialized = JsonConvert.SerializeObject(obj);
     string hash = Crypt.Sha256(serialized, length: Utilities.HASH_LENGTH);
     return hash;
   }
 
-  private static string Dict2Json(IDictionary<string, object?>? obj)
+  private static string Dict2Json(IReadOnlyDictionary<string, object?>? obj)
   {
     if (obj is null)
     {
@@ -462,17 +480,17 @@ public class BaseObjectSerializerV2
   }
 
   // (propertyInfo, isDetachable, isChunkable, chunkSize, JsonPropertyAttribute)
-  private List<(PropertyInfo, PropertyAttributeInfo)> GetTypedPropertiesWithCache(Base baseObj)
+  private IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> GetTypedPropertiesWithCache(Base baseObj)
   {
     Type type = baseObj.GetType();
-    IEnumerable<PropertyInfo> typedProperties = baseObj.GetInstanceMembers();
+    IReadOnlyList<PropertyInfo> typedProperties = baseObj.GetInstanceMembers();
 
     if (_typedPropertiesCache.TryGetValue(type.FullName, out List<(PropertyInfo, PropertyAttributeInfo)>? cached))
     {
       return cached;
     }
 
-    List<(PropertyInfo, PropertyAttributeInfo)> ret = new();
+    List<(PropertyInfo, PropertyAttributeInfo)> ret = new(typedProperties.Count);
 
     foreach (PropertyInfo typedProperty in typedProperties)
     {
@@ -481,17 +499,7 @@ public class BaseObjectSerializerV2
         continue;
       }
 
-      // Check JsonIgnore like this to cover both Newtonsoft JsonIgnore and System.Text.Json JsonIgnore
-      // TODO: replace JsonIgnore from newtonsoft with JsonIgnore from Sys, and check this more properly.
-      bool jsonIgnore = false;
-      foreach (object attr in typedProperty.GetCustomAttributes(true))
-      {
-        if (attr.GetType().Name.Contains("JsonIgnore"))
-        {
-          jsonIgnore = true;
-          break;
-        }
-      }
+      bool jsonIgnore = typedProperty.IsDefined(typeof(JsonIgnoreAttribute), false);
       if (jsonIgnore)
       {
         continue;

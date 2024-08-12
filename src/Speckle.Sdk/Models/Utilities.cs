@@ -34,18 +34,18 @@ public static class Utilities
   /// </remarks>
   /// <param name="item"> Object to flatten</param>
   /// <returns> Flattened objects after to host.</returns>
-  public static List<object> FlattenToHostConversionResult(object item)
+  public static List<object?> FlattenToHostConversionResult(object? item)
   {
-    List<object> convertedList = new();
-    Stack<object> stack = new();
+    List<object?> convertedList = new();
+    Stack<object?> stack = new();
     stack.Push(item);
 
     while (stack.Count > 0)
     {
-      object current = stack.Pop();
+      object? current = stack.Pop();
       if (current is IList list)
       {
-        foreach (object subItem in list)
+        foreach (object? subItem in list)
         {
           stack.Push(subItem);
         }

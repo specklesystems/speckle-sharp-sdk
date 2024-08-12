@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
@@ -192,11 +191,9 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
     // this is a preliminary client server correlation implementation
     // refactor this, when we have a better observability stack
     var context = new Context();
-    using var activity = SpeckleActivityFactory.Start($"SendAsync to {request.RequestUri}");
+    using var activity = SpeckleActivityFactory.Start("Http Send");
     {
-      SpeckleLog.Logger.Debug("Starting execution of http request to {targetUrl}", request.RequestUri);
-      var timer = Stopwatch.StartNew();
-
+      activity?.SetTag("http.url", request.RequestUri);
       context.Add("retryCount", 0);
 
       request.Headers.Add("x-request-id", context.CorrelationId.ToString());
@@ -210,22 +207,8 @@ public sealed class SpeckleHttpClientHandler : HttpClientHandler
           context
         )
         .ConfigureAwait(false);
-      timer.Stop();
-      var status = policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed";
       context.TryGetValue("retryCount", out var retryCount);
-      SpeckleLog.Logger
-      // .Log.ForContext("ExceptionType", policyResult.FinalException?.GetType())
-      .Information(
-        "Execution of http request to {httpScheme}://{hostUrl}{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries. Request correlation ID: {correlationId}",
-        request.RequestUri.Scheme,
-        request.RequestUri.Host,
-        request.RequestUri.PathAndQuery,
-        status,
-        policyResult.Result?.StatusCode,
-        timer.Elapsed.TotalSeconds,
-        retryCount ?? 0,
-        context.CorrelationId.ToString()
-      );
+      activity?.SetTag("retryCount", retryCount);
       if (policyResult.Outcome == OutcomeType.Successful)
       {
         return policyResult.Result.NotNull();
