@@ -22,3 +22,10 @@ public record SpeckleOtelTracing(
   bool Enabled = true,
   Dictionary<string, string>? Headers = null
 );
+
+public record SpeckleMeters(bool Console = false, SpeckleOtelMeters? Otel = null);
+public record SpeckleOtelMeters(
+  string? Endpoint = null,
+  bool Enabled = true,
+  Dictionary<string, string>? Headers = null
+);

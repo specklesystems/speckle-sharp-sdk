@@ -7,5 +7,6 @@ public record SpeckleConfiguration(
   HostApplication Application,
   HostAppVersion Version,
   SpeckleLogging? Logging = null,
-  SpeckleTracing? Tracing = null
+  SpeckleTracing? Tracing = null,
+  SpeckleMeters? Meters = null
 );

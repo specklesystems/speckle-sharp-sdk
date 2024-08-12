@@ -58,18 +58,22 @@ public static class Setup
     //start mutex so that Manager can detect if this process is running
     Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
 
-    foreach (var account in AccountManager.GetAccounts())
-    {
-      Analytics.AddConnectorToProfile(account.GetHashedEmail(), Application);
-      Analytics.IdentifyProfile(account.GetHashedEmail(), Application);
-    }
-    return LogBuilder.Initialize(
+    var logs = LogBuilder.Initialize(
       GetUserIdFromDefaultAccount(),
       ApplicationVersion,
       Slug,
       configuration.Logging,
-      configuration.Tracing
+      configuration.Tracing,
+      configuration.Meters
     );
+    foreach (var account in AccountManager.GetAccounts())
+    {
+      var hashedEmail = account.GetHashedEmail();
+      Analytics.AddConnectorToProfile(hashedEmail, Application);
+      Analytics.IdentifyProfile(hashedEmail, Application);
+    }
+
+    return logs;
   }
 
   private static string GetUserIdFromDefaultAccount()

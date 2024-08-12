@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -12,12 +13,21 @@ namespace Speckle.Sdk.Logging;
 
 public static class LogBuilder
 {
+  private class LogDisposable(TracerProvider? tracerProvider, MeterProvider? meterProvider) : IDisposable
+  {
+    public void Dispose()
+    {
+      tracerProvider?.Dispose();
+      meterProvider?.Dispose();
+    }
+  }
   public static IDisposable? Initialize(
     string userId,
     string applicationAndVersion,
     string slug,
     SpeckleLogging? speckleLogging,
-    SpeckleTracing? speckleTracing
+    SpeckleTracing? speckleTracing,
+    SpeckleMeters? speckleMeters
   )
   {
     var resourceBuilder = ResourceBuilder
@@ -71,7 +81,9 @@ public static class LogBuilder
     var logger = serilogLogConfiguration.CreateLogger();
     Log.Logger = logger;
 
-    return InitializeOtelTracing(speckleTracing, resourceBuilder);
+    var tracing = InitializeOtelTracing(speckleTracing, resourceBuilder);
+    var metering = InitializeOtelMeter(speckleMeters, resourceBuilder);
+    return new LogDisposable(tracing, metering);
   }
 
   private static FileVersionInfo GetFileVersionInfo()
@@ -113,7 +125,32 @@ public static class LogBuilder
       o.ResourceAttributes = resourceBuilder.Build().Attributes.ToDictionary(x => x.Key, x => x.Value);
     });
 
-  private static IDisposable? InitializeOtelTracing(SpeckleTracing? logConfiguration, ResourceBuilder resourceBuilder)
+  private static MeterProvider? InitializeOtelMeter(SpeckleMeters? logConfiguration, ResourceBuilder resourceBuilder)
+  {
+    var consoleEnabled = logConfiguration?.Console ?? false;
+    var otelEnabled = logConfiguration?.Otel?.Enabled ?? false;
+    if (!consoleEnabled && !otelEnabled)
+    {
+      return null;
+    }
+
+    var meterProviderBuilder = OpenTelemetry.Sdk.CreateMeterProviderBuilder().AddMeter(Consts.Application);
+    if (otelEnabled)
+    {
+      meterProviderBuilder = meterProviderBuilder.AddOtlpExporter(x => ProcessOptions(logConfiguration!, x));
+    }
+
+    if (consoleEnabled)
+    {
+      meterProviderBuilder = meterProviderBuilder.AddConsoleExporter();
+    }
+
+    meterProviderBuilder = meterProviderBuilder.SetResourceBuilder(resourceBuilder);
+
+    return meterProviderBuilder.Build();
+  }
+
+  private static TracerProvider? InitializeOtelTracing(SpeckleTracing? logConfiguration, ResourceBuilder resourceBuilder)
   {
     var consoleEnabled = logConfiguration?.Console ?? false;
     var otelEnabled = logConfiguration?.Otel?.Enabled ?? false;
@@ -123,41 +160,7 @@ public static class LogBuilder
     }
 
     var tracerProviderBuilder = OpenTelemetry.Sdk.CreateTracerProviderBuilder().AddSource(Consts.Application);
-    tracerProviderBuilder = tracerProviderBuilder.AddHttpClientInstrumentation(
-      (options) =>
-      {
-        options.FilterHttpWebRequest = (httpWebRequest) =>
-        {
-          // Example: Only collect telemetry about HTTP GET requests.
-          return httpWebRequest.Method.Equals(HttpMethod.Get.Method);
-        };
-        options.EnrichWithHttpWebRequest = (activity, httpWebRequest) =>
-        {
-          activity.SetTag("requestVersion", httpWebRequest.ProtocolVersion);
-        };
-        // Note: Only called on .NET Framework.
-        options.EnrichWithHttpWebResponse = (activity, httpWebResponse) =>
-        {
-          activity.SetTag("responseVersion", httpWebResponse.ProtocolVersion);
-        };
-        // Note: Only called on .NET & .NET Core runtimes.
-        options.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
-        {
-          activity.SetTag("requestVersion", httpRequestMessage.Version);
-        };
-        // Note: Only called on .NET & .NET Core runtimes.
-        options.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
-        {
-          activity.SetTag("responseVersion", httpResponseMessage.Version);
-        };
-        // Note: Called for all runtimes.
-        options.EnrichWithException = (activity, exception) =>
-        {
-          activity.SetTag("stackTrace", exception.StackTrace);
-        };
-        options.RecordException = true;
-      }
-    );
+    tracerProviderBuilder = tracerProviderBuilder.AddHttpClientInstrumentation();
     if (otelEnabled)
     {
       tracerProviderBuilder = tracerProviderBuilder.AddOtlpExporter(x => ProcessOptions(logConfiguration!, x));
@@ -174,6 +177,21 @@ public static class LogBuilder
   }
 
   private static void ProcessOptions(SpeckleTracing logConfiguration, OtlpExporterOptions options)
+  {
+    options.Protocol = OtlpExportProtocol.HttpProtobuf;
+    var headers = string.Join(",", logConfiguration.Otel?.Headers?.Select(x => x.Key + "=" + x.Value) ?? []);
+    if (headers.Length != 0)
+    {
+      options.Headers = headers;
+    }
+
+    if (logConfiguration.Otel?.Endpoint is not null)
+    {
+      options.Endpoint = new Uri(logConfiguration.Otel.Endpoint);
+    }
+  }
+  
+  private static void ProcessOptions(SpeckleMeters logConfiguration, OtlpExporterOptions options)
   {
     options.Protocol = OtlpExportProtocol.HttpProtobuf;
     var headers = string.Join(",", logConfiguration.Otel?.Headers?.Select(x => x.Key + "=" + x.Value) ?? []);
