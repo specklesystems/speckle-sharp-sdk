@@ -24,6 +24,7 @@ public record SpeckleOtelTracing(
 );
 
 public record SpeckleMeters(bool Console = false, SpeckleOtelMeters? Otel = null);
+
 public record SpeckleOtelMeters(
   string? Endpoint = null,
   bool Enabled = true,

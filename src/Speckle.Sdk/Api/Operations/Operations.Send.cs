@@ -124,15 +124,8 @@ public static partial class Operations
       }
 
       sendTimer.Stop();
-      activity?.SetTag("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed));
-      activity?.SetTag("note", "the elapsed summary doesn't need to add up to the total elapsed... Threading magic...");
-      activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
-      SpeckleLog.Logger.Information(
-        "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
-        transports.Max(t => t.SavedObjectCount),
-        sendTimer.Elapsed.TotalSeconds,
-        hash
-      );
+      var elapsedHistogram = SpeckleMeterFactory.CreateHistogram<long>("Send Elapsed", unit: "ms");
+      elapsedHistogram.Record(sendTimer.ElapsedMilliseconds);
       return hash;
     }
   }

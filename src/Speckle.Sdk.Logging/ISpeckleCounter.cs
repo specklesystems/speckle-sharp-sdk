@@ -8,8 +8,12 @@ public interface ISpeckleCounter<T>
   void Add(T delta, KeyValuePair<string, object?> tag);
   void Add(T delta, KeyValuePair<string, object?> tag1, KeyValuePair<string, object?> tag2);
 
-  void Add(T delta, KeyValuePair<string, object?> tag1, KeyValuePair<string, object?> tag2,
-    KeyValuePair<string, object?> tag3);
+  void Add(
+    T delta,
+    KeyValuePair<string, object?> tag1,
+    KeyValuePair<string, object?> tag2,
+    KeyValuePair<string, object?> tag3
+  );
 }
 
 public interface ISpeckleHistogram<T>

@@ -45,8 +45,6 @@ public sealed class ServerTransport : IServerTransport
     Directory.CreateDirectory(BlobStorageFolder);
   }
 
-  public int TotalSentBytes { get; private set; }
-
   public Account Account { get; }
   public Uri BaseUri { get; }
   public string StreamId { get; internal set; }
@@ -106,8 +104,6 @@ public sealed class ServerTransport : IServerTransport
 
   public CancellationToken CancellationToken { get; set; }
   public Action<string, int>? OnProgressAction { get; set; }
-  public int SavedObjectCount { get; private set; }
-  public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;
 
   public async Task<string> CopyObjectAndChildren(
     string id,
@@ -191,7 +187,8 @@ public sealed class ServerTransport : IServerTransport
       .ConfigureAwait(false);
 
     stopwatch.Stop();
-    Elapsed += stopwatch.Elapsed;
+    var elapsedHistogram = SpeckleMeterFactory.CreateHistogram<long>("ServerV2 Elapsed Receive", unit: "ms");
+    elapsedHistogram.Record(stopwatch.ElapsedMilliseconds);
     return rootObjectJson;
   }
 
@@ -201,7 +198,8 @@ public sealed class ServerTransport : IServerTransport
     var stopwatch = Stopwatch.StartNew();
     var result = Api.DownloadSingleObject(StreamId, id).Result;
     stopwatch.Stop();
-    Elapsed += stopwatch.Elapsed;
+    var elapsedHistogram = SpeckleMeterFactory.CreateHistogram<long>("ServerV2 Elapsed Get", unit: "ms");
+    elapsedHistogram.Record(stopwatch.ElapsedMilliseconds);
     return result;
   }
 
@@ -245,9 +243,6 @@ public sealed class ServerTransport : IServerTransport
     {
       throw new InvalidOperationException("ServerTransport already sending");
     }
-
-    TotalSentBytes = 0;
-    SavedObjectCount = 0;
 
     _exception = null;
     _shouldSendThreadRun = true;
@@ -298,9 +293,11 @@ public sealed class ServerTransport : IServerTransport
     {
       OnBatchSent = (num, size) =>
       {
+        var bytesHistogram = SpeckleMeterFactory.CreateHistogram<long>("ServerV2 Sent Bytes", unit: "bytes");
+        var objectsHistogram = SpeckleMeterFactory.CreateHistogram<long>("ServerV2 Sent Objects", unit: "count");
+        bytesHistogram.Record(size);
+        objectsHistogram.Record(num);
         OnProgressAction?.Invoke(TransportName, num);
-        TotalSentBytes += size;
-        SavedObjectCount += num;
       }
     };
   }
@@ -417,7 +414,11 @@ public sealed class ServerTransport : IServerTransport
         stopwatch.Stop();
         lock (_elapsedLock)
         {
-          Elapsed += stopwatch.Elapsed;
+          var elapsedHistogram = SpeckleMeterFactory.CreateHistogram<long>(
+            "ServerV2 Elapsed SendingThreadMain",
+            unit: "ms"
+          );
+          elapsedHistogram.Record(stopwatch.ElapsedMilliseconds);
         }
       }
     }

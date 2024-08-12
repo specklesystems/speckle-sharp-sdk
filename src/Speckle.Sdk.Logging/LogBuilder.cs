@@ -21,6 +21,7 @@ public static class LogBuilder
       meterProvider?.Dispose();
     }
   }
+
   public static IDisposable? Initialize(
     string userId,
     string applicationAndVersion,
@@ -150,7 +151,10 @@ public static class LogBuilder
     return meterProviderBuilder.Build();
   }
 
-  private static TracerProvider? InitializeOtelTracing(SpeckleTracing? logConfiguration, ResourceBuilder resourceBuilder)
+  private static TracerProvider? InitializeOtelTracing(
+    SpeckleTracing? logConfiguration,
+    ResourceBuilder resourceBuilder
+  )
   {
     var consoleEnabled = logConfiguration?.Console ?? false;
     var otelEnabled = logConfiguration?.Otel?.Enabled ?? false;
@@ -190,7 +194,7 @@ public static class LogBuilder
       options.Endpoint = new Uri(logConfiguration.Otel.Endpoint);
     }
   }
-  
+
   private static void ProcessOptions(SpeckleMeters logConfiguration, OtlpExporterOptions options)
   {
     options.Protocol = OtlpExportProtocol.HttpProtobuf;

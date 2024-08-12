@@ -38,9 +38,6 @@ public class BaseObjectSerializerV2
 
   public CancellationToken CancellationToken { get; set; }
 
-  /// <summary>The current total elapsed time spent serializing</summary>
-  public TimeSpan Elapsed => _stopwatch.Elapsed;
-
   public BaseObjectSerializerV2()
     : this(Array.Empty<ITransport>()) { }
 
@@ -107,6 +104,8 @@ public class BaseObjectSerializerV2
       _parentObjects = new HashSet<object>();
       _isBusy = false;
       _stopwatch.Stop();
+      var elapsedHistogram = SpeckleMeterFactory.CreateHistogram<long>("Serialize Elapsed", unit: "ms");
+      elapsedHistogram.Record(_stopwatch.ElapsedMilliseconds);
     }
   }
 

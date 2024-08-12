@@ -60,7 +60,7 @@ public static class Helpers
     using var client = new Client(account);
     using var transport = serverTransportFactory.Create(client.Account, sw.StreamId);
 
-    string objectId = "";
+    string objectId;
     Commit commit = null;
 
     //OBJECT URL
@@ -89,6 +89,12 @@ public static class Helpers
       objectId = branch.commits.items[0].referencedObject;
     }
 
+    var counter = SpeckleMeterFactory.GetCounter<long>(Analytics.Events.Receive.ToString());
+    counter.Add(
+      1,
+      new("sourceHostApp", HostApplications.GetHostAppFromString(commit.sourceApplication).Slug),
+      new("sourceHostAppVersion", commit.sourceApplication)
+    );
     Analytics.TrackEvent(
       client.Account,
       Analytics.Events.Receive,
@@ -115,8 +121,8 @@ public static class Helpers
           new CommitReceivedInput
           {
             streamId = sw.StreamId,
-            commitId = commit?.id,
-            message = commit?.message,
+            commitId = commit.id,
+            message = commit.message,
             sourceApplication = "Other"
           }
         )

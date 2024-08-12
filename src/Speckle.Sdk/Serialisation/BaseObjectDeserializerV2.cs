@@ -36,7 +36,6 @@ public sealed class BaseObjectDeserializerV2
   public Action<string, int>? OnProgressAction { get; set; }
 
   public string? BlobStorageFolder { get; set; }
-  public TimeSpan Elapsed { get; private set; }
 
   public static int DefaultNumberThreads => Math.Min(Environment.ProcessorCount, 6); //6 threads seems the sweet spot, see performance test project
   public int WorkerThreadCount { get; set; } = DefaultNumberThreads;
@@ -95,7 +94,8 @@ public sealed class BaseObjectDeserializerV2
       }
 
       stopwatch.Stop();
-      Elapsed += stopwatch.Elapsed;
+      var elapsedHistogram = SpeckleMeterFactory.CreateHistogram<long>("Deserialize Elapsed", unit: "ms");
+      elapsedHistogram.Record(stopwatch.ElapsedMilliseconds);
       if (ret is not Base b)
       {
         throw new SpeckleDeserializeException(
