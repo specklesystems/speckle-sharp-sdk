@@ -843,44 +843,4 @@ public static class AccountManager
     //escaped chars like % do not play nice with the server
     return Regex.Replace(Convert.ToBase64String(challengeData), @"[^\w\.@-]", "");
   }
-
-  /// <inheritdoc cref="GetServerInfo(System.Uri,System.Threading.CancellationToken)"/>
-  [Obsolete("Use URI overload (note: that one throws exceptions, this one returns null)")]
-  public static async Task<ServerInfo?> GetServerInfo(string server)
-  {
-    try
-    {
-      return await GetServerInfo(new Uri(server)).ConfigureAwait(false);
-    }
-    catch (SpeckleGraphQLException<ActiveUserResponse> ex)
-    {
-      SpeckleLog.Logger.Warning(
-        ex,
-        "Swallowing exception in {methodName}: {exceptionMessage}",
-        nameof(GetServerInfo),
-        ex.Message
-      );
-      return null;
-    }
-  }
-
-  /// <inheritdoc cref="GetUserInfo(string,System.Uri,System.Threading.CancellationToken)"/>
-  [Obsolete("Use URI overload (note: that one throws exceptions, this one returns null)")]
-  public static async Task<UserInfo?> GetUserInfo(string token, string server)
-  {
-    try
-    {
-      return await GetUserInfo(token, new Uri(server)).ConfigureAwait(false);
-    }
-    catch (SpeckleGraphQLException<ActiveUserResponse> ex)
-    {
-      SpeckleLog.Logger.Warning(
-        ex,
-        "Swallowing exception in {methodName}: {exceptionMessage}",
-        nameof(GetUserInfo),
-        ex.Message
-      );
-      return null;
-    }
-  }
 }
