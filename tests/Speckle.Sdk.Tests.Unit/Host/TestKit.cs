@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Unit.Host;
