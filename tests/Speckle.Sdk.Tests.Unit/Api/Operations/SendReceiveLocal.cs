@@ -44,7 +44,7 @@ public sealed class SendReceiveLocal : IDisposable
     (_objId01, var references) = await Sdk.Api.Operations.Send(myObject, localTransport, false);
 
     Assert.That(_objId01, Is.Not.Null);
-    Assert.That(references, Has.Count.EqualTo(0));
+    Assert.That(references, Has.Count.EqualTo(NUM_OBJECTS));
 
     TestContext.Out.WriteLine($"Written {NUM_OBJECTS + 1} objects. Commit id is {_objId01}");
   }

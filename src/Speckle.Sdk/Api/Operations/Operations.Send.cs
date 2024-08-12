@@ -58,7 +58,7 @@ public static partial class Operations
   /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
   /// <exception cref="TransportException">One or more <paramref name="transports"/> failed to send</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
-  public static async Task<(string rootObjId, Dictionary<string, ObjectReference> convertedReferences)> Send(
+  public static async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     IReadOnlyCollection<ITransport> transports,
     Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
@@ -87,7 +87,7 @@ public static partial class Operations
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
-      BaseObjectSerializerV2 serializerV2 = new(transports, internalProgressAction, false, cancellationToken);
+      BaseObjectSerializerV2 serializerV2 = new(transports, internalProgressAction, true, cancellationToken);
 
       foreach (var t in transports)
       {
