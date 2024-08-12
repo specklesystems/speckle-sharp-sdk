@@ -117,8 +117,6 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
   public Action<string, int>? OnProgressAction { get; set; }
 
-  [Obsolete("Transports will now throw exceptions")]
-  public Action<string, Exception>? OnErrorAction { get; set; }
   public int SavedObjectCount { get; private set; }
 
   public TimeSpan Elapsed { get; private set; }
@@ -457,14 +455,6 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     );
     return Task.FromResult(res);
   }
-
-  #endregion
-
-  #region Deprecated
-
-  [Obsolete("Use " + nameof(WriteCompletionStatus))]
-  [SuppressMessage("Design", "CA1024:Use properties where appropriate")]
-  public bool GetWriteCompletionStatus() => WriteCompletionStatus;
 
   #endregion
 }
