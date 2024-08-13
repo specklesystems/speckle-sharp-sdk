@@ -86,6 +86,14 @@ public interface ITransformable
 
 #endregion
 
+#region GIS
+public interface IGisFeature
+{
+  Base attributes { get; set; }
+}
+
+#endregion
+
 #region Built elements
 
 /// <summary>
