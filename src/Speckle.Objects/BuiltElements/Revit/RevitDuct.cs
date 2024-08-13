@@ -114,6 +114,7 @@ public class RevitDuct : Duct, IHasMEPConnectors
   #endregion
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitFlexDuct")]
 public class RevitFlexDuct : RevitDuct
 {
   public RevitFlexDuct() { }

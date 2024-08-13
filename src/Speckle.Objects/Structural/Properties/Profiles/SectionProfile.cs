@@ -47,7 +47,7 @@ public class SectionProfile : Base //section profile description
   public double weight { get; set; } //section weight, ex. kg/m weight is defined in materials though more ? rather than section profile.
   public string units { get; set; }
 }
-
+[SpeckleType("Objects.Structural.Properties.Profiles.Rectangular")]
 public class Rectangular : SectionProfile
 {
   public Rectangular() { }
@@ -73,7 +73,7 @@ public class Rectangular : SectionProfile
   public double flangeThickness { get; set; } // tf
   public override ShapeType shapeType { get; set; } = ShapeType.Rectangular;
 }
-
+[SpeckleType("Objects.Structural.Properties.Profiles.Circular")]
 public class Circular : SectionProfile
 {
   public Circular() { }
@@ -91,6 +91,7 @@ public class Circular : SectionProfile
   public override ShapeType shapeType { get; set; } = ShapeType.Circular;
 }
 
+[SpeckleType("Objects.Structural.Properties.Profiles.ISection")]
 public class ISection : SectionProfile
 {
   public ISection() { }
@@ -112,6 +113,7 @@ public class ISection : SectionProfile
   public override ShapeType shapeType { get; set; } = ShapeType.I;
 }
 
+[SpeckleType("Objects.Structural.Properties.Profiles.Tee")]
 public class Tee : SectionProfile
 {
   public Tee() { }
@@ -133,6 +135,7 @@ public class Tee : SectionProfile
   public override ShapeType shapeType { get; set; } = ShapeType.Tee;
 }
 
+[SpeckleType("Objects.Structural.Properties.Profiles.Angle")]
 public class Angle : SectionProfile
 {
   public Angle() { }
@@ -154,6 +157,7 @@ public class Angle : SectionProfile
   public override ShapeType shapeType { get; set; } = ShapeType.Angle;
 }
 
+[SpeckleType("Objects.Structural.Properties.Profiles.Channel")]
 public class Channel : SectionProfile
 {
   public Channel() { }
@@ -175,6 +179,7 @@ public class Channel : SectionProfile
   public override ShapeType shapeType { get; set; } = ShapeType.Channel;
 }
 
+[SpeckleType("Objects.Structural.Properties.Profiles.Perimeter")]
 public class Perimeter : SectionProfile
 {
   public Perimeter() { }
@@ -196,6 +201,7 @@ public class Perimeter : SectionProfile
   public List<ICurve> voids { get; set; } = new();
 }
 
+[SpeckleType("Objects.Structural.Properties.Profiles.Catalogue")]
 public class Catalogue : SectionProfile
 {
   public Catalogue() { }
@@ -226,6 +232,7 @@ public class Catalogue : SectionProfile
   public string sectionName { get; set; } // ex. W44x335, could be enum value
 }
 
+[SpeckleType("Objects.Structural.Properties.Profiles.Explicit")]
 public class Explicit : SectionProfile
 {
   public Explicit() { }
