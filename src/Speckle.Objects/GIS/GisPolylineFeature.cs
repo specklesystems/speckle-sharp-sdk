@@ -9,9 +9,9 @@ public class GisPolylineFeature : Base, IGisFeature, IDisplayValue<List<Polyline
 {
   public GisPolylineFeature() { }
 
-  public GisPolylineFeature(List<Polyline> lines, Base attributes)
+  public GisPolylineFeature(List<Polyline> polylines, Base attributes)
   {
-    displayValue = lines;
+    displayValue = polylines;
     this.attributes = attributes;
   }
 
