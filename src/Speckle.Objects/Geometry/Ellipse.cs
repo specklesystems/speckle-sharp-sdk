@@ -93,10 +93,10 @@ public class Ellipse : Base, ICurve, IHasArea
   public List<double> ToList()
   {
     var list = new List<double>();
-    list.Add(firstRadius ?? 0);
-    list.Add(secondRadius ?? 0);
-    list.Add(domain?.start ?? 0);
-    list.Add(domain?.end ?? 0);
+    list.Add(firstRadius);
+    list.Add(secondRadius);
+    list.Add(domain.start ?? 0);
+    list.Add(domain.end ?? 0);
 
     list.AddRange(plane.ToList());
 

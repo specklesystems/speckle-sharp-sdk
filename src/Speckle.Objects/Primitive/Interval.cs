@@ -6,19 +6,11 @@ namespace Speckle.Objects.Primitive;
 [SpeckleType("Objects.Primitive.Interval")]
 public class Interval : Base
 {
-  public Interval() { }
-
-  public Interval(double start, double end)
-  {
-    this.start = start;
-    this.end = end;
-  }
-
-  public double? start { get; set; }
-  public double? end { get; set; }
+  public required double start { get; set; }
+  public required double end { get; set; }
 
   [JsonIgnore]
-  public double Length => Math.Abs((end ?? 0) - (start ?? 0));
+  public double Length => Math.Abs((end) - (start));
 
   public override string ToString()
   {
