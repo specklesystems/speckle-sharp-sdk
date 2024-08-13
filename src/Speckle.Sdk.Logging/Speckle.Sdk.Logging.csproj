@@ -6,20 +6,20 @@
   <PropertyGroup>
     <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
     <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
-    <ILRepackExcludeAssemblies>C:\Users\adam\Git\speckle-sharp-sdk\src\Speckle.Logging\bin\Debug\netstandard2.0\System.Numerics.Vectors.dll</ILRepackExcludeAssemblies>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="ILRepack.FullAuto">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"  PrivateAssets="all"/>
-    <PackageReference Include="Serilog"  PrivateAssets="all"/>
-    <PackageReference Include="Serilog.Exceptions"  PrivateAssets="all"/>
-    <PackageReference Include="Serilog.Sinks.Console"  PrivateAssets="all"/>
-    <PackageReference Include="Serilog.Sinks.File"  PrivateAssets="all"/>
-    <PackageReference Include="Serilog.Sinks.OpenTelemetry"  PrivateAssets="all"/>
-    <PackageReference Include="OpenTelemetry.Exporter.Console"  PrivateAssets="all"/>
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" NoWarn="NU1902"  PrivateAssets="all"/>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" PrivateAssets="all"/>
+    <PackageReference Include="Serilog" PrivateAssets="all"/>
+    <PackageReference Include="Serilog.Exceptions" PrivateAssets="all"/>
+    <PackageReference Include="Serilog.Sinks.Console" PrivateAssets="all"/>
+    <PackageReference Include="Serilog.Sinks.File" PrivateAssets="all"/>
+    <PackageReference Include="Serilog.Sinks.OpenTelemetry" PrivateAssets="all"/>
+    <PackageReference Include="OpenTelemetry.Exporter.Console" PrivateAssets="all"/>
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" PrivateAssets="all"/>
   </ItemGroup>
 </Project>
