@@ -28,6 +28,7 @@ public class ModelInfo : Base
 /// <summary>
 /// Extended <see cref="ModelInfo"/> to contain additional properties applicable to AEC projects.
 /// </summary>
+[SpeckleType("Objects.Organization.BIMModelInfo")]
 public class BIMModelInfo : ModelInfo
 {
   /// <summary>
