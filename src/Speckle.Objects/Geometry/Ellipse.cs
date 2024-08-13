@@ -55,17 +55,17 @@ public class Ellipse : Base, ICurve, IHasArea
   /// <summary>
   /// Gets or sets the first radius of the <see cref="Ellipse"/>. This is usually the major radius.
   /// </summary>
-  public double? firstRadius { get; set; }
+  public required double firstRadius { get; set; }
 
   /// <summary>
   /// Gets or sets the second radius of the <see cref="Ellipse"/>. This is usually the minor radius.
   /// </summary>
-  public double? secondRadius { get; set; }
+  public required double secondRadius { get; set; }
 
   /// <summary>
   /// Gets or sets the plane to draw this ellipse in.
   /// </summary>
-  public Plane plane { get; set; }
+  public required Plane plane { get; set; }
 
   /// <summary>
   /// Gets or set the domain interval to trim this <see cref="Ellipse"/> with.
@@ -75,7 +75,7 @@ public class Ellipse : Base, ICurve, IHasArea
   /// <inheritdoc />
   public Box? bbox { get; set; }
 
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <summary>
   /// Gets or sets the domain interval for this <see cref="Ellipse"/>.

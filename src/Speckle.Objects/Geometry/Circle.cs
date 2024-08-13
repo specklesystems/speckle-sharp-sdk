@@ -11,39 +11,19 @@ namespace Speckle.Objects.Geometry;
 public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
 {
   /// <summary>
-  /// Constructs an empty <see cref="Circle"/> instance.
-  /// </summary>
-  public Circle() { }
-
-  /// <summary>
-  /// Constructs a new <see cref="Circle"/> instance.
-  /// </summary>
-  /// <param name="plane">The plane where the circle lies</param>
-  /// <param name="radius">The radius of the circle</param>
-  /// <param name="units">The units the circle is modeled in</param>
-  /// <param name="applicationId">The unique ID of this circle in a specific application</param>
-  public Circle(Plane plane, double radius, string units = Units.Meters, string? applicationId = null)
-  {
-    this.plane = plane;
-    this.radius = radius;
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  /// <summary>
   /// The radius of the circle
   /// </summary>
-  public double? radius { get; set; }
+  public required double radius { get; set; }
 
   /// <summary>
   /// The <see cref="Plane"/> the circle lies in.
   /// </summary>
-  public Plane plane { get; set; }
+  public required Plane plane { get; set; }
 
   /// <summary>
   /// The units this object was modeled in.
   /// </summary>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <inheritdoc/>
   public Interval domain { get; set; } = new(0, 1);
