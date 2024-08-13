@@ -1,10 +1,10 @@
-#nullable disable
 using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
@@ -30,9 +30,9 @@ public static class Helpers
   public static async Task<Base> Receive(
     this IServerTransportFactory serverTransportFactory,
     string stream,
-    Account account = null,
-    Action<ConcurrentDictionary<string, int>> onProgressAction = null,
-    Action<int> onTotalChildrenCountKnown = null
+    Account? account = null,
+    Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
+    Action<int>? onTotalChildrenCountKnown = null
   )
   {
     var sw = new StreamWrapper(stream);
@@ -61,17 +61,17 @@ public static class Helpers
     using var transport = serverTransportFactory.Create(client.Account, sw.StreamId);
 
     string objectId = "";
-    Commit commit = null;
+    Commit? commit = null;
 
     //OBJECT URL
     if (!string.IsNullOrEmpty(sw.ObjectId))
     {
-      objectId = sw.ObjectId;
+      objectId = sw.ObjectId.NotNull();
     }
     //COMMIT URL
     else if (!string.IsNullOrEmpty(sw.CommitId))
     {
-      commit = await client.CommitGet(sw.StreamId, sw.CommitId).ConfigureAwait(false);
+      commit = await client.CommitGet(sw.StreamId, sw.CommitId.NotNull()).ConfigureAwait(false);
       objectId = commit.referencedObject;
     }
     //BRANCH URL OR STREAM URL
@@ -79,7 +79,7 @@ public static class Helpers
     {
       var branchName = string.IsNullOrEmpty(sw.BranchName) ? "main" : sw.BranchName;
 
-      var branch = await client.BranchGet(sw.StreamId, branchName, 1).ConfigureAwait(false);
+      var branch = await client.BranchGet(sw.StreamId, branchName.NotNull(), 1).ConfigureAwait(false);
       if (branch.commits.items.Count == 0)
       {
         throw new SpeckleException("The selected branch has no commits.");
@@ -94,7 +94,7 @@ public static class Helpers
       Analytics.Events.Receive,
       new Dictionary<string, object>
       {
-        { "sourceHostApp", HostApplications.GetHostAppFromString(commit.sourceApplication).Slug },
+        { "sourceHostApp", HostApplications.GetHostAppFromString(commit.NotNull().sourceApplication).Slug },
         { "sourceHostAppVersion", commit.sourceApplication }
       }
     );
@@ -145,9 +145,9 @@ public static class Helpers
     string message = "No message",
     string sourceApplication = ".net",
     int totalChildrenCount = 0,
-    Account account = null,
+    Account? account = null,
     bool useDefaultCache = true,
-    Action<ConcurrentDictionary<string, int>> onProgressAction = null
+    Action<ConcurrentDictionary<string, int>>? onProgressAction = null
   )
   {
     var sw = new StreamWrapper(stream);
@@ -201,7 +201,7 @@ public static class Helpers
         os = Os.OSX;
       }
 
-      var versions = connector.Versions.Where(x => x.Os == os).OrderByDescending(x => x.Date).ToList();
+      var versions = connector.NotNull().Versions.Where(x => x.Os == os).OrderByDescending(x => x.Date).ToList();
       var stables = versions.Where(x => !x.Prerelease).ToArray();
       if (stables.Length == 0)
       {

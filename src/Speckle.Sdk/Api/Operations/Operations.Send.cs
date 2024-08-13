@@ -75,11 +75,9 @@ public static partial class Operations
       throw new ArgumentException("Expected at least on transport to be specified", nameof(transports));
     }
 
-    var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
 
     // make sure all logs in the operation have the proper context
     using var activity = SpeckleActivityFactory.Start();
-    activity?.SetTag("transportContext", transportContext);
     activity?.SetTag("correlationId", Guid.NewGuid().ToString());
     {
       var sendTimer = Stopwatch.StartNew();

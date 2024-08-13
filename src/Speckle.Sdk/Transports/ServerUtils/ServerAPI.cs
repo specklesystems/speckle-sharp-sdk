@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
@@ -32,7 +33,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     BlobStorageFolder = blobStorageFolder;
 
     _client = Http.GetHttpProxyClient(
-      new SpeckleHttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip }
+     new SpeckleHttpClientHandler( new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip })
     );
 
     _client.BaseAddress = baseUri;
@@ -57,7 +58,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     _client.Dispose();
   }
 
-  public async Task<string> DownloadSingleObject(string streamId, string objectId)
+  public async Task<string> DownloadSingleObject(string streamId, string objectId, Action<string, int>? progress)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
@@ -72,15 +73,15 @@ public sealed class ServerApi : IDisposable, IServerApi
       .SendAsync(rootHttpMessage, HttpCompletionOption.ResponseContentRead, CancellationToken)
       .ConfigureAwait(false);
 
-    rootHttpResponse.EnsureSuccessStatusCode();
-
-    string rootObjectStr = await rootHttpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-    return rootObjectStr;
+    string? rootObjectStr = null;
+    await ResponseProgress(rootHttpResponse, progress, (_, json) => rootObjectStr = json).ConfigureAwait(false);
+    return rootObjectStr.NotNull();
   }
 
   public async Task DownloadObjects(
     string streamId,
     IReadOnlyList<string> objectIds,
+    Action<string, int>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -91,7 +92,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
     if (objectIds.Count < BATCH_SIZE_GET_OBJECTS)
     {
-      await DownloadObjectsImpl(streamId, objectIds, onObjectCallback).ConfigureAwait(false);
+      await DownloadObjectsImpl(streamId, objectIds, progress, onObjectCallback).ConfigureAwait(false);
       return;
     }
 
@@ -100,12 +101,12 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       if (crtRequest.Count >= BATCH_SIZE_GET_OBJECTS)
       {
-        await DownloadObjectsImpl(streamId, crtRequest, onObjectCallback).ConfigureAwait(false);
+        await DownloadObjectsImpl(streamId, crtRequest,progress, onObjectCallback).ConfigureAwait(false);
         crtRequest = new List<string>();
       }
       crtRequest.Add(id);
     }
-    await DownloadObjectsImpl(streamId, crtRequest, onObjectCallback).ConfigureAwait(false);
+    await DownloadObjectsImpl(streamId, crtRequest, progress,onObjectCallback).ConfigureAwait(false);
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(string streamId, IReadOnlyList<string> objectIds)
@@ -142,7 +143,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     return ret;
   }
 
-  public async Task UploadObjects(string streamId, IReadOnlyList<(string, string)> objects)
+  public async Task UploadObjects(string streamId, IReadOnlyList<(string, string)> objects,  Action<string, int>? progress)
   {
     if (objects.Count == 0)
     {
@@ -196,7 +197,7 @@ public sealed class ServerApi : IDisposable, IServerApi
       int multipartSize = multipartedObjectsSize[i];
       if (crtRequestSize + multipartSize > MAX_REQUEST_SIZE || crtRequest.Count >= MAX_MULTIPART_COUNT)
       {
-        await UploadObjectsImpl(streamId, crtRequest).ConfigureAwait(false);
+        await UploadObjectsImpl(streamId, crtRequest, progress).ConfigureAwait(false);
         OnBatchSent?.Invoke(crtObjectCount, crtRequestSize);
         crtRequest = new List<List<(string, string)>>();
         crtRequestSize = 0;
@@ -208,7 +209,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
     if (crtRequest.Count > 0)
     {
-      await UploadObjectsImpl(streamId, crtRequest).ConfigureAwait(false);
+      await UploadObjectsImpl(streamId, crtRequest, progress).ConfigureAwait(false);
       OnBatchSent?.Invoke(crtObjectCount, crtRequestSize);
     }
   }
@@ -300,6 +301,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   private async Task DownloadObjectsImpl(
     string streamId,
     IReadOnlyList<string> objectIds,
+    Action<string, int>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -319,23 +321,28 @@ public sealed class ServerApi : IDisposable, IServerApi
     childrenHttpMessage.Headers.Add("Accept", "text/plain");
 
     HttpResponseMessage childrenHttpResponse = await _client
-      .SendAsync(childrenHttpMessage, HttpCompletionOption.ResponseHeadersRead, CancellationToken)
+      .SendAsync(childrenHttpMessage,  CancellationToken)
       .ConfigureAwait(false);
 
-    childrenHttpResponse.EnsureSuccessStatusCode();
+    await ResponseProgress(childrenHttpResponse, progress, onObjectCallback).ConfigureAwait(false);
+  }
 
+  private async Task ResponseProgress(HttpResponseMessage childrenHttpResponse, 
+    Action<string, int>? progress,  CbObjectDownloaded onObjectCallback)
+  {
+    childrenHttpResponse.EnsureSuccessStatusCode();
+    var length = childrenHttpResponse.Content.Headers.ContentLength;
     using Stream childrenStream = await childrenHttpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
     using var reader = new StreamReader(childrenStream, Encoding.UTF8);
-    while (reader.ReadLine() is { } line)
+    while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
     {
       CancellationToken.ThrowIfCancellationRequested();
 
       var pcs = line.Split(s_separator, 2);
+      progress?.Invoke("Download", Convert.ToInt32((double)childrenStream.Position / length * 100));
       onObjectCallback(pcs[0], pcs[1]);
     }
-
-    // Console.WriteLine($"ServerApi::DownloadObjects({objectIds.Count}) request in {sw.ElapsedMilliseconds / 1000.0} sec");
   }
 
   private async Task<Dictionary<string, bool>> HasObjectsImpl(string streamId, IReadOnlyList<string> objectIds)
@@ -360,7 +367,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     JObject doc = JObject.Parse(hasObjectsJson);
     foreach (KeyValuePair<string, JToken?> prop in doc)
     {
-      hasObjects[prop.Key] = (bool)prop!.Value!;
+      hasObjects[prop.Key] = (bool)prop.Value.NotNull();
     }
 
     // Console.WriteLine($"ServerApi::HasObjects({objectIds.Count}) request in {sw.ElapsedMilliseconds / 1000.0} sec");
@@ -368,7 +375,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     return hasObjects;
   }
 
-  private async Task UploadObjectsImpl(string streamId, List<List<(string, string)>> multipartedObjects)
+  private async Task UploadObjectsImpl(string streamId, List<List<(string, string)>> multipartedObjects,  Action<string, int>? progress)
   {
     // Stopwatch sw = new Stopwatch(); sw.Start();
 

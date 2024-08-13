@@ -127,7 +127,7 @@ public sealed class ServerTransport : IServerTransport
     var stopwatch = Stopwatch.StartNew();
     api.CancellationToken = CancellationToken;
 
-    string rootObjectJson = await api.DownloadSingleObject(StreamId, id).ConfigureAwait(false);
+    string rootObjectJson = await api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
     IList<string> allIds = ParseChildrenIds(rootObjectJson);
 
     List<string> childrenIds = allIds.Where(x => !x.Contains("blob:")).ToList();
@@ -148,6 +148,7 @@ public sealed class ServerTransport : IServerTransport
     await api.DownloadObjects(
         StreamId,
         newChildrenIds,
+        OnProgressAction,
         (childId, childData) =>
         {
           stopwatch.Stop();
@@ -199,7 +200,7 @@ public sealed class ServerTransport : IServerTransport
   {
     CancellationToken.ThrowIfCancellationRequested();
     var stopwatch = Stopwatch.StartNew();
-    var result = Api.DownloadSingleObject(StreamId, id).Result;
+    var result = Api.DownloadSingleObject(StreamId, id, OnProgressAction).Result;
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
     return result;
@@ -386,7 +387,7 @@ public sealed class ServerTransport : IServerTransport
         // Report the objects that are already on the server
         OnProgressAction?.Invoke(TransportName, hasObjects.Count - newObjects.Count);
 
-        await Api.UploadObjects(StreamId, newObjects).ConfigureAwait(false);
+        await Api.UploadObjects(StreamId, newObjects, OnProgressAction).ConfigureAwait(false);
 
         if (bufferBlobs.Count != 0)
         {

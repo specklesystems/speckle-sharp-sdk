@@ -93,10 +93,11 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     return ret;
   }
 
-  public async Task<string> DownloadSingleObject(string streamId, string objectId)
+  public async Task<string> DownloadSingleObject(string streamId, string objectId, 
+    Action<string, int>? progress)
   {
     EnsureStarted();
-    Task<object?> op = QueueOperation(ServerApiOperation.DownloadSingleObject, (streamId, objectId));
+    Task<object?> op = QueueOperation(ServerApiOperation.DownloadSingleObject, (streamId, objectId, progress));
     object? result = await op.ConfigureAwait(false);
     return (string)result!;
   }
@@ -104,6 +105,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
   public async Task DownloadObjects(
     string streamId,
     IReadOnlyList<string> objectIds,
+    Action<string, int>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -129,14 +131,14 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
       Task<object?> op = QueueOperation(
         ServerApiOperation.DownloadObjects,
-        (streamId, splitObjectsIds[i], callbackWrapper)
+        (streamId, splitObjectsIds[i], progress, callbackWrapper)
       );
       tasks.Add(op);
     }
     await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
   }
 
-  public async Task UploadObjects(string streamId, IReadOnlyList<(string, string)> objects)
+  public async Task UploadObjects(string streamId, IReadOnlyList<(string, string)> objects,  Action<string, int>? progress)
   {
     EnsureStarted();
     List<Task<object?>> tasks = new();
@@ -162,7 +164,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
         continue;
       }
 
-      var op = QueueOperation(ServerApiOperation.UploadObjects, (streamId, splitObjects[i]));
+      var op = QueueOperation(ServerApiOperation.UploadObjects, (streamId, splitObjects[i], progress));
       tasks.Add(op);
     }
     await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
@@ -245,18 +247,18 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     switch (operation)
     {
       case ServerApiOperation.DownloadSingleObject:
-        var (dsoStreamId, dsoObjectId) = ((string, string))inputValue;
-        return await serialApi.DownloadSingleObject(dsoStreamId, dsoObjectId).ConfigureAwait(false);
+        var (dsoStreamId, dsoObjectId, progress) = ((string, string,  Action<string, int>))inputValue;
+        return await serialApi.DownloadSingleObject(dsoStreamId, dsoObjectId, progress).ConfigureAwait(false);
       case ServerApiOperation.DownloadObjects:
-        var (doStreamId, doObjectIds, doCallback) = ((string, IReadOnlyList<string>, CbObjectDownloaded))inputValue;
-        await serialApi.DownloadObjects(doStreamId, doObjectIds, doCallback).ConfigureAwait(false);
+        var (doStreamId, doObjectIds,progress2, doCallback) = ((string, IReadOnlyList<string>,  Action<string, int>, CbObjectDownloaded))inputValue;
+        await serialApi.DownloadObjects(doStreamId, doObjectIds, progress2, doCallback).ConfigureAwait(false);
         return null;
       case ServerApiOperation.HasObjects:
         var (hoStreamId, hoObjectIds) = ((string, IReadOnlyList<string>))inputValue;
         return await serialApi.HasObjects(hoStreamId, hoObjectIds).ConfigureAwait(false);
       case ServerApiOperation.UploadObjects:
-        var (uoStreamId, uoObjects) = ((string, IReadOnlyList<(string, string)>))inputValue;
-        await serialApi.UploadObjects(uoStreamId, uoObjects).ConfigureAwait(false);
+        var (uoStreamId, uoObjects, progress3) = ((string, IReadOnlyList<(string, string)>,  Action<string, int>))inputValue;
+        await serialApi.UploadObjects(uoStreamId, uoObjects, progress3).ConfigureAwait(false);
         return null;
       case ServerApiOperation.UploadBlobs:
         var (ubStreamId, ubBlobs) = ((string, IReadOnlyList<(string, string)>))inputValue;
