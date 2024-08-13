@@ -34,6 +34,8 @@
     <PackageIcon>logo.png</PackageIcon>
     <RepositoryUrl>https://github.com/specklesystems/speckle-sharp-sdk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <!-- Expose the repository root to all projects -->
     <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
