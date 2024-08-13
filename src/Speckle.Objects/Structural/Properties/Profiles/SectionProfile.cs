@@ -47,6 +47,7 @@ public class SectionProfile : Base //section profile description
   public double weight { get; set; } //section weight, ex. kg/m weight is defined in materials though more ? rather than section profile.
   public string units { get; set; }
 }
+
 [SpeckleType("Objects.Structural.Properties.Profiles.Rectangular")]
 public class Rectangular : SectionProfile
 {
@@ -73,6 +74,7 @@ public class Rectangular : SectionProfile
   public double flangeThickness { get; set; } // tf
   public override ShapeType shapeType { get; set; } = ShapeType.Rectangular;
 }
+
 [SpeckleType("Objects.Structural.Properties.Profiles.Circular")]
 public class Circular : SectionProfile
 {

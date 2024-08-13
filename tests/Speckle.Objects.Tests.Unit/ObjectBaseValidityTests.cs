@@ -15,7 +15,7 @@ public class ObjectBaseValidityTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly);
   }
-  
+
   [Test]
   public void InheritanceTest()
   {
@@ -25,7 +25,9 @@ public class ObjectBaseValidityTests
       TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly, typeof(Test).Assembly);
     });
     exception.ShouldNotBeNull();
-    exception.Message.ShouldBe("Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute");
+    exception.Message.ShouldBe(
+      "Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute"
+    );
   }
 
   public class Test : Polycurve;
