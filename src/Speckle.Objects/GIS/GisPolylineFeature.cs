@@ -7,18 +7,10 @@ namespace Speckle.Objects.GIS;
 [SpeckleType("Objects.GIS.GisPolylineFeature")]
 public class GisPolylineFeature : Base, IGisFeature, IDisplayValue<List<Polyline>>
 {
-  public GisPolylineFeature() { }
-
-  public GisPolylineFeature(List<Polyline> polylines, Base attributes)
-  {
-    displayValue = polylines;
-    this.attributes = attributes;
-  }
-
-  public Base attributes { get; set; }
+  public required Base attributes { get; set; }
 
   [JsonIgnore]
-  public List<Polyline> geometry
+  public required List<Polyline> geometry
   {
     get { return displayValue; }
     set { displayValue = value; }

@@ -7,18 +7,10 @@ namespace Speckle.Objects.GIS;
 [SpeckleType("Objects.GIS.GisPointFeature")]
 public class GisPointFeature : Base, IGisFeature, IDisplayValue<List<Point>>
 {
-  public GisPointFeature() { }
-
-  public GisPointFeature(List<Point> points, Base attributes)
-  {
-    displayValue = points;
-    this.attributes = attributes;
-  }
-
-  public Base attributes { get; set; }
+  public required Base attributes { get; set; }
 
   [JsonIgnore]
-  public List<Point> geometry
+  public required List<Point> geometry
   {
     get { return displayValue; }
     set { displayValue = value; }
