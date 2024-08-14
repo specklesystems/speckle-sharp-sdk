@@ -104,7 +104,7 @@ public abstract class TransportTests
   public async Task ProgressAction_Called_OnSaveObject()
   {
     bool wasCalled = false;
-    Sut.NotNull().OnProgressAction = (_, _) => wasCalled = true;
+    Sut.NotNull().OnProgressAction = (_) => wasCalled = true;
 
     Sut.SaveObject("12345", "fake payload data");
 

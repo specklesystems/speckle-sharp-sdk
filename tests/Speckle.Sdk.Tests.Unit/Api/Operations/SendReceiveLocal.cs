@@ -196,7 +196,7 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    ConcurrentDictionary<string, int>? progress = null;
+    ConcurrentBag<ProgressArgs>? progress = null;
     (_commitId02, _) = await Sdk.Api.Operations.Send(
       myObject,
       _sut,
@@ -207,13 +207,13 @@ public sealed class SendReceiveLocal : IDisposable
       }
     );
     progress.NotNull();
-    Assert.That(progress.Keys, Has.Count.GreaterThanOrEqualTo(1));
+    Assert.That(progress, Has.Count.GreaterThanOrEqualTo(1));
   }
 
   [Test(Description = "Should show progress!"), Order(5)]
   public async Task DownloadProgressReports()
   {
-    ConcurrentDictionary<string, int>? progress = null;
+    ConcurrentBag<ProgressArgs>? progress = null;
     var pulledCommit = await Sdk.Api.Operations.Receive(
       _commitId02!,
       onProgressAction: dict =>
@@ -222,7 +222,7 @@ public sealed class SendReceiveLocal : IDisposable
       }
     );
     progress.NotNull();
-    Assert.That(progress.Keys, Has.Count.GreaterThanOrEqualTo(1));
+    Assert.That(progress, Has.Count.GreaterThanOrEqualTo(1));
   }
 
   [Test(Description = "Should not dispose of transports if so specified.")]
