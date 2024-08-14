@@ -266,7 +266,6 @@ public sealed class ServerApi : IDisposable, IServerApi
   public async Task DownloadBlobs(
     string streamId,
     IReadOnlyList<string> blobIds,
-    CbBlobdDownloaded onBlobCallback,
     Action<ProgressArgs>? progress
   )
   {
@@ -301,8 +300,6 @@ public sealed class ServerApi : IDisposable, IServerApi
         {
           await source.CopyToAsync(fs).ConfigureAwait(false);
         }
-
-        onBlobCallback();
       }
       catch (Exception ex) when (!ex.IsFatal())
       {

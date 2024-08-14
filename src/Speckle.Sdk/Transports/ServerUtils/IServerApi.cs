@@ -1,7 +1,6 @@
 namespace Speckle.Sdk.Transports.ServerUtils;
 
 public delegate void CbObjectDownloaded(string id, string json);
-public delegate void CbBlobdDownloaded();
 
 internal interface IServerApi
 {
@@ -31,7 +30,6 @@ internal interface IServerApi
   public Task DownloadBlobs(
     string streamId,
     IReadOnlyList<string> blobIds,
-    CbBlobdDownloaded onBlobCallback,
     Action<ProgressArgs>? progress
   );
 }

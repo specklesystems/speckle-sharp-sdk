@@ -178,7 +178,7 @@ public sealed class ServerTransport : IServerTransport
       .Where(blobId => !localBlobTrimmedHashes.Contains(blobId.Substring(0, Blob.LocalHashPrefixLength)))
       .ToList();
 
-    await api.DownloadBlobs(StreamId, newBlobIds, () => { }, OnProgressAction).ConfigureAwait(false);
+    await api.DownloadBlobs(StreamId, newBlobIds, OnProgressAction).ConfigureAwait(false);
 
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
