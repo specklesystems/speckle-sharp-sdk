@@ -7,6 +7,10 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents a circular curve based on a base <see cref="Plane"/> and a <see cref="double"/> as radius.
 /// </summary>
+/// <remarks>
+/// These circles are expected to be full (untrimmed) circles.
+/// For trimmed circles, convert them as <see cref="Arc"/>s instead
+/// </remarks>
 [SpeckleType("Objects.Geometry.Circle")]
 public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
 {
@@ -26,10 +30,10 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
   public required string units { get; set; }
 
   /// <inheritdoc/>
-  public Interval domain { get; set; } = Interval.UnitInterval; //TODO: should this be 0 - 2pi
+  public Interval domain { get; set; } = Interval.UnitInterval;
 
   /// <inheritdoc/>
-  public double length { get; set; } //TODO: should this be calculated
+  public double length { get; set; }
 
   //public Point center { get; set; }
 

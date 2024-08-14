@@ -146,6 +146,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       if (value != null)
       {
         var units = value.Count % 3 == 0 ? Units.None : Units.GetUnitFromEncoding(value[0]);
+        Vertices = new(value.Count / 3);
         for (int i = value.Count % 3 == 0 ? 0 : 1; i < value.Count; i += 3)
         {
           Vertices.Add(new Point(value[i], value[i + 1], value[i + 2], units));
@@ -339,7 +340,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
           IsoStatus = value[i + 6],
           TrimType = (BrepTrimType)value[i + 7],
           IsReversed = value[i + 8] == 1,
-          Domain = Interval.UnitInterval, //TODO: this can't be correct
+          Domain = Interval.UnitInterval, //TODO: This is a problem, see CXPLA-28
         };
         list.Add(trim);
       }
@@ -641,8 +642,8 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
             IsReversed = t.IsReversed,
             StartIndex = t.StartIndex,
             EndIndex = t.EndIndex,
-            FaceIndex = default, //TODO: this can't be correct
-            Domain = Interval.UnitInterval, //TODO: this can't be correct
+            FaceIndex = t.FaceIndex,
+            Domain = Interval.UnitInterval, //TODO: This is a problem, see CXPLA-28
           };
           Trims[i] = t;
         }
