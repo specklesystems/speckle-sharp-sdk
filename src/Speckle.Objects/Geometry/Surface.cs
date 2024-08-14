@@ -203,10 +203,10 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
     list.Add(rational ? 1 : 0);
     list.Add(closedU ? 1 : 0);
     list.Add(closedV ? 1 : 0);
-    list.Add(domainU.start ?? 0); // 7
-    list.Add(domainU.end ?? 1);
-    list.Add(domainV.start ?? 0);
-    list.Add(domainV.end ?? 1); // [0] 10
+    list.Add(domainU.start); // 7
+    list.Add(domainU.end);
+    list.Add(domainV.start);
+    list.Add(domainV.end); // [0] 10
 
     list.Add(pointData.Count); // 11
     list.Add(knotsU.Count); // 12

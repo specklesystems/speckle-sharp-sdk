@@ -41,7 +41,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   public required string units { get; set; }
 
   /// <inheritdoc/>
-  public Interval domain { get; set; } = new Interval(0, 1);
+  public Interval domain { get; set; } = Interval.UnitInterval;
 
   /// <inheritdoc/>
   public double length { get; set; }
@@ -80,7 +80,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
       closed = closed,
       units = units,
       applicationId = applicationId,
-      domain = domain != null ? new Interval { start = domain.start, end = domain.end } : new Interval(0, 1)
+      domain = domain != null ? new Interval { start = domain.start, end = domain.end } : Interval.UnitInterval
     };
 
     return result;
@@ -177,7 +177,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
       periodic = (int)list[3] == 1,
       rational = (int)list[4] == 1,
       closed = (int)list[5] == 1,
-      domain = new Interval(list[6], list[7]),
+      domain = new Interval { start = list[6], end = list[7] },
       displayValue = new Polyline { value = new(), units = units },
       points = list.GetRange(11, pointsCount),
       weights = list.GetRange(11 + pointsCount, weightsCount),

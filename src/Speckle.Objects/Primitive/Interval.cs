@@ -16,4 +16,6 @@ public class Interval : Base
   {
     return base.ToString() + $"[{start}, {end}]";
   }
+
+  public static Interval UnitInterval => new() { start = 0, end = 1 };
 }

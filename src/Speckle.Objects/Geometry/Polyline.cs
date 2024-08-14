@@ -32,7 +32,7 @@ public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   /// <summary>
   /// The internal domain of this curve.
   /// </summary>
-  public Interval domain { get; set; } = new(0, 1);
+  public Interval domain { get; set; } = Interval.UnitInterval;
 
   /// <inheritdoc/>
   public double length { get; set; }
@@ -116,7 +116,7 @@ public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
     return new()
     {
       closed = (int)list[2] == 1,
-      domain = new Interval(list[3], list[4]),
+      domain = new Interval { start = list[3], end = list[4] },
       value = list.GetRange(6, pointCount),
       units = Units.GetUnitFromEncoding(list[^1])
     };

@@ -26,10 +26,10 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
   public required string units { get; set; }
 
   /// <inheritdoc/>
-  public Interval domain { get; set; } = new(0, 1);
+  public Interval domain { get; set; } = Interval.UnitInterval; //TODO: should this be 0 - 2pi
 
   /// <inheritdoc/>
-  public double length { get; set; }
+  public double length { get; set; } //TODO: should this be calculated
 
   //public Point center { get; set; }
 
@@ -47,9 +47,9 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
   {
     var list = new List<double>();
 
-    list.Add(radius ?? 0);
-    list.Add(domain?.start ?? 0);
-    list.Add(domain?.end ?? 1);
+    list.Add(radius);
+    list.Add(domain.start);
+    list.Add(domain.end);
     list.AddRange(plane.ToList());
 
     list.Add(Units.GetEncodingFromUnit(units));
@@ -68,7 +68,7 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
     var circle = new Circle
     {
       radius = list[2],
-      domain = new Interval(list[3], list[4]),
+      domain = new Interval { start = list[3], end = list[4] },
       plane = Plane.FromList(list.GetRange(5, 13)),
       units = Units.GetUnitFromEncoding(list[list.Count - 1])
     };
