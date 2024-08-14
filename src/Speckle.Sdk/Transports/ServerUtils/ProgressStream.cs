@@ -23,7 +23,7 @@ internal class ProgressStream(Stream input, long? streamLength, Action<ProgressA
   {
     _stream.Write(buffer, offset, count);
     _position += count;
-    progress?.Invoke(new(ProgressEvent.DownloadBytes, _position, streamLength));
+    progress?.Invoke(new(ProgressEvent.UploadBytes, _position, streamLength));
   }
 
   public override bool CanRead => true;
