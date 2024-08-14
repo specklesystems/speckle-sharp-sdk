@@ -7,7 +7,9 @@ namespace Speckle.Sdk.Helpers;
 public sealed class SpeckleHttpClientHandler : DelegatingHandler
 {
   private readonly IEnumerable<TimeSpan> _delay;
-  public SpeckleHttpClientHandler(HttpMessageHandler innerhandler, IEnumerable<TimeSpan>? delay = null) : base(innerhandler)
+
+  public SpeckleHttpClientHandler(HttpMessageHandler innerhandler, IEnumerable<TimeSpan>? delay = null)
+    : base(innerhandler)
   {
     _delay = delay ?? Http.DefaultDelay();
   }

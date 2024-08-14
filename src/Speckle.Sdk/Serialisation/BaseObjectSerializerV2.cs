@@ -286,7 +286,7 @@ public class BaseObjectSerializerV2
       ObjectReference objRef = new() { referencedId = id };
       var objRefConverted = (IReadOnlyDictionary<string, object?>?)PreserializeObject(objRef);
       UpdateParentClosures(id);
-      _onProgressAction?.Invoke(new (ProgressEvent.SerializeObject, null, 1, null));
+      _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, null, 1, null));
 
       // add to obj refs to return
       if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.

@@ -331,7 +331,9 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
         CancellationToken.ThrowIfCancellationRequested();
       }
 
-      OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, Convert.ToInt32(saved/(_queue.Count + 1)), saved, _queue.Count));
+      OnProgressAction?.Invoke(
+        new(ProgressEvent.DownloadObject, Convert.ToInt32(saved / (_queue.Count + 1)), saved, _queue.Count)
+      );
 
       CancellationToken.ThrowIfCancellationRequested();
 

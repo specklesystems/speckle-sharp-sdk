@@ -29,15 +29,11 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
   private readonly int _timeoutSeconds;
 
-  private readonly Action<HttpProgressEventArgs>? _httpSendProgress;
-  private readonly Action<HttpProgressEventArgs>? _httpReceiveProgress;
-
   public ParallelServerApi(
     Uri baseUri,
     string authorizationToken,
     string blobStorageFolder,
     int timeoutSeconds,
-    Action<HttpProgressEventArgs>? httpSendProgress, Action<HttpProgressEventArgs>? httpReceiveProgress,
     int numThreads = 4,
     int numBufferedOperations = 8
   )
@@ -46,8 +42,6 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     _authToken = authorizationToken;
     _timeoutSeconds = timeoutSeconds;
     NumThreads = numThreads;
-    _httpSendProgress = httpSendProgress;
-    _httpReceiveProgress = httpReceiveProgress;
 
     BlobStorageFolder = blobStorageFolder;
 
@@ -100,8 +94,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     return ret;
   }
 
-  public async Task<string> DownloadSingleObject(string streamId, string objectId, 
-    Action<ProgressArgs>? progress)
+  public async Task<string> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
   {
     EnsureStarted();
     Task<object?> op = QueueOperation(ServerApiOperation.DownloadSingleObject, (streamId, objectId, progress));
@@ -145,7 +138,11 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
   }
 
-  public async Task UploadObjects(string streamId, IReadOnlyList<(string, string)> objects,  Action<ProgressArgs>? progress)
+  public async Task UploadObjects(
+    string streamId,
+    IReadOnlyList<(string, string)> objects,
+    Action<ProgressArgs>? progress
+  )
   {
     EnsureStarted();
     List<Task<object?>> tasks = new();
@@ -177,14 +174,19 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
   }
 
-  public async Task UploadBlobs(string streamId, IReadOnlyList<(string, string)> blobs,  Action<ProgressArgs>? progress)
+  public async Task UploadBlobs(string streamId, IReadOnlyList<(string, string)> blobs, Action<ProgressArgs>? progress)
   {
     EnsureStarted();
     var op = QueueOperation(ServerApiOperation.UploadBlobs, (streamId, blobs, progress));
     await op.ConfigureAwait(false);
   }
 
-  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, CbBlobdDownloaded onBlobDownloaded,  Action<ProgressArgs>? progress)
+  public async Task DownloadBlobs(
+    string streamId,
+    IReadOnlyList<string> blobIds,
+    CbBlobdDownloaded onBlobDownloaded,
+    Action<ProgressArgs>? progress
+  )
   {
     EnsureStarted();
     var op = QueueOperation(ServerApiOperation.DownloadBlobs, (streamId, blobIds, onBlobDownloaded, progress));
@@ -212,7 +214,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
   protected override void ThreadMain()
   {
-    using ServerApi serialApi = new(_baseUri, _authToken, BlobStorageFolder, _httpSendProgress, _httpReceiveProgress, _timeoutSeconds);
+    using ServerApi serialApi = new(_baseUri, _authToken, BlobStorageFolder, _timeoutSeconds);
 
     serialApi.OnBatchSent = (num, size) =>
     {
@@ -254,21 +256,34 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     switch (operation)
     {
       case ServerApiOperation.DownloadSingleObject:
-        var (dsoStreamId, dsoObjectId, progress) = ((string, string,  Action<ProgressArgs>?))inputValue;
+        var (dsoStreamId, dsoObjectId, progress) = ((string, string, Action<ProgressArgs>?))inputValue;
         return await serialApi.DownloadSingleObject(dsoStreamId, dsoObjectId, progress).ConfigureAwait(false);
       case ServerApiOperation.DownloadObjects:
-        var (doStreamId, doObjectIds,progress2, doCallback) = ((string, IReadOnlyList<string>,  Action<ProgressArgs>?, CbObjectDownloaded))inputValue;
+        var (doStreamId, doObjectIds, progress2, doCallback) = ((
+          string,
+          IReadOnlyList<string>,
+          Action<ProgressArgs>?,
+          CbObjectDownloaded
+        ))inputValue;
         await serialApi.DownloadObjects(doStreamId, doObjectIds, progress2, doCallback).ConfigureAwait(false);
         return null;
       case ServerApiOperation.HasObjects:
         var (hoStreamId, hoObjectIds) = ((string, IReadOnlyList<string>))inputValue;
         return await serialApi.HasObjects(hoStreamId, hoObjectIds).ConfigureAwait(false);
       case ServerApiOperation.UploadObjects:
-        var (uoStreamId, uoObjects, progress3) = ((string, IReadOnlyList<(string, string)>,  Action<ProgressArgs>?))inputValue;
+        var (uoStreamId, uoObjects, progress3) = ((
+          string,
+          IReadOnlyList<(string, string)>,
+          Action<ProgressArgs>?
+        ))inputValue;
         await serialApi.UploadObjects(uoStreamId, uoObjects, progress3).ConfigureAwait(false);
         return null;
       case ServerApiOperation.UploadBlobs:
-        var (ubStreamId, ubBlobs, progress4) = ((string, IReadOnlyList<(string, string)>,  Action<ProgressArgs>?))inputValue;
+        var (ubStreamId, ubBlobs, progress4) = ((
+          string,
+          IReadOnlyList<(string, string)>,
+          Action<ProgressArgs>?
+        ))inputValue;
         await serialApi.UploadBlobs(ubStreamId, ubBlobs, progress4).ConfigureAwait(false);
         return null;
       case ServerApiOperation.HasBlobs:
@@ -277,7 +292,12 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
           .HasBlobs(hbStreamId, hBlobs.Select(b => b.Item1.Split(':')[1]).ToList())
           .ConfigureAwait(false);
       case ServerApiOperation.DownloadBlobs:
-        var (dbStreamId, blobIds, cb, progress5) = ((string, IReadOnlyList<string>, CbBlobdDownloaded,  Action<ProgressArgs>?))inputValue;
+        var (dbStreamId, blobIds, cb, progress5) = ((
+          string,
+          IReadOnlyList<string>,
+          CbBlobdDownloaded,
+          Action<ProgressArgs>?
+        ))inputValue;
         await serialApi.DownloadBlobs(dbStreamId, blobIds, cb, progress5).ConfigureAwait(false);
         return null;
       default:

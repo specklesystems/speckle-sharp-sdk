@@ -15,15 +15,12 @@ public static partial class Operations
   /// </summary>
   /// <param name="onProgressAction"></param>
   /// <returns></returns>
-  private static Action<ProgressArgs>? GetInternalProgressAction(
-    Action<ConcurrentBag<ProgressArgs>>? onProgressAction
-  )
+  private static Action<ProgressArgs>? GetInternalProgressAction(Action<ConcurrentBag<ProgressArgs>>? onProgressAction)
   {
     if (onProgressAction is null)
     {
       return null;
     }
-
 
     return (args) =>
     {

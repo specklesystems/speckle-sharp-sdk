@@ -11,7 +11,9 @@ public enum ProgressEvent
   DeserializeObject,
   SerializeObject,
 }
+
 public record ProgressArgs(ProgressEvent ProgressEvent, int? Percentage, long? Count, long? Total);
+
 /// <summary>
 /// Interface defining the contract for transport implementations.
 /// </summary>

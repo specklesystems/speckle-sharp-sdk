@@ -129,8 +129,6 @@ public static class Helpers
     return receiveRes;
   }
 
- 
-
   /// <inheritdoc cref="TimeAgo(DateTime)"/>
   /// <param name="fallback">value to fallback to if the given <paramref name="timestamp"/> is <see langword="null"/></param>
   public static string TimeAgo(DateTime? timestamp, string fallback = "Never")

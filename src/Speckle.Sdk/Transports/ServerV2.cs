@@ -122,13 +122,7 @@ public sealed class ServerTransport : IServerTransport
 
     CancellationToken.ThrowIfCancellationRequested();
 
-    using ParallelServerApi api = new(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds, e =>
-    {
-      OnProgressAction?.Invoke(new (ProgressEvent.DownloadBytes, e.ProgressPercentage, e.BytesTransferred, e.TotalBytes));
-    }, e =>
-    {
-      OnProgressAction?.Invoke(new (ProgressEvent.UploadBytes, e.ProgressPercentage, e.BytesTransferred, e.TotalBytes));
-    });
+    using ParallelServerApi api = new(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
 
     var stopwatch = Stopwatch.StartNew();
     api.CancellationToken = CancellationToken;
@@ -186,15 +180,7 @@ public sealed class ServerTransport : IServerTransport
       .Where(blobId => !localBlobTrimmedHashes.Contains(blobId.Substring(0, Blob.LocalHashPrefixLength)))
       .ToList();
 
-    await api.DownloadBlobs(
-        StreamId,
-        newBlobIds,
-        () =>
-        {
-          
-        }, OnProgressAction
-      )
-      .ConfigureAwait(false);
+    await api.DownloadBlobs(StreamId, newBlobIds, () => { }, OnProgressAction).ConfigureAwait(false);
 
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
@@ -300,12 +286,7 @@ public sealed class ServerTransport : IServerTransport
   {
     SpeckleLog.Logger.Information("Initializing a new Remote Transport for {baseUri}", baseUri);
 
-    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds,  e => {
-      OnProgressAction?.Invoke(new (ProgressEvent.DownloadBytes, e.ProgressPercentage, e.BytesTransferred, e.TotalBytes));
-    }, e =>
-    {
-      OnProgressAction?.Invoke(new (ProgressEvent.UploadBytes, e.ProgressPercentage, e.BytesTransferred, e.TotalBytes));
-    })
+    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds)
     {
       OnBatchSent = (num, size) =>
       {
@@ -392,7 +373,6 @@ public sealed class ServerTransport : IServerTransport
             newObjects.Add((id, (string)json));
           }
         }
-
 
         await Api.UploadObjects(StreamId, newObjects, OnProgressAction).ConfigureAwait(false);
 

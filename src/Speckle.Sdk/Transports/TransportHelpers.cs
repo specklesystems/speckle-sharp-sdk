@@ -52,7 +52,9 @@ public static class TransportHelpers
 
         targetTransport.SaveObject(kvp.Key, child);
         var count = i++;
-        sourceTransport.OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.UploadObject, Convert.ToInt32(count/closures.Count), count, closures.Count));
+        sourceTransport.OnProgressAction?.Invoke(
+          new ProgressArgs(ProgressEvent.UploadObject, Convert.ToInt32(count / closures.Count), count, closures.Count)
+        );
       }
     }
 

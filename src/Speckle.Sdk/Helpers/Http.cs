@@ -128,7 +128,7 @@ public static class Http
   {
     try
     {
-      using var httpClient = GetHttpProxyClient(null,null);
+      using var httpClient = GetHttpProxyClient(null, null);
       HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
       response.EnsureSuccessStatusCode();
       SpeckleLog.Logger.Information("Successfully pinged {uri}", uri);
@@ -142,17 +142,16 @@ public static class Http
   }
 
   public static HttpClient GetHttpProxyClient(
-    Action<HttpProgressEventArgs>? httpSendProgress, Action<HttpProgressEventArgs>? httpReceiveProgress, SpeckleHttpClientHandler? speckleHttpClientHandler = null, TimeSpan? timeout = null)
+    SpeckleHttpClientHandler? speckleHttpClientHandler = null,
+    TimeSpan? timeout = null
+  )
   {
     IWebProxy proxy = WebRequest.GetSystemWebProxy();
     proxy.Credentials = CredentialCache.DefaultCredentials;
 
     speckleHttpClientHandler ??= new SpeckleHttpClientHandler(new HttpClientHandler());
 
-    var client = new HttpClient(new ProgressMessageHandler(speckleHttpClientHandler)
-    {
-      
-    }) { Timeout = timeout ?? TimeSpan.FromSeconds(100) };
+    var client = new HttpClient(speckleHttpClientHandler) { Timeout = timeout ?? TimeSpan.FromSeconds(100) };
     return client;
   }
 

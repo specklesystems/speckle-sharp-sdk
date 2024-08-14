@@ -75,7 +75,6 @@ public static partial class Operations
       throw new ArgumentException("Expected at least on transport to be specified", nameof(transports));
     }
 
-
     // make sure all logs in the operation have the proper context
     using var activity = SpeckleActivityFactory.Start();
     activity?.SetTag("correlationId", Guid.NewGuid().ToString());
