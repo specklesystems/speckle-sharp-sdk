@@ -92,7 +92,7 @@ public abstract class TransportTests
       Assert.That(res, Is.EqualTo(x.data));
     }
   }
-  
+
   [Test]
   public async Task ProgressAction_Called_OnSaveObject()
   {
