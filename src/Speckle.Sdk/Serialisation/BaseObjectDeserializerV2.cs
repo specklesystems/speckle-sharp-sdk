@@ -66,6 +66,7 @@ public sealed class BaseObjectDeserializerV2
 
       List<(string, int)> closures = GetClosures(rootObjectJson);
       closures.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+      int i = 0;
       foreach (var closure in closures)
       {
         string objId = closure.Item1;
@@ -77,7 +78,7 @@ public sealed class BaseObjectDeserializerV2
         //but adding throw here breaks blobs tests, see CNX-8541
 
         stopwatch.Start();
-        object? deserializedOrPromise = DeserializeTransportObjectProxy(objJson);
+        object? deserializedOrPromise = DeserializeTransportObjectProxy(objJson, i++, closures.Count);
         lock (_deserializedObjects)
         {
           _deserializedObjects[objId] = deserializedOrPromise;
@@ -87,7 +88,7 @@ public sealed class BaseObjectDeserializerV2
       object? ret;
       try
       {
-        ret = DeserializeTransportObject(rootObjectJson);
+        ret = DeserializeTransportObject(rootObjectJson, null, null);
       }
       catch (JsonReaderException ex)
       {
@@ -140,21 +141,21 @@ public sealed class BaseObjectDeserializerV2
     }
   }
 
-  private object? DeserializeTransportObjectProxy(string? objectJson)
+  private object? DeserializeTransportObjectProxy(string? objectJson, long? current, long? total)
   {
     if (objectJson is null)
     {
       return null;
     }
     // Try background work
-    Task<object?>? bgResult = _workerThreads?.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
+    Task<object?>? bgResult = _workerThreads?.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson,  current, total); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
     if (bgResult != null)
     {
       return bgResult;
     }
 
     // SyncS
-    return DeserializeTransportObject(objectJson);
+    return DeserializeTransportObject(objectJson, current, total);
   }
 
   /// <param name="objectJson"></param>
@@ -162,7 +163,7 @@ public sealed class BaseObjectDeserializerV2
   /// <exception cref="ArgumentNullException"><paramref name="objectJson"/> was null</exception>
   /// <exception cref="JsonReaderException "><paramref name="objectJson"/> was not valid JSON</exception>
   /// <exception cref="SpeckleDeserializeException">Failed to deserialize <see cref="JObject"/> to the target type</exception>
-  public object? DeserializeTransportObject(string objectJson)
+  public object? DeserializeTransportObject(string objectJson, long? current, long? total)
   {
     if (objectJson is null)
     {
@@ -191,7 +192,12 @@ public sealed class BaseObjectDeserializerV2
 
     lock (_callbackLock)
     {
-      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, null, 1, null));
+      int? percentage = null;
+      if (current is not null && total is not null)
+      {
+        percentage = Convert.ToInt32(((double)current / total) * 100);
+      }
+      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, percentage, current, total));
     }
 
     return converted;
@@ -319,7 +325,7 @@ public sealed class BaseObjectDeserializerV2
             throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
           }
 
-          deserialized = DeserializeTransportObject(objectJson);
+          deserialized = DeserializeTransportObject(objectJson, null, null);
 
           lock (_deserializedObjects)
           {
