@@ -1,10 +1,10 @@
-﻿using Speckle.Sdk.Transports.ServerUtils;
+﻿namespace Speckle.Sdk.Transports;
 
-namespace Speckle.Sdk.Transports;
-
-internal class ProgressStream(Stream input, long? streamLength, Action<ProgressArgs>? progress) : Stream
+internal class ProgressStream(Stream input, long? streamLength, Action<ProgressArgs>? progress)
+  : Stream
 {
   private long _position;
+  private readonly Stream _stream = new BufferedStream(input, 80 * 1024);
 
   public override void Flush() => throw new NotImplementedException();
 
@@ -14,7 +14,7 @@ internal class ProgressStream(Stream input, long? streamLength, Action<ProgressA
 
   public override int Read(byte[] buffer, int offset, int count)
   {
-    int n = input.Read(buffer, offset, count);
+    int n = _stream.Read(buffer, offset, count);
     _position += n;
     progress?.Invoke(new(ProgressEvent.DownloadBytes, _position, streamLength));
     return n;
