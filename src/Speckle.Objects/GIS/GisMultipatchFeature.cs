@@ -3,7 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.GIS;
 
-[SpeckleType("Objects.GIS.GisPolygonFeature")]
+[SpeckleType("Objects.GIS.GisMultipatchFeature")]
 public class GisMultipatchFeature : Base, IGisFeature, IDisplayValue<List<Mesh>>
 {
   public GisMultipatchFeature() { }
