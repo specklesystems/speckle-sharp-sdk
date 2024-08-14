@@ -16,12 +16,7 @@ internal class ProgressStream(Stream input, long? streamLength, Action<ProgressA
   {
     int n = input.Read(buffer, offset, count);
     _position += n;
-    int? percentage = null;
-    if (streamLength is not null)
-    {
-      percentage = Convert.ToInt32(_position / streamLength);
-    }
-    progress?.Invoke(new(ProgressEvent.DownloadBytes, percentage, _position, streamLength));
+    progress?.Invoke(new(ProgressEvent.DownloadBytes, _position, streamLength));
     return n;
   }
 

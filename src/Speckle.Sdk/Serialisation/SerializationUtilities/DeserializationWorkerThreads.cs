@@ -48,7 +48,7 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
 
       try
       {
-        (string objectJson, long ? current, long ? total) = ((string, long?, long?))inputValue!;
+        (string objectJson, long? current, long? total) = ((string, long?, long?))inputValue!;
         var result = RunOperation(taskType, objectJson, current, total, _serializer);
         tcs.SetResult(result);
       }
@@ -66,7 +66,9 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
 
   private static object? RunOperation(
     WorkerThreadTaskType taskType,
-    string objectJson, long? current, long? total,
+    string objectJson,
+    long? current,
+    long? total,
     BaseObjectDeserializerV2 serializer
   )
   {

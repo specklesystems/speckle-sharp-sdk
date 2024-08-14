@@ -58,7 +58,7 @@ public sealed class MemoryTransport : ITransport, ICloneable
     Objects[id] = serializedObject;
 
     SavedObjectCount++;
-    OnProgressAction?.Invoke(new(ProgressEvent.UploadObject, 100, 1, 1));
+    OnProgressAction?.Invoke(new(ProgressEvent.UploadObject, 1, 1));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
   }

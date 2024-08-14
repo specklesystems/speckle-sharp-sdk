@@ -348,19 +348,11 @@ public sealed class ServerApi : IDisposable, IServerApi
     var length = childrenHttpResponse.Content.Headers.ContentLength;
     using Stream childrenStream = await childrenHttpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
-    using var reader = new StreamReader(childrenStream, Encoding.UTF8);
+    using var reader = new StreamReader(new ProgressStream(childrenStream, length, progress), Encoding.UTF8);
     while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
     {
       CancellationToken.ThrowIfCancellationRequested();
 
-      progress?.Invoke(
-        new(
-          ProgressEvent.DownloadBytes,
-          Convert.ToInt32(childrenStream.Position / length),
-          childrenStream.Position,
-          length
-        )
-      );
       if (!isSingle)
       {
         var pcs = line.Split(s_separator, 2);

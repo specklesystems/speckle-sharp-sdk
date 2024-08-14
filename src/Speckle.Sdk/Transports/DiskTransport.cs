@@ -93,7 +93,7 @@ public class DiskTransport : ICloneable, ITransport
     }
 
     SavedObjectCount++;
-    OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, null, null, SavedObjectCount));
+    OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, null, SavedObjectCount));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
   }

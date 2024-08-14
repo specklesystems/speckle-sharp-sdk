@@ -148,7 +148,12 @@ public sealed class BaseObjectDeserializerV2
       return null;
     }
     // Try background work
-    Task<object?>? bgResult = _workerThreads?.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson,  current, total); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
+    Task<object?>? bgResult = _workerThreads?.TryStartTask(
+      WorkerThreadTaskType.Deserialize,
+      objectJson,
+      current,
+      total
+    ); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
     if (bgResult != null)
     {
       return bgResult;
@@ -192,12 +197,7 @@ public sealed class BaseObjectDeserializerV2
 
     lock (_callbackLock)
     {
-      int? percentage = null;
-      if (current is not null && total is not null)
-      {
-        percentage = Convert.ToInt32(((double)current / total) * 100);
-      }
-      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, percentage, current, total));
+      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, current, total));
     }
 
     return converted;
