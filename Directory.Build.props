@@ -32,7 +32,7 @@
     <PackageTags>speckle</PackageTags>
     <PackageProjectUrl>https://speckle.systems/</PackageProjectUrl>
     <PackageIcon>logo.png</PackageIcon>
-    <RepositoryUrl>https://github.com/specklesystems/speckle-sharp</RepositoryUrl>
+    <RepositoryUrl>https://github.com/specklesystems/speckle-sharp-sdk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <!-- Expose the repository root to all projects -->
     <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
