@@ -5,7 +5,7 @@ public delegate void CbBlobdDownloaded();
 
 internal interface IServerApi
 {
-  public Task<string> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress);
+  public Task<string?> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress);
 
   public Task DownloadObjects(
     string streamId,

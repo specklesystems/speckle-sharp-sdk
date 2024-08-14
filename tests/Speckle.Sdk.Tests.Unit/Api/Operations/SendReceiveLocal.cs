@@ -52,7 +52,7 @@ public sealed class SendReceiveLocal : IDisposable
   [Test(Description = "Pulling a commit locally"), Order(2)]
   public async Task LocalDownload()
   {
-    var commitPulled = await Sdk.Api.Operations.Receive(_objId01!);
+    var commitPulled = await Sdk.Api.Operations.Receive(_objId01.NotNull());
 
     Assert.That(((List<object>)commitPulled["@items"].NotNull())[0], Is.TypeOf<Point>());
     Assert.That(((List<object>)commitPulled["@items"].NotNull()), Has.Count.EqualTo(NUM_OBJECTS));
@@ -214,8 +214,8 @@ public sealed class SendReceiveLocal : IDisposable
   public async Task DownloadProgressReports()
   {
     ConcurrentBag<ProgressArgs>? progress = null;
-    var pulledCommit = await Sdk.Api.Operations.Receive(
-      _commitId02!,
+     await Sdk.Api.Operations.Receive(
+      _commitId02.NotNull(),
       onProgressAction: dict =>
       {
         progress = dict;

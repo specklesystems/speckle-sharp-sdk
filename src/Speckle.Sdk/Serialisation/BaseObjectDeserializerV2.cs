@@ -63,6 +63,23 @@ public sealed class BaseObjectDeserializerV2
       _deserializedObjects = new();
       _workerThreads = new DeserializationWorkerThreads(this, WorkerThreadCount);
       _workerThreads.Start();
+      
+      
+      object? ret;
+      try
+      {
+        ret = DeserializeTransportObject(rootObjectJson, null, null);
+      }
+      catch (JsonReaderException ex)
+      {
+        throw new SpeckleDeserializeException("Failed to deserialize json", ex);
+      }
+      if (ret is not Base b)
+      {
+        throw new SpeckleDeserializeException(
+          $"Expected {nameof(rootObjectJson)} to be deserialized to type {nameof(Base)} but was {ret}"
+        );
+      }
 
       List<(string, int)> closures = GetClosures(rootObjectJson);
       closures.Sort((a, b) => b.Item2.CompareTo(a.Item2));
@@ -85,24 +102,9 @@ public sealed class BaseObjectDeserializerV2
         }
       }
 
-      object? ret;
-      try
-      {
-        ret = DeserializeTransportObject(rootObjectJson, null, null);
-      }
-      catch (JsonReaderException ex)
-      {
-        throw new SpeckleDeserializeException("Failed to deserialize json", ex);
-      }
 
       stopwatch.Stop();
       Elapsed += stopwatch.Elapsed;
-      if (ret is not Base b)
-      {
-        throw new SpeckleDeserializeException(
-          $"Expected {nameof(rootObjectJson)} to be deserialized to type {nameof(Base)} but was {ret}"
-        );
-      }
 
       return b;
     }
@@ -188,7 +190,7 @@ public sealed class BaseObjectDeserializerV2
     object? converted;
     try
     {
-      converted = ConvertJsonElement(doc1);
+      converted = ConvertJsonElement(doc1,current, total);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -203,7 +205,7 @@ public sealed class BaseObjectDeserializerV2
     return converted;
   }
 
-  public object? ConvertJsonElement(JToken doc)
+  public object? ConvertJsonElement(JToken doc, long? current, long? total)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
@@ -245,7 +247,7 @@ public sealed class BaseObjectDeserializerV2
         int retListCount = 0;
         foreach (JToken value in docAsArray)
         {
-          object? convertedValue = ConvertJsonElement(value);
+          object? convertedValue = ConvertJsonElement(value,current, total);
           retListCount += convertedValue is DataChunk chunk ? chunk.data.Count : 1;
           jsonList.Add(convertedValue);
         }
@@ -276,7 +278,7 @@ public sealed class BaseObjectDeserializerV2
             continue;
           }
 
-          dict[prop.Name] = ConvertJsonElement(prop.Value);
+          dict[prop.Name] = ConvertJsonElement(prop.Value,current, total);
         }
 
         if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
@@ -325,7 +327,7 @@ public sealed class BaseObjectDeserializerV2
             throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
           }
 
-          deserialized = DeserializeTransportObject(objectJson, null, null);
+          deserialized = DeserializeTransportObject(objectJson,current, total);
 
           lock (_deserializedObjects)
           {

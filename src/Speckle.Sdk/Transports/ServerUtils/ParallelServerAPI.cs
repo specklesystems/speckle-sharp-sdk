@@ -81,8 +81,8 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     Dictionary<string, bool> ret = new();
     foreach (var task in tasks)
     {
-      var taskResult = (IReadOnlyDictionary<string, bool>)(await task.ConfigureAwait(false))!;
-      foreach (KeyValuePair<string, bool> kv in taskResult)
+      var taskResult = (IReadOnlyDictionary<string, bool>?)(await task.ConfigureAwait(false));
+      foreach (KeyValuePair<string, bool> kv in taskResult.Empty())
       {
         ret[kv.Key] = kv.Value;
       }
@@ -91,12 +91,12 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     return ret;
   }
 
-  public async Task<string> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
+  public async Task<string?> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
   {
     EnsureStarted();
     Task<object?> op = QueueOperation(ServerApiOperation.DownloadSingleObject, (streamId, objectId, progress));
     object? result = await op.ConfigureAwait(false);
-    return (string)result!;
+    return (string?)result;
   }
 
   public async Task DownloadObjects(
@@ -225,7 +225,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
       try
       {
-        var result = RunOperation(operation, inputValue!, serialApi).GetAwaiter().GetResult();
+        var result = RunOperation(operation, inputValue.NotNull(), serialApi).GetAwaiter().GetResult();
         tcs.SetResult(result);
       }
       catch (Exception ex)

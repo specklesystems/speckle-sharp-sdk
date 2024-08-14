@@ -52,7 +52,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     _client.Dispose();
   }
 
-  public async Task<string> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
+  public async Task<string?> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
@@ -69,7 +69,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
     string? rootObjectStr = null;
     await ResponseProgress(rootHttpResponse, progress, (_, json) => rootObjectStr = json, true).ConfigureAwait(false);
-    return rootObjectStr.NotNull();
+    return rootObjectStr;
   }
 
   public async Task DownloadObjects(

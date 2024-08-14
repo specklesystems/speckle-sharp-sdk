@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
@@ -124,8 +125,8 @@ public sealed class ServerTransport : IServerTransport
     var stopwatch = Stopwatch.StartNew();
     api.CancellationToken = CancellationToken;
 
-    string rootObjectJson = await api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
-    IList<string> allIds = ParseChildrenIds(rootObjectJson);
+    string? rootObjectJson = await api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
+    IList<string> allIds = ParseChildrenIds(rootObjectJson.NotNull());
 
     List<string> childrenIds = allIds.Where(x => !x.Contains("blob:")).ToList();
     List<string> blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x.Remove(0, 5)).ToList();
@@ -191,7 +192,7 @@ public sealed class ServerTransport : IServerTransport
     var result = Api.DownloadSingleObject(StreamId, id, OnProgressAction).Result;
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-    return result;
+    return result.NotNull();
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
