@@ -105,8 +105,7 @@ public static partial class Operations
         );
         activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
         SpeckleLog.Logger.Information(
-          "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
-          transports.Max(t => t.SavedObjectCount),
+          "Finished sending objects after {elapsed}, result {objectId}",
           sendTimer.Elapsed.TotalSeconds,
           rootObjectId
         );

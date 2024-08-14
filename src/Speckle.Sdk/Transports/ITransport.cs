@@ -35,11 +35,6 @@ public interface ITransport
   public TimeSpan Elapsed { get; }
 
   /// <summary>
-  ///  Show how many objects the transport saved.
-  /// </summary>
-  public int SavedObjectCount { get; }
-
-  /// <summary>
   /// Should be checked often and gracefully stop all in progress sending if requested.
   /// </summary>
   public CancellationToken CancellationToken { get; set; }

@@ -25,8 +25,6 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
   private readonly Uri _baseUri;
 
-  private readonly object _callbackLock = new();
-
   private readonly int _timeoutSeconds;
 
   public ParallelServerApi(
@@ -51,7 +49,6 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
   public CancellationToken CancellationToken { get; set; }
   public bool CompressPayloads { get; set; } = true;
-  public Action<int, int> OnBatchSent { get; set; }
 
   public string BlobStorageFolder { get; set; }
 
@@ -215,14 +212,6 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
   protected override void ThreadMain()
   {
     using ServerApi serialApi = new(_baseUri, _authToken, BlobStorageFolder, _timeoutSeconds);
-
-    serialApi.OnBatchSent = (num, size) =>
-    {
-      lock (_callbackLock)
-      {
-        OnBatchSent(num, size);
-      }
-    };
     serialApi.CancellationToken = CancellationToken;
     serialApi.CompressPayloads = CompressPayloads;
 

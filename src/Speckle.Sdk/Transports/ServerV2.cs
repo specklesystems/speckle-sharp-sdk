@@ -45,8 +45,6 @@ public sealed class ServerTransport : IServerTransport
     Directory.CreateDirectory(BlobStorageFolder);
   }
 
-  public int TotalSentBytes { get; private set; }
-
   public Account Account { get; }
   public Uri BaseUri { get; }
   public string StreamId { get; internal set; }
@@ -106,7 +104,6 @@ public sealed class ServerTransport : IServerTransport
 
   public CancellationToken CancellationToken { get; set; }
   public Action<ProgressArgs>? OnProgressAction { get; set; }
-  public int SavedObjectCount { get; private set; }
   public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;
 
   public async Task<string> CopyObjectAndChildren(
@@ -238,9 +235,6 @@ public sealed class ServerTransport : IServerTransport
       throw new InvalidOperationException("ServerTransport already sending");
     }
 
-    TotalSentBytes = 0;
-    SavedObjectCount = 0;
-
     _exception = null;
     _shouldSendThreadRun = true;
     _sendingThread = new Thread(SendingThreadMain) { Name = "ServerTransportSender", IsBackground = true };
@@ -286,14 +280,7 @@ public sealed class ServerTransport : IServerTransport
   {
     SpeckleLog.Logger.Information("Initializing a new Remote Transport for {baseUri}", baseUri);
 
-    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds)
-    {
-      OnBatchSent = (num, size) =>
-      {
-        TotalSentBytes += size;
-        SavedObjectCount += num;
-      }
-    };
+    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
   }
 
   public override string ToString()

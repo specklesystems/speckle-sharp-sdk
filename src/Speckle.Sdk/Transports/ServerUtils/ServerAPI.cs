@@ -47,11 +47,6 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   public string BlobStorageFolder { get; set; }
 
-  /// <summary>
-  /// Callback when sending batches. Parameters: object count, total bytes sent
-  /// </summary>
-  public Action<int, int> OnBatchSent { get; set; }
-
   public void Dispose()
   {
     _client.Dispose();
@@ -193,7 +188,6 @@ public sealed class ServerApi : IDisposable, IServerApi
     // 2. Split multiparts into individual server requests of max size MAX_REQUEST_SIZE or max length MAX_MULTIPART_COUNT and send them
     List<List<(string, string)>> crtRequest = new();
     int crtRequestSize = 0;
-    int crtObjectCount = 0;
     for (int i = 0; i < multipartedObjects.Count; i++)
     {
       List<(string, string)> multipart = multipartedObjects[i];
@@ -201,19 +195,15 @@ public sealed class ServerApi : IDisposable, IServerApi
       if (crtRequestSize + multipartSize > MAX_REQUEST_SIZE || crtRequest.Count >= MAX_MULTIPART_COUNT)
       {
         await UploadObjectsImpl(streamId, crtRequest, progress).ConfigureAwait(false);
-        OnBatchSent?.Invoke(crtObjectCount, crtRequestSize);
         crtRequest = new List<List<(string, string)>>();
         crtRequestSize = 0;
-        crtObjectCount = 0;
       }
       crtRequest.Add(multipart);
       crtRequestSize += multipartSize;
-      crtObjectCount += multipart.Count;
     }
     if (crtRequest.Count > 0)
     {
       await UploadObjectsImpl(streamId, crtRequest, progress).ConfigureAwait(false);
-      OnBatchSent?.Invoke(crtObjectCount, crtRequestSize);
     }
   }
 
