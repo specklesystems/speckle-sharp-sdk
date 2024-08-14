@@ -80,7 +80,7 @@ public static partial class Operations
     );
 
     // Try Local Receive
-    string? objString = null; //await LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
+    string? objString = LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
 
     if (objString is null)
     {

@@ -5,6 +5,7 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Transports.ServerUtils;
@@ -54,6 +55,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   public async Task<string?> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
   {
+    using var _ = SpeckleActivityFactory.Start();
     CancellationToken.ThrowIfCancellationRequested();
 
     // Get root object
@@ -83,6 +85,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       return;
     }
+    using var _ = SpeckleActivityFactory.Start();
 
     if (objectIds.Count < BATCH_SIZE_GET_OBJECTS)
     {
