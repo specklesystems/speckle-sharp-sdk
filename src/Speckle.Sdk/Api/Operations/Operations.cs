@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
@@ -14,8 +15,8 @@ public static partial class Operations
   /// </summary>
   /// <param name="onProgressAction"></param>
   /// <returns></returns>
-  private static Action<string, int>? GetInternalProgressAction(
-    Action<ConcurrentDictionary<string, int>>? onProgressAction
+  private static Action<ProgressArgs>? GetInternalProgressAction(
+    Action<ConcurrentBag<ProgressArgs>>? onProgressAction
   )
   {
     if (onProgressAction is null)
@@ -23,14 +24,11 @@ public static partial class Operations
       return null;
     }
 
-    var localProgressDict = new ConcurrentDictionary<string, int>();
 
-    return (name, processed) =>
+    return (args) =>
     {
-      if (!localProgressDict.TryAdd(name, processed))
-      {
-        localProgressDict[name] += processed;
-      }
+      var localProgressDict = new ConcurrentBag<ProgressArgs>();
+      localProgressDict.Add(args);
 
       onProgressAction.Invoke(localProgressDict);
     };

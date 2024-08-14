@@ -2,6 +2,7 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
@@ -13,7 +14,7 @@ public static partial class Operations
   /// <remarks>
   /// If you want to save and persist an object to Speckle Transport or Server,
   /// please use any of the "Send" methods.
-  /// <see cref="Send(Base,Speckle.Sdk.Transports.ITransport,bool,System.Action{System.Collections.Concurrent.ConcurrentDictionary{string,int}}?,System.Threading.CancellationToken)"/>
+  /// <see cref="Send(Base,Speckle.Sdk.Transports.ITransport,bool,System.Action{System.Collections.Concurrent.ConcurrentBag{ProgressArgs}}?,System.Threading.CancellationToken)"/>
   /// </remarks>
   /// <param name="value">The object to serialise</param>
   /// <param name="cancellationToken"></param>
@@ -27,7 +28,7 @@ public static partial class Operations
   /// <remarks>
   /// Note: if you want to pull an object from a Speckle Transport or Server,
   /// please use
-  /// <see cref="Receive(string,Speckle.Sdk.Transports.ITransport?,Speckle.Sdk.Transports.ITransport?,System.Action{System.Collections.Concurrent.ConcurrentDictionary{string,int}}?,System.Action{int}?,System.Threading.CancellationToken)"/>
+  /// <see cref="Receive(string,Speckle.Sdk.Transports.ITransport?,Speckle.Sdk.Transports.ITransport?,System.Action{System.Collections.Concurrent.ConcurrentBag{ProgressArgs}}?,System.Action{int}?,System.Threading.CancellationToken)"/>
   /// </remarks>
   /// <param name="value">The json string representation of a speckle object that you want to deserialize</param>
   /// <param name="cancellationToken"></param>

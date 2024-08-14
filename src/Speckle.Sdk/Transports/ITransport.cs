@@ -2,6 +2,16 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Transports;
 
+public enum ProgressEvent
+{
+  DownloadBytes,
+  UploadBytes,
+  DownloadObject,
+  UploadObject,
+  DeserializeObject,
+  SerializeObject,
+}
+public record ProgressArgs(ProgressEvent ProgressEvent, int? Percentage, long? Count, long? Total);
 /// <summary>
 /// Interface defining the contract for transport implementations.
 /// </summary>
@@ -35,7 +45,7 @@ public interface ITransport
   /// <summary>
   /// Used to report progress during the transport's longer operations.
   /// </summary>
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
 
   /// <summary>
   /// Signals to the transport that writes are about to begin.

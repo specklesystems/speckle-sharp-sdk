@@ -5,10 +5,10 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Transports.ServerUtils;
+
 
 public sealed class ServerApi : IDisposable, IServerApi
 {
@@ -26,13 +26,13 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   private readonly HttpClient _client;
 
-  public ServerApi(Uri baseUri, string? authorizationToken, string blobStorageFolder, int timeoutSeconds = 60)
+  public ServerApi(Uri baseUri, string? authorizationToken, string blobStorageFolder,Action<HttpProgressEventArgs>? httpSendProgress, Action<HttpProgressEventArgs>? httpReceiveProgress, int timeoutSeconds = 60)
   {
     CancellationToken = CancellationToken.None;
 
     BlobStorageFolder = blobStorageFolder;
 
-    _client = Http.GetHttpProxyClient(
+    _client = Http.GetHttpProxyClient(httpSendProgress, httpReceiveProgress,
      new SpeckleHttpClientHandler( new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip })
     );
 
@@ -58,7 +58,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     _client.Dispose();
   }
 
-  public async Task<string> DownloadSingleObject(string streamId, string objectId, Action<string, int>? progress)
+  public async Task<string> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
@@ -74,14 +74,14 @@ public sealed class ServerApi : IDisposable, IServerApi
       .ConfigureAwait(false);
 
     string? rootObjectStr = null;
-    await ResponseProgress(rootHttpResponse, progress, (_, json) => rootObjectStr = json).ConfigureAwait(false);
+    await ResponseProgress(rootHttpResponse, progress, (_, json) => rootObjectStr = json, true).ConfigureAwait(false);
     return rootObjectStr.NotNull();
   }
 
   public async Task DownloadObjects(
     string streamId,
     IReadOnlyList<string> objectIds,
-    Action<string, int>? progress,
+    Action<ProgressArgs>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -143,7 +143,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     return ret;
   }
 
-  public async Task UploadObjects(string streamId, IReadOnlyList<(string, string)> objects,  Action<string, int>? progress)
+  public async Task UploadObjects(string streamId, IReadOnlyList<(string, string)> objects,  Action<ProgressArgs>? progress)
   {
     if (objects.Count == 0)
     {
@@ -214,7 +214,8 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
   }
 
-  public async Task UploadBlobs(string streamId, IReadOnlyList<(string, string)> objects)
+  //TODO progress
+  public async Task UploadBlobs(string streamId, IReadOnlyList<(string, string)> objects,  Action<ProgressArgs>? progress)
   {
     CancellationToken.ThrowIfCancellationRequested();
     if (objects.Count == 0)
@@ -262,7 +263,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
   }
 
-  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, CbBlobdDownloaded onBlobCallback)
+  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, CbBlobdDownloaded onBlobCallback,  Action<ProgressArgs>? progress)
   {
     foreach (var blobId in blobIds)
     {
@@ -284,9 +285,10 @@ public sealed class ServerApi : IDisposable, IServerApi
           BlobStorageFolder,
           $"{blobId.Substring(0, Blob.LocalHashPrefixLength)}-{fileName}"
         );
+        using (var source = new ProgressStream(await response.Content.ReadAsStreamAsync(), response.Content.Headers.ContentLength, progress))
         using (var fs = new FileStream(fileLocation, FileMode.OpenOrCreate))
         {
-          await response.Content.CopyToAsync(fs).ConfigureAwait(false);
+          await source.CopyToAsync(fs).ConfigureAwait(false);
         }
 
         onBlobCallback();
@@ -301,7 +303,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   private async Task DownloadObjectsImpl(
     string streamId,
     IReadOnlyList<string> objectIds,
-    Action<string, int>? progress,
+    Action<ProgressArgs>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -324,11 +326,11 @@ public sealed class ServerApi : IDisposable, IServerApi
       .SendAsync(childrenHttpMessage,  CancellationToken)
       .ConfigureAwait(false);
 
-    await ResponseProgress(childrenHttpResponse, progress, onObjectCallback).ConfigureAwait(false);
+    await ResponseProgress(childrenHttpResponse, progress, onObjectCallback, false).ConfigureAwait(false);
   }
 
   private async Task ResponseProgress(HttpResponseMessage childrenHttpResponse, 
-    Action<string, int>? progress,  CbObjectDownloaded onObjectCallback)
+    Action<ProgressArgs>? progress,  CbObjectDownloaded onObjectCallback, bool isSingle)
   {
     childrenHttpResponse.EnsureSuccessStatusCode();
     var length = childrenHttpResponse.Content.Headers.ContentLength;
@@ -339,9 +341,17 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       CancellationToken.ThrowIfCancellationRequested();
 
-      var pcs = line.Split(s_separator, 2);
-      progress?.Invoke("Download", Convert.ToInt32((double)childrenStream.Position / length * 100));
-      onObjectCallback(pcs[0], pcs[1]);
+      progress?.Invoke(new(ProgressEvent.DownloadBytes, Convert.ToInt32(childrenStream.Position / length), childrenStream.Position, length));
+      if (!isSingle)
+      {
+        var pcs = line.Split(s_separator, 2);
+        onObjectCallback(pcs[0], pcs[1]);
+      }
+      else
+      {
+        onObjectCallback(string.Empty, line);
+        break;
+      }
     }
   }
 
@@ -375,7 +385,8 @@ public sealed class ServerApi : IDisposable, IServerApi
     return hasObjects;
   }
 
-  private async Task UploadObjectsImpl(string streamId, List<List<(string, string)>> multipartedObjects,  Action<string, int>? progress)
+  //TODO progress
+  private async Task UploadObjectsImpl(string streamId, List<List<(string, string)>> multipartedObjects,  Action<ProgressArgs>? progress)
   {
     // Stopwatch sw = new Stopwatch(); sw.Start();
 

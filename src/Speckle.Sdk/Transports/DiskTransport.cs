@@ -44,7 +44,7 @@ public class DiskTransport : ICloneable, ITransport
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
 
   public Action<string, Exception>? OnErrorAction { get; set; }
 
@@ -93,7 +93,7 @@ public class DiskTransport : ICloneable, ITransport
     }
 
     SavedObjectCount++;
-    OnProgressAction?.Invoke(TransportName, SavedObjectCount);
+    OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, null, null, SavedObjectCount));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
   }

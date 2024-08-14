@@ -105,7 +105,7 @@ public sealed class ServerTransport : IServerTransport
     };
 
   public CancellationToken CancellationToken { get; set; }
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
   public int SavedObjectCount { get; private set; }
   public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;
 
@@ -122,7 +122,13 @@ public sealed class ServerTransport : IServerTransport
 
     CancellationToken.ThrowIfCancellationRequested();
 
-    using ParallelServerApi api = new(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
+    using ParallelServerApi api = new(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds, e =>
+    {
+      OnProgressAction?.Invoke(new (ProgressEvent.DownloadBytes, e.ProgressPercentage, e.BytesTransferred, e.TotalBytes));
+    }, e =>
+    {
+      OnProgressAction?.Invoke(new (ProgressEvent.UploadBytes, e.ProgressPercentage, e.BytesTransferred, e.TotalBytes));
+    });
 
     var stopwatch = Stopwatch.StartNew();
     api.CancellationToken = CancellationToken;
@@ -153,7 +159,6 @@ public sealed class ServerTransport : IServerTransport
         {
           stopwatch.Stop();
           targetTransport.SaveObject(childId, childData);
-          OnProgressAction?.Invoke(TransportName, 1);
           stopwatch.Start();
         }
       )
@@ -186,8 +191,8 @@ public sealed class ServerTransport : IServerTransport
         newBlobIds,
         () =>
         {
-          OnProgressAction?.Invoke(TransportName, 1);
-        }
+          
+        }, OnProgressAction
       )
       .ConfigureAwait(false);
 
@@ -295,11 +300,15 @@ public sealed class ServerTransport : IServerTransport
   {
     SpeckleLog.Logger.Information("Initializing a new Remote Transport for {baseUri}", baseUri);
 
-    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds)
+    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds,  e => {
+      OnProgressAction?.Invoke(new (ProgressEvent.DownloadBytes, e.ProgressPercentage, e.BytesTransferred, e.TotalBytes));
+    }, e =>
+    {
+      OnProgressAction?.Invoke(new (ProgressEvent.UploadBytes, e.ProgressPercentage, e.BytesTransferred, e.TotalBytes));
+    })
     {
       OnBatchSent = (num, size) =>
       {
-        OnProgressAction?.Invoke(TransportName, num);
         TotalSentBytes += size;
         SavedObjectCount += num;
       }
@@ -384,8 +393,6 @@ public sealed class ServerTransport : IServerTransport
           }
         }
 
-        // Report the objects that are already on the server
-        OnProgressAction?.Invoke(TransportName, hasObjects.Count - newObjects.Count);
 
         await Api.UploadObjects(StreamId, newObjects, OnProgressAction).ConfigureAwait(false);
 
@@ -396,7 +403,7 @@ public sealed class ServerTransport : IServerTransport
           var newBlobs = bufferBlobs.Where(tuple => formattedIds.IndexOf(tuple.id) != -1).ToList();
           if (newBlobs.Count != 0)
           {
-            await Api.UploadBlobs(StreamId, newBlobs).ConfigureAwait(false);
+            await Api.UploadBlobs(StreamId, newBlobs, OnProgressAction).ConfigureAwait(false);
           }
         }
       }

@@ -34,7 +34,7 @@ public static partial class Operations
     string objectId,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
-    Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
+    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
     Action<int>? onTotalChildrenCountKnown = null,
     CancellationToken cancellationToken = default
   )
@@ -80,7 +80,7 @@ public static partial class Operations
     );
 
     // Try Local Receive
-    string? objString = LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
+    string? objString = null;//await LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
 
     if (objString is null)
     {

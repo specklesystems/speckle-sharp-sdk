@@ -33,7 +33,7 @@ public sealed class BaseObjectDeserializerV2
   /// </summary>
   public ITransport ReadTransport { get; set; }
 
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
 
   public string? BlobStorageFolder { get; set; }
   public TimeSpan Elapsed { get; private set; }
@@ -191,7 +191,7 @@ public sealed class BaseObjectDeserializerV2
 
     lock (_callbackLock)
     {
-      OnProgressAction?.Invoke("DS", 1);
+      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, null, 1, null));
     }
 
     return converted;

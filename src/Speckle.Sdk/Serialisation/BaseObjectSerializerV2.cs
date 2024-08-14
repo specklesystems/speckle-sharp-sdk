@@ -23,7 +23,7 @@ public class BaseObjectSerializerV2
   private List<Dictionary<string, int>> _parentClosures = new();
   private HashSet<object> _parentObjects = new();
   private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
-  private readonly Action<string, int>? _onProgressAction;
+  private readonly Action<ProgressArgs>? _onProgressAction;
 
   private readonly bool _trackDetachedChildren;
 
@@ -53,7 +53,7 @@ public class BaseObjectSerializerV2
   /// <param name="cancellationToken"></param>
   public BaseObjectSerializerV2(
     IReadOnlyCollection<ITransport> writeTransports,
-    Action<string, int>? onProgressAction = null,
+    Action<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
@@ -286,7 +286,7 @@ public class BaseObjectSerializerV2
       ObjectReference objRef = new() { referencedId = id };
       var objRefConverted = (IReadOnlyDictionary<string, object?>?)PreserializeObject(objRef);
       UpdateParentClosures(id);
-      _onProgressAction?.Invoke("S", 1);
+      _onProgressAction?.Invoke(new (ProgressEvent.SerializeObject, null, 1, null));
 
       // add to obj refs to return
       if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
