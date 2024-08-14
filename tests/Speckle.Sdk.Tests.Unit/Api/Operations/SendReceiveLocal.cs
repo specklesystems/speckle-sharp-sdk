@@ -214,7 +214,7 @@ public sealed class SendReceiveLocal : IDisposable
   public async Task DownloadProgressReports()
   {
     ConcurrentBag<ProgressArgs>? progress = null;
-     await Sdk.Api.Operations.Receive(
+    await Sdk.Api.Operations.Receive(
       _commitId02.NotNull(),
       onProgressAction: dict =>
       {
