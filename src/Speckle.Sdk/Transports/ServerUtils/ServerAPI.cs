@@ -263,11 +263,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
   }
 
-  public async Task DownloadBlobs(
-    string streamId,
-    IReadOnlyList<string> blobIds,
-    Action<ProgressArgs>? progress
-  )
+  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, Action<ProgressArgs>? progress)
   {
     foreach (var blobId in blobIds)
     {

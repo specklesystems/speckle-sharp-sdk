@@ -178,11 +178,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     await op.ConfigureAwait(false);
   }
 
-  public async Task DownloadBlobs(
-    string streamId,
-    IReadOnlyList<string> blobIds,
-    Action<ProgressArgs>? progress
-  )
+  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, Action<ProgressArgs>? progress)
   {
     EnsureStarted();
     var op = QueueOperation(ServerApiOperation.DownloadBlobs, (streamId, blobIds, progress));
@@ -280,12 +276,8 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
           .HasBlobs(hbStreamId, hBlobs.Select(b => b.Item1.Split(':')[1]).ToList())
           .ConfigureAwait(false);
       case ServerApiOperation.DownloadBlobs:
-        var (dbStreamId, blobIds, progress5) = ((
-          string,
-          IReadOnlyList<string>,
-          Action<ProgressArgs>?
-        ))inputValue;
-        await serialApi.DownloadBlobs(dbStreamId, blobIds,  progress5).ConfigureAwait(false);
+        var (dbStreamId, blobIds, progress5) = ((string, IReadOnlyList<string>, Action<ProgressArgs>?))inputValue;
+        await serialApi.DownloadBlobs(dbStreamId, blobIds, progress5).ConfigureAwait(false);
         return null;
       default:
         throw new ArgumentOutOfRangeException(nameof(operation), operation, null);

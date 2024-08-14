@@ -27,9 +27,5 @@ internal interface IServerApi
     Action<ProgressArgs>? progress
   );
 
-  public Task DownloadBlobs(
-    string streamId,
-    IReadOnlyList<string> blobIds,
-    Action<ProgressArgs>? progress
-  );
+  public Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, Action<ProgressArgs>? progress);
 }
