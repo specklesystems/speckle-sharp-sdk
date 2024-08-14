@@ -224,21 +224,6 @@ public sealed class ServerTransport : IServerTransport
     }
   }
 
-  public void SaveObject(string id, ITransport sourceTransport)
-  {
-    var objectData = sourceTransport.GetObject(id);
-
-    if (objectData is null)
-    {
-      throw new TransportException(
-        this,
-        $"Cannot copy {id} from {sourceTransport.TransportName} to {TransportName} as source returned null"
-      );
-    }
-
-    SaveObject(id, objectData);
-  }
-
   public void BeginWrite()
   {
     if (_shouldSendThreadRun || _sendingThread != null)

@@ -92,14 +92,7 @@ public abstract class TransportTests
       Assert.That(res, Is.EqualTo(x.data));
     }
   }
-
-  [Test]
-  public void SaveObject_FromTransport_FailsPredictably()
-  {
-    var exception = Assert.Throws<TransportException>(() => Sut.NotNull().SaveObject("non-existent-id", Sut));
-    Assert.That(exception?.Transport, Is.EqualTo(Sut));
-  }
-
+  
   [Test]
   public async Task ProgressAction_Called_OnSaveObject()
   {
