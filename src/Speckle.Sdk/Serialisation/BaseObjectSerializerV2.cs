@@ -86,7 +86,8 @@ public class BaseObjectSerializerV2
       IReadOnlyDictionary<string, object?> converted;
       try
       {
-        var x = PreserializeBase(baseObj, true);
+        int count = 0;
+        var x = PreserializeBase(baseObj, ref count, true);
         if (x is null)
         {
           throw new SpeckleSerializeException("Already serialized");
@@ -114,6 +115,7 @@ public class BaseObjectSerializerV2
   // (primitives, lists and dictionaries with string keys)
   public object? PreserializeObject(
     object? obj,
+    ref int count,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
   )
@@ -156,13 +158,13 @@ public class BaseObjectSerializerV2
       }
       // Complex enough to deserve its own function
       case Base b:
-        return PreserializeBase(b, computeClosures, inheritedDetachInfo);
+        return PreserializeBase(b, ref count, computeClosures, inheritedDetachInfo);
       case IDictionary d:
       {
         Dictionary<string, object> ret = new(d.Count);
         foreach (DictionaryEntry kvp in d)
         {
-          object? converted = PreserializeObject(kvp.Value, inheritedDetachInfo: inheritedDetachInfo);
+          object? converted = PreserializeObject(kvp.Value, ref count, inheritedDetachInfo: inheritedDetachInfo);
           if (converted != null)
           {
             ret[kvp.Key.ToString()] = converted;
@@ -179,7 +181,7 @@ public class BaseObjectSerializerV2
 
         foreach (object? element in e)
         {
-          ret.Add(PreserializeObject(element, inheritedDetachInfo: inheritedDetachInfo));
+          ret.Add(PreserializeObject(element, ref count, inheritedDetachInfo: inheritedDetachInfo));
         }
 
         return ret;
@@ -245,6 +247,7 @@ public class BaseObjectSerializerV2
 
   private IReadOnlyDictionary<string, object?>? PreserializeBase(
     Base baseObj,
+    ref int count,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
   )
@@ -262,7 +265,7 @@ public class BaseObjectSerializerV2
       _parentClosures.Add(closure);
     }
 
-    IReadOnlyDictionary<string, object?> convertedBase = PreserializeBaseProperties(baseObj, closure);
+    IReadOnlyDictionary<string, object?> convertedBase = PreserializeBaseProperties(baseObj, ref count, closure);
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
     {
@@ -284,9 +287,9 @@ public class BaseObjectSerializerV2
       var id = (string)convertedBase["id"].NotNull();
       StoreObject(id, json);
       ObjectReference objRef = new() { referencedId = id };
-      var objRefConverted = (IReadOnlyDictionary<string, object?>?)PreserializeObject(objRef);
+      var objRefConverted = (IReadOnlyDictionary<string, object?>?)PreserializeObject(objRef, ref count);
       UpdateParentClosures(id);
-      _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, 1, null));
+      _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++count, null));
 
       // add to obj refs to return
       if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
@@ -346,6 +349,7 @@ public class BaseObjectSerializerV2
 
   private IReadOnlyDictionary<string, object?> PreserializeBaseProperties(
     Base baseObj,
+    ref int count,
     IReadOnlyDictionary<string, int> closure
   )
   {
@@ -355,7 +359,7 @@ public class BaseObjectSerializerV2
     // Convert all properties
     foreach (var prop in allProperties)
     {
-      object? convertedValue = PreserializeBasePropertyValue(prop.Value.Item1, prop.Value.Item2);
+      object? convertedValue = PreserializeBasePropertyValue(prop.Value.Item1, ref count, prop.Value.Item2);
 
       if (
         convertedValue == null
@@ -378,12 +382,12 @@ public class BaseObjectSerializerV2
     return convertedBase;
   }
 
-  private object? PreserializeBasePropertyValue(object? baseValue, PropertyAttributeInfo detachInfo)
+  private object? PreserializeBasePropertyValue(object? baseValue, ref int count, PropertyAttributeInfo detachInfo)
   {
     // If there are no WriteTransports, keep everything attached.
     if (WriteTransports.Count == 0)
     {
-      return PreserializeObject(baseValue, inheritedDetachInfo: detachInfo);
+      return PreserializeObject(baseValue, ref count, inheritedDetachInfo: detachInfo);
     }
 
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
@@ -406,10 +410,14 @@ public class BaseObjectSerializerV2
         chunks.Add(crtChunk);
       }
 
-      return PreserializeObject(chunks, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null));
+      return PreserializeObject(
+        chunks,
+        ref count,
+        inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)
+      );
     }
 
-    return PreserializeObject(baseValue, inheritedDetachInfo: detachInfo);
+    return PreserializeObject(baseValue, ref count, inheritedDetachInfo: detachInfo);
   }
 
   private void UpdateParentClosures(string objectId)

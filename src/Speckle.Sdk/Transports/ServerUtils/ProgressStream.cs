@@ -1,11 +1,11 @@
 ﻿namespace Speckle.Sdk.Transports;
 
-internal class ProgressStream(Stream input, long? streamLength, Action<ProgressArgs>? progress) : Stream
+internal class ProgressStream(Stream input, long? streamLength, Action<ProgressArgs>? progress, bool useBuffer) : Stream
 {
   private long _position;
-  private readonly Stream _stream = new BufferedStream(input, 80 * 1024);
+  private readonly Stream _stream = useBuffer ? new BufferedStream(input, 80 * 1024) : input;
 
-  public override void Flush() => throw new NotImplementedException();
+  public override void Flush() => _stream.Flush();
 
   public override long Seek(long offset, SeekOrigin origin) => throw new NotImplementedException();
 
@@ -19,11 +19,16 @@ internal class ProgressStream(Stream input, long? streamLength, Action<ProgressA
     return n;
   }
 
-  public override void Write(byte[] buffer, int offset, int count) => throw new NotImplementedException();
+  public override void Write(byte[] buffer, int offset, int count)
+  {
+    _stream.Write(buffer, offset, count);
+    _position += count;
+    progress?.Invoke(new(ProgressEvent.DownloadBytes, _position, streamLength));
+  }
 
   public override bool CanRead => true;
   public override bool CanSeek => false;
-  public override bool CanWrite => false;
+  public override bool CanWrite => true;
   public override long Length => streamLength ?? 0;
   public override long Position
   {

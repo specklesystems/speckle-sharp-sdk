@@ -210,7 +210,6 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
   }
 
-  //TODO progress
   public async Task UploadBlobs(
     string streamId,
     IReadOnlyList<(string, string)> objects,
@@ -240,7 +239,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       RequestUri = new Uri($"/api/stream/{streamId}/blob", UriKind.Relative),
       Method = HttpMethod.Post,
-      Content = multipartFormDataContent
+      Content = new ProgressContent(multipartFormDataContent, progress)
     };
 
     try
@@ -285,17 +284,14 @@ public sealed class ServerApi : IDisposable, IServerApi
           BlobStorageFolder,
           $"{blobId.Substring(0, Blob.LocalHashPrefixLength)}-{fileName}"
         );
-        using (
-          var source = new ProgressStream(
-            await response.Content.ReadAsStreamAsync(),
-            response.Content.Headers.ContentLength,
-            progress
-          )
-        )
-        using (var fs = new FileStream(fileLocation, FileMode.OpenOrCreate))
-        {
-          await source.CopyToAsync(fs).ConfigureAwait(false);
-        }
+        using var source = new ProgressStream(
+          await response.Content.ReadAsStreamAsync(),
+          response.Content.Headers.ContentLength,
+          progress,
+          true
+        );
+        using var fs = new FileStream(fileLocation, FileMode.OpenOrCreate);
+        await source.CopyToAsync(fs).ConfigureAwait(false);
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
@@ -344,7 +340,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     var length = childrenHttpResponse.Content.Headers.ContentLength;
     using Stream childrenStream = await childrenHttpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
-    using var reader = new StreamReader(new ProgressStream(childrenStream, length, progress), Encoding.UTF8);
+    using var reader = new StreamReader(new ProgressStream(childrenStream, length, progress, true), Encoding.UTF8);
     while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
     {
       CancellationToken.ThrowIfCancellationRequested();
@@ -392,15 +388,12 @@ public sealed class ServerApi : IDisposable, IServerApi
     return hasObjects;
   }
 
-  //TODO progress
   private async Task UploadObjectsImpl(
     string streamId,
     List<List<(string, string)>> multipartedObjects,
     Action<ProgressArgs>? progress
   )
   {
-    // Stopwatch sw = new Stopwatch(); sw.Start();
-
     CancellationToken.ThrowIfCancellationRequested();
 
     using HttpRequestMessage message =
@@ -437,12 +430,10 @@ public sealed class ServerApi : IDisposable, IServerApi
         multipart.Add(new StringContent(ct, Encoding.UTF8), $"batch-{mpId}", $"batch-{mpId}");
       }
     }
-    message.Content = multipart;
+    message.Content = new ProgressContent(multipart, progress);
     HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
-
-    // Console.WriteLine($"ServerApi::UploadObjects({totalObjCount}) request in {sw.ElapsedMilliseconds / 1000.0} sec");
   }
 
   public async Task<List<string>> HasBlobs(string streamId, IReadOnlyList<string> blobIds)
@@ -466,17 +457,5 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
 
     return parsed;
-  }
-
-  private sealed class BlobUploadResult
-  {
-    public List<BlobUploadResultItem> uploadResults { get; set; }
-  }
-
-  private sealed class BlobUploadResultItem
-  {
-    public string blobId { get; set; }
-    public string formKey { get; set; }
-    public string fileName { get; set; }
   }
 }
