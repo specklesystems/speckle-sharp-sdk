@@ -1,7 +1,7 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
-using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
@@ -17,7 +17,7 @@ public sealed class BaseObjectDeserializerV2
   private readonly object _callbackLock = new();
 
   // id -> Base if already deserialized or id -> Task<object> if was handled by a bg thread
-  private Dictionary<string, object?>? _deserializedObjects;
+  private ConcurrentDictionary<string, object?>? _deserializedObjects;
 
   /// <summary>
   /// Property that describes the type of the object.
@@ -78,10 +78,7 @@ public sealed class BaseObjectDeserializerV2
 
         stopwatch.Start();
         object? deserializedOrPromise = DeserializeTransportObjectProxy(objJson, i++, closures.Count);
-        lock (_deserializedObjects)
-        {
-          _deserializedObjects[objId] = deserializedOrPromise;
-        }
+        _deserializedObjects.TryAdd(objId, deserializedOrPromise);
       }
 
       object? ret;
@@ -146,21 +143,18 @@ public sealed class BaseObjectDeserializerV2
     // JObject doc1 = JObject.Parse(objectJson);
 
     // This is equivalent code that doesn't parse datetimes:
-    JObject doc1;
-    using (JsonReader reader = new JsonTextReader(new StringReader(objectJson)))
-    {
-      reader.DateParseHandling = DateParseHandling.None;
-      doc1 = JObject.Load(reader);
-    }
+    using JsonReader reader = new JsonTextReader(new StringReader(objectJson));
+
+    reader.DateParseHandling = DateParseHandling.None;
 
     object? converted;
     try
     {
-      converted = ConvertJsonElement(doc1, currentObjectCount, totalObjectCount);
+      converted = ConvertJsonElement(reader, currentObjectCount, totalObjectCount, CancellationToken);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
-      throw new SpeckleDeserializeException($"Failed to deserialize {doc1} as {doc1.Type}", ex);
+      throw new SpeckleDeserializeException($"Failed to deserialize", ex);
     }
 
     lock (_callbackLock)
@@ -171,142 +165,166 @@ public sealed class BaseObjectDeserializerV2
     return converted;
   }
 
-  private object? ConvertJsonElement(JToken doc, long? currentObjectCount, long? totalObjectCount)
+  private List<object?> ReadArray(
+    JsonReader reader,
+    long? currentObjectCount,
+    long? totalObjectCount,
+    CancellationToken ct
+  )
   {
-    CancellationToken.ThrowIfCancellationRequested();
-
-    switch (doc.Type)
+    reader.Read();
+    List<object?> retList = new();
+    while (reader.TokenType != JsonToken.EndArray)
     {
-      case JTokenType.Undefined:
-      case JTokenType.Null:
-      case JTokenType.None:
-        return null;
-      case JTokenType.Boolean:
-        return (bool)doc;
-      case JTokenType.Integer:
-        try
-        {
-          return (long)doc;
-        }
-        catch (OverflowException ex)
-        {
-          var v = (object)(double)doc;
-          SpeckleLog.Logger.Debug(
-            ex,
-            "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
-            doc.Type,
-            v,
-            typeof(long),
-            typeof(double)
-          );
-          return v;
-        }
-      case JTokenType.Float:
-        return (double)doc;
-      case JTokenType.String:
-        return (string?)doc;
-      case JTokenType.Date:
-        return (DateTime)doc;
-      case JTokenType.Array:
-        JArray docAsArray = (JArray)doc;
-        List<object?> jsonList = new(docAsArray.Count);
-        int retListCount = 0;
-        foreach (JToken value in docAsArray)
-        {
-          object? convertedValue = ConvertJsonElement(value, currentObjectCount, totalObjectCount);
-          retListCount += convertedValue is DataChunk chunk ? chunk.data.Count : 1;
-          jsonList.Add(convertedValue);
-        }
+      object? convertedValue = ConvertJsonElement(reader, currentObjectCount, totalObjectCount, ct);
+      if (convertedValue is DataChunk chunk)
+      {
+        retList.AddRange(chunk.data);
+      }
+      else
+      {
+        retList.Add(convertedValue);
+      }
+    }
+    return retList;
+  }
 
-        List<object?> retList = new(retListCount);
-        foreach (object? jsonObj in jsonList)
-        {
-          if (jsonObj is DataChunk chunk)
+  private Dictionary<string, object?> ReadObject(
+    JsonReader reader,
+    long? currentObjectCount,
+    long? totalObjectCount,
+    CancellationToken ct
+  )
+  {
+    reader.Read();
+    Dictionary<string, object?> dict = new();
+    while (reader.TokenType != JsonToken.EndObject)
+    {
+      switch (reader.TokenType)
+      {
+        case JsonToken.PropertyName:
           {
-            retList.AddRange(chunk.data);
+            var propName = reader.Value.NotNull().ToString();
+            if (propName == "__closure")
+            {
+              reader.Read(); //goes to prop vale
+              reader.Skip();
+              reader.Read(); //goes to next
+              continue;
+            }
+            reader.Read(); //goes to prop vale
+            object? convertedValue = ConvertJsonElement(reader, currentObjectCount, totalObjectCount, ct);
+            dict[propName] = convertedValue;
           }
-          else
+          break;
+      }
+    }
+    return dict;
+  }
+
+  private object? ConvertJsonElement(
+    JsonReader reader,
+    long? currentObjectCount,
+    long? totalObjectCount,
+    CancellationToken ct
+  )
+  {
+    reader.Read();
+    while (reader.TokenType != JsonToken.EndObject)
+    {
+      ct.ThrowIfCancellationRequested();
+      switch (reader.TokenType)
+      {
+        case JsonToken.Undefined:
+        case JsonToken.Null:
+        case JsonToken.None:
+          return null;
+        case JsonToken.Boolean:
+          return (bool)reader.Value.NotNull();
+        case JsonToken.Integer:
+          try
           {
-            retList.Add(jsonObj);
+            return (long)reader.Value.NotNull();
           }
-        }
-
-        return retList;
-      case JTokenType.Object:
-        var jObject = (JContainer)doc;
-        Dictionary<string, object?> dict = new(jObject.Count);
-
-        foreach (JToken propJToken in jObject)
-        {
-          JProperty prop = (JProperty)propJToken;
-          if (prop.Name == "__closure")
+          catch (OverflowException ex)
           {
-            continue;
+            var v = (object)(double)reader.Value.NotNull();
+            SpeckleLog.Logger.Debug(
+              ex,
+              "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
+              reader.ValueType,
+              v,
+              typeof(long),
+              typeof(double)
+            );
+            return v;
+          }
+        case JsonToken.Float:
+          return (double)reader.Value.NotNull();
+        case JsonToken.String:
+          return (string?)reader.Value.NotNull();
+        case JsonToken.Date:
+          return (DateTime)reader.Value.NotNull();
+        case JsonToken.StartArray:
+          return ReadArray(reader, currentObjectCount, totalObjectCount, ct);
+        case JsonToken.StartObject:
+          var dict = ReadObject(reader, currentObjectCount, totalObjectCount, ct);
+
+          if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
+          {
+            return dict;
           }
 
-          dict[prop.Name] = ConvertJsonElement(prop.Value, currentObjectCount, totalObjectCount);
-        }
-
-        if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
-        {
-          return dict;
-        }
-
-        if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
-        {
-          var objId = (string)referencedId.NotNull();
-          object? deserialized = null;
-          _deserializedObjects.NotNull();
-          lock (_deserializedObjects)
+          if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
           {
+            var objId = (string)referencedId.NotNull();
+            object? deserialized = null;
+            _deserializedObjects.NotNull();
             if (_deserializedObjects.TryGetValue(objId, out object? o))
             {
               deserialized = o;
             }
-          }
 
-          if (deserialized is Task<object> task)
-          {
-            try
+            if (deserialized is Task<object> task)
             {
-              deserialized = task.Result;
-            }
-            catch (AggregateException ex)
-            {
-              throw new SpeckleDeserializeException("Failed to deserialize reference object", ex);
-            }
-            lock (_deserializedObjects)
-            {
-              _deserializedObjects[objId] = deserialized;
-            }
-          }
+              try
+              {
+                deserialized = task.Result;
+              }
+              catch (AggregateException ex)
+              {
+                throw new SpeckleDeserializeException("Failed to deserialize reference object", ex);
+              }
 
-          if (deserialized != null)
-          {
+              _deserializedObjects.TryAdd(objId, deserialized);
+            }
+
+            if (deserialized != null)
+            {
+              return deserialized;
+            }
+
+            // This reference was not already deserialized. Do it now in sync mode
+            string? objectJson = ReadTransport.GetObject(objId);
+            if (objectJson is null)
+            {
+              throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
+            }
+
+            deserialized = DeserializeTransportObject(objectJson, currentObjectCount, totalObjectCount);
+
+            _deserializedObjects.TryAdd(objId, deserialized);
+
             return deserialized;
           }
 
-          // This reference was not already deserialized. Do it now in sync mode
-          string? objectJson = ReadTransport.GetObject(objId);
-          if (objectJson is null)
-          {
-            throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
-          }
-
-          deserialized = DeserializeTransportObject(objectJson, currentObjectCount, totalObjectCount);
-
-          lock (_deserializedObjects)
-          {
-            _deserializedObjects[objId] = deserialized;
-          }
-
-          return deserialized;
-        }
-
-        return Dict2Base(dict);
-      default:
-        throw new ArgumentException("Json value not supported: " + doc.Type, nameof(doc));
+          return Dict2Base(dict);
+        default:
+          throw new ArgumentException("Json value not supported: " + reader.ValueType);
+      }
     }
+
+    return null;
   }
 
   private Base Dict2Base(Dictionary<string, object?> dictObj)
