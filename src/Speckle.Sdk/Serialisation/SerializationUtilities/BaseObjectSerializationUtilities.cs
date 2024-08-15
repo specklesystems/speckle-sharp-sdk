@@ -9,7 +9,7 @@ internal static class BaseObjectSerializationUtilities
 {
   #region Getting Types
   private static ConcurrentDictionary<string, IReadOnlyDictionary<string, PropertyInfo>> s_typeProperties = new();
-  private static ConcurrentDictionary<string, List<MethodInfo>> s_onDeserializedCallbacks = new();
+  private static ConcurrentDictionary<string, IReadOnlyList<MethodInfo>> s_onDeserializedCallbacks = new();
 
   internal static IReadOnlyDictionary<string, PropertyInfo> GetTypeProperties(string objFullType) =>
     s_typeProperties.GetOrAdd(objFullType, s =>
@@ -42,7 +42,7 @@ internal static class BaseObjectSerializationUtilities
           ret.Add(method);
         }
       }
-      return  ret ?? [..Array.Empty<MethodInfo>()];
+      return  (ret as IReadOnlyList<MethodInfo>) ?? Array.Empty<MethodInfo>();
     });
 
   /// <summary>
