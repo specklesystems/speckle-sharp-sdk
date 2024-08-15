@@ -178,11 +178,11 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
       rational = (int)list[4] == 1,
       closed = (int)list[5] == 1,
       domain = new Interval { start = list[6], end = list[7] },
-      displayValue = new Polyline { value = new(), units = units },
+      displayValue = new Polyline { value = new(), units = units }, // this is unique to breps, so we do not create curves with null displayValues
       points = list.GetRange(11, pointsCount),
       weights = list.GetRange(11 + pointsCount, weightsCount),
       knots = list.GetRange(11 + pointsCount + weightsCount, knotsCount),
-      units = units // this is unique to breps, so we do not create curves with null displayValues
+      units = units,
     };
 
     return curve;
