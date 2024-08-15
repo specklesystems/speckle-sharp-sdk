@@ -119,26 +119,23 @@ public sealed class BaseObjectDeserializerV2
   {
     try
     {
-      List<(string, int)> closureList = new();
       JObject doc1 = JObject.Parse(rootObjectJson);
-
-      if (!doc1.ContainsKey("__closure"))
+      if (doc1.TryGetValue("__closure", out JToken? closure))
       {
-        return new List<(string, int)>();
+        List<(string, int)> closureList = new(closure.Count());
+        foreach (JToken prop in closure)
+        {
+          string childId = ((JProperty)prop).Name;
+          int childMinDepth = (int)((JProperty)prop).Value;
+          closureList.Add((childId, childMinDepth));
+        }
+        return closureList;
       }
-
-      foreach (JToken prop in doc1["__closure"].NotNull())
-      {
-        string childId = ((JProperty)prop).Name;
-        int childMinDepth = (int)((JProperty)prop).Value;
-        closureList.Add((childId, childMinDepth));
-      }
-      return closureList;
     }
     catch (Exception ex) when (!ex.IsFatal())
     {
-      return new List<(string, int)>();
     }
+    return new List<(string, int)>(Array.Empty<(string, int)>());
   }
 
   private object? DeserializeTransportObjectProxy(string? objectJson, long? current, long? total)
