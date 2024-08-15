@@ -226,7 +226,7 @@ internal static class ValueConverter
       Type arrayElementType =
         type.GetElementType() ?? throw new ArgumentException("IsArray yet not valid element type", nameof(type));
 
-      Array ret = Array.CreateInstance(type, valueList.Count);
+      Array ret = Array.CreateInstance(arrayElementType, valueList.Count);
       for (int i = 0; i < valueList.Count; i++)
       {
         object inputListElement = valueList[i];
