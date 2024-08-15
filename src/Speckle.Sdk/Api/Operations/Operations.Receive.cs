@@ -34,7 +34,7 @@ public static partial class Operations
     string objectId,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
-    Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
+    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
     Action<int>? onTotalChildrenCountKnown = null,
     CancellationToken cancellationToken = default
   )

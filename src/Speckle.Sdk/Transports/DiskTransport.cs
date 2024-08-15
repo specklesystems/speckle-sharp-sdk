@@ -44,7 +44,7 @@ public class DiskTransport : ICloneable, ITransport
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
 
   public Action<string, Exception>? OnErrorAction { get; set; }
 
@@ -93,26 +93,9 @@ public class DiskTransport : ICloneable, ITransport
     }
 
     SavedObjectCount++;
-    OnProgressAction?.Invoke(TransportName, SavedObjectCount);
+    OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, SavedObjectCount, null));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-  }
-
-  public void SaveObject(string id, ITransport sourceTransport)
-  {
-    CancellationToken.ThrowIfCancellationRequested();
-
-    var serializedObject = sourceTransport.GetObject(id);
-
-    if (serializedObject is null)
-    {
-      throw new TransportException(
-        this,
-        $"Cannot copy {id} from {sourceTransport.TransportName} to {TransportName} as source returned null"
-      );
-    }
-
-    SaveObject(id, serializedObject);
   }
 
   public Task WriteComplete()

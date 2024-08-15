@@ -21,7 +21,7 @@ public class TestTransport : ITransport
   public TimeSpan Elapsed { get; }
   public int SavedObjectCount { get; }
   public CancellationToken CancellationToken { get; set; }
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
   public Action<string, Exception>? OnErrorAction { get; set; }
 
   public void BeginWrite() => throw new NotImplementedException();
@@ -29,8 +29,6 @@ public class TestTransport : ITransport
   public void EndWrite() => throw new NotImplementedException();
 
   public void SaveObject(string id, string serializedObject) => Objects[id] = serializedObject;
-
-  public void SaveObject(string id, ITransport sourceTransport) => throw new NotImplementedException();
 
   public Task WriteComplete() => throw new NotImplementedException();
 

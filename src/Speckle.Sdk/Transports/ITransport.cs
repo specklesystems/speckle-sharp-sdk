@@ -2,6 +2,18 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Transports;
 
+public enum ProgressEvent
+{
+  DownloadBytes,
+  UploadBytes,
+  DownloadObject,
+  UploadObject,
+  DeserializeObject,
+  SerializeObject,
+}
+
+public record ProgressArgs(ProgressEvent ProgressEvent, long? Count, long? Total);
+
 /// <summary>
 /// Interface defining the contract for transport implementations.
 /// </summary>
@@ -23,11 +35,6 @@ public interface ITransport
   public TimeSpan Elapsed { get; }
 
   /// <summary>
-  ///  Show how many objects the transport saved.
-  /// </summary>
-  public int SavedObjectCount { get; }
-
-  /// <summary>
   /// Should be checked often and gracefully stop all in progress sending if requested.
   /// </summary>
   public CancellationToken CancellationToken { get; set; }
@@ -35,7 +42,7 @@ public interface ITransport
   /// <summary>
   /// Used to report progress during the transport's longer operations.
   /// </summary>
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
 
   /// <summary>
   /// Signals to the transport that writes are about to begin.
@@ -55,16 +62,6 @@ public interface ITransport
   /// <exception cref="TransportException">Failed to save object</exception>
   /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
   public void SaveObject(string id, string serializedObject);
-
-  /// <summary>
-  /// <inheritdoc cref="SaveObject(string, string)"/>
-  /// Retrieving its serialised version from the provided transport.
-  /// </summary>
-  /// <param name="id"><inheritdoc cref="SaveObject(string, string)"/></param>
-  /// <param name="sourceTransport">The transport from where to retrieve it.</param>
-  /// <exception cref="TransportException">Failed to save object</exception>
-  /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
-  public void SaveObject(string id, ITransport sourceTransport);
 
   /// <summary>
   /// Awaitable method to figure out whether writing is completed.

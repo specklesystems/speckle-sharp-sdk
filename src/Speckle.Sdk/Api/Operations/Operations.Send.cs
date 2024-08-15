@@ -14,7 +14,7 @@ public static partial class Operations
   /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
   /// </summary>
   /// <remarks/>
-  /// <inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, Action{ConcurrentDictionary{string,int}}?, CancellationToken)"/>
+  /// <inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, Action{ConcurrentBag{ProgressArgs}}?, CancellationToken)"/>
   /// <param name="useDefaultCache">When <see langword="true"/>, an additional <see cref="SQLiteTransport"/> will be included</param>
   /// <exception cref="ArgumentNullException">The <paramref name="transport"/> or <paramref name="value"/> was <see langword="null"/></exception>
   /// <example><code>
@@ -25,7 +25,7 @@ public static partial class Operations
     Base value,
     ITransport transport,
     bool useDefaultCache,
-    Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
+    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
     CancellationToken cancellationToken = default
   )
   {
@@ -61,7 +61,7 @@ public static partial class Operations
   public static async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     IReadOnlyCollection<ITransport> transports,
-    Action<ConcurrentDictionary<string, int>>? onProgressAction = null,
+    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
     CancellationToken cancellationToken = default
   )
   {
@@ -75,11 +75,8 @@ public static partial class Operations
       throw new ArgumentException("Expected at least on transport to be specified", nameof(transports));
     }
 
-    var transportContext = transports.ToDictionary(t => t.TransportName, t => t.TransportContext);
-
     // make sure all logs in the operation have the proper context
     using var activity = SpeckleActivityFactory.Start();
-    activity?.SetTag("transportContext", transportContext);
     activity?.SetTag("correlationId", Guid.NewGuid().ToString());
     {
       var sendTimer = Stopwatch.StartNew();
@@ -108,8 +105,7 @@ public static partial class Operations
         );
         activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
         SpeckleLog.Logger.Information(
-          "Finished sending {objectCount} objects after {elapsed}, result {objectId}",
-          transports.Max(t => t.SavedObjectCount),
+          "Finished sending objects after {elapsed}, result {objectId}",
           sendTimer.Elapsed.TotalSeconds,
           rootObjectId
         );
@@ -140,7 +136,7 @@ public static partial class Operations
     }
   }
 
-  /// <returns><inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, Action{ConcurrentDictionary{string, int}}?, CancellationToken)"/></returns>
+  /// <returns><inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, Action{ConcurrentBag{ProgressArgs}}?, CancellationToken)"/></returns>
   internal static async Task<string> SerializerSend(
     Base value,
     BaseObjectSerializerV2 serializer,

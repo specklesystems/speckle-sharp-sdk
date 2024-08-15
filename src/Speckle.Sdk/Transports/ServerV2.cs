@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
@@ -44,8 +45,6 @@ public sealed class ServerTransport : IServerTransport
 
     Directory.CreateDirectory(BlobStorageFolder);
   }
-
-  public int TotalSentBytes { get; private set; }
 
   public Account Account { get; }
   public Uri BaseUri { get; }
@@ -105,8 +104,7 @@ public sealed class ServerTransport : IServerTransport
     };
 
   public CancellationToken CancellationToken { get; set; }
-  public Action<string, int>? OnProgressAction { get; set; }
-  public int SavedObjectCount { get; private set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
   public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;
 
   public async Task<string> CopyObjectAndChildren(
@@ -127,8 +125,8 @@ public sealed class ServerTransport : IServerTransport
     var stopwatch = Stopwatch.StartNew();
     api.CancellationToken = CancellationToken;
 
-    string rootObjectJson = await api.DownloadSingleObject(StreamId, id).ConfigureAwait(false);
-    IList<string> allIds = ParseChildrenIds(rootObjectJson);
+    string? rootObjectJson = await api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
+    IList<string> allIds = ParseChildrenIds(rootObjectJson.NotNull());
 
     List<string> childrenIds = allIds.Where(x => !x.Contains("blob:")).ToList();
     List<string> blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x.Remove(0, 5)).ToList();
@@ -148,11 +146,11 @@ public sealed class ServerTransport : IServerTransport
     await api.DownloadObjects(
         StreamId,
         newChildrenIds,
+        OnProgressAction,
         (childId, childData) =>
         {
           stopwatch.Stop();
           targetTransport.SaveObject(childId, childData);
-          OnProgressAction?.Invoke(TransportName, 1);
           stopwatch.Start();
         }
       )
@@ -180,15 +178,7 @@ public sealed class ServerTransport : IServerTransport
       .Where(blobId => !localBlobTrimmedHashes.Contains(blobId.Substring(0, Blob.LocalHashPrefixLength)))
       .ToList();
 
-    await api.DownloadBlobs(
-        StreamId,
-        newBlobIds,
-        () =>
-        {
-          OnProgressAction?.Invoke(TransportName, 1);
-        }
-      )
-      .ConfigureAwait(false);
+    await api.DownloadBlobs(StreamId, newBlobIds, OnProgressAction).ConfigureAwait(false);
 
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
@@ -199,10 +189,10 @@ public sealed class ServerTransport : IServerTransport
   {
     CancellationToken.ThrowIfCancellationRequested();
     var stopwatch = Stopwatch.StartNew();
-    var result = Api.DownloadSingleObject(StreamId, id).Result;
+    var result = Api.DownloadSingleObject(StreamId, id, OnProgressAction).Result;
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-    return result;
+    return result.NotNull();
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
@@ -224,30 +214,12 @@ public sealed class ServerTransport : IServerTransport
     }
   }
 
-  public void SaveObject(string id, ITransport sourceTransport)
-  {
-    var objectData = sourceTransport.GetObject(id);
-
-    if (objectData is null)
-    {
-      throw new TransportException(
-        this,
-        $"Cannot copy {id} from {sourceTransport.TransportName} to {TransportName} as source returned null"
-      );
-    }
-
-    SaveObject(id, objectData);
-  }
-
   public void BeginWrite()
   {
     if (_shouldSendThreadRun || _sendingThread != null)
     {
       throw new InvalidOperationException("ServerTransport already sending");
     }
-
-    TotalSentBytes = 0;
-    SavedObjectCount = 0;
 
     _exception = null;
     _shouldSendThreadRun = true;
@@ -294,15 +266,7 @@ public sealed class ServerTransport : IServerTransport
   {
     SpeckleLog.Logger.Information("Initializing a new Remote Transport for {baseUri}", baseUri);
 
-    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds)
-    {
-      OnBatchSent = (num, size) =>
-      {
-        OnProgressAction?.Invoke(TransportName, num);
-        TotalSentBytes += size;
-        SavedObjectCount += num;
-      }
-    };
+    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
   }
 
   public override string ToString()
@@ -383,10 +347,7 @@ public sealed class ServerTransport : IServerTransport
           }
         }
 
-        // Report the objects that are already on the server
-        OnProgressAction?.Invoke(TransportName, hasObjects.Count - newObjects.Count);
-
-        await Api.UploadObjects(StreamId, newObjects).ConfigureAwait(false);
+        await Api.UploadObjects(StreamId, newObjects, OnProgressAction).ConfigureAwait(false);
 
         if (bufferBlobs.Count != 0)
         {
@@ -395,7 +356,7 @@ public sealed class ServerTransport : IServerTransport
           var newBlobs = bufferBlobs.Where(tuple => formattedIds.IndexOf(tuple.id) != -1).ToList();
           if (newBlobs.Count != 0)
           {
-            await Api.UploadBlobs(StreamId, newBlobs).ConfigureAwait(false);
+            await Api.UploadBlobs(StreamId, newBlobs, OnProgressAction).ConfigureAwait(false);
           }
         }
       }

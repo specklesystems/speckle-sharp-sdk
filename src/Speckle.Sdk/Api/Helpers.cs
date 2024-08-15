@@ -1,10 +1,10 @@
-#nullable disable
 using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
@@ -30,9 +30,9 @@ public static class Helpers
   public static async Task<Base> Receive(
     this IServerTransportFactory serverTransportFactory,
     string stream,
-    Account account = null,
-    Action<ConcurrentDictionary<string, int>> onProgressAction = null,
-    Action<int> onTotalChildrenCountKnown = null
+    Account? account = null,
+    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
+    Action<int>? onTotalChildrenCountKnown = null
   )
   {
     var sw = new StreamWrapper(stream);
@@ -61,17 +61,17 @@ public static class Helpers
     using var transport = serverTransportFactory.Create(client.Account, sw.StreamId);
 
     string objectId = "";
-    Commit commit = null;
+    Commit? commit = null;
 
     //OBJECT URL
     if (!string.IsNullOrEmpty(sw.ObjectId))
     {
-      objectId = sw.ObjectId;
+      objectId = sw.ObjectId.NotNull();
     }
     //COMMIT URL
     else if (!string.IsNullOrEmpty(sw.CommitId))
     {
-      commit = await client.CommitGet(sw.StreamId, sw.CommitId).ConfigureAwait(false);
+      commit = await client.CommitGet(sw.StreamId, sw.CommitId.NotNull()).ConfigureAwait(false);
       objectId = commit.referencedObject;
     }
     //BRANCH URL OR STREAM URL
@@ -79,7 +79,7 @@ public static class Helpers
     {
       var branchName = string.IsNullOrEmpty(sw.BranchName) ? "main" : sw.BranchName;
 
-      var branch = await client.BranchGet(sw.StreamId, branchName, 1).ConfigureAwait(false);
+      var branch = await client.BranchGet(sw.StreamId, branchName.NotNull(), 1).ConfigureAwait(false);
       if (branch.commits.items.Count == 0)
       {
         throw new SpeckleException("The selected branch has no commits.");
@@ -94,7 +94,7 @@ public static class Helpers
       Analytics.Events.Receive,
       new Dictionary<string, object>
       {
-        { "sourceHostApp", HostApplications.GetHostAppFromString(commit.sourceApplication).Slug },
+        { "sourceHostApp", HostApplications.GetHostAppFromString(commit.NotNull().sourceApplication).Slug },
         { "sourceHostAppVersion", commit.sourceApplication }
       }
     );
@@ -128,105 +128,6 @@ public static class Helpers
     }
     return receiveRes;
   }
-
-  /// <summary>
-  /// Helper method to Send to a Speckle Server.
-  /// </summary>
-  /// <param name="stream">Stream URL or Id to send to. If the URL contains branchName, commitId or objectId those will be used, otherwise the latest commit from main will be received.</param>
-  /// <param name="data">Data to send</param>
-  /// <param name="account">Account to use. If not provided the default account will be used.</param>
-  /// <param name="useDefaultCache">Toggle for the default cache. If set to false, it will only send to the provided transports.</param>
-  /// <param name="onProgressAction">Action invoked on progress iterations.</param>
-  /// <returns></returns>
-  public static async Task<string> Send(
-    this IServerTransportFactory serverTransportFactory,
-    string stream,
-    Base data,
-    string message = "No message",
-    string sourceApplication = ".net",
-    int totalChildrenCount = 0,
-    Account account = null,
-    bool useDefaultCache = true,
-    Action<ConcurrentDictionary<string, int>> onProgressAction = null
-  )
-  {
-    var sw = new StreamWrapper(stream);
-
-    using var client = new Client(account ?? await sw.GetAccount().ConfigureAwait(false));
-
-    using var transport = serverTransportFactory.Create(client.Account, sw.StreamId);
-    var branchName = string.IsNullOrEmpty(sw.BranchName) ? "main" : sw.BranchName;
-
-    var (objectId, _) = await Operations.Send(data, transport, useDefaultCache, onProgressAction).ConfigureAwait(false);
-
-    Analytics.TrackEvent(client.Account, Analytics.Events.Send);
-
-    return await client
-      .CommitCreate(
-        new CommitCreateInput
-        {
-          streamId = sw.StreamId,
-          branchName = branchName,
-          objectId = objectId,
-          message = message,
-          sourceApplication = sourceApplication,
-          totalChildrenCount = totalChildrenCount
-        }
-      )
-      .ConfigureAwait(false);
-  }
-
-  /// <summary>
-  ///
-  /// </summary>
-  /// <param name="slug">The connector slug eg. revit, rhino, etc</param>
-  /// <returns></returns>
-  public static async Task<bool> IsConnectorUpdateAvailable(string slug)
-  {
-    //when debugging the version is not correct, so don't bother
-    if (!Analytics.IsReleaseMode)
-    {
-      return false;
-    }
-
-    try
-    {
-      using HttpClient client = Http.GetHttpProxyClient();
-      var response = await client.GetStringAsync($"{FEEDS_ENDPOINT}/{slug}.json").ConfigureAwait(false);
-      var connector = JsonConvert.DeserializeObject<Connector>(response);
-
-      var os = Os.Win; //TODO: This won't work for linux
-      if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-      {
-        os = Os.OSX;
-      }
-
-      var versions = connector.Versions.Where(x => x.Os == os).OrderByDescending(x => x.Date).ToList();
-      var stables = versions.Where(x => !x.Prerelease).ToArray();
-      if (stables.Length == 0)
-      {
-        return false;
-      }
-
-      var latestVersion = new System.Version(stables.First().Number);
-
-      var currentVersion = Assembly.GetAssembly(typeof(Helpers)).GetName().Version;
-
-      if (latestVersion > currentVersion)
-      {
-        return true;
-      }
-    }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-      //.Log.ForContext("slug", slug)
-      SpeckleLog.Logger.Warning(ex, "Failed to check for connector updates");
-    }
-
-    return false;
-  }
-
-#nullable enable
 
   /// <inheritdoc cref="TimeAgo(DateTime)"/>
   /// <param name="fallback">value to fallback to if the given <paramref name="timestamp"/> is <see langword="null"/></param>
