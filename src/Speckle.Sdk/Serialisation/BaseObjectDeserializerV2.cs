@@ -64,7 +64,7 @@ public sealed class BaseObjectDeserializerV2
       _workerThreads = new DeserializationWorkerThreads(this, WorkerThreadCount);
       _workerThreads.Start();
 
-      List<(string, int)> closures = GetClosures(rootObjectJson);
+      List<(string, int)> closures = ClosureParser.GetClosures(rootObjectJson);
       closures.Sort((a, b) => b.Item2.CompareTo(a.Item2));
       int i = 0;
       foreach (var closure in closures)
@@ -113,29 +113,6 @@ public sealed class BaseObjectDeserializerV2
       _workerThreads = null;
       _isBusy = false;
     }
-  }
-
-  private List<(string, int)> GetClosures(string rootObjectJson)
-  {
-    try
-    {
-      JObject doc1 = JObject.Parse(rootObjectJson);
-      if (doc1.TryGetValue("__closure", out JToken? closure))
-      {
-        List<(string, int)> closureList = new(closure.Count());
-        foreach (JToken prop in closure)
-        {
-          string childId = ((JProperty)prop).Name;
-          int childMinDepth = (int)((JProperty)prop).Value;
-          closureList.Add((childId, childMinDepth));
-        }
-        return closureList;
-      }
-    }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-    }
-    return new List<(string, int)>(Array.Empty<(string, int)>());
   }
 
   private object? DeserializeTransportObjectProxy(string? objectJson, long? current, long? total)
