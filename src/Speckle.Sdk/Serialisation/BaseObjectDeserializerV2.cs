@@ -163,12 +163,7 @@ public sealed class BaseObjectDeserializerV2
     return DeserializeTransportObject(objectJson, current, total);
   }
 
-  /// <param name="objectJson"></param>
-  /// <returns>The deserialized object</returns>
-  /// <exception cref="ArgumentNullException"><paramref name="objectJson"/> was null</exception>
-  /// <exception cref="JsonReaderException "><paramref name="objectJson"/> was not valid JSON</exception>
-  /// <exception cref="SpeckleDeserializeException">Failed to deserialize <see cref="JObject"/> to the target type</exception>
-  public object? DeserializeTransportObject(string objectJson, long? current, long? total)
+  internal object? DeserializeTransportObject(string objectJson, long? currentObjectCount, long? totalObjectCount)
   {
     if (objectJson is null)
     {
@@ -188,7 +183,7 @@ public sealed class BaseObjectDeserializerV2
     object? converted;
     try
     {
-      converted = ConvertJsonElement(doc1, current, total);
+      converted = ConvertJsonElement(doc1, currentObjectCount, totalObjectCount);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -197,13 +192,13 @@ public sealed class BaseObjectDeserializerV2
 
     lock (_callbackLock)
     {
-      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, current, total));
+      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, currentObjectCount, totalObjectCount));
     }
 
     return converted;
   }
 
-  public object? ConvertJsonElement(JToken doc, long? current, long? total)
+  private object? ConvertJsonElement(JToken doc, long? currentObjectCount, long? totalObjectCount)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
@@ -245,7 +240,7 @@ public sealed class BaseObjectDeserializerV2
         int retListCount = 0;
         foreach (JToken value in docAsArray)
         {
-          object? convertedValue = ConvertJsonElement(value, current, total);
+          object? convertedValue = ConvertJsonElement(value, currentObjectCount, totalObjectCount);
           retListCount += convertedValue is DataChunk chunk ? chunk.data.Count : 1;
           jsonList.Add(convertedValue);
         }
@@ -276,7 +271,7 @@ public sealed class BaseObjectDeserializerV2
             continue;
           }
 
-          dict[prop.Name] = ConvertJsonElement(prop.Value, current, total);
+          dict[prop.Name] = ConvertJsonElement(prop.Value, currentObjectCount, totalObjectCount);
         }
 
         if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
@@ -325,7 +320,7 @@ public sealed class BaseObjectDeserializerV2
             throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
           }
 
-          deserialized = DeserializeTransportObject(objectJson, current, total);
+          deserialized = DeserializeTransportObject(objectJson, currentObjectCount, totalObjectCount);
 
           lock (_deserializedObjects)
           {
