@@ -64,8 +64,7 @@ public sealed class BaseObjectDeserializerV2
       _workerThreads = new DeserializationWorkerThreads(this, WorkerThreadCount);
       _workerThreads.Start();
 
-      List<(string, int)> closures = ClosureParser.GetClosures(rootObjectJson);
-      closures.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+      var closures = ClosureParser.GetClosures(rootObjectJson);
       int i = 0;
       foreach (var closure in closures)
       {
