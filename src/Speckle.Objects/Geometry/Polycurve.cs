@@ -40,7 +40,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box? bbox { get; set; } //TODO: Check with Alex and Claire, should bbox be nullable or not...
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out ITransformable polycurve)
