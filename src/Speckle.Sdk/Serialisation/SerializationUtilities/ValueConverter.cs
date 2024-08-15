@@ -169,6 +169,7 @@ internal static class ValueConverter
       Type listElementType = type.GenericTypeArguments[0];
       
       _singleValue[0] = valueList.Count;
+      //reuse array to avoid params array allocation
       IList ret = (IList)Activator.CreateInstance(targetType, _singleValue);
       
       foreach (object inputListElement in valueList)
