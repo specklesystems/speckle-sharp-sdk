@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Serialisation;
 
@@ -51,7 +51,8 @@ public static class TransportHelpers
         }
 
         targetTransport.SaveObject(kvp.Key, child);
-        sourceTransport.OnProgressAction?.Invoke($"{sourceTransport}", i++);
+        var count = i++;
+        sourceTransport.OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.UploadObject, count, closures.Count));
       }
     }
 
