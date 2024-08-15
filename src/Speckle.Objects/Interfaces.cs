@@ -11,7 +11,7 @@ namespace Speckle.Objects;
 /// <summary>
 /// Represents an object that has a <see cref="IHasBoundingBox.bbox"/>
 /// </summary>
-public interface IHasBoundingBox
+public interface IHasBoundingBox : ISpeckleObject
 {
   /// <summary>
   /// The bounding box containing the object.
@@ -22,7 +22,7 @@ public interface IHasBoundingBox
 /// <summary>
 /// Represents a <see cref="Base"/> object that has <see cref="IHasArea.area"/>
 /// </summary>
-public interface IHasArea
+public interface IHasArea : ISpeckleObject
 {
   /// <summary>
   /// The area of the object
@@ -33,7 +33,7 @@ public interface IHasArea
 /// <summary>
 /// Represents an object that has <see cref="IHasVolume.volume"/>
 /// </summary>
-public interface IHasVolume
+public interface IHasVolume : ISpeckleObject
 {
   /// <summary>
   /// The volume of the object
@@ -44,7 +44,7 @@ public interface IHasVolume
 /// <summary>
 /// Represents
 /// </summary>
-public interface ICurve
+public interface ICurve : ISpeckleObject
 {
   /// <summary>
   /// The length of the curve.
@@ -73,7 +73,7 @@ public interface ITransformable<T> : ITransformable
 /// <summary>
 /// Interface for transformable objects where the type may not be known on convert (eg ICurve implementations)
 /// </summary>
-public interface ITransformable
+public interface ITransformable : ISpeckleObject
 {
   /// <summary>
   /// Returns a copy of the object with it's coordinates transformed by the provided <paramref name="transform"/>
@@ -87,7 +87,7 @@ public interface ITransformable
 #endregion
 
 #region GIS
-public interface IGisFeature
+public interface IGisFeature : ISpeckleObject
 {
   Base attributes { get; set; }
 }
@@ -110,7 +110,7 @@ public interface IGisFeature
 /// Expected to be either a <see cref="Base"/> type or a <see cref="List{T}"/> of <see cref="Base"/>s,
 /// most likely <see cref="Mesh"/> or <see cref="Polyline"/>.
 /// </typeparam>
-public interface IDisplayValue<out T>
+public interface IDisplayValue<out T> : ISpeckleObject
 {
   /// <summary>
   /// <see cref="displayValue"/> <see cref="Base"/>(s) will be used to display this <see cref="Base"/>
@@ -122,7 +122,7 @@ public interface IDisplayValue<out T>
 /// <summary>
 /// Represents a calculated object for civil disciplines
 /// </summary>
-public interface ICivilCalculatedObject
+public interface ICivilCalculatedObject : ISpeckleObject
 {
   /// <summary>
   /// <see cref="codes"/> for this calculated object.
