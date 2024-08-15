@@ -33,7 +33,7 @@ public sealed class BaseObjectDeserializerV2
   /// </summary>
   public ITransport ReadTransport { get; set; }
 
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
 
   public string? BlobStorageFolder { get; set; }
   public TimeSpan Elapsed { get; private set; }
@@ -66,6 +66,7 @@ public sealed class BaseObjectDeserializerV2
 
       List<(string, int)> closures = GetClosures(rootObjectJson);
       closures.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+      int i = 0;
       foreach (var closure in closures)
       {
         string objId = closure.Item1;
@@ -77,7 +78,7 @@ public sealed class BaseObjectDeserializerV2
         //but adding throw here breaks blobs tests, see CNX-8541
 
         stopwatch.Start();
-        object? deserializedOrPromise = DeserializeTransportObjectProxy(objJson);
+        object? deserializedOrPromise = DeserializeTransportObjectProxy(objJson, i++, closures.Count);
         lock (_deserializedObjects)
         {
           _deserializedObjects[objId] = deserializedOrPromise;
@@ -87,7 +88,7 @@ public sealed class BaseObjectDeserializerV2
       object? ret;
       try
       {
-        ret = DeserializeTransportObject(rootObjectJson);
+        ret = DeserializeTransportObject(rootObjectJson, null, null);
       }
       catch (JsonReaderException ex)
       {
@@ -140,29 +141,29 @@ public sealed class BaseObjectDeserializerV2
     }
   }
 
-  private object? DeserializeTransportObjectProxy(string? objectJson)
+  private object? DeserializeTransportObjectProxy(string? objectJson, long? current, long? total)
   {
     if (objectJson is null)
     {
       return null;
     }
     // Try background work
-    Task<object?>? bgResult = _workerThreads?.TryStartTask(WorkerThreadTaskType.Deserialize, objectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
+    Task<object?>? bgResult = _workerThreads?.TryStartTask(
+      WorkerThreadTaskType.Deserialize,
+      objectJson,
+      current,
+      total
+    ); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
     if (bgResult != null)
     {
       return bgResult;
     }
 
     // SyncS
-    return DeserializeTransportObject(objectJson);
+    return DeserializeTransportObject(objectJson, current, total);
   }
 
-  /// <param name="objectJson"></param>
-  /// <returns>The deserialized object</returns>
-  /// <exception cref="ArgumentNullException"><paramref name="objectJson"/> was null</exception>
-  /// <exception cref="JsonReaderException "><paramref name="objectJson"/> was not valid JSON</exception>
-  /// <exception cref="SpeckleDeserializeException">Failed to deserialize <see cref="JObject"/> to the target type</exception>
-  public object? DeserializeTransportObject(string objectJson)
+  internal object? DeserializeTransportObject(string objectJson, long? currentObjectCount, long? totalObjectCount)
   {
     if (objectJson is null)
     {
@@ -182,7 +183,7 @@ public sealed class BaseObjectDeserializerV2
     object? converted;
     try
     {
-      converted = ConvertJsonElement(doc1);
+      converted = ConvertJsonElement(doc1, currentObjectCount, totalObjectCount);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -191,13 +192,13 @@ public sealed class BaseObjectDeserializerV2
 
     lock (_callbackLock)
     {
-      OnProgressAction?.Invoke("DS", 1);
+      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, currentObjectCount, totalObjectCount));
     }
 
     return converted;
   }
 
-  public object? ConvertJsonElement(JToken doc)
+  private object? ConvertJsonElement(JToken doc, long? currentObjectCount, long? totalObjectCount)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
@@ -239,7 +240,7 @@ public sealed class BaseObjectDeserializerV2
         int retListCount = 0;
         foreach (JToken value in docAsArray)
         {
-          object? convertedValue = ConvertJsonElement(value);
+          object? convertedValue = ConvertJsonElement(value, currentObjectCount, totalObjectCount);
           retListCount += convertedValue is DataChunk chunk ? chunk.data.Count : 1;
           jsonList.Add(convertedValue);
         }
@@ -270,7 +271,7 @@ public sealed class BaseObjectDeserializerV2
             continue;
           }
 
-          dict[prop.Name] = ConvertJsonElement(prop.Value);
+          dict[prop.Name] = ConvertJsonElement(prop.Value, currentObjectCount, totalObjectCount);
         }
 
         if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
@@ -319,7 +320,7 @@ public sealed class BaseObjectDeserializerV2
             throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
           }
 
-          deserialized = DeserializeTransportObject(objectJson);
+          deserialized = DeserializeTransportObject(objectJson, currentObjectCount, totalObjectCount);
 
           lock (_deserializedObjects)
           {
@@ -396,10 +397,4 @@ public sealed class BaseObjectDeserializerV2
 
     return baseObj;
   }
-
-  [Obsolete("Use nameof(Base.speckle_type)")]
-  public string TypeDiscriminator => TYPE_DISCRIMINATOR;
-
-  [Obsolete("OnErrorAction unused, deserializer will throw exceptions instead")]
-  public Action<string, Exception>? OnErrorAction { get; set; }
 }

@@ -73,12 +73,12 @@ public class ServerTransportTests : IDisposable
     var myObject = Fixtures.GenerateSimpleObject();
     myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 
-    var sentObjectId = await Operations.Send(myObject, _transport, false);
+    var sendResult = await Operations.Send(myObject, _transport, false);
 
     // NOTE: used to debug diffing
     // await Operations.Send(myObject, new List<ITransport> { transport });
 
-    var receivedObject = await Operations.Receive(sentObjectId, _transport, new MemoryTransport());
+    var receivedObject = await Operations.Receive(sendResult.rootObjId, _transport, new MemoryTransport());
 
     var allFiles = Directory
       .GetFiles(_transport.BlobStorageFolder)
@@ -108,9 +108,9 @@ public class ServerTransportTests : IDisposable
     myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 
     var memTransport = new MemoryTransport();
-    var sentObjectId = await Operations.Send(myObject, new List<ITransport> { _transport, memTransport });
+    var sendResult = await Operations.Send(myObject, new List<ITransport> { _transport, memTransport });
 
-    var receivedObject = await Operations.Receive(sentObjectId, _transport, new MemoryTransport());
+    var receivedObject = await Operations.Receive(sendResult.rootObjId, _transport, new MemoryTransport());
 
     var allFiles = Directory
       .GetFiles(_transport.BlobStorageFolder)
@@ -141,10 +141,10 @@ public class ServerTransportTests : IDisposable
     myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 
     var memTransport = new MemoryTransport();
-    var sentObjectId = await Operations.Send(myObject, new ITransport[] { _transport, memTransport });
+    var sendResult = await Operations.Send(myObject, new ITransport[] { _transport, memTransport });
 
     memTransport = new MemoryTransport();
-    Base receivedObject = await Operations.Receive(sentObjectId, _transport, memTransport);
+    Base receivedObject = await Operations.Receive(sendResult.rootObjId, _transport, memTransport);
     Assert.That(receivedObject, Is.Not.Null);
 
     var allFiles = Directory

@@ -341,7 +341,7 @@ public class LegacyAPITests : IDisposable
 
     myObject["@Points"] = ptsList;
 
-    _objectId = await Operations.Send(myObject, new List<ITransport> { _myServerTransport });
+    (_objectId, _) = await Operations.Send(myObject, new List<ITransport> { _myServerTransport });
 
     Assert.That(_objectId, Is.Not.Null);
 

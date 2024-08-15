@@ -38,7 +38,7 @@ public static class AccountManager
   /// <returns></returns>
   public static async Task<ServerInfo> GetServerInfo(Uri server, CancellationToken cancellationToken = default)
   {
-    using var httpClient = Http.GetHttpProxyClient();
+    using var httpClient = Http.GetHttpProxyClient(null, null);
 
     using var gqlClient = new GraphQLHttpClient(
       new GraphQLHttpClientOptions
@@ -102,7 +102,7 @@ public static class AccountManager
     CancellationToken cancellationToken = default
   )
   {
-    using var httpClient = Http.GetHttpProxyClient();
+    using var httpClient = Http.GetHttpProxyClient(null, null);
     Http.AddAuthHeader(httpClient, token);
 
     using var gqlClient = new GraphQLHttpClient(
@@ -149,7 +149,7 @@ public static class AccountManager
   {
     try
     {
-      using var httpClient = Http.GetHttpProxyClient();
+      using var httpClient = Http.GetHttpProxyClient(null, null);
       Http.AddAuthHeader(httpClient, token);
 
       using var client = new GraphQLHttpClient(
@@ -751,7 +751,7 @@ public static class AccountManager
   {
     try
     {
-      using var client = Http.GetHttpProxyClient();
+      using var client = Http.GetHttpProxyClient(null, null);
 
       var body = new
       {
@@ -779,7 +779,7 @@ public static class AccountManager
   {
     try
     {
-      using var client = Http.GetHttpProxyClient();
+      using var client = Http.GetHttpProxyClient(null, null);
 
       var body = new
       {
@@ -811,7 +811,7 @@ public static class AccountManager
   /// <exception cref="HttpRequestException">Request to <paramref name="server"/> failed to send or response was not successful</exception>
   private static async Task<bool> IsFrontend2Server(Uri server)
   {
-    using var httpClient = Http.GetHttpProxyClient();
+    using var httpClient = Http.GetHttpProxyClient(null, null);
 
     var response = await Http.HttpPing(server).ConfigureAwait(false);
 
@@ -842,45 +842,5 @@ public static class AccountManager
 
     //escaped chars like % do not play nice with the server
     return Regex.Replace(Convert.ToBase64String(challengeData), @"[^\w\.@-]", "");
-  }
-
-  /// <inheritdoc cref="GetServerInfo(System.Uri,System.Threading.CancellationToken)"/>
-  [Obsolete("Use URI overload (note: that one throws exceptions, this one returns null)")]
-  public static async Task<ServerInfo?> GetServerInfo(string server)
-  {
-    try
-    {
-      return await GetServerInfo(new Uri(server)).ConfigureAwait(false);
-    }
-    catch (SpeckleGraphQLException<ActiveUserResponse> ex)
-    {
-      SpeckleLog.Logger.Warning(
-        ex,
-        "Swallowing exception in {methodName}: {exceptionMessage}",
-        nameof(GetServerInfo),
-        ex.Message
-      );
-      return null;
-    }
-  }
-
-  /// <inheritdoc cref="GetUserInfo(string,System.Uri,System.Threading.CancellationToken)"/>
-  [Obsolete("Use URI overload (note: that one throws exceptions, this one returns null)")]
-  public static async Task<UserInfo?> GetUserInfo(string token, string server)
-  {
-    try
-    {
-      return await GetUserInfo(token, new Uri(server)).ConfigureAwait(false);
-    }
-    catch (SpeckleGraphQLException<ActiveUserResponse> ex)
-    {
-      SpeckleLog.Logger.Warning(
-        ex,
-        "Swallowing exception in {methodName}: {exceptionMessage}",
-        nameof(GetUserInfo),
-        ex.Message
-      );
-      return null;
-    }
   }
 }

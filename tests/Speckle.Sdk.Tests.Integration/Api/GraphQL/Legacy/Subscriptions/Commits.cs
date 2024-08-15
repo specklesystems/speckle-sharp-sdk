@@ -73,13 +73,13 @@ public class Commits : IDisposable
 
     myObject["Points"] = ptsList;
 
-    var objectId = await Operations.Send(myObject, _myServerTransport, false);
+    var sendResult = await Operations.Send(myObject, _myServerTransport, false);
 
     var commitInput = new CommitCreateInput
     {
       streamId = _streamId,
       branchName = "awesome-features",
-      objectId = objectId,
+      objectId = sendResult.rootObjId,
       message = "sending some test points",
       sourceApplication = "Tests",
       totalChildrenCount = 20

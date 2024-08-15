@@ -115,10 +115,8 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
 
-  [Obsolete("Transports will now throw exceptions")]
-  public Action<string, Exception>? OnErrorAction { get; set; }
   public int SavedObjectCount { get; private set; }
 
   public TimeSpan Elapsed { get; private set; }
@@ -333,7 +331,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
         CancellationToken.ThrowIfCancellationRequested();
       }
 
-      OnProgressAction?.Invoke(TransportName, saved);
+      OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, saved, _queue.Count + 1));
 
       CancellationToken.ThrowIfCancellationRequested();
 
@@ -370,24 +368,6 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
     _writeTimer.Enabled = true;
     _writeTimer.Start();
-  }
-
-  public void SaveObject(string id, ITransport sourceTransport)
-  {
-    CancellationToken.ThrowIfCancellationRequested();
-
-    var serializedObject = sourceTransport.GetObject(id);
-
-    if (serializedObject is null)
-    {
-      throw new TransportException(
-        this,
-        $"Cannot copy {id} from {sourceTransport.TransportName} to {TransportName} as source returned null"
-      );
-    }
-
-    //Should this just call SaveObject... do we not want the write timers?
-    _queue.Enqueue((id, serializedObject, Encoding.UTF8.GetByteCount(serializedObject)));
   }
 
   /// <summary>
@@ -457,14 +437,6 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     );
     return Task.FromResult(res);
   }
-
-  #endregion
-
-  #region Deprecated
-
-  [Obsolete("Use " + nameof(WriteCompletionStatus))]
-  [SuppressMessage("Design", "CA1024:Use properties where appropriate")]
-  public bool GetWriteCompletionStatus() => WriteCompletionStatus;
 
   #endregion
 }

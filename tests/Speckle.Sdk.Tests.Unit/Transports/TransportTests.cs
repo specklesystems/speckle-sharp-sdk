@@ -94,17 +94,10 @@ public abstract class TransportTests
   }
 
   [Test]
-  public void SaveObject_FromTransport_FailsPredictably()
-  {
-    var exception = Assert.Throws<TransportException>(() => Sut.NotNull().SaveObject("non-existent-id", Sut));
-    Assert.That(exception?.Transport, Is.EqualTo(Sut));
-  }
-
-  [Test]
   public async Task ProgressAction_Called_OnSaveObject()
   {
     bool wasCalled = false;
-    Sut.NotNull().OnProgressAction = (_, _) => wasCalled = true;
+    Sut.NotNull().OnProgressAction = (_) => wasCalled = true;
 
     Sut.SaveObject("12345", "fake payload data");
 

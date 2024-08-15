@@ -47,6 +47,7 @@ public class ArchicadFenestration : Base, IDisplayValue<List<Mesh>>
   public List<Mesh> displayValue { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadDoorWindowBase")]
 public class ArchicadDoorWindowBase : ArchicadFenestration
 {
   public double? revealDepthFromSide { get; set; } /*APINullabe*/
@@ -61,10 +62,13 @@ public class ArchicadDoorWindowBase : ArchicadFenestration
   public Point? dirVector { get; set; } /*APINullabe*/
 }
 
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadDoor")]
 public sealed class ArchicadDoor : ArchicadDoorWindowBase { }
 
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadWindow")]
 public sealed class ArchicadWindow : ArchicadDoorWindowBase { }
 
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadSkylight")]
 public sealed class ArchicadSkylight : ArchicadFenestration
 {
   public uint? vertexID { get; set; } /*APINullabe*/

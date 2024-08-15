@@ -35,7 +35,7 @@ public sealed class MemoryTransport : ITransport, ICloneable
 
   public string TransportName { get; set; } = "Memory";
 
-  public Action<string, int>? OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
 
   public int SavedObjectCount { get; private set; }
 
@@ -58,26 +58,9 @@ public sealed class MemoryTransport : ITransport, ICloneable
     Objects[id] = serializedObject;
 
     SavedObjectCount++;
-    OnProgressAction?.Invoke(TransportName, 1);
+    OnProgressAction?.Invoke(new(ProgressEvent.UploadObject, 1, 1));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-  }
-
-  public void SaveObject(string id, ITransport sourceTransport)
-  {
-    CancellationToken.ThrowIfCancellationRequested();
-
-    var serializedObject = sourceTransport.GetObject(id);
-
-    if (serializedObject is null)
-    {
-      throw new TransportException(
-        this,
-        $"Cannot copy {id} from {sourceTransport.TransportName} to {TransportName} as source returned null"
-      );
-    }
-
-    SaveObject(id, serializedObject);
   }
 
   public string? GetObject(string id)
@@ -121,18 +104,8 @@ public sealed class MemoryTransport : ITransport, ICloneable
     return Task.FromResult(ret);
   }
 
-  [Obsolete("No replacement required, memory transport is always sync")]
-  [SuppressMessage("Design", "CA1024:Use properties where appropriate")]
-  public bool GetWriteCompletionStatus()
-  {
-    return true; // can safely assume it's always true, as ops are atomic?
-  }
-
   public override string ToString()
   {
     return $"Memory Transport {TransportName}";
   }
-
-  [Obsolete("Transports will now throw exceptions", true)]
-  public Action<string, Exception>? OnErrorAction { get; set; }
 }

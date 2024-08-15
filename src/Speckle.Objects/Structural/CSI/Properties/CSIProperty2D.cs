@@ -28,6 +28,7 @@ public class CSIProperty2D : Property2D
   public DeckType deckType { get; set; }
   public ShellType shellType { get; set; }
 
+  [SpeckleType("Objects.Structural.CSI.Properties.CSIProperty2D+WaffleSlab")]
   public class WaffleSlab : CSIProperty2D
   {
     public WaffleSlab() { }
@@ -70,6 +71,7 @@ public class CSIProperty2D : Property2D
     //[SchemaInfo("WaffleSlab","Define a WaffleSlab Area Property")]
   }
 
+  [SpeckleType("Objects.Structural.CSI.Properties.CSIProperty2D+RibbedSlab")]
   public class RibbedSlab : CSIProperty2D
   {
     public RibbedSlab() { }
@@ -110,6 +112,7 @@ public class CSIProperty2D : Property2D
     public int RibsParallelTo { get; set; }
   }
 
+  [SpeckleType("Objects.Structural.CSI.Properties.CSIProperty2D+Slab")]
   public class Slab : CSIProperty2D
   {
     public Slab() { }
@@ -128,6 +131,7 @@ public class CSIProperty2D : Property2D
     }
   }
 
+  [SpeckleType("Objects.Structural.CSI.Properties.CSIProperty2D+DeckFilled")]
   public class DeckFilled : CSIProperty2D
   {
     public DeckFilled() { }
@@ -183,6 +187,7 @@ public class CSIProperty2D : Property2D
     public double UnitWeight { get; set; }
   }
 
+  [SpeckleType("Objects.Structural.CSI.Properties.CSIProperty2D+DeckUnFilled")]
   public class DeckUnFilled : CSIProperty2D
   {
     [SchemaInfo("DeckUnFilled", "Create an CSI UnFilled Deck", "CSI", "Properties")]
@@ -229,6 +234,7 @@ public class CSIProperty2D : Property2D
     public double UnitWeight { get; set; }
   }
 
+  [SpeckleType("Objects.Structural.CSI.Properties.CSIProperty2D+DeckSlab")]
   public class DeckSlab : CSIProperty2D
   {
     [SchemaInfo("DeckSlab", "Create an CSI Slab Deck", "CSI", "Properties")]

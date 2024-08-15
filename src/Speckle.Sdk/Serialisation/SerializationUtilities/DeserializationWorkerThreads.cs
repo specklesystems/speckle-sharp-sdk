@@ -48,7 +48,8 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
 
       try
       {
-        var result = RunOperation(taskType, inputValue!, _serializer);
+        (string objectJson, long? current, long? total) = ((string, long?, long?))inputValue!;
+        var result = RunOperation(taskType, objectJson, current, total, _serializer);
         tcs.SetResult(result);
       }
       catch (Exception ex)
@@ -65,14 +66,16 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
 
   private static object? RunOperation(
     WorkerThreadTaskType taskType,
-    object inputValue,
+    string objectJson,
+    long? current,
+    long? total,
     BaseObjectDeserializerV2 serializer
   )
   {
     switch (taskType)
     {
       case WorkerThreadTaskType.Deserialize:
-        var converted = serializer.DeserializeTransportObject((string)inputValue);
+        var converted = serializer.DeserializeTransportObject(objectJson, current, total);
         return converted;
       default:
         throw new ArgumentException(
@@ -82,7 +85,7 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
     }
   }
 
-  internal Task<object?>? TryStartTask(WorkerThreadTaskType taskType, object inputValue)
+  internal Task<object?>? TryStartTask(WorkerThreadTaskType taskType, string? objectJson, long? current, long? total)
   {
     bool canStartTask = false;
     lock (_lockFreeThreads)
@@ -100,7 +103,7 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
     }
 
     TaskCompletionSource<object?> tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    Tasks.Add(new(taskType, inputValue, tcs));
+    Tasks.Add(new(taskType, (objectJson, current, total), tcs));
     return tcs.Task;
   }
 }
