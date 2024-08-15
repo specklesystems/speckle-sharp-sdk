@@ -5,7 +5,7 @@ using Speckle.Sdk.Models;
 namespace Speckle.Sdk.Tests.Unit.Models;
 
 [TestFixture(TestOf = typeof(Crypt))]
-public sealed class UtilitiesTests
+public sealed class HashUtilityTests
 {
   [Test]
   [TestOf(nameof(Crypt.Md5))]
@@ -30,43 +30,4 @@ public sealed class UtilitiesTests
     Assert.That(upper, Is.EqualTo(expected.ToUpper()));
   }
 
-  [Test]
-  public void FlattenToNativeConversion()
-  {
-    var singleObject = new object();
-    var nestedObjects = new List<object>()
-    {
-      new List<object>()
-      {
-        new(), // obj 1
-        new() // obj 2
-      },
-      new() // obj 3
-    };
-
-    var testEnum = new List<object>() { new(), new() }.Select(o => o);
-
-    var nestedObjectsWithEnumerableInherited = new List<object>()
-    {
-      new List<object>()
-      {
-        new(), // obj 1
-        new(), // obj 2
-        testEnum // obj 3
-      },
-      new() // obj 4
-    };
-
-    var parentTestEnumFlattened = Utilities.FlattenToHostConversionResult(testEnum);
-    var singleObjectFlattened = Utilities.FlattenToHostConversionResult(singleObject);
-    var nestedObjectsFlattened = Utilities.FlattenToHostConversionResult(nestedObjects);
-    var nestedObjectsWithEnumerableInheritedFlattened = Utilities.FlattenToHostConversionResult(
-      nestedObjectsWithEnumerableInherited
-    );
-
-    Assert.That(parentTestEnumFlattened.Count, Is.EqualTo(1));
-    Assert.That(singleObjectFlattened.Count, Is.EqualTo(1));
-    Assert.That(nestedObjectsFlattened.Count, Is.EqualTo(3));
-    Assert.That(nestedObjectsWithEnumerableInheritedFlattened.Count, Is.EqualTo(4));
-  }
 }

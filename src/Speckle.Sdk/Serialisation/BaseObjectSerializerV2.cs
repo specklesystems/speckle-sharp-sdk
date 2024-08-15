@@ -12,7 +12,6 @@ using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 using Constants = Speckle.Sdk.Helpers.Constants;
-using Utilities = Speckle.Sdk.Models.Utilities;
 
 namespace Speckle.Sdk.Serialisation;
 
@@ -438,7 +437,7 @@ public class BaseObjectSerializerV2
   private static string ComputeId(IReadOnlyDictionary<string, object?> obj)
   {
     string serialized = JsonConvert.SerializeObject(obj);
-    string hash = Crypt.Sha256(serialized, length: Utilities.HASH_LENGTH);
+    string hash = Crypt.Sha256(serialized, length: HashUtility.HASH_LENGTH);
     return hash;
   }
 

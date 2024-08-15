@@ -2,9 +2,9 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using Speckle.Sdk.Host;
 
-namespace Speckle.Sdk.Serialisation.SerializationUtilities;
+namespace Speckle.Sdk.Serialisation.Utilities;
 
-internal static class BaseObjectSerializationUtilities
+internal static class TypeCache
 {
   #region Getting Types
   private static Dictionary<string, Dictionary<string, PropertyInfo>> s_typeProperties = new();

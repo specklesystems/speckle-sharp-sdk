@@ -6,7 +6,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation.SerializationUtilities;
+using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
@@ -37,9 +37,7 @@ public sealed class BaseObjectDeserializerV2
 
   public string? BlobStorageFolder { get; set; }
   public TimeSpan Elapsed { get; private set; }
-
-  public static int DefaultNumberThreads => Math.Min(Environment.ProcessorCount, 6); //6 threads seems the sweet spot, see performance test project
-  public int WorkerThreadCount { get; set; } = DefaultNumberThreads;
+  public int WorkerThreadCount { get; set; } = Math.Min(Environment.ProcessorCount, 6); //6 threads seems the sweet spot, see performance test project;
 
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
   /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="rootObjectJson"/></returns>
@@ -350,8 +348,8 @@ public sealed class BaseObjectDeserializerV2
     dictObj.Remove(TYPE_DISCRIMINATOR);
     dictObj.Remove("__closure");
 
-    Dictionary<string, PropertyInfo> staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
-    List<MethodInfo> onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
+    Dictionary<string, PropertyInfo> staticProperties = TypeCache.GetTypeProperties(typeName);
+    List<MethodInfo> onDeserializedCallbacks = TypeCache.GetOnDeserializedCallbacks(typeName);
 
     foreach (var entry in dictObj)
     {
