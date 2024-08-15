@@ -32,13 +32,10 @@ public static class ClosureParser
         }
       }
     }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-    }
+    catch (Exception ex) when (!ex.IsFatal()) { }
     return Array.Empty<(string, int)>();
   }
-  
-  
+
   private static List<(string, int)>? ReadObject(JsonTextReader reader)
   {
     reader.Read();
@@ -47,17 +44,17 @@ public static class ClosureParser
       switch (reader.TokenType)
       {
         case JsonToken.PropertyName:
-        {
-          if (reader.Value as string == "__closure")
           {
+            if (reader.Value as string == "__closure")
+            {
+              reader.Read(); //goes to prop vale
+              var closureList = ReadClosureList(reader);
+              return closureList;
+            }
             reader.Read(); //goes to prop vale
-            var closureList = ReadClosureList(reader);
-            return closureList;
+            reader.Skip();
+            reader.Read(); //goes to next
           }
-          reader.Read();//goes to prop vale
-          reader.Skip();
-          reader.Read();//goes to next
-        }
           break;
         default:
           reader.Read();
@@ -68,9 +65,7 @@ public static class ClosureParser
     }
     return null;
   }
-  
 
- 
   private static List<(string, int)> ReadClosureList(JsonTextReader reader)
   {
     List<(string, int)> closureList = new();
