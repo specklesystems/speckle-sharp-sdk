@@ -33,9 +33,7 @@ internal static class BaseObjectSerializationUtilities
       MethodInfo[] methods = type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
       foreach (MethodInfo method in methods)
       {
-        var onDeserializedAttribute = method
-          .GetCustomAttribute<OnDeserializedAttribute>(true);
-        if (onDeserializedAttribute != null)
+        if ( method.IsDefined(typeof(OnDeserializedAttribute), true))
         {
           if (ret == null)
           {
