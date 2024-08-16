@@ -7,46 +7,30 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents a circular curve based on a base <see cref="Plane"/> and a <see cref="double"/> as radius.
 /// </summary>
+/// <remarks>
+/// These circles are expected to be full (untrimmed) circles.
+/// For trimmed circles, convert them as <see cref="Arc"/>s instead
+/// </remarks>
 [SpeckleType("Objects.Geometry.Circle")]
 public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
 {
   /// <summary>
-  /// Constructs an empty <see cref="Circle"/> instance.
-  /// </summary>
-  public Circle() { }
-
-  /// <summary>
-  /// Constructs a new <see cref="Circle"/> instance.
-  /// </summary>
-  /// <param name="plane">The plane where the circle lies</param>
-  /// <param name="radius">The radius of the circle</param>
-  /// <param name="units">The units the circle is modeled in</param>
-  /// <param name="applicationId">The unique ID of this circle in a specific application</param>
-  public Circle(Plane plane, double radius, string units = Units.Meters, string? applicationId = null)
-  {
-    this.plane = plane;
-    this.radius = radius;
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  /// <summary>
   /// The radius of the circle
   /// </summary>
-  public double? radius { get; set; }
+  public required double radius { get; set; }
 
   /// <summary>
   /// The <see cref="Plane"/> the circle lies in.
   /// </summary>
-  public Plane plane { get; set; }
+  public required Plane plane { get; set; }
 
   /// <summary>
   /// The units this object was modeled in.
   /// </summary>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <inheritdoc/>
-  public Interval domain { get; set; } = new(0, 1);
+  public Interval domain { get; set; } = Interval.UnitInterval;
 
   /// <inheritdoc/>
   public double length { get; set; }
@@ -57,7 +41,7 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <summary>
   /// Returns the coordinates of this <see cref="Circle"/> as a list of numbers
@@ -67,9 +51,9 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
   {
     var list = new List<double>();
 
-    list.Add(radius ?? 0);
-    list.Add(domain?.start ?? 0);
-    list.Add(domain?.end ?? 1);
+    list.Add(radius);
+    list.Add(domain.start);
+    list.Add(domain.end);
     list.AddRange(plane.ToList());
 
     list.Add(Units.GetEncodingFromUnit(units));
@@ -88,7 +72,7 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
     var circle = new Circle
     {
       radius = list[2],
-      domain = new Interval(list[3], list[4]),
+      domain = new Interval { start = list[3], end = list[4] },
       plane = Plane.FromList(list.GetRange(5, 13)),
       units = Units.GetUnitFromEncoding(list[list.Count - 1])
     };
