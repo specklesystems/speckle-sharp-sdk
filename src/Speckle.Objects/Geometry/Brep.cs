@@ -132,7 +132,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   {
     get
     {
-      var list = new List<double>(Vertices.Count + 1);
+      var list = new List<double>((Vertices.Count * 3) + 1);
       list.Add(Units.GetEncodingFromUnit(units));
       foreach (var vertex in Vertices)
       {
@@ -302,7 +302,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   {
     get
     {
-      List<int> list = new(Trims.Count * 9);
+      List<int> list = new(Trims.Count * TRIMS_ENCODING_LENGTH);
       foreach (var trim in Trims)
       {
         list.Add(trim.EdgeIndex);
@@ -325,8 +325,8 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
         return;
       }
 
-      var list = new List<BrepTrim>(value.Count / 9);
-      for (int i = 0; i < value.Count; i += 9)
+      var list = new List<BrepTrim>(value.Count / TRIMS_ENCODING_LENGTH);
+      for (int i = 0; i < value.Count; i += TRIMS_ENCODING_LENGTH)
       {
         var trim = new BrepTrim
         {
@@ -348,6 +348,8 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       Trims = list;
     }
   }
+
+  private const int TRIMS_ENCODING_LENGTH = 9;
 
   /// <summary>
   /// Gets or sets the list of faces in this <see cref="Brep"/> instance.
