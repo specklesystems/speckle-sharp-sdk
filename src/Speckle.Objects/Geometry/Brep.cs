@@ -36,7 +36,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   {
     get
     {
-      var list = new List<double>(Surfaces.Count);
+      var list = new List<double>();
       foreach (var srf in Surfaces)
       {
         list.AddRange(srf.ToList());
