@@ -2,7 +2,6 @@
 
 public class SpeckleSerializeException : SpeckleException
 {
-
   public SpeckleSerializeException(string message, Exception? inner = null)
     : base(message, inner) { }
 

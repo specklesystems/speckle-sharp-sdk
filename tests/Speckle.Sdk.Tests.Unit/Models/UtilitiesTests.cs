@@ -29,5 +29,4 @@ public sealed class HashUtilityTests
     Assert.That(lower, Is.EqualTo(expected.ToLower()));
     Assert.That(upper, Is.EqualTo(expected.ToUpper()));
   }
-
 }

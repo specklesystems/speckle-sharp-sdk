@@ -1,7 +1,7 @@
 ﻿using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 
-namespace Speckle.Sdk.Serialisation.SerializationUtilities;
+namespace Speckle.Sdk.Serialisation.Utilities;
 
 public static class ClosureParser
 {

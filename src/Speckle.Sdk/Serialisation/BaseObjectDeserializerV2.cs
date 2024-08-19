@@ -15,6 +15,7 @@ public sealed class BaseObjectDeserializerV2
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
+  private readonly object?[] _invokeNull = [null];
 
   // id -> Base if already deserialized or id -> Task<object> if was handled by a bg thread
   private Dictionary<string, object?>? _deserializedObjects;
@@ -316,7 +317,7 @@ public sealed class BaseObjectDeserializerV2
     dictObj.Remove(TYPE_DISCRIMINATOR);
     dictObj.Remove("__closure");
 
-    var staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
+    var staticProperties = TypeCache.GetTypeProperties(typeName);
     foreach (var entry in dictObj)
     {
       if (staticProperties.TryGetValue(entry.Key, out PropertyInfo? value) && value.CanWrite)
@@ -357,10 +358,10 @@ public sealed class BaseObjectDeserializerV2
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
 
-    var onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
+    var onDeserializedCallbacks = TypeCache.GetOnDeserializedCallbacks(typeName);
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {
-      onDeserialized.Invoke(baseObj, new object?[] { null });
+      onDeserialized.Invoke(baseObj, _invokeNull);
     }
 
     return baseObj;
