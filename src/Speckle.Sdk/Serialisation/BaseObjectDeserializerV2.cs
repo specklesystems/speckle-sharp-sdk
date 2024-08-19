@@ -64,8 +64,7 @@ public sealed class BaseObjectDeserializerV2
       _workerThreads = new DeserializationWorkerThreads(this, WorkerThreadCount);
       _workerThreads.Start();
 
-      List<(string, int)> closures = GetClosures(rootObjectJson);
-      closures.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+      var closures = ClosureParser.GetClosures(rootObjectJson);
       int i = 0;
       foreach (var closure in closures)
       {
@@ -112,32 +111,6 @@ public sealed class BaseObjectDeserializerV2
       _workerThreads?.Dispose();
       _workerThreads = null;
       _isBusy = false;
-    }
-  }
-
-  private List<(string, int)> GetClosures(string rootObjectJson)
-  {
-    try
-    {
-      List<(string, int)> closureList = new();
-      JObject doc1 = JObject.Parse(rootObjectJson);
-
-      if (!doc1.ContainsKey("__closure"))
-      {
-        return new List<(string, int)>();
-      }
-
-      foreach (JToken prop in doc1["__closure"].NotNull())
-      {
-        string childId = ((JProperty)prop).Name;
-        int childMinDepth = (int)((JProperty)prop).Value;
-        closureList.Add((childId, childMinDepth));
-      }
-      return closureList;
-    }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-      return new List<(string, int)>();
     }
   }
 
@@ -345,30 +318,26 @@ public sealed class BaseObjectDeserializerV2
     dictObj.Remove(TYPE_DISCRIMINATOR);
     dictObj.Remove("__closure");
 
-    Dictionary<string, PropertyInfo> staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
-    List<MethodInfo> onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
-
+    var staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
     foreach (var entry in dictObj)
     {
-      string lowerPropertyName = entry.Key.ToLower();
-      if (staticProperties.TryGetValue(lowerPropertyName, out PropertyInfo? value) && value.CanWrite)
+      if (staticProperties.TryGetValue(entry.Key, out PropertyInfo? value) && value.CanWrite)
       {
-        PropertyInfo property = staticProperties[lowerPropertyName];
         if (entry.Value == null)
         {
           // Check for JsonProperty(NullValueHandling = NullValueHandling.Ignore) attribute
-          JsonPropertyAttribute attr = property.GetCustomAttribute<JsonPropertyAttribute>(true);
-          if (attr != null && attr.NullValueHandling == NullValueHandling.Ignore)
+          JsonPropertyAttribute attr = value.GetCustomAttribute<JsonPropertyAttribute>(true);
+          if (attr is { NullValueHandling: NullValueHandling.Ignore })
           {
             continue;
           }
         }
 
-        Type targetValueType = property.PropertyType;
+        Type targetValueType = value.PropertyType;
         bool conversionOk = ValueConverter.ConvertValue(targetValueType, entry.Value, out object? convertedValue);
         if (conversionOk)
         {
-          property.SetValue(baseObj, convertedValue);
+          value.SetValue(baseObj, convertedValue);
         }
         else
         {
@@ -390,6 +359,7 @@ public sealed class BaseObjectDeserializerV2
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
 
+    var onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {
       onDeserialized.Invoke(baseObj, new object?[] { null });
