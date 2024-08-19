@@ -40,6 +40,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Logging", "src\Speckle.Sdk.Logging\Speckle.Sdk.Logging.csproj", "{156313B4-B588-4363-A0ED-5AB3A55AA4E8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Tests.Performance", "tests\Speckle.Sdk.Tests.Performance\Speckle.Sdk.Tests.Performance.csproj", "{870E3396-E6F7-43AE-B120-E651FA4F46BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +84,10 @@ Global
 		{156313B4-B588-4363-A0ED-5AB3A55AA4E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{156313B4-B588-4363-A0ED-5AB3A55AA4E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{156313B4-B588-4363-A0ED-5AB3A55AA4E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{870E3396-E6F7-43AE-B120-E651FA4F46BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{870E3396-E6F7-43AE-B120-E651FA4F46BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{870E3396-E6F7-43AE-B120-E651FA4F46BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{870E3396-E6F7-43AE-B120-E651FA4F46BD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A413E196-3696-4F48-B635-04B5F76BF9C9} = {5CB96C27-FC5B-4A41-86B6-951AF99B8116}
@@ -93,5 +99,6 @@ Global
 		{4FB41A6D-D139-4111-8115-E3F9F6BEAF24} = {35047EE7-AD1D-4741-80A7-8F0E874718E9}
 		{B623BD21-5CAA-43F9-A539-1835276C220E} = {DA2AED52-58F9-471E-8AD8-102FD36129E3}
 		{156313B4-B588-4363-A0ED-5AB3A55AA4E8} = {5CB96C27-FC5B-4A41-86B6-951AF99B8116}
+		{870E3396-E6F7-43AE-B120-E651FA4F46BD} = {35047EE7-AD1D-4741-80A7-8F0E874718E9}
 	EndGlobalSection
 EndGlobal

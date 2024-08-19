@@ -1,6 +1,7 @@
 <Project>
   <ItemGroup>
     <PackageVersion Include="altcover" Version="8.8.74" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Bullseye" Version="5.0.0" />
     <PackageVersion Include="GraphQL.Client" Version="6.0.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
