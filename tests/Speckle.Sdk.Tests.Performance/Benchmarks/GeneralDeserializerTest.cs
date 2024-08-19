@@ -1,5 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 
@@ -12,16 +14,16 @@ namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 [SimpleJob(RunStrategy.Monitoring)]
 public class GeneralDeserializer : IDisposable
 {
-  [Params(0, 9)]
-  public int DataComplexity { get; set; }
-
   private TestDataHelper _dataSource;
 
   [GlobalSetup]
   public async Task Setup()
   {
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     _dataSource = new TestDataHelper();
-    await _dataSource.SeedTransport(DataComplexity).ConfigureAwait(false);
+    await _dataSource
+      .SeedTransport(new("https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"))
+      .ConfigureAwait(false);
   }
 
   [Benchmark]
@@ -39,6 +41,6 @@ public class GeneralDeserializer : IDisposable
 
   public void Dispose()
   {
-    _dataSource.Dispose();
+    // _dataSource.Dispose();
   }
 }

@@ -14,18 +14,18 @@ public sealed class TestDataHelper : IDisposable
   public SQLiteTransport Transport { get; private set; }
   public string ObjectId { get; private set; }
 
-  public async Task SeedTransport(int dataComplexity)
+  public async Task SeedTransport(StreamWrapper sw)
   {
-    Transport = new SQLiteTransport(s_basePath, APPLICATION_NAME);
+    // Transport = new SQLiteTransport(s_basePath, APPLICATION_NAME);
+    Transport = new SQLiteTransport();
 
     //seed SQLite transport with test data
-    ObjectId = await SeedTransport(dataComplexity, Transport).ConfigureAwait(false);
+    ObjectId = await SeedTransport(sw, Transport).ConfigureAwait(false);
   }
 
-  public static async Task<string> SeedTransport(int dataComplexity, ITransport transport)
+  public static async Task<string> SeedTransport(StreamWrapper sw, ITransport transport)
   {
     //seed SQLite transport with test data
-    StreamWrapper sw = new($"https://latest.speckle.dev/streams/efd2c6a31d/branches/{dataComplexity}");
     var acc = await sw.GetAccount().ConfigureAwait(false);
     using var client = new Client(acc);
     var branch = await client.BranchGet(sw.StreamId, sw.BranchName!, 1).ConfigureAwait(false);
