@@ -12,25 +12,9 @@ namespace Speckle.Objects.Geometry;
 public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
 {
   /// <summary>
-  /// Constructs a new empty <see cref="Polycurve"/> instance.
-  /// </summary>
-  public Polycurve() { }
-
-  /// <summary>
-  /// Constructs a new empty <see cref="Polycurve"/> with defined units and unique application ID.
-  /// </summary>
-  /// <param name="units">The units the Polycurve was modelled in.</param>
-  /// <param name="applicationId">The unique ID of this polyline in a specific application</param>
-  public Polycurve(string units = Units.Meters, string? applicationId = null)
-  {
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  /// <summary>
   /// Gets or sets the list of segments that comprise this <see cref="Polycurve"/>
   /// </summary>
-  public List<ICurve> segments { get; set; } = new();
+  public required List<ICurve> segments { get; set; }
 
   /// <summary>
   /// Gets or sets a Boolean value indicating if the <see cref="Polycurve"/> is closed
@@ -42,12 +26,12 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   /// The unit's this <see cref="Polycurve"/> is in.
   /// This should be one of <see cref="Units"/>
   /// </summary>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <summary>
   /// The internal domain of this curve.
   /// </summary>
-  public Interval domain { get; set; } = new(0, 1);
+  public Interval domain { get; set; } = Interval.UnitInterval;
 
   /// <inheritdoc/>
   public double length { get; set; }
@@ -56,7 +40,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out ITransformable polycurve)
@@ -98,6 +82,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
     Polycurve polycurve =
       new()
       {
+        segments = new(),
         units = polyline.units,
         area = polyline.area,
         domain = polyline.domain,
@@ -114,7 +99,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
     }
     if (polyline.closed)
     {
-      var line = new Line(points[points.Count - 1], points[0], polyline.units);
+      var line = new Line(points[^1], points[0], polyline.units);
       polycurve.segments.Add(line);
     }
 
@@ -129,8 +114,8 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   {
     var list = new List<double>();
     list.Add(closed ? 1 : 0);
-    list.Add(domain?.start ?? 0);
-    list.Add(domain?.end ?? 1);
+    list.Add(domain.start);
+    list.Add(domain.end);
 
     var crvs = CurveArrayEncodingExtensions.ToArray(segments);
     list.Add(crvs.Count);
@@ -150,16 +135,15 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   /// <returns>A new <see cref="Polycurve"/> with the provided values.</returns>
   public static Polycurve FromList(List<double> list)
   {
-    var polycurve = new Polycurve { closed = list[2] == 1, domain = new Interval(list[3], list[4]) };
-
     var temp = list.GetRange(6, (int)list[5]);
-    polycurve.segments = CurveArrayEncodingExtensions.FromArray(temp);
-    polycurve.units = Units.GetUnitFromEncoding(list[list.Count - 1]);
-    return polycurve;
-  }
+    var polycurve = new Polycurve
+    {
+      segments = CurveArrayEncodingExtensions.FromArray(temp),
+      closed = (int)list[2] == 1,
+      domain = new Interval { start = list[3], end = list[4] },
+      units = Units.GetUnitFromEncoding(list[^1]),
+    };
 
-  public Polycurve ToPolycurve()
-  {
-    throw new NotImplementedException();
+    return polycurve;
   }
 }

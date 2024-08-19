@@ -11,61 +11,30 @@ namespace Speckle.Objects.Geometry;
 public class Plane : Base, ITransformable<Plane>
 {
   /// <summary>
-  /// Constructs an empty <see cref="Plane"/>
-  /// </summary>
-  public Plane() { }
-
-  /// <summary>
-  /// Constructs a new <see cref="Plane"/> given it's individual values.
-  /// </summary>
-  /// <param name="origin">The point to be used as origin</param>
-  /// <param name="normal">The vector to be used as Z axis</param>
-  /// <param name="xDir">The vector to be used as the X axis</param>
-  /// <param name="yDir">The vector to be used as the Y axis</param>
-  /// <param name="units">The units the coordinates are in.</param>
-  /// <param name="applicationId">The unique ID of this polyline in a specific application</param>
-  public Plane(
-    Point origin,
-    Vector normal,
-    Vector xDir,
-    Vector yDir,
-    string units = Units.Meters,
-    string? applicationId = null
-  )
-  {
-    this.origin = origin;
-    this.normal = normal;
-    xdir = xDir;
-    ydir = yDir;
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  /// <summary>
   /// The <see cref="Plane"/>s origin point.
   /// </summary>
-  public Point origin { get; set; }
+  public required Point origin { get; set; }
 
   /// <summary>
   /// The <see cref="Plane"/>s Z axis.
   /// </summary>
-  public Vector normal { get; set; }
+  public required Vector normal { get; set; }
 
   /// <summary>
   /// The <see cref="Plane"/>s X axis.
   /// </summary>
-  public Vector xdir { get; set; }
+  public required Vector xdir { get; set; }
 
   /// <summary>
   /// The <see cref="Plane"/>s Y axis.
   /// </summary>
-  public Vector ydir { get; set; }
+  public required Vector ydir { get; set; }
 
   /// <summary>
   /// The unit's this <see cref="Plane"/> is in.
   /// This should be one of <see cref="Units"/>
   /// </summary>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Plane transformed)
@@ -120,13 +89,15 @@ public class Plane : Base, ITransformable<Plane>
   /// <returns>A new <see cref="Plane"/> with the provided values.</returns>
   public static Plane FromList(List<double> list)
   {
-    var plane = new Plane();
-
     var units = Units.GetUnitFromEncoding(list[list.Count - 1]);
-    plane.origin = new Point(list[0], list[1], list[2], units);
-    plane.normal = new Vector(list[3], list[4], list[5], units);
-    plane.xdir = new Vector(list[6], list[7], list[8], units);
-    plane.ydir = new Vector(list[9], list[10], list[11], units);
+    var plane = new Plane
+    {
+      origin = new Point(list[0], list[1], list[2], units),
+      normal = new Vector(list[3], list[4], list[5], units),
+      xdir = new Vector(list[6], list[7], list[8], units),
+      ydir = new Vector(list[9], list[10], list[11], units),
+      units = units,
+    };
 
     return plane;
   }

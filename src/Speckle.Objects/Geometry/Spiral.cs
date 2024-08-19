@@ -37,5 +37,5 @@ public class Spiral : Base, ICurve, IHasBoundingBox, IDisplayValue<Polyline>
   [DetachProperty]
   public Polyline displayValue { get; set; }
 
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 }

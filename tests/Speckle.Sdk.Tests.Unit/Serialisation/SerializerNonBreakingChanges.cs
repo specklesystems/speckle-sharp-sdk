@@ -56,6 +56,24 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     Assert.That(res.value, Is.EqualTo(testCase));
   }
 
+  [Test]
+  public void NullToInt()
+  {
+    var from = new ObjectValueMock { value = null };
+
+    var res = from.SerializeAsTAndDeserialize<IntValueMock>();
+    Assert.That(res.value, Is.EqualTo(default(int)));
+  }
+
+  [Test]
+  public void NullToDouble()
+  {
+    var from = new ObjectValueMock { value = null };
+
+    var res = from.SerializeAsTAndDeserialize<DoubleValueMock>();
+    Assert.That(res.value, Is.EqualTo(default(double)));
+  }
+
   [
     Test,
     TestCaseSource(nameof(Int8TestCases)),
@@ -275,6 +293,12 @@ public class ColorValueMock : SerializerMock
 public class EnumValueMock : SerializerMock
 {
   public MyEnum value { get; set; }
+}
+
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.ObjectValueMock")]
+public class ObjectValueMock : SerializerMock
+{
+  public object? value { get; set; }
 }
 
 public enum MyEnum

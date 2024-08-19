@@ -41,7 +41,10 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
     this.startAngle = startAngle;
     this.endAngle = endAngle;
     this.angleRadians = angleRadians;
-    domain = angleRadians > 0 ? new Interval(0, angleRadians) : new Interval(angleRadians, 0);
+    domain =
+      angleRadians > 0
+        ? new Interval { start = 0, end = angleRadians }
+        : new Interval { start = angleRadians, end = 0 };
     this.applicationId = applicationId;
     this.units = units;
   }
@@ -64,7 +67,14 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
     string? applicationId = null
   )
     : this(
-      new Plane(startPoint, new Vector(0, 0, 1), new Vector(1, 0, 0), new Vector(0, 1, 0), units),
+      new Plane
+      {
+        origin = startPoint,
+        normal = new Vector(0, 0, 1),
+        xdir = new Vector(1, 0, 0),
+        ydir = new Vector(0, 1, 0),
+        units = units
+      },
       startPoint,
       endPoint,
       angleRadians,
@@ -106,7 +116,10 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
     this.startPoint = startPoint;
     this.endPoint = endPoint;
     this.angleRadians = angleRadians;
-    domain = angleRadians > 0 ? new Interval(0, angleRadians) : new Interval(angleRadians, 0);
+    domain =
+      angleRadians > 0
+        ? new Interval { start = 0, end = angleRadians }
+        : new Interval { start = angleRadians, end = 0 };
     this.applicationId = applicationId;
 
     // find chord and chord angle which may differ from the arc angle
@@ -204,7 +217,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
   public string units { get; set; }
 
   /// <inheritdoc/>
-  public Interval domain { get; set; } = new(0, 0);
+  public Interval domain { get; set; } = new() { start = 0, end = 0 };
 
   /// <inheritdoc/>
   public double length { get; set; }
@@ -213,7 +226,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Arc transformed)
@@ -279,7 +292,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
       startAngle = list[3],
       endAngle = list[4],
       angleRadians = list[5],
-      domain = new Interval(list[6], list[7]),
+      domain = new Interval { start = list[6], end = list[7] },
       units = Units.GetUnitFromEncoding(list[list.Count - 1]),
       plane = Plane.FromList(list.GetRange(8, 13))
     };
