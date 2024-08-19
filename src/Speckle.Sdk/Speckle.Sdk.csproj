@@ -10,7 +10,6 @@
     <IsPackable>true</IsPackable>
     <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
     <Configurations>Debug;Release;Local</Configurations>
-    <Platforms>AnyCPU;x64</Platforms>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
