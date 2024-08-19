@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Host;
@@ -11,10 +12,14 @@ public static class TypeLoader
   private static bool s_initialized;
   private static List<LoadedType> s_availableTypes = new();
 
-  private static ConcurrentDictionary<string, Type> s_cachedTypes = new();
-  private static ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
+  private static  ConcurrentDictionary<string, Type> s_cachedTypes = new();
+  private static  ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
+  private static  ConcurrentDictionary<PropertyInfo, JsonPropertyAttribute> s_jsonPropertyAttribute = new();
 
-  public static IEnumerable<LoadedType> Types => s_availableTypes;
+  private static  ConcurrentDictionary<Type, IReadOnlyList<PropertyInfo>> s_propInfoCache = new();
+
+
+  public static JsonPropertyAttribute? GetJsonPropertyAttribute(PropertyInfo property) => s_jsonPropertyAttribute.GetOrAdd(property, (p) => p.GetCustomAttribute<JsonPropertyAttribute>(true));
 
   public static void Initialize(params Assembly[] assemblies)
   {
@@ -30,6 +35,11 @@ public static class TypeLoader
       }
     }
   }
+
+  public static IReadOnlyList<PropertyInfo> GetBaseProperties(Type type) =>
+    s_propInfoCache.GetOrAdd(type, t => t.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+      .Where(p => !p.IsDefined(typeof(IgnoreTheItemAttribute), true))
+      .ToList());
 
   public static Type GetType(string fullTypeString) =>
     s_cachedTypes.GetOrAdd(
@@ -105,6 +115,8 @@ public static class TypeLoader
     s_availableTypes = new();
     s_cachedTypes = new();
     s_fullTypeStrings = new();
+    s_jsonPropertyAttribute = new();
+    s_propInfoCache = new();
     s_initialized = false;
   }
 
