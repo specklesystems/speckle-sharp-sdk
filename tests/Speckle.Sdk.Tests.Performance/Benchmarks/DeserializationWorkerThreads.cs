@@ -1,7 +1,10 @@
-﻿using BenchmarkDotNet.Attributes;
+using System.Drawing;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Point = Speckle.Objects.Geometry.Point;
 
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 
@@ -22,6 +25,7 @@ public class DeserializationWorkerThreads : IDisposable
   [GlobalSetup]
   public async Task Setup()
   {
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     _dataSource = new TestDataHelper();
     await _dataSource.SeedTransport(DataComplexity).ConfigureAwait(false);
   }
