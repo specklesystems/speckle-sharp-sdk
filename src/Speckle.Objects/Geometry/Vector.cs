@@ -104,7 +104,7 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   public double Length => Math.Sqrt(DotProduct(this, this));
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Vector transformed)

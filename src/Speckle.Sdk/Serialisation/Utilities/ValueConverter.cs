@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections;
 using System.Diagnostics.Contracts;
 using System.Drawing;
@@ -9,6 +10,8 @@ namespace Speckle.Sdk.Serialisation.Utilities;
 
 internal static class ValueConverter
 {
+  private static object[] _singleValue = new object[1];
+
   public static bool ConvertValue(Type type, object? value, out object? convertedValue)
   {
     // TODO: Document list of supported values in the SDK. (and grow it as needed)
@@ -165,7 +168,11 @@ internal static class ValueConverter
 
       var targetType = typeof(List<>).MakeGenericType(type.GenericTypeArguments);
       Type listElementType = type.GenericTypeArguments[0];
-      IList ret = (IList)Activator.CreateInstance(targetType, valueList.Count);
+
+      _singleValue[0] = valueList.Count;
+      //reuse array to avoid params array allocation
+      IList ret = (IList)Activator.CreateInstance(targetType, _singleValue);
+
       foreach (object inputListElement in valueList)
       {
         if (!ConvertValue(listElementType, inputListElement, out object? convertedListElement))
@@ -219,7 +226,7 @@ internal static class ValueConverter
       Type arrayElementType =
         type.GetElementType() ?? throw new ArgumentException("IsArray yet not valid element type", nameof(type));
 
-      Array ret = (Array)Activator.CreateInstance(type, valueList.Count);
+      Array ret = Array.CreateInstance(arrayElementType, valueList.Count);
       for (int i = 0; i < valueList.Count; i++)
       {
         object inputListElement = valueList[i];

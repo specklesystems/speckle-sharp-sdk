@@ -3,6 +3,7 @@ using Speckle.Objects.Structural.CSI.Properties;
 using Speckle.Objects.Structural.Geometry;
 using Speckle.Objects.Structural.Properties;
 using Speckle.Objects.Structural.Results;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
@@ -40,7 +41,14 @@ public class CSINode : Node
       ?? new Axis(
         "Global",
         AxisType.Cartesian,
-        new Plane(new Point(0, 0), new Vector(0, 0, 1), new Vector(1, 0, 0), new Vector(0, 1, 0))
+        new Plane
+        {
+          origin = new Point(0, 0),
+          normal = new Vector(0, 0, 1),
+          xdir = new Vector(1, 0, 0),
+          ydir = new Vector(0, 1, 0),
+          units = Units.Meters, //Not sure if defaulting to meters is correct, but it was what we were doing previously inside Plane's ctor
+        }
       );
     CSISpringProperty = springProperty;
     this.massProperty = massProperty;

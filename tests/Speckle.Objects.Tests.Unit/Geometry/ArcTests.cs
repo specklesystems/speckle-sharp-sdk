@@ -1,13 +1,22 @@
 using System;
 using NUnit.Framework;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Common;
 
 namespace Objects.Tests.Unit.Geometry;
 
 [TestFixture, TestOf(typeof(Arc))]
 public class ArcTests
 {
-  private Plane TestPlane => new(new Point(0, 0), new Vector(0, 0, 1), new Vector(1, 0, 0), new Vector(0, 1, 0));
+  private Plane TestPlane =>
+    new()
+    {
+      origin = new Point(0, 0),
+      normal = new Vector(0, 0, 1),
+      xdir = new Vector(1, 0, 0),
+      ydir = new Vector(0, 1, 0),
+      units = Units.Meters,
+    };
 
   [Test]
   public void CanCreateArc_HalfCircle()
