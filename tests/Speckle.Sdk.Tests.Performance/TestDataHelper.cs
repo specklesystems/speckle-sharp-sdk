@@ -13,6 +13,14 @@ public sealed class TestDataHelper : IDisposable
 
   public SQLiteTransport Transport { get; private set; }
   public string ObjectId { get; private set; }
+  
+  public async Task SeedTransport(Uri uri)
+  {
+    Transport = new SQLiteTransport(s_basePath, APPLICATION_NAME);
+
+    //seed SQLite transport with test data
+    ObjectId = await SeedTransport(uri, Transport).ConfigureAwait(false);
+  }
 
   public async Task SeedTransport(int dataComplexity)
   {
@@ -21,11 +29,11 @@ public sealed class TestDataHelper : IDisposable
     //seed SQLite transport with test data
     ObjectId = await SeedTransport(dataComplexity, Transport).ConfigureAwait(false);
   }
-
-  public static async Task<string> SeedTransport(int dataComplexity, ITransport transport)
+  
+  public static async Task<string> SeedTransport(Uri uri, ITransport transport)
   {
     //seed SQLite transport with test data
-    StreamWrapper sw = new($"https://latest.speckle.dev/streams/efd2c6a31d/branches/{dataComplexity}");
+    StreamWrapper sw = new(uri.ToString());
     var acc = await sw.GetAccount().ConfigureAwait(false);
     using var client = new Client(acc);
     var branch = await client.BranchGet(sw.StreamId, sw.BranchName!, 1).ConfigureAwait(false);
@@ -38,6 +46,13 @@ public sealed class TestDataHelper : IDisposable
     await transport.WriteComplete().ConfigureAwait(false);
 
     return objectId;
+  }
+
+  public static async Task<string> SeedTransport(int dataComplexity, ITransport transport)
+  {
+    //seed SQLite transport with test data
+    Uri uri = new($"https://latest.speckle.dev/streams/efd2c6a31d/branches/{dataComplexity}");
+    return await SeedTransport(uri, transport);
   }
 
   public async Task<Base> DeserializeBase()
