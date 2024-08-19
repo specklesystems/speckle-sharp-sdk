@@ -31,8 +31,18 @@ public static class TypeLoader
     }
   }
 
-  public static Type GetType(string fullTypeString) =>
-    s_cachedTypes.GetOrAdd(
+  private static void CheckInitialized()
+  {
+    if (!s_initialized)
+    {
+      throw new InvalidOperationException("TypeLoader is not initialized.");
+    }
+  }
+
+  public static Type GetType(string fullTypeString)
+  {
+    CheckInitialized();
+    return s_cachedTypes.GetOrAdd(
       fullTypeString,
       typeString =>
       {
@@ -41,9 +51,12 @@ public static class TypeLoader
         return type;
       }
     );
+  }
 
-  public static string GetFullTypeString(Type type) =>
-    s_fullTypeStrings.GetOrAdd(
+  public static string GetFullTypeString(Type type)
+  {
+    CheckInitialized();
+    return s_fullTypeStrings.GetOrAdd(
       type,
       t =>
       {
@@ -52,6 +65,7 @@ public static class TypeLoader
         {
           return nameof(Base);
         }
+
         Type? myType = t;
 
         do
@@ -63,17 +77,21 @@ public static class TypeLoader
             {
               throw new InvalidOperationException($"Type {t} is not registered with TypeLoader");
             }
+
             bases.Push(typeString);
           }
 
           myType = myType.BaseType;
         } while (myType is not null && myType.Name != nameof(Base));
+
         return string.Join(":", bases);
       }
     );
+  }
 
   public static string? GetTypeString(Type type)
   {
+    CheckInitialized();
     var typeInfo = s_availableTypes.FirstOrDefault(tp => tp.Type == type);
     if (typeInfo != null)
     {
@@ -84,6 +102,7 @@ public static class TypeLoader
 
   public static Type GetAtomicType(string objFullType)
   {
+    CheckInitialized();
     var objectTypes = objFullType.Split(':').Reverse();
     foreach (var typeName in objectTypes)
     {
