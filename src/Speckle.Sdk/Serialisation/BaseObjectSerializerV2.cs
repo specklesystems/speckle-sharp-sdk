@@ -84,7 +84,7 @@ public class BaseObjectSerializerV2
     {
       _stopwatch.Start();
       _isBusy = true;
-      IReadOnlyDictionary<string, object?> converted;
+      Dictionary<string, object?> converted;
       try
       {
         int count = 0;
@@ -246,7 +246,7 @@ public class BaseObjectSerializerV2
     }
   }
 
-  private IReadOnlyDictionary<string, object?>? PreserializeBase(
+  private Dictionary<string, object?>? PreserializeBase(
     Base baseObj,
     ref int count,
     bool computeClosures = false,
@@ -266,7 +266,7 @@ public class BaseObjectSerializerV2
       _parentClosures.Add(closure);
     }
 
-    IReadOnlyDictionary<string, object?> convertedBase = PreserializeBaseProperties(baseObj, ref count, closure);
+    Dictionary<string, object?> convertedBase = PreserializeBaseProperties(baseObj, ref count, closure);
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
     {
@@ -288,7 +288,7 @@ public class BaseObjectSerializerV2
       var id = (string)convertedBase["id"].NotNull();
       StoreObject(id, json);
       ObjectReference objRef = new() { referencedId = id };
-      var objRefConverted = (IReadOnlyDictionary<string, object?>?)PreserializeObject(objRef, ref count);
+      var objRefConverted = (Dictionary<string, object?>?)PreserializeObject(objRef, ref count);
       UpdateParentClosures(id);
       _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++count, null));
 
@@ -348,10 +348,10 @@ public class BaseObjectSerializerV2
     return allProperties;
   }
 
-  private IReadOnlyDictionary<string, object?> PreserializeBaseProperties(
+  private Dictionary<string, object?> PreserializeBaseProperties(
     Base baseObj,
     ref int count,
-    IReadOnlyDictionary<string, int> closure
+    Dictionary<string, int> closure
   )
   {
     var allProperties = ExtractAllProperties(baseObj);
@@ -441,7 +441,7 @@ public class BaseObjectSerializerV2
     return hash;
   }
 
-  private static string Dict2Json(IReadOnlyDictionary<string, object?>? obj)
+  private static string Dict2Json(IDictionary<string, object?>? obj)
   {
     if (obj is null)
     {
@@ -449,6 +449,7 @@ public class BaseObjectSerializerV2
     }
     string serialized = JsonConvert.SerializeObject(obj);
     var id = ComputeId(serialized);
+    obj["id"] = id;
     return serialized.Replace(EMPTY_ID, id);
   }
 
