@@ -12,14 +12,14 @@ public static class TypeLoader
   private static bool s_initialized;
   private static List<LoadedType> s_availableTypes = new();
 
-  private static  ConcurrentDictionary<string, Type> s_cachedTypes = new();
-  private static  ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
-  private static  ConcurrentDictionary<PropertyInfo, JsonPropertyAttribute> s_jsonPropertyAttribute = new();
+  private static ConcurrentDictionary<string, Type> s_cachedTypes = new();
+  private static ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
+  private static ConcurrentDictionary<PropertyInfo, JsonPropertyAttribute> s_jsonPropertyAttribute = new();
 
-  private static  ConcurrentDictionary<Type, IReadOnlyList<PropertyInfo>> s_propInfoCache = new();
+  private static ConcurrentDictionary<Type, IReadOnlyList<PropertyInfo>> s_propInfoCache = new();
 
-
-  public static JsonPropertyAttribute? GetJsonPropertyAttribute(PropertyInfo property) => s_jsonPropertyAttribute.GetOrAdd(property, (p) => p.GetCustomAttribute<JsonPropertyAttribute>(true));
+  public static JsonPropertyAttribute? GetJsonPropertyAttribute(PropertyInfo property) =>
+    s_jsonPropertyAttribute.GetOrAdd(property, (p) => p.GetCustomAttribute<JsonPropertyAttribute>(true));
 
   public static void Initialize(params Assembly[] assemblies)
   {
@@ -37,9 +37,13 @@ public static class TypeLoader
   }
 
   public static IReadOnlyList<PropertyInfo> GetBaseProperties(Type type) =>
-    s_propInfoCache.GetOrAdd(type, t => t.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-      .Where(p => !p.IsDefined(typeof(IgnoreTheItemAttribute), true))
-      .ToList());
+    s_propInfoCache.GetOrAdd(
+      type,
+      t =>
+        t.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+          .Where(p => !p.IsDefined(typeof(IgnoreTheItemAttribute), true))
+          .ToList()
+    );
 
   public static Type GetType(string fullTypeString) =>
     s_cachedTypes.GetOrAdd(

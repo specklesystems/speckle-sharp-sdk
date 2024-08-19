@@ -219,7 +219,8 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
 
     if (includeMembers.HasFlag(DynamicBaseMemberType.Instance))
     {
-      var pinfos = TypeLoader.GetBaseProperties(GetType())
+      var pinfos = TypeLoader
+        .GetBaseProperties(GetType())
         .Where(x =>
         {
           var hasIgnored = x.IsDefined(typeof(SchemaIgnore), true);
