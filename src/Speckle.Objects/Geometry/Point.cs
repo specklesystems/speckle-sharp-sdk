@@ -75,10 +75,7 @@ public class Point : Base, ITransformable<Point>
   /// The units this <see cref="Point"/> is in.
   /// This should be one of the units specified in <see cref="Units"/>
   /// </summary>
-  public string units { get; set; } = Units.None;
-
-  [JsonIgnore, Obsolete("Bounding box no longer applicable to point as of 2.18", true)]
-  public Box? bbox { get; set; }
+  public string units { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Point transformed)
@@ -217,11 +214,6 @@ public class Point : Base, ITransformable<Point>
   public double DistanceTo(Point point)
   {
     return Math.Sqrt(Math.Pow(x - point.x, 2) + Math.Pow(y - point.y, 2) + Math.Pow(z - point.z, 2));
-  }
-
-  public static Point Add(Point left, Point right)
-  {
-    throw new NotImplementedException();
   }
 
   public override bool Equals(object obj)

@@ -54,7 +54,7 @@ public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
   public string units { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Pointcloud transformed)
