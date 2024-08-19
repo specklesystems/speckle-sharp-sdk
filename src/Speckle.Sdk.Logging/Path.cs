@@ -150,23 +150,13 @@ public static class SpecklePathProvider
     return EnsureFolderExists(path ?? UserSpeckleFolderPath, s_blobFolderName);
   }
 
-  private static string EnsureFolderExists(string basePath, string folderName)
+  private static string EnsureFolderExists(params string[] folderName)
   {
-    var path = System.IO.Path.Combine(basePath, folderName);
+    var path = System.IO.Path.Combine(folderName);
     Directory.CreateDirectory(path);
     return path;
   }
 
-  /// <summary>
-  /// Get the folder where the Speckle logs should be stored.
-  /// </summary>
-  /// <param name="hostApplicationName">Name of the application using this SDK ie.: "Rhino"</param>
-  /// <param name="hostApplicationVersion">Public version slug of the application using this SDK ie.: "2023"</param>
-  public static string LogFolderPath(string hostApplicationName, string? hostApplicationVersion)
-  {
-    return EnsureFolderExists(
-      EnsureFolderExists(UserSpeckleFolderPath, LOG_FOLDER_NAME),
-      $"{hostApplicationName}{hostApplicationVersion ?? ""}"
-    );
-  }
+  internal static string LogFolderPath(string applicationAndVersion) =>
+    EnsureFolderExists(UserSpeckleFolderPath, LOG_FOLDER_NAME, applicationAndVersion);
 }

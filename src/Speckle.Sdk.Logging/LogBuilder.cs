@@ -50,7 +50,7 @@ public static class LogBuilder
     if (speckleLogging?.File is not null)
     {
       // TODO: check if we have write permissions to the file.
-      var logFilePath = SpecklePathProvider.LogFolderPath(applicationAndVersion, slug);
+      var logFilePath = SpecklePathProvider.LogFolderPath(applicationAndVersion);
       logFilePath = Path.Combine(logFilePath, speckleLogging.File.Path ?? "SpeckleCoreLog.txt");
       serilogLogConfiguration = serilogLogConfiguration.WriteTo.File(
         logFilePath,
@@ -71,6 +71,13 @@ public static class LogBuilder
     var logger = serilogLogConfiguration.CreateLogger();
     Log.Logger = logger;
 
+    logger
+      .ForContext("hostApplication", applicationAndVersion)
+      .ForContext("userApplicationDataPath", SpecklePathProvider.UserApplicationDataPath())
+      .ForContext("installApplicationDataPath", SpecklePathProvider.InstallApplicationDataPath)
+      .Information(
+        "Initialized logger inside {hostApplication}/{productVersion}/{version} for user {id}. Path info {userApplicationDataPath} {installApplicationDataPath}."
+      );
     return InitializeOtelTracing(speckleTracing, resourceBuilder);
   }
 
