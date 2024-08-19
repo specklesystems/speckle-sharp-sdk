@@ -18,6 +18,7 @@ namespace Speckle.Sdk.Serialisation;
 
 public class BaseObjectSerializerV2
 {
+  private static readonly string EMPTY_ID = Guid.Empty.ToString();
   private readonly Stopwatch _stopwatch = new();
   private volatile bool _isBusy;
   private List<Dictionary<string, int>> _parentClosures = new();
@@ -372,7 +373,7 @@ public class BaseObjectSerializerV2
       convertedBase[prop.Key] = convertedValue;
     }
 
-    convertedBase["id"] = baseObj is Blob blob ? blob.id : ComputeId(convertedBase);
+    convertedBase["id"] = baseObj is Blob blob ? blob.id : EMPTY_ID;
 
     if (closure.Count > 0)
     {
@@ -434,10 +435,8 @@ public class BaseObjectSerializerV2
     }
   }
 
-  [Pure]
-  private static string ComputeId(IReadOnlyDictionary<string, object?> obj)
+  private static string ComputeId(string serialized)
   {
-    string serialized = JsonConvert.SerializeObject(obj);
     string hash = Crypt.Sha256(serialized, length: Utilities.HASH_LENGTH);
     return hash;
   }
@@ -449,7 +448,8 @@ public class BaseObjectSerializerV2
       return string.Empty;
     }
     string serialized = JsonConvert.SerializeObject(obj);
-    return serialized;
+    var id = ComputeId(serialized);
+    return serialized.Replace(EMPTY_ID, id);
   }
 
   private void StoreObject(string objectId, string objectJson)
