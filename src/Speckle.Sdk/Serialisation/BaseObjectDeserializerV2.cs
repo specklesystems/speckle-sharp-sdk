@@ -50,7 +50,7 @@ public sealed class BaseObjectDeserializerV2
   /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public  Task<Base> Deserialize(string rootObjectJson)
+  public Task<Base> Deserialize(string rootObjectJson)
   {
     if (_isBusy)
     {
