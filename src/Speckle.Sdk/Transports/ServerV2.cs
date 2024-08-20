@@ -65,7 +65,7 @@ public sealed class ServerTransport : IServerTransport
     {
       if (IsInErrorState)
       {
-        return;
+        throw new TransportException("Server transport is in an errored state", _exception);
       }
 
       _sendBuffer.Add(($"blob:{hash}", obj.filePath));
@@ -206,7 +206,7 @@ public sealed class ServerTransport : IServerTransport
     {
       if (IsInErrorState)
       {
-        return;
+        throw new TransportException("Server transport is in an errored state", _exception);
       }
 
       _sendBuffer.Add((id, serializedObject));

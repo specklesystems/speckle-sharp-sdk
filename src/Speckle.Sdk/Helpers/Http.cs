@@ -22,6 +22,7 @@ public static class Http
   {
     return HttpPolicyExtensions
       .HandleTransientHttpError()
+      .Or<TaskCanceledException>()
       .WaitAndRetryAsync(
         delay ?? DefaultDelay(),
         (ex, timeSpan, retryAttempt, context) =>

@@ -1,4 +1,5 @@
-﻿using Polly;
+﻿using System.Diagnostics;
+using Polly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 
@@ -23,10 +24,19 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
   {
     // this is a preliminary client server correlation implementation
     // refactor this, when we have a better observability stack
+    var sw = Stopwatch.StartNew();
     var context = new Context();
     using var activity = SpeckleActivityFactory.Start("Http Send");
     {
+      SpeckleLog.Logger.Debug(
+        "Starting execution of http request to {targetUrl} {correlationId} {traceId}",
+        request.RequestUri,
+        context.CorrelationId,
+        activity?.TraceId
+      );
       activity?.SetTag("http.url", request.RequestUri);
+      activity?.SetTag("correlationId", context.CorrelationId);
+
       context.Add("retryCount", 0);
 
       request.Headers.Add("x-request-id", context.CorrelationId.ToString());
@@ -35,13 +45,38 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
         .ExecuteAndCaptureAsync(
           ctx =>
           {
-            return base.SendAsync(request, cancellationToken);
+            try
+            {
+              return base.SendAsync(request, cancellationToken);
+            }
+            catch (TaskCanceledException ex)
+            {
+              if (ex.CancellationToken == cancellationToken)
+              {
+                cancellationToken.ThrowIfCancellationRequested();
+              }
+
+              throw;
+            }
           },
           context
         )
         .ConfigureAwait(false);
       context.TryGetValue("retryCount", out var retryCount);
       activity?.SetTag("retryCount", retryCount);
+
+      SpeckleLog.Logger.Information(
+        "Execution of http request to {httpScheme}://{hostUrl}{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries. Request correlation ID: {correlationId}",
+        request.RequestUri.Scheme,
+        request.RequestUri.Host,
+        request.RequestUri.PathAndQuery,
+        policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed",
+        policyResult.Result?.StatusCode,
+        sw.Elapsed.TotalSeconds,
+        retryCount ?? 0,
+        context.CorrelationId.ToString()
+      );
+
       if (policyResult.Outcome == OutcomeType.Successful)
       {
         return policyResult.Result.NotNull();
