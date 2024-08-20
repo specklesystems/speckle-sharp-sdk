@@ -56,13 +56,14 @@ public class RevitInstance : Instance<RevitSymbolElementType>
   public Plane GetInsertionPlane()
   {
     // TODO: Check for Revit in GH/DYN
-    var plane = new Plane(
-      new Point(0, 0, 0, units),
-      new Vector(0, 0, 1, units),
-      new Vector(1, 0, 0, units),
-      new Vector(0, 1, 0, units),
-      units
-    );
+    var plane = new Plane()
+    {
+      origin = new Point(0, 0, 0, units),
+      normal = new Vector(0, 0, 1, units),
+      xdir = new Vector(1, 0, 0, units),
+      ydir = new Vector(0, 1, 0, units),
+      units = units,
+    };
     plane.TransformTo(transform, out Plane tPlane);
     return tPlane;
   }

@@ -149,13 +149,14 @@ public class BlockInstance : Instance<BlockDefinition>
   public Plane GetInsertionPlane()
   {
     // TODO: UPDATE!
-    var plane = new Plane(
-      typedDefinition.basePoint ?? new Point(0, 0, 0, units),
-      new Vector(0, 0, 1, units),
-      new Vector(1, 0, 0, units),
-      new Vector(0, 1, 0, units),
-      units
-    );
+    var plane = new Plane()
+    {
+      origin = typedDefinition.basePoint ?? new Point(0, 0, 0, units),
+      normal = new Vector(0, 0, 1, units),
+      xdir = new Vector(1, 0, 0, units),
+      ydir = new Vector(0, 1, 0, units),
+      units = units
+    };
     plane.TransformTo(transform, out Plane tPlane);
     return tPlane;
   }
