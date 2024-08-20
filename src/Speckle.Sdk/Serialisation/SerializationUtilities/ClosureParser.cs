@@ -5,29 +5,30 @@ namespace Speckle.Sdk.Serialisation.SerializationUtilities;
 
 public static class ClosureParser
 {
-  public static IReadOnlyList<(string, int)> GetClosures(string rootObjectJson)
-  {
-    using JsonTextReader reader = new(new StringReader(rootObjectJson));
-    return GetClosures(reader);
-  }
 
   public static IReadOnlyList<(string, int)> GetClosures(JsonReader reader)
   {
+    if (reader.TokenType != JsonToken.StartObject)
+    {
+      return Array.Empty<(string, int)>();
+    }
     var closureList = ReadClosureList(reader);
-    closureList =   closureList.OrderBy<(string, int), int>((b) => b.Item2);
-      return closureList.ToList();
+    closureList.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+      return closureList;
   }
 
 
-  private static IEnumerable<(string, int)> ReadClosureList(JsonReader reader)
+  private static List<(string, int)> ReadClosureList(JsonReader reader)
   {
+    List<(string, int)> closureList = new();
     reader.Read(); //startobject
     while (reader.TokenType != JsonToken.EndObject)
     {
       var childId = (reader.Value as string).NotNull(); // propertyName
       int childMinDepth = reader.ReadAsInt32().NotNull(); //propertyValue
       reader.Read();
-      yield return (childId, childMinDepth);
+      closureList.Add((childId, childMinDepth));
     }
+    return closureList;
   }
 }
