@@ -35,6 +35,10 @@ public sealed class BaseObjectDeserializerV2
 
   public Action<ProgressArgs>? OnProgressAction { get; set; }
 
+  private long _currentCount;
+  private HashSet<string> _ids = new();
+  private long _processedCount;
+
   public string? BlobStorageFolder { get; set; }
   public TimeSpan Elapsed { get; private set; }
 
@@ -59,48 +63,19 @@ public sealed class BaseObjectDeserializerV2
     try
     {
       _isBusy = true;
-      var stopwatch = Stopwatch.StartNew();
       _deserializedObjects = new();
+      _currentCount = 0;
       _workerThreads = new DeserializationWorkerThreads(this, WorkerThreadCount);
       _workerThreads.Start();
-
-      var closures = ClosureParser.GetClosures(rootObjectJson);
-      int i = 0;
-      foreach (var closure in closures)
+      Task<object?>? bgResult = _workerThreads?.TryStartTask(
+        WorkerThreadTaskType.Deserialize,
+        rootObjectJson
+      ); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
+      if (bgResult is null)
       {
-        string objId = closure.Item1;
-        // pausing for getting object from the transport
-        stopwatch.Stop();
-        string? objJson = ReadTransport.GetObject(objId);
-
-        //TODO: We should fail loudly when a closure can't be found (objJson is null)
-        //but adding throw here breaks blobs tests, see CNX-8541
-
-        stopwatch.Start();
-        object? deserializedOrPromise = DeserializeTransportObjectProxy(objJson, i++, closures.Count);
-        _deserializedObjects.TryAdd(objId, deserializedOrPromise);
+        throw new InvalidOperationException();
       }
-
-      object? ret;
-      try
-      {
-        ret = DeserializeTransportObject(rootObjectJson, null, null);
-      }
-      catch (JsonReaderException ex)
-      {
-        throw new SpeckleDeserializeException("Failed to deserialize json", ex);
-      }
-
-      stopwatch.Stop();
-      Elapsed += stopwatch.Elapsed;
-      if (ret is not Base b)
-      {
-        throw new SpeckleDeserializeException(
-          $"Expected {nameof(rootObjectJson)} to be deserialized to type {nameof(Base)} but was {ret}"
-        );
-      }
-
-      return b;
+      return (Base)bgResult.Result.NotNull();
     }
     finally
     {
@@ -111,29 +86,8 @@ public sealed class BaseObjectDeserializerV2
     }
   }
 
-  private object? DeserializeTransportObjectProxy(string? objectJson, long? current, long? total)
-  {
-    if (objectJson is null)
-    {
-      return null;
-    }
-    // Try background work
-    Task<object?>? bgResult = _workerThreads?.TryStartTask(
-      WorkerThreadTaskType.Deserialize,
-      objectJson,
-      current,
-      total
-    ); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
-    if (bgResult != null)
-    {
-      return bgResult;
-    }
 
-    // SyncS
-    return DeserializeTransportObject(objectJson, current, total);
-  }
-
-  internal object? DeserializeTransportObject(string objectJson, long? currentObjectCount, long? totalObjectCount)
+  internal object? DeserializeTransportObject(string objectJson)
   {
     if (objectJson is null)
     {
@@ -151,7 +105,7 @@ public sealed class BaseObjectDeserializerV2
     try
     {
       reader.Read();
-      converted = ReadObject(reader, currentObjectCount, totalObjectCount, CancellationToken);
+      converted = ReadObject(reader,  CancellationToken);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -160,7 +114,8 @@ public sealed class BaseObjectDeserializerV2
 
     lock (_callbackLock)
     {
-      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, currentObjectCount, totalObjectCount));
+      _processedCount++;
+      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount));
     }
 
     return converted;
@@ -169,8 +124,6 @@ public sealed class BaseObjectDeserializerV2
 
   private List<object?> ReadArray(
     JsonReader reader,
-    long? currentObjectCount,
-    long? totalObjectCount,
     CancellationToken ct
   )
   {
@@ -178,7 +131,7 @@ public sealed class BaseObjectDeserializerV2
     List<object?> retList = new();
     while (reader.TokenType != JsonToken.EndArray)
     {
-      object? convertedValue = ConvertJsonElement(reader, currentObjectCount, totalObjectCount, ct);
+      object? convertedValue = ConvertJsonElement(reader, ct);
       if (convertedValue is DataChunk chunk)
       {
         retList.AddRange(chunk.data);
@@ -194,8 +147,6 @@ public sealed class BaseObjectDeserializerV2
 
   private object? ReadObject(
     JsonReader reader,
-    long? currentObjectCount,
-    long? totalObjectCount,
     CancellationToken ct
   )
   {
@@ -212,82 +163,95 @@ public sealed class BaseObjectDeserializerV2
             {
               reader.Read(); //goes to prop value
               var closures = ClosureParser.GetClosures(reader);
-              int i = 0;
               object? ret;
               foreach (var closure in closures)
               {
+                _ids.Add(closure.Item1);
+              }
+
+              foreach (var closure in closures)
+              {
                 string objId = closure.Item1;
-                string? objJson = ReadTransport.GetObject(objId);
-                ret = DeserializeTransportObject(objJson.NotNull(), i++, closures.Count);
-                _deserializedObjects?.TryAdd(objId, ret);
+                  ret = TryGetDeserialized(objId);
               }
               reader.Read(); //goes to next
               continue;
             }
             reader.Read(); //goes prop value
-            object? convertedValue = ConvertJsonElement(reader, currentObjectCount, totalObjectCount, ct);
+            object? convertedValue = ConvertJsonElement(reader, ct);
             dict[propName] = convertedValue;
             reader.Read(); //goes to next
           }
           break;
+        default:
+          throw new InvalidOperationException($"Unknown {reader.ValueType} with {reader.Value}");
       }
     }
     
     if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
     {
-            return dict;
-          }
+      return dict;
+    }
 
-          if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
-          {
-            var objId = (string)referencedId.NotNull();
-            object? deserialized = null;
-            _deserializedObjects.NotNull();
-            if (_deserializedObjects.TryGetValue(objId, out object? o))
-            {
-              deserialized = o;
-            }
-
-            if (deserialized is Task<object> task)
-            {
-              try
-              {
-                deserialized = task.Result;
-              }
-              catch (AggregateException ex)
-              {
-                throw new SpeckleDeserializeException("Failed to deserialize reference object", ex);
-              }
-
-              _deserializedObjects.TryAdd(objId, deserialized);
-            }
-
-            if (deserialized != null)
-            {
-              return deserialized;
-            }
-
-            // This reference was not already deserialized. Do it now in sync mode
-            string? objectJson = ReadTransport.GetObject(objId);
-            if (objectJson is null)
-            {
-              throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
-            }
-
-            deserialized = DeserializeTransportObject(objectJson, currentObjectCount, totalObjectCount);
-
-            _deserializedObjects.TryAdd(objId, deserialized);
-
-            return deserialized;
+    if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
+    {
+      var objId = (string)referencedId.NotNull();
+      object? deserialized = TryGetDeserialized(objId);
+      return deserialized;
     }
 
     return Dict2Base(dict);
   }
 
+  private object? TryGetDeserialized(string objId)
+  {
+    object? deserialized = null;
+    _deserializedObjects.NotNull();
+    if (_deserializedObjects.TryGetValue(objId, out object? o))
+    {
+      deserialized = o;
+    }
+
+    if (deserialized is Task<object> task)
+    {
+      try
+      {
+        deserialized = task.Result;
+      }
+      catch (AggregateException ex)
+      {
+        throw new SpeckleDeserializeException("Failed to deserialize reference object", ex);
+      }
+
+      if (_deserializedObjects.TryAdd(objId, deserialized))
+      {
+        _currentCount++;
+      }
+    }
+    if (deserialized != null)
+    {
+      return deserialized;
+    }
+    
+
+    // This reference was not already deserialized. Do it now in sync mode
+    string? objectJson = ReadTransport.GetObject(objId);
+    if (objectJson is null)
+    {
+      throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
+    }
+
+    deserialized = DeserializeTransportObject(objectJson);
+      
+    if (_deserializedObjects.NotNull().TryAdd(objId, deserialized))
+    {
+      _currentCount++;
+    }
+
+    return deserialized;
+  }
   private object? ConvertJsonElement(
     JsonReader reader,
-    long? currentObjectCount,
-    long? totalObjectCount,
     CancellationToken ct
   )
   {
@@ -325,9 +289,9 @@ public sealed class BaseObjectDeserializerV2
         case JsonToken.Date:
           return (DateTime)reader.Value.NotNull();
         case JsonToken.StartArray:
-          return ReadArray(reader, currentObjectCount, totalObjectCount, ct);
+          return ReadArray(reader, ct);
         case JsonToken.StartObject:
-          var dict = ReadObject(reader, currentObjectCount, totalObjectCount, ct);
+          var dict = ReadObject(reader, ct);
           return dict;
       
         default:
