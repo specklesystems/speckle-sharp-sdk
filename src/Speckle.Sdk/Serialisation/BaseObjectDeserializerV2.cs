@@ -67,10 +67,7 @@ public sealed class BaseObjectDeserializerV2
       _currentCount = 0;
       _workerThreads = new DeserializationWorkerThreads(this, WorkerThreadCount);
       _workerThreads.Start();
-      object? bgResult = await _workerThreads.TryStartTask(
-        WorkerThreadTaskType.Deserialize,
-        rootObjectJson
-      ); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
+      object? bgResult = await _workerThreads.TryStartTask(WorkerThreadTaskType.Deserialize, rootObjectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
       if (bgResult is null)
       {
         throw new InvalidOperationException();
@@ -85,7 +82,6 @@ public sealed class BaseObjectDeserializerV2
       _isBusy = false;
     }
   }
-
 
   internal object? DeserializeTransportObject(string objectJson)
   {
@@ -105,7 +101,7 @@ public sealed class BaseObjectDeserializerV2
     try
     {
       reader.Read();
-      converted = ReadObject(reader,  CancellationToken);
+      converted = ReadObject(reader, CancellationToken);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -115,17 +111,15 @@ public sealed class BaseObjectDeserializerV2
     lock (_callbackLock)
     {
       _processedCount++;
-      OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount));
+      OnProgressAction?.Invoke(
+        new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount)
+      );
     }
 
     return converted;
   }
-  
 
-  private List<object?> ReadArray(
-    JsonReader reader,
-    CancellationToken ct
-  )
+  private List<object?> ReadArray(JsonReader reader, CancellationToken ct)
   {
     reader.Read();
     List<object?> retList = new();
@@ -145,10 +139,7 @@ public sealed class BaseObjectDeserializerV2
     return retList;
   }
 
-  private object? ReadObject(
-    JsonReader reader,
-    CancellationToken ct
-  )
+  private object? ReadObject(JsonReader reader, CancellationToken ct)
   {
     reader.Read();
     Dictionary<string, object?> dict = new();
@@ -172,7 +163,7 @@ public sealed class BaseObjectDeserializerV2
               foreach (var closure in closures)
               {
                 string objId = closure.Item1;
-                  ret = TryGetDeserialized(objId);
+                ret = TryGetDeserialized(objId);
               }
               reader.Read(); //goes to next
               continue;
@@ -187,7 +178,7 @@ public sealed class BaseObjectDeserializerV2
           throw new InvalidOperationException($"Unknown {reader.ValueType} with {reader.Value}");
       }
     }
-    
+
     if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
     {
       return dict;
@@ -232,7 +223,6 @@ public sealed class BaseObjectDeserializerV2
     {
       return deserialized;
     }
-    
 
     // This reference was not already deserialized. Do it now in sync mode
     string? objectJson = ReadTransport.GetObject(objId);
@@ -242,7 +232,7 @@ public sealed class BaseObjectDeserializerV2
     }
 
     deserialized = DeserializeTransportObject(objectJson);
-      
+
     if (_deserializedObjects.NotNull().TryAdd(objId, deserialized))
     {
       _currentCount++;
@@ -250,52 +240,50 @@ public sealed class BaseObjectDeserializerV2
 
     return deserialized;
   }
-  private object? ConvertJsonElement(
-    JsonReader reader,
-    CancellationToken ct
-  )
+
+  private object? ConvertJsonElement(JsonReader reader, CancellationToken ct)
   {
-      ct.ThrowIfCancellationRequested();
-      switch (reader.TokenType)
-      {
-        case JsonToken.Undefined:
-        case JsonToken.Null:
-        case JsonToken.None:
-          return null;
-        case JsonToken.Boolean:
-          return (bool)reader.Value.NotNull();
-        case JsonToken.Integer:
-          try
-          {
-            return (long)reader.Value.NotNull();
-          }
-          catch (OverflowException ex)
-          {
-            var v = (object)(double)reader.Value.NotNull();
-            SpeckleLog.Logger.Debug(
-              ex,
-              "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
-              reader.ValueType,
-              v,
-              typeof(long),
-              typeof(double)
-            );
-            return v;
-          }
-        case JsonToken.Float:
-          return (double)reader.Value.NotNull();
-        case JsonToken.String:
-          return (string?)reader.Value.NotNull();
-        case JsonToken.Date:
-          return (DateTime)reader.Value.NotNull();
-        case JsonToken.StartArray:
-          return ReadArray(reader, ct);
-        case JsonToken.StartObject:
-          var dict = ReadObject(reader, ct);
-          return dict;
-      
-        default:
-          throw new ArgumentException("Json value not supported: " + reader.ValueType);
+    ct.ThrowIfCancellationRequested();
+    switch (reader.TokenType)
+    {
+      case JsonToken.Undefined:
+      case JsonToken.Null:
+      case JsonToken.None:
+        return null;
+      case JsonToken.Boolean:
+        return (bool)reader.Value.NotNull();
+      case JsonToken.Integer:
+        try
+        {
+          return (long)reader.Value.NotNull();
+        }
+        catch (OverflowException ex)
+        {
+          var v = (object)(double)reader.Value.NotNull();
+          SpeckleLog.Logger.Debug(
+            ex,
+            "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
+            reader.ValueType,
+            v,
+            typeof(long),
+            typeof(double)
+          );
+          return v;
+        }
+      case JsonToken.Float:
+        return (double)reader.Value.NotNull();
+      case JsonToken.String:
+        return (string?)reader.Value.NotNull();
+      case JsonToken.Date:
+        return (DateTime)reader.Value.NotNull();
+      case JsonToken.StartArray:
+        return ReadArray(reader, ct);
+      case JsonToken.StartObject:
+        var dict = ReadObject(reader, ct);
+        return dict;
+
+      default:
+        throw new ArgumentException("Json value not supported: " + reader.ValueType);
     }
   }
 

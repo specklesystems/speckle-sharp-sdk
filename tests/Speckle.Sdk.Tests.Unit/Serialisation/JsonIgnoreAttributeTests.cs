@@ -8,12 +8,14 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 [TestOf(typeof(BaseObjectSerializerV2))]
 public sealed class JsonIgnoreRespected
-{  [SetUp]
+{
+  [SetUp]
   public void Setup()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(IgnoreTest).Assembly);
   }
+
   [Test]
   public void IgnoredProperties_NotIncludedInJson()
   {

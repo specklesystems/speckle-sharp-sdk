@@ -23,149 +23,150 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(StringValueMock).Assembly);
   }
-/*
-  [Test, TestCaseSource(nameof(Int8TestCases)), TestCaseSource(nameof(Int32TestCases))]
-  public void IntToColor(int argb)
-  {
-    var from = new IntValueMock { value = argb };
 
-    var res = from.SerializeAsTAndDeserialize<ColorValueMock>();
-    Assert.That(res.value.ToArgb(), Is.EqualTo(argb));
-  }
-
-  [Test, TestCaseSource(nameof(Int8TestCases)), TestCaseSource(nameof(Int32TestCases))]
-  public void ColorToInt(int argb)
-  {
-    var from = new ColorValueMock { value = Color.FromArgb(argb) };
-
-    var res = from.SerializeAsTAndDeserialize<IntValueMock>();
-    Assert.That(res.value, Is.EqualTo(argb));
-  }
-
-  [
-    Test,
-    TestCaseSource(nameof(Int8TestCases)),
-    TestCaseSource(nameof(Int32TestCases)),
-    TestCaseSource(nameof(Int64TestCases))
-  ]
-  public void IntToDouble(long testCase)
-  {
-    var from = new IntValueMock { value = testCase };
-
-    var res = from.SerializeAsTAndDeserialize<DoubleValueMock>();
-    Assert.That(res.value, Is.EqualTo(testCase));
-  }
-
-  [Test]
-  public void NullToInt()
-  {
-    var from = new ObjectValueMock { value = null };
-
-    var res = from.SerializeAsTAndDeserialize<IntValueMock>();
-    Assert.That(res.value, Is.EqualTo(default(int)));
-  }
-
-  [Test]
-  public void NullToDouble()
-  {
-    var from = new ObjectValueMock { value = null };
-
-    var res = from.SerializeAsTAndDeserialize<DoubleValueMock>();
-    Assert.That(res.value, Is.EqualTo(default(double)));
-  }
-
-  [
-    Test,
-    TestCaseSource(nameof(Int8TestCases)),
-    TestCaseSource(nameof(Int32TestCases)),
-    TestCaseSource(nameof(Int64TestCases))
-  ]
-  public void IntToString(long testCase)
-  {
-    var from = new IntValueMock { value = testCase };
-
-    var res = from.SerializeAsTAndDeserialize<StringValueMock>();
-    Assert.That(res.value, Is.EqualTo(testCase.ToString()));
-  }
-
-  private static readonly double[][] s_arrayTestCases =
-  {
-    Array.Empty<double>(),
-    new double[] { 0, 1, int.MaxValue, int.MinValue },
-    new[] { default, double.Epsilon, double.MaxValue, double.MinValue }
-  };
-
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void ArrayToList(double[] testCase)
-  {
-    var from = new ArrayDoubleValueMock { value = testCase };
-
-    var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
-  }
-
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void ListToArray(double[] testCase)
-  {
-    var from = new ListDoubleValueMock { value = testCase.ToList() };
-
-    var res = from.SerializeAsTAndDeserialize<ArrayDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
-  }
-
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void ListToIList(double[] testCase)
-  {
-    var from = new ListDoubleValueMock { value = testCase.ToList() };
-
-    var res = from.SerializeAsTAndDeserialize<IReadOnlyListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
-  }
-
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void ListToIReadOnlyList(double[] testCase)
-  {
-    var from = new ListDoubleValueMock { value = testCase.ToList() };
-
-    var res = from.SerializeAsTAndDeserialize<IListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
-  }
-
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void IListToList(double[] testCase)
-  {
-    var from = new IListDoubleValueMock { value = testCase.ToList() };
-
-    var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
-  }
-
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void IReadOnlyListToList(double[] testCase)
-  {
-    var from = new IReadOnlyListDoubleValueMock { value = testCase.ToList() };
-
-    var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
-  }
-
-  [Test, TestCaseSource(nameof(MyEnums))]
-  public void EnumToInt(MyEnum testCase)
-  {
-    var from = new EnumValueMock { value = testCase };
-
-    var res = from.SerializeAsTAndDeserialize<IntValueMock>();
-    Assert.That(res.value, Is.EqualTo((int)testCase));
-  }
-
-  [Test, TestCaseSource(nameof(MyEnums))]
-  public void IntToEnum(MyEnum testCase)
-  {
-    var from = new IntValueMock { value = (int)testCase };
-
-    var res = from.SerializeAsTAndDeserialize<EnumValueMock>();
-    Assert.That(res.value, Is.EqualTo(testCase));
-  }*/
+  /*
+    [Test, TestCaseSource(nameof(Int8TestCases)), TestCaseSource(nameof(Int32TestCases))]
+    public void IntToColor(int argb)
+    {
+      var from = new IntValueMock { value = argb };
+  
+      var res = from.SerializeAsTAndDeserialize<ColorValueMock>();
+      Assert.That(res.value.ToArgb(), Is.EqualTo(argb));
+    }
+  
+    [Test, TestCaseSource(nameof(Int8TestCases)), TestCaseSource(nameof(Int32TestCases))]
+    public void ColorToInt(int argb)
+    {
+      var from = new ColorValueMock { value = Color.FromArgb(argb) };
+  
+      var res = from.SerializeAsTAndDeserialize<IntValueMock>();
+      Assert.That(res.value, Is.EqualTo(argb));
+    }
+  
+    [
+      Test,
+      TestCaseSource(nameof(Int8TestCases)),
+      TestCaseSource(nameof(Int32TestCases)),
+      TestCaseSource(nameof(Int64TestCases))
+    ]
+    public void IntToDouble(long testCase)
+    {
+      var from = new IntValueMock { value = testCase };
+  
+      var res = from.SerializeAsTAndDeserialize<DoubleValueMock>();
+      Assert.That(res.value, Is.EqualTo(testCase));
+    }
+  
+    [Test]
+    public void NullToInt()
+    {
+      var from = new ObjectValueMock { value = null };
+  
+      var res = from.SerializeAsTAndDeserialize<IntValueMock>();
+      Assert.That(res.value, Is.EqualTo(default(int)));
+    }
+  
+    [Test]
+    public void NullToDouble()
+    {
+      var from = new ObjectValueMock { value = null };
+  
+      var res = from.SerializeAsTAndDeserialize<DoubleValueMock>();
+      Assert.That(res.value, Is.EqualTo(default(double)));
+    }
+  
+    [
+      Test,
+      TestCaseSource(nameof(Int8TestCases)),
+      TestCaseSource(nameof(Int32TestCases)),
+      TestCaseSource(nameof(Int64TestCases))
+    ]
+    public void IntToString(long testCase)
+    {
+      var from = new IntValueMock { value = testCase };
+  
+      var res = from.SerializeAsTAndDeserialize<StringValueMock>();
+      Assert.That(res.value, Is.EqualTo(testCase.ToString()));
+    }
+  
+    private static readonly double[][] s_arrayTestCases =
+    {
+      Array.Empty<double>(),
+      new double[] { 0, 1, int.MaxValue, int.MinValue },
+      new[] { default, double.Epsilon, double.MaxValue, double.MinValue }
+    };
+  
+    [Test, TestCaseSource(nameof(s_arrayTestCases))]
+    public void ArrayToList(double[] testCase)
+    {
+      var from = new ArrayDoubleValueMock { value = testCase };
+  
+      var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
+      Assert.That(res.value, Is.EquivalentTo(testCase));
+    }
+  
+    [Test, TestCaseSource(nameof(s_arrayTestCases))]
+    public void ListToArray(double[] testCase)
+    {
+      var from = new ListDoubleValueMock { value = testCase.ToList() };
+  
+      var res = from.SerializeAsTAndDeserialize<ArrayDoubleValueMock>();
+      Assert.That(res.value, Is.EquivalentTo(testCase));
+    }
+  
+    [Test, TestCaseSource(nameof(s_arrayTestCases))]
+    public void ListToIList(double[] testCase)
+    {
+      var from = new ListDoubleValueMock { value = testCase.ToList() };
+  
+      var res = from.SerializeAsTAndDeserialize<IReadOnlyListDoubleValueMock>();
+      Assert.That(res.value, Is.EquivalentTo(testCase));
+    }
+  
+    [Test, TestCaseSource(nameof(s_arrayTestCases))]
+    public void ListToIReadOnlyList(double[] testCase)
+    {
+      var from = new ListDoubleValueMock { value = testCase.ToList() };
+  
+      var res = from.SerializeAsTAndDeserialize<IListDoubleValueMock>();
+      Assert.That(res.value, Is.EquivalentTo(testCase));
+    }
+  
+    [Test, TestCaseSource(nameof(s_arrayTestCases))]
+    public void IListToList(double[] testCase)
+    {
+      var from = new IListDoubleValueMock { value = testCase.ToList() };
+  
+      var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
+      Assert.That(res.value, Is.EquivalentTo(testCase));
+    }
+  
+    [Test, TestCaseSource(nameof(s_arrayTestCases))]
+    public void IReadOnlyListToList(double[] testCase)
+    {
+      var from = new IReadOnlyListDoubleValueMock { value = testCase.ToList() };
+  
+      var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
+      Assert.That(res.value, Is.EquivalentTo(testCase));
+    }
+  
+    [Test, TestCaseSource(nameof(MyEnums))]
+    public void EnumToInt(MyEnum testCase)
+    {
+      var from = new EnumValueMock { value = testCase };
+  
+      var res = from.SerializeAsTAndDeserialize<IntValueMock>();
+      Assert.That(res.value, Is.EqualTo((int)testCase));
+    }
+  
+    [Test, TestCaseSource(nameof(MyEnums))]
+    public void IntToEnum(MyEnum testCase)
+    {
+      var from = new IntValueMock { value = (int)testCase };
+  
+      var res = from.SerializeAsTAndDeserialize<EnumValueMock>();
+      Assert.That(res.value, Is.EqualTo(testCase));
+    }*/
 
   [Test]
   [TestCaseSource(nameof(Float64TestCases))]

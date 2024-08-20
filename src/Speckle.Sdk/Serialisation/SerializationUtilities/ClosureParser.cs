@@ -5,7 +5,6 @@ namespace Speckle.Sdk.Serialisation.SerializationUtilities;
 
 public static class ClosureParser
 {
-
   public static IReadOnlyList<(string, int)> GetClosures(JsonReader reader)
   {
     if (reader.TokenType != JsonToken.StartObject)
@@ -14,9 +13,8 @@ public static class ClosureParser
     }
     var closureList = ReadClosureList(reader);
     closureList.Sort((a, b) => b.Item2.CompareTo(a.Item2));
-      return closureList;
+    return closureList;
   }
-
 
   private static List<(string, int)> ReadClosureList(JsonReader reader)
   {

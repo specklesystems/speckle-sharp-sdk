@@ -17,13 +17,13 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 )]
 public class SerializerBreakingChanges : PrimitiveTestFixture
 {
-  
   [SetUp]
   public void Setup()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
   }
+
   [Test]
   public void StringToInt_ShouldThrow()
   {
