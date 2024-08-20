@@ -150,7 +150,8 @@ public sealed class BaseObjectDeserializerV2
     object? converted;
     try
     {
-      converted = ConvertJsonElement(reader, currentObjectCount, totalObjectCount, CancellationToken);
+      reader.Read();
+      converted = ReadObject(reader, currentObjectCount, totalObjectCount, CancellationToken);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -164,6 +165,7 @@ public sealed class BaseObjectDeserializerV2
 
     return converted;
   }
+  
 
   private List<object?> ReadArray(
     JsonReader reader,
@@ -190,7 +192,7 @@ public sealed class BaseObjectDeserializerV2
     return retList;
   }
 
-  private Dictionary<string, object?> ReadObject(
+  private object? ReadObject(
     JsonReader reader,
     long? currentObjectCount,
     long? totalObjectCount,
@@ -208,11 +210,21 @@ public sealed class BaseObjectDeserializerV2
             var propName = reader.Value.NotNull().ToString();
             if (propName == "__closure")
             {
-              reader.Read(); //goes to prop vale
-              reader.Skip();
+              reader.Read(); //goes to prop value
+              var closures = ClosureParser.GetClosures(reader);
+              int i = 0;
+              object? ret;
+              foreach (var closure in closures)
+              {
+                string objId = closure.Item1;
+                string? objJson = ReadTransport.GetObject(objId);
+                ret = DeserializeTransportObject(objJson.NotNull(), i++, closures.Count);
+                _deserializedObjects?.TryAdd(objId, ret);
+              }
               reader.Read(); //goes to next
               continue;
             }
+            reader.Read(); //goes prop value
             object? convertedValue = ConvertJsonElement(reader, currentObjectCount, totalObjectCount, ct);
             dict[propName] = convertedValue;
             reader.Read(); //goes to next
@@ -220,59 +232,9 @@ public sealed class BaseObjectDeserializerV2
           break;
       }
     }
-    return dict;
-  }
-
-  private object? ConvertJsonElement(
-    JsonReader reader,
-    long? currentObjectCount,
-    long? totalObjectCount,
-    CancellationToken ct
-  )
-  {
-    reader.Read();
-    while (reader.TokenType != JsonToken.EndObject)
+    
+    if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
     {
-      ct.ThrowIfCancellationRequested();
-      switch (reader.TokenType)
-      {
-        case JsonToken.Undefined:
-        case JsonToken.Null:
-        case JsonToken.None:
-          return null;
-        case JsonToken.Boolean:
-          return (bool)reader.Value.NotNull();
-        case JsonToken.Integer:
-          try
-          {
-            return (long)reader.Value.NotNull();
-          }
-          catch (OverflowException ex)
-          {
-            var v = (object)(double)reader.Value.NotNull();
-            SpeckleLog.Logger.Debug(
-              ex,
-              "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
-              reader.ValueType,
-              v,
-              typeof(long),
-              typeof(double)
-            );
-            return v;
-          }
-        case JsonToken.Float:
-          return (double)reader.Value.NotNull();
-        case JsonToken.String:
-          return (string?)reader.Value.NotNull();
-        case JsonToken.Date:
-          return (DateTime)reader.Value.NotNull();
-        case JsonToken.StartArray:
-          return ReadArray(reader, currentObjectCount, totalObjectCount, ct);
-        case JsonToken.StartObject:
-          var dict = ReadObject(reader, currentObjectCount, totalObjectCount, ct);
-
-          if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
-          {
             return dict;
           }
 
@@ -317,15 +279,60 @@ public sealed class BaseObjectDeserializerV2
             _deserializedObjects.TryAdd(objId, deserialized);
 
             return deserialized;
-          }
-
-          return Dict2Base(dict);
-        default:
-          throw new ArgumentException("Json value not supported: " + reader.ValueType);
-      }
     }
 
-    return null;
+    return Dict2Base(dict);
+  }
+
+  private object? ConvertJsonElement(
+    JsonReader reader,
+    long? currentObjectCount,
+    long? totalObjectCount,
+    CancellationToken ct
+  )
+  {
+      ct.ThrowIfCancellationRequested();
+      switch (reader.TokenType)
+      {
+        case JsonToken.Undefined:
+        case JsonToken.Null:
+        case JsonToken.None:
+          return null;
+        case JsonToken.Boolean:
+          return (bool)reader.Value.NotNull();
+        case JsonToken.Integer:
+          try
+          {
+            return (long)reader.Value.NotNull();
+          }
+          catch (OverflowException ex)
+          {
+            var v = (object)(double)reader.Value.NotNull();
+            SpeckleLog.Logger.Debug(
+              ex,
+              "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
+              reader.ValueType,
+              v,
+              typeof(long),
+              typeof(double)
+            );
+            return v;
+          }
+        case JsonToken.Float:
+          return (double)reader.Value.NotNull();
+        case JsonToken.String:
+          return (string?)reader.Value.NotNull();
+        case JsonToken.Date:
+          return (DateTime)reader.Value.NotNull();
+        case JsonToken.StartArray:
+          return ReadArray(reader, currentObjectCount, totalObjectCount, ct);
+        case JsonToken.StartObject:
+          var dict = ReadObject(reader, currentObjectCount, totalObjectCount, ct);
+          return dict;
+      
+        default:
+          throw new ArgumentException("Json value not supported: " + reader.ValueType);
+    }
   }
 
   private Base Dict2Base(Dictionary<string, object?> dictObj)
