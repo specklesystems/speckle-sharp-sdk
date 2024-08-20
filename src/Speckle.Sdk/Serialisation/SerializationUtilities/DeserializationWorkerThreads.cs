@@ -73,7 +73,7 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
     switch (taskType)
     {
       case WorkerThreadTaskType.Deserialize:
-        var converted = serializer.DeserializeTransportObject(objectJson);
+        var converted = serializer.DeserializeJson(objectJson);
         return converted;
       default:
         throw new ArgumentException(

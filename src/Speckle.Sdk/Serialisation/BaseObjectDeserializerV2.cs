@@ -40,7 +40,6 @@ public sealed class BaseObjectDeserializerV2
   private long _processedCount;
 
   public string? BlobStorageFolder { get; set; }
-  public TimeSpan Elapsed { get; private set; }
 
   public static int DefaultNumberThreads => Math.Min(Environment.ProcessorCount, 6); //6 threads seems the sweet spot, see performance test project
   public int WorkerThreadCount { get; set; } = DefaultNumberThreads;
@@ -83,7 +82,7 @@ public sealed class BaseObjectDeserializerV2
     }
   }
 
-  internal object? DeserializeTransportObject(string objectJson)
+  internal object? DeserializeJson(string objectJson)
   {
     if (objectJson is null)
     {
@@ -125,7 +124,7 @@ public sealed class BaseObjectDeserializerV2
     List<object?> retList = new();
     while (reader.TokenType != JsonToken.EndArray)
     {
-      object? convertedValue = ConvertJsonElement(reader, ct);
+      object? convertedValue = ReadProperty(reader, ct);
       if (convertedValue is DataChunk chunk)
       {
         retList.AddRange(chunk.data);
@@ -154,7 +153,6 @@ public sealed class BaseObjectDeserializerV2
             {
               reader.Read(); //goes to prop value
               var closures = ClosureParser.GetClosures(reader);
-              object? ret;
               foreach (var closure in closures)
               {
                 _ids.Add(closure.Item1);
@@ -163,13 +161,13 @@ public sealed class BaseObjectDeserializerV2
               foreach (var closure in closures)
               {
                 string objId = closure.Item1;
-                ret = TryGetDeserialized(objId);
+                TryGetDeserialized(objId);
               }
               reader.Read(); //goes to next
               continue;
             }
             reader.Read(); //goes prop value
-            object? convertedValue = ConvertJsonElement(reader, ct);
+            object? convertedValue = ReadProperty(reader, ct);
             dict[propName] = convertedValue;
             reader.Read(); //goes to next
           }
@@ -231,7 +229,7 @@ public sealed class BaseObjectDeserializerV2
       throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
     }
 
-    deserialized = DeserializeTransportObject(objectJson);
+    deserialized = DeserializeJson(objectJson);
 
     if (_deserializedObjects.NotNull().TryAdd(objId, deserialized))
     {
@@ -241,7 +239,7 @@ public sealed class BaseObjectDeserializerV2
     return deserialized;
   }
 
-  private object? ConvertJsonElement(JsonReader reader, CancellationToken ct)
+  private object? ReadProperty(JsonReader reader, CancellationToken ct)
   {
     ct.ThrowIfCancellationRequested();
     switch (reader.TokenType)
