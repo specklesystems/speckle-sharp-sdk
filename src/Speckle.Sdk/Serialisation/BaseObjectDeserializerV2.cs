@@ -185,6 +185,7 @@ public sealed class BaseObjectDeserializerV2
       {
         retList.Add(convertedValue);
       }
+      reader.Read(); //goes to next
     }
     return retList;
   }
@@ -212,9 +213,9 @@ public sealed class BaseObjectDeserializerV2
               reader.Read(); //goes to next
               continue;
             }
-            reader.Read(); //goes to prop vale
             object? convertedValue = ConvertJsonElement(reader, currentObjectCount, totalObjectCount, ct);
             dict[propName] = convertedValue;
+            reader.Read(); //goes to next
           }
           break;
       }
