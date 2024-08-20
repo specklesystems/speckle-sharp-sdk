@@ -51,7 +51,7 @@ public sealed class BaseObjectDeserializerV2
   /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public Base Deserialize(string rootObjectJson)
+  public async Task<Base> Deserialize(string rootObjectJson)
   {
     if (_isBusy)
     {
@@ -67,7 +67,7 @@ public sealed class BaseObjectDeserializerV2
       _currentCount = 0;
       _workerThreads = new DeserializationWorkerThreads(this, WorkerThreadCount);
       _workerThreads.Start();
-      Task<object?>? bgResult = _workerThreads?.TryStartTask(
+      object? bgResult = await _workerThreads.TryStartTask(
         WorkerThreadTaskType.Deserialize,
         rootObjectJson
       ); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
@@ -75,7 +75,7 @@ public sealed class BaseObjectDeserializerV2
       {
         throw new InvalidOperationException();
       }
-      return (Base)bgResult.Result.NotNull();
+      return (Base)bgResult.NotNull();
     }
     finally
     {

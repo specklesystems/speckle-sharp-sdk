@@ -19,10 +19,10 @@ public class SimpleRoundTripTests
   }
 
   [TestCaseSource(nameof(TestData))]
-  public void SimpleSerialization(Base testData)
+  public async Task SimpleSerialization(Base testData)
   {
     var result = Sdk.Api.Operations.Serialize(testData);
-    var test = Sdk.Api.Operations.Deserialize(result);
+    var test = await Sdk.Api.Operations.Deserialize(result);
 
     Assert.That(testData.GetId(), Is.EqualTo(test.GetId()));
   }

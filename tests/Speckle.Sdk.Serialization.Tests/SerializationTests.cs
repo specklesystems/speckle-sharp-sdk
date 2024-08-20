@@ -64,7 +64,7 @@ public class SerializationTests
       var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
       starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
 
-      var baseType = deserializer.Deserialize(objJson);
+      var baseType = await deserializer.Deserialize(objJson);
       baseType.id.ShouldBe(id);
 
       starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");

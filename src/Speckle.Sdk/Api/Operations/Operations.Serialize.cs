@@ -37,9 +37,9 @@ public static partial class Operations
   /// <exception cref="JsonReaderException "><paramref name="value"/> was not valid JSON</exception>
   /// <exception cref="SpeckleException"><paramref name="value"/> cannot be deserialised to type <see cref="Base"/></exception>
   /// <exception cref="Speckle.Sdk.Transports.TransportException"><paramref name="value"/> contains closure references (see Remarks)</exception>
-  public static Base Deserialize(string value, CancellationToken cancellationToken = default)
+  public static async Task<Base> Deserialize(string value, CancellationToken cancellationToken = default)
   {
     var deserializer = new BaseObjectDeserializerV2 { CancellationToken = cancellationToken };
-    return deserializer.Deserialize(value);
+    return await deserializer.Deserialize(value);
   }
 }

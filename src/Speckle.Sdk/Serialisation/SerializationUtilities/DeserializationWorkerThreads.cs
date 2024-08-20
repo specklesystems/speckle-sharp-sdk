@@ -83,7 +83,7 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
     }
   }
 
-  internal Task<object?>? TryStartTask(WorkerThreadTaskType taskType, string? objectJson)
+  internal Task<object?> TryStartTask(WorkerThreadTaskType taskType, string? objectJson)
   {
     bool canStartTask = false;
     lock (_lockFreeThreads)
@@ -97,7 +97,7 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
 
     if (!canStartTask)
     {
-      return null;
+      throw new InvalidOperationException("Cannot start task");
     }
 
     TaskCompletionSource<object?> tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
