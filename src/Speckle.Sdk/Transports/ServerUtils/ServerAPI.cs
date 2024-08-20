@@ -26,7 +26,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   private readonly HttpClient _client;
 
-  public ServerApi(Uri baseUri, string? authorizationToken, string blobStorageFolder, int timeoutSeconds = 60)
+  public ServerApi(Uri baseUri, string? authorizationToken, string blobStorageFolder, int timeoutSeconds = 120)
   {
     CancellationToken = CancellationToken.None;
 

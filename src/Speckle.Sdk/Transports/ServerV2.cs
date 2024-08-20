@@ -206,7 +206,7 @@ public sealed class ServerTransport : IServerTransport
     {
       if (IsInErrorState)
       {
-        throw new TransportException("Server transport is in an errored state", _exception);
+        throw new TransportException($"{TransportName} transport failed", _exception);
       }
 
       _sendBuffer.Add((id, serializedObject));
