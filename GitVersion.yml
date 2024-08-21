@@ -7,5 +7,7 @@ branches:
     tag: rc
   develop:
     tag: dev
+    increment: None
   pull-request:
     tag: pr
+    increment: None
