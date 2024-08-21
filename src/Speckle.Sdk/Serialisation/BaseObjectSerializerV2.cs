@@ -16,7 +16,7 @@ using Utilities = Speckle.Sdk.Models.Utilities;
 
 namespace Speckle.Sdk.Serialisation;
 
-public record SerializationResult(string Json, string? Id);
+public record SerializationResult(string Json, string? Id, object? Value);
 
 public class BaseObjectSerializerV2
 {
@@ -158,13 +158,10 @@ public class BaseObjectSerializerV2
         if (result is not null)
         {
           writer.WriteRawValue(result.Json);
+          return result.Value;
         }
-        else
-        {
           writer.WriteNull();
           return null;
-        }
-        break;
       case IDictionary d:
       {
         writer.WriteStartObject();
@@ -288,7 +285,7 @@ public class BaseObjectSerializerV2
     {
       StoreBlob(myBlob);
       UpdateParentClosures($"blob:{id}");
-      return new(json, id);
+      return new(json, id, baseObj);
     }
 
     if (inheritedDetachInfo.IsDetachable && WriteTransports.Count > 0)
@@ -298,7 +295,7 @@ public class BaseObjectSerializerV2
       ObjectReference objRef = new() { referencedId = id };
       using var writer2 = new StringWriter();
       using var jsonWriter2 = new JsonTextWriter(writer2);
-      SerializeProperty(objRef, jsonWriter2);
+      var newObj = SerializeProperty(objRef, jsonWriter2);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
 
@@ -314,9 +311,9 @@ public class BaseObjectSerializerV2
           closure = closure
         };
       }
-      return new(json2, null);
+      return new(json2, null, newObj);
     }
-    return new(json, id);
+    return new(json, id, baseObj);
   }
 
   private Dictionary<string, (object?, PropertyAttributeInfo)> ExtractAllProperties(Base baseObj)
