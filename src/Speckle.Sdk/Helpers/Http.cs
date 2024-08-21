@@ -4,7 +4,6 @@ using System.Net.Sockets;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
-using Polly.Retry;
 using Polly.Timeout;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
@@ -35,7 +34,6 @@ public static class Http
         {
           context.Remove("retryCount");
           context.Add("retryCount", retryAttempt);
-          // SpeckleLog.Logger.Debug(ex, "Retrying request to {url} {correlationid}");
         }
       );
 
@@ -153,15 +151,12 @@ public static class Http
     }
   }
 
-  public static HttpClient GetHttpProxyClient(
-    SpeckleHttpClientHandler? speckleHttpClientHandler = null,
-    int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
-  )
+  public static HttpClient GetHttpProxyClient(SpeckleHttpClientHandler? speckleHttpClientHandler = null)
   {
     IWebProxy proxy = WebRequest.GetSystemWebProxy();
     proxy.Credentials = CredentialCache.DefaultCredentials;
 
-    speckleHttpClientHandler ??= new SpeckleHttpClientHandler(new HttpClientHandler(), timeoutSeconds: timeoutSeconds);
+    speckleHttpClientHandler ??= new SpeckleHttpClientHandler(new HttpClientHandler(), HttpAsyncPolicy());
 
     var client = new HttpClient(speckleHttpClientHandler)
     {

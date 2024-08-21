@@ -33,15 +33,16 @@ public sealed class ServerApi : IDisposable, IServerApi
     BlobStorageFolder = blobStorageFolder;
 
     _client = Http.GetHttpProxyClient(
-      new SpeckleHttpClientHandler(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip }),
-      timeoutSeconds
+      new SpeckleHttpClientHandler(
+        new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
+        Http.HttpAsyncPolicy(timeoutSeconds: timeoutSeconds)
+      )
     );
     _client.BaseAddress = baseUri;
 
     Http.AddAuthHeader(_client, authorizationToken);
   }
 
-  private int RetriedCount { get; set; }
   public CancellationToken CancellationToken { get; set; }
   public bool CompressPayloads { get; set; } = true;
 

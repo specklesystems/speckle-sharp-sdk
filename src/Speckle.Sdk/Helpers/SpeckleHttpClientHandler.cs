@@ -7,18 +7,12 @@ namespace Speckle.Sdk.Helpers;
 
 public sealed class SpeckleHttpClientHandler : DelegatingHandler
 {
-  private readonly IEnumerable<TimeSpan> _delay;
-  private readonly int _timeoutSeconds;
+  private readonly IAsyncPolicy<HttpResponseMessage> _resiliencePolicy;
 
-  public SpeckleHttpClientHandler(
-    HttpMessageHandler innerhandler,
-    IEnumerable<TimeSpan>? delay = null,
-    int timeoutSeconds = Http.DEFAULT_TIMEOUT_SECONDS
-  )
-    : base(innerhandler)
+  public SpeckleHttpClientHandler(HttpMessageHandler innerHandler, IAsyncPolicy<HttpResponseMessage> resiliencePolicy)
+    : base(innerHandler)
   {
-    _delay = delay ?? Http.DefaultDelay();
-    _timeoutSeconds = timeoutSeconds;
+    _resiliencePolicy = resiliencePolicy;
   }
 
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
@@ -47,7 +41,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
 
       request.Headers.Add("x-request-id", context.CorrelationId.ToString());
 
-      var policyResult = await Http.HttpAsyncPolicy(_delay, _timeoutSeconds)
+      var policyResult = await _resiliencePolicy
         .ExecuteAndCaptureAsync(
           ctx =>
           {
