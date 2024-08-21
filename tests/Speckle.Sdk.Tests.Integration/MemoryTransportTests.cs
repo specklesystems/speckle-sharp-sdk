@@ -9,7 +9,8 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Tests.Integration;
 
 public class MemoryTransportTests
-{  private MemoryTransport _memoryTransport;
+{
+  private MemoryTransport _memoryTransport;
 
   [SetUp]
   public void Setup()
@@ -18,6 +19,7 @@ public class MemoryTransportTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
+
   [Test]
   public async Task SendAndReceiveObjectWithBlobs()
   {
@@ -51,5 +53,4 @@ public class MemoryTransportTests
     Assert.That(blobs[1].filePath, Contains.Substring(_memoryTransport.BlobStorageFolder));
     Assert.That(blobs[2].filePath, Contains.Substring(_memoryTransport.BlobStorageFolder));
   }
-
 }

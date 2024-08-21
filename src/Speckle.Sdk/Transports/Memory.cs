@@ -17,7 +17,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
   public MemoryTransport()
     : this(new Dictionary<string, string>()) { }
 
-  public MemoryTransport(IDictionary<string, string> objects,string? basePath = null, string? applicationName = null)
+  public MemoryTransport(IDictionary<string, string> objects, string? basePath = null, string? applicationName = null)
   {
     Objects = objects;
     _basePath = basePath ?? SpecklePathProvider.UserApplicationDataPath();
@@ -26,7 +26,6 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     var dir = Path.Combine(_basePath, _applicationName);
     try
     {
-
       Directory.CreateDirectory(dir); //ensure dir is there
     }
     catch (Exception ex)
@@ -55,10 +54,15 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 
   public int SavedObjectCount { get; private set; }
 
-  public Dictionary<string, object> TransportContext => new() { { "name", TransportName }, { "type", GetType().Name },
-    { "basePath", _basePath },
-    { "applicationName", _applicationName },
-    { "blobStorageFolder", BlobStorageFolder } };
+  public Dictionary<string, object> TransportContext =>
+    new()
+    {
+      { "name", TransportName },
+      { "type", GetType().Name },
+      { "basePath", _basePath },
+      { "applicationName", _applicationName },
+      { "blobStorageFolder", BlobStorageFolder }
+    };
 
   public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;
 
@@ -129,7 +133,9 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
   }
 
   public string BlobStorageFolder => SpecklePathProvider.BlobStoragePath(Path.Combine(_basePath, _applicationName));
-  public void SaveBlob(Blob obj)   {
+
+  public void SaveBlob(Blob obj)
+  {
     var blobPath = obj.originalPath;
     var targetPath = obj.GetLocalDestinationPath(BlobStorageFolder);
     File.Copy(blobPath, targetPath, true);
