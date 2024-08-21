@@ -375,8 +375,13 @@ public class BaseObjectSerializerV2
     if (closure.Count > 0)
     {
       writer.WritePropertyName("__closure");
-      writer.WriteNull();
-      //convertedBase["__closure"] = closure;
+      writer.WriteStartObject();
+      foreach (var c in closure)
+      {
+        writer.WritePropertyName(c.Key);
+        writer.WriteValue(c.Value);
+      }
+      writer.WriteEndObject();
     }
 
     writer.WriteEndObject();
