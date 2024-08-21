@@ -1,9 +1,9 @@
 using System.Diagnostics;
-using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.SerializationUtilities;
 using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Transports;
@@ -126,10 +126,10 @@ public sealed class ServerTransport : IServerTransport
     api.CancellationToken = CancellationToken;
 
     string? rootObjectJson = await api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
-    IList<string> allIds = ParseChildrenIds(rootObjectJson.NotNull());
+    var allIds = ClosureParser.GetChildrenIds(rootObjectJson.NotNull()).ToList();
 
-    List<string> childrenIds = allIds.Where(x => !x.Contains("blob:")).ToList();
-    List<string> blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x.Remove(0, 5)).ToList();
+    var childrenIds = allIds.Where(x => !x.Contains("blob:"));
+    var blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x.Remove(0, 5));
 
     onTotalChildrenCountKnown?.Invoke(allIds.Count);
 
@@ -138,7 +138,7 @@ public sealed class ServerTransport : IServerTransport
     //
 
     // Check which children are not already in the local transport
-    var childrenFoundMap = await targetTransport.HasObjects(childrenIds).ConfigureAwait(false);
+    var childrenFoundMap = await targetTransport.HasObjects(childrenIds.ToList()).ConfigureAwait(false);
     List<string> newChildrenIds = new(from objId in childrenFoundMap.Keys where !childrenFoundMap[objId] select objId);
 
     targetTransport.BeginWrite();
@@ -272,25 +272,6 @@ public sealed class ServerTransport : IServerTransport
   public override string ToString()
   {
     return $"Server Transport @{Account.serverInfo.url}";
-  }
-
-  private static IList<string> ParseChildrenIds(string json)
-  {
-    List<string> childrenIds = new();
-
-    JObject doc1 = JObject.Parse(json);
-    JToken? closures = doc1["__closure"];
-    if (closures == null)
-    {
-      return Array.Empty<string>();
-    }
-
-    foreach (JToken prop in closures)
-    {
-      childrenIds.Add(((JProperty)prop).Name);
-    }
-
-    return childrenIds;
   }
 
   private async void SendingThreadMain()
