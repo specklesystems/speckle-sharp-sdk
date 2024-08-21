@@ -1,11 +1,18 @@
 ﻿using NUnit.Framework;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 public class SimpleRoundTripTests
-{
+{  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DiningTable).Assembly);
+  }
+
   public static IEnumerable<Base> TestData()
   {
     yield return new DiningTable { ["@strangeVariable_NAme3"] = new TableLegFixture() };

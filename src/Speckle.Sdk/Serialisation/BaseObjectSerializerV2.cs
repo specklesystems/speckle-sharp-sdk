@@ -378,6 +378,7 @@ public class BaseObjectSerializerV2
     var id = baseObj is Blob blob ? blob.id : ComputeId(computeIdProperties);
     writer.WritePropertyName("id");
     writer.WriteValue(id);
+    baseObj.id = id;
 
     if (closure.Count > 0)
     {
