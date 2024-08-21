@@ -16,7 +16,7 @@ using Utilities = Speckle.Sdk.Models.Utilities;
 
 namespace Speckle.Sdk.Serialisation;
 
-public record SerializationResult(string Json, string Id);
+public record SerializationResult(string Json, string? Id);
 public class BaseObjectSerializerV2
 {
   private readonly Stopwatch _stopwatch = new();
@@ -88,7 +88,7 @@ public class BaseObjectSerializerV2
       try
       {
         var result = SerializeBase(baseObj, true).NotNull();
-        StoreObject(result.Id, result.Json);
+        StoreObject(result.Id.NotNull(), result.Json);
         return result.Json;
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
@@ -271,10 +271,10 @@ public class BaseObjectSerializerV2
       _parentClosures.Add(closure);
     }
 
-    using var writer2 = new StringWriter();
-    using var jsonWriter2 = new JsonTextWriter(writer2);
-    string id = SerializeBaseObject(baseObj, jsonWriter2, closure);
-    var json = writer2.ToString();
+    using var writer = new StringWriter();
+    using var jsonWriter = new JsonTextWriter(writer);
+    string id = SerializeBaseObject(baseObj, jsonWriter, closure);
+    var json = writer.ToString();
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
     {
@@ -295,7 +295,10 @@ public class BaseObjectSerializerV2
       StoreObject(id, json);
       
       ObjectReference objRef = new() { referencedId = id };
-      var result = SerializeBase(objRef);
+      using var writer2 = new StringWriter();
+      using var jsonWriter2 = new JsonTextWriter(writer2);
+       SerializeProperty(objRef, jsonWriter2);
+      var json2 = writer2.ToString();
       UpdateParentClosures(id);
       
       _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
@@ -310,7 +313,7 @@ public class BaseObjectSerializerV2
           closure = closure
         };
       }
-      return result;
+      return new(json2, null);
     }
     return new(json, id);
   }
