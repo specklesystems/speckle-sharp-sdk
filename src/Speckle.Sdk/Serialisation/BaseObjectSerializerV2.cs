@@ -16,6 +16,7 @@ using Utilities = Speckle.Sdk.Models.Utilities;
 
 namespace Speckle.Sdk.Serialisation;
 
+public record SerializationResult(string Json, string Id);
 public class BaseObjectSerializerV2
 {
   private readonly Stopwatch _stopwatch = new();
@@ -26,6 +27,7 @@ public class BaseObjectSerializerV2
   private readonly Action<ProgressArgs>? _onProgressAction;
 
   private readonly bool _trackDetachedChildren;
+  private int _serializedCount;
 
   /// <summary>
   /// Keeps track of all detached children created during serialisation that have an applicationId (provided this serializer instance has been told to track detached children).
@@ -83,24 +85,16 @@ public class BaseObjectSerializerV2
     {
       _stopwatch.Start();
       _isBusy = true;
-      IReadOnlyDictionary<string, object?> converted;
       try
       {
-        int count = 0;
-        var x = PreserializeBase(baseObj, ref count, true);
-        if (x is null)
-        {
-          throw new SpeckleSerializeException("Already serialized");
-        }
-        converted = x;
+        var result = SerializeBase(baseObj, true).NotNull();
+        StoreObject(result.Id, result.Json);
+        return result.Json;
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
         throw new SpeckleSerializeException($"Failed to extract (pre-serialize) properties from the {baseObj}", ex);
       }
-      string serialized = Dict2Json(converted);
-      StoreObject((string)converted["id"].NotNull(), serialized);
-      return serialized;
     }
     finally
     {
@@ -113,9 +107,9 @@ public class BaseObjectSerializerV2
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
-  public object? PreserializeObject(
+  public void SerializeProperty(
     object? obj,
-    ref int count,
+   JsonWriter writer,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
   )
@@ -124,12 +118,14 @@ public class BaseObjectSerializerV2
 
     if (obj == null)
     {
-      return null;
+      writer.WriteNull();
+      return;
     }
 
     if (obj.GetType().IsPrimitive || obj is string)
     {
-      return obj;
+      writer.WriteValue(obj);
+      return;
     }
 
     switch (obj)
@@ -154,100 +150,101 @@ public class BaseObjectSerializerV2
           }
         }
         UpdateParentClosures(r.referencedId);
-        return ret;
+        SerializeProperty(ret, writer);
+        break;
       }
-      // Complex enough to deserve its own function
       case Base b:
-        return PreserializeBase(b, ref count, computeClosures, inheritedDetachInfo);
+         var result = SerializeBase(b, computeClosures, inheritedDetachInfo);
+        writer.WriteRawValue(result.NotNull().Json);
+        break;
       case IDictionary d:
       {
-        Dictionary<string, object> ret = new(d.Count);
+        writer.WriteStartObject();
         foreach (DictionaryEntry kvp in d)
         {
-          object? converted = PreserializeObject(kvp.Value, ref count, inheritedDetachInfo: inheritedDetachInfo);
-          if (converted != null)
-          {
-            ret[kvp.Key.ToString()] = converted;
-          }
+          writer.WritePropertyName(kvp.Key.ToString());
+          SerializeProperty(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo);
         }
-        return ret;
+        writer.WriteEndObject();
+        break;
       }
       case IEnumerable e:
       {
         //TODO: handle IReadonlyDictionary
-        int preSize = (e is IList list) ? list.Count : 0;
-
-        List<object?> ret = new(preSize);
-
+        writer.WriteStartArray();
         foreach (object? element in e)
         {
-          ret.Add(PreserializeObject(element, ref count, inheritedDetachInfo: inheritedDetachInfo));
+          SerializeProperty(element, writer, inheritedDetachInfo: inheritedDetachInfo);
         }
-
-        return ret;
+        writer.WriteEndArray();
+        break;
       }
       case Enum:
-        return (int)obj;
+        writer.WriteValue((int)obj);
+        break;
       // Support for simple types
       case Guid g:
-        return g.ToString();
+        writer.WriteValue( g.ToString());
+        break;
       case Color c:
-        return c.ToArgb();
+        writer.WriteValue( c.ToArgb());
+        break;
       case DateTime t:
-        return t.ToString("o", CultureInfo.InvariantCulture);
+        writer.WriteValue(  t.ToString("o", CultureInfo.InvariantCulture));
+        break;
       case Matrix4x4 md:
-        return new List<double>
-        {
-          md.M11,
-          md.M12,
-          md.M13,
-          md.M14,
-          md.M21,
-          md.M22,
-          md.M23,
-          md.M24,
-          md.M31,
-          md.M32,
-          md.M33,
-          md.M34,
-          md.M41,
-          md.M42,
-          md.M43,
-          md.M44
-        };
+        writer.WriteStartArray();
+        
+        writer.WriteValue(   md.M11);
+          writer.WriteValue(  md.M12);
+            writer.WriteValue(   md.M13);
+              writer.WriteValue(   md.M14);
+                writer.WriteValue(    md.M21);
+                  writer.WriteValue(  md.M22);
+                    writer.WriteValue(  md.M23);
+                      writer.WriteValue(   md.M24);
+                        writer.WriteValue(   md.M31);
+                          writer.WriteValue(   md.M32);
+                            writer.WriteValue(   md.M33);
+                              writer.WriteValue(  md.M34);
+                                writer.WriteValue(   md.M41);
+                                  writer.WriteValue(   md.M42);
+                                    writer.WriteValue(   md.M43);
+                                      writer.WriteValue(   md.M44);
+      writer.WriteEndArray();
+        break;
       //BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
       case System.Numerics.Matrix4x4 ms:
         SpeckleLog.Logger.Warning(
           "This kept for backwards compatibility, no one should be using {this}",
           "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
         );
-        return new List<double>
-        {
-          ms.M11,
-          ms.M12,
-          ms.M13,
-          ms.M14,
-          ms.M21,
-          ms.M22,
-          ms.M23,
-          ms.M24,
-          ms.M31,
-          ms.M32,
-          ms.M33,
-          ms.M34,
-          ms.M41,
-          ms.M42,
-          ms.M43,
-          ms.M44
-        };
+        writer.WriteStartArray();
+        writer.WriteValue(   ms.M11);
+        writer.WriteValue(  ms.M12);
+        writer.WriteValue(   ms.M13);
+        writer.WriteValue(   ms.M14);
+        writer.WriteValue(    ms.M21);
+        writer.WriteValue(  ms.M22);
+        writer.WriteValue(  ms.M23);
+        writer.WriteValue(   ms.M24);
+        writer.WriteValue(   ms.M31);
+        writer.WriteValue(   ms.M32);
+        writer.WriteValue(   ms.M33);
+        writer.WriteValue(  ms.M34);
+        writer.WriteValue(   ms.M41);
+        writer.WriteValue(   ms.M42);
+        writer.WriteValue(   ms.M43);
+        writer.WriteValue(   ms.M44);
+        writer.WriteEndArray();
+        break;
       default:
         throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}");
     }
   }
 
-  private IReadOnlyDictionary<string, object?>? PreserializeBase(
+  private SerializationResult? SerializeBase(
     Base baseObj,
-    ref int count,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
   )
@@ -265,7 +262,10 @@ public class BaseObjectSerializerV2
       _parentClosures.Add(closure);
     }
 
-    IReadOnlyDictionary<string, object?> convertedBase = PreserializeBaseProperties(baseObj, ref count, closure);
+    using var writer2 = new StringWriter();
+    using var jsonWriter2 = new JsonTextWriter(writer2);
+    string id = SerializeBaseObject(baseObj, jsonWriter2, closure);
+    var json = writer2.ToString();
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
     {
@@ -277,19 +277,19 @@ public class BaseObjectSerializerV2
     if (baseObj is Blob myBlob)
     {
       StoreBlob(myBlob);
-      UpdateParentClosures($"blob:{convertedBase["id"]}");
-      return convertedBase;
+      UpdateParentClosures($"blob:{id}");
+      return new(json, id);
     }
 
     if (inheritedDetachInfo.IsDetachable && WriteTransports.Count > 0)
     {
-      var json = Dict2Json(convertedBase);
-      var id = (string)convertedBase["id"].NotNull();
       StoreObject(id, json);
+      
       ObjectReference objRef = new() { referencedId = id };
-      var objRefConverted = (IReadOnlyDictionary<string, object?>?)PreserializeObject(objRef, ref count);
+      var result = SerializeBase(objRef);
       UpdateParentClosures(id);
-      _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++count, null));
+      
+      _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
 
       // add to obj refs to return
       if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
@@ -301,10 +301,9 @@ public class BaseObjectSerializerV2
           closure = closure
         };
       }
-
-      return objRefConverted;
+      return result;
     }
-    return convertedBase;
+    return new(json, id);
   }
 
   private IReadOnlyDictionary<string, (object?, PropertyAttributeInfo)> ExtractAllProperties(Base baseObj)
@@ -347,47 +346,49 @@ public class BaseObjectSerializerV2
     return allProperties;
   }
 
-  private IReadOnlyDictionary<string, object?> PreserializeBaseProperties(
+  private string SerializeBaseObject(
     Base baseObj,
-    ref int count,
+    JsonWriter writer,
     IReadOnlyDictionary<string, int> closure
   )
   {
     var allProperties = ExtractAllProperties(baseObj);
-    Dictionary<string, object?> convertedBase = new(allProperties.Count + 2);
 
+    writer.WriteStartObject();
     // Convert all properties
     foreach (var prop in allProperties)
-    {
-      object? convertedValue = PreserializeBasePropertyValue(prop.Value.Item1, ref count, prop.Value.Item2);
-
-      if (
-        convertedValue == null
-        && prop.Value.Item2.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore }
+    {      if (
+        prop.Value.Item2.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore }
       )
       {
         continue;
       }
 
-      convertedBase[prop.Key] = convertedValue;
+      writer.WritePropertyName(prop.Key);
+      SerializeBasePropertyValue(prop.Value.Item1, writer, prop.Value.Item2);
     }
 
-    convertedBase["id"] = baseObj is Blob blob ? blob.id : ComputeId(convertedBase);
+    var id = baseObj is Blob blob ? blob.id : ComputeId(allProperties.ToDictionary(x => x.Key.ToString(), x => x.Value.Item1));
+    writer.WritePropertyName("id");
+    writer.WriteValue(id);
 
     if (closure.Count > 0)
     {
-      convertedBase["__closure"] = closure;
+      writer.WritePropertyName("__closure");
+      writer.WriteNull();
+      //convertedBase["__closure"] = closure;
     }
 
-    return convertedBase;
+    writer.WriteEndObject();
+    return id;
   }
 
-  private object? PreserializeBasePropertyValue(object? baseValue, ref int count, PropertyAttributeInfo detachInfo)
+  private void SerializeBasePropertyValue(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
   {
     // If there are no WriteTransports, keep everything attached.
     if (WriteTransports.Count == 0)
     {
-      return PreserializeObject(baseValue, ref count, inheritedDetachInfo: detachInfo);
+      SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
     }
 
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
@@ -410,14 +411,15 @@ public class BaseObjectSerializerV2
         chunks.Add(crtChunk);
       }
 
-      return PreserializeObject(
+      SerializeProperty(
         chunks,
-        ref count,
+        jsonWriter,
         inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)
       );
+      return;
     }
 
-    return PreserializeObject(baseValue, ref count, inheritedDetachInfo: detachInfo);
+    SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
   }
 
   private void UpdateParentClosures(string objectId)
@@ -440,16 +442,6 @@ public class BaseObjectSerializerV2
     string serialized = JsonConvert.SerializeObject(obj);
     string hash = Crypt.Sha256(serialized, length: Utilities.HASH_LENGTH);
     return hash;
-  }
-
-  private static string Dict2Json(IReadOnlyDictionary<string, object?>? obj)
-  {
-    if (obj is null)
-    {
-      return string.Empty;
-    }
-    string serialized = JsonConvert.SerializeObject(obj);
-    return serialized;
   }
 
   private void StoreObject(string objectId, string objectJson)
