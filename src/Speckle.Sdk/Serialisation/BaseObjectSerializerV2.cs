@@ -107,7 +107,7 @@ public class BaseObjectSerializerV2
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
-  public void SerializeProperty(
+  public object? SerializeProperty(
     object? obj,
    JsonWriter writer,
     bool computeClosures = false,
@@ -119,13 +119,13 @@ public class BaseObjectSerializerV2
     if (obj == null)
     {
       writer.WriteNull();
-      return;
+      return null;
     }
 
     if (obj.GetType().IsPrimitive || obj is string)
     {
       writer.WriteValue(obj);
-      return;
+      return obj;
     }
 
     switch (obj)
@@ -150,14 +150,18 @@ public class BaseObjectSerializerV2
           }
         }
         UpdateParentClosures(r.referencedId);
-        SerializeProperty(ret, writer);
-        break;
+        return SerializeProperty(ret, writer);
       }
       case Base b:
          var result = SerializeBase(b, computeClosures, inheritedDetachInfo);
          if (result is not null)
          {
            writer.WriteRawValue(result.Json);
+         }
+         else
+         {
+           writer.WriteNull();
+           return null;
          }
          break;
       case IDictionary d:
@@ -244,6 +248,8 @@ public class BaseObjectSerializerV2
       default:
         throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}");
     }
+
+    return obj;
   }
 
   private SerializationResult? SerializeBase(
@@ -309,7 +315,7 @@ public class BaseObjectSerializerV2
     return new(json, id);
   }
 
-  private IReadOnlyDictionary<string, (object?, PropertyAttributeInfo)> ExtractAllProperties(Base baseObj)
+  private Dictionary<string, (object?, PropertyAttributeInfo)> ExtractAllProperties(Base baseObj)
   {
     IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
     IReadOnlyCollection<string> dynamicProperties = baseObj.GetDynamicPropertyKeys();
@@ -356,6 +362,7 @@ public class BaseObjectSerializerV2
   )
   {
     var allProperties = ExtractAllProperties(baseObj);
+    var computeIdProperties = new Dictionary<string, object?>(allProperties.Count);
 
     writer.WriteStartObject();
     // Convert all properties
@@ -368,10 +375,11 @@ public class BaseObjectSerializerV2
       }
 
       writer.WritePropertyName(prop.Key);
-      SerializeBasePropertyValue(prop.Value.Item1, writer, prop.Value.Item2);
+      var valueToComputeIdFor = SerializeProperty(prop.Value.Item1, writer, prop.Value.Item2);
+      computeIdProperties[prop.Key] = valueToComputeIdFor;
     }
 
-    var id = baseObj is Blob blob ? blob.id : ComputeId(allProperties.ToDictionary(x => x.Key.ToString(), x => x.Value.Item1));
+    var id = baseObj is Blob blob ? blob.id : ComputeId(computeIdProperties);
     writer.WritePropertyName("id");
     writer.WriteValue(id);
 
@@ -391,13 +399,12 @@ public class BaseObjectSerializerV2
     return id;
   }
 
-  private void SerializeBasePropertyValue(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
+  private object?  SerializeProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
   {
     // If there are no WriteTransports, keep everything attached.
     if (WriteTransports.Count == 0)
     {
-      SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
-      return;
+      return SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
     }
 
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
@@ -420,15 +427,14 @@ public class BaseObjectSerializerV2
         chunks.Add(crtChunk);
       }
 
-      SerializeProperty(
+      return SerializeProperty(
         chunks,
         jsonWriter,
         inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)
       );
-      return;
     }
 
-    SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+    return SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
   }
 
   private void UpdateParentClosures(string objectId)
