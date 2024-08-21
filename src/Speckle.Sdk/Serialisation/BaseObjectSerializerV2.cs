@@ -155,8 +155,11 @@ public class BaseObjectSerializerV2
       }
       case Base b:
          var result = SerializeBase(b, computeClosures, inheritedDetachInfo);
-        writer.WriteRawValue(result.NotNull().Json);
-        break;
+         if (result is not null)
+         {
+           writer.WriteRawValue(result.Json);
+         }
+         break;
       case IDictionary d:
       {
         writer.WriteStartObject();
@@ -394,6 +397,7 @@ public class BaseObjectSerializerV2
     if (WriteTransports.Count == 0)
     {
       SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+      return;
     }
 
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
