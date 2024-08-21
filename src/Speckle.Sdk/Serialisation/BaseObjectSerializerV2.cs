@@ -17,6 +17,7 @@ using Utilities = Speckle.Sdk.Models.Utilities;
 namespace Speckle.Sdk.Serialisation;
 
 public record SerializationResult(string Json, string? Id);
+
 public class BaseObjectSerializerV2
 {
   private readonly Stopwatch _stopwatch = new();
@@ -109,7 +110,7 @@ public class BaseObjectSerializerV2
   // (primitives, lists and dictionaries with string keys)
   public object? SerializeProperty(
     object? obj,
-   JsonWriter writer,
+    JsonWriter writer,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
   )
@@ -153,17 +154,17 @@ public class BaseObjectSerializerV2
         return SerializeProperty(ret, writer);
       }
       case Base b:
-         var result = SerializeBase(b, computeClosures, inheritedDetachInfo);
-         if (result is not null)
-         {
-           writer.WriteRawValue(result.Json);
-         }
-         else
-         {
-           writer.WriteNull();
-           return null;
-         }
-         break;
+        var result = SerializeBase(b, computeClosures, inheritedDetachInfo);
+        if (result is not null)
+        {
+          writer.WriteRawValue(result.Json);
+        }
+        else
+        {
+          writer.WriteNull();
+          return null;
+        }
+        break;
       case IDictionary d:
       {
         writer.WriteStartObject();
@@ -191,34 +192,34 @@ public class BaseObjectSerializerV2
         break;
       // Support for simple types
       case Guid g:
-        writer.WriteValue( g.ToString());
+        writer.WriteValue(g.ToString());
         break;
       case Color c:
-        writer.WriteValue( c.ToArgb());
+        writer.WriteValue(c.ToArgb());
         break;
       case DateTime t:
-        writer.WriteValue(  t.ToString("o", CultureInfo.InvariantCulture));
+        writer.WriteValue(t.ToString("o", CultureInfo.InvariantCulture));
         break;
       case Matrix4x4 md:
         writer.WriteStartArray();
-        
-        writer.WriteValue(   md.M11);
-          writer.WriteValue(  md.M12);
-            writer.WriteValue(   md.M13);
-              writer.WriteValue(   md.M14);
-                writer.WriteValue(    md.M21);
-                  writer.WriteValue(  md.M22);
-                    writer.WriteValue(  md.M23);
-                      writer.WriteValue(   md.M24);
-                        writer.WriteValue(   md.M31);
-                          writer.WriteValue(   md.M32);
-                            writer.WriteValue(   md.M33);
-                              writer.WriteValue(  md.M34);
-                                writer.WriteValue(   md.M41);
-                                  writer.WriteValue(   md.M42);
-                                    writer.WriteValue(   md.M43);
-                                      writer.WriteValue(   md.M44);
-      writer.WriteEndArray();
+
+        writer.WriteValue(md.M11);
+        writer.WriteValue(md.M12);
+        writer.WriteValue(md.M13);
+        writer.WriteValue(md.M14);
+        writer.WriteValue(md.M21);
+        writer.WriteValue(md.M22);
+        writer.WriteValue(md.M23);
+        writer.WriteValue(md.M24);
+        writer.WriteValue(md.M31);
+        writer.WriteValue(md.M32);
+        writer.WriteValue(md.M33);
+        writer.WriteValue(md.M34);
+        writer.WriteValue(md.M41);
+        writer.WriteValue(md.M42);
+        writer.WriteValue(md.M43);
+        writer.WriteValue(md.M44);
+        writer.WriteEndArray();
         break;
       //BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
       case System.Numerics.Matrix4x4 ms:
@@ -227,22 +228,22 @@ public class BaseObjectSerializerV2
           "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
         );
         writer.WriteStartArray();
-        writer.WriteValue(   ms.M11);
-        writer.WriteValue(  ms.M12);
-        writer.WriteValue(   ms.M13);
-        writer.WriteValue(   ms.M14);
-        writer.WriteValue(    ms.M21);
-        writer.WriteValue(  ms.M22);
-        writer.WriteValue(  ms.M23);
-        writer.WriteValue(   ms.M24);
-        writer.WriteValue(   ms.M31);
-        writer.WriteValue(   ms.M32);
-        writer.WriteValue(   ms.M33);
-        writer.WriteValue(  ms.M34);
-        writer.WriteValue(   ms.M41);
-        writer.WriteValue(   ms.M42);
-        writer.WriteValue(   ms.M43);
-        writer.WriteValue(   ms.M44);
+        writer.WriteValue(ms.M11);
+        writer.WriteValue(ms.M12);
+        writer.WriteValue(ms.M13);
+        writer.WriteValue(ms.M14);
+        writer.WriteValue(ms.M21);
+        writer.WriteValue(ms.M22);
+        writer.WriteValue(ms.M23);
+        writer.WriteValue(ms.M24);
+        writer.WriteValue(ms.M31);
+        writer.WriteValue(ms.M32);
+        writer.WriteValue(ms.M33);
+        writer.WriteValue(ms.M34);
+        writer.WriteValue(ms.M41);
+        writer.WriteValue(ms.M42);
+        writer.WriteValue(ms.M43);
+        writer.WriteValue(ms.M44);
         writer.WriteEndArray();
         break;
       default:
@@ -293,14 +294,14 @@ public class BaseObjectSerializerV2
     if (inheritedDetachInfo.IsDetachable && WriteTransports.Count > 0)
     {
       StoreObject(id, json);
-      
+
       ObjectReference objRef = new() { referencedId = id };
       using var writer2 = new StringWriter();
       using var jsonWriter2 = new JsonTextWriter(writer2);
-       SerializeProperty(objRef, jsonWriter2);
+      SerializeProperty(objRef, jsonWriter2);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
-      
+
       _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
 
       // add to obj refs to return
@@ -358,11 +359,7 @@ public class BaseObjectSerializerV2
     return allProperties;
   }
 
-  private string SerializeBaseObject(
-    Base baseObj,
-    JsonWriter writer,
-    IReadOnlyDictionary<string, int> closure
-  )
+  private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
   {
     var allProperties = ExtractAllProperties(baseObj);
     var computeIdProperties = new Dictionary<string, object?>(allProperties.Count);
@@ -370,9 +367,8 @@ public class BaseObjectSerializerV2
     writer.WriteStartObject();
     // Convert all properties
     foreach (var prop in allProperties)
-    {      if (
-        prop.Value.Item2.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore }
-      )
+    {
+      if (prop.Value.Item2.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
       {
         continue;
       }
@@ -402,7 +398,7 @@ public class BaseObjectSerializerV2
     return id;
   }
 
-  private object?  SerializeProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
+  private object? SerializeProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
   {
     // If there are no WriteTransports, keep everything attached.
     if (WriteTransports.Count == 0)
