@@ -47,7 +47,7 @@ public class ServerTransportTests : IDisposable
 
   private void CleanData()
   {
-    _transport?.Dispose();
+    _transport.Dispose();
     if (Directory.Exists(_basePath))
     {
       Directory.Delete(_basePath, true);
@@ -139,7 +139,7 @@ public class ServerTransportTests : IDisposable
     myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 
     var memTransport = new MemoryTransport();
-    var sendResult = await Operations.Send(myObject, new ITransport[] { _transport, memTransport });
+    var sendResult = await Operations.Send(myObject, [_transport, memTransport]);
 
     memTransport = new MemoryTransport();
     Base receivedObject = await Operations.Receive(sendResult.rootObjId, _transport, memTransport);

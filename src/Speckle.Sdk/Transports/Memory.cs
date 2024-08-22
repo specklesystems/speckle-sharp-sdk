@@ -12,14 +12,21 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 {
   private readonly string _basePath;
   private readonly string _applicationName;
+  private readonly bool _blobStorageEnabled;
   public IDictionary<string, string> Objects { get; }
 
   public MemoryTransport()
     : this(new Dictionary<string, string>()) { }
 
-  public MemoryTransport(IDictionary<string, string> objects, string? basePath = null, string? applicationName = null)
+  public MemoryTransport(
+    IDictionary<string, string> objects,
+    bool blobStorageEnabled = false,
+    string? basePath = null,
+    string? applicationName = null
+  )
   {
     Objects = objects;
+    _blobStorageEnabled = blobStorageEnabled;
     _basePath = basePath ?? SpecklePathProvider.UserApplicationDataPath();
     _applicationName = applicationName ?? "Speckle";
     SpeckleLog.Logger.Debug("Creating a new Memory Transport");
@@ -37,7 +44,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 
   public object Clone()
   {
-    return new MemoryTransport(Objects, _basePath, _applicationName)
+    return new MemoryTransport(Objects, _blobStorageEnabled, _basePath, _applicationName)
     {
       TransportName = TransportName,
       OnProgressAction = OnProgressAction,
@@ -136,6 +143,10 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 
   public void SaveBlob(Blob obj)
   {
+    if (!_blobStorageEnabled)
+    {
+      return;
+    }
     var blobPath = obj.originalPath;
     var targetPath = obj.GetLocalDestinationPath(BlobStorageFolder);
     File.Copy(blobPath, targetPath, true);
