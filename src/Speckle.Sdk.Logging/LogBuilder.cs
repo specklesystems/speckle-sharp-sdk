@@ -167,7 +167,7 @@ public static class LogBuilder
     );
     if (otelEnabled)
     {
-      tracerProviderBuilder = tracerProviderBuilder.AddOtlpExporter(x => ProcessOptions(logConfiguration!, x));
+      tracerProviderBuilder = tracerProviderBuilder.AddOtlpExporter(x => ProcessOptions(logConfiguration ?? throw new NullReferenceException(), x));
     }
 
     if (consoleEnabled)
