@@ -23,7 +23,7 @@ namespace Speckle.Sdk.Models;
 [Serializable]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Serialized property names are camelCase by design")]
-public class Base : DynamicBase
+public class Base : DynamicBase, ISpeckleObject
 {
   private static readonly Regex s_chunkSyntax = Constants.ChunkPropertyNameRegex;
 

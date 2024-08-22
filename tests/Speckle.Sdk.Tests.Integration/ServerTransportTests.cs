@@ -43,10 +43,7 @@ public class ServerTransportTests : IDisposable
   }
 
   [TearDown]
-  public void TearDown()
-  {
-    CleanData();
-  }
+  public void TearDown() => CleanData();
 
   private void CleanData()
   {
@@ -55,6 +52,7 @@ public class ServerTransportTests : IDisposable
     {
       Directory.Delete(_basePath, true);
     }
+    Directory.CreateDirectory(_basePath);
   }
 
   [Test]
@@ -141,7 +139,7 @@ public class ServerTransportTests : IDisposable
     myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 
     var memTransport = new MemoryTransport();
-    var sendResult = await Operations.Send(myObject, new ITransport[] { _transport, memTransport });
+    var sendResult = await Operations.Send(myObject, [_transport, memTransport]);
 
     memTransport = new MemoryTransport();
     Base receivedObject = await Operations.Receive(sendResult.rootObjId, _transport, memTransport);

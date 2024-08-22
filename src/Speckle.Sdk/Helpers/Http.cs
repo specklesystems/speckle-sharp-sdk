@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
-using Polly.Retry;
+using Polly.Timeout;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
@@ -13,15 +13,21 @@ namespace Speckle.Sdk.Helpers;
 
 public static class Http
 {
+  public const int DEFAULT_TIMEOUT_SECONDS = 60;
+
   public static IEnumerable<TimeSpan> DefaultDelay()
   {
-    return Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(100), 5);
+    return Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(200), 5);
   }
 
-  public static AsyncRetryPolicy<HttpResponseMessage> HttpAsyncPolicy(IEnumerable<TimeSpan>? delay = null)
+  public static IAsyncPolicy<HttpResponseMessage> HttpAsyncPolicy(
+    IEnumerable<TimeSpan>? delay = null,
+    int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
+  )
   {
-    return HttpPolicyExtensions
+    var retryPolicy = HttpPolicyExtensions
       .HandleTransientHttpError()
+      .Or<TimeoutRejectedException>()
       .WaitAndRetryAsync(
         delay ?? DefaultDelay(),
         (ex, timeSpan, retryAttempt, context) =>
@@ -30,6 +36,10 @@ public static class Http
           context.Add("retryCount", retryAttempt);
         }
       );
+
+    var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(timeoutSeconds);
+
+    return Policy.WrapAsync(retryPolicy, timeoutPolicy);
   }
 
   /// <summary>
@@ -128,7 +138,7 @@ public static class Http
   {
     try
     {
-      using var httpClient = GetHttpProxyClient(null, null);
+      using var httpClient = GetHttpProxyClient();
       HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
       response.EnsureSuccessStatusCode();
       SpeckleLog.Logger.Information("Successfully pinged {uri}", uri);
@@ -141,17 +151,17 @@ public static class Http
     }
   }
 
-  public static HttpClient GetHttpProxyClient(
-    SpeckleHttpClientHandler? speckleHttpClientHandler = null,
-    TimeSpan? timeout = null
-  )
+  public static HttpClient GetHttpProxyClient(SpeckleHttpClientHandler? speckleHttpClientHandler = null)
   {
     IWebProxy proxy = WebRequest.GetSystemWebProxy();
     proxy.Credentials = CredentialCache.DefaultCredentials;
 
-    speckleHttpClientHandler ??= new SpeckleHttpClientHandler(new HttpClientHandler());
+    speckleHttpClientHandler ??= new SpeckleHttpClientHandler(new HttpClientHandler(), HttpAsyncPolicy());
 
-    var client = new HttpClient(speckleHttpClientHandler) { Timeout = timeout ?? TimeSpan.FromSeconds(100) };
+    var client = new HttpClient(speckleHttpClientHandler)
+    {
+      Timeout = Timeout.InfiniteTimeSpan //timeout is configured on the SpeckleHttpClientHandler through policy
+    };
     return client;
   }
 

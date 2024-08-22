@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using Microsoft.CSharp.RuntimeBinder;
 
-namespace Speckle.Sdk.Serialisation.SerializationUtilities;
+namespace Speckle.Sdk.Serialisation.Utilities;
 
 internal static class CallSiteCache
 {

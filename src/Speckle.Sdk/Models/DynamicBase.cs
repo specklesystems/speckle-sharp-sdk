@@ -18,8 +18,6 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
   public const DynamicBaseMemberType DEFAULT_INCLUDE_MEMBERS =
     DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic;
 
-  private static readonly Dictionary<Type, List<PropertyInfo>> s_propInfoCache = new();
-
   /// <summary>
   /// The actual property bag, where dynamically added props are stored.
   /// </summary>
@@ -43,8 +41,8 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         return value;
       }
 
-      PopulatePropInfoCache(GetType());
-      var prop = s_propInfoCache[GetType()].FirstOrDefault(p => p.Name == key);
+      var pinfos = TypeLoader.GetBaseProperties(GetType());
+      var prop = pinfos.FirstOrDefault(p => p.Name == key);
 
       if (prop == null)
       {
@@ -66,8 +64,8 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         return;
       }
 
-      PopulatePropInfoCache(GetType());
-      var prop = s_propInfoCache[GetType()].FirstOrDefault(p => p.Name == key);
+      var pinfos = TypeLoader.GetBaseProperties(GetType());
+      var prop = pinfos.FirstOrDefault(p => p.Name == key);
 
       if (prop == null)
       {
@@ -153,78 +151,54 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
     return true;
   }
 
-  private static void PopulatePropInfoCache(Type type)
-  {
-    if (!s_propInfoCache.ContainsKey(type))
-    {
-      s_propInfoCache[type] = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-        .Where(p => !p.IsDefined(typeof(IgnoreTheItemAttribute), true))
-        .ToList();
-    }
-  }
-
   /// <summary>
   /// Gets all of the property names on this class, dynamic or not.
   /// </summary> <returns></returns>
   [Obsolete("Use `GetMembers(DynamicBaseMemberType.All).Keys` instead")]
   public override IEnumerable<string> GetDynamicMemberNames()
   {
-    PopulatePropInfoCache(GetType());
-    var pinfos = s_propInfoCache[GetType()];
+    var pinfos = TypeLoader.GetBaseProperties(GetType());
 
-    var names = new List<string>(_properties.Count + pinfos.Count);
     foreach (var pinfo in pinfos)
     {
-      names.Add(pinfo.Name);
+      yield return pinfo.Name;
     }
 
     foreach (var kvp in _properties)
     {
-      names.Add(kvp.Key);
+      yield return kvp.Key;
     }
-
-    return names;
   }
 
   public static IEnumerable<string> GetInstanceMembersNames(Type t)
   {
-    PopulatePropInfoCache(t);
-    var pinfos = s_propInfoCache[t];
+    var pinfos = TypeLoader.GetBaseProperties(t);
 
-    var names = new List<string>(pinfos.Count);
     foreach (var pinfo in pinfos)
     {
-      names.Add(pinfo.Name);
+      yield return pinfo.Name;
     }
-
-    return names;
   }
 
   /// <summary>
   /// Gets the defined (typed) properties of this object.
   /// </summary>
   /// <returns></returns>
-  public IReadOnlyList<PropertyInfo> GetInstanceMembers()
+  public IEnumerable<PropertyInfo> GetInstanceMembers()
   {
     return GetInstanceMembers(GetType());
   }
 
-  public static IReadOnlyList<PropertyInfo> GetInstanceMembers(Type t)
+  public static IEnumerable<PropertyInfo> GetInstanceMembers(Type t)
   {
-    PopulatePropInfoCache(t);
-    var pinfos = s_propInfoCache[t];
-
-    var names = new List<PropertyInfo>(pinfos.Count);
-
+    var pinfos = TypeLoader.GetBaseProperties(t);
     foreach (var pinfo in pinfos)
     {
       if (pinfo.Name != "Item")
       {
-        names.Add(pinfo);
+        yield return pinfo;
       }
     }
-
-    return names;
   }
 
   /// <summary>
@@ -245,8 +219,8 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
 
     if (includeMembers.HasFlag(DynamicBaseMemberType.Instance))
     {
-      PopulatePropInfoCache(GetType());
-      var pinfos = s_propInfoCache[GetType()]
+      var pinfos = TypeLoader
+        .GetBaseProperties(GetType())
         .Where(x =>
         {
           var hasIgnored = x.IsDefined(typeof(SchemaIgnore), true);

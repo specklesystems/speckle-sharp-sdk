@@ -1,12 +1,11 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation.SerializationUtilities;
+using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
@@ -15,6 +14,7 @@ public sealed class BaseObjectDeserializerV2
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
+  private readonly object?[] _invokeNull = [null];
 
   // id -> Base if already deserialized or id -> Task<object> if was handled by a bg thread
   private ConcurrentDictionary<string, object?>? _deserializedObjects;
@@ -23,8 +23,6 @@ public sealed class BaseObjectDeserializerV2
   /// Property that describes the type of the object.
   /// </summary>
   private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
-
-  private DeserializationWorkerThreads? _workerThreads;
 
   public CancellationToken CancellationToken { get; set; }
 
@@ -61,22 +59,11 @@ public sealed class BaseObjectDeserializerV2
       _isBusy = true;
       _deserializedObjects = new(StringComparer.Ordinal);
       _currentCount = 0;
-      /*
-      _workerThreads = new DeserializationWorkerThreads(this, WorkerThreadCount);
-      _workerThreads.Start();
-      object? bgResult = await _workerThreads.TryStartTask(WorkerThreadTaskType.Deserialize, rootObjectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
-      if (bgResult is null)
-      {
-        throw new InvalidOperationException();
-      }
-      return (Base)bgResult.NotNull();*/
-      return Task.FromResult<Base>((Base)DeserializeJson(rootObjectJson).NotNull());
+      return Task.FromResult((Base)DeserializeJson(rootObjectJson).NotNull());
     }
     finally
     {
       _deserializedObjects = null;
-      _workerThreads?.Dispose();
-      _workerThreads = null;
       _isBusy = false;
     }
   }
@@ -225,7 +212,7 @@ public sealed class BaseObjectDeserializerV2
     string? objectJson = ReadTransport.GetObject(objId);
     if (objectJson is null)
     {
-      throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
+      return null;
     }
 
     deserialized = DeserializeJson(objectJson);
@@ -293,7 +280,7 @@ public sealed class BaseObjectDeserializerV2
     dictObj.Remove(TYPE_DISCRIMINATOR);
     dictObj.Remove("__closure");
 
-    var staticProperties = BaseObjectSerializationUtilities.GetTypeProperties(typeName);
+    var staticProperties = TypeCache.GetTypeProperties(typeName);
     foreach (var entry in dictObj)
     {
       if (staticProperties.TryGetValue(entry.Key, out PropertyInfo? value) && value.CanWrite)
@@ -301,7 +288,7 @@ public sealed class BaseObjectDeserializerV2
         if (entry.Value == null)
         {
           // Check for JsonProperty(NullValueHandling = NullValueHandling.Ignore) attribute
-          JsonPropertyAttribute attr = value.GetCustomAttribute<JsonPropertyAttribute>(true);
+          JsonPropertyAttribute? attr = TypeLoader.GetJsonPropertyAttribute(value);
           if (attr is { NullValueHandling: NullValueHandling.Ignore })
           {
             continue;
@@ -334,10 +321,10 @@ public sealed class BaseObjectDeserializerV2
       bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
     }
 
-    var onDeserializedCallbacks = BaseObjectSerializationUtilities.GetOnDeserializedCallbacks(typeName);
+    var onDeserializedCallbacks = TypeCache.GetOnDeserializedCallbacks(typeName);
     foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
     {
-      onDeserialized.Invoke(baseObj, new object?[] { null });
+      onDeserialized.Invoke(baseObj, _invokeNull);
     }
 
     return baseObj;

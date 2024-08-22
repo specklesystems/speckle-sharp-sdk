@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+using System.Reflection;
+using NUnit.Framework;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
@@ -6,11 +7,16 @@ using Speckle.Sdk.Tests.Unit.Host;
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 public class SimpleRoundTripTests
-{  [SetUp]
-  public void Setup()
+{
+  static SimpleRoundTripTests()
+  {
+    Reset();
+  }
+
+  private static void Reset()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DiningTable).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
 
   public static IEnumerable<Base> TestData()
@@ -24,6 +30,9 @@ public class SimpleRoundTripTests
     }
     yield return polyline;
   }
+
+  [SetUp]
+  public void Setup() => Reset();
 
   [TestCaseSource(nameof(TestData))]
   public async Task SimpleSerialization(Base testData)
