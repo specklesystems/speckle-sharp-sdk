@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.SerializationUtilities;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -141,10 +142,10 @@ public static partial class Operations
       return null;
     }
 
-    // Shoot out the total children count
-    var closures = TransportHelpers.GetClosureTable(objString);
+    // Shoot out the total children count, wasteful
+    var count = ClosureParser.GetClosures(objString).Count();
 
-    onTotalChildrenCountKnown?.Invoke(closures?.Count ?? 0);
+    onTotalChildrenCountKnown?.Invoke(count);
 
     return objString;
   }

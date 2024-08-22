@@ -5,7 +5,7 @@ namespace Speckle.Sdk.Serialisation.SerializationUtilities;
 
 public static class ClosureParser
 {
-  public static IEnumerable<string> GetChildrenIds(string rootObjectJson)
+  public static IEnumerable<(string, int)> GetClosures(string rootObjectJson)
   {
     try
     {
@@ -18,7 +18,7 @@ public static class ClosureParser
           case JsonToken.StartObject:
           {
             var closureList = ReadObject(reader);
-            return closureList.Select(x => x.Item1);
+            return closureList;
           }
           default:
             reader.Read();
@@ -30,8 +30,9 @@ public static class ClosureParser
     catch (Exception ex) when (!ex.IsFatal()) { }
     return [];
   }
+  public static IEnumerable<string> GetChildrenIds(string rootObjectJson) => GetClosures(rootObjectJson).Select(x => x.Item1);
 
-  private static IEnumerable<(string, int)>? ReadObject(JsonTextReader reader)
+  private static IEnumerable<(string, int)> ReadObject(JsonTextReader reader)
   {
     reader.Read();
     while (reader.TokenType != JsonToken.EndObject)
@@ -58,7 +59,7 @@ public static class ClosureParser
           break;
       }
     }
-    return null;
+    return [];
   }
 
   public static IReadOnlyList<(string, int)> GetClosures(JsonReader reader)
