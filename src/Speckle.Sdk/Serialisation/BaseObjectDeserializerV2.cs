@@ -225,7 +225,7 @@ public sealed class BaseObjectDeserializerV2
     string? objectJson = ReadTransport.GetObject(objId);
     if (objectJson is null)
     {
-      throw new TransportException($"Failed to fetch object id {objId} from {ReadTransport} ");
+      return null;
     }
 
     deserialized = DeserializeJson(objectJson);
