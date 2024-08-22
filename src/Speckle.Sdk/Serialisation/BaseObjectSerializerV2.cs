@@ -490,13 +490,13 @@ public class BaseObjectSerializerV2
   private IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> GetTypedPropertiesWithCache(Base baseObj)
   {
     Type type = baseObj.GetType();
-    IReadOnlyList<PropertyInfo> typedProperties = baseObj.GetInstanceMembers();
 
     if (_typedPropertiesCache.TryGetValue(type.FullName, out List<(PropertyInfo, PropertyAttributeInfo)>? cached))
     {
       return cached;
     }
 
+    var typedProperties = baseObj.GetInstanceMembers().ToList();
     List<(PropertyInfo, PropertyAttributeInfo)> ret = new(typedProperties.Count);
 
     foreach (PropertyInfo typedProperty in typedProperties)
