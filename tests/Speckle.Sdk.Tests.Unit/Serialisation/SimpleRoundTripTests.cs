@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using NUnit.Framework;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
