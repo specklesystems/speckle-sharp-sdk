@@ -49,7 +49,7 @@ public class Blob : Base
   {
     if ((_isHashExpired || _hash == null) && filePath != null)
     {
-      _hash = Utilities.HashFile(filePath);
+      _hash = HashUtility.HashFile(filePath);
     }
 
     return _hash;

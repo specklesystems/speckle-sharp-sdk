@@ -1,6 +1,6 @@
-using Speckle.Sdk.Logging;
+using Speckle.Sdk.Common;
 
-namespace Speckle.Sdk.Serialisation.SerializationUtilities;
+namespace Speckle.Sdk.Serialisation.Utilities;
 
 internal enum WorkerThreadTaskType
 {
@@ -48,7 +48,7 @@ internal sealed class DeserializationWorkerThreads : ParallelOperationExecutor<W
 
       try
       {
-        (string objectJson, long? current, long? total) = ((string, long?, long?))inputValue!;
+        (string objectJson, long? current, long? total) = ((string, long?, long?))inputValue.NotNull();
         var result = RunOperation(taskType, objectJson, current, total, _serializer);
         tcs.SetResult(result);
       }
