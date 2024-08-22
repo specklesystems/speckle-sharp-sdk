@@ -30,7 +30,9 @@ public static class ClosureParser
     catch (Exception ex) when (!ex.IsFatal()) { }
     return [];
   }
-  public static IEnumerable<string> GetChildrenIds(string rootObjectJson) => GetClosures(rootObjectJson).Select(x => x.Item1);
+
+  public static IEnumerable<string> GetChildrenIds(string rootObjectJson) =>
+    GetClosures(rootObjectJson).Select(x => x.Item1);
 
   private static IEnumerable<(string, int)> ReadObject(JsonTextReader reader)
   {

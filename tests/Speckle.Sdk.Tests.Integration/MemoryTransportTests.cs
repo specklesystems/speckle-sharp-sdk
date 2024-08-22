@@ -25,7 +25,7 @@ public class MemoryTransportTests
   {
     Directory.Delete(_memoryTransport.BlobStorageFolder, true);
     Directory.CreateDirectory(_memoryTransport.BlobStorageFolder);
-    
+
     var myObject = Fixtures.GenerateSimpleObject();
     myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 
