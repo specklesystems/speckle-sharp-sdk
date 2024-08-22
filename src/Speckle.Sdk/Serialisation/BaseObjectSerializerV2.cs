@@ -159,8 +159,8 @@ public class BaseObjectSerializerV2
           writer.WriteRawValue(result.Json);
           return result.Value;
         }
-          writer.WriteNull();
-          return null;
+        writer.WriteNull();
+        return null;
       case IDictionary d:
       {
         writer.WriteStartObject();
