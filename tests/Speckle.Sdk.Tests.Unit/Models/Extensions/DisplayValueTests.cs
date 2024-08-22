@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
 
@@ -9,6 +10,20 @@ public class DisplayValueTests
 {
   private const string PAYLOAD = "This is my payload";
   private static readonly Base s_displayValue = new() { applicationId = PAYLOAD };
+
+  static DisplayValueTests()
+  {
+    Reset();
+  }
+
+  private static void Reset()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly);
+  }
+
+  [SetUp]
+  public void Setup() => Reset();
 
   [TestCaseSource(nameof(TestCases))]
   public void TestTryGetDisplayValue_WithValue(Base testCase)
