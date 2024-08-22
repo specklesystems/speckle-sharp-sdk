@@ -47,7 +47,7 @@ public class ServerTransportTests : IDisposable
 
   private void CleanData()
   {
-    _transport.Dispose();
+    _transport?.Dispose();
     if (Directory.Exists(_basePath))
     {
       Directory.Delete(_basePath, true);
