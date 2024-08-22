@@ -41,10 +41,11 @@ public static class TransportHelpers
     {
       cancellationToken.ThrowIfCancellationRequested();
 
-      /*if (closure.StartsWith("blob:"))
+      //skips blobs because ServerTransport downloads things separately
+      if (closure.StartsWith("blob:"))
       {
         continue;
-      }*/
+      }
       var child = sourceTransport.GetObject(closure);
       if (child is null)
       {

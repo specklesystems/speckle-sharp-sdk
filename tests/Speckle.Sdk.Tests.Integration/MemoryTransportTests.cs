@@ -10,13 +10,12 @@ namespace Speckle.Sdk.Tests.Integration;
 
 public class MemoryTransportTests
 {
-  private MemoryTransport _memoryTransport;
+  private readonly MemoryTransport _memoryTransport = new(new ConcurrentDictionary<string, string>());
 
   [SetUp]
   public void Setup()
   {
     CleanData();
-    _memoryTransport = new MemoryTransport(new ConcurrentDictionary<string, string>());
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
