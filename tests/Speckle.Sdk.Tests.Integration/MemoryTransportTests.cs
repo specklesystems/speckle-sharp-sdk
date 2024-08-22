@@ -15,17 +15,27 @@ public class MemoryTransportTests
   [SetUp]
   public void Setup()
   {
+    CleanData();
     _memoryTransport = new MemoryTransport(new ConcurrentDictionary<string, string>());
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
 
+  [TearDown]
+  public void TearDown() => CleanData();
+
+  private void CleanData()
+  {
+    if (Directory.Exists(_memoryTransport.BlobStorageFolder))
+    {
+      Directory.Delete(_memoryTransport.BlobStorageFolder, true);
+    }
+    Directory.CreateDirectory(_memoryTransport.BlobStorageFolder);
+  }
+
   [Test]
   public async Task SendAndReceiveObjectWithBlobs()
   {
-    Directory.Delete(_memoryTransport.BlobStorageFolder, true);
-    Directory.CreateDirectory(_memoryTransport.BlobStorageFolder);
-
     var myObject = Fixtures.GenerateSimpleObject();
     myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 

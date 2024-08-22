@@ -43,10 +43,7 @@ public class ServerTransportTests : IDisposable
   }
 
   [TearDown]
-  public void TearDown()
-  {
-    CleanData();
-  }
+  public void TearDown() => CleanData();
 
   private void CleanData()
   {
@@ -55,6 +52,7 @@ public class ServerTransportTests : IDisposable
     {
       Directory.Delete(_basePath, true);
     }
+    Directory.CreateDirectory(_basePath);
   }
 
   [Test]
