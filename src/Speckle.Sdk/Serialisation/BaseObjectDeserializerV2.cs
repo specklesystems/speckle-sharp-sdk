@@ -301,7 +301,7 @@ public sealed class BaseObjectDeserializerV2
         if (entry.Value == null)
         {
           // Check for JsonProperty(NullValueHandling = NullValueHandling.Ignore) attribute
-          JsonPropertyAttribute attr = value.GetCustomAttribute<JsonPropertyAttribute>(true);
+          JsonPropertyAttribute? attr = TypeLoader.GetJsonPropertyAttribute(value);
           if (attr is { NullValueHandling: NullValueHandling.Ignore })
           {
             continue;
