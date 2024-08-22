@@ -1,6 +1,6 @@
-using Speckle.Sdk.Logging;
+using Speckle.Sdk.Common;
 
-namespace Speckle.Sdk.Serialisation.SerializationUtilities;
+namespace Speckle.Sdk.Serialisation.Utilities;
 
 internal enum WorkerThreadTaskType
 {
