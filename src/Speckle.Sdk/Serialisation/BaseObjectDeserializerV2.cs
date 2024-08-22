@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
@@ -25,8 +24,6 @@ public sealed class BaseObjectDeserializerV2
   /// </summary>
   private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
 
-  private DeserializationWorkerThreads? _workerThreads;
-
   public CancellationToken CancellationToken { get; set; }
 
   /// <summary>
@@ -41,8 +38,6 @@ public sealed class BaseObjectDeserializerV2
   private long _processedCount;
 
   public string? BlobStorageFolder { get; set; }
-  public TimeSpan Elapsed { get; private set; }
-  public int WorkerThreadCount { get; set; } = Math.Min(Environment.ProcessorCount, 6); //6 threads seems the sweet spot, see performance test project;
 
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
   /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="rootObjectJson"/></returns>
@@ -64,22 +59,11 @@ public sealed class BaseObjectDeserializerV2
       _isBusy = true;
       _deserializedObjects = new(StringComparer.Ordinal);
       _currentCount = 0;
-      /*
-      _workerThreads = new DeserializationWorkerThreads(this, WorkerThreadCount);
-      _workerThreads.Start();
-      object? bgResult = await _workerThreads.TryStartTask(WorkerThreadTaskType.Deserialize, rootObjectJson); //BUG: Because we don't guarantee this task will ever be awaited, this may lead to unobserved exceptions!
-      if (bgResult is null)
-      {
-        throw new InvalidOperationException();
-      }
-      return (Base)bgResult.NotNull();*/
-      return Task.FromResult<Base>((Base)DeserializeJson(rootObjectJson).NotNull());
+      return Task.FromResult((Base)DeserializeJson(rootObjectJson).NotNull());
     }
     finally
     {
       _deserializedObjects = null;
-      _workerThreads?.Dispose();
-      _workerThreads = null;
       _isBusy = false;
     }
   }

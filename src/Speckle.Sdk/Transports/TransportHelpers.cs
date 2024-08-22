@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Serialisation.SerializationUtilities;
+using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Transports;
 

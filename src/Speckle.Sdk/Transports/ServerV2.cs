@@ -3,7 +3,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation.SerializationUtilities;
+using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Transports;
