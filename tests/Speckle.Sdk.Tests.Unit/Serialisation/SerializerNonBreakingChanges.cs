@@ -210,7 +210,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     Random rand = new(seed);
     List<double> testCase = Enumerable.Range(0, 16).Select(_ => rand.NextDouble() * scalar).ToList();
 
-    ListDoubleValueMock from = new() { value = testCase, };
+    ListDoubleValueMock from = new() { value = testCase };
 
     //Test List -> Matrix
     var res = await from.SerializeAsTAndDeserialize<Matrix32ValueMock>();

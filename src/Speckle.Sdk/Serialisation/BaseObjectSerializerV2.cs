@@ -224,22 +224,22 @@ public class BaseObjectSerializerV2
           "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
         );
         writer.WriteStartArray();
-        writer.WriteValue(ms.M11);
-        writer.WriteValue(ms.M12);
-        writer.WriteValue(ms.M13);
-        writer.WriteValue(ms.M14);
-        writer.WriteValue(ms.M21);
-        writer.WriteValue(ms.M22);
-        writer.WriteValue(ms.M23);
-        writer.WriteValue(ms.M24);
-        writer.WriteValue(ms.M31);
-        writer.WriteValue(ms.M32);
-        writer.WriteValue(ms.M33);
-        writer.WriteValue(ms.M34);
-        writer.WriteValue(ms.M41);
-        writer.WriteValue(ms.M42);
-        writer.WriteValue(ms.M43);
-        writer.WriteValue(ms.M44);
+        writer.WriteValue((double)ms.M11);
+        writer.WriteValue((double)ms.M12);
+        writer.WriteValue((double)ms.M13);
+        writer.WriteValue((double)ms.M14);
+        writer.WriteValue((double)ms.M21);
+        writer.WriteValue((double)ms.M22);
+        writer.WriteValue((double)ms.M23);
+        writer.WriteValue((double)ms.M24);
+        writer.WriteValue((double)ms.M31);
+        writer.WriteValue((double)ms.M32);
+        writer.WriteValue((double)ms.M33);
+        writer.WriteValue((double)ms.M34);
+        writer.WriteValue((double)ms.M41);
+        writer.WriteValue((double)ms.M42);
+        writer.WriteValue((double)ms.M43);
+        writer.WriteValue((double)ms.M44);
         writer.WriteEndArray();
         break;
       default:
