@@ -6,6 +6,7 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
+using Microsoft.Extensions.DependencyInjection;
 
 //Replace this with a brand new model URL
 Uri modelUrl = new("https://testing1.speckle.dev/projects/cdedc63e6d/models/2d68380f1d");
@@ -66,5 +67,5 @@ static void SetupSpeckle()
       )
     )
   );
-  Setup.Initialize(config);
+  Setup.Initialize(new ServiceCollection(), config);
 }

@@ -10,7 +10,7 @@ using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk;
 
-public record Sdk(IDisposable? Logging, IServiceProvider ServiceProvider);
+public record SpeckleSdk(IDisposable? Logging, IServiceProvider ServiceProvider);
 /// <summary>
 ///  Anonymous telemetry to help us understand how to make a better Speckle.
 ///  This really helps us to deliver a better open source project and product!
@@ -58,7 +58,7 @@ public static class Setup
   /// </summary>
   internal static string Slug { get; private set; } = HostApplications.Other.Slug;
 
-  public static Sdk Initialize(IServiceCollection serviceCollection, SpeckleConfiguration configuration)
+  public static SpeckleSdk Initialize(IServiceCollection serviceCollection, SpeckleConfiguration configuration)
   {
     if (s_initialized)
     {
