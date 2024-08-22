@@ -1,18 +1,34 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.DependencyInjection;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk;
 
+public record Sdk(IDisposable? Logging, IServiceProvider ServiceProvider);
 /// <summary>
 ///  Anonymous telemetry to help us understand how to make a better Speckle.
 ///  This really helps us to deliver a better open source project and product!
 /// </summary>
 public static class Setup
 {
+
+  public static IServiceProvider CreateServiceProvider(IServiceCollection serviceCollection) =>
+    new SpeckleServiceProvider(serviceCollection.Select(x => new SpeckleServiceDescriptor(GetServiceLifetime(x.Lifetime), x.ServiceType, x.ImplementationType, x.ImplementationInstance, x.ImplementationFactory)));
+  
+  private static SpeckleServiceLifetime GetServiceLifetime(ServiceLifetime serviceLifetime) =>
+    serviceLifetime switch
+    {
+      ServiceLifetime.Singleton => SpeckleServiceLifetime.Singleton,
+      ServiceLifetime.Scoped => SpeckleServiceLifetime.Scoped,
+      ServiceLifetime.Transient => SpeckleServiceLifetime.Transient,
+      _ => throw new ArgumentOutOfRangeException(nameof(serviceLifetime), serviceLifetime, null)
+    };
   public static Mutex Mutex { get; set; }
 
   private static bool s_initialized;
@@ -42,7 +58,7 @@ public static class Setup
   /// </summary>
   internal static string Slug { get; private set; } = HostApplications.Other.Slug;
 
-  public static IDisposable? Initialize(SpeckleConfiguration configuration)
+  public static Sdk Initialize(IServiceCollection serviceCollection, SpeckleConfiguration configuration)
   {
     if (s_initialized)
     {
@@ -63,13 +79,15 @@ public static class Setup
       Analytics.AddConnectorToProfile(account.GetHashedEmail(), Application);
       Analytics.IdentifyProfile(account.GetHashedEmail(), Application);
     }
-    return LogBuilder.Initialize(
+    var logDisposable = LogBuilder.Initialize(
       GetUserIdFromDefaultAccount(),
       ApplicationVersion,
       Slug,
       configuration.Logging,
       configuration.Tracing
     );
+    serviceCollection.AddSdk();
+    return new (logDisposable, CreateServiceProvider(serviceCollection));
   }
 
   private static string GetUserIdFromDefaultAccount()

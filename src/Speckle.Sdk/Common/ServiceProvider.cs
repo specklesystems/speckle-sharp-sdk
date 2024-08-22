@@ -1,6 +1,8 @@
-﻿namespace Speckle.Sdk.Common;
+﻿using Speckle.Sdk.DependencyInjection;
 
-public class ServiceProvider
+namespace Speckle.Sdk.Common;
+
+public class ServiceProvider(SpeckleServiceProvider speckleServiceProvider) : IServiceProvider
 {
-  
+  public object GetService(Type serviceType) => speckleServiceProvider.GetService(serviceType);
 }

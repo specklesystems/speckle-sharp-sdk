@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
+    <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ILRepack.FullAuto">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" PrivateAssets="all"/>
+  </ItemGroup>
+</Project>
