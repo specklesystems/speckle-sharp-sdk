@@ -23,8 +23,11 @@ public class MemoryTransportTests
   [Test]
   public async Task SendAndReceiveObjectWithBlobs()
   {
+    Directory.Delete(_memoryTransport.BlobStorageFolder, true);
+    Directory.CreateDirectory(_memoryTransport.BlobStorageFolder);
+    
     var myObject = Fixtures.GenerateSimpleObject();
-    myObject["@blobs"] = Fixtures.GenerateThreeBlobs();
+    myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 
     var sendResult = await Operations.Send(myObject, _memoryTransport, false);
 
