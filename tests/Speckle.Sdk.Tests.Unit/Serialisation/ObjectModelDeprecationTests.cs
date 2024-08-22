@@ -3,13 +3,12 @@ using Shouldly;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Deprecated;
-using Speckle.Sdk.Serialisation.SerializationUtilities;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation
 {
   [TestFixture]
-  [TestOf(typeof(BaseObjectSerializationUtilities))]
-  public class ObjectModelDeprecationTests
+  [TestOf(typeof(TypeLoader))]
+  public class TypeLoaderTests
   {
     [SetUp]
     public void Setup()
