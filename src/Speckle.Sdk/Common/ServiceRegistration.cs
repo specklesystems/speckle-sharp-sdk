@@ -9,7 +9,7 @@ public static class ServiceRegistration
   public static IServiceCollection AddSdk(this IServiceCollection serviceCollection)
   {
     serviceCollection.AddSingleton<ILoggerFactory>(new SpeckleLoggerFactory());
-    serviceCollection.AddTransient(typeof(Logger<>), typeof(ILogger<>));
+    serviceCollection.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
     return serviceCollection;
   }
 }

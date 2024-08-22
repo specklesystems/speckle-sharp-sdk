@@ -5,7 +5,6 @@
   </PropertyGroup>
   <PropertyGroup>
     <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
-    <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
   </PropertyGroup>
 
   <ItemGroup>

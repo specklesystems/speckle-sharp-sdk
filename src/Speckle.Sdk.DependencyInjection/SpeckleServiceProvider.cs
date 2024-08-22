@@ -1,11 +1,18 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Speckle.InterfaceGenerator;
 
 namespace Speckle.Sdk.DependencyInjection;
 
-public class SpeckleServiceProvider : IServiceProvider
+[GenerateAutoInterface]
+public class SpeckleServiceProvider : IServiceProvider, ISpeckleServiceProvider
 {
   private readonly IServiceProvider _serviceProvider;
+  
+  internal SpeckleServiceProvider(IServiceProvider serviceProvider)
+  {
+    _serviceProvider = serviceProvider;
+  }
 
   public SpeckleServiceProvider(IEnumerable<SpeckleServiceDescriptor> serviceCollection)
   {
@@ -15,6 +22,7 @@ public class SpeckleServiceProvider : IServiceProvider
       services.Add(descriptor);
     }
 
+    services.AddSingleton<ISpeckleServiceProvider>(x => (ISpeckleServiceProvider)x);
     _serviceProvider = services.BuildServiceProvider();
   }
 
@@ -31,7 +39,7 @@ public class SpeckleServiceProvider : IServiceProvider
     }
     if (speckleServiceDescriptor.ImplementationFactory is not null)
     {
-      return new ServiceDescriptor(speckleServiceDescriptor.ServiceType, null, speckleServiceDescriptor.ImplementationFactory);
+      return new ServiceDescriptor(speckleServiceDescriptor.ServiceType, speckleServiceDescriptor.ImplementationFactory, lifetime);
     }
     throw new ArgumentOutOfRangeException(nameof(speckleServiceDescriptor), speckleServiceDescriptor, null);
   }
@@ -46,4 +54,14 @@ public class SpeckleServiceProvider : IServiceProvider
     };
 
   public object GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
+  
+  public ISpeckleScope BeginScope() => new SpeckleScope(_serviceProvider.CreateScope());
+
+  [AutoInterfaceIgnore]
+  public T GetRequiredService<T>() where T : class  => _serviceProvider.GetRequiredService<T>();
+}
+
+public partial interface ISpeckleServiceProvider
+{
+  T GetRequiredService<T>() where T : class;
 }
