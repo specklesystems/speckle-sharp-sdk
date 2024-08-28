@@ -41,7 +41,6 @@
       <!-- Naming things is hard enough -->
       CA1710;CA1711;CA1724;CA1716;CA1720;CA1724;
       <!-- Aspirational -->
-      IDE1006;
       CA1502;
       $(NoWarn)
     </NoWarn>
