@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Net.WebSockets;
 using System.Reflection;
@@ -16,6 +16,7 @@ using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Api;
 
+[SuppressMessage("Maintainability", "CA1506:Avoid excessive class coupling", Justification = "Class needs refactor")]
 public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
 {
   public ProjectResource Project { get; }
@@ -27,11 +28,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   public CommentResource Comment { get; }
   public SubscriptionResource Subscription { get; }
 
-  public string ServerUrl => Account.serverInfo.url;
-
-  public string ApiToken => Account.token;
-
-  public System.Version? ServerVersion { get; private set; }
+  public Uri ServerUrl => new(Account.serverInfo.url);
 
   [JsonIgnore]
   public Account Account { get; }
@@ -65,16 +62,6 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     try
     {
       Subscription.Dispose();
-      UserStreamAddedSubscription?.Dispose();
-      UserStreamRemovedSubscription?.Dispose();
-      StreamUpdatedSubscription?.Dispose();
-      BranchCreatedSubscription?.Dispose();
-      BranchUpdatedSubscription?.Dispose();
-      BranchDeletedSubscription?.Dispose();
-      CommitCreatedSubscription?.Dispose();
-      CommitUpdatedSubscription?.Dispose();
-      CommitDeletedSubscription?.Dispose();
-      CommentActivitySubscription?.Dispose();
       GQLClient.Dispose();
     }
     catch (Exception ex) when (!ex.IsFatal()) { }

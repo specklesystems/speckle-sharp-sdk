@@ -1,5 +1,4 @@
 using GraphQL;
-using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Api;
 

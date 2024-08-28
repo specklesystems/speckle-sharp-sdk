@@ -1,5 +1,4 @@
 using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
@@ -39,7 +38,7 @@ public static partial class Operations
   /// <exception cref="Speckle.Sdk.Transports.TransportException"><paramref name="value"/> contains closure references (see Remarks)</exception>
   public static Base Deserialize(string value, CancellationToken cancellationToken = default)
   {
-    var deserializer = new BaseObjectDeserializerV2 { CancellationToken = cancellationToken };
+    using var deserializer = new BaseObjectDeserializerV2 { CancellationToken = cancellationToken };
     return deserializer.Deserialize(value);
   }
 }

@@ -1,13 +1,14 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using System.Web;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
-using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Credentials;
 
+[SuppressMessage("Design", "CA1054:URI-like parameters should not be strings", Justification = "Class needs re-write")]
+[SuppressMessage("Usage", "CA2234:Pass system uri objects instead of strings", Justification = "Class needs re-write")]
 public class StreamWrapper
 {
   private Account? _account;
@@ -212,7 +213,7 @@ public class StreamWrapper
       switch (uri.Segments.Length)
       {
         case 3: // ie http://speckle.server/streams/8fecc9aa6d
-          if (uri.Segments[1].ToLowerInvariant() != "streams/")
+          if (!uri.Segments[1].Equals("streams/", StringComparison.InvariantCultureIgnoreCase))
           {
             throw new SpeckleException($"Cannot parse {uri} into a stream wrapper class.");
           }
@@ -223,7 +224,7 @@ public class StreamWrapper
 
           break;
         case 4: // ie https://speckle.server/streams/0c6ad366c4/globals/
-          if (uri.Segments[3].ToLowerInvariant().StartsWith("globals"))
+          if (uri.Segments[3].StartsWith("globals", StringComparison.InvariantCultureIgnoreCase))
           {
             StreamId = uri.Segments[2].Replace("/", "");
             BranchName = Uri.UnescapeDataString(uri.Segments[3].Replace("/", ""));

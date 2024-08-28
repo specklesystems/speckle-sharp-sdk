@@ -55,7 +55,7 @@ public static partial class Operations
     }
 
     // Setup Serializer
-    BaseObjectDeserializerV2 serializerV2 =
+    using BaseObjectDeserializerV2 serializerV2 =
       new()
       {
         ReadTransport = localTransport,

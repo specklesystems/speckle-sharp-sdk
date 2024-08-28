@@ -18,7 +18,7 @@ public static class ClosureParser
           case JsonToken.StartObject:
           {
             var closureList = ReadObject(reader);
-            if (closureList?.Any() ?? false)
+            if (closureList is not null && closureList.Count != 0)
             {
               closureList.Sort((a, b) => b.Item2.CompareTo(a.Item2));
               return closureList;

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Transports;

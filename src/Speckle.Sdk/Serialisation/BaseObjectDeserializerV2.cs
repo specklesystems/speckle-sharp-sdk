@@ -11,7 +11,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
-public sealed class BaseObjectDeserializerV2
+public sealed class BaseObjectDeserializerV2 : IDisposable
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
@@ -366,4 +366,6 @@ public sealed class BaseObjectDeserializerV2
 
     return baseObj;
   }
+
+  public void Dispose() => _workerThreads?.Dispose();
 }

@@ -51,7 +51,7 @@ public class SerializationTests
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var closure = await ReadAsObjects(fullName);
-    var deserializer = new BaseObjectDeserializerV2
+    using var deserializer = new BaseObjectDeserializerV2
     {
       ReadTransport = new TestTransport(closure),
       CancellationToken = default
