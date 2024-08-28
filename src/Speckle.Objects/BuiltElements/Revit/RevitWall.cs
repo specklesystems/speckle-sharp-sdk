@@ -145,13 +145,14 @@ public class RevitFaceWall : Wall
   {
     if (surface.Surfaces.Count == 0)
     {
-      throw new Exception("Cannot create a RevitWall with an empty BREP");
+      throw new ArgumentException("Cannot create a RevitWall with an empty BREP", nameof(surface));
     }
 
     if (surface.Surfaces.Count > 1)
     {
-      throw new Exception(
-        "The provided brep has more than 1 surface. Please deconstruct/explode it to create multiple instances"
+      throw new ArgumentException(
+        "The provided brep has more than 1 surface. Please deconstruct/explode it to create multiple instances",
+        nameof(surface)
       );
     }
 

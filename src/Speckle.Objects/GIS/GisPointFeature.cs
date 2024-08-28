@@ -12,8 +12,8 @@ public class GisPointFeature : Base, IGisFeature, IDisplayValue<List<Point>>
   [JsonIgnore]
   public required List<Point> geometry
   {
-    get { return displayValue; }
-    set { displayValue = value; }
+    get => displayValue;
+    set => displayValue = value;
   }
 
   [DetachProperty]
