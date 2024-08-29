@@ -1,66 +1,32 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using Objects.Other;
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Other;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// Represents a "Boundary Representation" Solid
 /// </summary>
+[SpeckleType("Objects.Geometry.Brep")]
 public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<Brep>, IDisplayValue<List<Mesh>>
 {
-  /// <summary>
-  /// Initializes a new instance of <see cref="Brep"/> class.
-  /// </summary>
-  public Brep()
-  {
-    Surfaces = new List<Surface>();
-    Curve2D = new List<ICurve>();
-    Curve3D = new List<ICurve>();
-
-    Vertices = new List<Point>();
-    Edges = new List<BrepEdge>();
-    Loops = new List<BrepLoop>();
-    Trims = new List<BrepTrim>();
-    Faces = new List<BrepFace>();
-
-    IsClosed = false;
-    Orientation = BrepOrientation.None;
-  }
-
-  public Brep(string provenance, Mesh displayValue, string units = Units.Meters, string? applicationId = null)
-    : this(provenance, new List<Mesh> { displayValue }, units, applicationId) { }
-
-  public Brep(string provenance, List<Mesh> displayValues, string units = Units.Meters, string? applicationId = null)
-    : this()
-  {
-    this.provenance = provenance;
-    displayValue = displayValues;
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  public string provenance { get; set; }
-
   /// <summary>
   /// The unit's this object's coordinates are in.
   /// </summary>
   /// <remarks>
-  /// This should be one of <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </remarks>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <summary>
   /// Gets or sets the list of surfaces in this <see cref="Brep"/> instance.
   /// </summary>
   [JsonIgnore]
-  public List<Surface> Surfaces { get; set; }
+  public required List<Surface> Surfaces { get; set; }
 
   /// <summary>
   /// Gets or sets the flat list of numbers representing the <see cref="Brep"/>'s surfaces.
@@ -71,14 +37,10 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
     get
     {
       var list = new List<double>();
-      if (Surfaces != null)
+      foreach (var srf in Surfaces)
       {
-        foreach (var srf in Surfaces)
-        {
-          list.AddRange(srf.ToList());
-        }
+        list.AddRange(srf.ToList());
       }
-
       return list;
     }
     set
@@ -107,7 +69,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// Gets or sets the list of 3-dimensional curves in this <see cref="Brep"/> instance.
   /// </summary>
   [JsonIgnore]
-  public List<ICurve> Curve3D { get; set; }
+  public required List<ICurve> Curve3D { get; set; }
 
   /// <summary>
   /// Gets or sets the flat list of numbers representing the <see cref="Brep"/>'s 3D curves.
@@ -132,7 +94,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// Gets or sets the list of 2-dimensional UV curves in this <see cref="Brep"/> instance.
   /// </summary>
   [JsonIgnore]
-  public List<ICurve> Curve2D { get; set; }
+  public required List<ICurve> Curve2D { get; set; }
 
   /// <summary>
   /// Gets or sets the flat list of numbers representing the <see cref="Brep"/>'s 2D curves.
@@ -157,7 +119,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// Gets or sets the list of vertices in this <see cref="Brep"/> instance.
   /// </summary>
   [JsonIgnore]
-  public List<Point> Vertices { get; set; }
+  public required List<Point> Vertices { get; set; }
 
   /// <summary>
   /// Gets or sets the flat list of numbers representing the <see cref="Brep"/>'s vertices.
@@ -170,7 +132,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   {
     get
     {
-      var list = new List<double>();
+      var list = new List<double>((Vertices.Count * 3) + 1);
       list.Add(Units.GetEncodingFromUnit(units));
       foreach (var vertex in Vertices)
       {
@@ -184,6 +146,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       if (value != null)
       {
         var units = value.Count % 3 == 0 ? Units.None : Units.GetUnitFromEncoding(value[0]);
+        Vertices = new(value.Count / 3);
         for (int i = value.Count % 3 == 0 ? 0 : 1; i < value.Count; i += 3)
         {
           Vertices.Add(new Point(value[i], value[i + 1], value[i + 2], units));
@@ -196,7 +159,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// Gets or sets the list of edges in this <see cref="Brep"/> instance.
   /// </summary>
   [JsonIgnore]
-  public List<BrepEdge> Edges { get; set; }
+  public required List<BrepEdge> Edges { get; set; }
 
   /// <summary>
   /// Gets or sets the flat list of numbers representing the <see cref="Brep"/>'s edges.
@@ -216,8 +179,8 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
           ints.Add(e.StartIndex);
           ints.Add(e.EndIndex);
           ints.Add(Convert.ToInt32(e.ProxyCurveIsReversed));
-          ints.Add(e.Domain.start ?? 0);
-          ints.Add(e.Domain.end ?? 1);
+          ints.Add(e.Domain.start);
+          ints.Add(e.Domain.end);
           ints.AddRange(e.TrimIndices.Select(Convert.ToDouble).Cast<double?>());
           return ints.Prepend(ints.Count);
         })
@@ -243,11 +206,23 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
         var domainStart = loopValues[4];
         var domainEnd = loopValues[5];
         Interval domain =
-          domainStart.HasValue && domainEnd.HasValue ? new(domainStart.Value, domainEnd.Value) : new(0, 1);
+          domainStart.HasValue && domainEnd.HasValue
+            ? new() { start = domainStart.Value, end = domainEnd.Value }
+            : Interval.UnitInterval;
 
         var trimIndices = loopValues.GetRange(6, loopValues.Count - 6).Select(d => Convert.ToInt32(d)).ToArray();
 
-        var edge = new BrepEdge(this, curve3dIndex, trimIndices, startIndex, endIndex, proxyReversed, domain);
+        var edge = new BrepEdge
+        {
+          Brep = this,
+          Curve3dIndex = curve3dIndex,
+          TrimIndices = trimIndices,
+          StartIndex = startIndex,
+          EndIndex = endIndex,
+          ProxyCurveIsReversed = proxyReversed,
+          Domain = domain
+        };
+
         Edges.Add(edge);
         i += n + 1;
       }
@@ -258,7 +233,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// Gets or sets the list of closed UV loops in this <see cref="Brep"/> instance.
   /// </summary>
   [JsonIgnore]
-  public List<BrepLoop> Loops { get; set; }
+  public required List<BrepLoop> Loops { get; set; }
 
   /// <summary>
   /// Gets or sets the flat list of numbers representing the <see cref="Brep"/>'s loops.
@@ -297,7 +272,13 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
         var faceIndex = loopValues[0];
         var type = (BrepLoopType)loopValues[1];
         var trimIndices = loopValues.GetRange(2, loopValues.Count - 2);
-        var loop = new BrepLoop(this, faceIndex, trimIndices, type);
+        var loop = new BrepLoop
+        {
+          Brep = this,
+          FaceIndex = faceIndex,
+          TrimIndices = trimIndices,
+          Type = type
+        };
         Loops.Add(loop);
         i += n + 1;
       }
@@ -308,7 +289,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// Gets or sets the list of UV trim segments for each surface in this <see cref="Brep"/> instance.
   /// </summary>
   [JsonIgnore]
-  public List<BrepTrim> Trims { get; set; }
+  public required List<BrepTrim> Trims { get; set; }
 
   /// <summary>
   /// Gets or sets the flat list of numbers representing the <see cref="Brep"/>'s trims.
@@ -321,7 +302,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   {
     get
     {
-      List<int> list = new();
+      List<int> list = new(Trims.Count * TRIMS_ENCODING_LENGTH);
       foreach (var trim in Trims)
       {
         list.Add(trim.EdgeIndex);
@@ -344,11 +325,12 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
         return;
       }
 
-      var list = new List<BrepTrim>();
-      for (int i = 0; i < value.Count; i += 9)
+      var list = new List<BrepTrim>(value.Count / TRIMS_ENCODING_LENGTH);
+      for (int i = 0; i < value.Count; i += TRIMS_ENCODING_LENGTH)
       {
         var trim = new BrepTrim
         {
+          Brep = this,
           EdgeIndex = value[i],
           StartIndex = value[i + 1],
           EndIndex = value[i + 2],
@@ -357,7 +339,8 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
           CurveIndex = value[i + 5],
           IsoStatus = value[i + 6],
           TrimType = (BrepTrimType)value[i + 7],
-          IsReversed = value[i + 8] == 1
+          IsReversed = value[i + 8] == 1,
+          Domain = Interval.UnitInterval, //TODO: This is a problem, see CXPLA-28
         };
         list.Add(trim);
       }
@@ -366,11 +349,13 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
     }
   }
 
+  private const int TRIMS_ENCODING_LENGTH = 9;
+
   /// <summary>
   /// Gets or sets the list of faces in this <see cref="Brep"/> instance.
   /// </summary>
   [JsonIgnore]
-  public List<BrepFace> Faces { get; set; }
+  public required List<BrepFace> Faces { get; set; }
 
   /// <summary>
   /// Gets or sets the flat list of numbers representing the <see cref="Brep"/>'s faces.
@@ -395,11 +380,11 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
         .ToList();
     set
     {
-      Faces = new List<BrepFace>();
       if (value == null || value.Count == 0)
       {
         return;
       }
+      Faces = new List<BrepFace>();
 
       var i = 0;
       while (i < value.Count)
@@ -411,7 +396,14 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
         var outerLoopIndex = faceValues[1];
         var orientationIsReversed = faceValues[2] == 1;
         var loopIndices = faceValues.GetRange(3, faceValues.Count - 3);
-        var face = new BrepFace(this, surfIndex, loopIndices, outerLoopIndex, orientationIsReversed);
+        var face = new BrepFace
+        {
+          Brep = this,
+          SurfaceIndex = surfIndex,
+          LoopIndices = loopIndices,
+          OuterLoopIndex = outerLoopIndex,
+          OrientationReversed = orientationIsReversed
+        };
         Faces.Add(face);
         i += n + 1;
       }
@@ -421,22 +413,22 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets if this <see cref="Brep"/> instance is closed or not.
   /// </summary>
-  public bool IsClosed { get; set; }
+  public required bool IsClosed { get; set; }
 
   /// <summary>
   /// Gets or sets the list of surfaces in this <see cref="Brep"/> instance.
   /// </summary>
-  public BrepOrientation Orientation { get; set; }
+  public required BrepOrientation Orientation { get; set; }
 
   /// <inheritdoc/>
   [DetachProperty]
-  public List<Mesh> displayValue { get; set; }
+  public required List<Mesh> displayValue { get; set; }
 
   /// <inheritdoc/>
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public double volume { get; set; }
@@ -477,7 +469,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
     }
 
     // transform vertices
-    var transformedVertices = new List<Point>();
+    var transformedVertices = new List<Point>(Vertices.Count);
     foreach (var vertex in Vertices)
     {
       vertex.TransformTo(transform, out Point transformedVertex);
@@ -486,7 +478,6 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
 
     transformed = new Brep
     {
-      provenance = provenance,
       units = units,
       displayValue = displayValues,
       Surfaces = surfaces,
@@ -505,45 +496,63 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
     foreach (var e in Edges)
     {
       transformed.Edges.Add(
-        new BrepEdge(
-          transformed,
-          e.Curve3dIndex,
-          e.TrimIndices,
-          e.StartIndex,
-          e.EndIndex,
-          e.ProxyCurveIsReversed,
-          e.Domain
-        )
+        new BrepEdge
+        {
+          Brep = transformed,
+          Curve3dIndex = e.Curve3dIndex,
+          TrimIndices = e.TrimIndices,
+          StartIndex = e.StartIndex,
+          EndIndex = e.EndIndex,
+          ProxyCurveIsReversed = e.ProxyCurveIsReversed,
+          Domain = e.Domain
+        }
       );
     }
 
     foreach (var l in Loops)
     {
-      transformed.Loops.Add(new BrepLoop(transformed, l.FaceIndex, l.TrimIndices, l.Type));
+      transformed.Loops.Add(
+        new BrepLoop
+        {
+          Brep = transformed,
+          FaceIndex = l.FaceIndex,
+          TrimIndices = l.TrimIndices,
+          Type = l.Type
+        }
+      );
     }
 
     foreach (var t in Trims)
     {
       transformed.Trims.Add(
-        new BrepTrim(
-          transformed,
-          t.EdgeIndex,
-          t.FaceIndex,
-          t.LoopIndex,
-          t.CurveIndex,
-          t.IsoStatus,
-          t.TrimType,
-          t.IsReversed,
-          t.StartIndex,
-          t.EndIndex
-        )
+        new BrepTrim
+        {
+          Brep = transformed,
+          EdgeIndex = t.EdgeIndex,
+          FaceIndex = t.FaceIndex,
+          LoopIndex = t.LoopIndex,
+          CurveIndex = t.CurveIndex,
+          IsoStatus = t.IsoStatus,
+          TrimType = t.TrimType,
+          IsReversed = t.IsReversed,
+          StartIndex = t.StartIndex,
+          EndIndex = t.EndIndex,
+          Domain = null!,
+        }
       );
     }
 
     foreach (var f in Faces)
     {
       transformed.Faces.Add(
-        new BrepFace(transformed, f.SurfaceIndex, f.LoopIndices, f.OuterLoopIndex, f.OrientationReversed)
+        new BrepFace
+        {
+          Brep = transformed,
+          SurfaceIndex = f.SurfaceIndex,
+          LoopIndices = f.LoopIndices,
+          OuterLoopIndex = f.OuterLoopIndex,
+          OrientationReversed = f.OrientationReversed
+        }
       );
     }
 
@@ -566,21 +575,22 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
     for (var i = 0; i < Edges.Count; i++)
     {
       var e = Edges[i];
-      lock (e)
+      var existing = e;
+      lock (existing)
       {
         if (e.Brep != null)
         {
-#pragma warning disable CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
-          e = new BrepEdge(
-#pragma warning restore CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
-            this,
-            e.Curve3dIndex,
-            e.TrimIndices,
-            e.StartIndex,
-            e.EndIndex,
-            e.ProxyCurveIsReversed,
-            e.Domain
-          );
+          e = new BrepEdge
+          {
+            Brep = this,
+            Curve3dIndex = e.Curve3dIndex,
+            TrimIndices = e.TrimIndices,
+            StartIndex = e.StartIndex,
+            EndIndex = e.EndIndex,
+            ProxyCurveIsReversed = e.ProxyCurveIsReversed,
+            Domain = e.Domain,
+          };
+
           Edges[i] = e;
         }
         else
@@ -593,13 +603,19 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
     for (var i = 0; i < Loops.Count; i++)
     {
       var l = Loops[i];
-      lock (l)
+      var existingLoop = l;
+      lock (existingLoop)
       {
         if (l.Brep != null)
         {
-#pragma warning disable CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
-          l = new BrepLoop(this, l.FaceIndex, l.TrimIndices, l.Type);
-#pragma warning restore CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
+          l = new BrepLoop
+          {
+            Brep = this,
+            FaceIndex = l.FaceIndex,
+            TrimIndices = l.TrimIndices,
+            Type = l.Type,
+          };
+
           Loops[i] = l;
         }
         else
@@ -612,24 +628,25 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
     for (var i = 0; i < Trims.Count; i++)
     {
       var t = Trims[i];
-      lock (t)
+      var existingTrim = t;
+      lock (existingTrim)
       {
         if (t.Brep != null)
         {
-#pragma warning disable CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
-          t = new BrepTrim(
-#pragma warning restore CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
-            this,
-            t.EdgeIndex,
-            t.FaceIndex,
-            t.LoopIndex,
-            t.CurveIndex,
-            t.IsoStatus,
-            t.TrimType,
-            t.IsReversed,
-            t.StartIndex,
-            t.EndIndex
-          );
+          t = new BrepTrim
+          {
+            Brep = this,
+            EdgeIndex = t.EdgeIndex,
+            LoopIndex = t.LoopIndex,
+            CurveIndex = t.CurveIndex,
+            IsoStatus = t.IsoStatus,
+            TrimType = t.TrimType,
+            IsReversed = t.IsReversed,
+            StartIndex = t.StartIndex,
+            EndIndex = t.EndIndex,
+            FaceIndex = t.FaceIndex,
+            Domain = Interval.UnitInterval, //TODO: This is a problem, see CXPLA-28
+          };
           Trims[i] = t;
         }
         else
@@ -642,13 +659,19 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
     for (var i = 0; i < Faces.Count; i++)
     {
       var f = Faces[i];
-      lock (f)
+      var existingFace = f;
+      lock (existingFace)
       {
         if (f.Brep != null)
         {
-#pragma warning disable CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
-          f = new BrepFace(this, f.SurfaceIndex, f.LoopIndices, f.OuterLoopIndex, f.OrientationReversed);
-#pragma warning restore CS0728 // Possibly incorrect assignment to local which is the argument to a using or lock statement
+          f = new BrepFace
+          {
+            Brep = this,
+            SurfaceIndex = f.SurfaceIndex,
+            LoopIndices = f.LoopIndices,
+            OuterLoopIndex = f.OuterLoopIndex,
+            OrientationReversed = f.OrientationReversed
+          };
           Faces[i] = f;
         }
         else

@@ -8,6 +8,12 @@
         "resolved": "5.0.0",
         "contentHash": "bqyt+m17ym+5aN45C5oZRAjuLDt8jKiCm/ys1XfymIXSkrTFwvI/QsbY3ucPSHDz7SF7uON7B57kXFv5H2k1ew=="
       },
+      "GitVersion.MsBuild": {
+        "type": "Direct",
+        "requested": "[5.12.0, )",
+        "resolved": "5.12.0",
+        "contentHash": "dJuigXycpJNOiLT9or7mkHSkGFHgGW3/p6cNNYEKZBa7Hhp1FdX/cvqYWWYhRLpfoZOedeA7aRbYiOB3vW/dvA=="
+      },
       "Glob": {
         "type": "Direct",
         "requested": "[1.1.9, )",
@@ -24,12 +30,6 @@
           "Microsoft.SourceLink.Common": "8.0.0"
         }
       },
-      "MinVer": {
-        "type": "Direct",
-        "requested": "[5.0.0, )",
-        "resolved": "5.0.0",
-        "contentHash": "ybkgpQMtt0Fo91l5rYtE3TZtD+Nmy5Ko091xvfXXOosQdMi30XO2EZ2+ShZt89gdu7RMmJqZaJ+e1q6d+6+KNw=="
-      },
       "PolySharp": {
         "type": "Direct",
         "requested": "[1.14.1, )",
@@ -41,6 +41,12 @@
         "requested": "[12.0.0, )",
         "resolved": "12.0.0",
         "contentHash": "ptxlWtxC8vM6Y6e3h9ZTxBBkOWnWrm/Sa1HT+2i1xcXY3Hx2hmKDZP5RShPf8Xr9D+ivlrXNy57ktzyH8kyt+Q=="
+      },
+      "Speckle.InterfaceGenerator": {
+        "type": "Direct",
+        "requested": "[0.9.6, )",
+        "resolved": "0.9.6",
+        "contentHash": "HKH7tYrYYlCK1ct483hgxERAdVdMtl7gUKW9ijWXxA1UsYR4Z+TrRHYmzZ9qmpu1NnTycSrp005NYM78GDKV1w=="
       },
       "Microsoft.Build.Tasks.Git": {
         "type": "Transitive",

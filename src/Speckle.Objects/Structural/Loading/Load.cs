@@ -1,7 +1,8 @@
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Loading;
+namespace Speckle.Objects.Structural.Loading;
 
+[SpeckleType("Objects.Structural.Loading.Load")]
 public class Load : Base
 {
   public Load() { }

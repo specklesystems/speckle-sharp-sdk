@@ -1,13 +1,12 @@
-using System.Collections.Generic;
-using System.Linq;
-using Objects.BuiltElements;
-using Objects.BuiltElements.Revit;
-using Objects.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements;
+using Speckle.Objects.BuiltElements.Revit;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Other.Revit;
+namespace Speckle.Objects.Other.Revit;
 
+[SpeckleType("Objects.Other.Revit.RevitInstance")]
 public class RevitInstance : Instance<RevitSymbolElementType>
 {
   public Level level { get; set; }
@@ -19,7 +18,7 @@ public class RevitInstance : Instance<RevitSymbolElementType>
 
   protected override IEnumerable<Base> GetTransformableGeometry()
   {
-    var allChildren = typedDefinition.elements ?? new List<Base>();
+    var allChildren = typedDefinition.elements ?? new List<Base>(); // TODO: this is a bug, should be copying elements list instead of using the reference
     if (typedDefinition.displayValue.Count != 0)
     {
       allChildren.AddRange(typedDefinition.displayValue);
@@ -57,13 +56,14 @@ public class RevitInstance : Instance<RevitSymbolElementType>
   public Plane GetInsertionPlane()
   {
     // TODO: Check for Revit in GH/DYN
-    var plane = new Plane(
-      new Point(0, 0, 0, units),
-      new Vector(0, 0, 1, units),
-      new Vector(1, 0, 0, units),
-      new Vector(0, 1, 0, units),
-      units
-    );
+    var plane = new Plane()
+    {
+      origin = new Point(0, 0, 0, units),
+      normal = new Vector(0, 0, 1, units),
+      xdir = new Vector(1, 0, 0, units),
+      ydir = new Vector(0, 1, 0, units),
+      units = units,
+    };
     plane.TransformTo(transform, out Plane tPlane);
     return tPlane;
   }

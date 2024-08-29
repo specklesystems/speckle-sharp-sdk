@@ -1,12 +1,12 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Structural.Materials;
-using Objects.Structural.Properties.Profiles;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties.Profiles;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.TeklaStructures;
+namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.TeklaContourPlate")]
 public class TeklaContourPlate : Area
 {
   [SchemaInfo("ContourPlate", "Creates a TeklaStructures contour plate.", "Tekla", "Structure")]
@@ -54,6 +54,7 @@ public class TeklaContourPlate : Area
   public List<TeklaContourPoint> contour { get; set; } // Use for ToNative to Tekla. Other programs can use Area.outline.
 }
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.TeklaContourPoint")]
 public class TeklaContourPoint : Point
 {
   public TeklaContourPoint() { }

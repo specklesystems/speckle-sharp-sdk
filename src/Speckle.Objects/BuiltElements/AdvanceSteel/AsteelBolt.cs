@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.AdvanceSteel;
+namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
 public abstract class AsteelBolt : Base, IAsteelObject
 {
@@ -14,12 +13,14 @@ public abstract class AsteelBolt : Base, IAsteelObject
   public Base asteelProperties { get; set; }
 }
 
+[SpeckleType("Objects.BuiltElements.AdvanceSteel.AsteelCircularBolt")]
 public class AsteelCircularBolt : AsteelBolt
 {
   //[SchemaInfo("AsteelCircularBolt", "Creates a Advance Steel circular bolt.", "Advance Steel", "Structure")]
   public AsteelCircularBolt() { }
 }
 
+[SpeckleType("Objects.BuiltElements.AdvanceSteel.AsteelRectangularBolt")]
 public class AsteelRectangularBolt : AsteelBolt
 {
   //[SchemaInfo("AsteelRectangularBolt", "Creates a Advance Steel rectangular bolt.", "Advance Steel", "Structure")]

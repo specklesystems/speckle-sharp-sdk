@@ -1,14 +1,14 @@
-using System.Collections.Generic;
-using Objects.Other;
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Other;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// A Surface in NURBS form.
 /// </summary>
+[SpeckleType("Objects.Geometry.Surface")]
 public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
 {
   /// <summary>
@@ -93,7 +93,7 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
 
   /// <summary>
   /// The unit's this <see cref="Surface"/> is in.
-  /// This should be one of <see cref="Speckle.Core.Kits.Units"/>
+  /// This should be one of <see cref="Units"/>
   /// </summary>
   public string units { get; set; }
 
@@ -101,7 +101,7 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Surface transformed)
@@ -203,10 +203,10 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
     list.Add(rational ? 1 : 0);
     list.Add(closedU ? 1 : 0);
     list.Add(closedV ? 1 : 0);
-    list.Add(domainU.start ?? 0); // 7
-    list.Add(domainU.end ?? 1);
-    list.Add(domainV.start ?? 0);
-    list.Add(domainV.end ?? 1); // [0] 10
+    list.Add(domainU.start); // 7
+    list.Add(domainU.end);
+    list.Add(domainV.start);
+    list.Add(domainV.end); // [0] 10
 
     list.Add(pointData.Count); // 11
     list.Add(knotsU.Count); // 12

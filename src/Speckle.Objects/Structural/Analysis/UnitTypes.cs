@@ -1,4 +1,4 @@
-namespace Objects.Structural.Analysis;
+namespace Speckle.Objects.Structural.Analysis;
 
 public enum UnitsType
 {

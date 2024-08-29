@@ -1,7 +1,9 @@
-using Objects.Geometry;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.TeklaStructures;
+namespace Speckle.Objects.BuiltElements.TeklaStructures;
 
+[SpeckleType("Objects.BuiltElements.TeklaStructures.Fitting")]
 public class Fitting : Plane
 {
   public string hostID { get; set; }

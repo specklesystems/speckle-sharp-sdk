@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Objects.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
-using Speckle.Core.Models.GraphTraversal;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.GraphTraversal;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 public abstract class Instance : Base
 {
@@ -116,6 +113,7 @@ public abstract class Instance<T> : Instance
 /// <summary>
 /// Block instance class
 /// </summary>
+[SpeckleType("Objects.Other.BlockInstance")]
 public class BlockInstance : Instance<BlockDefinition>
 {
   public BlockInstance() { }
@@ -151,13 +149,14 @@ public class BlockInstance : Instance<BlockDefinition>
   public Plane GetInsertionPlane()
   {
     // TODO: UPDATE!
-    var plane = new Plane(
-      typedDefinition.basePoint ?? new Point(0, 0, 0, units),
-      new Vector(0, 0, 1, units),
-      new Vector(1, 0, 0, units),
-      new Vector(0, 1, 0, units),
-      units
-    );
+    var plane = new Plane()
+    {
+      origin = typedDefinition.basePoint ?? new Point(0, 0, 0, units),
+      normal = new Vector(0, 0, 1, units),
+      xdir = new Vector(1, 0, 0, units),
+      ydir = new Vector(0, 1, 0, units),
+      units = units
+    };
     plane.TransformTo(transform, out Plane tPlane);
     return tPlane;
   }

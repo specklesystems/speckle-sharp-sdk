@@ -1,80 +1,60 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Objects.Other;
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Logging;
-using Speckle.Core.Models;
+using Speckle.Objects.Other;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
+[SpeckleType("Objects.Geometry.Curve")]
 public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Curve>, IDisplayValue<Polyline>
 {
-  /// <summary>
-  /// Constructs an empty <see cref="Curve"/> instance.
-  /// </summary>
-  public Curve() { }
+  public required int degree { get; set; }
 
-  /// <summary>
-  /// Constructs a new <see cref="Curve"/> instance based on displayValue a polyline.
-  /// </summary>
-  /// <param name="poly">The polyline that will be this curve's <see cref="displayValue"/></param>
-  /// <param name="units">The units this curve is be modelled in</param>
-  /// <param name="applicationId">The unique ID of this curve in a specific application</param>
-  public Curve(Polyline poly, string units = Units.Meters, string? applicationId = null)
-  {
-    displayValue = poly;
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  public int degree { get; set; }
-
-  public bool periodic { get; set; }
+  public required bool periodic { get; set; }
 
   /// <summary>
   /// "True" if weights differ, "False" if weights are the same.
   /// </summary>
-  public bool rational { get; set; }
+  public required bool rational { get; set; }
 
   [DetachProperty, Chunkable(31250)]
-  public List<double> points { get; set; }
+  public required List<double> points { get; set; }
 
   /// <summary>
   /// Gets or sets the weights for this <see cref="Curve"/>. Use a default value of 1 for unweighted points.
   /// </summary>
   [DetachProperty, Chunkable(31250)]
-  public List<double> weights { get; set; }
+  public required List<double> weights { get; set; }
 
   /// <summary>
   /// Gets or sets the knots for this <see cref="Curve"/>. Count should be equal to <see cref="points"/> count + <see cref="degree"/> + 1.
   /// </summary>
   [DetachProperty, Chunkable(31250)]
-  public List<double> knots { get; set; }
+  public required List<double> knots { get; set; }
 
-  public bool closed { get; set; }
+  public required bool closed { get; set; }
 
   /// <summary>
   /// The units this object was specified in.
   /// </summary>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <inheritdoc/>
-  public Interval domain { get; set; } = new Interval(0, 1);
+  public Interval domain { get; set; } = Interval.UnitInterval;
 
   /// <inheritdoc/>
   public double length { get; set; }
 
   /// <inheritdoc/>
   [DetachProperty]
-  public Polyline displayValue { get; set; }
+  public required Polyline displayValue { get; set; }
 
   /// <inheritdoc/>
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Curve transformed)
@@ -100,7 +80,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
       closed = closed,
       units = units,
       applicationId = applicationId,
-      domain = domain != null ? new Interval { start = domain.start, end = domain.end } : new Interval(0, 1)
+      domain = domain != null ? new Interval { start = domain.start, end = domain.end } : Interval.UnitInterval
     };
 
     return result;
@@ -135,9 +115,12 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   }
 
   /// <summary>
-  /// Returns the values of this <see cref="Curve"/> as a list of numbers
+  /// Returns the values of this <see cref="Curve"/> as a list of numbers.
   /// </summary>
   /// <returns>A list of values representing the <see cref="Curve"/></returns>
+  /// <remarks>
+  /// This is currently only used for encoding optimization in curves in breps!
+  /// </remarks>
   public List<double> ToList()
   {
     var list = new List<double>();
@@ -168,36 +151,40 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   /// </summary>
   /// <param name="list">The list of values representing this <see cref="Curve"/></param>
   /// <returns>A new <see cref="Curve"/> with the provided values.</returns>
+  /// <remarks>
+  /// This is currently being used only for deserialization of Brep curves!
+  /// </remarks>
   public static Curve FromList(List<double> list)
   {
-    if (list[0] != list.Count - 1)
+    if ((int)list[0] != list.Count - 1)
     {
-      throw new Exception($"Incorrect length. Expected {list[0]}, got {list.Count}.");
+      throw new ArgumentException($"Incorrect length. Expected {list[0]}, got {list.Count}", nameof(list));
     }
 
     if (list[1] != CurveTypeEncoding.Curve)
     {
-      throw new Exception($"Wrong curve type. Expected {CurveTypeEncoding.Curve}, got {list[1]}.");
+      throw new ArgumentException($"Wrong curve type. Expected {CurveTypeEncoding.Curve}, got {list[1]}", nameof(list));
     }
-
-    var curve = new Curve
-    {
-      degree = (int)list[2],
-      periodic = list[3] == 1,
-      rational = list[4] == 1,
-      closed = list[5] == 1,
-      domain = new Interval(list[6], list[7])
-    };
 
     var pointsCount = (int)list[8];
     var weightsCount = (int)list[9];
     var knotsCount = (int)list[10];
 
-    curve.points = list.GetRange(11, pointsCount);
-    curve.weights = list.GetRange(11 + pointsCount, weightsCount);
-    curve.knots = list.GetRange(11 + pointsCount + weightsCount, knotsCount);
+    string units = Units.GetUnitFromEncoding(list[^1]);
+    var curve = new Curve
+    {
+      degree = (int)list[2],
+      periodic = (int)list[3] == 1,
+      rational = (int)list[4] == 1,
+      closed = (int)list[5] == 1,
+      domain = new Interval { start = list[6], end = list[7] },
+      displayValue = new Polyline { value = new(), units = units }, // this is unique to breps, so we do not create curves with null displayValues
+      points = list.GetRange(11, pointsCount),
+      weights = list.GetRange(11 + pointsCount, weightsCount),
+      knots = list.GetRange(11 + pointsCount + weightsCount, knotsCount),
+      units = units,
+    };
 
-    curve.units = Units.GetUnitFromEncoding(list[list.Count - 1]);
     return curve;
   }
 }

@@ -1,7 +1,6 @@
-using System.Collections.Generic;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry.Autocad;
+namespace Speckle.Objects.Geometry.Autocad;
 
 /// <summary>
 /// A curve that is comprised of line, arc and/or curve segments, representing the Autocad Polyline, Polyline2d, and Polyline3d classes.
@@ -12,6 +11,7 @@ namespace Objects.Geometry.Autocad;
 /// <see cref="AutocadPolyType.FitCurve2d"/> type will only have <see cref="Arc"/>s in <see cref="Polycurve.segments"/>.
 /// <see cref="AutocadPolyType.CubicSpline2d"/>, <see cref="AutocadPolyType.CubicSpline3d"/>, <see cref="AutocadPolyType.QuadSpline2d"/>, and <see cref="AutocadPolyType.QuadSpline3d"/> types will have only a single <see cref="Curve"/>s in <see cref="Polycurve.segments"/>.
 /// </remarks>
+[SpeckleType("Objects.Geometry.Autocad.AutocadPolycurve")]
 public class AutocadPolycurve : Polycurve
 {
   /// <summary>

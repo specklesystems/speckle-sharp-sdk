@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Objects.BuiltElements.Revit;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit;
+using Speckle.Sdk.Models;
 
-namespace Objects.Utils;
+namespace Speckle.Objects.Utils;
 
 public static class Parameters
 {

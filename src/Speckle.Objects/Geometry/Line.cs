@@ -1,15 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Objects.Other;
-using Objects.Primitive;
-using Speckle.Core.Kits;
-using Speckle.Core.Logging;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Other;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
+[SpeckleType("Objects.Geometry.Line")]
 public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
 {
   public Line() { }
@@ -82,10 +81,10 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
   public Point start { get; set; }
   public Point end { get; set; }
 
-  public Interval domain { get; set; } = new(0, 1);
+  public Interval domain { get; set; } = Interval.UnitInterval;
   public double length { get; set; }
 
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
 
   public bool TransformTo(Transform transform, out Line transformed)
   {
@@ -97,7 +96,7 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
       end = transformedEnd,
       applicationId = applicationId,
       units = units,
-      domain = domain is null ? new(0, 1) : new() { start = domain.start, end = domain.end }
+      domain = domain is null ? Interval.UnitInterval : new() { start = domain.start, end = domain.end }
     };
     return true;
   }
@@ -127,7 +126,10 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
     var units = Units.GetUnitFromEncoding(list[list.Count - 1]);
     var startPt = new Point(list[2], list[3], list[4], units);
     var endPt = new Point(list[5], list[6], list[7], units);
-    var line = new Line(startPt, endPt, units) { domain = new Interval(list[8], list[9]) };
+    var line = new Line(startPt, endPt, units)
+    {
+      domain = new Interval { start = list[8], end = list[9] }
+    };
     return line;
   }
 }

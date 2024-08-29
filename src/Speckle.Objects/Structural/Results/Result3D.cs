@@ -1,11 +1,11 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
-using Objects.Structural.Loading;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Results;
+namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.ResultSet3D")]
 public class ResultSet3D : Result
 {
   public ResultSet3D() { }
@@ -20,6 +20,7 @@ public class ResultSet3D : Result
   public List<Result3D> results3D { get; set; }
 }
 
+[SpeckleType("Objects.Structural.Results.Result3D")]
 public class Result3D : Result
 {
   public Result3D() { }

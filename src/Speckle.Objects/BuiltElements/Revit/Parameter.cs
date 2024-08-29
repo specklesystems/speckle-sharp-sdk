@@ -1,8 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.Parameter")]
 public class Parameter : Base
 {
   public Parameter() { }

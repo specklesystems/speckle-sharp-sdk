@@ -1,7 +1,8 @@
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.CSI.Geometry;
+namespace Speckle.Objects.Structural.CSI.Geometry;
 
+[SpeckleType("Objects.Structural.CSI.Geometry.CSIPier")]
 public class CSIPier : Base
 {
   public CSIPier(

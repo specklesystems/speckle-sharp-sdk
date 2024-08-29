@@ -1,10 +1,12 @@
-using Objects.Geometry;
-using Objects.Structural.Properties;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Geometry;
+namespace Speckle.Objects.Structural.Geometry;
 
+[SpeckleType("Objects.Structural.Geometry.Node")]
 public class Node : Base
 {
   public Node() { }
@@ -41,7 +43,14 @@ public class Node : Base
       ?? new Axis(
         "Global",
         AxisType.Cartesian,
-        new Plane(new Point(0, 0), new Vector(0, 0, 1), new Vector(1, 0, 0), new Vector(0, 1, 0))
+        new Plane
+        {
+          origin = new Point(0, 0),
+          normal = new Vector(0, 0, 1),
+          xdir = new Vector(1, 0, 0),
+          ydir = new Vector(0, 1, 0),
+          units = Units.Meters, //Not sure if defaulting to meters is correct, but it was what we were doing previously inside Plane's ctor
+        }
       );
     this.springProperty = springProperty;
     this.massProperty = massProperty;

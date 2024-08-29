@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.AdvanceSteel;
+namespace Speckle.Objects.BuiltElements.AdvanceSteel;
 
+[SpeckleType("Objects.BuiltElements.AdvanceSteel.AsteelSpecialPart")]
 public class AsteelSpecialPart : Base, IAsteelObject
 {
   [DetachProperty]

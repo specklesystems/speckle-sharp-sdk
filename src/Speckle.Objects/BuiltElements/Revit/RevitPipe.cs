@@ -1,12 +1,12 @@
-using System.Collections.Generic;
-using Objects.BuiltElements.Revit.Interfaces;
-using Objects.Geometry;
-using Objects.Utils;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit.Interfaces;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitPipe")]
 public class RevitPipe : Pipe, IHasMEPConnectors
 {
   public RevitPipe() { }
@@ -43,6 +43,7 @@ public class RevitPipe : Pipe, IHasMEPConnectors
   public List<RevitMEPConnector> Connectors { get; set; } = new();
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitFlexPipe")]
 public class RevitFlexPipe : RevitPipe
 {
   public RevitFlexPipe() { }

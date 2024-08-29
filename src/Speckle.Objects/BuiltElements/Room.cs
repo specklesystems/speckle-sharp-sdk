@@ -1,12 +1,12 @@
-using System.Collections.Generic;
-using Objects.BuiltElements.Revit;
-using Objects.Geometry;
-using Objects.Utils;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements;
+namespace Speckle.Objects.BuiltElements;
 
+[SpeckleType("Objects.BuiltElements.Room")]
 public class Room : Base, IHasArea, IHasVolume, IDisplayValue<List<Mesh>>
 {
   public Room() { }

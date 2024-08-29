@@ -20,20 +20,35 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <IsPackable>false</IsPackable>  
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
   
-  <PropertyGroup> 
+  <PropertyGroup>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <PackageTags>speckle</PackageTags>
+    <PackageProjectUrl>https://speckle.systems/</PackageProjectUrl>
+    <PackageIcon>logo.png</PackageIcon>
+    <RepositoryUrl>https://github.com/specklesystems/speckle-sharp-sdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <!-- Expose the repository root to all projects -->
+    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <MinVerDefaultPreReleaseIdentifiers>alpha</MinVerDefaultPreReleaseIdentifiers>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;1573</NoWarn>
   </PropertyGroup>  
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+    <None
+      Condition="'$(IsPackable)' == 'true'"
+      Include="..\..\logo.png"
+      Pack="true"
+      PackagePath="\"
+      Visible="false"/>
   </ItemGroup>
 </Project>

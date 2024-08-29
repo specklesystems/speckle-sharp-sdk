@@ -1,11 +1,12 @@
-using Objects.Structural.Materials;
-using Objects.Structural.Properties;
-using Objects.Structural.Properties.Profiles;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Materials;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Objects.Structural.Properties.Profiles;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Properties;
+namespace Speckle.Objects.Structural.GSA.Properties;
 
+[SpeckleType("Objects.Structural.GSA.Properties.GSAProperty1D")]
 public class GSAProperty1D : Property1D
 {
   public GSAProperty1D() { }

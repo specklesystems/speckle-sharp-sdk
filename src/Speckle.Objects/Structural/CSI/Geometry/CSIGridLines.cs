@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using Objects.BuiltElements;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.CSI.Geometry;
+namespace Speckle.Objects.Structural.CSI.Geometry;
 
+[SpeckleType("Objects.Structural.CSI.Geometry.CSIGridLines")]
 public class CSIGridLines : Base
 {
   public double Xo { get; set; }

@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
-using Objects.Structural.Loading;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Results;
+namespace Speckle.Objects.Structural.Results;
 
 public enum CaseType
 {
@@ -12,6 +11,7 @@ public enum CaseType
   Combination
 }
 
+[SpeckleType("Objects.Structural.Results.ResultSetNode")]
 public class ResultSetNode : Result
 {
   public ResultSetNode() { }
@@ -26,6 +26,7 @@ public class ResultSetNode : Result
   public List<ResultNode> resultsNode { get; set; }
 }
 
+[SpeckleType("Objects.Structural.Results.ResultNode")]
 public class ResultNode : Result
 {
   public ResultNode() { }

@@ -1,16 +1,15 @@
-using System;
-using System.Collections.Generic;
-using Objects.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Archicad;
+namespace Speckle.Objects.BuiltElements.Archicad;
 
 /*
 For further informations about given the variables, visit:
 https://archicadapi.graphisoft.com/documentation/api_columntype
 */
+[SpeckleType("Objects.BuiltElements.Archicad.ArchicadColumn")]
 public class ArchicadColumn : Column
 {
   [SchemaInfo("ArchicadColumn", "Creates an Archicad Column by curve.", "Archicad", "Structure")]
@@ -123,6 +122,7 @@ public class ArchicadColumn : Column
   public double? coverFillTransformationYAxisX { get; set; }
   public double? coverFillTransformationYAxisY { get; set; }
 
+  [SpeckleType("Objects.BuiltElements.Archicad.ArchicadColumn+ColumnSegment")]
   public class ColumnSegment : Base
   {
     // Segment - Veneer attributes

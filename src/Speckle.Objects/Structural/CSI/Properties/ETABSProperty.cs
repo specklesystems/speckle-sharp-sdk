@@ -1,4 +1,4 @@
-namespace Objects.Structural.CSI.Properties;
+namespace Speckle.Objects.Structural.CSI.Properties;
 
 public enum DiaphragmOption
 {

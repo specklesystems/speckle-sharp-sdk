@@ -1,8 +1,9 @@
-using System.Collections.Generic;
-using Speckle.Core.Models;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.Collections;
 
-namespace Objects.GIS;
+namespace Speckle.Objects.GIS;
 
+[SpeckleType("Objects.GIS.VectorLayer")]
 public class VectorLayer : Collection
 {
   public CRS? crs { get; set; }

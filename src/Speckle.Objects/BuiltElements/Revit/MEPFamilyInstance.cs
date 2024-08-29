@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using Objects.BuiltElements.Revit.Interfaces;
-using Objects.Other.Revit;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit.Interfaces;
+using Speckle.Objects.Other.Revit;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitMEPFamilyInstance")]
 public class RevitMEPFamilyInstance : RevitInstance, IHasMEPConnectors
 {
   public string RevitPartType { get; set; }

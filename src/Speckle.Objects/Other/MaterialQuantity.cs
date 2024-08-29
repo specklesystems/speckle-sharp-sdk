@@ -1,8 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
+[SpeckleType("Objects.Other.MaterialQuantity")]
 public class MaterialQuantity : Base
 {
   public MaterialQuantity() { }

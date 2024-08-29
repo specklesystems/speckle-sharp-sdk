@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
-using Objects.Geometry;
-using Objects.Utils;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitColumn")]
 public class RevitColumn : Column
 {
   public RevitColumn() { }
@@ -54,6 +53,12 @@ public class RevitColumn : Column
   public string type { get; set; }
   public Base? parameters { get; set; }
   public string? elementId { get; set; }
+
+  public new Level? level
+  {
+    get => base.level;
+    set => base.level = value;
+  }
 
   #region Schema Info Constructors
 

@@ -1,13 +1,12 @@
-using System;
-using System.Collections.Generic;
-using Objects.BuiltElements.Revit.Interfaces;
-using Objects.Geometry;
-using Objects.Utils;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.BuiltElements.Revit.Interfaces;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.BuiltElements.Revit;
+namespace Speckle.Objects.BuiltElements.Revit;
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitDuct")]
 public class RevitDuct : Duct, IHasMEPConnectors
 {
   public RevitDuct() { }
@@ -115,6 +114,7 @@ public class RevitDuct : Duct, IHasMEPConnectors
   #endregion
 }
 
+[SpeckleType("Objects.BuiltElements.Revit.RevitFlexDuct")]
 public class RevitFlexDuct : RevitDuct
 {
   public RevitFlexDuct() { }

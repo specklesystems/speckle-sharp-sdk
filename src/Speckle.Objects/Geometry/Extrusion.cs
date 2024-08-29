@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 [Obsolete("Unused")]
+[SpeckleType("Objects.Geometry.Extrusion")]
 [SuppressMessage("Design", "CA1051:Do not declare visible instance fields", Justification = "Obsolete")]
 public class Extrusion : Base, IHasVolume, IHasArea, IHasBoundingBox
 {
@@ -36,6 +35,6 @@ public class Extrusion : Base, IHasVolume, IHasArea, IHasBoundingBox
 
   public double area { get; set; }
 
-  public Box bbox { get; set; }
+  public Box? bbox { get; set; }
   public double volume { get; set; }
 }

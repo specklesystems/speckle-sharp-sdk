@@ -1,8 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Results;
+namespace Speckle.Objects.Structural.Results;
 
+[SpeckleType("Objects.Structural.Results.ResultSetAll")]
 public class ResultSetAll : Base
 {
   public ResultSetAll() { }

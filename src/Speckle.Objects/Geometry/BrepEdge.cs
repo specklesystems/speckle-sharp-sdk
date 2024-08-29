@@ -1,48 +1,26 @@
-using System.Collections.Generic;
-using System.Linq;
-using Objects.Primitive;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk.Models;
 
-namespace Objects.Geometry;
+namespace Speckle.Objects.Geometry;
 
 /// <summary>
 /// Represents an edge of the <see cref="Brep"/>.
 /// </summary>
+[SpeckleType("Objects.Geometry.BrepEdge")]
 public class BrepEdge : Base
 {
-  public BrepEdge() { }
-
-  public BrepEdge(
-    Brep brep,
-    int curve3dIndex,
-    int[] trimIndices,
-    int startIndex,
-    int endIndex,
-    bool proxyCurvedIsReversed,
-    Interval? domain
-  )
-  {
-    Brep = brep;
-    Curve3dIndex = curve3dIndex;
-    TrimIndices = trimIndices;
-    StartIndex = startIndex;
-    EndIndex = endIndex;
-    ProxyCurveIsReversed = proxyCurvedIsReversed;
-    Domain = domain ?? new(0, 1);
-  }
-
   [JsonIgnore]
-  public Brep Brep { get; set; }
+  public required Brep Brep { get; set; }
 
-  public int Curve3dIndex { get; set; }
-  public int[] TrimIndices { get; set; }
-  public int StartIndex { get; set; }
-  public int EndIndex { get; set; }
+  public required int Curve3dIndex { get; set; }
+  public required int[] TrimIndices { get; set; }
+  public required int StartIndex { get; set; }
+  public required int EndIndex { get; set; }
 
-  public bool ProxyCurveIsReversed { get; set; }
+  public required bool ProxyCurveIsReversed { get; set; }
 
-  public Interval Domain { get; set; } = new(0, 1);
+  public required Interval Domain { get; set; }
 
   [JsonIgnore]
   public Point StartVertex => Brep.Vertices[StartIndex];

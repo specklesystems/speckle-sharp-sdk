@@ -1,8 +1,9 @@
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Materials;
+namespace Speckle.Objects.Structural.Materials;
 
+[SpeckleType("Objects.Structural.Materials.StructuralMaterial")]
 public class StructuralMaterial : Base
 {
   // add carbon/environmental parameters?

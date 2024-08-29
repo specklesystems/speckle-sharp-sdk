@@ -1,9 +1,10 @@
 using System.Drawing;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.Proxies;
 
-namespace Objects.Other;
+namespace Speckle.Objects.Other;
 
 /// <summary>
 /// Minimal physically based material DTO class. Based on references from
@@ -13,6 +14,7 @@ namespace Objects.Other;
 /// See: https://docs.unrealengine.com/en-US/RenderingAndGraphics/Materials/PhysicallyBased/index.html
 /// And: https://blogs.unity3d.com/2014/10/29/physically-based-shading-in-unity-5-a-primer/
 /// </summary>
+[SpeckleType("Objects.Other.RenderMaterial")]
 public class RenderMaterial : Base
 {
   public RenderMaterial() { }
@@ -57,4 +59,29 @@ public class RenderMaterial : Base
     get => Color.FromArgb(emissive);
     set => diffuse = value.ToArgb();
   }
+}
+
+/// <summary>
+/// Used to store render material to object relationships in root collections
+/// </summary>
+[SpeckleType("Objects.Other.RenderMaterialProxy")]
+public class RenderMaterialProxy : Base, IProxyCollection
+{
+  public RenderMaterialProxy() { }
+
+  public RenderMaterialProxy(RenderMaterial renderMaterial, List<string> objects)
+  {
+    value = renderMaterial;
+    this.objects = objects;
+  }
+
+  /// <summary>
+  /// The list of application ids of objects that use this render material
+  /// </summary>
+  public List<string> objects { get; set; }
+
+  /// <summary>
+  /// The render material used by <see cref="objects"/>
+  /// </summary>
+  public RenderMaterial value { get; set; }
 }

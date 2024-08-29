@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using Objects.Structural.Geometry;
-using Speckle.Core.Kits;
-using Speckle.Core.Models;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.Loading;
+namespace Speckle.Objects.Structural.Loading;
 
+[SpeckleType("Objects.Structural.Loading.LoadFace")]
 public class LoadFace : Load
 {
   public LoadFace() { }

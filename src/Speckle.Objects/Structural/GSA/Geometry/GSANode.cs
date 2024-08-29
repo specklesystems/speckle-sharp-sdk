@@ -1,10 +1,13 @@
-using Objects.Geometry;
-using Objects.Structural.Geometry;
-using Objects.Structural.Properties;
-using Speckle.Core.Kits;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Structural.Geometry;
+using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Structural.GSA.Geometry;
+namespace Speckle.Objects.Structural.GSA.Geometry;
 
+[SpeckleType("Objects.Structural.GSA.Geometry.GSANode")]
 public class GSANode : Node
 {
   public GSANode() { }
@@ -40,7 +43,14 @@ public class GSANode : Node
         ? new Axis(
           "Global",
           AxisType.Cartesian,
-          new Plane(new Point(0, 0), new Vector(0, 0, 1), new Vector(1, 0, 0), new Vector(0, 1, 0))
+          new Plane()
+          {
+            origin = new Point(0, 0),
+            normal = new Vector(0, 0, 1),
+            xdir = new Vector(1, 0, 0),
+            ydir = new Vector(0, 1, 0),
+            units = Units.Meters //Not sure if defaulting to meters is correct, but it was what we were doing previously inside Plane's ctor
+          }
         )
         : constraintAxis;
     this.springProperty = springProperty;
