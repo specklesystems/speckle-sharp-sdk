@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
