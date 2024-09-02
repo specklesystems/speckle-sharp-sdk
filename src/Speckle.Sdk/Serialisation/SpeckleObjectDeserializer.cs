@@ -10,7 +10,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
-public sealed class BaseObjectDeserializerV2
+public sealed class SpeckleObjectDeserializer
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
