@@ -185,14 +185,14 @@ public sealed class ServerTransport : IServerTransport
     return rootObjectJson;
   }
 
-  public string GetObject(string id)
+  public async Task<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
     var stopwatch = Stopwatch.StartNew();
-    var result = Api.DownloadSingleObject(StreamId, id, OnProgressAction).Result;
+    var result = await Api.DownloadSingleObject(StreamId, id, OnProgressAction);
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-    return result.NotNull();
+    return result;
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)

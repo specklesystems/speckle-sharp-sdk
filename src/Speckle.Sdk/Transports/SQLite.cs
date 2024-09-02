@@ -72,7 +72,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   private readonly string _connectionString;
 
   private SqliteConnection Connection { get; set; }
-  private object ConnectionLock { get; set; }
+  private SemaphoreSlim _connectionLock = new (1, 1);
 
   public string BlobStorageFolder => SpecklePathProvider.BlobStoragePath(Path.Combine(_basePath, _applicationName));
 
@@ -206,7 +206,6 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
     Connection = new SqliteConnection(_connectionString);
     Connection.Open();
-    ConnectionLock = new object();
   }
 
   /// <summary>
@@ -401,41 +400,47 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   /// </summary>
   /// <param name="id"></param>
   /// <returns></returns>
-  public string? GetObject(string id)
+  public async Task<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
-    lock (ConnectionLock)
+    await _connectionLock.WaitAsync(CancellationToken);
+    try
     {
       var startTime = Stopwatch.GetTimestamp();
       using (var command = new SqliteCommand("SELECT * FROM objects WHERE hash = @hash LIMIT 1 ", Connection))
       {
         command.Parameters.AddWithValue("@hash", id);
-        using var reader = command.ExecuteReader();
+        using var reader = await command.ExecuteReaderAsync(CancellationToken);
 
-        while (reader.Read())
+        while (await reader.ReadAsync(CancellationToken))
         {
           return reader.GetString(1);
         }
       }
+
       Elapsed += LoggingHelpers.GetElapsedTime(startTime, Stopwatch.GetTimestamp());
+    }
+    finally
+    {
+      _connectionLock.Release();
     }
     return null; // pass on the duty of null checks to consumers
   }
 
-  public Task<string> CopyObjectAndChildren(
+  public async Task<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
   )
   {
-    string res = TransportHelpers.CopyObjectAndChildrenSync(
+    string res = await TransportHelpers.CopyObjectAndChildrenSync(
       id,
       this,
       targetTransport,
       onTotalChildrenCountKnown,
       CancellationToken
     );
-    return Task.FromResult(res);
+    return res;
   }
 
   #endregion

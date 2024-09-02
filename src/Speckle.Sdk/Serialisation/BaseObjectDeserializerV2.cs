@@ -124,7 +124,7 @@ public sealed class BaseObjectDeserializerV2
     return retList;
   }
 
-  private object? ReadObject(JsonReader reader, CancellationToken ct)
+  private async Task<object?> ReadObject(JsonReader reader, CancellationToken ct)
   {
     reader.Read();
     Dictionary<string, object?> dict = new();
@@ -147,7 +147,7 @@ public sealed class BaseObjectDeserializerV2
               foreach (var closure in closures)
               {
                 string objId = closure.Item1;
-                TryGetDeserialized(objId);
+                await TryGetDeserialized(objId);
               }
               reader.Read(); //goes to next
               continue;
@@ -178,7 +178,7 @@ public sealed class BaseObjectDeserializerV2
     return Dict2Base(dict);
   }
 
-  private object? TryGetDeserialized(string objId)
+  private async Task<object?> TryGetDeserialized(string objId)
   {
     object? deserialized = null;
     _deserializedObjects.NotNull();
@@ -209,7 +209,7 @@ public sealed class BaseObjectDeserializerV2
     }
 
     // This reference was not already deserialized. Do it now in sync mode
-    string? objectJson = ReadTransport.GetObject(objId);
+    string? objectJson = await ReadTransport.GetObject(objId);
     if (objectJson is null)
     {
       return null;
