@@ -35,7 +35,7 @@ jobs:
       - name: Self-sign nuget
         run: |
           echo ${{ secrets.SELF_CERT_FILE_B64 }} > certificate.txt
-          certutil -decode certificate.txt speckle.pfx
+          base64 -d certificate.txt > speckle.pfx
           dotnet nuget sign output/*.nupkg --certificate-path speckle.pfx --certificate-password ${{ secrets.SELF_CERT_PASSWORD }}
 
       # - name: Push to nuget.org
