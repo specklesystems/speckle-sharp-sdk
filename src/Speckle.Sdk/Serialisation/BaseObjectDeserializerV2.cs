@@ -45,7 +45,7 @@ public sealed class BaseObjectDeserializerV2
   /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public Task<Base> Deserialize(string rootObjectJson)
+  public async Task<Base> Deserialize(string rootObjectJson)
   {
     if (_isBusy)
     {
@@ -59,7 +59,7 @@ public sealed class BaseObjectDeserializerV2
       _isBusy = true;
       _deserializedObjects = new(StringComparer.Ordinal);
       _currentCount = 0;
-      return Task.FromResult((Base)DeserializeJson(rootObjectJson).NotNull());
+      return (Base)(await DeserializeJson(rootObjectJson).NotNull());
     }
     finally
     {
@@ -68,7 +68,7 @@ public sealed class BaseObjectDeserializerV2
     }
   }
 
-  internal object? DeserializeJson(string objectJson)
+  private async Task<object?> DeserializeJson(string objectJson)
   {
     if (objectJson is null)
     {
@@ -85,8 +85,8 @@ public sealed class BaseObjectDeserializerV2
     object? converted;
     try
     {
-      reader.Read();
-      converted = ReadObject(reader, CancellationToken);
+      await reader.ReadAsync(CancellationToken);
+      converted = await ReadObjectAsync(reader, CancellationToken);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -104,13 +104,14 @@ public sealed class BaseObjectDeserializerV2
     return converted;
   }
 
-  private List<object?> ReadArray(JsonReader reader, CancellationToken ct)
+  //this should be buffered
+  private async Task<List<object?>> ReadArrayAsync(JsonReader reader, CancellationToken ct)
   {
-    reader.Read();
+    await reader.ReadAsync(ct);
     List<object?> retList = new();
     while (reader.TokenType != JsonToken.EndArray)
     {
-      object? convertedValue = ReadProperty(reader, ct);
+      object? convertedValue = await ReadProperty(reader, ct);
       if (convertedValue is DataChunk chunk)
       {
         retList.AddRange(chunk.data);
@@ -119,14 +120,14 @@ public sealed class BaseObjectDeserializerV2
       {
         retList.Add(convertedValue);
       }
-      reader.Read(); //goes to next
+      await reader.ReadAsync(ct); //goes to next
     }
     return retList;
   }
 
-  private async Task<object?> ReadObject(JsonReader reader, CancellationToken ct)
+  private async Task<object?> ReadObjectAsync(JsonReader reader, CancellationToken ct)
   {
-    reader.Read();
+    await reader.ReadAsync(ct);
     Dictionary<string, object?> dict = new();
     while (reader.TokenType != JsonToken.EndObject)
     {
@@ -137,7 +138,7 @@ public sealed class BaseObjectDeserializerV2
             var propName = reader.Value.NotNull().ToString();
             if (propName == "__closure")
             {
-              reader.Read(); //goes to prop value
+              await reader.ReadAsync(ct); //goes to prop value
               var closures = ClosureParser.GetClosures(reader);
               foreach (var closure in closures)
               {
@@ -149,13 +150,13 @@ public sealed class BaseObjectDeserializerV2
                 string objId = closure.Item1;
                 await TryGetDeserialized(objId);
               }
-              reader.Read(); //goes to next
+              await reader.ReadAsync(ct); //goes to next
               continue;
             }
-            reader.Read(); //goes prop value
+            await reader.ReadAsync(ct); //goes prop value
             object? convertedValue = ReadProperty(reader, ct);
             dict[propName] = convertedValue;
-            reader.Read(); //goes to next
+            await reader.ReadAsync(ct); //goes to next
           }
           break;
         default:
@@ -225,7 +226,7 @@ public sealed class BaseObjectDeserializerV2
     return deserialized;
   }
 
-  private object? ReadProperty(JsonReader reader, CancellationToken ct)
+  private async Task<object?> ReadProperty(JsonReader reader, CancellationToken ct)
   {
     ct.ThrowIfCancellationRequested();
     switch (reader.TokenType)
@@ -261,9 +262,9 @@ public sealed class BaseObjectDeserializerV2
       case JsonToken.Date:
         return (DateTime)reader.Value.NotNull();
       case JsonToken.StartArray:
-        return ReadArray(reader, ct);
+        return await ReadArrayAsync(reader, ct);
       case JsonToken.StartObject:
-        var dict = ReadObject(reader, ct);
+        var dict = await ReadObjectAsync(reader, ct);
         return dict;
 
       default:
