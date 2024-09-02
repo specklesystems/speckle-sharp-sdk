@@ -72,7 +72,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   private readonly string _connectionString;
 
   private SqliteConnection Connection { get; set; }
-  private SemaphoreSlim _connectionLock = new (1, 1);
+  private SemaphoreSlim _connectionLock = new(1, 1);
 
   public string BlobStorageFolder => SpecklePathProvider.BlobStoragePath(Path.Combine(_basePath, _applicationName));
 
