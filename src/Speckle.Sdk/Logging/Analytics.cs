@@ -75,7 +75,7 @@ public static class Analytics
   }
 
   private const string MIXPANEL_TOKEN = "acd87c5a50b56df91a795e999812a3a4";
-  private const string MIXPANEL_SERVER = "https://analytics.speckle.systems";
+  private static readonly Uri s_mixpanelServer = new("https://analytics.speckle.systems");
 
   /// <summary>
   /// Cached email
@@ -240,7 +240,7 @@ public static class Analytics
         using HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
         query.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        var res = await client.PostAsync(MIXPANEL_SERVER + "/track?ip=1", query).ConfigureAwait(false);
+        var res = await client.PostAsync(new Uri(s_mixpanelServer, "/track?ip=1"), query).ConfigureAwait(false);
         res.EnsureSuccessStatusCode();
       }
       catch (Exception ex) when (!ex.IsFatal())
@@ -277,7 +277,9 @@ public static class Analytics
         using HttpClient client = Http.GetHttpProxyClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
         query.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        var res = await client.PostAsync(MIXPANEL_SERVER + "/engage#profile-union", query).ConfigureAwait(false);
+        var res = await client
+          .PostAsync(new Uri(s_mixpanelServer, "/engage#profile-union"), query)
+          .ConfigureAwait(false);
         res.EnsureSuccessStatusCode();
       }
       catch (Exception ex) when (!ex.IsFatal())
@@ -309,7 +311,7 @@ public static class Analytics
         using HttpClient client = Http.GetHttpProxyClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
         query.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        var res = await client.PostAsync(MIXPANEL_SERVER + "/engage#profile-set", query).ConfigureAwait(false);
+        var res = await client.PostAsync(new Uri(s_mixpanelServer, "/engage#profile-set"), query).ConfigureAwait(false);
         res.EnsureSuccessStatusCode();
       }
       catch (Exception ex) when (!ex.IsFatal())

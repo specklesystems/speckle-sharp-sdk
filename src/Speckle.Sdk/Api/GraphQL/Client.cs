@@ -161,9 +161,9 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   private Dictionary<string, object?> ConvertExpandoToDict(ExpandoObject expando)
   {
     var variables = new Dictionary<string, object?>();
-    foreach (KeyValuePair<string, object> kvp in expando)
+    foreach (KeyValuePair<string, object?> kvp in expando)
     {
-      object value;
+      object? value;
       if (kvp.Value is ExpandoObject ex)
       {
         value = ConvertExpandoToDict(ex);

@@ -226,7 +226,7 @@ public static class AccountManager
 
     if (!string.IsNullOrEmpty(customServerUrl))
     {
-      if (Uri.TryCreate(customServerUrl, UriKind.Absolute, out Uri url))
+      if (Uri.TryCreate(customServerUrl, UriKind.Absolute, out Uri? url))
       {
         return url;
       }
@@ -815,7 +815,7 @@ public static class AccountManager
 
     var headers = response.Headers;
     const string HEADER = "x-speckle-frontend-2";
-    if (!headers.TryGetValues(HEADER, out IEnumerable<string> values))
+    if (!headers.TryGetValues(HEADER, out IEnumerable<string>? values))
     {
       return false;
     }

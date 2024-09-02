@@ -281,7 +281,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   /// <returns></returns>
   public bool WriteCompletionStatus => _queue.IsEmpty && !_isWriting;
 
-  private void WriteTimerElapsed(object sender, ElapsedEventArgs e)
+  private void WriteTimerElapsed(object? sender, ElapsedEventArgs e)
   {
     _writeTimer.Enabled = false;
 

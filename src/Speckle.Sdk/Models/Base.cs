@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
@@ -111,7 +112,7 @@ public class Base : DynamicBase, ISpeckleObject
 
       var detachAttribute = prop.GetCustomAttribute<DetachPropertyAttribute>(true);
 
-      object value = prop.GetValue(@base);
+      object? value = prop.GetValue(@base);
 
       if (detachAttribute is { Detachable: true })
       {
