@@ -88,7 +88,7 @@ public class ServerTransportTests : IDisposable
 
     // Check that there are three downloaded blobs!
     Assert.That(blobPaths, Has.Count.EqualTo(3));
-    var objectBlobs = receivedObject["blobs"] as IList<object>;
+    var objectBlobs = receivedObject["@blobs"] as IList<object>;
     objectBlobs.ShouldNotBeNull();
     var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs
@@ -121,7 +121,7 @@ public class ServerTransportTests : IDisposable
     // Check that there are three downloaded blobs!
     Assert.That(blobPaths, Has.Count.EqualTo(3));
 
-    var objectBlobs = receivedObject["blobs"] as IList<object>;
+    var objectBlobs = receivedObject["@blobs"] as IList<object>;
     objectBlobs.ShouldNotBeNull();
     var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs
@@ -156,7 +156,7 @@ public class ServerTransportTests : IDisposable
     // Check that there are three downloaded blobs!
     Assert.That(blobPaths.Count, Is.EqualTo(3));
 
-    var objectBlobs = receivedObject["blobs"] as IList<object>;
+    var objectBlobs = receivedObject["@blobs"] as IList<object>;
     objectBlobs.ShouldNotBeNull();
     var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs
