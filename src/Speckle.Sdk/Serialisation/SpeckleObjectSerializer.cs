@@ -166,7 +166,7 @@ public class SpeckleObjectSerializer
         writer.WriteStartObject();
         foreach (DictionaryEntry kvp in d)
         {
-          writer.WritePropertyName(kvp.Key.ToString());
+          writer.WritePropertyName(kvp.Key.ToString().NotNull());
           SerializeProperty(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo);
         }
         writer.WriteEndObject();

@@ -134,7 +134,7 @@ public sealed class SpeckleObjectDeserializer
       {
         case JsonToken.PropertyName:
           {
-            var propName = reader.Value.NotNull().ToString();
+            string propName = (reader.Value?.ToString()).NotNull();
             if (propName == "__closure")
             {
               reader.Read(); //goes to prop value
@@ -277,7 +277,7 @@ public sealed class SpeckleObjectDeserializer
   {
     string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();
     Type type = TypeLoader.GetType(typeName);
-    Base baseObj = (Base)Activator.CreateInstance(type);
+    Base baseObj = (Base)Activator.CreateInstance(type).NotNull();
 
     dictObj.Remove(TYPE_DISCRIMINATOR);
     dictObj.Remove("__closure");
