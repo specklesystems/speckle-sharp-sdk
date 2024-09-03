@@ -1,19 +1,27 @@
 ﻿using NUnit.Framework;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
-[TestOf(typeof(BaseObjectSerializerV2))]
+[TestOf(typeof(SpeckleObjectSerializer))]
 public sealed class JsonIgnoreRespected
 {
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(IgnoreTest).Assembly);
+  }
+
   [Test]
   public void IgnoredProperties_NotIncludedInJson()
   {
     IgnoreTest testData = new();
 
-    BaseObjectSerializerV2 sut = new();
+    SpeckleObjectSerializer sut = new();
 
     var res = sut.Serialize(testData);
 

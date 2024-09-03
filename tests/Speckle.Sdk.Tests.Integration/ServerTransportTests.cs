@@ -43,10 +43,7 @@ public class ServerTransportTests : IDisposable
   }
 
   [TearDown]
-  public void TearDown()
-  {
-    CleanData();
-  }
+  public void TearDown() => CleanData();
 
   private void CleanData()
   {
@@ -55,6 +52,7 @@ public class ServerTransportTests : IDisposable
     {
       Directory.Delete(_basePath, true);
     }
+    Directory.CreateDirectory(_basePath);
   }
 
   [Test]
@@ -71,7 +69,7 @@ public class ServerTransportTests : IDisposable
   public async Task SendAndReceiveObjectWithBlobs()
   {
     var myObject = Fixtures.GenerateSimpleObject();
-    myObject["blobs"] = Fixtures.GenerateThreeBlobs();
+    myObject["@blobs"] = Fixtures.GenerateThreeBlobs();
 
     var sendResult = await Operations.Send(myObject, _transport, false);
 
@@ -90,7 +88,7 @@ public class ServerTransportTests : IDisposable
 
     // Check that there are three downloaded blobs!
     Assert.That(blobPaths, Has.Count.EqualTo(3));
-    var objectBlobs = receivedObject["blobs"] as IList<object>;
+    var objectBlobs = receivedObject["@blobs"] as IList<object>;
     objectBlobs.ShouldNotBeNull();
     var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs
@@ -105,7 +103,7 @@ public class ServerTransportTests : IDisposable
   public async Task SendWithBlobsWithoutSQLiteSendCache()
   {
     var myObject = Fixtures.GenerateSimpleObject();
-    myObject["blobs"] = Fixtures.GenerateThreeBlobs();
+    myObject["@blobs"] = Fixtures.GenerateThreeBlobs();
 
     var memTransport = new MemoryTransport();
     var sendResult = await Operations.Send(myObject, new List<ITransport> { _transport, memTransport });
@@ -123,7 +121,7 @@ public class ServerTransportTests : IDisposable
     // Check that there are three downloaded blobs!
     Assert.That(blobPaths, Has.Count.EqualTo(3));
 
-    var objectBlobs = receivedObject["blobs"] as IList<object>;
+    var objectBlobs = receivedObject["@blobs"] as IList<object>;
     objectBlobs.ShouldNotBeNull();
     var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs
@@ -138,10 +136,10 @@ public class ServerTransportTests : IDisposable
   public async Task SendReceiveWithCleanedMemoryCache()
   {
     var myObject = Fixtures.GenerateSimpleObject();
-    myObject["blobs"] = Fixtures.GenerateThreeBlobs();
+    myObject["@blobs"] = Fixtures.GenerateThreeBlobs();
 
     var memTransport = new MemoryTransport();
-    var sendResult = await Operations.Send(myObject, new ITransport[] { _transport, memTransport });
+    var sendResult = await Operations.Send(myObject, [_transport, memTransport]);
 
     memTransport = new MemoryTransport();
     Base receivedObject = await Operations.Receive(sendResult.rootObjId, _transport, memTransport);
@@ -158,7 +156,7 @@ public class ServerTransportTests : IDisposable
     // Check that there are three downloaded blobs!
     Assert.That(blobPaths.Count, Is.EqualTo(3));
 
-    var objectBlobs = receivedObject["blobs"] as IList<object>;
+    var objectBlobs = receivedObject["@blobs"] as IList<object>;
     objectBlobs.ShouldNotBeNull();
     var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs

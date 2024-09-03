@@ -1,11 +1,11 @@
-﻿using Speckle.Newtonsoft.Json;
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 
 public static class ClosureParser
 {
-  public static IReadOnlyList<(string, int)> GetClosures(string rootObjectJson)
+  public static IEnumerable<(string, int)> GetClosures(string rootObjectJson)
   {
     try
     {
@@ -18,12 +18,7 @@ public static class ClosureParser
           case JsonToken.StartObject:
           {
             var closureList = ReadObject(reader);
-            if (closureList?.Any() ?? false)
-            {
-              closureList.Sort((a, b) => b.Item2.CompareTo(a.Item2));
-              return closureList;
-            }
-            return Array.Empty<(string, int)>();
+            return closureList;
           }
           default:
             reader.Read();
@@ -33,10 +28,13 @@ public static class ClosureParser
       }
     }
     catch (Exception ex) when (!ex.IsFatal()) { }
-    return Array.Empty<(string, int)>();
+    return [];
   }
 
-  private static List<(string, int)>? ReadObject(JsonTextReader reader)
+  public static IEnumerable<string> GetChildrenIds(string rootObjectJson) =>
+    GetClosures(rootObjectJson).Select(x => x.Item1);
+
+  private static IEnumerable<(string, int)> ReadObject(JsonTextReader reader)
   {
     reader.Read();
     while (reader.TokenType != JsonToken.EndObject)
@@ -48,7 +46,7 @@ public static class ClosureParser
             if (reader.Value as string == "__closure")
             {
               reader.Read(); //goes to prop vale
-              var closureList = ReadClosureList(reader);
+              var closureList = ReadClosureEnumerable(reader);
               return closureList;
             }
             reader.Read(); //goes to prop vale
@@ -63,10 +61,21 @@ public static class ClosureParser
           break;
       }
     }
-    return null;
+    return [];
   }
 
-  private static List<(string, int)> ReadClosureList(JsonTextReader reader)
+  public static IReadOnlyList<(string, int)> GetClosures(JsonReader reader)
+  {
+    if (reader.TokenType != JsonToken.StartObject)
+    {
+      return Array.Empty<(string, int)>();
+    }
+    var closureList = ReadClosureEnumerable(reader).ToList();
+    closureList.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+    return closureList;
+  }
+
+  private static IEnumerable<(string, int)> ReadClosureEnumerable(JsonReader reader)
   {
     List<(string, int)> closureList = new();
     reader.Read(); //startobject
@@ -77,7 +86,6 @@ public static class ClosureParser
       reader.Read();
       closureList.Add((childId, childMinDepth));
     }
-
     return closureList;
   }
 }
