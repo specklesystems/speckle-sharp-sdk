@@ -12,7 +12,7 @@ public enum ProgressEvent
   SerializeObject,
 }
 
-public record ProgressArgs(ProgressEvent ProgressEvent, long? Count, long? Total);
+public record ProgressArgs(ProgressEvent ProgressEvent, long? Count, long? Total, long? ProcessedTotal = null);
 
 /// <summary>
 /// Interface defining the contract for transport implementations.

@@ -73,8 +73,9 @@ public class Base : DynamicBase, ISpeckleObject
   /// <returns>the resulting id (hash)</returns>
   public string GetId(bool decompose = false)
   {
+    //TODO remove me
     var transports = decompose ? [new MemoryTransport()] : Array.Empty<ITransport>();
-    var serializer = new BaseObjectSerializerV2(transports);
+    var serializer = new SpeckleObjectSerializer(transports);
 
     string obj = serializer.Serialize(this);
     return JObject.Parse(obj).GetValue(nameof(id))?.ToString() ?? string.Empty;
