@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using NUnit.Framework;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -38,7 +38,7 @@ public class SimpleRoundTripTests
   public async Task SimpleSerialization(Base testData)
   {
     var result = Sdk.Api.Operations.Serialize(testData);
-    var test = await Sdk.Api.Operations.Deserialize(result);
+    var test = await Sdk.Api.Operations.DeserializeAsync(result);
 
     Assert.That(testData.GetId(), Is.EqualTo(test.GetId()));
   }

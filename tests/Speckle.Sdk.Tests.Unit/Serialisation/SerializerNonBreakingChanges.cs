@@ -337,7 +337,7 @@ public abstract class SerializerMock : Base
 
     var json = Operations.Serialize(this);
 
-    Base result = await Operations.Deserialize(json);
+    Base result = await Operations.DeserializeAsync(json);
     Assert.That(result, Is.Not.Null);
     Assert.That(result, Is.TypeOf<TTo>());
     return (TTo)result;

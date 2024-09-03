@@ -108,7 +108,7 @@ public static partial class Operations
 
     using var activity = SpeckleActivityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = await serializer.Deserialize(objString);
+    Base res = await serializer.DeserializeJsonAsync(objString);
 
     timer.Stop();
     SpeckleLog.Logger.Information(
