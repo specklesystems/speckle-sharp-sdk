@@ -147,10 +147,9 @@ public sealed class SpeckleObjectDeserializer
               foreach (var closure in closures)
               {
                 string objId = closure.Item1;
-                if (TryGetDeserialized(objId) == null)
-                {
-                  throw new TransportException($"Closure {objId} was not found in transport {ReadTransport}");
-                }
+                //don't do anything with return value but later check if null
+                // https://linear.app/speckle/issue/CXPLA-54/when-deserializing-dont-allow-closures-that-arent-downloadable
+                TryGetDeserialized(objId);
               }
               reader.Read(); //goes to next
               continue;
