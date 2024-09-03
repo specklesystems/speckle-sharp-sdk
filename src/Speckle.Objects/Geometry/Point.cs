@@ -216,7 +216,7 @@ public class Point : Base, ITransformable<Point>
     return Math.Sqrt(Math.Pow(x - point.x, 2) + Math.Pow(y - point.y, 2) + Math.Pow(z - point.z, 2));
   }
 
-  public override bool Equals(object obj)
+  public override bool Equals(object? obj)
   {
     if (ReferenceEquals(this, obj))
     {
@@ -231,5 +231,12 @@ public class Point : Base, ITransformable<Point>
     return this == (Point)obj;
   }
 
-  public override int GetHashCode() => HashCode.Of(units).And(x).And(y).And(y);
+  public override int GetHashCode()
+  {
+    #if NETSTANDARD2_0
+    return HashCode.Of(units).And(x).And(y).And(y);
+    #else
+    return HashCode.Combine(units, x, y, z);
+    #endif
+  }
 }
