@@ -45,7 +45,7 @@ public sealed class SpeckleObjectDeserializer
   /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public async Task<Base> Deserialize(string rootObjectJson)
+  public async Task<Base> DeserializeJsonAsync(string rootObjectJson)
   {
     if (_isBusy)
     {
@@ -59,7 +59,7 @@ public sealed class SpeckleObjectDeserializer
       _isBusy = true;
       _deserializedObjects = new(StringComparer.Ordinal);
       _currentCount = 0;
-      return (Base)(await DeserializeJsonAsync(rootObjectJson).NotNull());
+      return (Base)(await DeserializeJsonAsyncInternal(rootObjectJson).NotNull());
     }
     finally
     {
@@ -68,7 +68,7 @@ public sealed class SpeckleObjectDeserializer
     }
   }
 
-  private async Task<object?> DeserializeJsonAsync(string objectJson)
+  private async Task<object?> DeserializeJsonAsyncInternal(string objectJson)
   {
     if (objectJson is null)
     {

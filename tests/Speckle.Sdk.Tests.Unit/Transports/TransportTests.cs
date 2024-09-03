@@ -25,7 +25,7 @@ public abstract class TransportTests
     await Sut.WriteComplete();
 
     {
-      var postAdd =await Sut.GetObject(PAYLOAD_ID);
+      var postAdd = await Sut.GetObject(PAYLOAD_ID);
       Assert.That(postAdd, Is.EqualTo(PAYLOAD_DATA));
     }
   }
