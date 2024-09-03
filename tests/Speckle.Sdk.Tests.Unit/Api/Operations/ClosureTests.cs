@@ -50,7 +50,7 @@ public class Closures
     var test = await Sdk.Api.Operations.Receive(sendResult.rootObjId, localTransport: transport);
 
     test.id.NotNull();
-    Assert.That(d1.GetId(true), Is.EqualTo(test.id));
+    Assert.That(await d1.GetId(true), Is.EqualTo(test.id));
 
     var d1_ = NotNullExtensions.NotNull(
       JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d1.GetId(true)])
@@ -64,19 +64,19 @@ public class Closures
     var d4_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d4.GetId(true)]);
     var d5_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d5.GetId(true)]);
 
-    var depthOf_d5_in_d1 = int.Parse((string)d1_.__closure[d5.GetId(true)]);
+    var depthOf_d5_in_d1 = int.Parse((string)d1_.__closure[await d5.GetId(true)]);
     Assert.That(depthOf_d5_in_d1, Is.EqualTo(1));
 
-    var depthOf_d4_in_d1 = int.Parse((string)d1_.__closure[d4.GetId(true)]);
+    var depthOf_d4_in_d1 = int.Parse((string)d1_.__closure[await d4.GetId(true)]);
     Assert.That(depthOf_d4_in_d1, Is.EqualTo(3));
 
-    var depthOf_d5_in_d3 = int.Parse((string)d3_.__closure[d5.GetId(true)]);
+    var depthOf_d5_in_d3 = int.Parse((string)d3_.__closure[await d5.GetId(true)]);
     Assert.That(depthOf_d5_in_d3, Is.EqualTo(2));
 
-    var depthOf_d4_in_d3 = int.Parse((string)d3_.__closure[d4.GetId(true)]);
+    var depthOf_d4_in_d3 = int.Parse((string)d3_.__closure[await d4.GetId(true)]);
     Assert.That(depthOf_d4_in_d3, Is.EqualTo(1));
 
-    var depthOf_d5_in_d2 = int.Parse((string)d2_.__closure[d5.GetId(true)]);
+    var depthOf_d5_in_d2 = int.Parse((string)d2_.__closure[await d5.GetId(true)]);
     Assert.That(depthOf_d5_in_d2, Is.EqualTo(1));
   }
 

@@ -433,7 +433,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     Action<int>? onTotalChildrenCountKnown = null
   )
   {
-    string res = await TransportHelpers.CopyObjectAndChildrenSync(
+    string res = await TransportHelpers.CopyObjectAndChildrenAsync(
       id,
       this,
       targetTransport,
