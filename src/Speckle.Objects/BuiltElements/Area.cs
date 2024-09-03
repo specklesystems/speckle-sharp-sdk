@@ -23,6 +23,8 @@ public class Area : Base, IHasArea, IHasVolume, IDisplayValue<List<Mesh>>
 
   public string name { get; set; }
   public string number { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public Point center { get; set; }
   public List<ICurve> voids { get; set; } = new();

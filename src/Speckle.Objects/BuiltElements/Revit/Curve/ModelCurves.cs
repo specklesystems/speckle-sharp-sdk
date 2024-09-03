@@ -61,6 +61,8 @@ public class RoomBoundaryLine : Base
   public ICurve baseCurve { get; set; }
   public Base? parameters { get; set; }
   public string elementId { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public string units { get; set; }
 }

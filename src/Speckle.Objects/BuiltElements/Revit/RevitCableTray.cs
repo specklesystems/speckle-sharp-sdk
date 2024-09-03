@@ -8,6 +8,8 @@ public class RevitCableTray : CableTray, IHasMEPConnectors
 {
   public string family { get; set; }
   public string type { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public Base parameters { get; set; }
   public string elementId { get; set; }

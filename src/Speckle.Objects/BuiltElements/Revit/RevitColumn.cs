@@ -42,6 +42,7 @@ public class RevitColumn : Column
     this.parameters = parameters?.ToBase();
   }
 
+  [DetachProperty]
   public Level? topLevel { get; set; }
   public double baseOffset { get; set; }
   public double topOffset { get; set; }

@@ -33,6 +33,8 @@ public class RevitBrace : Brace
   public string type { get; set; }
   public Base? parameters { get; set; }
   public string? elementId { get; set; }
+
+  [DetachProperty]
   public Level? level { get; set; }
 
   #region Schema Info Constructor
