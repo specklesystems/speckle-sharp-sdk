@@ -10,7 +10,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
-public sealed class BaseObjectDeserializerV2
+public sealed class SpeckleObjectDeserializer
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
@@ -148,7 +148,10 @@ public sealed class BaseObjectDeserializerV2
               foreach (var closure in closures)
               {
                 string objId = closure.Item1;
-                await TryGetDeserialized(objId);
+                if (TryGetDeserialized(objId) == null)
+                {
+                  throw new TransportException($"Closure {objId} was not found in transport {ReadTransport}");
+                }
               }
               await reader.ReadAsync(ct); //goes to next
               continue;

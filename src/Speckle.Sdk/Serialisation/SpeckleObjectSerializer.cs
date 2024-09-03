@@ -17,7 +17,7 @@ namespace Speckle.Sdk.Serialisation;
 
 public record SerializationResult(string Json, string? Id, object? Value);
 
-public class BaseObjectSerializerV2
+public class SpeckleObjectSerializer
 {
   private readonly Stopwatch _stopwatch = new();
   private volatile bool _isBusy;
@@ -43,7 +43,7 @@ public class BaseObjectSerializerV2
   /// <summary>The current total elapsed time spent serializing</summary>
   public TimeSpan Elapsed => _stopwatch.Elapsed;
 
-  public BaseObjectSerializerV2()
+  public SpeckleObjectSerializer()
     : this(Array.Empty<ITransport>()) { }
 
   /// <summary>
@@ -53,7 +53,7 @@ public class BaseObjectSerializerV2
   /// <param name="onProgressAction">Used to track progress.</param>
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
-  public BaseObjectSerializerV2(
+  public SpeckleObjectSerializer(
     IReadOnlyCollection<ITransport> writeTransports,
     Action<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
