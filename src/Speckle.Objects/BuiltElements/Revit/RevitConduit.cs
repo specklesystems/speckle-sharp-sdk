@@ -10,6 +10,7 @@ public class RevitConduit : Conduit, IHasMEPConnectors
 
   public string type { get; set; }
 
+  [DetachProperty]
   public Level level { get; set; }
 
   public Base parameters { get; set; }
