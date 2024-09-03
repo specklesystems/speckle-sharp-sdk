@@ -166,7 +166,7 @@ public class BaseObjectSerializerV2
           object? converted = PreserializeObject(kvp.Value, ref count, inheritedDetachInfo: inheritedDetachInfo);
           if (converted != null)
           {
-            ret[kvp.Key.ToString()] = converted;
+            ret[kvp.Key.ToString().NotNull()] = converted;
           }
         }
         return ret;
@@ -491,7 +491,7 @@ public class BaseObjectSerializerV2
   {
     Type type = baseObj.GetType();
 
-    if (_typedPropertiesCache.TryGetValue(type.FullName, out List<(PropertyInfo, PropertyAttributeInfo)>? cached))
+    if (_typedPropertiesCache.TryGetValue(type.FullName.NotNull(), out List<(PropertyInfo, PropertyAttributeInfo)>? cached))
     {
       return cached;
     }

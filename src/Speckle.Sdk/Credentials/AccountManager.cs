@@ -227,7 +227,7 @@ public static class AccountManager
 
     if (!string.IsNullOrEmpty(customServerUrl))
     {
-      Uri.TryCreate(customServerUrl, UriKind.Absolute, out Uri url);
+      Uri.TryCreate(customServerUrl, UriKind.Absolute, out Uri? url);
       if (url != null)
       {
         serverUrl = customServerUrl.TrimEnd('/');
@@ -606,7 +606,7 @@ public static class AccountManager
       throw new Exception("Local auth flow failed to complete within the timeout window");
     }
 
-    if (task.IsFaulted)
+    if (task.IsFaulted && task.Exception is not null)
     {
       SpeckleLog.Logger.Error(
         task.Exception,
@@ -817,7 +817,7 @@ public static class AccountManager
 
     var headers = response.Headers;
     const string HEADER = "x-speckle-frontend-2";
-    if (!headers.TryGetValues(HEADER, out IEnumerable<string> values))
+    if (!headers.TryGetValues(HEADER, out IEnumerable<string>? values))
     {
       return false;
     }
@@ -836,10 +836,13 @@ public static class AccountManager
 
   private static string GenerateChallenge()
   {
+    #if NETSTANDARD2_0
     using RNGCryptoServiceProvider rng = new();
     byte[] challengeData = new byte[32];
     rng.GetBytes(challengeData);
-
+    #else
+    byte[] challengeData = RandomNumberGenerator.GetBytes(32);
+#endif
     //escaped chars like % do not play nice with the server
     return Regex.Replace(Convert.ToBase64String(challengeData), @"[^\w\.@-]", "");
   }

@@ -1,3 +1,4 @@
+#if NETSTANDARD2_0
 using System.ComponentModel;
 
 namespace Speckle.Sdk.Common;
@@ -84,7 +85,7 @@ public readonly struct HashCode : IEquatable<HashCode>
   public bool Equals(HashCode other) => this.value.Equals(other.value);
 
   /// <inheritdoc />
-  public override bool Equals(object obj)
+  public override bool Equals(object? obj)
   {
     if (obj is HashCode)
     {
@@ -136,3 +137,4 @@ public readonly struct HashCode : IEquatable<HashCode>
     return temp;
   }
 }
+#endif

@@ -55,9 +55,9 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
 
       SpeckleLog.Logger.Information(
         "Execution of http request to {httpScheme}://{hostUrl}{relativeUrl} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries. Request correlation ID: {correlationId}",
-        request.RequestUri.Scheme,
-        request.RequestUri.Host,
-        request.RequestUri.PathAndQuery,
+        request.RequestUri?.Scheme,
+        request.RequestUri?.Host,
+        request.RequestUri?.PathAndQuery,
         policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed",
         policyResult.Result?.StatusCode,
         sw.Elapsed.TotalSeconds,

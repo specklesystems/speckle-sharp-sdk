@@ -66,7 +66,7 @@ public sealed class MemoryTransport : ITransport, ICloneable
   public string? GetObject(string id)
   {
     var stopwatch = Stopwatch.StartNew();
-    var ret = Objects.TryGetValue(id, out string o) ? o : null;
+    var ret = Objects.TryGetValue(id, out string? o) ? o : null;
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
     return ret;
