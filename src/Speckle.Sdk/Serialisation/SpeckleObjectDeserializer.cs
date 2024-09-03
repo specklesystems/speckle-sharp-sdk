@@ -147,7 +147,10 @@ public sealed class SpeckleObjectDeserializer
               foreach (var closure in closures)
               {
                 string objId = closure.Item1;
-                TryGetDeserialized(objId);
+                if (TryGetDeserialized(objId) == null)
+                {
+                  throw new TransportException($"Closure {objId} was not found in transport {ReadTransport}");
+                }
               }
               reader.Read(); //goes to next
               continue;
