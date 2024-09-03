@@ -99,10 +99,10 @@ Target(
   }
 );
 
-static Task RunRestore() => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build");
+static Task RunPack() => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build");
 
-Target(PACK, DependsOn(TEST), RunRestore);
-Target(PACK_LOCAL, DependsOn(BUILD), RunRestore);
+Target(PACK, DependsOn(TEST), RunPack);
+Target(PACK_LOCAL, DependsOn(BUILD), RunPack);
 
 Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
 
