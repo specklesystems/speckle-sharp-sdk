@@ -84,7 +84,7 @@ public static partial class Operations
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
-      BaseObjectSerializerV2 serializerV2 = new(transports, internalProgressAction, true, cancellationToken);
+      SpeckleObjectSerializer serializerV2 = new(transports, internalProgressAction, true, cancellationToken);
 
       foreach (var t in transports)
       {
@@ -139,7 +139,7 @@ public static partial class Operations
   /// <returns><inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, Action{ConcurrentBag{ProgressArgs}}?, CancellationToken)"/></returns>
   internal static async Task<string> SerializerSend(
     Base value,
-    BaseObjectSerializerV2 serializer,
+    SpeckleObjectSerializer serializer,
     CancellationToken cancellationToken = default
   )
   {

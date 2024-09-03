@@ -21,7 +21,7 @@ public static partial class Operations
   /// <returns>A json string representation of the object.</returns>
   public static string Serialize(Base value, CancellationToken cancellationToken = default)
   {
-    var serializer = new BaseObjectSerializerV2 { CancellationToken = cancellationToken };
+    var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
     return serializer.Serialize(value);
   }
 

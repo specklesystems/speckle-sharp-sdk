@@ -6,7 +6,7 @@ using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
-[TestOf(typeof(BaseObjectSerializerV2))]
+[TestOf(typeof(SpeckleObjectSerializer))]
 public sealed class JsonIgnoreRespected
 {
   [SetUp]
@@ -21,7 +21,7 @@ public sealed class JsonIgnoreRespected
   {
     IgnoreTest testData = new();
 
-    BaseObjectSerializerV2 sut = new();
+    SpeckleObjectSerializer sut = new();
 
     var res = sut.Serialize(testData);
 
