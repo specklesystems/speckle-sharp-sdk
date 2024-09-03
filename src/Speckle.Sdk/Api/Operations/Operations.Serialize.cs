@@ -20,7 +20,7 @@ public static partial class Operations
   /// <returns>A json string representation of the object.</returns>
   public static string Serialize(Base value, CancellationToken cancellationToken = default)
   {
-    var serializer = new BaseObjectSerializerV2 { CancellationToken = cancellationToken };
+    var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
     return serializer.Serialize(value);
   }
 
@@ -31,14 +31,14 @@ public static partial class Operations
   /// </remarks>
   /// <param name="value">The json string representation of a speckle object that you want to deserialize</param>
   /// <param name="cancellationToken"></param>
-  /// <returns><inheritdoc cref="BaseObjectDeserializerV2.Deserialize"/></returns>
+  /// <returns><inheritdoc cref="SpeckleObjectDeserializer.Deserialize"/></returns>
   /// <exception cref="ArgumentNullException"><paramref name="value"/> was null</exception>
   /// <exception cref="JsonReaderException "><paramref name="value"/> was not valid JSON</exception>
   /// <exception cref="SpeckleException"><paramref name="value"/> cannot be deserialised to type <see cref="Base"/></exception>
   /// <exception cref="Speckle.Sdk.Transports.TransportException"><paramref name="value"/> contains closure references (see Remarks)</exception>
-  public static Base Deserialize(string value, CancellationToken cancellationToken = default)
+  public static async Task<Base> Deserialize(string value, CancellationToken cancellationToken = default)
   {
-    using var deserializer = new BaseObjectDeserializerV2 { CancellationToken = cancellationToken };
-    return deserializer.Deserialize(value);
+    var deserializer = new SpeckleObjectDeserializer { CancellationToken = cancellationToken };
+    return await deserializer.Deserialize(value);
   }
 }

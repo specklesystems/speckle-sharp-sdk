@@ -1,5 +1,8 @@
 using NUnit.Framework;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
@@ -14,12 +17,19 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 )]
 public class SerializerBreakingChanges : PrimitiveTestFixture
 {
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+  }
+
   [Test]
   public void StringToInt_ShouldThrow()
   {
     var from = new StringValueMock { value = "testValue" };
 
-    Assert.Throws<SpeckleDeserializeException>(() => from.SerializeAsTAndDeserialize<IntValueMock>());
+    Assert.ThrowsAsync<SpeckleDeserializeException>(async () => await from.SerializeAsTAndDeserialize<IntValueMock>());
   }
 
   [Test, TestCaseSource(nameof(MyEnums))]
@@ -27,9 +37,9 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   {
     var from = new StringValueMock { value = testCase.ToString() };
 
-    Assert.Throws<SpeckleDeserializeException>(() =>
+    Assert.ThrowsAsync<SpeckleDeserializeException>(async () =>
     {
-      var res = from.SerializeAsTAndDeserialize<EnumValueMock>();
+      var res = await from.SerializeAsTAndDeserialize<EnumValueMock>();
     });
   }
 
@@ -42,6 +52,6 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   public void DoubleToInt_ShouldThrow(double testCase)
   {
     var from = new DoubleValueMock { value = testCase };
-    Assert.Throws<SpeckleDeserializeException>(() => from.SerializeAsTAndDeserialize<IntValueMock>());
+    Assert.ThrowsAsync<SpeckleDeserializeException>(async () => await from.SerializeAsTAndDeserialize<IntValueMock>());
   }
 }
