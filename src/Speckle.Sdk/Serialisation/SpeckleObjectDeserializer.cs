@@ -150,7 +150,7 @@ public sealed class SpeckleObjectDeserializer
                 string objId = closure.Item1;
                 //don't do anything with return value but later check if null
                 // https://linear.app/speckle/issue/CXPLA-54/when-deserializing-dont-allow-closures-that-arent-downloadable
-                TryGetDeserialized(objId);
+                await TryGetDeserializedAsync(objId);
               }
               await reader.ReadAsync(ct); //goes to next
               continue;
@@ -174,14 +174,14 @@ public sealed class SpeckleObjectDeserializer
     if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
     {
       var objId = (string)referencedId.NotNull();
-      object? deserialized = await TryGetDeserialized(objId);
+      object? deserialized = await TryGetDeserializedAsync(objId);
       return deserialized;
     }
 
     return Dict2Base(dict);
   }
 
-  private async Task<object?> TryGetDeserialized(string objId)
+  private async Task<object?> TryGetDeserializedAsync(string objId)
   {
     object? deserialized = null;
     _deserializedObjects.NotNull();
