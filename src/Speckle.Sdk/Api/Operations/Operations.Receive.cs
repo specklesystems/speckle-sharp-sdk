@@ -56,7 +56,7 @@ public static partial class Operations
     }
 
     // Setup Serializer
-    BaseObjectDeserializerV2 serializerV2 =
+    SpeckleObjectDeserializer serializer =
       new()
       {
         ReadTransport = localTransport,
@@ -108,7 +108,7 @@ public static partial class Operations
 
     using var activity = SpeckleActivityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = await serializerV2.Deserialize(objString);
+    Base res = await serializer.Deserialize(objString);
 
     timer.Stop();
     SpeckleLog.Logger.Information(
@@ -123,7 +123,7 @@ public static partial class Operations
 
   /// <summary>
   /// Try and get the object from the local transport. If it's there, we assume all its children are there
-  /// This assumption is hard-wired into the <see cref="BaseObjectDeserializerV2"/>
+  /// This assumption is hard-wired into the <see cref="SpeckleObjectDeserializer"/>
   /// </summary>
   /// <param name="objectId"></param>
   /// <param name="localTransport"></param>

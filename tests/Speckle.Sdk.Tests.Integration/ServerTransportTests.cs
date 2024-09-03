@@ -69,7 +69,7 @@ public class ServerTransportTests : IDisposable
   public async Task SendAndReceiveObjectWithBlobs()
   {
     var myObject = Fixtures.GenerateSimpleObject();
-    myObject["blobs"] = Fixtures.GenerateThreeBlobs();
+    myObject["@blobs"] = Fixtures.GenerateThreeBlobs();
 
     var sendResult = await Operations.Send(myObject, _transport, false);
 
@@ -103,7 +103,7 @@ public class ServerTransportTests : IDisposable
   public async Task SendWithBlobsWithoutSQLiteSendCache()
   {
     var myObject = Fixtures.GenerateSimpleObject();
-    myObject["blobs"] = Fixtures.GenerateThreeBlobs();
+    myObject["@blobs"] = Fixtures.GenerateThreeBlobs();
 
     var memTransport = new MemoryTransport();
     var sendResult = await Operations.Send(myObject, new List<ITransport> { _transport, memTransport });
@@ -136,7 +136,7 @@ public class ServerTransportTests : IDisposable
   public async Task SendReceiveWithCleanedMemoryCache()
   {
     var myObject = Fixtures.GenerateSimpleObject();
-    myObject["blobs"] = Fixtures.GenerateThreeBlobs();
+    myObject["@blobs"] = Fixtures.GenerateThreeBlobs();
 
     var memTransport = new MemoryTransport();
     var sendResult = await Operations.Send(myObject, [_transport, memTransport]);
