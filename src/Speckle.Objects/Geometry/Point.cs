@@ -233,10 +233,10 @@ public class Point : Base, ITransformable<Point>
 
   public override int GetHashCode()
   {
-    #if NETSTANDARD2_0
+#if NETSTANDARD2_0
     return HashCode.Of(units).And(x).And(y).And(y);
-    #else
+#else
     return HashCode.Combine(units, x, y, z);
-    #endif
+#endif
   }
 }

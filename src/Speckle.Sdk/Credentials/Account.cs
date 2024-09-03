@@ -96,11 +96,11 @@ public class Account : IEquatable<Account>
 
   public override int GetHashCode()
   {
-    #if NETSTANDARD2_0
-        return HashCode.Of(userInfo.email).And(serverInfo.url);
-    #else
+#if NETSTANDARD2_0
+    return HashCode.Of(userInfo.email).And(serverInfo.url);
+#else
     return HashCode.Combine(userInfo.email, serverInfo.url);
-    #endif
+#endif
   }
 
   #endregion

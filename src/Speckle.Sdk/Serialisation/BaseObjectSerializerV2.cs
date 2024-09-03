@@ -491,7 +491,12 @@ public class BaseObjectSerializerV2
   {
     Type type = baseObj.GetType();
 
-    if (_typedPropertiesCache.TryGetValue(type.FullName.NotNull(), out List<(PropertyInfo, PropertyAttributeInfo)>? cached))
+    if (
+      _typedPropertiesCache.TryGetValue(
+        type.FullName.NotNull(),
+        out List<(PropertyInfo, PropertyAttributeInfo)>? cached
+      )
+    )
     {
       return cached;
     }

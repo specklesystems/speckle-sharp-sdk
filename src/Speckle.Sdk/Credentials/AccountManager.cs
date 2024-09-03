@@ -836,11 +836,11 @@ public static class AccountManager
 
   private static string GenerateChallenge()
   {
-    #if NETSTANDARD2_0
+#if NETSTANDARD2_0
     using RNGCryptoServiceProvider rng = new();
     byte[] challengeData = new byte[32];
     rng.GetBytes(challengeData);
-    #else
+#else
     byte[] challengeData = RandomNumberGenerator.GetBytes(32);
 #endif
     //escaped chars like % do not play nice with the server
