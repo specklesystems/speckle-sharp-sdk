@@ -72,7 +72,7 @@ public class SpeckleObjectSerializer
   /// <exception cref="TransportException">Failed to save object in one or more <see cref="WriteTransports"/></exception>
   /// <exception cref="SpeckleSerializeException">Failed to extract (pre-serialize) properties from the <paramref name="baseObj"/></exception>
   /// <exception cref="OperationCanceledException">One or more <see cref="WriteTransports"/>'s cancellation token requested cancel</exception>
-  public string Serialize(Base baseObj)
+  public async Task<string> SerializeAsync(Base baseObj)
   {
     if (_isBusy)
     {
@@ -87,7 +87,7 @@ public class SpeckleObjectSerializer
       _isBusy = true;
       try
       {
-        var result = SerializeBase(baseObj, true).NotNull();
+        var result = await SerializeBaseAsync(baseObj, true).NotNull();
         StoreObject(result.Id.NotNull(), result.Json);
         return result.Json;
       }
@@ -107,7 +107,7 @@ public class SpeckleObjectSerializer
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
-  public object? SerializeProperty(
+  public async Task<object?> SerializePropertyAsync(
     object? obj,
     JsonWriter writer,
     bool computeClosures = false,
@@ -118,13 +118,13 @@ public class SpeckleObjectSerializer
 
     if (obj == null)
     {
-      writer.WriteNull();
+      await writer.WriteNullAsync(CancellationToken);
       return null;
     }
 
     if (obj.GetType().IsPrimitive || obj is string)
     {
-      writer.WriteValue(obj);
+      await writer.WriteValueAsync(obj, CancellationToken);
       return obj;
     }
 
@@ -150,72 +150,72 @@ public class SpeckleObjectSerializer
           }
         }
         UpdateParentClosures(r.referencedId);
-        return SerializeProperty(ret, writer);
+        return await SerializePropertyAsync(ret, writer);
       }
       case Base b:
-        var result = SerializeBase(b, computeClosures, inheritedDetachInfo);
+        var result = await SerializeBaseAsync(b, computeClosures, inheritedDetachInfo);
         if (result is not null)
         {
-          writer.WriteRawValue(result.Json);
+          await writer.WriteRawValueAsync(result.Json, CancellationToken);
           return result.Value;
         }
-        writer.WriteNull();
+        await writer.WriteNullAsync(CancellationToken);
         return null;
       case IDictionary d:
       {
-        writer.WriteStartObject();
+        await writer.WriteStartObjectAsync(CancellationToken);
         foreach (DictionaryEntry kvp in d)
         {
-          writer.WritePropertyName(kvp.Key.ToString());
-          SerializeProperty(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo);
+          await writer.WritePropertyNameAsync(kvp.Key.ToString(), CancellationToken);
+          await SerializePropertyAsync(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo);
         }
-        writer.WriteEndObject();
+        await writer.WriteEndObjectAsync(CancellationToken);
         break;
       }
       case IEnumerable e:
       {
         //TODO: handle IReadonlyDictionary
-        writer.WriteStartArray();
+        await writer.WriteStartArrayAsync(CancellationToken);
         foreach (object? element in e)
         {
-          SerializeProperty(element, writer, inheritedDetachInfo: inheritedDetachInfo);
+          await SerializePropertyAsync(element, writer, inheritedDetachInfo: inheritedDetachInfo);
         }
-        writer.WriteEndArray();
+        await writer.WriteEndArrayAsync(CancellationToken);
         break;
       }
       case Enum:
-        writer.WriteValue((int)obj);
+        await writer.WriteValueAsync((int)obj, CancellationToken);
         break;
       // Support for simple types
       case Guid g:
-        writer.WriteValue(g.ToString());
+        await writer.WriteValueAsync(g.ToString(), CancellationToken);
         break;
       case Color c:
-        writer.WriteValue(c.ToArgb());
+        await writer.WriteValueAsync(c.ToArgb(), CancellationToken);
         break;
       case DateTime t:
-        writer.WriteValue(t.ToString("o", CultureInfo.InvariantCulture));
+        await writer.WriteValueAsync(t.ToString("o", CultureInfo.InvariantCulture), CancellationToken);
         break;
       case Matrix4x4 md:
-        writer.WriteStartArray();
+        await writer.WriteStartArrayAsync(CancellationToken);
 
-        writer.WriteValue(md.M11);
-        writer.WriteValue(md.M12);
-        writer.WriteValue(md.M13);
-        writer.WriteValue(md.M14);
-        writer.WriteValue(md.M21);
-        writer.WriteValue(md.M22);
-        writer.WriteValue(md.M23);
-        writer.WriteValue(md.M24);
-        writer.WriteValue(md.M31);
-        writer.WriteValue(md.M32);
-        writer.WriteValue(md.M33);
-        writer.WriteValue(md.M34);
-        writer.WriteValue(md.M41);
-        writer.WriteValue(md.M42);
-        writer.WriteValue(md.M43);
-        writer.WriteValue(md.M44);
-        writer.WriteEndArray();
+        await writer.WriteValueAsync(md.M11, CancellationToken);
+        await writer.WriteValueAsync(md.M12, CancellationToken);
+        await writer.WriteValueAsync(md.M13, CancellationToken);
+        await writer.WriteValueAsync(md.M14, CancellationToken);
+        await writer.WriteValueAsync(md.M21, CancellationToken);
+        await writer.WriteValueAsync(md.M22, CancellationToken);
+        await writer.WriteValueAsync(md.M23, CancellationToken);
+        await writer.WriteValueAsync(md.M24, CancellationToken);
+        await writer.WriteValueAsync(md.M31, CancellationToken);
+        await writer.WriteValueAsync(md.M32, CancellationToken);
+        await writer.WriteValueAsync(md.M33, CancellationToken);
+        await writer.WriteValueAsync(md.M34, CancellationToken);
+        await writer.WriteValueAsync(md.M41, CancellationToken);
+        await writer.WriteValueAsync(md.M42, CancellationToken);
+        await writer.WriteValueAsync(md.M43, CancellationToken);
+        await writer.WriteValueAsync(md.M44, CancellationToken);
+        await writer.WriteEndArrayAsync(CancellationToken);
         break;
       //BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
       case System.Numerics.Matrix4x4 ms:
@@ -223,24 +223,24 @@ public class SpeckleObjectSerializer
           "This kept for backwards compatibility, no one should be using {this}",
           "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
         );
-        writer.WriteStartArray();
-        writer.WriteValue((double)ms.M11);
-        writer.WriteValue((double)ms.M12);
-        writer.WriteValue((double)ms.M13);
-        writer.WriteValue((double)ms.M14);
-        writer.WriteValue((double)ms.M21);
-        writer.WriteValue((double)ms.M22);
-        writer.WriteValue((double)ms.M23);
-        writer.WriteValue((double)ms.M24);
-        writer.WriteValue((double)ms.M31);
-        writer.WriteValue((double)ms.M32);
-        writer.WriteValue((double)ms.M33);
-        writer.WriteValue((double)ms.M34);
-        writer.WriteValue((double)ms.M41);
-        writer.WriteValue((double)ms.M42);
-        writer.WriteValue((double)ms.M43);
-        writer.WriteValue((double)ms.M44);
-        writer.WriteEndArray();
+        await writer.WriteStartArrayAsync(CancellationToken);
+        await writer.WriteValueAsync((double)ms.M11, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M12, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M13, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M14, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M21, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M22, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M23, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M24, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M31, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M32, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M33, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M34, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M41, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M42, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M43, CancellationToken);
+        await writer.WriteValueAsync((double)ms.M44, CancellationToken);
+        await writer.WriteEndArrayAsync(CancellationToken);
         break;
       default:
         throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}");
@@ -249,7 +249,7 @@ public class SpeckleObjectSerializer
     return obj;
   }
 
-  private SerializationResult? SerializeBase(
+  private async Task<SerializationResult?> SerializeBaseAsync(
     Base baseObj,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
@@ -270,7 +270,7 @@ public class SpeckleObjectSerializer
 
     using var writer = new StringWriter();
     using var jsonWriter = new JsonTextWriter(writer);
-    string id = SerializeBaseObject(baseObj, jsonWriter, closure);
+    string id = await SerializeBaseObjectAsync(baseObj, jsonWriter, closure);
     var json = writer.ToString();
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
@@ -294,7 +294,7 @@ public class SpeckleObjectSerializer
       ObjectReference objRef = new() { referencedId = id };
       using var writer2 = new StringWriter();
       using var jsonWriter2 = new JsonTextWriter(writer2);
-      var newObj = SerializeProperty(objRef, jsonWriter2);
+      var newObj = await SerializePropertyAsync(objRef, jsonWriter2);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
 
@@ -355,12 +355,16 @@ public class SpeckleObjectSerializer
     return allProperties;
   }
 
-  private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
+  private async Task<string> SerializeBaseObjectAsync(
+    Base baseObj,
+    JsonWriter writer,
+    IReadOnlyDictionary<string, int> closure
+  )
   {
     var allProperties = ExtractAllProperties(baseObj);
     var computeIdProperties = new Dictionary<string, object?>(allProperties.Count);
 
-    writer.WriteStartObject();
+    await writer.WriteStartObjectAsync(CancellationToken);
     // Convert all properties
     foreach (var prop in allProperties)
     {
@@ -369,38 +373,42 @@ public class SpeckleObjectSerializer
         continue;
       }
 
-      writer.WritePropertyName(prop.Key);
-      var valueToComputeIdFor = SerializeProperty(prop.Value.Item1, writer, prop.Value.Item2);
+      await writer.WritePropertyNameAsync(prop.Key, CancellationToken);
+      var valueToComputeIdFor = await SerializePropertyAsync(prop.Value.Item1, writer, prop.Value.Item2);
       computeIdProperties[prop.Key] = valueToComputeIdFor;
     }
 
     var id = baseObj is Blob blob ? blob.id : ComputeId(computeIdProperties);
-    writer.WritePropertyName("id");
-    writer.WriteValue(id);
+    await writer.WritePropertyNameAsync("id", CancellationToken);
+    await writer.WriteValueAsync(id, CancellationToken);
     baseObj.id = id;
 
     if (closure.Count > 0)
     {
-      writer.WritePropertyName("__closure");
-      writer.WriteStartObject();
+      await writer.WritePropertyNameAsync("__closure", CancellationToken);
+      await writer.WriteStartObjectAsync(CancellationToken);
       foreach (var c in closure)
       {
-        writer.WritePropertyName(c.Key);
-        writer.WriteValue(c.Value);
+        await writer.WritePropertyNameAsync(c.Key, CancellationToken);
+        await writer.WriteValueAsync(c.Value, CancellationToken);
       }
-      writer.WriteEndObject();
+      await writer.WriteEndObjectAsync(CancellationToken);
     }
 
-    writer.WriteEndObject();
+    await writer.WriteEndObjectAsync(CancellationToken);
     return id;
   }
 
-  private object? SerializeProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
+  private Task<object?> SerializePropertyAsync(
+    object? baseValue,
+    JsonWriter jsonWriter,
+    PropertyAttributeInfo detachInfo
+  )
   {
     // If there are no WriteTransports, keep everything attached.
     if (WriteTransports.Count == 0)
     {
-      return SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+      return SerializePropertyAsync(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
     }
 
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
@@ -423,14 +431,14 @@ public class SpeckleObjectSerializer
         chunks.Add(crtChunk);
       }
 
-      return SerializeProperty(
+      return SerializePropertyAsync(
         chunks,
         jsonWriter,
         inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)
       );
     }
 
-    return SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+    return SerializePropertyAsync(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
   }
 
   private void UpdateParentClosures(string objectId)

@@ -17,13 +17,13 @@ public sealed class JsonIgnoreRespected
   }
 
   [Test]
-  public void IgnoredProperties_NotIncludedInJson()
+  public async Task IgnoredProperties_NotIncludedInJson()
   {
     IgnoreTest testData = new();
 
     SpeckleObjectSerializer sut = new();
 
-    var res = sut.Serialize(testData);
+    var res = await sut.SerializeAsync(testData);
 
     Assert.That(res, Does.Contain(nameof(testData.ShouldBeIncluded)));
     Assert.That(res, Does.Contain(testData.ShouldBeIncluded));

@@ -52,11 +52,17 @@ public class Closures
     test.id.NotNull();
     Assert.That(d1.GetId(true), Is.EqualTo(test.id));
 
-    var d1_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d1.GetId(true)]));
-    var d2_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d2.GetId(true)]));
-    var d3_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d3.GetId(true)]));
-    var d4_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d4.GetId(true)]);
-    var d5_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d5.GetId(true)]);
+    var d1_ = NotNullExtensions.NotNull(
+      JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d1.GetId(true)])
+    );
+    var d2_ = NotNullExtensions.NotNull(
+      JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d2.GetId(true)])
+    );
+    var d3_ = NotNullExtensions.NotNull(
+      JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d3.GetId(true)])
+    );
+    var d4_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d4.GetId(true)]);
+    var d5_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d5.GetId(true)]);
 
     var depthOf_d5_in_d1 = int.Parse((string)d1_.__closure[d5.GetId(true)]);
     Assert.That(depthOf_d5_in_d1, Is.EqualTo(1));
