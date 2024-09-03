@@ -14,10 +14,7 @@ public readonly struct HashCode : IEquatable<HashCode>
   /// Initializes a new instance of the <see cref="HashCode"/> struct.
   /// </summary>
   /// <param name="value">The value.</param>
-  private HashCode(int value)
-  {
-    _value = value;
-  }
+  private HashCode(int value) => _value = value;
 
   /// <summary>
   /// Performs an implicit conversion from <see cref="HashCode"/> to <see cref="int"/>.

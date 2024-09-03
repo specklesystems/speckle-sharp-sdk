@@ -158,6 +158,16 @@ public class LegacyAPITests : IDisposable
     Assert.That(invites, Is.Not.Null);
   }
 
+  [Test, Order(33)]
+  public async Task StreamInviteUse()
+  {
+    var invites = await _secondClient.GetAllPendingInvites();
+
+    var res = await _secondClient.StreamInviteUse(invites[0].streamId, invites[0].token);
+
+    Assert.That(res, Is.True);
+  }
+
   [Test, Order(34)]
   public async Task StreamUpdatePermission()
   {
