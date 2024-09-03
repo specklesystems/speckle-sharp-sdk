@@ -30,7 +30,7 @@ public static class TransportHelpers
 
     targetTransport.SaveObject(id, parent);
 
-    var closures = ClosureParser.GetChildrenIds(parent).ToList();
+    var closures = (await ClosureParser.GetChildrenIdsAsync(parent)).ToList();
 
     onTotalChildrenCountKnown?.Invoke(closures.Count);
 
