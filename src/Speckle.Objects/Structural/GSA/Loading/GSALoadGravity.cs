@@ -1,5 +1,6 @@
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Structural.Loading;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
@@ -21,7 +22,7 @@ public class GSALoadGravity : LoadGravity
     this.nativeId = nativeId;
     this.name = name;
     this.loadCase = loadCase;
-    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1);
+    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1, Units.Meters); //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
   }
 
   [SchemaInfo(
@@ -42,7 +43,7 @@ public class GSALoadGravity : LoadGravity
     this.name = name;
     this.elements = elements;
     this.loadCase = loadCase;
-    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1);
+    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1, Units.Meters); //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
   }
 
   [SchemaInfo(
@@ -66,7 +67,7 @@ public class GSALoadGravity : LoadGravity
     this.elements = elements;
     this.nodes = nodes;
     this.loadCase = loadCase;
-    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1);
+    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1, Units.Meters); //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
   }
 
   public int nativeId { get; set; }

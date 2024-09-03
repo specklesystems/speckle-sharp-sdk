@@ -69,9 +69,9 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
       new Plane
       {
         origin = startPoint,
-        normal = new Vector(0, 0, 1),
-        xdir = new Vector(1, 0, 0),
-        ydir = new Vector(0, 1, 0),
+        normal = new Vector(0, 0, 1, units),
+        xdir = new Vector(1, 0, 0, units),
+        ydir = new Vector(0, 1, 0, units),
         units = units
       },
       startPoint,
@@ -138,17 +138,17 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
 
     // find the chord vector then calculate the perpendicular vector which points to the centre
     // which can be used to find the circle centre point
-    var dir = chordAngle < 0 ? -1 : 1;
-    var centreToChord = Math.Sqrt(Math.Pow((double)radius, 2) - Math.Pow(chordLength * 0.5, 2));
-    var perp = Vector.CrossProduct(new Vector(endPoint - startPoint), plane.normal);
-    var circleCentre = chordMidpoint + new Point(perp.Unit() * centreToChord * -dir);
+    int dir = chordAngle < 0 ? -1 : 1;
+    double centreToChord = Math.Sqrt(Math.Pow((double)radius, 2) - Math.Pow(chordLength * 0.5, 2));
+    Vector perp = Vector.CrossProduct((endPoint - startPoint).ToVector(), plane.normal);
+    Point circleCentre = chordMidpoint + (perp.Unit() * centreToChord * -dir).ToPoint();
     plane.origin = circleCentre;
 
     // use the perpendicular vector in the other direction (from the centre to the arc) to find the arc midpoint
     midPoint =
       angleRadians > Math.PI
-        ? chordMidpoint + new Point(perp.Unit() * ((double)radius + centreToChord) * -dir)
-        : chordMidpoint + new Point(perp.Unit() * ((double)radius - centreToChord) * dir);
+        ? chordMidpoint + (perp.Unit() * ((double)radius + centreToChord) * -dir).ToPoint()
+        : chordMidpoint + (perp.Unit() * ((double)radius - centreToChord) * dir).ToPoint();
 
     // find the start angle using trig (correcting for quadrant position) and add the arc angle to get the end angle
     startAngle = Math.Tan((startPoint.y - circleCentre.y) / (startPoint.x - circleCentre.x)) % (2 * Math.PI);

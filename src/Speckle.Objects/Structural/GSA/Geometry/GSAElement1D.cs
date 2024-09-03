@@ -1,6 +1,7 @@
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Structural.Geometry;
 using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
@@ -37,8 +38,8 @@ public class GSAElement1D : Element1D
     this.type = type;
     this.end1Releases = end1Releases ?? new Restraint("FFFFFF");
     this.end2Releases = end2Releases ?? new Restraint("FFFFFF");
-    this.end1Offset = end1Offset ?? new Vector(0, 0, 0);
-    this.end2Offset = end2Offset ?? new Vector(0, 0, 0);
+    this.end1Offset = end1Offset ?? new Vector(0, 0, 0, units = Units.Meters); //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
+    this.end2Offset = end2Offset ?? new Vector(0, 0, 0, units = Units.Meters); //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
     this.localAxis = localAxis;
   }
 
@@ -69,8 +70,8 @@ public class GSAElement1D : Element1D
     this.type = type;
     this.end1Releases = end1Releases ?? new Restraint("FFFFFF");
     this.end2Releases = end2Releases ?? new Restraint("FFFFFF");
-    this.end1Offset = end1Offset ?? new Vector(0, 0, 0);
-    this.end2Offset = end2Offset ?? new Vector(0, 0, 0);
+    this.end1Offset = end1Offset ?? new Vector(0, 0, 0, Units.Meters); //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
+    this.end2Offset = end2Offset ?? new Vector(0, 0, 0, Units.Meters); //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
     this.orientationNode = orientationNode;
     this.orientationAngle = orientationAngle;
   }
