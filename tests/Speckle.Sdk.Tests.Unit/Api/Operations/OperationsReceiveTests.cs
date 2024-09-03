@@ -26,7 +26,7 @@ public sealed partial class OperationsReceiveTests
     ];
   }
 
-  public static async Task<IReadOnlyList<string>> TestCases()
+  public static async Task<IEnumerable<string>> TestCases()
   {
     List<string> ret = new();
     foreach (var s in s_testObjects)
