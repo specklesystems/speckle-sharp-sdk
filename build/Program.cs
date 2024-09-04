@@ -93,7 +93,7 @@ Target(
     await RunAsync(
       "dotnet",
       $"run --project {file} -c Release"
-    );
+    ).ConfigureAwait(false);
   }
 );
 
