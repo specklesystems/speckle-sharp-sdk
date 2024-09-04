@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Timers;
 using Microsoft.Data.Sqlite;
@@ -281,7 +280,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   /// <returns></returns>
   public bool WriteCompletionStatus => _queue.IsEmpty && !_isWriting;
 
-  private void WriteTimerElapsed(object sender, ElapsedEventArgs e)
+  private void WriteTimerElapsed(object? sender, ElapsedEventArgs e)
   {
     _writeTimer.Enabled = false;
 

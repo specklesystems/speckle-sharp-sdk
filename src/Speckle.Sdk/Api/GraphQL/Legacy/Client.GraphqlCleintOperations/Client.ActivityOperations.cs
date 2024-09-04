@@ -1,4 +1,5 @@
 using GraphQL;
+using Speckle.Sdk.Api.GraphQL.Models;
 
 namespace Speckle.Sdk.Api;
 
@@ -16,7 +17,7 @@ public partial class Client
   /// <param name="limit">Max number of activity items to get</param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
-  public async Task<List<ActivityItem>> StreamGetActivity(
+  public async Task<List<Activity>> StreamGetActivity(
     string id,
     DateTime? after = null,
     DateTime? before = null,

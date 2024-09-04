@@ -34,7 +34,7 @@ public sealed class SpeckleObjectDeserializer
   public Action<ProgressArgs>? OnProgressAction { get; set; }
 
   private long _currentCount;
-  private HashSet<string> _ids = new();
+  private readonly HashSet<string> _ids = new();
   private long _processedCount;
 
   public string? BlobStorageFolder { get; set; }

@@ -110,13 +110,13 @@ public class Base : DynamicBase, ISpeckleObject
         continue;
       }
 
-      var detachAttribute = prop.GetCustomAttribute<DetachProperty>(true);
+      var detachAttribute = prop.GetCustomAttribute<DetachPropertyAttribute>(true);
 
-      object value = prop.GetValue(@base);
+      object? value = prop.GetValue(@base);
 
       if (detachAttribute is { Detachable: true })
       {
-        var chunkAttribute = prop.GetCustomAttribute<Chunkable>(true);
+        var chunkAttribute = prop.GetCustomAttribute<ChunkableAttribute>(true);
         if (chunkAttribute == null)
         {
           count += HandleObjectCount(value, parsed);
@@ -132,7 +132,7 @@ public class Base : DynamicBase, ISpeckleObject
       }
     }
 
-    var dynamicProps = @base.GetDynamicPropertyKeys();
+    var dynamicProps = @base.DynamicPropertyKeys;
     foreach (var propName in dynamicProps)
     {
       if (!propName.StartsWith("@"))
@@ -144,7 +144,7 @@ public class Base : DynamicBase, ISpeckleObject
       if (s_chunkSyntax.IsMatch(propName))
       {
         var match = s_chunkSyntax.Match(propName);
-        _ = int.TryParse(match.Groups[match.Groups.Count - 1].Value, out int chunkSize);
+        _ = int.TryParse(match.Groups[^1].Value, out int chunkSize);
 
         if (chunkSize != -1 && @base[propName] is IList asList)
         {

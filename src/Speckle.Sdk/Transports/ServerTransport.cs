@@ -171,11 +171,11 @@ public sealed class ServerTransport : IServerTransport
       .GetFiles(BlobStorageFolder)
       .Select(fileName => fileName.Split(Path.DirectorySeparatorChar).Last())
       .Where(fileName => fileName.Length > 10)
-      .Select(fileName => fileName.Substring(0, Blob.LocalHashPrefixLength))
+      .Select(fileName => fileName[..Blob.LocalHashPrefixLength])
       .ToList();
 
     var newBlobIds = blobIds
-      .Where(blobId => !localBlobTrimmedHashes.Contains(blobId.Substring(0, Blob.LocalHashPrefixLength)))
+      .Where(blobId => !localBlobTrimmedHashes.Contains(blobId[..Blob.LocalHashPrefixLength]))
       .ToList();
 
     await api.DownloadBlobs(StreamId, newBlobIds, OnProgressAction).ConfigureAwait(false);

@@ -110,19 +110,19 @@ public class ObjectSerialization
   [Test]
   public async Task ChunkSerialisation()
   {
-    var baseBasedChunk = new DataChunk();
+    var baseBasedChunk = new DataChunk() { data = new() };
     for (var i = 0; i < 200; i++)
     {
       baseBasedChunk.data.Add(new SuperPoint { W = i });
     }
 
-    var stringBasedChunk = new DataChunk();
+    var stringBasedChunk = new DataChunk() { data = new() };
     for (var i = 0; i < 200; i++)
     {
       stringBasedChunk.data.Add(i + "_hai");
     }
 
-    var doubleBasedChunk = new DataChunk();
+    var doubleBasedChunk = new DataChunk() { data = new() };
     for (var i = 0; i < 200; i++)
     {
       doubleBasedChunk.data.Add(i + 0.33);
