@@ -69,7 +69,7 @@ public static class LogBuilder
       serilogLogConfiguration = InitializeOtelLogging(serilogLogConfiguration, speckleLogging.Otel, resourceBuilder);
     }
     var logger = serilogLogConfiguration.CreateLogger();
-    Log.Logger = logger;
+    SpeckleLog.SpeckleLogger = logger;
 
     logger
       .ForContext("hostApplication", applicationAndVersion)

@@ -84,7 +84,10 @@ public class RevitShaft : RevitOpening
     this.parameters = parameters?.ToBase();
   }
 
+  [DetachProperty]
   public Level bottomLevel { get; set; }
+
+  [DetachProperty]
   public Level topLevel { get; set; }
   public double height { get; set; }
 

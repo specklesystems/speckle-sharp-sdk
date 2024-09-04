@@ -20,6 +20,8 @@ public class RevitRailing : Base, IDisplayValue<List<Mesh>>
 
   //public string family { get; set; }
   public string type { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public Polycurve path { get; set; }
   public bool flipped { get; set; }
