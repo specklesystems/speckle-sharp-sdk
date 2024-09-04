@@ -40,6 +40,6 @@ public class SimpleRoundTripTests
     var result = await Sdk.Api.Operations.Serialize(testData);
     var test = await Sdk.Api.Operations.DeserializeAsync(result);
 
-    Assert.That(testData.GetId(), Is.EqualTo(test.GetId()));
+    Assert.That(await testData.GetIdAsync(), Is.EqualTo(await test.GetIdAsync()));
   }
 }

@@ -31,7 +31,7 @@ public sealed partial class OperationsReceiveTests
     List<string> ret = new();
     foreach (var s in s_testObjects)
     {
-      ret.Add(await s.GetId());
+      ret.Add(await s.GetIdAsync());
     }
 
     return ret;
