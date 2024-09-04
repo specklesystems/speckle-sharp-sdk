@@ -17,7 +17,7 @@ public abstract class TransportTests
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     {
-      var preAdd = Sut.NotNull().GetObject(PAYLOAD_ID);
+      var preAdd = await Sut.NotNull().GetObject(PAYLOAD_ID);
       Assert.That(preAdd, Is.Null);
     }
 
@@ -25,7 +25,7 @@ public abstract class TransportTests
     await Sut.WriteComplete();
 
     {
-      var postAdd = Sut.GetObject(PAYLOAD_ID);
+      var postAdd = await Sut.GetObject(PAYLOAD_ID);
       Assert.That(postAdd, Is.EqualTo(PAYLOAD_DATA));
     }
   }
@@ -88,7 +88,7 @@ public abstract class TransportTests
     //Test 3. GetObjects
     foreach (var x in testData)
     {
-      var res = Sut.GetObject(x.id);
+      var res = await Sut.GetObject(x.id);
       Assert.That(res, Is.EqualTo(x.data));
     }
   }
@@ -168,7 +168,7 @@ public abstract class TransportTests
     //Assert
     foreach (var (expectedId, expectedData) in testData)
     {
-      var actual = destination.GetObject(expectedId);
+      var actual = await destination.GetObject(expectedId);
       Assert.That(actual, Is.EqualTo(expectedData));
     }
   }

@@ -32,7 +32,7 @@ public class TestTransport : ITransport
 
   public Task WriteComplete() => throw new NotImplementedException();
 
-  public string? GetObject(string id) => Objects.TryGetValue(id, out string? o) ? o : null;
+  public Task<string?> GetObject(string id) => Task.FromResult(Objects.TryGetValue(id, out string? o) ? o : null);
 
   public Task<string> CopyObjectAndChildren(
     string id,

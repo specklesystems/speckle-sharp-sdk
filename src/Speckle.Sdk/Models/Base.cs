@@ -30,7 +30,7 @@ public class Base : DynamicBase, ISpeckleObject
   private string _type;
 
   /// <summary>
-  /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. Use the <see cref="GetId(bool)"/> function to get it.</b>
+  /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. Use the <see cref="GetIdAsync"/> function to get it.</b>
   /// </summary>
   [SchemaIgnore]
   public virtual string id { get; set; }
@@ -70,13 +70,13 @@ public class Base : DynamicBase, ISpeckleObject
   /// </remarks>
   /// <param name="decompose">If <see langword="true"/>, will decompose the object in the process of hashing.</param>
   /// <returns>the resulting id (hash)</returns>
-  public string GetId(bool decompose = false)
+  public async Task<string> GetIdAsync(bool decompose = false)
   {
     //TODO remove me
     var transports = decompose ? [new MemoryTransport()] : Array.Empty<ITransport>();
     var serializer = new SpeckleObjectSerializer(transports);
 
-    string obj = serializer.Serialize(this);
+    string obj = await serializer.SerializeAsync(this).ConfigureAwait(false);
     return JObject.Parse(obj).GetValue(nameof(id))?.ToString() ?? string.Empty;
   }
 

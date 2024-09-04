@@ -126,7 +126,7 @@ public sealed class ServerTransport : IServerTransport
     api.CancellationToken = CancellationToken;
 
     string? rootObjectJson = await api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
-    var allIds = ClosureParser.GetChildrenIds(rootObjectJson.NotNull()).ToList();
+    var allIds = (await ClosureParser.GetChildrenIdsAsync(rootObjectJson.NotNull()).ConfigureAwait(false)).ToList();
 
     var childrenIds = allIds.Where(x => !x.Contains("blob:"));
     var blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x.Remove(0, 5));
@@ -185,14 +185,14 @@ public sealed class ServerTransport : IServerTransport
     return rootObjectJson;
   }
 
-  public string GetObject(string id)
+  public async Task<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
     var stopwatch = Stopwatch.StartNew();
-    var result = Api.DownloadSingleObject(StreamId, id, OnProgressAction).Result;
+    var result = await Api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-    return result.NotNull();
+    return result;
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
