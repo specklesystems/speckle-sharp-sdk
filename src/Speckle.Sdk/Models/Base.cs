@@ -76,7 +76,7 @@ public class Base : DynamicBase, ISpeckleObject
     var transports = decompose ? [new MemoryTransport()] : Array.Empty<ITransport>();
     var serializer = new SpeckleObjectSerializer(transports);
 
-    string obj = await serializer.SerializeAsync(this);
+    string obj = await serializer.SerializeAsync(this).ConfigureAwait(false);
     return JObject.Parse(obj).GetValue(nameof(id))?.ToString() ?? string.Empty;
   }
 

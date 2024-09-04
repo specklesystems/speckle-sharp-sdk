@@ -20,7 +20,7 @@ public static class TransportHelpers
 
     cancellationToken.ThrowIfCancellationRequested();
 
-    var parent = await sourceTransport.GetObject(id);
+    var parent = await sourceTransport.GetObject(id).ConfigureAwait(false);
     if (parent is null)
     {
       throw new TransportException(
@@ -30,7 +30,7 @@ public static class TransportHelpers
 
     targetTransport.SaveObject(id, parent);
 
-    var closures = (await ClosureParser.GetChildrenIdsAsync(parent)).ToList();
+    var closures = (await ClosureParser.GetChildrenIdsAsync(parent).ConfigureAwait(false)).ToList();
 
     onTotalChildrenCountKnown?.Invoke(closures.Count);
 
@@ -44,7 +44,7 @@ public static class TransportHelpers
       {
         continue;
       }
-      var child = await sourceTransport.GetObject(closure);
+      var child = await sourceTransport.GetObject(closure).ConfigureAwait(false);
       if (child is null)
       {
         throw new TransportException(

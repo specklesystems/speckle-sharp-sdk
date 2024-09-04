@@ -59,7 +59,7 @@ public sealed class SpeckleObjectDeserializer
       _isBusy = true;
       _deserializedObjects = new(StringComparer.Ordinal);
       _currentCount = 0;
-      return (Base)(await DeserializeJsonAsyncInternal(rootObjectJson).NotNull());
+      return (Base)(await DeserializeJsonAsyncInternal(rootObjectJson).NotNull().ConfigureAwait(false));
     }
     finally
     {
@@ -85,8 +85,8 @@ public sealed class SpeckleObjectDeserializer
     object? converted;
     try
     {
-      await reader.ReadAsync(CancellationToken);
-      converted = await ReadObjectAsync(reader, CancellationToken);
+      await reader.ReadAsync(CancellationToken).ConfigureAwait(false);
+      converted = await ReadObjectAsync(reader, CancellationToken).ConfigureAwait(false);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -107,11 +107,11 @@ public sealed class SpeckleObjectDeserializer
   //this should be buffered
   private async Task<List<object?>> ReadArrayAsync(JsonReader reader, CancellationToken ct)
   {
-    await reader.ReadAsync(ct);
+    await reader.ReadAsync(ct).ConfigureAwait(false);
     List<object?> retList = new();
     while (reader.TokenType != JsonToken.EndArray)
     {
-      object? convertedValue = await ReadPropertyAsync(reader, ct);
+      object? convertedValue = await ReadPropertyAsync(reader, ct).ConfigureAwait(false);
       if (convertedValue is DataChunk chunk)
       {
         retList.AddRange(chunk.data);
@@ -120,14 +120,14 @@ public sealed class SpeckleObjectDeserializer
       {
         retList.Add(convertedValue);
       }
-      await reader.ReadAsync(ct); //goes to next
+      await reader.ReadAsync(ct).ConfigureAwait(false); //goes to next
     }
     return retList;
   }
 
   private async Task<object?> ReadObjectAsync(JsonReader reader, CancellationToken ct)
   {
-    await reader.ReadAsync(ct);
+    await reader.ReadAsync(ct).ConfigureAwait(false);
     Dictionary<string, object?> dict = new();
     while (reader.TokenType != JsonToken.EndObject)
     {
@@ -138,8 +138,8 @@ public sealed class SpeckleObjectDeserializer
             var propName = reader.Value.NotNull().ToString();
             if (propName == "__closure")
             {
-              await reader.ReadAsync(ct); //goes to prop value
-              var closures = await ClosureParser.GetClosuresAsync(reader);
+              await reader.ReadAsync(ct).ConfigureAwait(false); //goes to prop value
+              var closures = await ClosureParser.GetClosuresAsync(reader).ConfigureAwait(false);
               foreach (var closure in closures)
               {
                 _ids.Add(closure.Item1);
@@ -150,15 +150,15 @@ public sealed class SpeckleObjectDeserializer
                 string objId = closure.Item1;
                 //don't do anything with return value but later check if null
                 // https://linear.app/speckle/issue/CXPLA-54/when-deserializing-dont-allow-closures-that-arent-downloadable
-                await TryGetDeserializedAsync(objId);
+                await TryGetDeserializedAsync(objId).ConfigureAwait(false);
               }
-              await reader.ReadAsync(ct); //goes to next
+              await reader.ReadAsync(ct).ConfigureAwait(false); //goes to next
               continue;
             }
-            await reader.ReadAsync(ct); //goes prop value
-            object? convertedValue = await ReadPropertyAsync(reader, ct);
+            await reader.ReadAsync(ct).ConfigureAwait(false); //goes prop value
+            object? convertedValue = await ReadPropertyAsync(reader, ct).ConfigureAwait(false);
             dict[propName] = convertedValue;
-            await reader.ReadAsync(ct); //goes to next
+            await reader.ReadAsync(ct).ConfigureAwait(false); //goes to next
           }
           break;
         default:
@@ -174,7 +174,7 @@ public sealed class SpeckleObjectDeserializer
     if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
     {
       var objId = (string)referencedId.NotNull();
-      object? deserialized = await TryGetDeserializedAsync(objId);
+      object? deserialized = await TryGetDeserializedAsync(objId).ConfigureAwait(false);
       return deserialized;
     }
 
@@ -212,13 +212,13 @@ public sealed class SpeckleObjectDeserializer
     }
 
     // This reference was not already deserialized. Do it now in sync mode
-    string? objectJson = await ReadTransport.GetObject(objId);
+    string? objectJson = await ReadTransport.GetObject(objId).ConfigureAwait(false);
     if (objectJson is null)
     {
       return null;
     }
 
-    deserialized = await DeserializeJsonAsyncInternal(objectJson);
+    deserialized = await DeserializeJsonAsyncInternal(objectJson).ConfigureAwait(false);
 
     if (_deserializedObjects.NotNull().TryAdd(objId, deserialized))
     {
@@ -264,9 +264,9 @@ public sealed class SpeckleObjectDeserializer
       case JsonToken.Date:
         return (DateTime)reader.Value.NotNull();
       case JsonToken.StartArray:
-        return await ReadArrayAsync(reader, ct);
+        return await ReadArrayAsync(reader, ct).ConfigureAwait(false);
       case JsonToken.StartObject:
-        var dict = await ReadObjectAsync(reader, ct);
+        var dict = await ReadObjectAsync(reader, ct).ConfigureAwait(false);
         return dict;
 
       default:

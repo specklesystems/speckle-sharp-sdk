@@ -109,13 +109,9 @@ public class DiskTransport : ICloneable, ITransport
     Action<int>? onTotalChildrenCountKnown = null
   )
   {
-    string res = await TransportHelpers.CopyObjectAndChildrenAsync(
-      id,
-      this,
-      targetTransport,
-      onTotalChildrenCountKnown,
-      CancellationToken
-    );
+    string res = await TransportHelpers
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, onTotalChildrenCountKnown, CancellationToken)
+      .ConfigureAwait(false);
     return res;
   }
 

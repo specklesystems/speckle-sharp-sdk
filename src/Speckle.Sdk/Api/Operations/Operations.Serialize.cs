@@ -21,7 +21,7 @@ public static partial class Operations
   public static async Task<string> Serialize(Base value, CancellationToken cancellationToken = default)
   {
     var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
-    return await serializer.SerializeAsync(value);
+    return await serializer.SerializeAsync(value).ConfigureAwait(false);
   }
 
   /// <remarks>
@@ -39,6 +39,6 @@ public static partial class Operations
   public static async Task<Base> DeserializeAsync(string value, CancellationToken cancellationToken = default)
   {
     var deserializer = new SpeckleObjectDeserializer { CancellationToken = cancellationToken };
-    return await deserializer.DeserializeJsonAsync(value);
+    return await deserializer.DeserializeJsonAsync(value).ConfigureAwait(false);
   }
 }

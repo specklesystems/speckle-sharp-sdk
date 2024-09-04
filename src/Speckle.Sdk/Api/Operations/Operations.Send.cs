@@ -143,7 +143,7 @@ public static partial class Operations
     CancellationToken cancellationToken = default
   )
   {
-    string obj = await serializer.SerializeAsync(value);
+    string obj = await serializer.SerializeAsync(value).ConfigureAwait(false);
     Task[] transportAwaits = serializer.WriteTransports.Select(t => t.WriteComplete()).ToArray();
 
     cancellationToken.ThrowIfCancellationRequested();

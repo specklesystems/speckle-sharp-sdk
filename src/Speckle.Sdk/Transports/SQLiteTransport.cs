@@ -71,7 +71,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   private readonly string _connectionString;
 
   private SqliteConnection Connection { get; set; }
-  private SemaphoreSlim _connectionLock = new(1, 1);
+  private readonly SemaphoreSlim _connectionLock = new(1, 1);
 
   public string BlobStorageFolder => SpecklePathProvider.BlobStoragePath(Path.Combine(_basePath, _applicationName));
 
@@ -97,6 +97,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     Connection.Close();
     Connection.Dispose();
     _writeTimer.Dispose();
+    _connectionLock.Dispose();
   }
 
   public string TransportName { get; set; } = "SQLite";
@@ -402,16 +403,16 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   public async Task<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
-    await _connectionLock.WaitAsync(CancellationToken);
+    await _connectionLock.WaitAsync(CancellationToken).ConfigureAwait(false);
     try
     {
       var startTime = Stopwatch.GetTimestamp();
       using (var command = new SqliteCommand("SELECT * FROM objects WHERE hash = @hash LIMIT 1 ", Connection))
       {
         command.Parameters.AddWithValue("@hash", id);
-        using var reader = await command.ExecuteReaderAsync(CancellationToken);
+        using var reader = await command.ExecuteReaderAsync(CancellationToken).ConfigureAwait(false);
 
-        while (await reader.ReadAsync(CancellationToken))
+        while (await reader.ReadAsync(CancellationToken).ConfigureAwait(false))
         {
           return reader.GetString(1);
         }
@@ -432,13 +433,9 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     Action<int>? onTotalChildrenCountKnown = null
   )
   {
-    string res = await TransportHelpers.CopyObjectAndChildrenAsync(
-      id,
-      this,
-      targetTransport,
-      onTotalChildrenCountKnown,
-      CancellationToken
-    );
+    string res = await TransportHelpers
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, onTotalChildrenCountKnown, CancellationToken)
+      .ConfigureAwait(false);
     return res;
   }
 
