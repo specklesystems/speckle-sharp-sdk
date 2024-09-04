@@ -6,7 +6,7 @@ using Speckle.Objects.Structural.GSA.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
-namespace Objects.Tests.Unit;
+namespace Speckle.Objects.Tests.Unit;
 
 public class ObjectBaseValidityTests
 {
@@ -27,7 +27,7 @@ public class ObjectBaseValidityTests
     });
     exception.ShouldNotBeNull();
     exception.Message.ShouldBe(
-      "Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute"
+      "Speckle.Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute"
     );
   }
 
@@ -37,7 +37,7 @@ public class ObjectBaseValidityTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly);
     var fullTypeString = TypeLoader.GetFullTypeString(typeof(AutocadPolycurve));
-    fullTypeString.ShouldBe("Objects.Geometry.Polycurve:Objects.Geometry.Autocad.AutocadPolycurve");
+    fullTypeString.ShouldBe("Speckle.Objects.Geometry.Polycurve:Speckle.Objects.Geometry.Autocad.AutocadPolycurve");
   }
 
   public class Test : Polycurve;

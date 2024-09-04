@@ -1,11 +1,10 @@
 using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
 using Speckle.Objects.BuiltElements;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 
-namespace Objects.Tests.Unit.Utils;
+namespace Speckle.Objects.Tests.Unit.Utils;
 
 [TestFixture]
 public class ShallowCopyTests
@@ -13,10 +12,33 @@ public class ShallowCopyTests
   [Test]
   public void CanShallowCopy_Wall()
   {
-    var wall = new Wall(5, new Line(new Point(0, 0), new Point(3, 0)))
+    const string UNITS = Units.Meters;
+    var wall = new Wall(
+      5,
+      new Line()
+      {
+        start = new Point(0, 0, 0, UNITS),
+        end = new Point(3, 0, 0, UNITS),
+        units = UNITS
+      }
+    )
     {
-      units = Units.Meters,
-      displayValue = new List<Mesh> { new(), new() }
+      units = UNITS,
+      displayValue = new List<Mesh>
+      {
+        new Mesh
+        {
+          vertices = new(),
+          faces = new(),
+          units = UNITS
+        },
+        new Mesh
+        {
+          vertices = new(),
+          faces = new(),
+          units = UNITS
+        },
+      }
     };
 
     var shallow = wall.ShallowCopy();
