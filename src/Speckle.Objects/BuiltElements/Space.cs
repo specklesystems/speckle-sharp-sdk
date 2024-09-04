@@ -47,8 +47,12 @@ public class Space : Base, IHasArea, IHasVolume, IDisplayValue<List<Mesh>>
   public string name { get; set; }
   public string number { get; set; }
   public Point basePoint { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public double baseOffset { get; set; }
+
+  [DetachProperty]
   public Level topLevel { get; set; } // corresponds to UpperLimit property in Revit api
   public double topOffset { get; set; } // corresponds to LimitOffset property in Revit api
   public List<ICurve> voids { get; set; } = new();

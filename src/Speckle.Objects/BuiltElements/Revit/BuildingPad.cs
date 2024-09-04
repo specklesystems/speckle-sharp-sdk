@@ -12,6 +12,7 @@ public class BuildingPad : Base, IDisplayValue<List<Mesh>>
 
   public string type { get; set; }
 
+  [DetachProperty]
   public Level level { get; set; }
 
   public Base parameters { get; set; }

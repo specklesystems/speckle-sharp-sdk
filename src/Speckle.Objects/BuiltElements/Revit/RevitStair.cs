@@ -8,7 +8,11 @@ public class RevitStair : Base, IDisplayValue<List<Mesh>>
 {
   public string family { get; set; }
   public string type { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
+
+  [DetachProperty]
   public Level topLevel { get; set; }
   public double riserHeight { get; set; }
   public int risersNumber { get; set; }
