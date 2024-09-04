@@ -15,7 +15,6 @@ using Constants = Speckle.Sdk.Helpers.Constants;
 
 namespace Speckle.Sdk.Serialisation;
 
-
 public class SpeckleObjectSerializer
 {
   private readonly Stopwatch _stopwatch = new();

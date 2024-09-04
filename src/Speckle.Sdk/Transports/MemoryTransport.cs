@@ -15,7 +15,6 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
   public IReadOnlyDictionary<string, string> Objects => _objects;
   private readonly Dictionary<string, string> _objects;
 
-
   public MemoryTransport(
     Dictionary<string, string>? objects = null,
     bool blobStorageEnabled = false,
