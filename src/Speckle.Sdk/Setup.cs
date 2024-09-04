@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
@@ -61,7 +60,7 @@ public static class Setup
     foreach (var account in AccountManager.GetAccounts())
     {
       Analytics.AddConnectorToProfile(account.GetHashedEmail(), Application);
-      Analytics.IdentifyProfile(account.GetHashedEmail(), Application);
+      Analytics.IdentifyProfile(account.GetHashedEmail());
     }
     return LogBuilder.Initialize(
       GetUserIdFromDefaultAccount(),

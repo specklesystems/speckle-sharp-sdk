@@ -1,5 +1,5 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
@@ -13,19 +13,17 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
   private readonly string _basePath;
   private readonly string _applicationName;
   private readonly bool _blobStorageEnabled;
-  public IDictionary<string, string> Objects { get; }
-
-  public MemoryTransport()
-    : this(new Dictionary<string, string>()) { }
+  public IReadOnlyDictionary<string, string> Objects => _objects;
+  private readonly ConcurrentDictionary<string, string> _objects;
 
   public MemoryTransport(
-    IDictionary<string, string> objects,
+    ConcurrentDictionary<string, string>? objects = null,
     bool blobStorageEnabled = false,
     string? basePath = null,
     string? applicationName = null
   )
   {
-    Objects = objects;
+    _objects = objects ?? new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
     _blobStorageEnabled = blobStorageEnabled;
     _basePath = basePath ?? SpecklePathProvider.UserApplicationDataPath();
     _applicationName = applicationName ?? "Speckle";
@@ -44,7 +42,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 
   public object Clone()
   {
-    return new MemoryTransport(Objects, _blobStorageEnabled, _basePath, _applicationName)
+    return new MemoryTransport(_objects, _blobStorageEnabled, _basePath, _applicationName)
     {
       TransportName = TransportName,
       OnProgressAction = OnProgressAction,
@@ -85,7 +83,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     CancellationToken.ThrowIfCancellationRequested();
     var stopwatch = Stopwatch.StartNew();
 
-    Objects[id] = serializedObject;
+    _objects[id] = serializedObject;
 
     SavedObjectCount++;
     OnProgressAction?.Invoke(new(ProgressEvent.UploadObject, 1, 1));
@@ -93,29 +91,25 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     Elapsed += stopwatch.Elapsed;
   }
 
-  public string? GetObject(string id)
+  public Task<string?> GetObject(string id)
   {
     var stopwatch = Stopwatch.StartNew();
-    var ret = Objects.TryGetValue(id, out string o) ? o : null;
+    var ret = Objects.TryGetValue(id, out string? o) ? o : null;
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-    return ret;
+    return Task.FromResult(ret);
   }
 
-  public Task<string> CopyObjectAndChildren(
+  public async Task<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
   )
   {
-    string res = TransportHelpers.CopyObjectAndChildrenSync(
-      id,
-      this,
-      targetTransport,
-      onTotalChildrenCountKnown,
-      CancellationToken
-    );
-    return Task.FromResult(res);
+    string res = await TransportHelpers
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, onTotalChildrenCountKnown, CancellationToken)
+      .ConfigureAwait(false);
+    return res;
   }
 
   public Task WriteComplete()

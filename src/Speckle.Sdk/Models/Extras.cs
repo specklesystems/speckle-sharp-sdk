@@ -1,5 +1,3 @@
-#nullable disable
-
 namespace Speckle.Sdk.Models;
 
 /// <summary>
@@ -9,15 +7,14 @@ namespace Speckle.Sdk.Models;
 [SpeckleType("Speckle.Core.Models.DataChunk")]
 public sealed class DataChunk : Base
 {
-  public List<object> data { get; set; } = new();
+  public required List<object?> data { get; init; }
 }
 
-[SpeckleType("Speckle.Core.Models.ObjectReference")]
+[DeprecatedSpeckleType("Speckle.Core.Models.ObjectReference")]
+[SpeckleType("reference")]
 public sealed class ObjectReference : Base
 {
-  public new string speckle_type = "reference";
-
-  public string referencedId { get; set; }
+  public required string referencedId { get; init; }
 
   public Dictionary<string, int> closure { get; set; }
 }

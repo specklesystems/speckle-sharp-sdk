@@ -5,7 +5,7 @@ namespace Speckle.Sdk.Transports;
 
 public static class TransportHelpers
 {
-  public static string CopyObjectAndChildrenSync(
+  public static async Task<string> CopyObjectAndChildrenAsync(
     string id,
     ITransport sourceTransport,
     ITransport targetTransport,
@@ -20,7 +20,7 @@ public static class TransportHelpers
 
     cancellationToken.ThrowIfCancellationRequested();
 
-    var parent = sourceTransport.GetObject(id);
+    var parent = await sourceTransport.GetObject(id).ConfigureAwait(false);
     if (parent is null)
     {
       throw new TransportException(
@@ -30,7 +30,7 @@ public static class TransportHelpers
 
     targetTransport.SaveObject(id, parent);
 
-    var closures = ClosureParser.GetChildrenIds(parent).ToList();
+    var closures = (await ClosureParser.GetChildrenIdsAsync(parent).ConfigureAwait(false)).ToList();
 
     onTotalChildrenCountKnown?.Invoke(closures.Count);
 
@@ -44,7 +44,7 @@ public static class TransportHelpers
       {
         continue;
       }
-      var child = sourceTransport.GetObject(closure);
+      var child = await sourceTransport.GetObject(closure).ConfigureAwait(false);
       if (child is null)
       {
         throw new TransportException(

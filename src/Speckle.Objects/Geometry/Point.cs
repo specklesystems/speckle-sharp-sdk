@@ -216,14 +216,14 @@ public class Point : Base, ITransformable<Point>
     return Math.Sqrt(Math.Pow(x - point.x, 2) + Math.Pow(y - point.y, 2) + Math.Pow(z - point.z, 2));
   }
 
-  public override bool Equals(object obj)
+  public override bool Equals(object? obj)
   {
     if (ReferenceEquals(this, obj))
     {
       return true;
     }
 
-    if (ReferenceEquals(obj, null))
+    if (obj is null)
     {
       return false;
     }

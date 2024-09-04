@@ -3,7 +3,6 @@ using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
@@ -121,9 +120,9 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
     return list;
   }
 
-  public static Line FromList(List<double> list)
+  public static Line FromList(IReadOnlyList<double> list)
   {
-    var units = Units.GetUnitFromEncoding(list[list.Count - 1]);
+    var units = Units.GetUnitFromEncoding(list[^1]);
     var startPt = new Point(list[2], list[3], list[4], units);
     var endPt = new Point(list[5], list[6], list[7], units);
     var line = new Line(startPt, endPt, units)

@@ -3,7 +3,7 @@ using OpenTelemetry.Trace;
 
 namespace Speckle.Sdk.Logging;
 
-public class SpeckleActivity(Activity activity) : ISpeckleActivity
+public sealed class SpeckleActivity(Activity activity) : ISpeckleActivity
 {
   public void Dispose() => activity.Dispose();
 

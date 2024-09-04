@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Timers;
 using Microsoft.Data.Sqlite;
@@ -72,7 +71,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   private readonly string _connectionString;
 
   private SqliteConnection Connection { get; set; }
-  private object ConnectionLock { get; set; }
+  private readonly SemaphoreSlim _connectionLock = new(1, 1);
 
   public string BlobStorageFolder => SpecklePathProvider.BlobStoragePath(Path.Combine(_basePath, _applicationName));
 
@@ -98,6 +97,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     Connection.Close();
     Connection.Dispose();
     _writeTimer.Dispose();
+    _connectionLock.Dispose();
   }
 
   public string TransportName { get; set; } = "SQLite";
@@ -206,7 +206,6 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
     Connection = new SqliteConnection(_connectionString);
     Connection.Open();
-    ConnectionLock = new object();
   }
 
   /// <summary>
@@ -282,7 +281,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   /// <returns></returns>
   public bool WriteCompletionStatus => _queue.IsEmpty && !_isWriting;
 
-  private void WriteTimerElapsed(object sender, ElapsedEventArgs e)
+  private void WriteTimerElapsed(object? sender, ElapsedEventArgs e)
   {
     _writeTimer.Enabled = false;
 
@@ -401,41 +400,43 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   /// </summary>
   /// <param name="id"></param>
   /// <returns></returns>
-  public string? GetObject(string id)
+  public async Task<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
-    lock (ConnectionLock)
+    await _connectionLock.WaitAsync(CancellationToken).ConfigureAwait(false);
+    try
     {
       var startTime = Stopwatch.GetTimestamp();
       using (var command = new SqliteCommand("SELECT * FROM objects WHERE hash = @hash LIMIT 1 ", Connection))
       {
         command.Parameters.AddWithValue("@hash", id);
-        using var reader = command.ExecuteReader();
+        using var reader = await command.ExecuteReaderAsync(CancellationToken).ConfigureAwait(false);
 
-        while (reader.Read())
+        while (await reader.ReadAsync(CancellationToken).ConfigureAwait(false))
         {
           return reader.GetString(1);
         }
       }
+
       Elapsed += LoggingHelpers.GetElapsedTime(startTime, Stopwatch.GetTimestamp());
+    }
+    finally
+    {
+      _connectionLock.Release();
     }
     return null; // pass on the duty of null checks to consumers
   }
 
-  public Task<string> CopyObjectAndChildren(
+  public async Task<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
   )
   {
-    string res = TransportHelpers.CopyObjectAndChildrenSync(
-      id,
-      this,
-      targetTransport,
-      onTotalChildrenCountKnown,
-      CancellationToken
-    );
-    return Task.FromResult(res);
+    string res = await TransportHelpers
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, onTotalChildrenCountKnown, CancellationToken)
+      .ConfigureAwait(false);
+    return res;
   }
 
   #endregion

@@ -9,7 +9,6 @@ namespace Speckle.Sdk.Tests.Performance;
 public sealed class TestDataHelper : IDisposable
 {
   private static readonly string s_basePath = $"./temp {Guid.NewGuid()}";
-  private const string APPLICATION_NAME = "Speckle Performance Tests";
 
   public SQLiteTransport Transport { get; private set; }
   public string ObjectId { get; private set; }
