@@ -13,6 +13,7 @@ const string INTEGRATION = "integration";
 const string PACK = "pack";
 const string PACK_LOCAL = "pack-local";
 const string CLEAN_LOCKS = "clean-locks";
+const string PERF = "perf";
 
 Target(
   CLEAN_LOCKS,
@@ -78,6 +79,18 @@ Target(
     await RunAsync(
       "dotnet",
       $"test {file} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage /p:AltCoverVerbosity=Warning"
+    );
+  }
+);
+
+Target(
+  PERF,
+  Glob.Files(".", "**/*.Tests.Performance.csproj").Concat(Glob.Files(".", "**/*.Tests.Performance")),
+  async file =>
+  {
+    await RunAsync(
+      "dotnet",
+      $"run --project {file} -c Release"
     );
   }
 );

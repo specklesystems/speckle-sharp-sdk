@@ -5,11 +5,12 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>disable</Nullable>
+      <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="BenchmarkDotNet" />
-      <PackageReference Include="Speckle.Objects" VersionOverride="3.1.0-dev.109"/> <!--Latest-->
+      <PackageReference Include="BenchmarkDotNet"  Version="0.14.0"/>
+      <PackageReference Include="Speckle.Objects" Version="3.0.1-rc.117"/> <!--Latest-->
 <!--      <PackageReference Include="Speckle.Objects" VersionOverride="3.0.0-dev.51"/> &lt;!&ndash;Pre-optimisation&ndash;&gt;-->
     </ItemGroup>
   
