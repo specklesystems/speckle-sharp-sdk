@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
@@ -13,16 +14,16 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
   private readonly string _applicationName;
   private readonly bool _blobStorageEnabled;
   public IReadOnlyDictionary<string, string> Objects => _objects;
-  private readonly Dictionary<string, string> _objects;
+  private readonly ConcurrentDictionary<string, string> _objects;
 
   public MemoryTransport(
-    Dictionary<string, string>? objects = null,
+    ConcurrentDictionary<string, string>? objects = null,
     bool blobStorageEnabled = false,
     string? basePath = null,
     string? applicationName = null
   )
   {
-    _objects = objects ?? new Dictionary<string, string>(StringComparer.Ordinal);
+    _objects = objects ?? new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
     _blobStorageEnabled = blobStorageEnabled;
     _basePath = basePath ?? SpecklePathProvider.UserApplicationDataPath();
     _applicationName = applicationName ?? "Speckle";
