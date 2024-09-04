@@ -24,7 +24,7 @@ public class FreeformElement : Base, IDisplayValue<List<Base>>
     this.subcategory = subcategory;
     if (!IsValid())
     {
-      throw new Exception("Freeform elements can only be created from BREPs or Meshes");
+      throw new ArgumentException("Freeform elements can only be created from BREPs or Meshes", nameof(baseGeometries));
     }
 
     this.parameters = parameters?.ToBase();

@@ -87,7 +87,11 @@ public class ModelPropertySupportedTypes
 
         Type propType = prop.PropertyType;
         Type typeDef = propType.IsGenericType ? propType.GetGenericTypeDefinition() : propType;
-        Assert.That(_allowedTypes, Does.Contain(typeDef), $"{typeDef} was not in allowedTypes");
+        Assert.That(
+          _allowedTypes,
+          Does.Contain(typeDef),
+          $"{typeDef} was not in allowedTypes. (Origin: {type}.{prop.Name})"
+        );
       }
     }
   }

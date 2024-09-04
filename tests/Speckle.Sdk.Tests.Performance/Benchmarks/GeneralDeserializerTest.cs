@@ -41,6 +41,6 @@ public class GeneralDeserializer : IDisposable
 
   public void Dispose()
   {
-    // _dataSource.Dispose();
+    _dataSource.Dispose();
   }
 }

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
@@ -96,7 +95,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
   public string? GetObject(string id)
   {
     var stopwatch = Stopwatch.StartNew();
-    var ret = Objects.TryGetValue(id, out string o) ? o : null;
+    var ret = Objects.TryGetValue(id, out string? o) ? o : null;
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
     return ret;

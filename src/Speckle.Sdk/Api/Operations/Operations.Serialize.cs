@@ -1,5 +1,4 @@
 using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
@@ -40,6 +39,6 @@ public static partial class Operations
   public static async Task<Base> Deserialize(string value, CancellationToken cancellationToken = default)
   {
     var deserializer = new SpeckleObjectDeserializer { CancellationToken = cancellationToken };
-    return await deserializer.Deserialize(value);
+    return await deserializer.Deserialize(value).ConfigureAwait(false);
   }
 }

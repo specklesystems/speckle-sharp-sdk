@@ -98,14 +98,6 @@ public class LegacyAPITests : IDisposable
     InitServerTransport();
   }
 
-  [Test, Order(10)]
-  public async Task StreamsGet()
-  {
-    var res = await _myClient.StreamsGet();
-
-    Assert.That(res, Is.Not.Null);
-  }
-
   [Test, Order(11)]
   public async Task StreamGet()
   {
@@ -122,14 +114,6 @@ public class LegacyAPITests : IDisposable
     var res = await _myClient.IsStreamAccessible(_streamId);
 
     Assert.That(res, Is.True);
-  }
-
-  [Test, Order(13)]
-  public async Task StreamSearch()
-  {
-    var res = await _myClient.StreamSearch(_streamId);
-
-    Assert.That(res, Is.Not.Null);
   }
 
   [Test, Order(20)]

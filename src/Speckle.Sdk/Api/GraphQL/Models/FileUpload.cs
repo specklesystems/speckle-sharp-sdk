@@ -20,10 +20,4 @@ public sealed class FileUpload
   public bool uploadComplete { get; init; }
   public DateTime uploadDate { get; init; }
   public string userId { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public string branchName { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public string streamId { get; init; }
 }

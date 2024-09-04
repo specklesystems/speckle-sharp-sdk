@@ -22,6 +22,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{DA2AED
 		README.md = README.md
 		GitVersion.yml = GitVersion.yml
 		docker-compose.yml = docker-compose.yml
+		CodeMetricsConfig.txt = CodeMetricsConfig.txt
+		Directory.Build.Targets = Directory.Build.Targets
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{58D37DA9-F948-48CA-9A73-F5BBBD533DBF}"

@@ -13,15 +13,6 @@ public abstract class UserBase
   public string role { get; init; }
   public ResourceCollection<Activity> timeline { get; init; }
   public bool? verified { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public int totalOwnedStreamsFavorites { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public ResourceCollection<Commit> commits { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public ResourceCollection<Stream> streams { get; init; }
 }
 
 public sealed class LimitedUser : UserBase
@@ -40,9 +31,6 @@ public sealed class User : UserBase
   public bool? isOnboardingFinished { get; init; }
   public List<PendingStreamCollaborator> projectInvites { get; init; }
   public ResourceCollection<Project> projects { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public ResourceCollection<Stream> favoriteStreams { get; init; }
 
   public override string ToString()
   {

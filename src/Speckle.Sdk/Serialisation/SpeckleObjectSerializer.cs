@@ -107,7 +107,7 @@ public class SpeckleObjectSerializer
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
-  public object? SerializeProperty(
+  internal object? SerializeProperty(
     object? obj,
     JsonWriter writer,
     bool computeClosures = false,
@@ -318,7 +318,7 @@ public class SpeckleObjectSerializer
   private Dictionary<string, (object?, PropertyAttributeInfo)> ExtractAllProperties(Base baseObj)
   {
     IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
-    IReadOnlyCollection<string> dynamicProperties = baseObj.GetDynamicPropertyKeys();
+    IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
 
     // propertyName -> (originalValue, isDetachable, isChunkable, chunkSize)
     Dictionary<string, (object?, PropertyAttributeInfo)> allProperties =
@@ -406,7 +406,7 @@ public class SpeckleObjectSerializer
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
     {
       List<object> chunks = new();
-      DataChunk crtChunk = new() { data = new List<object>(detachInfo.ChunkSize) };
+      DataChunk crtChunk = new() { data = new List<object?>(detachInfo.ChunkSize) };
 
       foreach (object element in chunkableCollection)
       {
@@ -414,7 +414,7 @@ public class SpeckleObjectSerializer
         if (crtChunk.data.Count >= detachInfo.ChunkSize)
         {
           chunks.Add(crtChunk);
-          crtChunk = new DataChunk { data = new List<object>(detachInfo.ChunkSize) };
+          crtChunk = new DataChunk { data = new List<object?>(detachInfo.ChunkSize) };
         }
       }
 
@@ -518,8 +518,12 @@ public class SpeckleObjectSerializer
 
       _ = typedProperty.GetValue(baseObj);
 
-      List<DetachProperty> detachableAttributes = typedProperty.GetCustomAttributes<DetachProperty>(true).ToList();
-      List<Chunkable> chunkableAttributes = typedProperty.GetCustomAttributes<Chunkable>(true).ToList();
+      List<DetachPropertyAttribute> detachableAttributes = typedProperty
+        .GetCustomAttributes<DetachPropertyAttribute>(true)
+        .ToList();
+      List<ChunkableAttribute> chunkableAttributes = typedProperty
+        .GetCustomAttributes<ChunkableAttribute>(true)
+        .ToList();
       bool isDetachable = detachableAttributes.Count > 0 && detachableAttributes[0].Detachable;
       bool isChunkable = chunkableAttributes.Count > 0;
       int chunkSize = isChunkable ? chunkableAttributes[0].MaxObjCountPerChunk : 1000;
@@ -531,7 +535,7 @@ public class SpeckleObjectSerializer
     return ret;
   }
 
-  public readonly struct PropertyAttributeInfo
+  internal readonly struct PropertyAttributeInfo
   {
     public PropertyAttributeInfo(
       bool isDetachable,
