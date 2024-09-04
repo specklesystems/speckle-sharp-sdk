@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using NUnit.Framework;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
@@ -16,6 +15,6 @@ public sealed class MemoryTransportTests : TransportTests
   [SetUp]
   public void Setup()
   {
-    _memoryTransport = new MemoryTransport(new ConcurrentDictionary<string, string>());
+    _memoryTransport = new MemoryTransport();
   }
 }

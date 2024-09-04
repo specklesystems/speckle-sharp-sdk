@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Tests.Integration;
 
 public class MemoryTransportTests
 {
-  private readonly MemoryTransport _memoryTransport = new(new ConcurrentDictionary<string, string>(), true);
+  private readonly MemoryTransport _memoryTransport = new(blobStorageEnabled:true);
 
   [SetUp]
   public void Setup()

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
@@ -13,19 +12,18 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
   private readonly string _basePath;
   private readonly string _applicationName;
   private readonly bool _blobStorageEnabled;
-  public IDictionary<string, string> Objects { get; }
+  public IReadOnlyDictionary<string, string> Objects => _objects;
+  private readonly Dictionary<string, string> _objects;
 
-  public MemoryTransport()
-    : this(new Dictionary<string, string>()) { }
 
   public MemoryTransport(
-    IDictionary<string, string> objects,
+    Dictionary<string, string>? objects = null,
     bool blobStorageEnabled = false,
     string? basePath = null,
     string? applicationName = null
   )
   {
-    Objects = objects;
+    _objects = objects ?? new Dictionary<string, string>(StringComparer.Ordinal);
     _blobStorageEnabled = blobStorageEnabled;
     _basePath = basePath ?? SpecklePathProvider.UserApplicationDataPath();
     _applicationName = applicationName ?? "Speckle";
@@ -44,7 +42,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 
   public object Clone()
   {
-    return new MemoryTransport(Objects, _blobStorageEnabled, _basePath, _applicationName)
+    return new MemoryTransport(_objects, _blobStorageEnabled, _basePath, _applicationName)
     {
       TransportName = TransportName,
       OnProgressAction = OnProgressAction,
@@ -85,7 +83,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     CancellationToken.ThrowIfCancellationRequested();
     var stopwatch = Stopwatch.StartNew();
 
-    Objects[id] = serializedObject;
+    _objects[id] = serializedObject;
 
     SavedObjectCount++;
     OnProgressAction?.Invoke(new(ProgressEvent.UploadObject, 1, 1));
