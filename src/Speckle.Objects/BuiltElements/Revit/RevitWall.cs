@@ -46,6 +46,8 @@ public class RevitWall : Wall
   public double topOffset { get; set; }
   public bool flipped { get; set; }
   public bool structural { get; set; }
+
+  [DetachProperty]
   public Level? topLevel { get; set; }
   public Base? parameters { get; set; }
   public string? elementId { get; set; }
@@ -212,6 +214,7 @@ public class RevitProfileWall : Wall
   public string type { get; set; }
   public Polycurve profile { get; set; }
 
+  [DetachProperty]
   public new Level? level
   {
     get => base.level;

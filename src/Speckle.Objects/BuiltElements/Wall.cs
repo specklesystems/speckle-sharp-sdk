@@ -30,6 +30,8 @@ public class Wall : Base, IDisplayValue<IReadOnlyList<Base>>
 
   public string? units { get; set; }
   public ICurve baseLine { get; set; }
+
+  [DetachProperty]
   public virtual Level? level { get; internal set; }
 
   [DetachProperty]

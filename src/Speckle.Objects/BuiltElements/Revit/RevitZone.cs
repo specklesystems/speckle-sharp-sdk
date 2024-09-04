@@ -7,6 +7,7 @@ public class RevitZone : Zone
 {
   public RevitZone() { }
 
+  [DetachProperty]
   public Level level { get; set; }
   public string phaseName { get; set; }
   public Base parameters { get; set; }

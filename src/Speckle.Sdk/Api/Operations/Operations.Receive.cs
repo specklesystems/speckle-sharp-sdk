@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -55,7 +56,7 @@ public static partial class Operations
     }
 
     // Setup Serializer
-    using BaseObjectDeserializerV2 serializerV2 =
+    SpeckleObjectDeserializer serializer =
       new()
       {
         ReadTransport = localTransport,
@@ -107,7 +108,7 @@ public static partial class Operations
 
     using var activity = SpeckleActivityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = serializerV2.Deserialize(objString);
+    Base res = await serializer.Deserialize(objString).ConfigureAwait(false);
 
     timer.Stop();
     SpeckleLog.Logger.Information(
@@ -122,7 +123,7 @@ public static partial class Operations
 
   /// <summary>
   /// Try and get the object from the local transport. If it's there, we assume all its children are there
-  /// This assumption is hard-wired into the <see cref="BaseObjectDeserializerV2"/>
+  /// This assumption is hard-wired into the <see cref="SpeckleObjectDeserializer"/>
   /// </summary>
   /// <param name="objectId"></param>
   /// <param name="localTransport"></param>
@@ -141,10 +142,10 @@ public static partial class Operations
       return null;
     }
 
-    // Shoot out the total children count
-    var closures = TransportHelpers.GetClosureTable(objString);
+    // Shoot out the total children count, wasteful
+    var count = ClosureParser.GetClosures(objString).Count();
 
-    onTotalChildrenCountKnown?.Invoke(closures?.Count ?? 0);
+    onTotalChildrenCountKnown?.Invoke(count);
 
     return objString;
   }

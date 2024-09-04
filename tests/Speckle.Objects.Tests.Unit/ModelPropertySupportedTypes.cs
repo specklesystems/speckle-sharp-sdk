@@ -35,7 +35,7 @@ public class ModelPropertySupportedTypes
   /// <remarks>
   /// If you're tempted to add to this list, please ensure both our serializer and deserializer support properties of this type
   /// Check the <see cref="Speckle.Sdk.Serialisation.Utilities.ValueConverter"/>
-  /// Check the <see cref="BaseObjectSerializerV2"/>
+  /// Check the <see cref="SpeckleObjectSerializer"/>
   /// (or is an interface where all concrete types are supported)
   /// You should also consider adding a test in SerializerNonBreakingChanges
   /// </remarks>
@@ -87,7 +87,11 @@ public class ModelPropertySupportedTypes
 
         Type propType = prop.PropertyType;
         Type typeDef = propType.IsGenericType ? propType.GetGenericTypeDefinition() : propType;
-        Assert.That(_allowedTypes, Does.Contain(typeDef), $"{typeDef} was not in allowedTypes");
+        Assert.That(
+          _allowedTypes,
+          Does.Contain(typeDef),
+          $"{typeDef} was not in allowedTypes. (Origin: {type}.{prop.Name})"
+        );
       }
     }
   }

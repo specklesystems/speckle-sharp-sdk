@@ -9,6 +9,7 @@ namespace Speckle.Objects.Other.Revit;
 [SpeckleType("Objects.Other.Revit.RevitInstance")]
 public class RevitInstance : Instance<RevitSymbolElementType>
 {
+  [DetachProperty]
   public Level level { get; set; }
   public bool facingFlipped { get; set; }
   public bool handFlipped { get; set; }
