@@ -31,7 +31,7 @@ public class Base : DynamicBase, ISpeckleObject
   private string _type;
 
   /// <summary>
-  /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. Use the <see cref="GetId(bool)"/> function to get it.</b>
+  /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. Use the <see cref="GetIdAsync"/> function to get it.</b>
   /// </summary>
   [SchemaIgnore]
   public virtual string id { get; set; }
@@ -71,13 +71,13 @@ public class Base : DynamicBase, ISpeckleObject
   /// </remarks>
   /// <param name="decompose">If <see langword="true"/>, will decompose the object in the process of hashing.</param>
   /// <returns>the resulting id (hash)</returns>
-  public string GetId(bool decompose = false)
+  public async Task<string> GetIdAsync(bool decompose = false)
   {
     //TODO remove me
     var transports = decompose ? [new MemoryTransport()] : Array.Empty<ITransport>();
     var serializer = new SpeckleObjectSerializer(transports);
 
-    string obj = serializer.Serialize(this);
+    string obj = await serializer.SerializeAsync(this).ConfigureAwait(false);
     return JObject.Parse(obj).GetValue(nameof(id))?.ToString() ?? string.Empty;
   }
 
@@ -111,13 +111,13 @@ public class Base : DynamicBase, ISpeckleObject
         continue;
       }
 
-      var detachAttribute = prop.GetCustomAttribute<DetachProperty>(true);
+      var detachAttribute = prop.GetCustomAttribute<DetachPropertyAttribute>(true);
 
       object? value = prop.GetValue(@base);
 
       if (detachAttribute is { Detachable: true })
       {
-        var chunkAttribute = prop.GetCustomAttribute<Chunkable>(true);
+        var chunkAttribute = prop.GetCustomAttribute<ChunkableAttribute>(true);
         if (chunkAttribute == null)
         {
           count += HandleObjectCount(value, parsed);
@@ -133,7 +133,7 @@ public class Base : DynamicBase, ISpeckleObject
       }
     }
 
-    var dynamicProps = @base.GetDynamicPropertyKeys();
+    var dynamicProps = @base.DynamicPropertyKeys;
     foreach (var propName in dynamicProps)
     {
       if (!propName.StartsWith("@"))
@@ -145,7 +145,7 @@ public class Base : DynamicBase, ISpeckleObject
       if (s_chunkSyntax.IsMatch(propName))
       {
         var match = s_chunkSyntax.Match(propName);
-        _ = int.TryParse(match.Groups[match.Groups.Count - 1].Value, out int chunkSize);
+        _ = int.TryParse(match.Groups[^1].Value, out int chunkSize);
 
         if (chunkSize != -1 && @base[propName] is IList asList)
         {

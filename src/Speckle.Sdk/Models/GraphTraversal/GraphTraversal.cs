@@ -13,6 +13,44 @@ public class GraphTraversal : GraphTraversal<TraversalContext>
   {
     return new TraversalContext<TraversalContext>(current, propName, parent);
   }
+
+  /// <summary>
+  /// Traverses supported Collections yielding <see cref="Base"/> objects.
+  /// Does not traverse <see cref="Base"/>, only (potentially nested) collections.
+  /// </summary>
+  /// <param name="value">The value to traverse</param>
+  public static IEnumerable<Base> TraverseMember(object? value)
+  {
+    //TODO we should benchmark this, as yield returning like this could be suboptimal
+    switch (value)
+    {
+      case Base o:
+        yield return o;
+        break;
+      case IList list:
+      {
+        foreach (object? obj in list)
+        {
+          foreach (Base o in TraverseMember(obj))
+          {
+            yield return o;
+          }
+        }
+        break;
+      }
+      case IDictionary dictionary:
+      {
+        foreach (object? obj in dictionary.Values)
+        {
+          foreach (Base o in TraverseMember(obj))
+          {
+            yield return o;
+          }
+        }
+        break;
+      }
+    }
+  }
 }
 
 public abstract class GraphTraversal<T>
@@ -91,44 +129,6 @@ public abstract class GraphTraversal<T>
   }
 
   protected abstract T NewContext(Base current, string? propName, T? parent);
-
-  /// <summary>
-  /// Traverses supported Collections yielding <see cref="Base"/> objects.
-  /// Does not traverse <see cref="Base"/>, only (potentially nested) collections.
-  /// </summary>
-  /// <param name="value">The value to traverse</param>
-  public static IEnumerable<Base> TraverseMember(object? value)
-  {
-    //TODO we should benchmark this, as yield returning like this could be suboptimal
-    switch (value)
-    {
-      case Base o:
-        yield return o;
-        break;
-      case IList list:
-      {
-        foreach (object? obj in list)
-        {
-          foreach (Base o in TraverseMember(obj))
-          {
-            yield return o;
-          }
-        }
-        break;
-      }
-      case IDictionary dictionary:
-      {
-        foreach (object? obj in dictionary.Values)
-        {
-          foreach (Base o in TraverseMember(obj))
-          {
-            yield return o;
-          }
-        }
-        break;
-      }
-    }
-  }
 
   private ITraversalRule GetActiveRuleOrDefault(Base o)
   {

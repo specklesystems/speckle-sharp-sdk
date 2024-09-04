@@ -2,7 +2,6 @@ using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
 using Speckle.Sdk;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.BuiltElements.Revit;
@@ -84,7 +83,10 @@ public class RevitShaft : RevitOpening
     this.parameters = parameters?.ToBase();
   }
 
+  [DetachProperty]
   public Level bottomLevel { get; set; }
+
+  [DetachProperty]
   public Level topLevel { get; set; }
   public double height { get; set; }
 

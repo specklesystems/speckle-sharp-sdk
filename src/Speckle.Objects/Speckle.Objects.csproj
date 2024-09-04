@@ -13,6 +13,13 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <NoWarn>
+      $(NoWarn);
+      IDE0060;CA1034;CA1819;CA1708;CA1008;CA2225;CA1024;
+    </NoWarn>
+  </PropertyGroup>
+  
   <ItemGroup>
     <InternalsVisibleTo Include="Speckle.Objects.Tests.Unit" />
   </ItemGroup>

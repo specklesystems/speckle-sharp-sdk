@@ -2,7 +2,6 @@ using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
@@ -293,7 +292,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
       endAngle = list[4],
       angleRadians = list[5],
       domain = new Interval { start = list[6], end = list[7] },
-      units = Units.GetUnitFromEncoding(list[list.Count - 1]),
+      units = Units.GetUnitFromEncoding(list[^1]),
       plane = Plane.FromList(list.GetRange(8, 13))
     };
     arc.startPoint = Point.FromList(list.GetRange(21, 3), arc.units);

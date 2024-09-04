@@ -61,6 +61,8 @@ public class RevitCeiling : Ceiling
 
   public string family { get; set; }
   public string type { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public double slope { get; set; }
   public Line? slopeDirection { get; set; }

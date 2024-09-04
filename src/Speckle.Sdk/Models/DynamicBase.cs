@@ -1,6 +1,6 @@
 using System.Dynamic;
 using System.Reflection;
-using Speckle.Sdk.Common;
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 
@@ -224,7 +224,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         .GetBaseProperties(GetType())
         .Where(x =>
         {
-          var hasIgnored = x.IsDefined(typeof(SchemaIgnore), true);
+          var hasIgnored = x.IsDefined(typeof(SchemaIgnoreAttribute), true);
           var hasObsolete = x.IsDefined(typeof(ObsoleteAttribute), true);
 
           // If obsolete is false and prop has obsolete attr
@@ -272,10 +272,8 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
   /// Gets the dynamically added property names only.
   /// </summary>
   /// <returns></returns>
-  public IReadOnlyCollection<string> GetDynamicPropertyKeys()
-  {
-    return _properties.Keys;
-  }
+  [JsonIgnore]
+  public IReadOnlyCollection<string> DynamicPropertyKeys => _properties.Keys;
 }
 
 /// <summary>

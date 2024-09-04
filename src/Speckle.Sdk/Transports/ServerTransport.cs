@@ -126,7 +126,7 @@ public sealed class ServerTransport : IServerTransport
     api.CancellationToken = CancellationToken;
 
     string? rootObjectJson = await api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
-    var allIds = ClosureParser.GetChildrenIds(rootObjectJson.NotNull()).ToList();
+    var allIds = (await ClosureParser.GetChildrenIdsAsync(rootObjectJson.NotNull()).ConfigureAwait(false)).ToList();
 
     var childrenIds = allIds.Where(x => !x.Contains("blob:"));
     var blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x.Remove(0, 5));
@@ -171,11 +171,11 @@ public sealed class ServerTransport : IServerTransport
       .GetFiles(BlobStorageFolder)
       .Select(fileName => fileName.Split(Path.DirectorySeparatorChar).Last())
       .Where(fileName => fileName.Length > 10)
-      .Select(fileName => fileName.Substring(0, Blob.LocalHashPrefixLength))
+      .Select(fileName => fileName[..Blob.LocalHashPrefixLength])
       .ToList();
 
     var newBlobIds = blobIds
-      .Where(blobId => !localBlobTrimmedHashes.Contains(blobId.Substring(0, Blob.LocalHashPrefixLength)))
+      .Where(blobId => !localBlobTrimmedHashes.Contains(blobId[..Blob.LocalHashPrefixLength]))
       .ToList();
 
     await api.DownloadBlobs(StreamId, newBlobIds, OnProgressAction).ConfigureAwait(false);
@@ -185,14 +185,14 @@ public sealed class ServerTransport : IServerTransport
     return rootObjectJson;
   }
 
-  public string GetObject(string id)
+  public async Task<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
     var stopwatch = Stopwatch.StartNew();
-    var result = Api.DownloadSingleObject(StreamId, id, OnProgressAction).Result;
+    var result = await Api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-    return result.NotNull();
+    return result;
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)

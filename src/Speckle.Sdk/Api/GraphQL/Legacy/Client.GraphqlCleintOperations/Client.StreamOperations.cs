@@ -1,9 +1,7 @@
 #nullable disable
 using GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
-using Speckle.Sdk.Api.GraphQL.Models.Responses;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Api;
 
@@ -97,167 +95,25 @@ public partial class Client
   }
 
   /// <summary>
+  /// Gets all favorite streams for the current user
+  /// </summary>
+  /// <param name="limit">Max number of streams to return</param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  [Obsolete("Favourite streams are no longer a supported feature", true)]
+  public Task<List<Stream>> FavoriteStreamsGet(int limit = 10, CancellationToken cancellationToken = default) =>
+    throw new NotImplementedException();
+
+  /// <summary>
   /// Gets all streams for the current user
   /// </summary>
   /// <param name="limit">Max number of streams to return</param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <seealso cref="ActiveUserResource.GetProjects"/>
-  [Obsolete($"Use client.{nameof(ActiveUser)}.{nameof(ActiveUserResource.GetProjects)}")]
-  public async Task<List<Stream>> StreamsGet(int limit = 10, CancellationToken cancellationToken = default)
-  {
-    var request = new GraphQLRequest
-    {
-      Query =
-        $@"query User {{
-                      activeUser{{
-                        id,
-                        email,
-                        name,
-                        bio,
-                        company,
-                        avatar,
-                        verified,
-                        profiles,
-                        role,
-                        streams(limit:{limit}) {{
-                          totalCount,
-                          cursor,
-                          items {{
-                            id,
-                            name,
-                            description,
-                            isPublic,
-                            role,
-                            createdAt,
-                            updatedAt,
-                            favoritedDate,
-                            commentCount
-                            favoritesCount
-                            collaborators {{
-                              id,
-                              name,
-                              role,
-                              avatar
-                            }}
-                          }}
-                        }}
-                      }}
-                    }}"
-    };
-
-    var res = await ExecuteGraphQLRequest<ActiveUserResponse>(request, cancellationToken).ConfigureAwait(false);
-
-    if (res?.activeUser == null)
-    {
-      throw new SpeckleException(
-        "User is not authenticated, or the credentials were not valid. Check the provided account is still valid, remove it from manager and add it again."
-      );
-    }
-
-    return res.activeUser.streams.items;
-  }
-
-  //TODO: API GAP
-  /// <summary>
-  /// Gets all favorite streams for the current user
-  /// </summary>
-  /// <param name="limit">Max number of streams to return</param>
-  /// <param name="cancellationToken"></param>
-  /// <returns></returns>
-  public async Task<List<Stream>> FavoriteStreamsGet(int limit = 10, CancellationToken cancellationToken = default)
-  {
-    var request = new GraphQLRequest
-    {
-      Query =
-        $@"query User {{
-                      activeUser{{
-                        id,
-                        email,
-                        name,
-                        bio,
-                        company,
-                        avatar,
-                        verified,
-                        profiles,
-                        role,
-                        favoriteStreams(limit:{limit}) {{
-                          totalCount,
-                          cursor,
-                          items {{
-                            id,
-                            name,
-                            description,
-                            isPublic,
-                            role,
-                            createdAt,
-                            updatedAt,
-                            favoritedDate,
-                            commentCount
-                            favoritesCount
-                            collaborators {{
-                              id,
-                              name,
-                              role,
-                              avatar
-                            }}
-                          }}
-                        }}
-                      }}
-                    }}"
-    };
-    return (await ExecuteGraphQLRequest<ActiveUserResponse>(request, cancellationToken).ConfigureAwait(false))
-      .activeUser
-      .favoriteStreams
-      .items;
-  }
-
-  /// <summary>
-  /// Searches the user's streams by name, description, and ID
-  /// </summary>
-  /// <param name="query">String query to search for</param>
-  /// <param name="limit">Max number of streams to return</param>
-  /// <param name="cancellationToken"></param>
-  /// <returns></returns>
-  /// <seealso cref="GraphQL.Resources.ActiveUserResource.GetProjects"/>
-  [Obsolete($"Use client.{nameof(ActiveUser)}.{nameof(ActiveUserResource.GetProjects)}")]
-  public async Task<List<Stream>> StreamSearch(
-    string query,
-    int limit = 10,
-    CancellationToken cancellationToken = default
-  )
-  {
-    var request = new GraphQLRequest
-    {
-      Query =
-        @"query Streams ($query: String!, $limit: Int!) {
-                      streams(query: $query, limit: $limit) {
-                        totalCount,
-                        cursor,
-                        items {
-                          id,
-                          name,
-                          description,
-                          isPublic,
-                          role,
-                          createdAt,
-                          updatedAt,
-                          commentCount
-                          favoritesCount
-                          collaborators {
-                            id,
-                            name,
-                            role
-                          }
-                        }
-                      }     
-                    }",
-      Variables = new { query, limit }
-    };
-
-    var res = await GQLClient.SendMutationAsync<StreamsData>(request, cancellationToken).ConfigureAwait(false); //WARN: Why do we do this?
-    return (await ExecuteGraphQLRequest<StreamsData>(request, cancellationToken).ConfigureAwait(false)).streams.items;
-  }
+  [Obsolete($"Use client.{nameof(ActiveUser)}.{nameof(ActiveUserResource.GetProjects)}", true)]
+  public Task<List<Stream>> StreamsGet(int limit = 10, CancellationToken cancellationToken = default) =>
+    throw new NotImplementedException();
 
   /// <summary>
   /// Creates a stream.
@@ -378,33 +234,10 @@ public partial class Client
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <seealso cref="GraphQL.Resources.ProjectResource.GetWithTeam"/>
-  [Obsolete($"Use client.{nameof(Project)}.{nameof(ProjectResource.GetWithTeam)}")]
-  public async Task<Stream> StreamGetPendingCollaborators(
-    string streamId,
-    CancellationToken cancellationToken = default
-  )
+  [Obsolete($"Use client.{nameof(Project)}.{nameof(ProjectResource.GetWithTeam)}", true)]
+  public Task<Stream> StreamGetPendingCollaborators(string streamId, CancellationToken cancellationToken = default)
   {
-    var request = new GraphQLRequest
-    {
-      Query =
-        @"query Stream($id: String!) {
-                      stream(id: $id) {
-                        id
-                        pendingCollaborators {
-                          id
-                          inviteId
-                          title
-                          role
-                          user {
-                            avatar
-                          }
-                        }
-                      }
-                    }",
-      Variables = new { id = streamId }
-    };
-    var res = await GQLClient.SendMutationAsync<StreamData>(request, cancellationToken).ConfigureAwait(false); //WARN: Why do we do this?
-    return (await ExecuteGraphQLRequest<StreamData>(request, cancellationToken).ConfigureAwait(false)).stream;
+    throw new NotImplementedException();
   }
 
   /// <summary>

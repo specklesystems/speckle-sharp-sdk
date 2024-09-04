@@ -171,6 +171,10 @@ public static class TypeLoader
       throw new InvalidOperationException($"{type.FullName} inherits from Base has no SpeckleTypeAttribute");
     }
     var deprecatedSpeckleTypes = type.GetCustomAttributes<DeprecatedSpeckleTypeAttribute>();
-    return new LoadedType(speckleType.Name, type, deprecatedSpeckleTypes.Select(x => x.Name).ToList());
+    return new LoadedType(
+      speckleType.SpeckleTypeName,
+      type,
+      deprecatedSpeckleTypes.Select(x => x.SpeckleTypeName).ToList()
+    );
   }
 }

@@ -223,7 +223,7 @@ public class Point : Base, ITransformable<Point>
       return true;
     }
 
-    if (ReferenceEquals(obj, null))
+    if (obj is null)
     {
       return false;
     }

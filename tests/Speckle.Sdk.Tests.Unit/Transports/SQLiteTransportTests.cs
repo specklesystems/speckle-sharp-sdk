@@ -52,7 +52,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     _sqlite.UpdateObject(PAYLOAD_ID, NEW_PAYLOAD);
     await _sqlite.WriteComplete();
 
-    var result = _sqlite.GetObject(PAYLOAD_ID);
+    var result = await _sqlite.GetObject(PAYLOAD_ID);
     Assert.That(result, Is.EqualTo(NEW_PAYLOAD));
   }
 
@@ -63,29 +63,29 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     const string PAYLOAD_ID = "MyTestObjectId";
     const string PAYLOAD_DATA = "MyTestObjectData";
 
-    var preUpdate = _sqlite.NotNull().GetObject(PAYLOAD_ID);
+    var preUpdate = await _sqlite.NotNull().GetObject(PAYLOAD_ID);
     Assert.That(preUpdate, Is.Null);
 
     _sqlite.UpdateObject(PAYLOAD_ID, PAYLOAD_DATA);
     await _sqlite.WriteComplete();
 
-    var postUpdate = _sqlite.GetObject(PAYLOAD_ID);
+    var postUpdate = await _sqlite.GetObject(PAYLOAD_ID);
     Assert.That(postUpdate, Is.EqualTo(PAYLOAD_DATA));
   }
 
   [Test]
-  public void SaveAndRetrieveObject_Sync()
+  public async Task SaveAndRetrieveObject_Sync()
   {
     const string PAYLOAD_ID = "MyTestObjectId";
     const string PAYLOAD_DATA = "MyTestObjectData";
 
-    var preAdd = Sut.NotNull().GetObject(PAYLOAD_ID);
+    var preAdd = await Sut.NotNull().GetObject(PAYLOAD_ID);
     Assert.That(preAdd, Is.Null);
 
     _sqlite.NotNull().SaveObjectSync(PAYLOAD_ID, PAYLOAD_DATA);
 
     {
-      var postAdd = Sut.GetObject(PAYLOAD_ID);
+      var postAdd = await Sut.GetObject(PAYLOAD_ID);
       Assert.That(postAdd, Is.EqualTo(PAYLOAD_DATA));
     }
   }

@@ -235,12 +235,10 @@ public sealed class ServerApi : IDisposable, IServerApi
       multipartFormDataContent.Add(fsc, $"hash:{hash}", fileName);
     }
 
-    using var message = new HttpRequestMessage
-    {
-      RequestUri = new Uri($"/api/stream/{streamId}/blob", UriKind.Relative),
-      Method = HttpMethod.Post,
-      Content = new ProgressContent(multipartFormDataContent, progress)
-    };
+    using var message = new HttpRequestMessage();
+    message.RequestUri = new Uri($"/api/stream/{streamId}/blob", UriKind.Relative);
+    message.Method = HttpMethod.Post;
+    message.Content = new ProgressContent(multipartFormDataContent, progress);
 
     try
     {
@@ -268,11 +266,9 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       try
       {
-        using var blobMessage = new HttpRequestMessage
-        {
-          RequestUri = new Uri($"api/stream/{streamId}/blob/{blobId}", UriKind.Relative),
-          Method = HttpMethod.Get
-        };
+        using var blobMessage = new HttpRequestMessage();
+        blobMessage.RequestUri = new Uri($"api/stream/{streamId}/blob/{blobId}", UriKind.Relative);
+        blobMessage.Method = HttpMethod.Get;
 
         using var response = await _client.SendAsync(blobMessage, CancellationToken).ConfigureAwait(false);
         response.Content.Headers.TryGetValues("Content-Disposition", out IEnumerable<string>? cdHeaderValues);
@@ -280,12 +276,9 @@ public sealed class ServerApi : IDisposable, IServerApi
         var cdHeader = cdHeaderValues?.FirstOrDefault();
         string? fileName = cdHeader?.Split(s_filenameSeparator, StringSplitOptions.None)[1].TrimStart('"').TrimEnd('"');
 
-        string fileLocation = Path.Combine(
-          BlobStorageFolder,
-          $"{blobId.Substring(0, Blob.LocalHashPrefixLength)}-{fileName}"
-        );
+        string fileLocation = Path.Combine(BlobStorageFolder, $"{blobId[..Blob.LocalHashPrefixLength]}-{fileName}");
         using var source = new ProgressStream(
-          await response.Content.ReadAsStreamAsync(),
+          await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
           response.Content.Headers.ContentLength,
           progress,
           true

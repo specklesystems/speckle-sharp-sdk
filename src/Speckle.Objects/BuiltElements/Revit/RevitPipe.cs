@@ -39,6 +39,8 @@ public class RevitPipe : Pipe, IHasMEPConnectors
   public string systemType { get; set; }
   public Base? parameters { get; set; }
   public string elementId { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public List<RevitMEPConnector> Connectors { get; set; } = new();
 }

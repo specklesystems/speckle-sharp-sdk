@@ -33,6 +33,8 @@ public class RevitWire : Wire, IHasMEPConnectors
   public string wiringType { get; set; }
   public List<double> constructionPoints { get; set; } // used in constructor for revit native wires
   public string system { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public Base? parameters { get; set; }
   public string elementId { get; set; }

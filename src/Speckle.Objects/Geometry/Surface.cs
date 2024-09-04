@@ -250,7 +250,7 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
     srf.knotsU = list.GetRange(14 + pointCount, knotsUCount);
     srf.knotsV = list.GetRange(14 + pointCount + knotsUCount, knotsVCount);
 
-    var u = list[list.Count - 1];
+    var u = list[^1];
     srf.units = Units.GetUnitFromEncoding(u);
     return srf;
   }

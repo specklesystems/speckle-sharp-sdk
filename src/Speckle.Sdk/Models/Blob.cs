@@ -1,5 +1,4 @@
 ﻿#nullable disable
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 using Speckle.Newtonsoft.Json;
 
@@ -64,6 +63,6 @@ public class Blob : Base
   public string GetLocalDestinationPath(string blobStorageFolder)
   {
     var fileName = Path.GetFileName(filePath);
-    return Path.Combine(blobStorageFolder, $"{id.Substring(0, 10)}-{fileName}");
+    return Path.Combine(blobStorageFolder, $"{id[..10]}-{fileName}");
   }
 }

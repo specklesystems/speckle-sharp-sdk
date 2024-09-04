@@ -14,24 +14,24 @@ Uri modelUrl = new("https://testing1.speckle.dev/projects/cdedc63e6d/models/2d68
 const string OBJECT_ID = "5cbf84a0061172102ef8a66ae914f232";
 
 SetupSpeckle();
-var testData = await GetSampleData(OBJECT_ID);
-await SendToSpeckle(testData, modelUrl);
+var testData = await GetSampleData(OBJECT_ID).ConfigureAwait(false);
+await SendToSpeckle(testData, modelUrl).ConfigureAwait(false);
 
 return;
 
 static async Task SendToSpeckle(Base testData, Uri modelUrl)
 {
   SpeckleLog.Logger.Information("Starting Long Send Test Send");
-  var destinationTransport = await GetDestination(modelUrl);
+  var destinationTransport = await GetDestination(modelUrl).ConfigureAwait(false);
 
-  var (res, _) = await Operations.Send(testData, new[] { destinationTransport });
+  var (res, _) = await Operations.Send(testData, new[] { destinationTransport }).ConfigureAwait(false);
   SpeckleLog.Logger.Information("Starting Send was successful: {objectId}", res);
 }
 
 static async Task<ITransport> GetDestination(Uri modelUrl)
 {
   StreamWrapper sw = new(modelUrl.ToString());
-  var acc = await sw.GetAccount();
+  var acc = await sw.GetAccount().ConfigureAwait(false);
   return new ServerTransport(acc, sw.StreamId);
 }
 
@@ -40,7 +40,7 @@ static async Task<Base> GetSampleData(string objectId)
   SpeckleLog.Logger.Information("Gathering Sample Data Set");
   using SQLiteTransport source = new(SpecklePathProvider.UserApplicationDataPath(), "longsendtest");
   MemoryTransport memoryTransport = new();
-  return await Operations.Receive(objectId, source, memoryTransport);
+  return await Operations.Receive(objectId, source, memoryTransport).ConfigureAwait(false);
 }
 
 static void SetupSpeckle()

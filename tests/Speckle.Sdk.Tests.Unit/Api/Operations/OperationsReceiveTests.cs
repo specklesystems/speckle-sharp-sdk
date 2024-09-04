@@ -26,7 +26,16 @@ public sealed partial class OperationsReceiveTests
     ];
   }
 
-  public static IEnumerable<string> TestCases => s_testObjects.Select(x => x.GetId(true));
+  public static async Task<IEnumerable<string>> TestCases()
+  {
+    List<string> ret = new();
+    foreach (var s in s_testObjects)
+    {
+      ret.Add(await s.GetIdAsync(true));
+    }
+
+    return ret;
+  }
 
   private MemoryTransport _testCaseTransport;
 

@@ -1,8 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Helpers;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Transports.ServerUtils;
