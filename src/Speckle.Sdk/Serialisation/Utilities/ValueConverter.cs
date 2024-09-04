@@ -177,7 +177,7 @@ internal static class ValueConverter
 
       s_singleValue[0] = valueList.Count;
       //reuse array to avoid params array allocation
-      IList ret = (IList)Activator.CreateInstance(targetType, _singleValue).NotNull();
+      IList ret = (IList)Activator.CreateInstance(targetType, s_singleValue).NotNull();
 
       foreach (object inputListElement in valueList)
       {

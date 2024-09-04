@@ -609,9 +609,9 @@ public static class AccountManager
       SpeckleLog.Logger.Error(
         task.Exception,
         "Getting access code flow failed with {exceptionMessage}",
-        task.Exception?.Message
+        task.Exception.Message
       );
-      throw new AuthFlowException($"Auth flow failed: {task.Exception?.Message}", task.Exception);
+      throw new AuthFlowException($"Auth flow failed: {task.Exception.Message}", task.Exception);
     }
 
     // task completed within timeout

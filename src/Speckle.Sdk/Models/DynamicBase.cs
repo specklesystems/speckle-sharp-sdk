@@ -1,6 +1,7 @@
 using System.Dynamic;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 

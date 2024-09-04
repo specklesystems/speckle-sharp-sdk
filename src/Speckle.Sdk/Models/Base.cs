@@ -136,7 +136,11 @@ public class Base : DynamicBase, ISpeckleObject
     var dynamicProps = @base.DynamicPropertyKeys;
     foreach (var propName in dynamicProps)
     {
+#if NETSTANDARD2_0
       if (!propName.StartsWith("@"))
+#else
+      if (!propName.StartsWith('@'))
+#endif
       {
         continue;
       }
