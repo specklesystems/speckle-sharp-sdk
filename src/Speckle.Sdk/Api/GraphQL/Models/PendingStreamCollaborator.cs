@@ -15,4 +15,10 @@ public sealed class PendingStreamCollaborator
   public LimitedUser invitedBy { get; init; }
   public LimitedUser user { get; init; }
   public string token { get; init; }
+
+  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
+  public string streamId { get; init; }
+
+  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
+  public string streamName { get; init; }
 }

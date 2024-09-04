@@ -37,7 +37,7 @@ public class ObjectBaseValidityTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly);
     var fullTypeString = TypeLoader.GetFullTypeString(typeof(AutocadPolycurve));
-    fullTypeString.ShouldBe("Speckle.Objects.Geometry.Polycurve:Speckle.Objects.Geometry.Autocad.AutocadPolycurve");
+    fullTypeString.ShouldBe("Objects.Geometry.Polycurve:Objects.Geometry.Autocad.AutocadPolycurve");
   }
 
   public class Test : Polycurve;
