@@ -399,7 +399,7 @@ public class SpeckleObjectSerializer
     return id;
   }
 
-  private Task<object?> SerializePropertyAsync(
+  private async Task<object?> SerializePropertyAsync(
     object? baseValue,
     JsonWriter jsonWriter,
     PropertyAttributeInfo detachInfo
@@ -408,7 +408,7 @@ public class SpeckleObjectSerializer
     // If there are no WriteTransports, keep everything attached.
     if (WriteTransports.Count == 0)
     {
-      return SerializePropertyAsync(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+      return await SerializePropertyAsync(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
     }
 
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
@@ -431,14 +431,14 @@ public class SpeckleObjectSerializer
         chunks.Add(crtChunk);
       }
 
-      return SerializePropertyAsync(
+      return await SerializePropertyAsync(
         chunks,
         jsonWriter,
         inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)
       );
     }
 
-    return SerializePropertyAsync(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+    return await SerializePropertyAsync(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
   }
 
   private void UpdateParentClosures(string objectId)
