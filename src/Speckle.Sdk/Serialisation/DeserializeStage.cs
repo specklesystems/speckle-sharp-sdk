@@ -77,7 +77,7 @@ public class DeserializeStage : Stage<Transported, Deserialized>
   {
     string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();
     Type type = TypeLoader.GetType(typeName);
-    Base baseObj = (Base)Activator.CreateInstance(type);
+    Base baseObj = (Base)Activator.CreateInstance(type).NotNull();
 
     dictObj.Remove(TYPE_DISCRIMINATOR);
     dictObj.Remove("__closure");

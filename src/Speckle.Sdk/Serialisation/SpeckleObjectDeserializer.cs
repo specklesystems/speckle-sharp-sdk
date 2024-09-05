@@ -84,7 +84,7 @@ public sealed class SpeckleObjectDeserializer
       {
         case JsonToken.PropertyName:
           {
-            var propName = reader.Value.NotNull().ToString();
+            var propName = reader.Value.NotNull().ToString().NotNull();
             await reader.ReadAsync(ct).ConfigureAwait(false); //goes prop value
             object? convertedValue = await ReadPropertyAsync(reader, ct).ConfigureAwait(false);
             dict[propName] = convertedValue;
@@ -104,7 +104,7 @@ public sealed class SpeckleObjectDeserializer
     if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
     {
       var objId = (string)referencedId.NotNull();
-      if (_closures.TryGetValue(objId, out Base closure))
+      if (_closures.TryGetValue(objId, out Base? closure))
       {
         return closure;
       }
