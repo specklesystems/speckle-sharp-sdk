@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
@@ -8,10 +9,8 @@ namespace Speckle.Sdk.Tests.Performance;
 
 public sealed class TestDataHelper : IDisposable
 {
-  private static readonly string s_basePath = $"./temp {Guid.NewGuid()}";
-
-  public SQLiteTransport Transport { get; private set; }
-  public string ObjectId { get; private set; }
+  public SQLiteTransport? Transport { get; private set; }
+  public string? ObjectId { get; private set; }
 
   public async Task SeedTransport(StreamWrapper sw)
   {
@@ -27,7 +26,7 @@ public sealed class TestDataHelper : IDisposable
     //seed SQLite transport with test data
     var acc = await sw.GetAccount().ConfigureAwait(false);
     using var client = new Client(acc);
-    var branch = await client.BranchGet(sw.StreamId, sw.BranchName!, 1).ConfigureAwait(false);
+    var branch = await client.BranchGet(sw.StreamId, sw.BranchName.NotNull(), 1).ConfigureAwait(false);
     var objectId = branch.commits.items[0].referencedObject;
 
     using ServerTransport remoteTransport = new(acc, sw.StreamId);
@@ -38,16 +37,10 @@ public sealed class TestDataHelper : IDisposable
 
     return objectId;
   }
-
-  public async Task<Base> DeserializeBase()
-  {
-    return await Operations.Receive(ObjectId, null, Transport).ConfigureAwait(false);
-  }
-
+  
   public void Dispose()
   {
-    Transport.Dispose();
+    Transport?.Dispose();
     SqliteConnection.ClearAllPools();
-    Directory.Delete(s_basePath, true);
   }
 }

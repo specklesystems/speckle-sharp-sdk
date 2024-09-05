@@ -90,6 +90,14 @@ Target(
   Glob.Files(".", "**/*.Tests.Performance.csproj").Concat(Glob.Files(".", "**/*.Tests.Performance")),
   async file =>
   {
+    var dir = Path.GetDirectoryName(file) ?? throw new InvalidOperationException();
+    var binDir = Path.Combine(dir, "Release", "bin");
+    Console.WriteLine($"Checking {binDir}");
+    if (Directory.Exists(binDir))
+    {
+      Directory.Delete(binDir, true);
+      Console.WriteLine($"Deleted {binDir}");
+    }
     await RunAsync(
       "dotnet",
       $"run --project {file} -c Release"

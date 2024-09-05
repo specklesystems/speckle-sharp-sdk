@@ -4,6 +4,7 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Toolchains.CsProj;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -34,21 +35,25 @@ public class GeneralDeserializer : IDisposable
       AddJob(oldJob);
     }
   }
+  private TestDataHelper _dataSource;
 
   [GlobalSetup]
-  public void Setup()
+  public async Task Setup()
   {
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+    _dataSource = new TestDataHelper();
+    await _dataSource
+      .SeedTransport(new("https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"))
+      .ConfigureAwait(false);
   }
   [Benchmark]
   public async Task<Base> RunTest()
   {
-    using var dataSource = new TestDataHelper();
-    await dataSource
-      .SeedTransport(new("https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"))
-      .ConfigureAwait(false);
-    
-    SpeckleObjectDeserializer sut = new() { ReadTransport = dataSource.Transport };
-    return await sut.Deserialize(dataSource.Transport.GetObject(dataSource.ObjectId)!);
+    SpeckleObjectDeserializer sut = new() { ReadTransport = _dataSource.Transport.NotNull() };
+    return await sut.Deserialize(_dataSource.Transport.NotNull().GetObject(_dataSource.ObjectId.NotNull()).NotNull());
   }
+  [GlobalCleanup]
+  public void Cleanup() => Dispose();
+
+  public void Dispose() => _dataSource.Dispose();
 }
