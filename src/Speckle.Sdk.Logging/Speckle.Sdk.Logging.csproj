@@ -9,8 +9,6 @@
     <PackageTags>$(PackageTags) core sdk</PackageTags>
     <IsPackable>true</IsPackable>
     <Configurations>Debug;Release;Local</Configurations>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <PropertyGroup>
     <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
