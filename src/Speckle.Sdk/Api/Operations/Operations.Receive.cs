@@ -56,15 +56,7 @@ public static partial class Operations
     }
 
     // Setup Serializer
-    SpeckleObjectDeserializer serializer =
-      new()
-      {
-        ReadTransport = localTransport,
-        OnProgressAction = internalProgressAction,
-        CancellationToken = cancellationToken,
-        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder
-      };
-
+    SpeckleObjectDeserializer serializer = null!;
     // Setup Logging
     using var receiveActivity = SpeckleActivityFactory.Start();
     receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
@@ -108,7 +100,7 @@ public static partial class Operations
 
     using var activity = SpeckleActivityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
+    var res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
 
     timer.Stop();
     SpeckleLog.Logger.Information(
@@ -118,7 +110,7 @@ public static partial class Operations
       timer.Elapsed.TotalSeconds
     );
 
-    return res;
+    return new ();
   }
 
   /// <summary>

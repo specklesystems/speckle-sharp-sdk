@@ -1,56 +1,31 @@
-using System.Collections.Concurrent;
-using System.Reflection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation.Utilities;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
 public sealed class SpeckleObjectDeserializer
 {
-  private bool _isBusy;
-  private readonly object _callbackLock = new();
-
+  /// <summary>
+  /// Property that describes the type of the object.
+  /// </summary>
+  private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
   public CancellationToken CancellationToken { get; set; }
+  
+  private readonly IReadOnlyDictionary<string, Base> _closures;
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
-
-  private long _currentCount;
-  private readonly HashSet<string> _ids = new();
-  private long _processedCount;
-
-  /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
-  /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="rootObjectJson"/></returns>
-  /// <exception cref="InvalidOperationException">Thrown when <see cref="_isBusy"/></exception>
-  /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
-  /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
-  // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public async Task<Dictionary<string, object?>> DeserializeJsonAsync(string rootObjectJson)
+  public SpeckleObjectDeserializer(IReadOnlyDictionary<string, Base> closures)
   {
-    if (_isBusy)
-    {
-      throw new InvalidOperationException(
-        "A deserializer instance can deserialize only 1 object at a time. Consider creating multiple deserializer instances"
-      );
-    }
-
-    try
-    {
-      _isBusy = true;
-      _currentCount = 0;
-      return await DeserializeJsonAsyncInternal(rootObjectJson).ConfigureAwait(false);
-    }
-    finally
-    {
-      _isBusy = false;
-    }
+    _closures = closures;
   }
 
-  private async Task<Dictionary<string, object?>> DeserializeJsonAsyncInternal(string objectJson)
+  /// <param name="objectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
+  /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="objectJson"/></returns>
+  /// <exception cref="ArgumentNullException"><paramref name="objectJson"/> was null</exception>
+  /// <exception cref="SpeckleDeserializeException"><paramref name="objectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
+  // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
+  public async Task<Dictionary<string, object?>> DeserializeJsonAsync(string objectJson)
   {
     if (objectJson is null)
     {
@@ -64,23 +39,15 @@ public sealed class SpeckleObjectDeserializer
 
     reader.DateParseHandling = DateParseHandling.None;
 
-    Dictionary<string, object?> converted;
+    Dictionary<string, object?>? converted;
     try
     {
       await reader.ReadAsync(CancellationToken).ConfigureAwait(false);
-      converted = await ReadObjectAsync(reader, CancellationToken).ConfigureAwait(false);
+      converted = (Dictionary<string, object?>)await ReadObjectAsync(reader, CancellationToken).ConfigureAwait(false);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
       throw new SpeckleDeserializeException($"Failed to deserialize", ex);
-    }
-
-    lock (_callbackLock)
-    {
-      _processedCount++;
-      OnProgressAction?.Invoke(
-        new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount)
-      );
     }
 
     return converted;
@@ -107,7 +74,7 @@ public sealed class SpeckleObjectDeserializer
     return retList;
   }
 
-  private async Task<Dictionary<string, object?>> ReadObjectAsync(JsonReader reader, CancellationToken ct)
+  private async Task<object> ReadObjectAsync(JsonReader reader, CancellationToken ct)
   {
     await reader.ReadAsync(ct).ConfigureAwait(false);
     Dictionary<string, object?> dict = new();
@@ -117,26 +84,7 @@ public sealed class SpeckleObjectDeserializer
       {
         case JsonToken.PropertyName:
           {
-            string propName = (reader.Value?.ToString()).NotNull();
-            if (propName == "__closure")
-            {
-              await reader.ReadAsync(ct).ConfigureAwait(false); //goes to prop value
-              var closures = await ClosureParser.GetClosuresAsync(reader).ConfigureAwait(false);
-              foreach (var closure in closures)
-              {
-                _ids.Add(closure.Item1);
-              }
-
-              foreach (var closure in closures)
-              {
-                string objId = closure.Item1;
-                //don't do anything with return value but later check if null
-                // https://linear.app/speckle/issue/CXPLA-54/when-deserializing-dont-allow-closures-that-arent-downloadable
-                await TryGetDeserializedAsync(objId).ConfigureAwait(false);
-              }
-              await reader.ReadAsync(ct).ConfigureAwait(false); //goes to next
-              continue;
-            }
+            var propName = reader.Value.NotNull().ToString();
             await reader.ReadAsync(ct).ConfigureAwait(false); //goes prop value
             object? convertedValue = await ReadPropertyAsync(reader, ct).ConfigureAwait(false);
             dict[propName] = convertedValue;
@@ -148,13 +96,26 @@ public sealed class SpeckleObjectDeserializer
       }
     }
 
+    if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
+    {
+      return dict;
+    }
 
+    if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
+    {
+      var objId = (string)referencedId.NotNull();
+      if (_closures.TryGetValue(objId, out Base closure))
+      {
+        return closure;
+      }
 
-   
+      throw new InvalidOperationException("missing reference");
+    }
 
     return dict;
   }
-  
+
+
   private async Task<object?> ReadPropertyAsync(JsonReader reader, CancellationToken ct)
   {
     ct.ThrowIfCancellationRequested();
@@ -200,5 +161,4 @@ public sealed class SpeckleObjectDeserializer
         throw new ArgumentException("Json value not supported: " + reader.ValueType);
     }
   }
-
 }

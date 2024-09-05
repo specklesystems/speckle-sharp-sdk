@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading.Channels;
 using Speckle.Newtonsoft.Json;
@@ -11,16 +12,14 @@ namespace Speckle.Sdk.Serialisation;
 public record Deserialized(string Id, string Json, Base BaseObject);
 public class DeserializeStage : Stage<Transported, Deserialized>
 { 
-
-  public string? BlobStorageFolder { get; set; }
-  private readonly object?[] _invokeNull = [null];
-
   /// <summary>
   /// Property that describes the type of the object.
   /// </summary>
   private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
+  private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _closures = new();
+  public string? BlobStorageFolder { get; set; }
+  private readonly object?[] _invokeNull = [null];
   
-  private readonly SpeckleObjectDeserializer _deserializer = new ();
   public DeserializeStage()
     : base(Channel.CreateUnbounded<Transported>())
   {
@@ -30,25 +29,47 @@ public class DeserializeStage : Stage<Transported, Deserialized>
 
   protected override async ValueTask<Deserialized?> Execute(Transported message)
   {
-  }
+    if (!_closures.TryGetValue(message.Id, out var closures))
+    {
+      closures = (await ClosureParser.GetChildrenIdsAsync(message.Json).ConfigureAwait(false)).ToList();
+      _closures.TryAdd(message.Id, closures);
+    }
+    var closureBases = new Dictionary<string, Base>();
+    bool anyNotFound = false;
+    foreach(var c in closures)
+    {
+      if (ReceiveStage.NotNull().Cache.TryGetValue(c, out var cached))
+      {
+        closureBases.Add(c, cached);
+      }
+      else
+      {
+        await ReceiveStage.WriteToStage(c).ConfigureAwait(false);
+        anyNotFound = true;
+      }
+    }
 
-  private async ValueTask<Base> Deserialiser(string id, string json)
+    if (anyNotFound)
+    {
+      await ReceiveStage.NotNull().WriteToStage(message.Id).ConfigureAwait(false);
+      return null;
+    }
+   var @base = await Deserialise(closureBases, message.Id, message.Json).ConfigureAwait(false);
+   _closures.TryRemove(message.Id, out _);
+   return new (message.Id, message.Json, @base);
+  }
+  
+  
+
+  private async ValueTask<Base> Deserialise(IReadOnlyDictionary<string, Base> dictionary, string id, string json)
   {
     if (ReceiveStage?.Cache.TryGetValue(id, out var baseObject) ?? false)
     {
       return baseObject;
     }
-    var dict = await _deserializer.DeserializeJsonAsync(message.Json).ConfigureAwait(false);
-    if (dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
-    {
-      if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
-      {
-        var objId = (string)referencedId.NotNull();
-        object? deserialized = await TryGetDeserializedAsync(objId).ConfigureAwait(false);
-        return deserialized;
-      }
-      return dict;
-    }
+  SpeckleObjectDeserializer _deserializer = new (dictionary);
+    var dict = await _deserializer.DeserializeJsonAsync(json).ConfigureAwait(false);
+    return Dict2Base(dict);
   }
   
   
