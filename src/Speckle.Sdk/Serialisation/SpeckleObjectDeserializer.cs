@@ -14,22 +14,8 @@ public sealed class SpeckleObjectDeserializer
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
-  private readonly object?[] _invokeNull = [null];
-
-  // id -> Base if already deserialized or id -> Task<object> if was handled by a bg thread
-  private ConcurrentDictionary<string, object?>? _deserializedObjects;
-
-  /// <summary>
-  /// Property that describes the type of the object.
-  /// </summary>
-  private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
 
   public CancellationToken CancellationToken { get; set; }
-
-  /// <summary>
-  /// The sync transport. This transport will be used synchronously.
-  /// </summary>
-  public ITransport ReadTransport { get; set; }
 
   public Action<ProgressArgs>? OnProgressAction { get; set; }
 
@@ -37,15 +23,13 @@ public sealed class SpeckleObjectDeserializer
   private readonly HashSet<string> _ids = new();
   private long _processedCount;
 
-  public string? BlobStorageFolder { get; set; }
-
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
   /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="rootObjectJson"/></returns>
   /// <exception cref="InvalidOperationException">Thrown when <see cref="_isBusy"/></exception>
   /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public async Task<Base> DeserializeJsonAsync(string rootObjectJson)
+  public async Task<Dictionary<string, object?>> DeserializeJsonAsync(string rootObjectJson)
   {
     if (_isBusy)
     {
@@ -57,18 +41,16 @@ public sealed class SpeckleObjectDeserializer
     try
     {
       _isBusy = true;
-      _deserializedObjects = new(StringComparer.Ordinal);
       _currentCount = 0;
-      return (Base)(await DeserializeJsonAsyncInternal(rootObjectJson).NotNull().ConfigureAwait(false));
+      return await DeserializeJsonAsyncInternal(rootObjectJson).ConfigureAwait(false);
     }
     finally
     {
-      _deserializedObjects = null;
       _isBusy = false;
     }
   }
 
-  private async Task<object?> DeserializeJsonAsyncInternal(string objectJson)
+  private async Task<Dictionary<string, object?>> DeserializeJsonAsyncInternal(string objectJson)
   {
     if (objectJson is null)
     {
@@ -82,7 +64,7 @@ public sealed class SpeckleObjectDeserializer
 
     reader.DateParseHandling = DateParseHandling.None;
 
-    object? converted;
+    Dictionary<string, object?> converted;
     try
     {
       await reader.ReadAsync(CancellationToken).ConfigureAwait(false);
@@ -125,7 +107,7 @@ public sealed class SpeckleObjectDeserializer
     return retList;
   }
 
-  private async Task<object?> ReadObjectAsync(JsonReader reader, CancellationToken ct)
+  private async Task<Dictionary<string, object?>> ReadObjectAsync(JsonReader reader, CancellationToken ct)
   {
     await reader.ReadAsync(ct).ConfigureAwait(false);
     Dictionary<string, object?> dict = new();
@@ -166,68 +148,13 @@ public sealed class SpeckleObjectDeserializer
       }
     }
 
-    if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
-    {
-      return dict;
-    }
 
-    if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
-    {
-      var objId = (string)referencedId.NotNull();
-      object? deserialized = await TryGetDeserializedAsync(objId).ConfigureAwait(false);
-      return deserialized;
-    }
 
-    return Dict2Base(dict);
+   
+
+    return dict;
   }
-
-  private async Task<object?> TryGetDeserializedAsync(string objId)
-  {
-    object? deserialized = null;
-    _deserializedObjects.NotNull();
-    if (_deserializedObjects.TryGetValue(objId, out object? o))
-    {
-      deserialized = o;
-    }
-
-    if (deserialized is Task<object> task)
-    {
-      try
-      {
-        deserialized = task.Result;
-      }
-      catch (AggregateException ex)
-      {
-        throw new SpeckleDeserializeException("Failed to deserialize reference object", ex);
-      }
-
-      if (_deserializedObjects.TryAdd(objId, deserialized))
-      {
-        _currentCount++;
-      }
-    }
-    if (deserialized != null)
-    {
-      return deserialized;
-    }
-
-    // This reference was not already deserialized. Do it now in sync mode
-    string? objectJson = await ReadTransport.GetObject(objId).ConfigureAwait(false);
-    if (objectJson is null)
-    {
-      return null;
-    }
-
-    deserialized = await DeserializeJsonAsyncInternal(objectJson).ConfigureAwait(false);
-
-    if (_deserializedObjects.NotNull().TryAdd(objId, deserialized))
-    {
-      _currentCount++;
-    }
-
-    return deserialized;
-  }
-
+  
   private async Task<object?> ReadPropertyAsync(JsonReader reader, CancellationToken ct)
   {
     ct.ThrowIfCancellationRequested();
@@ -274,62 +201,4 @@ public sealed class SpeckleObjectDeserializer
     }
   }
 
-  private Base Dict2Base(Dictionary<string, object?> dictObj)
-  {
-    string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();
-    Type type = TypeLoader.GetType(typeName);
-    Base baseObj = (Base)Activator.CreateInstance(type);
-
-    dictObj.Remove(TYPE_DISCRIMINATOR);
-    dictObj.Remove("__closure");
-
-    var staticProperties = TypeCache.GetTypeProperties(typeName);
-    foreach (var entry in dictObj)
-    {
-      if (staticProperties.TryGetValue(entry.Key, out PropertyInfo? value) && value.CanWrite)
-      {
-        if (entry.Value == null)
-        {
-          // Check for JsonProperty(NullValueHandling = NullValueHandling.Ignore) attribute
-          JsonPropertyAttribute? attr = TypeLoader.GetJsonPropertyAttribute(value);
-          if (attr is { NullValueHandling: NullValueHandling.Ignore })
-          {
-            continue;
-          }
-        }
-
-        Type targetValueType = value.PropertyType;
-        bool conversionOk = ValueConverter.ConvertValue(targetValueType, entry.Value, out object? convertedValue);
-        if (conversionOk)
-        {
-          value.SetValue(baseObj, convertedValue);
-        }
-        else
-        {
-          // Cannot convert the value in the json to the static property type
-          throw new SpeckleDeserializeException(
-            $"Cannot deserialize {entry.Value?.GetType().FullName} to {targetValueType.FullName}"
-          );
-        }
-      }
-      else
-      {
-        // No writable property with this name
-        CallSiteCache.SetValue(entry.Key, baseObj, entry.Value);
-      }
-    }
-
-    if (baseObj is Blob bb && BlobStorageFolder != null)
-    {
-      bb.filePath = bb.GetLocalDestinationPath(BlobStorageFolder);
-    }
-
-    var onDeserializedCallbacks = TypeCache.GetOnDeserializedCallbacks(typeName);
-    foreach (MethodInfo onDeserialized in onDeserializedCallbacks)
-    {
-      onDeserialized.Invoke(baseObj, _invokeNull);
-    }
-
-    return baseObj;
-  }
 }
