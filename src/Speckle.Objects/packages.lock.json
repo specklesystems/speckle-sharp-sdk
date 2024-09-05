@@ -186,6 +186,14 @@
           "System.Memory": "4.5.4"
         }
       },
+      "System.Threading.Channels": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "CMaFr7v+57RW7uZfZkPExsPB6ljwzhjACWW1gfU35Y56rk72B/Wu+sTqxVmGSk4SFUlPc3cjeKND0zktziyjBA==",
+        "dependencies": {
+          "System.Threading.Tasks.Extensions": "4.5.4"
+        }
+      },
       "System.Threading.Tasks.Extensions": {
         "type": "Transitive",
         "resolved": "4.5.4",
@@ -206,7 +214,8 @@
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
           "Speckle.Sdk.Logging": "[1.0.0, )",
-          "System.Text.Json": "[5.0.2, )"
+          "System.Text.Json": "[5.0.2, )",
+          "System.Threading.Channels": "[8.0.0, )"
         }
       },
       "speckle.sdk.logging": {
