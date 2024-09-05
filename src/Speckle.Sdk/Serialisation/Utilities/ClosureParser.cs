@@ -5,7 +5,10 @@ namespace Speckle.Sdk.Serialisation.Utilities;
 
 public static class ClosureParser
 {
-  public static async Task<IReadOnlyList<(string, int)>> GetClosuresAsync(string rootObjectJson, CancellationToken cancellationToken = default)
+  public static async Task<IReadOnlyList<(string, int)>> GetClosuresAsync(
+    string rootObjectJson,
+    CancellationToken cancellationToken = default
+  )
   {
     try
     {
@@ -31,10 +34,15 @@ public static class ClosureParser
     return [];
   }
 
-  public static async Task<IEnumerable<string>> GetChildrenIdsAsync(string rootObjectJson, CancellationToken cancellationToken = default) =>
-    (await GetClosuresAsync(rootObjectJson, cancellationToken).ConfigureAwait(false)).Select(x => x.Item1);
+  public static async Task<IEnumerable<string>> GetChildrenIdsAsync(
+    string rootObjectJson,
+    CancellationToken cancellationToken = default
+  ) => (await GetClosuresAsync(rootObjectJson, cancellationToken).ConfigureAwait(false)).Select(x => x.Item1);
 
-  private static async Task<IReadOnlyList<(string, int)>> ReadObjectAsync(JsonTextReader reader, CancellationToken cancellationToken)
+  private static async Task<IReadOnlyList<(string, int)>> ReadObjectAsync(
+    JsonTextReader reader,
+    CancellationToken cancellationToken
+  )
   {
     await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
     while (reader.TokenType != JsonToken.EndObject)
