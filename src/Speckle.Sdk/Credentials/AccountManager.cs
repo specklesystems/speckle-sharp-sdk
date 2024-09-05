@@ -604,14 +604,14 @@ public static class AccountManager
       throw new AuthFlowException("Local auth flow failed to complete within the timeout window");
     }
 
-    if (task.IsFaulted)
+    if (task.IsFaulted && task.Exception is not null)
     {
       SpeckleLog.Logger.Error(
         task.Exception,
         "Getting access code flow failed with {exceptionMessage}",
-        task.Exception?.Message
+        task.Exception.Message
       );
-      throw new AuthFlowException($"Auth flow failed: {task.Exception?.Message}", task.Exception);
+      throw new AuthFlowException($"Auth flow failed: {task.Exception.Message}", task.Exception);
     }
 
     // task completed within timeout
@@ -834,10 +834,13 @@ public static class AccountManager
 
   private static string GenerateChallenge()
   {
+#if NETSTANDARD2_0
     using RNGCryptoServiceProvider rng = new();
     byte[] challengeData = new byte[32];
     rng.GetBytes(challengeData);
-
+#else
+    byte[] challengeData = RandomNumberGenerator.GetBytes(32);
+#endif
     //escaped chars like % do not play nice with the server
     return Regex.Replace(Convert.ToBase64String(challengeData), @"[^\w\.@-]", "");
   }
