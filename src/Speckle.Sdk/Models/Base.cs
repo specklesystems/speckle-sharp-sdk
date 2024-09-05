@@ -92,12 +92,10 @@ public class Base : DynamicBase, ISpeckleObject
 
   private static long CountDescendants(Base @base, ISet<int> parsed)
   {
-    if (parsed.Contains(@base.GetHashCode()))
+    if (!parsed.Add(@base.GetHashCode()))
     {
       return 0;
     }
-
-    parsed.Add(@base.GetHashCode());
 
     long count = 0;
     var typedProps = @base.GetInstanceMembers();
