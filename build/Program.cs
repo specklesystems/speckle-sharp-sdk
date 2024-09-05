@@ -91,7 +91,7 @@ Target(
   async file =>
   {
     var dir = Path.GetDirectoryName(file) ?? throw new InvalidOperationException();
-    var binDir = Path.Combine(dir, "Release", "bin");
+    var binDir = Path.Combine(dir,  "bin", "Release");
     Console.WriteLine($"Checking {binDir}");
     if (Directory.Exists(binDir))
     {
