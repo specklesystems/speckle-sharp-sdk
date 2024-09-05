@@ -5,24 +5,24 @@ namespace Speckle.Sdk.Serialisation.Utilities;
 
 public static class ClosureParser
 {
-  public static async Task<IReadOnlyList<(string, int)>> GetClosuresAsync(string rootObjectJson)
+  public static async Task<IReadOnlyList<(string, int)>> GetClosuresAsync(string rootObjectJson, CancellationToken cancellationToken = default)
   {
     try
     {
       using JsonTextReader reader = new(new StringReader(rootObjectJson));
-      reader.Read();
+      await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
       while (reader.TokenType != JsonToken.EndObject)
       {
         switch (reader.TokenType)
         {
           case JsonToken.StartObject:
           {
-            var closureList = await ReadObjectAsync(reader).ConfigureAwait(false);
+            var closureList = await ReadObjectAsync(reader, cancellationToken).ConfigureAwait(false);
             return closureList;
           }
           default:
-            reader.Read();
-            reader.Skip();
+            await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+            await reader.SkipAsync(cancellationToken).ConfigureAwait(false);
             break;
         }
       }
@@ -31,12 +31,12 @@ public static class ClosureParser
     return [];
   }
 
-  public static async Task<IEnumerable<string>> GetChildrenIdsAsync(string rootObjectJson) =>
-    (await GetClosuresAsync(rootObjectJson).ConfigureAwait(false)).Select(x => x.Item1);
+  public static async Task<IEnumerable<string>> GetChildrenIdsAsync(string rootObjectJson, CancellationToken cancellationToken = default) =>
+    (await GetClosuresAsync(rootObjectJson, cancellationToken).ConfigureAwait(false)).Select(x => x.Item1);
 
-  private static async Task<IReadOnlyList<(string, int)>> ReadObjectAsync(JsonTextReader reader)
+  private static async Task<IReadOnlyList<(string, int)>> ReadObjectAsync(JsonTextReader reader, CancellationToken cancellationToken)
   {
-    await reader.ReadAsync().ConfigureAwait(false);
+    await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
     while (reader.TokenType != JsonToken.EndObject)
     {
       switch (reader.TokenType)
@@ -45,19 +45,19 @@ public static class ClosureParser
           {
             if (reader.Value as string == "__closure")
             {
-              await reader.ReadAsync().ConfigureAwait(false); //goes to prop vale
+              await reader.ReadAsync(cancellationToken).ConfigureAwait(false); //goes to prop vale
               var closureList = await ReadClosureEnumerableAsync(reader).ConfigureAwait(false);
               return closureList;
             }
-            await reader.ReadAsync().ConfigureAwait(false); //goes to prop vale
-            await reader.SkipAsync().ConfigureAwait(false);
-            await reader.ReadAsync().ConfigureAwait(false); //goes to next
+            await reader.ReadAsync(cancellationToken).ConfigureAwait(false); //goes to prop vale
+            await reader.SkipAsync(cancellationToken).ConfigureAwait(false);
+            await reader.ReadAsync(cancellationToken).ConfigureAwait(false); //goes to next
           }
           break;
         default:
-          await reader.ReadAsync().ConfigureAwait(false);
-          await reader.SkipAsync().ConfigureAwait(false);
-          await reader.ReadAsync().ConfigureAwait(false);
+          await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+          await reader.SkipAsync(cancellationToken).ConfigureAwait(false);
+          await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
           break;
       }
     }
