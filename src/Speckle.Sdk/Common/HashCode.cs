@@ -1,3 +1,4 @@
+#if NETSTANDARD2_0
 using System.ComponentModel;
 
 namespace Speckle.Sdk.Common;
@@ -135,3 +136,4 @@ public readonly struct HashCode : IEquatable<HashCode>
     return _value;
   }
 }
+#endif

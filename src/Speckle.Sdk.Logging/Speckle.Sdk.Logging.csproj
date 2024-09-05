@@ -1,8 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <RootNamespace>Speckle.Sdk.Logging</RootNamespace>
+    <PackageId>Speckle.Sdk.Logging</PackageId>
+    <Product>Speckle.Sdk.Logging</Product>
+    <Description>The .NET Logging SDK for Speckle</Description>
+    <PackageTags>$(PackageTags) core sdk</PackageTags>
+    <IsPackable>true</IsPackable>
+    <Configurations>Debug;Release;Local</Configurations>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
   <PropertyGroup>
     <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
     <ILRepackRenameInternalized>true</ILRepackRenameInternalized>

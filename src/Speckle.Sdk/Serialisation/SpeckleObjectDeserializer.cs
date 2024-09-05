@@ -117,7 +117,7 @@ public sealed class SpeckleObjectDeserializer
       {
         case JsonToken.PropertyName:
           {
-            var propName = reader.Value.NotNull().ToString();
+            string propName = (reader.Value?.ToString()).NotNull();
             if (propName == "__closure")
             {
               await reader.ReadAsync(ct).ConfigureAwait(false); //goes to prop value

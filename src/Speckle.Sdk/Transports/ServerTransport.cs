@@ -126,7 +126,9 @@ public sealed class ServerTransport : IServerTransport
     api.CancellationToken = CancellationToken;
 
     string? rootObjectJson = await api.DownloadSingleObject(StreamId, id, OnProgressAction).ConfigureAwait(false);
-    var allIds = (await ClosureParser.GetChildrenIdsAsync(rootObjectJson.NotNull()).ConfigureAwait(false)).ToList();
+    var allIds = (
+      await ClosureParser.GetChildrenIdsAsync(rootObjectJson.NotNull(), CancellationToken).ConfigureAwait(false)
+    ).ToList();
 
     var childrenIds = allIds.Where(x => !x.Contains("blob:"));
     var blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x.Remove(0, 5));
