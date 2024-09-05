@@ -37,7 +37,7 @@ public sealed class TestDataHelper : IDisposable
 
     return objectId;
   }
-  
+
   public void Dispose()
   {
     Transport?.Dispose();

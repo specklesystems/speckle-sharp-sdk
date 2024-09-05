@@ -87,21 +87,24 @@ Target(
 
 Target(
   PERF,
-  Glob.Files(".", "**/*.Tests.Performance.csproj").Concat(Glob.Files(".", "**/*.Tests.Performance")),
+  Glob.Files(".", "**/*.Performance.Runner.csproj"),
   async file =>
   {
-    var dir = Path.GetDirectoryName(file) ?? throw new InvalidOperationException();
-    var binDir = Path.Combine(dir,  "bin", "Release");
-    Console.WriteLine($"Checking {binDir}");
-    if (Directory.Exists(binDir))
+    void CheckBuildDirectory(string dir, string build)
     {
-      Directory.Delete(binDir, true);
-      Console.WriteLine($"Deleted {binDir}");
+      var binDir = Path.Combine(dir, "bin", build);
+      Console.WriteLine($"Checking: {binDir}");
+      if (Directory.Exists(binDir))
+      {
+        Directory.Delete(binDir, true);
+        Console.WriteLine($"Deleted: {binDir}");
+      }
     }
-    await RunAsync(
-      "dotnet",
-      $"run --project {file} -c Release"
-    ).ConfigureAwait(false);
+    var dir = Path.GetDirectoryName(file) ?? throw new InvalidOperationException();
+    CheckBuildDirectory(dir, "Release");
+    CheckBuildDirectory(dir, "Debug");
+
+    await RunAsync("dotnet", $"run --project {file} -c Release").ConfigureAwait(false);
   }
 );
 
