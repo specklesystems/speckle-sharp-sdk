@@ -325,7 +325,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     httpClient.DefaultRequestHeaders.Add("apollographql-client-name", Setup.ApplicationVersion);
     httpClient.DefaultRequestHeaders.Add(
       "apollographql-client-version",
-      Assembly.GetExecutingAssembly().GetName().Version.ToString()
+      Assembly.GetExecutingAssembly().GetName().Version?.ToString()
     );
     return httpClient;
   }

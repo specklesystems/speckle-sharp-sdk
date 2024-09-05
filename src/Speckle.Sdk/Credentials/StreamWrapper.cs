@@ -140,8 +140,11 @@ public class StreamWrapper
     {
       throw new NotSupportedException("Multi-model urls are not supported yet");
     }
-
+#if NETSTANDARD2_0
     if (model.Value.StartsWith("$"))
+#else
+    if (model.Value.StartsWith('$'))
+#endif
     {
       throw new NotSupportedException("Federation model urls are not supported");
     }

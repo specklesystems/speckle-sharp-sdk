@@ -18,9 +18,12 @@ public static class Crypt
   public static string Sha256(string input, string? format = "x2", int startIndex = 0, int length = 64)
   {
     var inputBytes = Encoding.UTF8.GetBytes(input);
-
+#if NETSTANDARD2_0
     using var sha256 = SHA256.Create();
     byte[] hash = sha256.ComputeHash(inputBytes);
+#else
+    byte[] hash = SHA256.HashData(inputBytes);
+#endif
 
     StringBuilder sb = new(64);
     foreach (byte b in hash)
@@ -37,10 +40,13 @@ public static class Crypt
   [SuppressMessage("Security", "CA5351:Do Not Use Broken Cryptographic Algorithms")]
   public static string Md5(string input, string? format = "x2", int startIndex = 0, int length = 32)
   {
-    using MD5 md5 = MD5.Create();
     byte[] inputBytes = Encoding.ASCII.GetBytes(input.ToLowerInvariant());
+#if NETSTANDARD2_0
+    using MD5 md5 = MD5.Create();
     byte[] hashBytes = md5.ComputeHash(inputBytes);
-
+#else
+    byte[] hashBytes = MD5.HashData(inputBytes);
+#endif
     StringBuilder sb = new(32);
     for (int i = 0; i < hashBytes.Length; i++)
     {
