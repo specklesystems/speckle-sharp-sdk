@@ -15,6 +15,7 @@ public sealed class ReceiveStage : IDisposable
   private  long _deserialized;
   private  long _gathered;
   private long _received;
+  private long _transported;
   private HashSet<string> _requestedIds = new();
   private Base? _last;
   public ReceiveStage(Uri baseUri, string streamId, string? authorizationToken)
@@ -36,15 +37,20 @@ public sealed class ReceiveStage : IDisposable
     
       
     var count = await SourceChannel.Reader
+      .PipeFilter(out var cached, 1, OnFilterOutCached)
       .Batch(ServerApi.BATCH_SIZE_GET_OBJECTS)
       .WithTimeout(TimeSpan.FromMilliseconds(500))
       .PipeAsync(4, OnTransport)
       .Join()
       .PipeAsync(2, OnDeserialize)
       .ReadAll(async x => await OnReceive(x, initialId).ConfigureAwait(false)).ConfigureAwait(false);
-    Console.WriteLine($"Really Done? {count}");
+    var unmatched = await cached.ReadAll(x => { }).ConfigureAwait(false);
+    
+    Console.WriteLine($"Really Done? {count} {unmatched}");
     return _last.NotNull();
   }
+
+  private bool OnFilterOutCached(string id) => !_idToBaseCache.ContainsKey(id);
 
   private async ValueTask<List<Transported>> OnTransport(List<string> batch)
   {
@@ -52,6 +58,7 @@ public sealed class ReceiveStage : IDisposable
     var ret = new List<Transported>(gathered.Count);
     foreach (var arg in gathered)
     {
+      _transported++;
       if (!_idToBaseCache.ContainsKey(arg.Id))
       {
         _gathered++;
@@ -68,12 +75,11 @@ public sealed class ReceiveStage : IDisposable
     {
       return null;
     }
+    _deserialized++;
     if (_idToBaseCache.TryAdd(deserialized.Id, deserialized.BaseObject))
     {
-      _deserialized++;
       return deserialized;
     }
-
     return null;
   }
 
@@ -89,7 +95,7 @@ public sealed class ReceiveStage : IDisposable
       _received++;
     }
 
-    Console.WriteLine($"Received {received.Id} - r {_received} - d {_deserialized} - g {_gathered}");
+    Console.WriteLine($"Received {received.Id} - r {_received} - d {_deserialized} - g {_gathered} - t {_transported}");
     if (received.Id == initialId)
     {
       await SourceChannel.CompleteAsync().ConfigureAwait(false);
