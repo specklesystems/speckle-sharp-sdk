@@ -7,45 +7,51 @@ namespace Speckle.Sdk.Helpers;
 
 public static class Crypt
 {
-  /// <param name="input">the value to hash</param>
-  /// <param name="format">NumericFormat</param>
-  /// <param name="startIndex"></param>
-  /// <param name="length"></param>
-  /// <returns>the hash string</returns>
 #if NET6_0_OR_GREATER
+  /// <param name="input">the value to hash</param>
+  /// <param name="format"><c>"x2"</c> for lower case, <c>"X2"</c> for uppercase.</param>
+  /// <param name="length">Desired length of the returned string. Must be 2 &#x2264; Length &#x2264; 64, and must be a multiple of 2</param>
+  /// <returns>the hash string</returns>
   [Pure]
   public static string Sha256(
     ReadOnlySpan<char> input,
     [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = "x2",
-    int startIndex = 0,
-    int length = 64
+    int length = SHA256.HashSizeInBytes * sizeof(char)
   )
   {
     Span<byte> inputBytes = stackalloc byte[Encoding.UTF8.GetByteCount(input)];
     Encoding.UTF8.GetBytes(input, inputBytes);
 
-    Span<byte> hash = stackalloc byte[32]; // SHA256 produces 32-byte hash
+    Span<byte> hash = stackalloc byte[SHA256.HashSizeInBytes];
     SHA256.HashData(inputBytes, hash);
 
-    int outputLength = Math.Min(length, hash.Length - startIndex);
-    Span<char> output = stackalloc char[outputLength * 2]; // Each byte is represented by two hex characters
+    Span<char> output = stackalloc char[length];
 
-    for (int i = 0; i < outputLength; i++)
+    for (int i = 0, j = 0; j < length; i += sizeof(byte), j += sizeof(char))
     {
-      hash[startIndex + i].TryFormat(output[(i * 2)..], out _, format);
+      hash[i].TryFormat(output[j..], out _, format);
     }
 
     return new string(output);
   }
-#else
+#endif
+
+  /// <param name="input">the value to hash</param>
+  /// <param name="format">NumericFormat</param>
+  /// <param name="length"></param>
+  /// <returns>the hash string</returns>
   /// <exception cref="FormatException"><paramref name="format"/> is not a recognised numeric format</exception>
   /// <exception cref="ArgumentOutOfRangeException"><inheritdoc cref="StringBuilder.ToString(int, int)"/></exception>
   [Pure]
-  public static string Sha256(string input, string? format = "x2", int startIndex = 0, int length = 64)
+  public static string Sha256(string input, string? format = "x2", int length = 64)
   {
     var inputBytes = Encoding.UTF8.GetBytes(input);
+#if NET6_0_OR_GREATER
+    byte[] hash = SHA256.HashData(inputBytes);
+#else
     using var sha256 = SHA256.Create();
     byte[] hash = sha256.ComputeHash(inputBytes);
+#endif
 
     StringBuilder sb = new(64);
     foreach (byte b in hash)
@@ -53,15 +59,14 @@ public static class Crypt
       sb.Append(b.ToString(format));
     }
 
-    return sb.ToString(startIndex, length);
+    return sb.ToString(0, length);
   }
-#endif
 
-  /// <inheritdoc cref="Sha256"/>
+  /// <inheritdoc cref="Sha256(string, string?, int)"/>
   /// <remarks>MD5 is a broken cryptographic algorithm and should be used subject to review see CA5351</remarks>
   [Pure]
   [SuppressMessage("Security", "CA5351:Do Not Use Broken Cryptographic Algorithms")]
-  public static string Md5(string input, string? format = "x2", int startIndex = 0, int length = 32)
+  public static string Md5(string input, string? format = "x2", int length = 32)
   {
     byte[] inputBytes = Encoding.ASCII.GetBytes(input.ToLowerInvariant());
 #if NETSTANDARD2_0
@@ -76,6 +81,6 @@ public static class Crypt
       sb.Append(hashBytes[i].ToString(format));
     }
 
-    return sb.ToString(startIndex, length);
+    return sb.ToString(0, length);
   }
 }
