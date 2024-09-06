@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Threading.Channels;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
@@ -21,7 +20,7 @@ public class DeserializeStage : Stage<Transported, Deserialized>
   private readonly object?[] _invokeNull = [null];
   
   public DeserializeStage()
-    : base(Channel.CreateUnbounded<Transported>())
+    : base(System.Threading.Channels.Channel.CreateUnbounded<Transported>())
   {
   }
   

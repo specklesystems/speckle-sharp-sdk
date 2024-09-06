@@ -34,12 +34,15 @@ public sealed class ReceiveStage : IDisposable
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
     await TransportStage.Writer.WriteAsync(id).ConfigureAwait(false);
     Base? b = null;
-    await _channel.Reader.ReadAllAsync((received, index) =>
+   var count = await _channel.Reader.ReadAllAsync((received, index) =>
     {
       if (received.Id == id)
       {
         Console.WriteLine("Done?");
         b = received.BaseObject;
+        TransportStage.Channel.CompleteAsync();
+        DeserializeStage.Channel.CompleteAsync();
+        _channel.CompleteAsync();
       } 
       else
       {
@@ -51,7 +54,7 @@ public sealed class ReceiveStage : IDisposable
       }
       return new ValueTask(Task.CompletedTask);
     }).ConfigureAwait(false);
-    Console.WriteLine("Really Done?");
+    Console.WriteLine($"Really Done? {count}");
     return b.NotNull();
   }
 

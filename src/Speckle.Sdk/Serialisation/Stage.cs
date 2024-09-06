@@ -12,7 +12,6 @@ public interface IStageProcess
 
 public abstract class Stage<TConsumes, TProduces> : IStageProcess
 {
-  private readonly Channel<TConsumes> _channel;
 #pragma warning disable IDE0032
   private long _dequeued;
   private long _done;
@@ -22,16 +21,17 @@ public abstract class Stage<TConsumes, TProduces> : IStageProcess
 
   protected Stage(Channel<TConsumes> channel, int batchSize = 1)
   {
-    _channel = channel;
+    Channel = channel;
     _batchSize = batchSize;
   }
   
-  public long Queued => _channel.Reader.Count;
+  public long Queued => Channel.Reader.Count;
   public long Dequeued => _dequeued;
   public long Done => _done;
   
-  protected ChannelReader<TConsumes> Reader => _channel.Reader;
-  public ChannelWriter<TConsumes> Writer =>  _channel.Writer;
+  protected ChannelReader<TConsumes> Reader => Channel.Reader;
+  public ChannelWriter<TConsumes> Writer =>  Channel.Writer;
+  public Channel<TConsumes> Channel {get;}
 
   public async ValueTask Run(Func<IReadOnlyList<TProduces>, ValueTask> channelWriter)
   {
