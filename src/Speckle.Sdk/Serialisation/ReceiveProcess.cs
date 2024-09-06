@@ -43,7 +43,7 @@ public sealed class ReceiveStage : IDisposable
       .PipeAsync(4, OnTransport)
       .Join()
       .PipeAsync(2, OnDeserialize)
-      .ReadAll(async x => await OnReceive(x, initialId).ConfigureAwait(false)).ConfigureAwait(false);
+      .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false)).ConfigureAwait(false);
     var unmatched = await cached.ReadAll(x => { }).ConfigureAwait(false);
     
     Console.WriteLine($"Really Done? {count} {unmatched}");
