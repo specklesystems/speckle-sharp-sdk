@@ -35,7 +35,7 @@ public sealed class HashUtilityTests
   [Test, TestOf(nameof(Crypt.Md5))]
   public void Md5(
     [ValueSource(nameof(TestCases))] (string input, string _, string expected) testCase,
-    [Range(32, 32)] int length
+    [Range(0, 32)] int length
   )
   {
     var lower = Crypt.Md5(testCase.input, "x2", length);
