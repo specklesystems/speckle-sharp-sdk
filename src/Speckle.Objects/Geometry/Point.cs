@@ -216,7 +216,14 @@ public class Point : Base, ITransformable<Point>
     return this == (Point)obj;
   }
 
-  public override int GetHashCode() => HashCode.Of(units).And(x).And(y).And(y);
+  public override int GetHashCode()
+  {
+#if NETSTANDARD2_0
+    return HashCode.Of(units).And(x).And(y).And(y);
+#else
+    return HashCode.Combine(units, x, y, z);
+#endif
+  }
 
   [Obsolete($"Use {nameof(Vector.ToPoint)}", true)]
   public Point(Vector _) { }

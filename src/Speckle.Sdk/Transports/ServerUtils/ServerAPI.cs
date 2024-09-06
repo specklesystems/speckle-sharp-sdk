@@ -273,8 +273,8 @@ public sealed class ServerApi : IDisposable, IServerApi
         using var response = await _client.SendAsync(blobMessage, CancellationToken).ConfigureAwait(false);
         response.Content.Headers.TryGetValues("Content-Disposition", out IEnumerable<string>? cdHeaderValues);
 
-        var cdHeader = cdHeaderValues.First();
-        var fileName = cdHeader.Split(s_filenameSeparator, StringSplitOptions.None)[1].TrimStart('"').TrimEnd('"');
+        var cdHeader = cdHeaderValues?.FirstOrDefault();
+        string? fileName = cdHeader?.Split(s_filenameSeparator, StringSplitOptions.None)[1].TrimStart('"').TrimEnd('"');
 
         string fileLocation = Path.Combine(BlobStorageFolder, $"{blobId[..Blob.LocalHashPrefixLength]}-{fileName}");
         using var source = new ProgressStream(

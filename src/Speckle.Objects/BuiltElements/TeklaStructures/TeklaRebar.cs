@@ -35,7 +35,9 @@ public class Hook : Base
 
 [Obsolete("Deprecated in 2.17: set starthook and endhook to null or refer to hook angle instead")]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Obsolete")]
+#pragma warning disable CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 public enum shape
+#pragma warning restore CS8981 // The type name only contains lower-cased ascii characters. Such names may become reserved for the language.
 {
   NO_HOOK = 0,
   HOOK_90_DEGREES = 1,

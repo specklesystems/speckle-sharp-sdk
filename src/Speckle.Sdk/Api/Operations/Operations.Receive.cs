@@ -81,7 +81,7 @@ public static partial class Operations
     );
 
     // Try Local Receive
-    string? objString = LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
+    string? objString = await LocalReceive(objectId, localTransport, onTotalChildrenCountKnown).ConfigureAwait(false);
 
     if (objString is null)
     {
@@ -108,7 +108,7 @@ public static partial class Operations
 
     using var activity = SpeckleActivityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = await serializer.Deserialize(objString).ConfigureAwait(false);
+    Base res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
 
     timer.Stop();
     SpeckleLog.Logger.Information(
@@ -130,20 +130,22 @@ public static partial class Operations
   /// <param name="onTotalChildrenCountKnown"></param>
   /// <returns></returns>
   /// <exception cref="SpeckleDeserializeException"></exception>
-  internal static string? LocalReceive(
+  internal static async Task<string?> LocalReceive(
     string objectId,
     ITransport localTransport,
     Action<int>? onTotalChildrenCountKnown
   )
   {
-    string? objString = localTransport.GetObject(objectId);
+    string? objString = await localTransport.GetObject(objectId).ConfigureAwait(false);
     if (objString is null)
     {
       return null;
     }
 
     // Shoot out the total children count, wasteful
-    var count = ClosureParser.GetClosures(objString).Count();
+    var count = (
+      await ClosureParser.GetClosuresAsync(objString, localTransport.CancellationToken).ConfigureAwait(false)
+    ).Count;
 
     onTotalChildrenCountKnown?.Invoke(count);
 

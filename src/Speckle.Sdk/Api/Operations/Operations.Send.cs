@@ -65,10 +65,12 @@ public static partial class Operations
     CancellationToken cancellationToken = default
   )
   {
+#pragma warning disable CA1510
     if (value is null)
     {
       throw new ArgumentNullException(nameof(value));
     }
+#pragma warning restore CA1510
 
     if (transports.Count == 0)
     {
@@ -143,7 +145,7 @@ public static partial class Operations
     CancellationToken cancellationToken = default
   )
   {
-    string obj = serializer.Serialize(value);
+    string obj = await serializer.SerializeAsync(value).ConfigureAwait(false);
     Task[] transportAwaits = serializer.WriteTransports.Select(t => t.WriteComplete()).ToArray();
 
     cancellationToken.ThrowIfCancellationRequested();

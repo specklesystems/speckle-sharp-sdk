@@ -1,6 +1,7 @@
 using System.Dynamic;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 
@@ -252,7 +253,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         .ToList()
         .ForEach(e =>
         {
-          var attr = e.GetCustomAttribute<SchemaComputedAttribute>();
+          var attr = e.GetCustomAttribute<SchemaComputedAttribute>().NotNull();
           try
           {
             dic[attr.Name] = e.Invoke(this, null);
