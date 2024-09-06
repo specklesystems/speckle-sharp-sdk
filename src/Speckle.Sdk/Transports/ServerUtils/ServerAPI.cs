@@ -12,7 +12,7 @@ namespace Speckle.Sdk.Transports.ServerUtils;
 
 public sealed class ServerApi : IDisposable, IServerApi
 {
-  private const int BATCH_SIZE_GET_OBJECTS = 10000;
+  public const int BATCH_SIZE_GET_OBJECTS = 10000;
   private const int BATCH_SIZE_HAS_OBJECTS = 100000;
 
   private const int MAX_MULTIPART_COUNT = 5;
@@ -104,6 +104,38 @@ public sealed class ServerApi : IDisposable, IServerApi
       crtRequest.Add(id);
     }
     await DownloadObjectsImpl(streamId, crtRequest, progress, onObjectCallback).ConfigureAwait(false);
+  }
+  
+  public async Task<IReadOnlyList<(string, string)>> DownloadObjects2(
+    string streamId,
+    IReadOnlyList<string> objectIds,
+    Action<ProgressArgs>? progress
+  )
+  {
+    if (objectIds.Count == 0)
+    {
+      return [];
+    }
+    using var _ = SpeckleActivityFactory.Start();
+
+    if (objectIds.Count < BATCH_SIZE_GET_OBJECTS)
+    {
+      return await DownloadObjectsImpl2(streamId, objectIds, progress).ConfigureAwait(false);
+    }
+
+    List<(string, string)> ret = new(objectIds.Count);
+    List<string> crtRequest = new();
+    foreach (string id in objectIds)
+    {
+      if (crtRequest.Count >= BATCH_SIZE_GET_OBJECTS)
+      {
+        ret.AddRange(await DownloadObjectsImpl2(streamId, crtRequest, progress).ConfigureAwait(false));
+        crtRequest = new List<string>();
+      }
+      crtRequest.Add(id);
+    }
+    ret.AddRange(await DownloadObjectsImpl2(streamId, crtRequest, progress).ConfigureAwait(false));
+    return ret;
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(string streamId, IReadOnlyList<string> objectIds)
@@ -292,7 +324,7 @@ public sealed class ServerApi : IDisposable, IServerApi
       }
     }
   }
-
+  
   private async Task DownloadObjectsImpl(
     string streamId,
     IReadOnlyList<string> objectIds,
@@ -320,6 +352,48 @@ public sealed class ServerApi : IDisposable, IServerApi
       .ConfigureAwait(false);
 
     await ResponseProgress(childrenHttpResponse, progress, onObjectCallback, false).ConfigureAwait(false);
+  }
+
+  private async Task<IReadOnlyList<(string, string)>> DownloadObjectsImpl2(
+    string streamId,
+    IReadOnlyList<string> objectIds,
+    Action<ProgressArgs>? progress
+  )
+  {
+    // Stopwatch sw = new Stopwatch(); sw.Start();
+
+    CancellationToken.ThrowIfCancellationRequested();
+
+    using var childrenHttpMessage = new HttpRequestMessage
+    {
+      RequestUri = new Uri($"/api/getobjects/{streamId}", UriKind.Relative),
+      Method = HttpMethod.Post
+    };
+
+    Dictionary<string, string> postParameters = new() { { "objects", JsonConvert.SerializeObject(objectIds) } };
+    string serializedPayload = JsonConvert.SerializeObject(postParameters);
+    childrenHttpMessage.Content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
+    childrenHttpMessage.Headers.Add("Accept", "text/plain");
+
+    HttpResponseMessage childrenHttpResponse = await _client
+      .SendAsync(childrenHttpMessage, CancellationToken)
+      .ConfigureAwait(false);
+
+    childrenHttpResponse.EnsureSuccessStatusCode();
+    var length = childrenHttpResponse.Content.Headers.ContentLength;
+    using Stream childrenStream = await childrenHttpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
+
+    using var reader = new StreamReader(new ProgressStream(childrenStream, length, progress, true), Encoding.UTF8);
+    var ret = new List<(string, string)>(objectIds.Count);
+    while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
+    {
+      CancellationToken.ThrowIfCancellationRequested();
+
+        var pcs = line.Split(s_separator, 2);
+        ret.Add((pcs[0], pcs[1]));
+    }
+
+    return ret;
   }
 
   private async Task ResponseProgress(

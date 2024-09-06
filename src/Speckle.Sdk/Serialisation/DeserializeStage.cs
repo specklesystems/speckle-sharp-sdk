@@ -27,36 +27,45 @@ public class DeserializeStage : Stage<Transported, Deserialized>
   
   public ReceiveStage? ReceiveStage { get; set; }
 
-  protected override async ValueTask<Deserialized?> Execute(Transported message)
+  protected override async ValueTask<IReadOnlyList<Deserialized>> Execute(IReadOnlyList<Transported> messages)
   {
-    if (!_closures.TryGetValue(message.Id, out var closures))
+    var ret = new List<Deserialized>(1);
+    foreach (var message in messages)
     {
-      closures = (await ClosureParser.GetChildrenIdsAsync(message.Json).ConfigureAwait(false)).ToList();
-      _closures.TryAdd(message.Id, closures);
-    }
-    var closureBases = new Dictionary<string, Base>();
-    bool anyNotFound = false;
-    foreach(var c in closures)
-    {
-      if (ReceiveStage.NotNull().Cache.TryGetValue(c, out var cached))
+      if (!_closures.TryGetValue(message.Id, out var closures))
       {
-        closureBases.Add(c, cached);
+        closures = (await ClosureParser.GetChildrenIdsAsync(message.Json).ConfigureAwait(false)).ToList();
+        _closures.TryAdd(message.Id, closures);
+      }
+
+      var closureBases = new Dictionary<string, Base>();
+      bool anyNotFound = false;
+      foreach (var c in closures)
+      {
+        if (ReceiveStage.NotNull().Cache.TryGetValue(c, out var cached))
+        {
+          closureBases.Add(c, cached);
+        }
+        else
+        {
+          await ReceiveStage.WriteToStage(c).ConfigureAwait(false);
+          anyNotFound = true;
+        }
+      }
+
+      if (anyNotFound)
+      {
+        await ReceiveStage.NotNull().WriteToStage(message.Id).ConfigureAwait(false);
       }
       else
       {
-        await ReceiveStage.WriteToStage(c).ConfigureAwait(false);
-        anyNotFound = true;
+        var @base = await Deserialise(closureBases, message.Id, message.Json).ConfigureAwait(false);
+        _closures.TryRemove(message.Id, out _);
+        ret.Add(new(message.Id, message.Json, @base));
       }
     }
 
-    if (anyNotFound)
-    {
-      await ReceiveStage.NotNull().WriteToStage(message.Id).ConfigureAwait(false);
-      return null;
-    }
-   var @base = await Deserialise(closureBases, message.Id, message.Json).ConfigureAwait(false);
-   _closures.TryRemove(message.Id, out _);
-   return new (message.Id, message.Json, @base);
+    return ret;
   }
   
   

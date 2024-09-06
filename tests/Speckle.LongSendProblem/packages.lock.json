@@ -69,6 +69,11 @@
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
+      "Open.ChannelExtensions": {
+        "type": "Transitive",
+        "resolved": "8.4.3",
+        "contentHash": "ExjIyNC+MZVz31MrbVdFJoVlo0P/DdX/9IwOFKK+tXRIx0PB43rgWEwOhNfdQZeUL6TJME1NxfTDX9ca5Ljf3g=="
+      },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
         "resolved": "2.1.4",
@@ -121,6 +126,7 @@
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
           "Microsoft.Data.Sqlite": "[7.0.7, )",
+          "Open.ChannelExtensions": "[8.4.3, )",
           "Polly": "[7.2.3, )",
           "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
           "Polly.Extensions.Http": "[3.0.0, )",

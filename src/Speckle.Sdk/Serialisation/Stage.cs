@@ -1,4 +1,5 @@
 using System.Threading.Channels;
+using Open.ChannelExtensions;
 
 namespace Speckle.Sdk.Serialisation;
 
@@ -16,10 +17,13 @@ public abstract class Stage<TConsumes, TProduces> : IStageProcess
   private long _dequeued;
   private long _done;
 #pragma warning restore IDE0032
+  
+  private readonly int _batchSize;
 
-  protected Stage(Channel<TConsumes> channel)
+  protected Stage(Channel<TConsumes> channel, int batchSize = 1)
   {
     _channel = channel;
+    _batchSize = batchSize;
   }
   
   public long Queued => _channel.Reader.Count;
@@ -45,22 +49,35 @@ public abstract class Stage<TConsumes, TProduces> : IStageProcess
 
   public async ValueTask Run()
   {
-    while (await Reader.WaitToReadAsync().ConfigureAwait(false))
+    var batch = new List<TConsumes>();
+    while (true)
     {
-      if (Reader.TryRead(out TConsumes? message))
+      batch.Clear();
+      if (_batchSize <= 1)
       {
-        _dequeued++;
-        //Console.WriteLine($"{GetType()} Transforming message");
-        TProduces? produces = await Execute(message).ConfigureAwait(false);
-        _done++;
-        if (produces is not null && Produce is not null)
-        {
-         // Console.WriteLine($"{GetType()} Producing message");
-          await Produce(produces).ConfigureAwait(false);
-        }
+        batch.Add(await Reader.ReadAsync().ConfigureAwait(false));
+      }
+      else
+      {
+        batch.AddRange(await Reader.Batch(_batchSize).WithTimeout(TimeSpan.FromMilliseconds(500)).ReadAsync().ConfigureAwait(false));
+      }
+      if (batch.Count != 0)
+      {
+          _dequeued+=batch.Count;
+          //Console.WriteLine($"{GetType()} Transforming message");
+          var produces = await Execute(batch).ConfigureAwait(false);
+          _done+=batch.Count;
+          if (produces is not null && Produce is not null)
+          {
+            //Console.WriteLine($"{GetType()} Producing message");
+            foreach (var produce in produces)
+            {
+              await Produce(produce).ConfigureAwait(false);
+            }
+          }
       }
     }
   }
 
-  protected abstract ValueTask<TProduces?> Execute(TConsumes message);
+  protected abstract ValueTask<IReadOnlyList<TProduces>> Execute(IReadOnlyList<TConsumes> message);
 }
