@@ -2,6 +2,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Security.Cryptography;
 using System.Text;
+#if NET6_0_OR_GREATER
+using System.Runtime.InteropServices;
+#endif
 
 namespace Speckle.Sdk.Helpers;
 
@@ -19,8 +22,7 @@ public static class Crypt
     int length = SHA256.HashSizeInBytes * sizeof(char)
   )
   {
-    Span<byte> inputBytes = stackalloc byte[Encoding.UTF8.GetByteCount(input)];
-    Encoding.UTF8.GetBytes(input, inputBytes);
+    ReadOnlySpan<byte> inputBytes = MemoryMarshal.AsBytes(input);
 
     Span<byte> hash = stackalloc byte[SHA256.HashSizeInBytes];
     SHA256.HashData(inputBytes, hash);
@@ -49,7 +51,7 @@ public static class Crypt
     int length = 64
   )
   {
-    var inputBytes = Encoding.UTF8.GetBytes(input);
+    var inputBytes = Encoding.Unicode.GetBytes(input);
 #if NET6_0_OR_GREATER
     byte[] hash = SHA256.HashData(inputBytes);
 #else
