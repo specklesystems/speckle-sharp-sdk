@@ -12,11 +12,14 @@ public static class Crypt
   /// <param name="startIndex"></param>
   /// <param name="length"></param>
   /// <returns>the hash string</returns>
-  /// <exception cref="FormatException"><paramref name="format"/> is not a recognised numeric format</exception>
-  /// <exception cref="ArgumentOutOfRangeException"><inheritdoc cref="StringBuilder.ToString(int, int)"/></exception>
 #if NET6_0_OR_GREATER
   [Pure]
-  public static string Sha256(ReadOnlySpan<char> input, string? format = "x2", int startIndex = 0, int length = 64)
+  public static string Sha256(
+    ReadOnlySpan<char> input,
+    [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = "x2",
+    int startIndex = 0,
+    int length = 64
+  )
   {
     Span<byte> inputBytes = stackalloc byte[Encoding.UTF8.GetByteCount(input)];
     Encoding.UTF8.GetBytes(input, inputBytes);
@@ -26,6 +29,7 @@ public static class Crypt
 
     int outputLength = Math.Min(length, hash.Length - startIndex);
     Span<char> output = stackalloc char[outputLength * 2]; // Each byte is represented by two hex characters
+
     for (int i = 0; i < outputLength; i++)
     {
       hash[startIndex + i].TryFormat(output[(i * 2)..], out _, format);
@@ -34,6 +38,8 @@ public static class Crypt
     return new string(output);
   }
 #else
+  /// <exception cref="FormatException"><paramref name="format"/> is not a recognised numeric format</exception>
+  /// <exception cref="ArgumentOutOfRangeException"><inheritdoc cref="StringBuilder.ToString(int, int)"/></exception>
   [Pure]
   public static string Sha256(string input, string? format = "x2", int startIndex = 0, int length = 64)
   {
