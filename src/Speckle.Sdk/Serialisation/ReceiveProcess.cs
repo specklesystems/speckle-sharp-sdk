@@ -7,45 +7,42 @@ using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation;
 
-
 public sealed class ReceiveStage : IDisposable
 {
   private readonly ConcurrentDictionary<string, Base> _idToBaseCache = new(StringComparer.Ordinal);
 
-  private  long _deserialized;
-  private  long _gathered;
+  private long _deserialized;
+  private long _gathered;
   private long _received;
   private long _transported;
   private HashSet<string> _requestedIds = new();
   private Base? _last;
+
   public ReceiveStage(Uri baseUri, string streamId, string? authorizationToken)
   {
     TransportStage = new TransportStage(baseUri, streamId, authorizationToken);
-    DeserializeStage = new()
-    {
-      ReceiveStage = this
-    };
+    DeserializeStage = new() { ReceiveStage = this };
   }
-  
+
   public Channel<string> SourceChannel { get; private set; }
-  
+
   public async Task<Base> GetObject(string initialId)
   {
     SourceChannel = Channel.CreateUnbounded<string>();
-    
+
     await SourceChannel.Writer.WriteAsync(initialId).ConfigureAwait(false);
-    
-      
-    var count = await SourceChannel.Reader
-      .PipeFilter(out var cached, 1, OnFilterOutCached)
+
+    var count = await SourceChannel
+      .Reader.PipeFilter(out var cached, 1, OnFilterOutCached)
       .Batch(ServerApi.BATCH_SIZE_GET_OBJECTS)
       .WithTimeout(TimeSpan.FromMilliseconds(500))
       .PipeAsync(4, OnTransport)
       .Join()
       .PipeAsync(2, OnDeserialize)
-      .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false)).ConfigureAwait(false);
+      .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false))
+      .ConfigureAwait(false);
     var unmatched = await cached.ReadAll(x => { }).ConfigureAwait(false);
-    
+
     Console.WriteLine($"Really Done? {count} {unmatched}");
     return _last.NotNull();
   }
@@ -103,11 +100,10 @@ public sealed class ReceiveStage : IDisposable
     }
   }
 
-  public TransportStage TransportStage{ get; }
+  public TransportStage TransportStage { get; }
   public DeserializeStage DeserializeStage { get; }
 
   public IReadOnlyDictionary<string, Base> Cache => _idToBaseCache;
-  
+
   public void Dispose() => TransportStage.Dispose();
 }
-

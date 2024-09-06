@@ -12,7 +12,7 @@ public sealed class SpeckleObjectDeserializer2
   /// </summary>
   private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
   public CancellationToken CancellationToken { get; set; }
-  
+
   private readonly IReadOnlyDictionary<string, Base> _closures;
 
   public SpeckleObjectDeserializer2(IReadOnlyDictionary<string, Base> closures)
@@ -114,7 +114,6 @@ public sealed class SpeckleObjectDeserializer2
 
     return dict;
   }
-
 
   private async Task<object?> ReadPropertyAsync(JsonReader reader, CancellationToken ct)
   {

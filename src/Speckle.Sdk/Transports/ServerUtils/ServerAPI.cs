@@ -105,7 +105,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
     await DownloadObjectsImpl(streamId, crtRequest, progress, onObjectCallback).ConfigureAwait(false);
   }
-  
+
   public async Task<IReadOnlyList<(string, string)>> DownloadObjects2(
     string streamId,
     IReadOnlyList<string> objectIds,
@@ -324,7 +324,7 @@ public sealed class ServerApi : IDisposable, IServerApi
       }
     }
   }
-  
+
   private async Task DownloadObjectsImpl(
     string streamId,
     IReadOnlyList<string> objectIds,
@@ -389,8 +389,8 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       CancellationToken.ThrowIfCancellationRequested();
 
-        var pcs = line.Split(s_separator, 2);
-        ret.Add((pcs[0], pcs[1]));
+      var pcs = line.Split(s_separator, 2);
+      ret.Add((pcs[0], pcs[1]));
     }
 
     return ret;

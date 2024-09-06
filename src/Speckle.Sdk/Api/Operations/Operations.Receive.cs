@@ -118,7 +118,7 @@ public static partial class Operations
       timer.Elapsed.TotalSeconds
     );
 
-    return new ();
+    return new();
   }
 
   /// <summary>
