@@ -22,7 +22,7 @@ public static class Crypt
     Encoding.UTF8.GetBytes(input, inputBytes);
 
     Span<byte> hash = stackalloc byte[32]; // SHA256 produces 32-byte hash
-    SHA256.TryHashData(inputBytes, hash, out _);
+    SHA256.HashData(inputBytes, hash);
 
     int outputLength = Math.Min(length, hash.Length - startIndex);
     Span<char> output = stackalloc char[outputLength * 2]; // Each byte is represented by two hex characters
