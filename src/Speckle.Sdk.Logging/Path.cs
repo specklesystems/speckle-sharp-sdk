@@ -105,8 +105,19 @@ public static class SpecklePathProvider
   }
 
   /// <summary>
-  /// Get the platform specific user configuration folder path.
+  /// Get the platform specific user configuration folder path.<br/>
+  /// Unless overriden (see <see cref="OverrideApplicationDataPath"/>) will be the <see cref="Environment.SpecialFolder.ApplicationData"/> path e.g.:
+  /// In cases such as linux servers where the above path is not permissive, we will fall back to <see cref="Environment.SpecialFolder.UserProfile"/>
   /// </summary>
+  /// <remarks>
+  /// <see cref="Environment.SpecialFolder.ApplicationData"/> path usually maps to
+  /// <ul>
+  ///   <li>win: <c>%appdata%/</c></li>
+  ///   <li>MacOS: <c>~/.config/</c></li>
+  ///   <li>Linux: <c>~/.config/</c></li>
+  /// </ul>
+  /// </remarks>
+  /// <exception cref="PlatformNotSupportedException">Both <see cref="Environment.SpecialFolder.ApplicationData"/> and <see cref="Environment.SpecialFolder.UserProfile"/> paths are inaccessible</exception>
   public static string UserApplicationDataPath()
   {
     // if we have an override, just return that
