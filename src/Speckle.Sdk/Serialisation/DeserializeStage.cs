@@ -9,7 +9,7 @@ using Speckle.Sdk.Serialisation.Utilities;
 namespace Speckle.Sdk.Serialisation;
 
 public record Deserialized(string Id, string Json, Base BaseObject);
-public class DeserializeStage : Stage<Transported, Deserialized>
+public class DeserializeStage
 { 
   /// <summary>
   /// Property that describes the type of the object.
@@ -19,18 +19,10 @@ public class DeserializeStage : Stage<Transported, Deserialized>
   public string? BlobStorageFolder { get; set; }
   private readonly object?[] _invokeNull = [null];
   
-  public DeserializeStage()
-    : base(System.Threading.Channels.Channel.CreateUnbounded<Transported>())
-  {
-  }
-  
   public ReceiveStage? ReceiveStage { get; set; }
 
-  protected override async ValueTask<IReadOnlyList<Deserialized>> Execute(IReadOnlyList<Transported> messages)
+  public async ValueTask<Deserialized?> Execute(Transported message)
   {
-    var ret = new List<Deserialized>(messages.Count);
-    foreach (var message in messages)
-    {
       if (!_closures.TryGetValue(message.Id, out var closures))
       {
         closures = (await ClosureParser.GetChildrenIdsAsync(message.Json).ConfigureAwait(false)).ToList();
@@ -47,24 +39,22 @@ public class DeserializeStage : Stage<Transported, Deserialized>
         }
         else
         {
-          await ReceiveStage.TransportStage.Writer.WriteAsync(c).ConfigureAwait(false);
+          await ReceiveStage.SourceChannel.Writer.WriteAsync(c).ConfigureAwait(false);
           anyNotFound = true;
         }
       }
 
       if (anyNotFound)
       {
-        await ReceiveStage.NotNull().TransportStage.Writer.WriteAsync(message.Id).ConfigureAwait(false);
+        await ReceiveStage.NotNull().SourceChannel.Writer.WriteAsync(message.Id).ConfigureAwait(false);
+        return null;
       }
       else
       {
         var @base = await Deserialise(closureBases, message.Id, message.Json).ConfigureAwait(false);
         _closures.TryRemove(message.Id, out _);
-        ret.Add(new(message.Id, message.Json, @base));
+        return new(message.Id, message.Json, @base);
       }
-    }
-
-    return ret;
   }
   
   
