@@ -14,16 +14,32 @@ public static class Crypt
   /// <returns>the hash string</returns>
   /// <exception cref="FormatException"><paramref name="format"/> is not a recognised numeric format</exception>
   /// <exception cref="ArgumentOutOfRangeException"><inheritdoc cref="StringBuilder.ToString(int, int)"/></exception>
+#if NET6_0_OR_GREATER
+  [Pure]
+  public static string Sha256(ReadOnlySpan<char> input, string? format = "x2", int startIndex = 0, int length = 64)
+  {
+    Span<byte> inputBytes = stackalloc byte[Encoding.UTF8.GetByteCount(input)];
+    Encoding.UTF8.GetBytes(input, inputBytes);
+
+    Span<byte> hash = stackalloc byte[32]; // SHA256 produces 32-byte hash
+    SHA256.TryHashData(inputBytes, hash, out _);
+
+    int outputLength = Math.Min(length, hash.Length - startIndex);
+    Span<char> output = stackalloc char[outputLength * 2]; // Each byte is represented by two hex characters
+    for (int i = 0; i < outputLength; i++)
+    {
+      hash[startIndex + i].TryFormat(output[(i * 2)..], out _, format);
+    }
+
+    return new string(output);
+  }
+#else
   [Pure]
   public static string Sha256(string input, string? format = "x2", int startIndex = 0, int length = 64)
   {
     var inputBytes = Encoding.UTF8.GetBytes(input);
-#if NETSTANDARD2_0
     using var sha256 = SHA256.Create();
     byte[] hash = sha256.ComputeHash(inputBytes);
-#else
-    byte[] hash = SHA256.HashData(inputBytes);
-#endif
 
     StringBuilder sb = new(64);
     foreach (byte b in hash)
@@ -33,6 +49,7 @@ public static class Crypt
 
     return sb.ToString(startIndex, length);
   }
+#endif
 
   /// <inheritdoc cref="Sha256"/>
   /// <remarks>MD5 is a broken cryptographic algorithm and should be used subject to review see CA5351</remarks>
