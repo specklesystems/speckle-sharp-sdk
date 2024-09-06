@@ -56,7 +56,15 @@ public static partial class Operations
     }
 
     // Setup Serializer
-    SpeckleObjectDeserializer serializer = null!;
+    SpeckleObjectDeserializer serializer =
+      new()
+      {
+        ReadTransport = localTransport,
+        OnProgressAction = internalProgressAction,
+        CancellationToken = cancellationToken,
+        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder
+      };
+
     // Setup Logging
     using var receiveActivity = SpeckleActivityFactory.Start();
     receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
