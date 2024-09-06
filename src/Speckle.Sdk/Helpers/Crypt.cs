@@ -11,7 +11,7 @@ public static class Crypt
   /// <param name="input">the value to hash</param>
   /// <param name="format"><c>"x2"</c> for lower case, <c>"X2"</c> for uppercase.</param>
   /// <param name="length">Desired length of the returned string. Must be 2 &#x2264; Length &#x2264; 64, and must be a multiple of 2</param>
-  /// <returns>the hash string</returns>
+  /// <returns><inheritdoc cref="Sha256(string, string?, int)"/></returns>
   [Pure]
   public static string Sha256(
     ReadOnlySpan<char> input,
@@ -37,13 +37,17 @@ public static class Crypt
 #endif
 
   /// <param name="input">the value to hash</param>
-  /// <param name="format">NumericFormat</param>
-  /// <param name="length"></param>
+  /// <param name="format"><c>"x2"</c> for lower case, <c>"X2"</c> for uppercase.</param>
+  /// <param name="length">Desired length of the returned string</param>
   /// <returns>the hash string</returns>
   /// <exception cref="FormatException"><paramref name="format"/> is not a recognised numeric format</exception>
   /// <exception cref="ArgumentOutOfRangeException"><inheritdoc cref="StringBuilder.ToString(int, int)"/></exception>
   [Pure]
-  public static string Sha256(string input, string? format = "x2", int length = 64)
+  public static string Sha256(
+    string input,
+    [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = "x2",
+    int length = 64
+  )
   {
     var inputBytes = Encoding.UTF8.GetBytes(input);
 #if NET6_0_OR_GREATER
@@ -66,7 +70,11 @@ public static class Crypt
   /// <remarks>MD5 is a broken cryptographic algorithm and should be used subject to review see CA5351</remarks>
   [Pure]
   [SuppressMessage("Security", "CA5351:Do Not Use Broken Cryptographic Algorithms")]
-  public static string Md5(string input, string? format = "x2", int length = 32)
+  public static string Md5(
+    string input,
+    [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = "x2",
+    int length = 32
+  )
   {
     byte[] inputBytes = Encoding.ASCII.GetBytes(input.ToLowerInvariant());
 #if NETSTANDARD2_0
