@@ -65,7 +65,7 @@ public class DeserializeStage
     {
       return baseObject;
     }
-  SpeckleObjectDeserializer _deserializer = new (dictionary);
+  SpeckleObjectDeserializer2 _deserializer = new (dictionary);
     var dict = await _deserializer.DeserializeJsonAsync(json).ConfigureAwait(false);
     return Dict2Base(dict);
   }
