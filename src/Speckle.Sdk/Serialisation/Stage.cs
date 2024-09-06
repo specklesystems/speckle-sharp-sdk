@@ -31,26 +31,12 @@ public abstract class Stage<TConsumes, TProduces> : IStageProcess
   public long Done => _done;
   
   protected ChannelReader<TConsumes> Reader => _channel.Reader;
-  
-  public async ValueTask WriteToStage(TConsumes message)
-  {
-    while (await _channel.Writer.WaitToWriteAsync().ConfigureAwait(false))
-    {
-      if (_channel.Writer.TryWrite(message))
-      {
-        return;
-      }
+  public ChannelWriter<TConsumes> Writer =>  _channel.Writer;
 
-      await Task.Delay(TimeSpan.FromMilliseconds(10)).ConfigureAwait(false);
-    }
-  }
-  
-  public Func<TProduces, ValueTask>? Produce { get; set; } 
-
-  public async ValueTask Run()
+  public async ValueTask Run(Func<IReadOnlyList<TProduces>, ValueTask> channelWriter)
   {
     var batch = new List<TConsumes>();
-    while (true)
+    while (!Reader.Completion.IsCompleted)
     {
       batch.Clear();
       if (_batchSize <= 1)
@@ -67,16 +53,14 @@ public abstract class Stage<TConsumes, TProduces> : IStageProcess
           //Console.WriteLine($"{GetType()} Transforming message");
           var produces = await Execute(batch).ConfigureAwait(false);
           _done+=batch.Count;
-          if (produces is not null && Produce is not null)
+          if (produces is not null)
           {
             //Console.WriteLine($"{GetType()} Producing message");
-            foreach (var produce in produces)
-            {
-              await Produce(produce).ConfigureAwait(false);
-            }
+              await channelWriter(produces).ConfigureAwait(false);
           }
       }
     }
+    Console.WriteLine(GetType() + "Done");
   }
 
   protected abstract ValueTask<IReadOnlyList<TProduces>> Execute(IReadOnlyList<TConsumes> message);

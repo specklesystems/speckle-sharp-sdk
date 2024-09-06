@@ -1,43 +1,45 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Channels;
+using Open.ChannelExtensions;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation;
 
 public record Received(string Id, Base Object);
 
-public sealed class ReceiveStage : Stage<string, Received>, IDisposable
+public sealed class ReceiveStage : IDisposable
 {
   private readonly ConcurrentDictionary<string, Base> _idToBaseCache = new(StringComparer.Ordinal);
 
-  private readonly TransportStage _transportStage;
-  private readonly DeserializeStage _deserializeStage = new();
-  
+  private readonly Channel<Deserialized> _channel;
+
+  private  long _deserialized;
+  private  long _gathered;
   public ReceiveStage(Uri baseUri, string streamId, string? authorizationToken)
-    : base(Channel.CreateUnbounded<string>())
   {
-    _transportStage = new TransportStage(baseUri, streamId, authorizationToken)
+    _channel = Channel.CreateUnbounded<Deserialized>();
+    TransportStage = new TransportStage(baseUri, streamId, authorizationToken);
+    DeserializeStage = new()
     {
-      Produce = OnTransported
+      ReceiveStage = this
     };
-    _deserializeStage.Produce = OnDeserialized;
-    _deserializeStage.ReceiveStage = this;
   }
   
   public async Task<Base> GetObject(string id)
   {
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-    Task.Run(() => _transportStage.Run());    
-    Task.Run(() => _deserializeStage.Run());
+    Task.Run(() => TransportStage.Run(OnTransported));    
+    Task.Run(() => DeserializeStage.Run(OnDeserialized));
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-    
-    var tcs = new TaskCompletionSource<Base>();
-    Produce = received =>
+    await TransportStage.Writer.WriteAsync(id).ConfigureAwait(false);
+    Base? b = null;
+    await _channel.Reader.ReadAllAsync((received, index) =>
     {
       if (received.Id == id)
       {
         Console.WriteLine("Done?");
-        tcs.TrySetResult(received.Object);
+        b = received.BaseObject;
       } 
       else
       {
@@ -45,52 +47,46 @@ public sealed class ReceiveStage : Stage<string, Received>, IDisposable
         {
           return $"Done: {stage.Done} Queued: {stage.Queued} Dequeued: {stage.Dequeued}";
         }
-        Console.WriteLine($"Received {received.Id} - {Process(this)} - Transport {Process(_transportStage)}  - Deserialization {Process(_deserializeStage)}");
+        Console.WriteLine($"Received {received.Id} - r {index} - d {_deserialized} - g {_gathered} - Transport {Process(TransportStage)}  - Deserialization {Process(DeserializeStage)}");
       }
       return new ValueTask(Task.CompletedTask);
-    };
-    await WriteToStage(id).ConfigureAwait(false);
-    await Run().ConfigureAwait(false);
-    var b = await tcs.Task.ConfigureAwait(false);
-    Console.WriteLine("Done?");
-    return b;
+    }).ConfigureAwait(false);
+    Console.WriteLine("Really Done?");
+    return b.NotNull();
   }
+
+  public TransportStage TransportStage{ get; }
+  public DeserializeStage DeserializeStage { get; }
 
   public IReadOnlyDictionary<string, Base> Cache => _idToBaseCache;
-  private async ValueTask OnDeserialized(Deserialized arg)
+  private async ValueTask OnDeserialized(IReadOnlyList<Deserialized> batch)
   {
-    if (_idToBaseCache.TryAdd(arg.Id, arg.BaseObject) && Produce is not null)
+    foreach (var arg in batch)
     {
-      await Produce(new (arg.Id, arg.BaseObject)).ConfigureAwait(false);
-    }
-  }
-
-  private async ValueTask OnTransported(Transported arg)
-  {
-    if (_idToBaseCache.ContainsKey(arg.Id))
-    {
-      return;
-    }
-    await _deserializeStage.WriteToStage(arg).ConfigureAwait(false);
-  }
-
-  protected override async ValueTask<IReadOnlyList<Received>> Execute(IReadOnlyList<string> message)
-  {
-    var ret = new List<Received>(message.Count);
-    foreach (var id in message)
-    {
-      if (_idToBaseCache.TryGetValue(id, out var @base))
+      if (_idToBaseCache.TryAdd(arg.Id, arg.BaseObject))
       {
-        ret.Add(new(id, @base));
+        _deserialized++;
+        await _channel.Writer.WriteAsync(arg).ConfigureAwait(false);
       }
       else
       {
-        await _transportStage.WriteToStage(id).ConfigureAwait(false);
+        continue;
       }
     }
-    return ret;
   }
 
-  public void Dispose() => _transportStage.Dispose();
+  private async ValueTask OnTransported(IReadOnlyList<Transported> batch)
+  {
+    foreach (var arg in batch)
+    {
+      if (!_idToBaseCache.ContainsKey(arg.Id))
+      {
+        _gathered++;
+        await DeserializeStage.Writer.WriteAsync(arg).ConfigureAwait(false);
+      }
+    }
+  }
+
+  public void Dispose() => TransportStage.Dispose();
 }
 

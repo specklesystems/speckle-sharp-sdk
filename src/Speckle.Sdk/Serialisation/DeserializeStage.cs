@@ -29,7 +29,7 @@ public class DeserializeStage : Stage<Transported, Deserialized>
 
   protected override async ValueTask<IReadOnlyList<Deserialized>> Execute(IReadOnlyList<Transported> messages)
   {
-    var ret = new List<Deserialized>(1);
+    var ret = new List<Deserialized>(messages.Count);
     foreach (var message in messages)
     {
       if (!_closures.TryGetValue(message.Id, out var closures))
@@ -48,14 +48,14 @@ public class DeserializeStage : Stage<Transported, Deserialized>
         }
         else
         {
-          await ReceiveStage.WriteToStage(c).ConfigureAwait(false);
+          await ReceiveStage.TransportStage.Writer.WriteAsync(c).ConfigureAwait(false);
           anyNotFound = true;
         }
       }
 
       if (anyNotFound)
       {
-        await ReceiveStage.NotNull().WriteToStage(message.Id).ConfigureAwait(false);
+        await ReceiveStage.NotNull().TransportStage.Writer.WriteAsync(message.Id).ConfigureAwait(false);
       }
       else
       {
