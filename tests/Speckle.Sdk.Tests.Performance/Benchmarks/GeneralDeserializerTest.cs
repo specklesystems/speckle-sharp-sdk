@@ -46,14 +46,37 @@ public class GeneralDeserializer
   }
 
   [Benchmark]
-  public async Task<Base> RunTest()
+  public Task<Base> TwoDownloadFourDeserializer()
+  {
+    return RunTest(new ReceiveProcessSettings() {MaxDownloadThreads = 2, MaxDeserializeThreads = 4});
+  }
+
+  [Benchmark]
+  public Task<Base> FourDownloadFourDeserializer()
+  {
+    return RunTest(new ReceiveProcessSettings() {MaxDownloadThreads = 4, MaxDeserializeThreads = 4});
+  }
+  
+  [Benchmark]
+  public Task<Base> FourDownload8Deserializer()
+  {
+    return RunTest(new ReceiveProcessSettings() {MaxDownloadThreads = 4, MaxDeserializeThreads = 8});
+  }
+  [Benchmark]
+  public Task<Base> TwoDownloadFourDeserializerHalfMaxSize()
+  {
+    return RunTest(new ReceiveProcessSettings() {MaxDownloadThreads = 2, MaxDeserializeThreads = 4, MaxObjectRequestSize = 5000});
+  }
+
+
+  private async Task<Base> RunTest(ReceiveProcessSettings receiveProcessSettings)
   {
     /*SpeckleObjectDeserializer sut = new() { ReadTransport = _dataSource.Transport };
     string data = await _dataSource.Transport.GetObject(_dataSource.ObjectId)!;
     return await sut.DeserializeJsonAsync(data);*/
     var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 
-//var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
+    //var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
     
     StreamWrapper sw = new(url);
     var acc = await sw.GetAccount().ConfigureAwait(false);
@@ -61,7 +84,7 @@ public class GeneralDeserializer
     var branch = await client.BranchGet(sw.StreamId, sw.BranchName!, 1).ConfigureAwait(false);
     var objectId = branch.commits.items[0].referencedObject;
     
-    using var stage = new ReceiveStage(new Uri(acc.serverInfo.url), sw.StreamId, null);
+    using var stage = new ReceiveProcess(new Uri(acc.serverInfo.url), sw.StreamId, null, receiveProcessSettings);
     return await stage.GetObject(objectId, args => { }, default).ConfigureAwait(false);
   }
 }

@@ -19,7 +19,7 @@ public static partial class Operations
     CancellationToken cancellationToken = default
   )
   {
-    using var stage = new ReceiveStage(new Uri(account.serverInfo.url), streamId, null);
+    using var stage = new ReceiveProcess(new Uri(account.serverInfo.url), streamId, null);
     var @base = await stage.GetObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);
     return @base;
   }

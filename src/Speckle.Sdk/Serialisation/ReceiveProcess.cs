@@ -8,8 +8,11 @@ using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation;
 
-public sealed class ReceiveStage : IDisposable
+public record ReceiveProcessSettings(int MaxDownloadThreads = 1, 
+  int MaxDeserializeThreads = 1, int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS, int BatchWaitMilliseconds = 500);
+public sealed class ReceiveProcess : IDisposable
 {
+  private readonly ReceiveProcessSettings _settings = new();
   private readonly ConcurrentDictionary<string, Base> _idToBaseCache = new(StringComparer.Ordinal);
 
   private long _deserialized;
@@ -19,8 +22,12 @@ public sealed class ReceiveStage : IDisposable
   private readonly HashSet<string> _requestedIds = new();
   private Base? _last;
 
-  public ReceiveStage(Uri baseUri, string streamId, string? authorizationToken)
+  public ReceiveProcess(Uri baseUri, string streamId, string? authorizationToken, ReceiveProcessSettings? settings = null)
   {
+    if (settings is not null)
+    {
+      _settings = settings;
+    }
     SourceChannel = Channel.CreateUnbounded<string>();
     CachingStage = new(_idToBaseCache);
     TransportStage = new TransportStage(baseUri, streamId, authorizationToken);
@@ -46,11 +53,11 @@ public sealed class ReceiveStage : IDisposable
 
     var count = await SourceChannel
       .Reader.Pipe(1, OnCache, cancellationToken: cancellationToken)
-      .Batch(ServerApi.BATCH_SIZE_GET_OBJECTS)
-      .WithTimeout(TimeSpan.FromMilliseconds(500))
-      .PipeAsync(4, OnTransport, cancellationToken: cancellationToken)
+      .Batch(_settings.MaxObjectRequestSize)
+      .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
+      .PipeAsync(_settings.MaxDownloadThreads, OnTransport, cancellationToken: cancellationToken)
       .Join()
-      .PipeAsync(2, OnDeserialize, cancellationToken: cancellationToken)
+      .PipeAsync(_settings.MaxDeserializeThreads, OnDeserialize, cancellationToken: cancellationToken)
       .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false), cancellationToken)
       .ConfigureAwait(false);
 
