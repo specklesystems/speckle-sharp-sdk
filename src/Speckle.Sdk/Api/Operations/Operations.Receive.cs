@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -10,6 +11,19 @@ namespace Speckle.Sdk.Api;
 
 public static partial class Operations
 {
+  public static async Task<Base> Receive2(
+    Account account,
+    string streamId,
+    string objectId,
+    Action<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    using var stage = new ReceiveStage(new Uri(account.serverInfo.url), streamId, null);
+    var @base = await stage.GetObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);
+    return @base;
+  }
+
   /// <summary>
   /// Receives an object (and all its sub-children) from the two provided <see cref="ITransport"/>s.
   /// <br/>

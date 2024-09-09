@@ -19,6 +19,6 @@ var branch = await client.BranchGet(sw.StreamId, sw.BranchName!, 1).ConfigureAwa
 var objectId = branch.commits.items[0].referencedObject;
 
 using var stage = new ReceiveStage(new Uri(acc.serverInfo.url), sw.StreamId, null);
-var @base = await stage.GetObject(objectId).ConfigureAwait(false);
+var @base = await stage.GetObject(objectId, args => { }, default).ConfigureAwait(false);
 
 Console.WriteLine(@base.id == objectId);

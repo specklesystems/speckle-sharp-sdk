@@ -7,10 +7,6 @@ namespace Speckle.Sdk.Serialisation;
 
 public sealed class SpeckleObjectDeserializer2
 {
-  /// <summary>
-  /// Property that describes the type of the object.
-  /// </summary>
-  private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
   public CancellationToken CancellationToken { get; set; }
 
   private readonly IReadOnlyDictionary<string, Base> _closures;
@@ -25,7 +21,7 @@ public sealed class SpeckleObjectDeserializer2
   /// <exception cref="ArgumentNullException"><paramref name="objectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="objectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public async Task<Dictionary<string, object?>> DeserializeJsonAsync(string objectJson)
+  public async Task<Base> DeserializeJsonAsync(string objectJson)
   {
     if (objectJson is null)
     {
@@ -39,11 +35,11 @@ public sealed class SpeckleObjectDeserializer2
 
     reader.DateParseHandling = DateParseHandling.None;
 
-    Dictionary<string, object?>? converted;
+    Base? converted;
     try
     {
       await reader.ReadAsync(CancellationToken).ConfigureAwait(false);
-      converted = (Dictionary<string, object?>)await ReadObjectAsync(reader, CancellationToken).ConfigureAwait(false);
+      converted = (Base)await ReadObjectAsync(reader, CancellationToken).ConfigureAwait(false);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -96,7 +92,7 @@ public sealed class SpeckleObjectDeserializer2
       }
     }
 
-    if (!dict.TryGetValue(TYPE_DISCRIMINATOR, out object? speckleType))
+    if (!dict.TryGetValue(DictionaryConverter.TYPE_DISCRIMINATOR, out object? speckleType))
     {
       return dict;
     }
@@ -112,8 +108,10 @@ public sealed class SpeckleObjectDeserializer2
       throw new InvalidOperationException("missing reference");
     }
 
-    return dict;
+    return  DictionaryConverter.Dict2Base(dict);
   }
+  
+  
 
   private async Task<object?> ReadPropertyAsync(JsonReader reader, CancellationToken ct)
   {

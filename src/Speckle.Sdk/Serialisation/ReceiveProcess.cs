@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation;
@@ -26,28 +27,33 @@ public sealed class ReceiveStage : IDisposable
 
   public Channel<string> SourceChannel { get; private set; }
 
-  public async Task<Base> GetObject(string initialId)
+  public Action<ProgressArgs>? Progress { get; set; }
+
+  public void InvokeProgress() => Progress?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, _received, SourceChannel.Reader.Count));
+
+  public async Task<Base> GetObject(string initialId,  Action<ProgressArgs>? progress, CancellationToken cancellationToken)
   {
+    Progress = progress;
     SourceChannel = Channel.CreateUnbounded<string>();
 
-    await SourceChannel.Writer.WriteAsync(initialId).ConfigureAwait(false);
+    await SourceChannel.Writer.WriteAsync(initialId, cancellationToken).ConfigureAwait(false);
 
     var count = await SourceChannel
-      .Reader.PipeFilter(out var cached, 1, OnFilterOutCached)
+      .Reader//.PipeFilter(out var cached, 1, OnFilterOutCached, cancellationToken: cancellationToken)
       .Batch(ServerApi.BATCH_SIZE_GET_OBJECTS)
       .WithTimeout(TimeSpan.FromMilliseconds(500))
-      .PipeAsync(4, OnTransport)
+      .PipeAsync(1, OnTransport, cancellationToken: cancellationToken)
       .Join()
-      .PipeAsync(2, OnDeserialize)
-      .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false))
+      .PipeAsync(1, OnDeserialize, cancellationToken: cancellationToken)
+      .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false), cancellationToken)
       .ConfigureAwait(false);
-    var unmatched = await cached.ReadAll(x => { }).ConfigureAwait(false);
+  //  var unmatched = await cached.ReadAll(x => { }, cancellationToken).ConfigureAwait(false);
 
-    Console.WriteLine($"Really Done? {count} {unmatched}");
+    Console.WriteLine($"Really Done? {count} {_idToBaseCache.Count}");
     return _last.NotNull();
   }
 
-  private bool OnFilterOutCached(string id) => !_idToBaseCache.ContainsKey(id);
+ // private bool OnFilterOutCached(string id) => !_idToBaseCache.ContainsKey(id);
 
   private async ValueTask<List<Transported>> OnTransport(List<string> batch)
   {
@@ -62,6 +68,8 @@ public sealed class ReceiveStage : IDisposable
         ret.Add(arg);
       }
     }
+    
+    InvokeProgress();
     return ret;
   }
 
@@ -72,6 +80,7 @@ public sealed class ReceiveStage : IDisposable
     {
       return null;
     }
+    InvokeProgress();
     _deserialized++;
     if (_idToBaseCache.TryAdd(deserialized.Id, deserialized.BaseObject))
     {
@@ -92,6 +101,7 @@ public sealed class ReceiveStage : IDisposable
       _received++;
     }
 
+    InvokeProgress();
     Console.WriteLine($"Received {received.Id} - r {_received} - d {_deserialized} - g {_gathered} - t {_transported}");
     if (received.Id == initialId)
     {
