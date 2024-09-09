@@ -106,7 +106,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     await DownloadObjectsImpl(streamId, crtRequest, progress, onObjectCallback).ConfigureAwait(false);
   }
 
-  public async Task<IReadOnlyList<(string, string)>> DownloadObjects2(
+  public IAsyncEnumerable<(string, string)> DownloadObjects2(
     string streamId,
     IReadOnlyList<string> objectIds,
     Action<ProgressArgs>? progress
@@ -114,28 +114,16 @@ public sealed class ServerApi : IDisposable, IServerApi
   {
     if (objectIds.Count == 0)
     {
-      return [];
+      return AsyncEnumerable.Empty<(string, string)>();
     }
     using var _ = SpeckleActivityFactory.Start();
 
     if (objectIds.Count < BATCH_SIZE_GET_OBJECTS)
     {
-      return await DownloadObjectsImpl2(streamId, objectIds, progress).ConfigureAwait(false);
+      return DownloadObjectsImpl2(streamId, objectIds, progress);
     }
 
-    List<(string, string)> ret = new(objectIds.Count);
-    List<string> crtRequest = new();
-    foreach (string id in objectIds)
-    {
-      if (crtRequest.Count >= BATCH_SIZE_GET_OBJECTS)
-      {
-        ret.AddRange(await DownloadObjectsImpl2(streamId, crtRequest, progress).ConfigureAwait(false));
-        crtRequest = new List<string>();
-      }
-      crtRequest.Add(id);
-    }
-    ret.AddRange(await DownloadObjectsImpl2(streamId, crtRequest, progress).ConfigureAwait(false));
-    return ret;
+    throw new InvalidOperationException($"Cannot request more than {BATCH_SIZE_GET_OBJECTS} objects");
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(string streamId, IReadOnlyList<string> objectIds)
@@ -312,8 +300,7 @@ public sealed class ServerApi : IDisposable, IServerApi
         using var source = new ProgressStream(
           await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
           response.Content.Headers.ContentLength,
-          progress,
-          true
+          progress
         );
         using var fs = new FileStream(fileLocation, FileMode.OpenOrCreate);
         await source.CopyToAsync(fs).ConfigureAwait(false);
@@ -354,7 +341,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     await ResponseProgress(childrenHttpResponse, progress, onObjectCallback, false).ConfigureAwait(false);
   }
 
-  private async Task<IReadOnlyList<(string, string)>> DownloadObjectsImpl2(
+  private async IAsyncEnumerable<(string, string)> DownloadObjectsImpl2(
     string streamId,
     IReadOnlyList<string> objectIds,
     Action<ProgressArgs>? progress
@@ -376,24 +363,21 @@ public sealed class ServerApi : IDisposable, IServerApi
     childrenHttpMessage.Headers.Add("Accept", "text/plain");
 
     HttpResponseMessage childrenHttpResponse = await _client
-      .SendAsync(childrenHttpMessage, CancellationToken)
+      .SendAsync(childrenHttpMessage, HttpCompletionOption.ResponseHeadersRead, CancellationToken)
       .ConfigureAwait(false);
 
     childrenHttpResponse.EnsureSuccessStatusCode();
     var length = childrenHttpResponse.Content.Headers.ContentLength;
     using Stream childrenStream = await childrenHttpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
-    using var reader = new StreamReader(new ProgressStream(childrenStream, length, progress, true), Encoding.UTF8);
-    var ret = new List<(string, string)>(objectIds.Count);
+    using var reader = new StreamReader(new ProgressStream(childrenStream, length, progress), Encoding.UTF8);
     while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
     {
       CancellationToken.ThrowIfCancellationRequested();
 
       var pcs = line.Split(s_separator, 2);
-      ret.Add((pcs[0], pcs[1]));
+      yield return (pcs[0], pcs[1]);
     }
-
-    return ret;
   }
 
   private async Task ResponseProgress(
@@ -407,7 +391,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     var length = childrenHttpResponse.Content.Headers.ContentLength;
     using Stream childrenStream = await childrenHttpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
-    using var reader = new StreamReader(new ProgressStream(childrenStream, length, progress, true), Encoding.UTF8);
+    using var reader = new StreamReader(new ProgressStream(childrenStream, length, progress), Encoding.UTF8);
     while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
     {
       CancellationToken.ThrowIfCancellationRequested();

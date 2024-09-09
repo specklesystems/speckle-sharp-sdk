@@ -21,7 +21,7 @@ public sealed class SpeckleObjectDeserializer2
   /// <exception cref="ArgumentNullException"><paramref name="objectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="objectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public async Task<Base> DeserializeJsonAsync(string objectJson)
+  public async ValueTask<Base> DeserializeJsonAsync(string objectJson)
   {
     if (objectJson is null)
     {
@@ -49,8 +49,7 @@ public sealed class SpeckleObjectDeserializer2
     return converted;
   }
 
-  //this should be buffered
-  private async Task<List<object?>> ReadArrayAsync(JsonReader reader, CancellationToken ct)
+  private async ValueTask<List<object?>> ReadArrayAsync(JsonReader reader, CancellationToken ct)
   {
     await reader.ReadAsync(ct).ConfigureAwait(false);
     List<object?> retList = new();
@@ -70,7 +69,7 @@ public sealed class SpeckleObjectDeserializer2
     return retList;
   }
 
-  private async Task<object> ReadObjectAsync(JsonReader reader, CancellationToken ct)
+  private async ValueTask<object> ReadObjectAsync(JsonReader reader, CancellationToken ct)
   {
     await reader.ReadAsync(ct).ConfigureAwait(false);
     Dictionary<string, object?> dict = new();
@@ -111,7 +110,7 @@ public sealed class SpeckleObjectDeserializer2
     return DictionaryConverter.Dict2Base(dict);
   }
 
-  private async Task<object?> ReadPropertyAsync(JsonReader reader, CancellationToken ct)
+  private async ValueTask<object?> ReadPropertyAsync(JsonReader reader, CancellationToken ct)
   {
     ct.ThrowIfCancellationRequested();
     switch (reader.TokenType)

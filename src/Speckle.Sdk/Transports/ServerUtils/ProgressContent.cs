@@ -17,7 +17,7 @@ internal class ProgressContent : HttpContent
 
   protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
   {
-    ProgressStream progressStream = new(stream, _innerContent.Headers.ContentLength, _progress, false);
+    ProgressStream progressStream = new(stream, _innerContent.Headers.ContentLength, _progress);
     return _innerContent.CopyToAsync(progressStream);
   }
 

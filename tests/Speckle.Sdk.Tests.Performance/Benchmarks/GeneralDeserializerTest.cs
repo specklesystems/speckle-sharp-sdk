@@ -5,6 +5,7 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Toolchains.CsProj;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -19,7 +20,7 @@ namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 [RankColumn]
 [MemoryDiagnoser]
 [Orderer(SummaryOrderPolicy.FastestToSlowest)]
-public class GeneralDeserializer : IDisposable
+public class GeneralDeserializer
 { 
   private class Config : ManualConfig
   {
@@ -32,40 +33,35 @@ public class GeneralDeserializer : IDisposable
       AddJob(job);
     }
   }
-  private TestDataHelper _dataSource;
 
   [GlobalSetup]
-  public async Task Setup()
+  public void Setup()
   {
+    TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
-    _dataSource = new TestDataHelper();
+   /* _dataSource = new TestDataHelper();
     await _dataSource
       .SeedTransport(new("https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"))
-      .ConfigureAwait(false);
+      .ConfigureAwait(false);*/
   }
 
   [Benchmark]
   public async Task<Base> RunTest()
   {
-    SpeckleObjectDeserializer sut = new() { ReadTransport = _dataSource.Transport };
+    /*SpeckleObjectDeserializer sut = new() { ReadTransport = _dataSource.Transport };
     string data = await _dataSource.Transport.GetObject(_dataSource.ObjectId)!;
-    return await sut.DeserializeJsonAsync(data);
+    return await sut.DeserializeJsonAsync(data);*/
+    var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 
-    StreamWrapper sw = new("https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e");
+//var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
+    
+    StreamWrapper sw = new(url);
     var acc = await sw.GetAccount().ConfigureAwait(false);
+    using var client = new Client(acc);
+    var branch = await client.BranchGet(sw.StreamId, sw.BranchName!, 1).ConfigureAwait(false);
+    var objectId = branch.commits.items[0].referencedObject;
     
     using var stage = new ReceiveStage(new Uri(acc.serverInfo.url), sw.StreamId, null);
-    return await stage.GetObject(_dataSource.ObjectId, args => { }, default).ConfigureAwait(false);
-  }
-
-  [GlobalCleanup]
-  public void Cleanup()
-  {
-    Dispose();
-  }
-
-  public void Dispose()
-  {
-    _dataSource.Dispose();
+    return await stage.GetObject(objectId, args => { }, default).ConfigureAwait(false);
   }
 }
