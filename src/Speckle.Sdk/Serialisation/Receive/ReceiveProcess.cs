@@ -6,7 +6,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.Receive;
 
 public record ReceiveProcessSettings(int MaxDownloadThreads = 1, 
   int MaxDeserializeThreads = 1, int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS, int BatchWaitMilliseconds = 500);

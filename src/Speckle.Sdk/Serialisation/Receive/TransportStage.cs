@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Speckle.Sdk.Transports.ServerUtils;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.Receive;
 
 public record Transported(string Id, string Json);
 

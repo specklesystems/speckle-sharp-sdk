@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.Receive;
 
 public class CachingStage
 {

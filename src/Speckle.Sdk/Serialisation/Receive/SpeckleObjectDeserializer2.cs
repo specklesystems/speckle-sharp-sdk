@@ -3,7 +3,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.Receive;
 
 public sealed class SpeckleObjectDeserializer2
 {

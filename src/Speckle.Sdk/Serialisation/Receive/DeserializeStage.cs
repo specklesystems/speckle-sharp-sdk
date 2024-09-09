@@ -4,7 +4,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.Receive;
 
 public record Deserialized(string Id, string Json, Base BaseObject);
 
