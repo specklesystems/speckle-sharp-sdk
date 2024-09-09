@@ -132,7 +132,7 @@ public static partial class Operations
       timer.Elapsed.TotalSeconds
     );
 
-    return new();
+    return res;
   }
 
   /// <summary>

@@ -124,7 +124,7 @@ public sealed class ReceiveStage : IDisposable
     }
 
     InvokeProgress();
-    Console.WriteLine($"Received {received.Id} - r {_received} - d {_deserialized} - g {_saved} - t {_downloaded}");
+    //Console.WriteLine($"Received {received.Id} - r {_received} - d {_deserialized} - g {_saved} - t {_downloaded}");
     if (received.Id == initialId)
     {
       await SourceChannel.CompleteAsync().ConfigureAwait(false);
