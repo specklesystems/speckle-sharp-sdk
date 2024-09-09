@@ -208,12 +208,12 @@ public class Point : Base, ITransformable<Point>
       return true;
     }
 
-    if (obj is null)
+    if (obj is Point p)
     {
-      return false;
+      return this == p;
     }
 
-    return this == (Point)obj;
+    return false;
   }
 
   public override int GetHashCode()
