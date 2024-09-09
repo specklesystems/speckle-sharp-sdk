@@ -16,16 +16,18 @@ public sealed class ReceiveStage : IDisposable
   private long _gathered;
   private long _received;
   private long _transported;
-  private HashSet<string> _requestedIds = new();
+  private readonly HashSet<string> _requestedIds = new();
   private Base? _last;
 
   public ReceiveStage(Uri baseUri, string streamId, string? authorizationToken)
   {
+    SourceChannel = Channel.CreateUnbounded<string>();
+    CachingStage = new(_idToBaseCache);
     TransportStage = new TransportStage(baseUri, streamId, authorizationToken);
-    DeserializeStage = new() { ReceiveStage = this };
+    DeserializeStage = new() { CachingStage = CachingStage, SourceChannel = SourceChannel };
   }
 
-  public Channel<string> SourceChannel { get; private set; }
+  public Channel<string> SourceChannel { get; }
 
   public Action<ProgressArgs>? Progress { get; set; }
 
@@ -39,12 +41,11 @@ public sealed class ReceiveStage : IDisposable
   )
   {
     Progress = progress;
-    SourceChannel = Channel.CreateUnbounded<string>();
 
     await SourceChannel.Writer.WriteAsync(initialId, cancellationToken).ConfigureAwait(false);
 
     var count = await SourceChannel
-      .Reader //.PipeFilter(out var cached, 1, OnFilterOutCached, cancellationToken: cancellationToken)
+      .Reader.Pipe(1, OnCache, cancellationToken: cancellationToken)
       .Batch(ServerApi.BATCH_SIZE_GET_OBJECTS)
       .WithTimeout(TimeSpan.FromMilliseconds(500))
       .PipeAsync(1, OnTransport, cancellationToken: cancellationToken)
@@ -52,16 +53,32 @@ public sealed class ReceiveStage : IDisposable
       .PipeAsync(1, OnDeserialize, cancellationToken: cancellationToken)
       .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false), cancellationToken)
       .ConfigureAwait(false);
-    //  var unmatched = await cached.ReadAll(x => { }, cancellationToken).ConfigureAwait(false);
 
     Console.WriteLine($"Really Done? {count} {_idToBaseCache.Count}");
     return _last.NotNull();
   }
 
-  // private bool OnFilterOutCached(string id) => !_idToBaseCache.ContainsKey(id);
-
-  private async ValueTask<List<Transported>> OnTransport(List<string> batch)
+  private string? OnCache(string id)
   {
+    if (CachingStage.Cache.ContainsKey(id))
+    {
+      return null;
+    }
+
+    InvokeProgress();
+    return id;
+  }
+
+  private async ValueTask<List<Transported>> OnTransport(List<string?> b)
+  {
+    var batch = new List<string>();
+    foreach (var item in b)
+    {
+      if (item is not null)
+      {
+        batch.Add(item);
+      }
+    }
     var gathered = await TransportStage.Execute(batch).ConfigureAwait(false);
     var ret = new List<Transported>(gathered.Count);
     foreach (var arg in gathered)
@@ -115,10 +132,9 @@ public sealed class ReceiveStage : IDisposable
     }
   }
 
+  public CachingStage CachingStage { get; }
   public TransportStage TransportStage { get; }
   public DeserializeStage DeserializeStage { get; }
-
-  public IReadOnlyDictionary<string, Base> Cache => _idToBaseCache;
 
   public void Dispose() => TransportStage.Dispose();
 }

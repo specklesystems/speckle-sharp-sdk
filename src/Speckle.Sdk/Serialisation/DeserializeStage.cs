@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Threading.Channels;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
@@ -11,7 +12,8 @@ public class DeserializeStage
 {
   private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _closures = new();
 
-  public ReceiveStage? ReceiveStage { get; set; }
+  public CachingStage? CachingStage { get; set; }
+  public Channel<string> SourceChannel { get; set; }
 
   public async ValueTask<Deserialized?> Execute(Transported message)
   {
@@ -25,20 +27,20 @@ public class DeserializeStage
     bool anyNotFound = false;
     foreach (var c in closures)
     {
-      if (ReceiveStage.NotNull().Cache.TryGetValue(c, out var cached))
+      if (CachingStage.NotNull().Cache.TryGetValue(c, out var cached))
       {
         closureBases.Add(c, cached);
       }
       else
       {
-        await ReceiveStage.SourceChannel.Writer.WriteAsync(c).ConfigureAwait(false);
+        await SourceChannel.Writer.WriteAsync(c).ConfigureAwait(false);
         anyNotFound = true;
       }
     }
 
     if (anyNotFound)
     {
-      await ReceiveStage.NotNull().SourceChannel.Writer.WriteAsync(message.Id).ConfigureAwait(false);
+      await SourceChannel.Writer.WriteAsync(message.Id).ConfigureAwait(false);
       return null;
     }
 
@@ -49,7 +51,7 @@ public class DeserializeStage
 
   private async ValueTask<Base> Deserialise(IReadOnlyDictionary<string, Base> dictionary, string id, string json)
   {
-    if (ReceiveStage?.Cache.TryGetValue(id, out var baseObject) ?? false)
+    if (CachingStage?.Cache.TryGetValue(id, out var baseObject) ?? false)
     {
       return baseObject;
     }
