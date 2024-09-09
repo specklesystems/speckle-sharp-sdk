@@ -108,10 +108,8 @@ public sealed class SpeckleObjectDeserializer2
       throw new InvalidOperationException("missing reference");
     }
 
-    return  DictionaryConverter.Dict2Base(dict);
+    return DictionaryConverter.Dict2Base(dict);
   }
-  
-  
 
   private async Task<object?> ReadPropertyAsync(JsonReader reader, CancellationToken ct)
   {

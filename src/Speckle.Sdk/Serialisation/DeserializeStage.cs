@@ -56,5 +56,4 @@ public class DeserializeStage
     SpeckleObjectDeserializer2 deserializer = new(dictionary);
     return await deserializer.DeserializeJsonAsync(json).ConfigureAwait(false);
   }
-
 }

@@ -14,10 +14,9 @@ public static class DictionaryConverter
   /// </summary>
   public const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
   private static readonly object?[] s_invokeNull = [null];
-  
+
   public static string? BlobStorageFolder { get; set; }
-  
-  
+
   public static Base Dict2Base(Dictionary<string, object?> dictObj)
   {
     string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();

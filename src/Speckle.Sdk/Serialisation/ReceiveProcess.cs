@@ -29,9 +29,14 @@ public sealed class ReceiveStage : IDisposable
 
   public Action<ProgressArgs>? Progress { get; set; }
 
-  public void InvokeProgress() => Progress?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, _received, SourceChannel.Reader.Count));
+  public void InvokeProgress() =>
+    Progress?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, _received, SourceChannel.Reader.Count));
 
-  public async Task<Base> GetObject(string initialId,  Action<ProgressArgs>? progress, CancellationToken cancellationToken)
+  public async Task<Base> GetObject(
+    string initialId,
+    Action<ProgressArgs>? progress,
+    CancellationToken cancellationToken
+  )
   {
     Progress = progress;
     SourceChannel = Channel.CreateUnbounded<string>();
@@ -39,7 +44,7 @@ public sealed class ReceiveStage : IDisposable
     await SourceChannel.Writer.WriteAsync(initialId, cancellationToken).ConfigureAwait(false);
 
     var count = await SourceChannel
-      .Reader//.PipeFilter(out var cached, 1, OnFilterOutCached, cancellationToken: cancellationToken)
+      .Reader //.PipeFilter(out var cached, 1, OnFilterOutCached, cancellationToken: cancellationToken)
       .Batch(ServerApi.BATCH_SIZE_GET_OBJECTS)
       .WithTimeout(TimeSpan.FromMilliseconds(500))
       .PipeAsync(1, OnTransport, cancellationToken: cancellationToken)
@@ -47,13 +52,13 @@ public sealed class ReceiveStage : IDisposable
       .PipeAsync(1, OnDeserialize, cancellationToken: cancellationToken)
       .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false), cancellationToken)
       .ConfigureAwait(false);
-  //  var unmatched = await cached.ReadAll(x => { }, cancellationToken).ConfigureAwait(false);
+    //  var unmatched = await cached.ReadAll(x => { }, cancellationToken).ConfigureAwait(false);
 
     Console.WriteLine($"Really Done? {count} {_idToBaseCache.Count}");
     return _last.NotNull();
   }
 
- // private bool OnFilterOutCached(string id) => !_idToBaseCache.ContainsKey(id);
+  // private bool OnFilterOutCached(string id) => !_idToBaseCache.ContainsKey(id);
 
   private async ValueTask<List<Transported>> OnTransport(List<string> batch)
   {
@@ -68,7 +73,7 @@ public sealed class ReceiveStage : IDisposable
         ret.Add(arg);
       }
     }
-    
+
     InvokeProgress();
     return ret;
   }
