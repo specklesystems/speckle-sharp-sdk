@@ -262,7 +262,7 @@ public class SpeckleObjectSerializer
     return obj;
   }
 
-  private async Task<SerializationResult?> SerializeBaseAsync(
+  internal async Task<SerializationResult?> SerializeBaseAsync(
     Base baseObj,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
