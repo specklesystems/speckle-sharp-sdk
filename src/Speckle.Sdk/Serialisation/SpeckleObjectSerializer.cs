@@ -161,26 +161,38 @@ public class SpeckleObjectSerializer
         return null;
       case IDictionary d:
       {
+        Dictionary<string, object?> ret = new(d.Count);
         await writer.WriteStartObjectAsync(CancellationToken).ConfigureAwait(false);
+
         foreach (DictionaryEntry kvp in d)
         {
-          await writer.WritePropertyNameAsync(kvp.Key.ToString().NotNull(), CancellationToken).ConfigureAwait(false);
-          await SerializePropertyAsync(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo)
+          if (kvp.Key is not string key)
+          {
+            throw new ArgumentException(
+              "Serializing dictionaries that are not string based keys is not supported",
+              nameof(obj)
+            );
+          }
+
+          await writer.WritePropertyNameAsync(key, CancellationToken).ConfigureAwait(false);
+          ret[key] = await SerializePropertyAsync(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo)
             .ConfigureAwait(false);
         }
         await writer.WriteEndObjectAsync(CancellationToken).ConfigureAwait(false);
-        break;
+        return ret;
       }
-      case IEnumerable e:
+      case ICollection e:
       {
-        //TODO: handle IReadonlyDictionary
+        object?[] ret = new object?[e.Count];
         await writer.WriteStartArrayAsync(CancellationToken).ConfigureAwait(false);
+        int i = 0;
         foreach (object? element in e)
         {
-          await SerializePropertyAsync(element, writer, inheritedDetachInfo: inheritedDetachInfo).ConfigureAwait(false);
+          ret[i++] = await SerializePropertyAsync(element, writer, inheritedDetachInfo: inheritedDetachInfo)
+            .ConfigureAwait(false);
         }
         await writer.WriteEndArrayAsync(CancellationToken).ConfigureAwait(false);
-        break;
+        return ret;
       }
       case Enum:
         await writer.WriteValueAsync((int)obj, CancellationToken).ConfigureAwait(false);
@@ -316,7 +328,7 @@ public class SpeckleObjectSerializer
     return new(json, id, baseObj);
   }
 
-  private Dictionary<string, (object?, PropertyAttributeInfo)> ExtractAllProperties(Base baseObj)
+  private Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
   {
     IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
     IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
@@ -373,13 +385,13 @@ public class SpeckleObjectSerializer
     // Convert all properties
     foreach (var prop in allProperties)
     {
-      if (prop.Value.Item2.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
+      if (prop.Value.info.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
       {
         continue;
       }
 
       await writer.WritePropertyNameAsync(prop.Key, CancellationToken).ConfigureAwait(false);
-      var valueToComputeIdFor = await SerializePropertyAsync(prop.Value.Item1, writer, prop.Value.Item2)
+      var valueToComputeIdFor = await SerializePropertyAsync(prop.Value.value, writer, prop.Value.info)
         .ConfigureAwait(false);
       computeIdProperties[prop.Key] = valueToComputeIdFor;
     }
