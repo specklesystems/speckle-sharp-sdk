@@ -364,15 +364,13 @@
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
           "Microsoft.Data.Sqlite": "[7.0.7, )",
-          "Open.ChannelExtensions": "[8.4.3, )",
           "Polly": "[7.2.3, )",
           "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
           "Polly.Extensions.Http": "[3.0.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
           "Speckle.Sdk.Logging": "[1.0.0, )",
-          "System.Text.Json": "[5.0.2, )",
-          "System.Threading.Channels": "[8.0.0, )"
+          "System.Text.Json": "[5.0.2, )"
         }
       },
       "speckle.sdk.logging": {
