@@ -20,7 +20,7 @@ public static class TypeLoader
   public static IEnumerable<LoadedType> Types => s_availableTypes;
 
   public static JsonPropertyAttribute? GetJsonPropertyAttribute(PropertyInfo property) =>
-    s_jsonPropertyAttribute.GetOrAdd(property, (p) => p.GetCustomAttribute<JsonPropertyAttribute>(true));
+    s_jsonPropertyAttribute.GetOrAdd(property, p => p.GetCustomAttribute<JsonPropertyAttribute>(true));
 
   public static void Initialize(params Assembly[] assemblies)
   {

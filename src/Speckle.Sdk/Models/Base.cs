@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
@@ -92,12 +93,10 @@ public class Base : DynamicBase, ISpeckleObject
 
   private static long CountDescendants(Base @base, ISet<int> parsed)
   {
-    if (parsed.Contains(@base.GetHashCode()))
+    if (!parsed.Add(@base.GetHashCode()))
     {
       return 0;
     }
-
-    parsed.Add(@base.GetHashCode());
 
     long count = 0;
     var typedProps = @base.GetInstanceMembers();
@@ -135,7 +134,11 @@ public class Base : DynamicBase, ISpeckleObject
     var dynamicProps = @base.DynamicPropertyKeys;
     foreach (var propName in dynamicProps)
     {
+#if NETSTANDARD2_0
       if (!propName.StartsWith("@"))
+#else
+      if (!propName.StartsWith('@'))
+#endif
       {
         continue;
       }
@@ -217,7 +220,7 @@ public class Base : DynamicBase, ISpeckleObject
   public Base ShallowCopy()
   {
     Type type = GetType();
-    Base myDuplicate = (Base)Activator.CreateInstance(type);
+    Base myDuplicate = (Base)Activator.CreateInstance(type).NotNull();
     myDuplicate.id = id;
     myDuplicate.applicationId = applicationId;
 

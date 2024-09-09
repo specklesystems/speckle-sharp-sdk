@@ -65,10 +65,12 @@ public static partial class Operations
     CancellationToken cancellationToken = default
   )
   {
+#pragma warning disable CA1510
     if (value is null)
     {
       throw new ArgumentNullException(nameof(value));
     }
+#pragma warning restore CA1510
 
     if (transports.Count == 0)
     {

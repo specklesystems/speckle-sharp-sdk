@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
@@ -176,7 +177,7 @@ internal static class ValueConverter
 
       s_singleValue[0] = valueList.Count;
       //reuse array to avoid params array allocation
-      IList ret = (IList)Activator.CreateInstance(targetType, s_singleValue);
+      IList ret = (IList)Activator.CreateInstance(targetType, s_singleValue).NotNull();
 
       foreach (object inputListElement in valueList)
       {
@@ -205,7 +206,7 @@ internal static class ValueConverter
       }
 
       Type dictValueType = type.GenericTypeArguments[1];
-      IDictionary ret = (IDictionary)Activator.CreateInstance(type);
+      IDictionary ret = (IDictionary)Activator.CreateInstance(type).NotNull();
 
       foreach (KeyValuePair<string, object> kv in valueDict)
       {

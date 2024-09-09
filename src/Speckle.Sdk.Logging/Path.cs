@@ -26,7 +26,7 @@ public static class SpecklePathProvider
   /// Get the installation path.
   /// </summary>
   public static string InstallApplicationDataPath =>
-    Assembly.GetAssembly(typeof(SpecklePathProvider)).Location.Contains("ProgramData")
+    Assembly.GetExecutingAssembly().Location.Contains("ProgramData")
       ? Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)
       : UserApplicationDataPath();
 

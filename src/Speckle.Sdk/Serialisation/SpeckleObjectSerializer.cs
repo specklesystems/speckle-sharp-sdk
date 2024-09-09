@@ -164,7 +164,7 @@ public class SpeckleObjectSerializer
         await writer.WriteStartObjectAsync(CancellationToken).ConfigureAwait(false);
         foreach (DictionaryEntry kvp in d)
         {
-          await writer.WritePropertyNameAsync(kvp.Key.ToString(), CancellationToken).ConfigureAwait(false);
+          await writer.WritePropertyNameAsync(kvp.Key.ToString().NotNull(), CancellationToken).ConfigureAwait(false);
           await SerializePropertyAsync(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo)
             .ConfigureAwait(false);
         }
@@ -341,7 +341,11 @@ public class SpeckleObjectSerializer
       }
 
       object? baseValue = baseObj[propName];
+#if NETSTANDARD2_0
       bool isDetachable = propName.StartsWith("@");
+#else
+      bool isDetachable = propName.StartsWith('@');
+#endif
       bool isChunkable = false;
       int chunkSize = 1000;
 
@@ -506,7 +510,12 @@ public class SpeckleObjectSerializer
   {
     Type type = baseObj.GetType();
 
-    if (_typedPropertiesCache.TryGetValue(type.FullName, out List<(PropertyInfo, PropertyAttributeInfo)>? cached))
+    if (
+      _typedPropertiesCache.TryGetValue(
+        type.FullName.NotNull(),
+        out List<(PropertyInfo, PropertyAttributeInfo)>? cached
+      )
+    )
     {
       return cached;
     }
