@@ -8,8 +8,8 @@ using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public record ReceiveProcessSettings(int MaxDownloadThreads = 1, 
-  int MaxDeserializeThreads = 1, int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS, int BatchWaitMilliseconds = 500);
+public record ReceiveProcessSettings(int MaxDownloadThreads = 4, 
+  int MaxDeserializeThreads = 4, int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS, int BatchWaitMilliseconds = 500);
 public sealed class ReceiveProcess : IDisposable
 {
   private readonly ReceiveProcessSettings _settings = new();

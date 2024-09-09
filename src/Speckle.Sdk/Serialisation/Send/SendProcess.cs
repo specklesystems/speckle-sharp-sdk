@@ -3,6 +3,7 @@ using Open.ChannelExtensions;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Receive;
 using Speckle.Sdk.Transports;
+using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation;
 
@@ -14,26 +15,28 @@ public class SerializeStage
     throw new NotImplementedException();
   }
 }
-public class SerializeStage
+public class SendStage
 {
-  public async ValueTask<Serialized?> Execute(Base @base)
+  public async ValueTask Execute(List<Serialized> serialized)
   {
     throw new NotImplementedException();
   }
 }
-public record SendProcessSettings(int MaxSerializeThreads);
+public record SendProcessSettings(int MaxSerializeThreads = 4, int MaxSendingThreads = 4, int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS, int BatchWaitMilliseconds = 500);
 public class SendProcess
 {
-  private int _serialized;
   private SendProcessSettings _settings = new();
+  private int _serialized;
+  private int _send;
 
   public SendProcess(Uri baseUri, string streamId, string? authorizationToken)
   {
-    SourceChannel = Channel.CreateUnbounded<string>();
+    SourceChannel = Channel.CreateUnbounded<Base>();
   }
 
-  public Channel<string> SourceChannel { get; }
+  public Channel<Base> SourceChannel { get; }
   public SerializeStage SerializeStage { get; set; }
+  public SendStage SendStage { get; set; }
 
   public Action<ProgressArgs[]>? Progress { get; set; }
 
@@ -41,19 +44,21 @@ public class SendProcess
     Progress?.Invoke([]);
 
   public async Task<string> SaveObject(
-    string json,
+    Base @base,
     Action<ProgressArgs[]>? progress,
     CancellationToken cancellationToken
   )
   {
     Progress = progress;
 
-    await SourceChannel.Writer.WriteAsync(json, cancellationToken).ConfigureAwait(false);
+    await SourceChannel.Writer.WriteAsync(@base, cancellationToken).ConfigureAwait(false);
 
     var count = await SourceChannel
       .PipeAsync(_settings.MaxSerializeThreads, OnSerialize, cancellationToken: cancellationToken)
-      .PipeAsync(_settings.MaxDeserializeThreads, OnDeserialize, cancellationToken: cancellationToken)
-      .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false), cancellationToken)
+      .Batch(_settings.MaxObjectRequestSize)
+      .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
+      .PipeAsync(_settings.MaxSendingThreads, OnSend, cancellationToken: cancellationToken)
+      .ReadAllAsync(cancellationToken)
       .ConfigureAwait(false);
 
     Console.WriteLine($"Really Done? {count} {_idToBaseCache.Count}");
@@ -74,13 +79,8 @@ public class SendProcess
   
   private async ValueTask OnSend(List<Serialized> serialized)
   {
-    var serialized = await SerializeStage.Execute(@base).ConfigureAwait(false);
-    if (serialized is null)
-    {
-      return null;
-    }
+    await SendStage.Execute(serialized).ConfigureAwait(false);
     InvokeProgress();
-    _serialized++;
-    return serialized;
+    _send++;
   }
 }
