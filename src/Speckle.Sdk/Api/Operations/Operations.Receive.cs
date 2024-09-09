@@ -15,7 +15,7 @@ public static partial class Operations
     Account account,
     string streamId,
     string objectId,
-    Action<ProgressArgs>? onProgressAction = null,
+    Action<ProgressArgs[]>? onProgressAction = null,
     CancellationToken cancellationToken = default
   )
   {

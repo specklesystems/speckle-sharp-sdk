@@ -13,9 +13,9 @@ public sealed class ReceiveStage : IDisposable
   private readonly ConcurrentDictionary<string, Base> _idToBaseCache = new(StringComparer.Ordinal);
 
   private long _deserialized;
-  private long _gathered;
+  private long _saved;
   private long _received;
-  private long _transported;
+  private long _downloaded;
   private readonly HashSet<string> _requestedIds = new();
   private Base? _last;
 
@@ -29,14 +29,14 @@ public sealed class ReceiveStage : IDisposable
 
   public Channel<string> SourceChannel { get; }
 
-  public Action<ProgressArgs>? Progress { get; set; }
+  public Action<ProgressArgs[]>? Progress { get; set; }
 
   public void InvokeProgress() =>
-    Progress?.Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, _received, SourceChannel.Reader.Count));
+    Progress?.Invoke([new ProgressArgs(ProgressEvent.DeserializeObject, _deserialized, null), new ProgressArgs(ProgressEvent.DownloadObject, _downloaded, null)]);
 
   public async Task<Base> GetObject(
     string initialId,
-    Action<ProgressArgs>? progress,
+    Action<ProgressArgs[]>? progress,
     CancellationToken cancellationToken
   )
   {
@@ -48,9 +48,9 @@ public sealed class ReceiveStage : IDisposable
       .Reader.Pipe(1, OnCache, cancellationToken: cancellationToken)
       .Batch(ServerApi.BATCH_SIZE_GET_OBJECTS)
       .WithTimeout(TimeSpan.FromMilliseconds(500))
-      .PipeAsync(1, OnTransport, cancellationToken: cancellationToken)
+      .PipeAsync(4, OnTransport, cancellationToken: cancellationToken)
       .Join()
-      .PipeAsync(1, OnDeserialize, cancellationToken: cancellationToken)
+      .PipeAsync(2, OnDeserialize, cancellationToken: cancellationToken)
       .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false), cancellationToken)
       .ConfigureAwait(false);
 
@@ -83,10 +83,10 @@ public sealed class ReceiveStage : IDisposable
     var ret = new List<Transported>(gathered.Count);
     foreach (var arg in gathered)
     {
-      _transported++;
+      _downloaded++;
       if (!_idToBaseCache.ContainsKey(arg.Id))
       {
-        _gathered++;
+        _saved++;
         ret.Add(arg);
       }
     }
@@ -124,7 +124,7 @@ public sealed class ReceiveStage : IDisposable
     }
 
     InvokeProgress();
-    Console.WriteLine($"Received {received.Id} - r {_received} - d {_deserialized} - g {_gathered} - t {_transported}");
+    Console.WriteLine($"Received {received.Id} - r {_received} - d {_deserialized} - g {_saved} - t {_downloaded}");
     if (received.Id == initialId)
     {
       await SourceChannel.CompleteAsync().ConfigureAwait(false);

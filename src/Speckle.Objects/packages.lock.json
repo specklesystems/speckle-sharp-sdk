@@ -96,15 +96,6 @@
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
-      "Open.ChannelExtensions": {
-        "type": "Transitive",
-        "resolved": "8.4.3",
-        "contentHash": "ExjIyNC+MZVz31MrbVdFJoVlo0P/DdX/9IwOFKK+tXRIx0PB43rgWEwOhNfdQZeUL6TJME1NxfTDX9ca5Ljf3g==",
-        "dependencies": {
-          "System.Collections.Immutable": "8.0.0",
-          "System.Threading.Channels": "8.0.0"
-        }
-      },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
         "resolved": "2.1.4",
@@ -259,6 +250,16 @@
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.4"
         }
       },
+      "Open.ChannelExtensions": {
+        "type": "CentralTransitive",
+        "requested": "[8.4.3, )",
+        "resolved": "8.4.3",
+        "contentHash": "ExjIyNC+MZVz31MrbVdFJoVlo0P/DdX/9IwOFKK+tXRIx0PB43rgWEwOhNfdQZeUL6TJME1NxfTDX9ca5Ljf3g==",
+        "dependencies": {
+          "System.Collections.Immutable": "8.0.0",
+          "System.Threading.Channels": "8.0.0"
+        }
+      },
       "Polly": {
         "type": "CentralTransitive",
         "requested": "[7.2.3, )",
@@ -385,11 +386,6 @@
         "resolved": "8.0.0",
         "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
-      "Open.ChannelExtensions": {
-        "type": "Transitive",
-        "resolved": "8.4.3",
-        "contentHash": "ExjIyNC+MZVz31MrbVdFJoVlo0P/DdX/9IwOFKK+tXRIx0PB43rgWEwOhNfdQZeUL6TJME1NxfTDX9ca5Ljf3g=="
-      },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
         "resolved": "2.1.4",
@@ -476,6 +472,12 @@
           "Microsoft.Data.Sqlite.Core": "7.0.7",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.4"
         }
+      },
+      "Open.ChannelExtensions": {
+        "type": "CentralTransitive",
+        "requested": "[8.4.3, )",
+        "resolved": "8.4.3",
+        "contentHash": "ExjIyNC+MZVz31MrbVdFJoVlo0P/DdX/9IwOFKK+tXRIx0PB43rgWEwOhNfdQZeUL6TJME1NxfTDX9ca5Ljf3g=="
       },
       "Polly": {
         "type": "CentralTransitive",
