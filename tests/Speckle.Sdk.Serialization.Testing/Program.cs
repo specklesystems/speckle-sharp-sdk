@@ -3,7 +3,6 @@ using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Receive;
 
 TypeLoader.Reset();
