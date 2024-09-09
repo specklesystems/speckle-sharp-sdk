@@ -13,7 +13,7 @@ namespace Speckle.Objects.Geometry;
 /// TODO: The Point class does not override the Equality operator, which means that there may be cases where `Equals` is used instead of `==`, as the comparison will be done by reference, not value.
 /// </remarks>
 [SpeckleType("Objects.Geometry.Point")]
-public class Point : Base, ITransformable<Point>
+public class Point : Base, ITransformable<Point>, IEquatable<Point>
 {
   /// <inheritdoc/>
   public Point() { }
@@ -200,6 +200,8 @@ public class Point : Base, ITransformable<Point>
   {
     return Math.Sqrt(Math.Pow(x - point.x, 2) + Math.Pow(y - point.y, 2) + Math.Pow(z - point.z, 2));
   }
+
+  public bool Equals(Point? other) => this == other;
 
   public override bool Equals(object? obj)
   {
