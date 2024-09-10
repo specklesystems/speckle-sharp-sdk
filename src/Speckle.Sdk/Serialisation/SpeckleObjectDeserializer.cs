@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
+using System.Numerics;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
@@ -240,23 +240,21 @@ public sealed class SpeckleObjectDeserializer
       case JsonToken.Boolean:
         return (bool)reader.Value.NotNull();
       case JsonToken.Integer:
-        try
+        if (reader.Value is long longValue)
         {
-          return (long)reader.Value.NotNull();
+          return longValue;
         }
-        catch (SystemException ex) when (ex is OverflowException or InvalidCastException)
+        if (reader.Value is BigInteger bitInt)
         {
-          var v = (object)(double)reader.Value.NotNull();
-          SpeckleLog.Logger.Debug(
-            ex,
-            "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
-            reader.ValueType,
-            v,
-            typeof(long),
-            typeof(double)
-          );
-          return v;
+          // This is behaviour carried over from v2 to facilitate large numbers from Python
+          // This is quite hacky, as it's a bit questionable exactly what numbers are supported, and with what tolerance
+          // For this reason, this can be considered undocumented behaviour, and is only for values within the range of a 64bit integer.
+          return (double)bitInt;
         }
+
+        throw new ArgumentException(
+          $"Found an unsupported integer type {reader.Value?.GetType()} with value {reader.Value}"
+        );
       case JsonToken.Float:
         return (double)reader.Value.NotNull();
       case JsonToken.String:
