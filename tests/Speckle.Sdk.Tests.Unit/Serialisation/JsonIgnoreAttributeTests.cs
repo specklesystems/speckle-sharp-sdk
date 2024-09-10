@@ -38,7 +38,7 @@ public sealed class JsonIgnoreRespected
 
     SpeckleObjectSerializer sut = new();
 
-    var (json, id, _) = await sut.SerializeBaseAsync(testData).NotNull();
+    var (json, id) = await sut.SerializeBaseAsync(testData).NotNull();
 
     Assert.That(json, Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
     Assert.That(json, Does.Not.Contain(ignoredPayload));
@@ -57,7 +57,7 @@ public sealed class JsonIgnoreRespected
     MemoryTransport savedObjects = new();
     SpeckleObjectSerializer sut = new(writeTransports: [savedObjects]);
 
-    var (json, id, _) = await sut.SerializeBaseAsync(testData).NotNull();
+    var (json, id) = await sut.SerializeBaseAsync(testData).NotNull();
 
     savedObjects.SaveObject(id.NotNull(), json);
 
