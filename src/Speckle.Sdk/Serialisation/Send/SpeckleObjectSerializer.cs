@@ -396,7 +396,7 @@ public class SpeckleObjectSerializer2
     // If there are no WriteTransports, keep everything attached.
     if (forceAttach)
     {
-      await SerializePropertyAsync(baseValue, jsonWriter, detachInfo, forceAttach).ConfigureAwait(false);
+      await SerializePropertyAsync(baseValue, jsonWriter, false, detachInfo, forceAttach).ConfigureAwait(false);
       return;
     }
 
@@ -421,7 +421,7 @@ public class SpeckleObjectSerializer2
       }
     }
 
-    await SerializePropertyAsync(baseValue, jsonWriter, detachInfo, forceAttach).ConfigureAwait(false);
+    await SerializePropertyAsync(baseValue, jsonWriter, false, detachInfo, forceAttach).ConfigureAwait(false);
   }
 
   private void UpdateParentClosures(string objectId)

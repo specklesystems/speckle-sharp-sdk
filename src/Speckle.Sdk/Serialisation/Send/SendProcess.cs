@@ -34,6 +34,7 @@ public sealed class SendProcess : IDisposable
 
   public void InvokeProgress() => Progress?.Invoke([]);
 
+  public async ValueTask Finish() => await SourceChannel.CompleteAsync().ConfigureAwait(false);
   public async Task<long> Start(
     Action<ProgressArgs[]>? progress,
     CancellationToken cancellationToken)
@@ -44,7 +45,7 @@ public sealed class SendProcess : IDisposable
       .PipeAsync(_settings.MaxSerializeThreads, OnSerialize, cancellationToken: cancellationToken)
       .Batch(_settings.MaxObjectRequestSize)
       .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
-      .ReadAllAsync(OnSend, false, cancellationToken: cancellationToken)
+      .ReadAllAsync(cancellationToken, OnSend)
       .ConfigureAwait(false);
 
     Console.WriteLine($"Really Done? {count}");
