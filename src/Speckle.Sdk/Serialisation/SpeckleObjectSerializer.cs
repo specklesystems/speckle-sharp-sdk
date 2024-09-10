@@ -379,7 +379,11 @@ public class SpeckleObjectSerializer
   )
   {
     var allProperties = ExtractAllProperties(baseObj);
-    var computeIdProperties = new Dictionary<string, object?>(allProperties.Count);
+
+    if (baseObj is not Blob)
+    {
+      writer = new SerializerIdWriter(writer);
+    }
 
     await writer.WriteStartObjectAsync(CancellationToken).ConfigureAwait(false);
     // Convert all properties
@@ -391,12 +395,19 @@ public class SpeckleObjectSerializer
       }
 
       await writer.WritePropertyNameAsync(prop.Key, CancellationToken).ConfigureAwait(false);
-      var valueToComputeIdFor = await SerializePropertyAsync(prop.Value.value, writer, prop.Value.info)
-        .ConfigureAwait(false);
-      computeIdProperties[prop.Key] = valueToComputeIdFor;
+      await SerializePropertyAsync(prop.Value.value, writer, prop.Value.info).ConfigureAwait(false);
     }
 
-    var id = baseObj is Blob blob ? blob.id : ComputeId(computeIdProperties);
+    string id;
+    if (writer is SerializerIdWriter serializerIdWriter)
+    {
+      (var json, writer) = await serializerIdWriter.FinishIdWriterAsync(CancellationToken).ConfigureAwait(false);
+      id = ComputeId(json);
+    }
+    else
+    {
+      id = ((Blob)baseObj).id;
+    }
     await writer.WritePropertyNameAsync("id", CancellationToken).ConfigureAwait(false);
     await writer.WriteValueAsync(id, CancellationToken).ConfigureAwait(false);
     baseObj.id = id;
@@ -475,9 +486,8 @@ public class SpeckleObjectSerializer
   }
 
   [Pure]
-  private static string ComputeId(IReadOnlyDictionary<string, object?> obj)
+  private static string ComputeId(string serialized)
   {
-    string serialized = JsonConvert.SerializeObject(obj);
     string hash = Crypt.Sha256(serialized, length: HashUtility.HASH_LENGTH);
     return hash;
   }
