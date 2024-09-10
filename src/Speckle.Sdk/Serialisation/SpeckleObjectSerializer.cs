@@ -474,7 +474,11 @@ public class SpeckleObjectSerializer
   [Pure]
   private static string ComputeId(string serialized)
   {
+#if NET6_0_OR_GREATER
+    string hash = Crypt.Sha256(serialized.AsSpan(), length: HashUtility.HASH_LENGTH);
+#else
     string hash = Crypt.Sha256(serialized, length: HashUtility.HASH_LENGTH);
+#endif
     return hash;
   }
 
