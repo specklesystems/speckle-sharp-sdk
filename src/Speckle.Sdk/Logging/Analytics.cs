@@ -1,4 +1,3 @@
-#nullable disable
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
@@ -6,17 +5,43 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Web;
+using Microsoft.Extensions.Logging;
+using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 
 namespace Speckle.Sdk.Logging;
 
+public partial interface IAnalytics
+{
+  void TrackEvent(
+    global::Speckle.Sdk.Logging.Analytics.Events eventName,
+    System.Collections.Generic.Dictionary<string, object>? customProperties = default,
+    bool isAction = true
+  );
+
+  /// <summary>
+  /// Tracks an event from a specified account, anonymizes personal information
+  /// </summary>
+  /// <param name="account">Account to use, it will be anonymized</param>
+  /// <param name="eventName">Name of the event</param>
+  /// <param name="customProperties">Additional parameters to pass to the event</param>
+  /// <param name="isAction">True if it's an action performed by a logged user</param>
+  void TrackEvent(
+    global::Speckle.Sdk.Credentials.Account account,
+    global::Speckle.Sdk.Logging.Analytics.Events eventName,
+    System.Collections.Generic.Dictionary<string, object>? customProperties = default,
+    bool isAction = true
+  );
+}
+
 /// <summary>
 ///  Anonymous telemetry to help us understand how to make a better Speckle.
 ///  This really helps us to deliver a better open source project and product!
 /// </summary>
-public static class Analytics
+[GenerateAutoInterface]
+public class Analytics(IAccountManager accountManager, ISpeckleHttp speckleHttp, ILogger<Analytics> logger) : IAnalytics
 {
   /// <summary>
   /// Default Mixpanel events
@@ -107,11 +132,8 @@ public static class Analytics
   /// <param name="eventName">Name of the even</param>
   /// <param name="customProperties">Additional parameters to pass in to event</param>
   /// <param name="isAction">True if it's an action performed by a logged user</param>
-  public static void TrackEvent(
-    Events eventName,
-    Dictionary<string, object> customProperties = null,
-    bool isAction = true
-  )
+  [AutoInterfaceIgnore]
+  public void TrackEvent(Events eventName, Dictionary<string, object>? customProperties = null, bool isAction = true)
   {
     string email;
     string server;
@@ -123,7 +145,7 @@ public static class Analytics
     }
     else
     {
-      var acc = AccountManager.GetDefaultAccount();
+      var acc = accountManager.GetDefaultAccount();
       if (acc == null)
       {
         var macAddr = NetworkInterface
@@ -155,10 +177,12 @@ public static class Analytics
   /// <param name="eventName">Name of the event</param>
   /// <param name="customProperties">Additional parameters to pass to the event</param>
   /// <param name="isAction">True if it's an action performed by a logged user</param>
-  public static void TrackEvent(
+
+  [AutoInterfaceIgnore]
+  public void TrackEvent(
     Account account,
     Events eventName,
-    Dictionary<string, object> customProperties = null,
+    Dictionary<string, object>? customProperties = null,
     bool isAction = true
   )
   {
@@ -180,11 +204,11 @@ public static class Analytics
   /// <param name="eventName">Name of the event</param>
   /// <param name="customProperties">Additional parameters to pass to the event</param>
   /// <param name="isAction">True if it's an action performed by a logged user</param>
-  private static void TrackEvent(
+  private void TrackEvent(
     string hashedEmail,
     string hashedServer,
     Events eventName,
-    Dictionary<string, object> customProperties = null,
+    Dictionary<string, object>? customProperties = null,
     bool isAction = true
   )
   {
@@ -245,81 +269,73 @@ public static class Analytics
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Logger.Warning(ex, "Analytics event failed {exceptionMessage}", ex.Message);
+        logger.LogWarning(ex, "Analytics event failed {exceptionMessage}", ex.Message);
       }
     });
   }
 
-  internal static void AddConnectorToProfile(string hashedEmail, string connector)
+  public async Task AddConnectorToProfile(string hashedEmail, string connector)
   {
-    Task.Run(async () =>
+    try
     {
-      try
+      var data = new Dictionary<string, object>
       {
-        var data = new Dictionary<string, object>
+        { "$token", MIXPANEL_TOKEN },
+        { "$distinct_id", hashedEmail },
         {
-          { "$token", MIXPANEL_TOKEN },
-          { "$distinct_id", hashedEmail },
+          "$union",
+          new Dictionary<string, object>
           {
-            "$union",
-            new Dictionary<string, object>
             {
-              {
-                "Connectors",
-                new List<string> { connector }
-              }
+              "Connectors",
+              new List<string> { connector }
             }
           }
-        };
-        string json = JsonConvert.SerializeObject(data);
+        }
+      };
+      string json = JsonConvert.SerializeObject(data);
 
-        var query = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes("data=" + HttpUtility.UrlEncode(json))));
-        using HttpClient client = Http.GetHttpProxyClient();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
-        query.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        var res = await client
-          .PostAsync(new Uri(s_mixpanelServer, "/engage#profile-union"), query)
-          .ConfigureAwait(false);
-        res.EnsureSuccessStatusCode();
-      }
-      catch (Exception ex) when (!ex.IsFatal())
-      {
-        //.ForContext("connector", connector)
-        SpeckleLog.Logger.Warning(ex, "Failed add connector to profile");
-      }
-    });
+      var query = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes("data=" + HttpUtility.UrlEncode(json))));
+      using HttpClient client = speckleHttp.GetHttpProxyClient();
+      client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
+      query.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+      var res = await client.PostAsync(new Uri(s_mixpanelServer, "/engage#profile-union"), query).ConfigureAwait(false);
+      res.EnsureSuccessStatusCode();
+    }
+    catch (Exception ex) when (!ex.IsFatal())
+    {
+      //.ForContext("connector", connector)
+      logger.LogWarning(ex, "Failed add connector to profile");
+    }
   }
 
-  internal static void IdentifyProfile(string hashedEmail)
+  public async Task IdentifyProfile(string hashedEmail)
   {
-    Task.Run(async () =>
+    try
     {
-      try
+      var data = new Dictionary<string, object>
       {
-        var data = new Dictionary<string, object>
+        { "$token", MIXPANEL_TOKEN },
+        { "$distinct_id", hashedEmail },
         {
-          { "$token", MIXPANEL_TOKEN },
-          { "$distinct_id", hashedEmail },
-          {
-            "$set",
-            new Dictionary<string, object> { { "Identified", true } }
-          }
-        };
-        string json = JsonConvert.SerializeObject(data);
+          "$set",
+          new Dictionary<string, object> { { "Identified", true } }
+        }
+      };
+      string json = JsonConvert.SerializeObject(data);
 
-        var query = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes("data=" + HttpUtility.UrlEncode(json))));
-        using HttpClient client = Http.GetHttpProxyClient();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
-        query.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-        var res = await client.PostAsync(new Uri(s_mixpanelServer, "/engage#profile-set"), query).ConfigureAwait(false);
-        res.EnsureSuccessStatusCode();
-      }
-      catch (Exception ex) when (!ex.IsFatal())
-      {
-        //.ForContext("connector", connector)
-        SpeckleLog.Logger.Warning(ex, "Failed identify profile");
-      }
-    });
+      var query = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes("data=" + HttpUtility.UrlEncode(json))));
+      using HttpClient client = speckleHttp.GetHttpProxyClient();
+      client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
+      query.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+      var res = await client.PostAsync(new Uri(s_mixpanelServer, "/engage#profile-set"), query).ConfigureAwait(false);
+      res.EnsureSuccessStatusCode();
+    }
+    catch (Exception ex) when (!ex.IsFatal())
+    {
+      //.ForContext("connector", connector)
+      logger.LogWarning(ex, "Failed identify profile");
+    }
   }
 
   private static string GetOs()

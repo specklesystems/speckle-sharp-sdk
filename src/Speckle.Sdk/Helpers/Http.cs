@@ -1,53 +1,28 @@
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.Contrib.WaitAndRetry;
-using Polly.Extensions.Http;
-using Polly.Timeout;
+using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Helpers;
 
-public static class Http
+[GenerateAutoInterface]
+public class SpeckleHttp(
+  ILogger<SpeckleHttp> logger,
+  IAccountManager accountManager,
+  ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory
+) : ISpeckleHttp
 {
-  public const int DEFAULT_TIMEOUT_SECONDS = 60;
-
-  public static IEnumerable<TimeSpan> DefaultDelay()
-  {
-    return Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(200), 5);
-  }
-
-  public static IAsyncPolicy<HttpResponseMessage> HttpAsyncPolicy(
-    IEnumerable<TimeSpan>? delay = null,
-    int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
-  )
-  {
-    var retryPolicy = HttpPolicyExtensions
-      .HandleTransientHttpError()
-      .Or<TimeoutRejectedException>()
-      .WaitAndRetryAsync(
-        delay ?? DefaultDelay(),
-        (ex, timeSpan, retryAttempt, context) =>
-        {
-          context.Remove("retryCount");
-          context.Add("retryCount", retryAttempt);
-        }
-      );
-
-    var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(timeoutSeconds);
-
-    return Policy.WrapAsync(retryPolicy, timeoutPolicy);
-  }
-
   /// <summary>
   /// Checks if the user has a valid internet connection by first pinging cloudfare (fast)
   /// and then trying get from the default Speckle server (slower)
   /// </summary>
   /// <returns>True if the user is connected to the internet, false otherwise.</returns>
-  public static async Task<bool> UserHasInternet()
+  public async Task<bool> UserHasInternet()
   {
     Uri? defaultServer = null;
     try
@@ -58,7 +33,7 @@ public static class Http
         return true;
       }
 
-      defaultServer = AccountManager.GetDefaultServerUrl();
+      defaultServer = accountManager.GetDefaultServerUrl();
       await HttpPing(defaultServer).ConfigureAwait(false);
       return true;
     }
@@ -66,7 +41,7 @@ public static class Http
     {
       using var activity = SpeckleActivityFactory.Start();
       activity?.SetTag("defaultServer", defaultServer);
-      SpeckleLog.Logger.Warning(ex, "Failed to ping internet");
+      logger.LogWarning(ex, "Failed to ping internet");
 
       return false;
     }
@@ -77,14 +52,14 @@ public static class Http
   /// </summary>
   /// <param name="hostnameOrAddress">The hostname or address to ping.</param>
   /// <returns>True if the the status code is 200, false otherwise.</returns>
-  public static async Task<bool> Ping(string hostnameOrAddress)
+  public async Task<bool> Ping(string hostnameOrAddress)
   {
-    SpeckleLog.Logger.Information("Pinging {hostnameOrAddress}", hostnameOrAddress);
+    logger.LogInformation("Pinging {hostnameOrAddress}", hostnameOrAddress);
     var policy = Policy
       .Handle<PingException>()
       .Or<SocketException>()
       .WaitAndRetryAsync(
-        DefaultDelay(),
+        speckleHttpClientHandlerFactory.DefaultDelay(),
         (ex, timeSpan, retryAttempt, context) => {
           //Log.Information(
           //  ex,
@@ -120,9 +95,10 @@ public static class Http
       return true;
     }
 
-    SpeckleLog.Logger.Warning(
+    logger.LogWarning(
       policyResult.FinalException,
       "Failed to ping {hostnameOrAddress} cause: {exceptionMessage}",
+      hostnameOrAddress,
       policyResult.FinalException.Message
     );
     return false;
@@ -133,29 +109,29 @@ public static class Http
   /// </summary>
   /// <param name="uri">The URI that should be pinged</param>
   /// <exception cref="HttpRequestException">Request to <paramref name="uri"/> failed</exception>
-  public static async Task<HttpResponseMessage> HttpPing(Uri uri)
+  public async Task<HttpResponseMessage> HttpPing(Uri uri)
   {
     try
     {
       using var httpClient = GetHttpProxyClient();
       HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
       response.EnsureSuccessStatusCode();
-      SpeckleLog.Logger.Information("Successfully pinged {uri}", uri);
+      logger.LogInformation("Successfully pinged {uri}", uri);
       return response;
     }
     catch (HttpRequestException ex)
     {
-      SpeckleLog.Logger.Warning(ex, "Ping to {uri} was unsuccessful: {message}", uri, ex.Message);
+      logger.LogWarning(ex, "Ping to {uri} was unsuccessful: {message}", uri, ex.Message);
       throw new HttpRequestException($"Ping to {uri} was unsuccessful", ex);
     }
   }
 
-  public static HttpClient GetHttpProxyClient(SpeckleHttpClientHandler? speckleHttpClientHandler = null)
+  public HttpClient GetHttpProxyClient(SpeckleHttpClientHandler? speckleHttpClientHandler = null)
   {
     IWebProxy proxy = WebRequest.GetSystemWebProxy();
     proxy.Credentials = CredentialCache.DefaultCredentials;
 
-    speckleHttpClientHandler ??= new SpeckleHttpClientHandler(new HttpClientHandler(), HttpAsyncPolicy());
+    speckleHttpClientHandler ??= speckleHttpClientHandlerFactory.Create();
 
     var client = new HttpClient(speckleHttpClientHandler)
     {
@@ -164,7 +140,7 @@ public static class Http
     return client;
   }
 
-  public static bool CanAddAuth(string? authToken, out string? bearerHeader)
+  public bool CanAddAuth(string? authToken, out string? bearerHeader)
   {
     if (!string.IsNullOrEmpty(authToken))
     {
@@ -178,7 +154,7 @@ public static class Http
     return false;
   }
 
-  public static void AddAuthHeader(HttpClient client, string? authToken)
+  public void AddAuthHeader(HttpClient client, string? authToken)
   {
     if (CanAddAuth(authToken, out string? value))
     {

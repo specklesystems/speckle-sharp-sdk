@@ -3,7 +3,6 @@ using System.Reflection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Models;
 
@@ -260,7 +259,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
           }
           catch (Exception ex) when (!ex.IsFatal())
           {
-            SpeckleLog.Logger.Warning(ex, "Failed to get computed member: {name}", attr.Name);
+            //SpeckleLog.Logger.Warning(ex, "Failed to get computed member: {name}", attr.Name);
             dic[attr.Name] = null;
           }
         });

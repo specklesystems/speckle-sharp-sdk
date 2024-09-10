@@ -27,7 +27,6 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     _blobStorageEnabled = blobStorageEnabled;
     _basePath = basePath ?? SpecklePathProvider.UserApplicationDataPath();
     _applicationName = applicationName ?? "Speckle";
-    SpeckleLog.Logger.Debug("Creating a new Memory Transport");
     var dir = Path.Combine(_basePath, _applicationName);
     try
     {

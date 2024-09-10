@@ -3,7 +3,6 @@ using System.Reflection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
@@ -244,17 +243,17 @@ public sealed class SpeckleObjectDeserializer
         {
           return (long)reader.Value.NotNull();
         }
-        catch (OverflowException ex)
+        catch (OverflowException)
         {
           var v = (object)(double)reader.Value.NotNull();
-          SpeckleLog.Logger.Debug(
-            ex,
-            "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
-            reader.ValueType,
-            v,
-            typeof(long),
-            typeof(double)
-          );
+          /* SpeckleLog.Logger.Debug(
+             ex,
+             "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
+             reader.ValueType,
+             v,
+             typeof(long),
+             typeof(double)
+           );*/
           return v;
         }
       case JsonToken.Float:

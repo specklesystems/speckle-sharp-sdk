@@ -26,21 +26,28 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   private readonly HttpClient _client;
 
-  public ServerApi(Uri baseUri, string? authorizationToken, string blobStorageFolder, int timeoutSeconds = 120)
+  public ServerApi(
+    ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
+    ISpeckleHttp speckleHttp,
+    Uri baseUri,
+    string? authorizationToken,
+    string blobStorageFolder,
+    int timeoutSeconds = 120
+  )
   {
     CancellationToken = CancellationToken.None;
 
     BlobStorageFolder = blobStorageFolder;
 
-    _client = Http.GetHttpProxyClient(
-      new SpeckleHttpClientHandler(
+    _client = speckleHttp.GetHttpProxyClient(
+      speckleHttpClientHandlerFactory.Create(
         new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
-        Http.HttpAsyncPolicy(timeoutSeconds: timeoutSeconds)
+        speckleHttpClientHandlerFactory.HttpAsyncPolicy(timeoutSeconds: timeoutSeconds)
       )
     );
     _client.BaseAddress = baseUri;
 
-    Http.AddAuthHeader(_client, authorizationToken);
+    speckleHttp.AddAuthHeader(_client, authorizationToken);
   }
 
   public CancellationToken CancellationToken { get; set; }

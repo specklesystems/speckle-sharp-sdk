@@ -16,25 +16,6 @@ public class StreamWrapper
   public StreamWrapper() { }
 
   /// <summary>
-  /// Creates a StreamWrapper from a stream url or a stream id
-  /// </summary>
-  /// <param name="streamUrlOrId">Stream Url eg: http://speckle.server/streams/8fecc9aa6d/commits/76a23d7179  or stream ID eg: 8fecc9aa6d</param>
-  /// <exception cref="Exception"></exception>
-  public StreamWrapper(string streamUrlOrId)
-  {
-    OriginalInput = streamUrlOrId;
-
-    if (!Uri.TryCreate(streamUrlOrId, UriKind.Absolute, out _))
-    {
-      StreamWrapperFromId(streamUrlOrId);
-    }
-    else
-    {
-      StreamWrapperFromUrl(streamUrlOrId);
-    }
-  }
-
-  /// <summary>
   /// Creates a StreamWrapper by streamId, userId and serverUrl
   /// </summary>
   /// <param name="streamId"></param>
@@ -91,19 +72,19 @@ public class StreamWrapper
     }
   }
 
-  private void StreamWrapperFromId(string streamId)
-  {
-    Account? account = AccountManager.GetDefaultAccount();
-
-    if (account == null)
-    {
-      throw new SpeckleException("You do not have any account. Please create one or add it to the Speckle Manager.");
-    }
-
-    ServerUrl = account.serverInfo.url;
-    UserId = account.userInfo.id;
-    StreamId = streamId;
-  }
+  /* public static void StreamWrapperFromId(IAccountManager accountManager, string streamId)
+   {
+     Account? account = accountManager.GetDefaultAccount();
+ 
+     if (account == null)
+     {
+       throw new SpeckleException("You do not have any account. Please create one or add it to the Speckle Manager.");
+     }
+ 
+     ServerUrl = account.serverInfo.url;
+     UserId = account.userInfo.id;
+     StreamId = streamId;
+   }*/
 
   /// <summary>
   /// The ReGex pattern to determine if a URL's AbsolutePath is a Frontend2 URL or not.
@@ -280,7 +261,11 @@ public class StreamWrapper
   /// </summary>
   /// <exception cref="SpeckleException">Throws exception if account fetching failed. This could be due to non-existent account or stream.</exception>
   /// <returns>The valid account object for this stream.</returns>
-  public async Task<Account> GetAccount()
+  public async Task<Account> GetAccount(
+    IClientFactory clientFactory,
+    ISpeckleHttp speckleHttp,
+    IAccountManager accountManager
+  )
   {
     if (_account != null)
     {
@@ -291,22 +276,22 @@ public class StreamWrapper
     if (OriginalInput != null && OriginalInput.Contains("?u="))
     {
       var userId = OriginalInput.Split(new[] { "?u=" }, StringSplitOptions.None)[1];
-      var acc = AccountManager.GetAccounts().FirstOrDefault(acc => acc.userInfo.id == userId);
+      var acc = accountManager.GetAccounts().FirstOrDefault(acc => acc.userInfo.id == userId);
       if (acc != null)
       {
-        await ValidateWithAccount(acc).ConfigureAwait(false);
+        await ValidateWithAccount(clientFactory, speckleHttp, acc).ConfigureAwait(false);
         _account = acc;
         return acc;
       }
     }
 
     // Step 2: check the default
-    var defAcc = AccountManager.GetDefaultAccount();
+    var defAcc = accountManager.GetDefaultAccount();
     List<Exception> err = new();
     try
     {
       defAcc.NotNull();
-      await ValidateWithAccount(defAcc).ConfigureAwait(false);
+      await ValidateWithAccount(clientFactory, speckleHttp, defAcc).ConfigureAwait(false);
       _account = defAcc;
       return defAcc;
     }
@@ -316,7 +301,7 @@ public class StreamWrapper
     }
 
     // Step 3: all the rest
-    var accs = AccountManager.GetAccounts(ServerUrl).ToList();
+    var accs = accountManager.GetAccounts(ServerUrl).ToList();
     if (accs.Count == 0)
     {
       throw new SpeckleException($"You don't have any accounts for {ServerUrl}.");
@@ -326,7 +311,7 @@ public class StreamWrapper
     {
       try
       {
-        await ValidateWithAccount(acc).ConfigureAwait(false);
+        await ValidateWithAccount(clientFactory, speckleHttp, acc).ConfigureAwait(false);
         _account = acc;
         return acc;
       }
@@ -375,7 +360,7 @@ public class StreamWrapper
   /// <exception cref="ArgumentException">The <see cref="Speckle.Sdk.Api.GraphQL.Models.ServerInfo"/> of the provided <paramref name="acc"/> is invalid or does not match the <see cref="StreamWrapper"/>'s <see cref="ServerUrl"/></exception>
   /// <exception cref="HttpRequestException">You are not connected to the internet</exception>
   /// <exception cref="SpeckleException">Verification of the current state of the stream wrapper with provided <paramref name="acc"/> was unsuccessful. The <paramref name="acc"/> could be invalid, or lack permissions for the <see cref="StreamId"/>, or the <see cref="StreamId"/> or <see cref="BranchName"/> are invalid</exception>
-  public async Task ValidateWithAccount(Account acc)
+  public async Task ValidateWithAccount(IClientFactory clientFactory, ISpeckleHttp speckleHttp, Account acc)
   {
     Uri url;
     try
@@ -394,14 +379,14 @@ public class StreamWrapper
 
     try
     {
-      await Http.HttpPing(url).ConfigureAwait(false);
+      await speckleHttp.HttpPing(url).ConfigureAwait(false);
     }
     catch (HttpRequestException ex)
     {
       throw new HttpRequestException("You are not connected to the internet.", ex);
     }
 
-    using var client = new Client(acc);
+    using var client = clientFactory.Create(acc);
     // First check if the stream exists
     try
     {

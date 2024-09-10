@@ -12,8 +12,6 @@ namespace Speckle.Sdk;
 /// </summary>
 public static class Setup
 {
-  public static Mutex Mutex { get; set; }
-
   private static bool s_initialized;
 
   static Setup()
@@ -53,9 +51,6 @@ public static class Setup
     Application = configuration.Application.Name;
     Version = HostApplications.GetVersion(configuration.Version);
     Slug = configuration.Application.Slug;
-
-    //start mutex so that Manager can detect if this process is running
-    Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
 
     foreach (var account in AccountManager.GetAccounts())
     {

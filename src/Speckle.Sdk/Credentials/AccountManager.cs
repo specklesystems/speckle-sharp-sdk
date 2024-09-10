@@ -6,6 +6,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using GraphQL;
 using GraphQL.Client.Http;
+using Microsoft.Extensions.Logging;
+using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
@@ -23,7 +25,8 @@ namespace Speckle.Sdk.Credentials;
 /// <summary>
 /// Manage accounts locally for desktop applications.
 /// </summary>
-public static class AccountManager
+[GenerateAutoInterface]
+public class AccountManager(ILogger<AccountManager> logger, ISpeckleHttp speckleHttp) : IAccountManager
 {
   public const string DEFAULT_SERVER_URL = "https://app.speckle.systems";
 
@@ -36,9 +39,9 @@ public static class AccountManager
   /// </summary>
   /// <param name="server">Server URL</param>
   /// <returns></returns>
-  public static async Task<ServerInfo> GetServerInfo(Uri server, CancellationToken cancellationToken = default)
+  public async Task<ServerInfo> GetServerInfo(Uri server, CancellationToken cancellationToken = default)
   {
-    using var httpClient = Http.GetHttpProxyClient();
+    using var httpClient = speckleHttp.GetHttpProxyClient();
 
     using var gqlClient = new GraphQLHttpClient(
       new GraphQLHttpClientOptions
@@ -96,14 +99,10 @@ public static class AccountManager
   /// <param name="token"></param>
   /// <param name="server">Server URL</param>
   /// <returns></returns>
-  public static async Task<UserInfo> GetUserInfo(
-    string token,
-    Uri server,
-    CancellationToken cancellationToken = default
-  )
+  public async Task<UserInfo> GetUserInfo(string token, Uri server, CancellationToken cancellationToken = default)
   {
-    using var httpClient = Http.GetHttpProxyClient();
-    Http.AddAuthHeader(httpClient, token);
+    using var httpClient = speckleHttp.GetHttpProxyClient();
+    speckleHttp.AddAuthHeader(httpClient, token);
 
     using var gqlClient = new GraphQLHttpClient(
       new GraphQLHttpClientOptions { EndPoint = new Uri(server, "/graphql") },
@@ -141,7 +140,7 @@ public static class AccountManager
   /// <param name="token"></param>
   /// <param name="server">Server URL</param>
   /// <returns></returns>
-  internal static async Task<ActiveUserServerInfoResponse> GetUserServerInfo(
+  internal async Task<ActiveUserServerInfoResponse> GetUserServerInfo(
     string token,
     Uri server,
     CancellationToken ct = default
@@ -149,8 +148,8 @@ public static class AccountManager
   {
     try
     {
-      using var httpClient = Http.GetHttpProxyClient();
-      Http.AddAuthHeader(httpClient, token);
+      using var httpClient = speckleHttp.GetHttpProxyClient();
+      speckleHttp.AddAuthHeader(httpClient, token);
 
       using var client = new GraphQLHttpClient(
         new GraphQLHttpClientOptions { EndPoint = new Uri(server, "/graphql") },
@@ -206,7 +205,7 @@ public static class AccountManager
   /// <summary>
   /// The Default Server URL for authentication, can be overridden by placing a file with the alternatrive url in the Speckle folder or with an ENV_VAR
   /// </summary>
-  public static Uri GetDefaultServerUrl()
+  public Uri GetDefaultServerUrl()
   {
     var customServerUrl = "";
 
@@ -238,7 +237,7 @@ public static class AccountManager
   /// <param name="id">The Id of the account to fetch</param>
   /// <returns></returns>
   /// <exception cref="SpeckleAccountManagerException">Account with <paramref name="id"/> was not found</exception>
-  public static Account GetAccount(string id)
+  public Account GetAccount(string id)
   {
     return GetAccounts().FirstOrDefault(acc => acc.id == id)
       ?? throw new SpeckleAccountManagerException($"Account {id} not found");
@@ -248,7 +247,7 @@ public static class AccountManager
   /// Upgrades an account from the account.serverInfo.movedFrom account to the account.serverInfo.movedTo account
   /// </summary>
   /// <param name="id">Id of the account to upgrade</param>
-  public static async Task UpgradeAccount(string id)
+  public async Task UpgradeAccount(string id)
   {
     Account account = GetAccount(id);
 
@@ -272,7 +271,7 @@ public static class AccountManager
     await s_accountStorage.WriteComplete().ConfigureAwait(false);
   }
 
-  public static IEnumerable<Account> GetAccounts(string serverUrl)
+  public IEnumerable<Account> GetAccounts(string serverUrl)
   {
     return GetAccounts(new Uri(serverUrl));
   }
@@ -283,7 +282,7 @@ public static class AccountManager
   /// Accounts are deemed to be the same when the Account.Id matches.
   /// </summary>
   /// <param name="serverUrl">Uri for server.</param>
-  public static IEnumerable<Account> GetAccounts(Uri serverUrl)
+  public IEnumerable<Account> GetAccounts(Uri serverUrl)
   {
     var accounts = GetAccounts().ToList();
     List<Account> filtered = new();
@@ -313,7 +312,7 @@ public static class AccountManager
   /// Gets this environment's default account if any. If there is no default, the first found will be returned and set as default.
   /// </summary>
   /// <returns>The default account or null.</returns>
-  public static Account? GetDefaultAccount()
+  public Account? GetDefaultAccount()
   {
     var defaultAccount = GetAccounts().FirstOrDefault(acc => acc.isDefault);
     if (defaultAccount != null)
@@ -324,7 +323,7 @@ public static class AccountManager
     var firstAccount = GetAccounts().FirstOrDefault();
     if (firstAccount == null)
     {
-      SpeckleLog.Logger.Information("No Speckle accounts found. Visit the Speckle web app to create one");
+      logger.LogInformation("No Speckle accounts found. Visit the Speckle web app to create one");
     }
 
     return firstAccount;
@@ -335,7 +334,7 @@ public static class AccountManager
   /// </summary>
   /// <remarks>This function does have potential side effects. Any invalid accounts found while enumerating will be removed</remarks>
   /// <returns>Un-enumerated enumerable of accounts</returns>
-  public static IEnumerable<Account> GetAccounts()
+  public IEnumerable<Account> GetAccounts()
   {
     static bool IsInvalid(Account ac) => ac.userInfo == null || ac.serverInfo == null;
 
@@ -366,7 +365,7 @@ public static class AccountManager
   /// These are accounts not handled by Manager and are stored in json format in a local directory
   /// </summary>
   /// <returns></returns>
-  private static IList<Account> GetLocalAccounts()
+  private IList<Account> GetLocalAccounts()
   {
     var accountsDir = SpecklePathProvider.AccountsFolderPath;
     if (!Directory.Exists(accountsDir))
@@ -398,7 +397,7 @@ public static class AccountManager
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Logger.Warning(ex, "Failed to load json account at {filePath}", file);
+        logger.LogWarning(ex, "Failed to load json account at {filePath}", file);
       }
     }
 
@@ -409,7 +408,7 @@ public static class AccountManager
   /// Refetches user and server info for each account
   /// </summary>
   /// <returns></returns>
-  public static async Task UpdateAccounts(CancellationToken ct = default)
+  public async Task UpdateAccounts(CancellationToken ct = default)
   {
     // need to ToList() the GetAccounts call or the UpdateObject call at the end of this method
     // will not work because sqlite does not support concurrent db calls
@@ -458,7 +457,7 @@ public static class AccountManager
   /// Removes an account
   /// </summary>
   /// <param name="id">ID of the account to remove</param>
-  public static void RemoveAccount(string id)
+  public void RemoveAccount(string id)
   {
     //TODO: reset default account
     s_accountStorage.DeleteObject(id);
@@ -475,7 +474,7 @@ public static class AccountManager
   /// Changes the default account
   /// </summary>
   /// <param name="id"></param>
-  public static void ChangeDefaultAccount(string id)
+  public void ChangeDefaultAccount(string id)
   {
     foreach (var account in GetAccounts())
     {
@@ -500,7 +499,7 @@ public static class AccountManager
   /// <remarks>
   /// <inheritdoc cref="Account.GetLocalIdentifier"/>
   /// </remarks>
-  public static Uri? GetLocalIdentifierForAccount(Account account)
+  public Uri? GetLocalIdentifierForAccount(Account account)
   {
     var identifier = account.GetLocalIdentifier();
 
@@ -510,12 +509,18 @@ public static class AccountManager
     return searchResult == null ? null : identifier;
   }
 
+  public async Task<UserInfo> Validate(Account account)
+  {
+    Uri server = new(account.serverInfo.url);
+    return await GetUserInfo(account.token, server).ConfigureAwait(false);
+  }
+
   /// <summary>
   /// Gets the account that corresponds to the given local identifier.
   /// </summary>
   /// <param name="localIdentifier">The local identifier of the account.</param>
   /// <returns>The account that matches the local identifier, or null if no match is found.</returns>
-  public static Account? GetAccountForLocalIdentifier(Uri localIdentifier)
+  public Account? GetAccountForLocalIdentifier(Uri localIdentifier)
   {
     var searchResult = GetAccounts()
       .FirstOrDefault(acc =>
@@ -527,34 +532,31 @@ public static class AccountManager
     return searchResult;
   }
 
-  private static Uri EnsureCorrectServerUrl(Uri? server)
+  private Uri EnsureCorrectServerUrl(Uri? server)
   {
     var localUrl = server;
     if (localUrl == null)
     {
       localUrl = GetDefaultServerUrl();
-      SpeckleLog.Logger.Debug(
-        "The provided server url was null or empty. Changed to the default url {serverUrl}",
-        localUrl
-      );
+      logger.LogDebug("The provided server url was null or empty. Changed to the default url {serverUrl}", localUrl);
     }
     return localUrl;
   }
 
-  private static void EnsureGetAccessCodeFlowIsSupported()
+  private void EnsureGetAccessCodeFlowIsSupported()
   {
     if (!HttpListener.IsSupported)
     {
-      SpeckleLog.Logger.Error("HttpListener not supported");
+      logger.LogError("HttpListener not supported");
       throw new PlatformNotSupportedException("Your operating system is not supported");
     }
   }
 
-  private static async Task<string> GetAccessCode(Uri server, string challenge, TimeSpan timeout)
+  private async Task<string> GetAccessCode(Uri server, string challenge, TimeSpan timeout)
   {
     EnsureGetAccessCodeFlowIsSupported();
 
-    SpeckleLog.Logger.Debug("Starting auth process for {server}/authn/verify/sca/{challenge}", server, challenge);
+    logger.LogDebug("Starting auth process for {server}/authn/verify/sca/{challenge}", server, challenge);
 
     var accessCode = "";
 
@@ -566,14 +568,14 @@ public static class AccountManager
       var localUrl = "http://localhost:29363/";
       listener.Prefixes.Add(localUrl);
       listener.Start();
-      SpeckleLog.Logger.Debug("Listening for auth redirects on {localUrl}", localUrl);
+      logger.LogDebug("Listening for auth redirects on {localUrl}", localUrl);
       // Note: The GetContext method blocks while waiting for a request.
       HttpListenerContext context = listener.GetContext();
       HttpListenerRequest request = context.Request;
       HttpListenerResponse response = context.Response;
 
       accessCode = request.QueryString["access_code"];
-      SpeckleLog.Logger.Debug("Got access code {accessCode}", accessCode);
+      logger.LogDebug("Got access code {accessCode}", accessCode);
 
       string message =
         accessCode != null
@@ -587,7 +589,7 @@ public static class AccountManager
       Stream output = response.OutputStream;
       output.Write(buffer, 0, buffer.Length);
       output.Close();
-      SpeckleLog.Logger.Debug("Processed finished processing the access code");
+      logger.LogDebug("Processed finished processing the access code");
       listener.Stop();
       listener.Close();
     });
@@ -597,7 +599,7 @@ public static class AccountManager
     // this is means the task timed out
     if (completedTask != task)
     {
-      SpeckleLog.Logger.Warning(
+      logger.LogWarning(
         "Local auth flow failed to complete within the timeout window. Access code is {accessCode}",
         accessCode
       );
@@ -606,7 +608,7 @@ public static class AccountManager
 
     if (task.IsFaulted && task.Exception is not null)
     {
-      SpeckleLog.Logger.Error(
+      logger.LogError(
         task.Exception,
         "Getting access code flow failed with {exceptionMessage}",
         task.Exception.Message
@@ -615,14 +617,14 @@ public static class AccountManager
     }
 
     // task completed within timeout
-    SpeckleLog.Logger.Information(
+    logger.LogInformation(
       "Local auth flow completed successfully within the timeout window. Access code is {accessCode}",
       accessCode
     );
     return accessCode;
   }
 
-  private static async Task<Account> CreateAccount(string accessCode, string challenge, Uri server)
+  private async Task<Account> CreateAccount(string accessCode, string challenge, Uri server)
   {
     try
     {
@@ -637,7 +639,7 @@ public static class AccountManager
         serverInfo = userResponse.serverInfo,
         userInfo = userResponse.activeUser
       };
-      SpeckleLog.Logger.Information("Successfully created account for {serverUrl}", server);
+      logger.LogInformation("Successfully created account for {serverUrl}", server);
 
       return account;
     }
@@ -701,9 +703,9 @@ public static class AccountManager
   /// </summary>
   /// <param name="server">Server to use to add the account, if not provied the default Server will be used</param>
   /// <returns></returns>
-  public static async Task AddAccount(Uri? server = null)
+  public async Task AddAccount(Uri? server = null)
   {
-    SpeckleLog.Logger.Debug("Starting to add account for {serverUrl}", server);
+    logger.LogDebug("Starting to add account for {serverUrl}", server);
 
     server = EnsureCorrectServerUrl(server);
 
@@ -726,17 +728,17 @@ public static class AccountManager
 
       //if the account already exists it will not be added again
       s_accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
-      SpeckleLog.Logger.Debug("Finished adding account {accountId} for {serverUrl}", account.id, server);
+      logger.LogDebug("Finished adding account {accountId} for {serverUrl}", account.id, server);
     }
     catch (SpeckleAccountManagerException ex)
     {
-      SpeckleLog.Logger.Fatal(ex, "Failed to add account: {exceptionMessage}", ex.Message);
+      logger.LogCritical(ex, "Failed to add account: {exceptionMessage}", ex.Message);
       // rethrowing any known errors
       throw;
     }
     catch (Exception ex) when (!ex.IsFatal())
     {
-      SpeckleLog.Logger.Fatal(ex, "Failed to add account: {exceptionMessage}", ex.Message);
+      logger.LogCritical(ex, "Failed to add account: {exceptionMessage}", ex.Message);
       throw new SpeckleAccountManagerException($"Failed to add account: {ex.Message}", ex);
     }
     finally
@@ -745,11 +747,11 @@ public static class AccountManager
     }
   }
 
-  private static async Task<TokenExchangeResponse> GetToken(string accessCode, string challenge, Uri server)
+  private async Task<TokenExchangeResponse> GetToken(string accessCode, string challenge, Uri server)
   {
     try
     {
-      using var client = Http.GetHttpProxyClient();
+      using var client = speckleHttp.GetHttpProxyClient();
 
       var body = new
       {
@@ -773,11 +775,11 @@ public static class AccountManager
     }
   }
 
-  private static async Task<TokenExchangeResponse> GetRefreshedToken(string refreshToken, Uri server)
+  private async Task<TokenExchangeResponse> GetRefreshedToken(string refreshToken, Uri server)
   {
     try
     {
-      using var client = Http.GetHttpProxyClient();
+      using var client = speckleHttp.GetHttpProxyClient();
 
       var body = new
       {
@@ -807,11 +809,11 @@ public static class AccountManager
   /// <returns><see langword="true"/> if response contains FE2 header and the value was <see langword="true"/></returns>
   /// <exception cref="SpeckleException">response contained FE2 header, but the value was <see langword="null"/>, empty, or not parseable to a <see cref="Boolean"/></exception>
   /// <exception cref="HttpRequestException">Request to <paramref name="server"/> failed to send or response was not successful</exception>
-  private static async Task<bool> IsFrontend2Server(Uri server)
+  private async Task<bool> IsFrontend2Server(Uri server)
   {
-    using var httpClient = Http.GetHttpProxyClient();
+    using var httpClient = speckleHttp.GetHttpProxyClient();
 
-    var response = await Http.HttpPing(server).ConfigureAwait(false);
+    var response = await speckleHttp.HttpPing(server).ConfigureAwait(false);
 
     var headers = response.Headers;
     const string HEADER = "x-speckle-frontend-2";

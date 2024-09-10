@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
@@ -8,11 +9,17 @@ namespace Speckle.Sdk.Helpers;
 public sealed class SpeckleHttpClientHandler : DelegatingHandler
 {
   private readonly IAsyncPolicy<HttpResponseMessage> _resiliencePolicy;
+  private readonly ILogger<SpeckleHttpClientHandler> _logger;
 
-  public SpeckleHttpClientHandler(HttpMessageHandler innerHandler, IAsyncPolicy<HttpResponseMessage> resiliencePolicy)
+  public SpeckleHttpClientHandler(
+    HttpMessageHandler innerHandler,
+    IAsyncPolicy<HttpResponseMessage> resiliencePolicy,
+    ILogger<SpeckleHttpClientHandler> logger
+  )
     : base(innerHandler)
   {
     _resiliencePolicy = resiliencePolicy;
+    _logger = logger;
   }
 
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
@@ -28,7 +35,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
     var context = new Context();
     using var activity = SpeckleActivityFactory.Start("Http Send");
     {
-      SpeckleLog.Logger.Debug(
+      _logger.LogDebug(
         "Starting execution of http request to {targetUrl} {correlationId} {traceId}",
         request.RequestUri,
         context.CorrelationId,
@@ -53,7 +60,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
       context.TryGetValue("retryCount", out var retryCount);
       activity?.SetTag("retryCount", retryCount);
 
-      SpeckleLog.Logger.Information(
+      _logger.LogInformation(
         "Execution of http request to {url} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries. Request correlation ID: {correlationId}",
         request.RequestUri,
         policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed",

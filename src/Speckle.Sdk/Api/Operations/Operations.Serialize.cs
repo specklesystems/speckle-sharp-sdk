@@ -5,7 +5,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
-public static partial class Operations
+public partial class Operations
 {
   /// <summary>
   /// Serializes a given object.

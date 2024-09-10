@@ -8,7 +8,6 @@ using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 using Constants = Speckle.Sdk.Helpers.Constants;
@@ -220,10 +219,10 @@ public class SpeckleObjectSerializer
         break;
       //BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
       case System.Numerics.Matrix4x4 ms:
-        SpeckleLog.Logger.Warning(
+        /*SpeckleLog.Logger.Warning(
           "This kept for backwards compatibility, no one should be using {this}",
           "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
-        );
+        );*/
         await writer.WriteStartArrayAsync(CancellationToken).ConfigureAwait(false);
         await writer.WriteValueAsync((double)ms.M11, CancellationToken).ConfigureAwait(false);
         await writer.WriteValueAsync((double)ms.M12, CancellationToken).ConfigureAwait(false);
