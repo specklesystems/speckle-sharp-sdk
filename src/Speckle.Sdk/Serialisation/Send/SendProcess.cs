@@ -14,7 +14,7 @@ public record SendProcessSettings(
 
 public sealed class SendProcess : IDisposable
 {
-  private SendProcessSettings _settings = new();
+  private readonly SendProcessSettings _settings = new();
   private int _serialized;
   private int _send;
 
