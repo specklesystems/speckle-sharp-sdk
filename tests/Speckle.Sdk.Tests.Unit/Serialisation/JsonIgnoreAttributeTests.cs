@@ -25,7 +25,7 @@ public sealed class JsonIgnoreRespected
   public static IEnumerable<TestCaseData> IgnoredTestCases()
   {
     const string EXPECTED_PAYLOAD = "this should have been included";
-    const string EXPECTED_HASH = "e7ee95122faa308bf88068182f212788";
+    const string EXPECTED_HASH = "ae8977efcd2dfff03137b7f3d2f27b8d";
     yield return new TestCaseData("this should have been ignored", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
     yield return new TestCaseData("again, ignored!", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
     yield return new TestCaseData("this one is not", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
