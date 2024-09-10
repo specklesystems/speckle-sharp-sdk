@@ -244,7 +244,7 @@ public sealed class SpeckleObjectDeserializer
         {
           return (long)reader.Value.NotNull();
         }
-        catch (OverflowException ex)
+        catch (SystemException ex) when (ex is OverflowException or InvalidCastException)
         {
           var v = (object)(double)reader.Value.NotNull();
           SpeckleLog.Logger.Debug(
