@@ -1,6 +1,7 @@
 using GraphQL;
 using GraphQL.Client.Http;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
+using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Api.GraphQL;
 
@@ -49,6 +50,6 @@ public static class GraphQLHttpClientExtensions
 
     return response.Data.serverInfo.version == "dev"
       ? new System.Version(999, 999, 999)
-      : new System.Version(response.Data.serverInfo.version.Split('-').First());
+      : new System.Version(response.Data.serverInfo.version.NotNull().Split('-').First());
   }
 }
