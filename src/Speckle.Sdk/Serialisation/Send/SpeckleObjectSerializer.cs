@@ -119,40 +119,42 @@ public class SpeckleObjectSerializer2
           }
         }
         UpdateParentClosures(r.referencedId);
-        return await SerializePropertyAsync(ret, writer, detachInfo, forceAttach).ConfigureAwait(false);
-      }
+        await SerializePropertyAsync(ret, writer, detachInfo, forceAttach).ConfigureAwait(false);
+        break;
       case Base b:
         var result = await SerializeBaseAsync(b, computeClosures, detachInfo, forceAttach).ConfigureAwait(false);
         if (result is not null)
         {
           await writer.WriteRawValueAsync(result.Json, CancellationToken).ConfigureAwait(false);
-          return result.Value;
         }
-        await writer.WriteNullAsync(CancellationToken).ConfigureAwait(false);
-        return null;
+        else
+        {
+          await writer.WriteNullAsync(CancellationToken).ConfigureAwait(false);
+        }
+        break;
       case IDictionary d:
-      {
-        await writer.WriteStartObjectAsync(CancellationToken).ConfigureAwait(false);
-        foreach (DictionaryEntry kvp in d)
         {
-          await writer.WritePropertyNameAsync(kvp.Key.ToString().NotNull(), CancellationToken).ConfigureAwait(false);
-          await SerializePropertyAsync(kvp.Value, writer, detachInfo, forceAttach)
-            .ConfigureAwait(false);
+          await writer.WriteStartObjectAsync(CancellationToken).ConfigureAwait(false);
+          foreach (DictionaryEntry kvp in d)
+          {
+            await writer.WritePropertyNameAsync(kvp.Key.ToString().NotNull(), CancellationToken).ConfigureAwait(false);
+            await SerializePropertyAsync(kvp.Value, writer, detachInfo, forceAttach)
+              .ConfigureAwait(false);
+          }
+          await writer.WriteEndObjectAsync(CancellationToken).ConfigureAwait(false);
         }
-        await writer.WriteEndObjectAsync(CancellationToken).ConfigureAwait(false);
         break;
-      }
-      case IEnumerable e:
-      {
-        //TODO: handle IReadonlyDictionary
-        await writer.WriteStartArrayAsync(CancellationToken).ConfigureAwait(false);
-        foreach (object? element in e)
+      case ICollection e:
         {
-          await SerializePropertyAsync(element, writer, detachInfo, forceAttach).ConfigureAwait(false);
+          await writer.WriteStartArrayAsync(CancellationToken).ConfigureAwait(false);
+          foreach (object? element in e)
+          {
+            await SerializePropertyAsync(element, writer, detachInfo, forceAttach)
+              .ConfigureAwait(false);
+          }
+          await writer.WriteEndArrayAsync(CancellationToken).ConfigureAwait(false);
         }
-        await writer.WriteEndArrayAsync(CancellationToken).ConfigureAwait(false);
         break;
-      }
       case Enum:
         await writer.WriteValueAsync((int)obj, CancellationToken).ConfigureAwait(false);
         break;
@@ -217,11 +219,9 @@ public class SpeckleObjectSerializer2
       default:
         throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}");
     }
-
-    return obj;
   }
 
-  private async Task<SerializationResult?> SerializeBaseAsync(
+  internal async Task<SerializationResult?> SerializeBaseAsync(
     Base baseObj,
     bool computeClosures,
     PropertyAttributeInfo detachInfo,
@@ -256,7 +256,7 @@ public class SpeckleObjectSerializer2
     if (baseObj is Blob)
     {
       UpdateParentClosures($"blob:{id}");
-      return new(json, id, baseObj);
+      return new(json, id);
     }
 
     if (detachInfo.IsDetachable && forceAttach)
@@ -264,7 +264,7 @@ public class SpeckleObjectSerializer2
       ObjectReference objRef = new() { referencedId = id };
       using var writer2 = new StringWriter();
       using var jsonWriter2 = new JsonTextWriter(writer2);
-      var newObj = await SerializePropertyAsync(objRef, jsonWriter2, default, forceAttach).ConfigureAwait(false);
+      await SerializePropertyAsync(objRef, jsonWriter2, default, forceAttach).ConfigureAwait(false);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
 
@@ -280,12 +280,12 @@ public class SpeckleObjectSerializer2
           closure = closure
         };
       }
-      return new(json2, null, newObj);
+      return new(json2, null);
     }
-    return new(json, id, baseObj);
+    return new(json, id);
   }
 
-  private Dictionary<string, (object?, PropertyAttributeInfo)> ExtractAllProperties(Base baseObj)
+  private Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
   {
     IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
     IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
@@ -337,24 +337,35 @@ public class SpeckleObjectSerializer2
   )
   {
     var allProperties = ExtractAllProperties(baseObj);
-    var computeIdProperties = new Dictionary<string, object?>(allProperties.Count);
+
+    if (baseObj is not Blob)
+    {
+      writer = new SerializerIdWriter(writer);
+    }
 
     await writer.WriteStartObjectAsync(CancellationToken).ConfigureAwait(false);
     // Convert all properties
     foreach (var prop in allProperties)
     {
-      if (prop.Value.Item2.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
+      if (prop.Value.info.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
       {
         continue;
       }
 
       await writer.WritePropertyNameAsync(prop.Key, CancellationToken).ConfigureAwait(false);
-      var valueToComputeIdFor = await SerializePropertyAsync(prop.Value.Item1, writer, prop.Value.Item2, forceAttach)
-        .ConfigureAwait(false);
-      computeIdProperties[prop.Key] = valueToComputeIdFor;
+      await SerializePropertyAsync(prop.Value.value, writer, prop.Value.info, forceAttach).ConfigureAwait(false);
     }
 
-    var id = baseObj is Blob blob ? blob.id : ComputeId(computeIdProperties);
+    string id;
+    if (writer is SerializerIdWriter serializerIdWriter)
+    {
+      (var json, writer) = await serializerIdWriter.FinishIdWriterAsync(CancellationToken).ConfigureAwait(false);
+      id = ComputeId(json);
+    }
+    else
+    {
+      id = ((Blob)baseObj).id;
+    }
     await writer.WritePropertyNameAsync("id", CancellationToken).ConfigureAwait(false);
     await writer.WriteValueAsync(id, CancellationToken).ConfigureAwait(false);
     baseObj.id = id;

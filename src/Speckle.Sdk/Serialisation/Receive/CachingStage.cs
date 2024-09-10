@@ -3,14 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public class CachingStage
+public class CachingStage(ConcurrentDictionary<string, Base> idToBaseCache)
 {
-  private readonly ConcurrentDictionary<string, Base> _idToBaseCache;
-
-  public CachingStage(ConcurrentDictionary<string, Base> idToBaseCache)
-  {
-    _idToBaseCache = idToBaseCache;
-  }
-
-  public IReadOnlyDictionary<string, Base> Cache => _idToBaseCache;
+  public IReadOnlyDictionary<string, Base> Cache => idToBaseCache;
 }
