@@ -8,8 +8,13 @@ using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public record ReceiveProcessSettings(int MaxDownloadThreads = 4, 
-  int MaxDeserializeThreads = 4, int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS, int BatchWaitMilliseconds = 500);
+public record ReceiveProcessSettings(
+  int MaxDownloadThreads = 4,
+  int MaxDeserializeThreads = 4,
+  int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS,
+  int BatchWaitMilliseconds = 500
+);
+
 public sealed class ReceiveProcess : IDisposable
 {
   private readonly ReceiveProcessSettings _settings = new();
@@ -22,7 +27,12 @@ public sealed class ReceiveProcess : IDisposable
   private readonly HashSet<string> _requestedIds = new();
   private Base? _last;
 
-  public ReceiveProcess(Uri baseUri, string streamId, string? authorizationToken, ReceiveProcessSettings? settings = null)
+  public ReceiveProcess(
+    Uri baseUri,
+    string streamId,
+    string? authorizationToken,
+    ReceiveProcessSettings? settings = null
+  )
   {
     if (settings is not null)
     {
@@ -39,7 +49,12 @@ public sealed class ReceiveProcess : IDisposable
   public Action<ProgressArgs[]>? Progress { get; set; }
 
   public void InvokeProgress() =>
-    Progress?.Invoke([new ProgressArgs(ProgressEvent.DeserializeObject, _deserialized, null), new ProgressArgs(ProgressEvent.DownloadObject, _downloaded, null)]);
+    Progress?.Invoke(
+      [
+        new ProgressArgs(ProgressEvent.DeserializeObject, _deserialized, null),
+        new ProgressArgs(ProgressEvent.DownloadObject, _downloaded, null)
+      ]
+    );
 
   public async Task<Base> GetObject(
     string initialId,

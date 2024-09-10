@@ -32,7 +32,6 @@ public class SpeckleObjectSerializer2
 
   public CancellationToken CancellationToken { get; set; }
 
-
   /// <summary>
   /// Creates a new Serializer instance.
   /// </summary>
@@ -77,7 +76,7 @@ public class SpeckleObjectSerializer2
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
-  private async Task<object?> SerializePropertyAsync(
+  private async Task SerializePropertyAsync(
     object? obj,
     JsonWriter writer,
     bool computeClosures,
@@ -90,13 +89,13 @@ public class SpeckleObjectSerializer2
     if (obj == null)
     {
       await writer.WriteNullAsync(CancellationToken).ConfigureAwait(false);
-      return null;
+      return;
     }
 
     if (obj.GetType().IsPrimitive || obj is string)
     {
       await writer.WriteValueAsync(obj, CancellationToken).ConfigureAwait(false);
-      return obj;
+      return;
     }
 
     switch (obj)
@@ -105,7 +104,6 @@ public class SpeckleObjectSerializer2
       // Note: this change was needed as we've made the ObjectReference type inherit from Base for
       // the purpose of the "do not convert unchanged previously converted objects" POC.
       case ObjectReference r:
-      {
         Dictionary<string, object> ret =
           new()
           {
@@ -377,16 +375,18 @@ public class SpeckleObjectSerializer2
     return id;
   }
 
-  private async Task<object?> SerializePropertyAsync(
+  private async Task SerializePropertyAsync(
     object? baseValue,
     JsonWriter jsonWriter,
     PropertyAttributeInfo detachInfo,
     bool forceAttach
   )
   {
+    // If there are no WriteTransports, keep everything attached.
     if (forceAttach)
     {
-      return await SerializePropertyAsync(baseValue, jsonWriter, detachInfo, forceAttach).ConfigureAwait(false);
+      await SerializePropertyAsync(baseValue, jsonWriter, detachInfo, forceAttach).ConfigureAwait(false);
+      return;
     }
 
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
@@ -408,16 +408,9 @@ public class SpeckleObjectSerializer2
       {
         chunks.Add(crtChunk);
       }
-
-      return await SerializePropertyAsync(
-          chunks,
-          jsonWriter,
-          new PropertyAttributeInfo(true, false, 0, null), forceAttach
-        )
-        .ConfigureAwait(false);
     }
 
-    return await SerializePropertyAsync(baseValue, jsonWriter, detachInfo, forceAttach).ConfigureAwait(false);
+    await SerializePropertyAsync(baseValue, jsonWriter, detachInfo, forceAttach).ConfigureAwait(false);
   }
 
   private void UpdateParentClosures(string objectId)
@@ -435,17 +428,15 @@ public class SpeckleObjectSerializer2
   }
 
   [Pure]
-  private static string ComputeId(IReadOnlyDictionary<string, object?> obj)
+  private static string ComputeId(string serialized)
   {
 #if NET6_0_OR_GREATER
-    ReadOnlySpan<char> serialized = JsonConvert.SerializeObject(obj).AsSpan();
+    string hash = Crypt.Sha256(serialized.AsSpan(), length: HashUtility.HASH_LENGTH);
 #else
-    string serialized = JsonConvert.SerializeObject(obj);
-#endif
     string hash = Crypt.Sha256(serialized, length: HashUtility.HASH_LENGTH);
+#endif
     return hash;
   }
-
 
   // (propertyInfo, isDetachable, isChunkable, chunkSize, JsonPropertyAttribute)
   private IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> GetTypedPropertiesWithCache(Base baseObj)

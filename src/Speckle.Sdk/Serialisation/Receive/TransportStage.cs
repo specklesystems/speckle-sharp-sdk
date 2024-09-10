@@ -27,12 +27,9 @@ public sealed class TransportStage : IDisposable
       {
         _requestedIds.Add(id);
       }
-      await foreach(var (id, json) in _serverApi.DownloadObjects2(_streamId, ids, null))
+      await foreach (var (id, json) in _serverApi.DownloadObjects2(_streamId, ids, null))
       {
-        ret.Add(new Transported(
-          id,
-          json
-        ));
+        ret.Add(new Transported(id, json));
       }
       _requested += ids.Count;
       Console.WriteLine($"Transported {_requested} - Unique {_requestedIds.Count}");

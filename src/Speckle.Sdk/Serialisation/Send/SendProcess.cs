@@ -8,6 +8,7 @@ using Speckle.Sdk.Transports.ServerUtils;
 namespace Speckle.Sdk.Serialisation;
 
 public record Serialized(string Id, string Json);
+
 public class SerializeStage
 {
   public async ValueTask<Serialized?> Execute(Base @base)
@@ -15,6 +16,7 @@ public class SerializeStage
     throw new NotImplementedException();
   }
 }
+
 public class SendStage
 {
   public async ValueTask Execute(List<Serialized> serialized)
@@ -22,7 +24,14 @@ public class SendStage
     throw new NotImplementedException();
   }
 }
-public record SendProcessSettings(int MaxSerializeThreads = 4, int MaxSendingThreads = 4, int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS, int BatchWaitMilliseconds = 500);
+
+public record SendProcessSettings(
+  int MaxSerializeThreads = 4,
+  int MaxSendingThreads = 4,
+  int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS,
+  int BatchWaitMilliseconds = 500
+);
+
 public class SendProcess
 {
   private SendProcessSettings _settings = new();
@@ -40,8 +49,7 @@ public class SendProcess
 
   public Action<ProgressArgs[]>? Progress { get; set; }
 
-  public void InvokeProgress() =>
-    Progress?.Invoke([]);
+  public void InvokeProgress() => Progress?.Invoke([]);
 
   public async Task<string> SaveObject(
     Base @base,
@@ -76,7 +84,7 @@ public class SendProcess
     _serialized++;
     return serialized;
   }
-  
+
   private async ValueTask OnSend(List<Serialized> serialized)
   {
     await SendStage.Execute(serialized).ConfigureAwait(false);
