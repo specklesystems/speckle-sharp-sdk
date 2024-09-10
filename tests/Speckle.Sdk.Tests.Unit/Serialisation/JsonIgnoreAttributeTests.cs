@@ -39,6 +39,7 @@ public sealed class JsonIgnoreRespected
     yield return new TestCaseData("again, ignored!", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
     yield return new TestCaseData("this one is not", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
   }
+
   [TestCaseSource(nameof(IgnoredTestCases))]
   public async Task<string?> IgnoredProperties_NotIncludedInJson(string ignoredPayload, string expectedPayload)
   {
