@@ -133,19 +133,16 @@ public class SpeckleObjectSerializer
       // the purpose of the "do not convert unchanged previously converted objects" POC.
       case ObjectReference r:
       {
-        Dictionary<string, object> ret =
+        Dictionary<string, object?> ret =
           new()
           {
             ["speckle_type"] = r.speckle_type,
             ["referencedId"] = r.referencedId,
             ["__closure"] = r.closure
           };
-        if (r.closure is not null)
+        foreach (var kvp in r.closure.Empty())
         {
-          foreach (var kvp in r.closure)
-          {
-            UpdateParentClosures(kvp.Key);
-          }
+          UpdateParentClosures(kvp.Key);
         }
         UpdateParentClosures(r.referencedId);
         return await SerializePropertyAsync(ret, writer).ConfigureAwait(false);

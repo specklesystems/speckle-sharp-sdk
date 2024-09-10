@@ -57,7 +57,7 @@ public static class NotNullExtensions
   {
     if (obj is null)
     {
-      return Enumerable.Empty<T>();
+      return [];
     }
     return obj;
   }
