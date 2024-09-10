@@ -252,7 +252,7 @@ public static class AccountManager
   {
     Account account = GetAccount(id);
 
-    if (account.serverInfo.migration.movedTo is not Uri upgradeUri)
+    if (account.serverInfo.migration?.movedTo is not Uri upgradeUri)
     {
       throw new SpeckleAccountManagerException(
         $"Server with url {account.serverInfo.url} does not have information about the upgraded server"

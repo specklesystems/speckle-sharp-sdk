@@ -27,10 +27,11 @@ public class GeneralDeserializer : IDisposable
   }
 
   [Benchmark]
-  public Base RunTest()
+  public async Task<Base> RunTest()
   {
-    BaseObjectDeserializerV2 sut = new() { ReadTransport = _dataSource.Transport };
-    return sut.Deserialize(_dataSource.Transport.GetObject(_dataSource.ObjectId)!);
+    SpeckleObjectDeserializer sut = new() { ReadTransport = _dataSource.Transport };
+    string data = await _dataSource.Transport.GetObject(_dataSource.ObjectId)!;
+    return await sut.DeserializeJsonAsync(data);
   }
 
   [GlobalCleanup]
