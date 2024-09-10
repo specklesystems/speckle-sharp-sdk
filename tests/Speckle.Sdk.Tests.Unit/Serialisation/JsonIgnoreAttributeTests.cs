@@ -25,12 +25,20 @@ public sealed class JsonIgnoreRespected
   public static IEnumerable<TestCaseData> IgnoredTestCases()
   {
     const string EXPECTED_PAYLOAD = "this should have been included";
-    const string EXPECTED_HASH = "ae8977efcd2dfff03137b7f3d2f27b8d";
+    const string EXPECTED_HASH = "e1d9f0685266465c9bfe4e71f2eee6e9";
     yield return new TestCaseData("this should have been ignored", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
     yield return new TestCaseData("again, ignored!", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
     yield return new TestCaseData("this one is not", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
   }
 
+  public static IEnumerable<TestCaseData> IgnoredCompoundTestCases()
+  {
+    const string EXPECTED_PAYLOAD = "this should have been included";
+    const string EXPECTED_HASH = "eeaeee4e61b04b313dd840cd63341eee";
+    yield return new TestCaseData("this should have been ignored", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
+    yield return new TestCaseData("again, ignored!", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
+    yield return new TestCaseData("this one is not", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
+  }
   [TestCaseSource(nameof(IgnoredTestCases))]
   public async Task<string?> IgnoredProperties_NotIncludedInJson(string ignoredPayload, string expectedPayload)
   {
@@ -49,7 +57,7 @@ public sealed class JsonIgnoreRespected
     return id;
   }
 
-  [TestCaseSource(nameof(IgnoredTestCases))]
+  [TestCaseSource(nameof(IgnoredCompoundTestCases))]
   public async Task<string?> IgnoredProperties_Compound_NotIncludedInJson(string ignoredPayload, string expectedPayload)
   {
     IgnoredCompoundTest testData = new(ignoredPayload, expectedPayload);
