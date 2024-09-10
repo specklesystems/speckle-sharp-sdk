@@ -6,7 +6,6 @@ using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation;
 
-
 public record SendProcessSettings(
   int MaxSerializeThreads = 4,
   int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS,
@@ -35,9 +34,8 @@ public sealed class SendProcess : IDisposable
   public void InvokeProgress() => Progress?.Invoke([]);
 
   public async ValueTask Finish() => await SourceChannel.CompleteAsync().ConfigureAwait(false);
-  public async Task<long> Start(
-    Action<ProgressArgs[]>? progress,
-    CancellationToken cancellationToken)
+
+  public async Task<long> Start(Action<ProgressArgs[]>? progress, CancellationToken cancellationToken)
   {
     Progress = progress;
 
@@ -52,10 +50,7 @@ public sealed class SendProcess : IDisposable
     return count;
   }
 
-  public async Task SaveObject(
-    Base @base,
-    CancellationToken cancellationToken
-  )
+  public async Task SaveObject(Base @base, CancellationToken cancellationToken)
   {
     await SourceChannel.Writer.WriteAsync(@base, cancellationToken).ConfigureAwait(false);
   }

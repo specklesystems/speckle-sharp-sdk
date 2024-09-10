@@ -15,7 +15,9 @@ public sealed class SendStage : IDisposable
 
   public async ValueTask Execute(List<Serialized> serialized)
   {
-    await _serverApi.UploadObjects(_streamId, serialized.Select(x => (x.Id, x.Json )).ToArray(), args => { }).ConfigureAwait(false);
+    await _serverApi
+      .UploadObjects(_streamId, serialized.Select(x => (x.Id, x.Json)).ToArray(), args => { })
+      .ConfigureAwait(false);
   }
 
   public void Dispose() => _serverApi.Dispose();

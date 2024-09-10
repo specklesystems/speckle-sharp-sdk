@@ -14,16 +14,16 @@ public sealed class TransportStage(Uri baseUri, string streamId, string? authori
   public async ValueTask<List<Transported>> Execute(IReadOnlyList<string> ids)
   {
     var ret = new List<Transported>(ids.Count);
-      foreach (var id in ids)
-      {
-        _requestedIds.Add(id);
-      }
-      await foreach (var (id, json) in _serverApi.DownloadObjects2(streamId, ids, null))
-      {
-        ret.Add(new Transported(id, json));
-      }
-      _requested += ids.Count;
-      Console.WriteLine($"Transported {_requested} - Unique {_requestedIds.Count}");
+    foreach (var id in ids)
+    {
+      _requestedIds.Add(id);
+    }
+    await foreach (var (id, json) in _serverApi.DownloadObjects2(streamId, ids, null))
+    {
+      ret.Add(new Transported(id, json));
+    }
+    _requested += ids.Count;
+    Console.WriteLine($"Transported {_requested} - Unique {_requestedIds.Count}");
     return ret;
   }
 

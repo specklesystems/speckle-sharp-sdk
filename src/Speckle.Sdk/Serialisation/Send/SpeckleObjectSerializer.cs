@@ -138,8 +138,7 @@ public class SpeckleObjectSerializer2
           foreach (DictionaryEntry kvp in d)
           {
             await writer.WritePropertyNameAsync(kvp.Key.ToString().NotNull(), CancellationToken).ConfigureAwait(false);
-            await SerializePropertyAsync(kvp.Value, writer, detachInfo, forceAttach)
-              .ConfigureAwait(false);
+            await SerializePropertyAsync(kvp.Value, writer, detachInfo, forceAttach).ConfigureAwait(false);
           }
           await writer.WriteEndObjectAsync(CancellationToken).ConfigureAwait(false);
         }
@@ -149,8 +148,7 @@ public class SpeckleObjectSerializer2
           await writer.WriteStartArrayAsync(CancellationToken).ConfigureAwait(false);
           foreach (object? element in e)
           {
-            await SerializePropertyAsync(element, writer, detachInfo, forceAttach)
-              .ConfigureAwait(false);
+            await SerializePropertyAsync(element, writer, detachInfo, forceAttach).ConfigureAwait(false);
           }
           await writer.WriteEndArrayAsync(CancellationToken).ConfigureAwait(false);
         }
