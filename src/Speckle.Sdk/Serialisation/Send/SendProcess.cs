@@ -4,7 +4,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.Send;
 
 public record SendProcessSettings(
   int MaxSerializeThreads = 4,
@@ -15,8 +15,6 @@ public record SendProcessSettings(
 public sealed class SendProcess : IDisposable
 {
   private readonly SendProcessSettings _settings = new();
-  private int _serialized;
-  private int _send;
 
   public SendProcess(Uri baseUri, string streamId, string? authorizationToken)
   {
@@ -25,13 +23,21 @@ public sealed class SendProcess : IDisposable
     SerializeStage = new();
   }
 
+  private long _requested;
   public Channel<Base> SourceChannel { get; }
   public SerializeStage SerializeStage { get; set; }
   public SendStage SendStage { get; set; }
 
   public Action<ProgressArgs[]>? Progress { get; set; }
 
-  public void InvokeProgress() => Progress?.Invoke([]);
+  public void InvokeProgress() =>
+    Progress?.Invoke(
+      [
+          new ProgressArgs(ProgressEvent.UploadObject, _requested, null),
+        new ProgressArgs(ProgressEvent.SerializeObject, SerializeStage.Serialized, null),
+        new ProgressArgs(ProgressEvent.UploadBytes, SendStage.Sent, null)
+      ]
+    );
 
   public async ValueTask Finish() => await SourceChannel.CompleteAsync().ConfigureAwait(false);
 
@@ -53,13 +59,14 @@ public sealed class SendProcess : IDisposable
   public async Task SaveObject(Base @base, CancellationToken cancellationToken)
   {
     await SourceChannel.Writer.WriteAsync(@base, cancellationToken).ConfigureAwait(false);
+    _requested++;
+    InvokeProgress();
   }
 
   private async ValueTask<Serialized> OnSerialize(Base @base)
   {
     var serialized = await SerializeStage.Execute(@base).ConfigureAwait(false);
     InvokeProgress();
-    _serialized++;
     return serialized;
   }
 
@@ -67,7 +74,6 @@ public sealed class SendProcess : IDisposable
   {
     await SendStage.Execute(serialized).ConfigureAwait(false);
     InvokeProgress();
-    _send++;
   }
 
   public void Dispose() => SendStage.Dispose();

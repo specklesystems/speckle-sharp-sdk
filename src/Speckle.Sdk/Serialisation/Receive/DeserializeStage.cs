@@ -14,6 +14,8 @@ public class DeserializeStage
 
   public CachingStage? CachingStage { get; set; }
   public Channel<string> SourceChannel { get; set; }
+  
+  public long Deserialized { get; private set; }
 
   public async ValueTask<Deserialized?> Execute(Transported message)
   {
@@ -46,6 +48,7 @@ public class DeserializeStage
 
     var @base = await Deserialise(closureBases, message.Id, message.Json).ConfigureAwait(false);
     _closures.TryRemove(message.Id, out _);
+    Deserialized++;
     return new(message.Id, message.Json, @base);
   }
 

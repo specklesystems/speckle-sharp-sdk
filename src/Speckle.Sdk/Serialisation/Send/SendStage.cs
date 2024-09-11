@@ -1,12 +1,13 @@
 ﻿using Speckle.Sdk.Transports.ServerUtils;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.Send;
 
 public sealed class SendStage : IDisposable
 {
   private readonly ServerApi _serverApi;
   private readonly string _streamId;
 
+  public long Sent { get; private set; }
   public SendStage(Uri baseUri, string streamId, string? authorizationToken)
   {
     _streamId = streamId;
@@ -23,7 +24,7 @@ public sealed class SendStage : IDisposable
       .UploadObjects(
         _streamId,
         serialized.Where(x => hasResults.ContainsKey(x.Id)).Select(x => (x.Id, x.Json)).ToArray(),
-        args => { }
+        args => { Sent += args.Count ?? 0; }
       )
       .ConfigureAwait(false);
   }

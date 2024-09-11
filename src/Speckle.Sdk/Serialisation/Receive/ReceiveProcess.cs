@@ -20,10 +20,7 @@ public sealed class ReceiveProcess : IDisposable
   private readonly ReceiveProcessSettings _settings = new();
   private readonly ConcurrentDictionary<string, Base> _idToBaseCache = new(StringComparer.Ordinal);
 
-  private long _deserialized;
-  private long _saved;
   private long _received;
-  private long _downloaded;
   private readonly HashSet<string> _requestedIds = new();
   private Base? _last;
 
@@ -51,8 +48,9 @@ public sealed class ReceiveProcess : IDisposable
   public void InvokeProgress() =>
     Progress?.Invoke(
       [
-        new ProgressArgs(ProgressEvent.DeserializeObject, _deserialized, null),
-        new ProgressArgs(ProgressEvent.DownloadObject, _downloaded, null)
+        new ProgressArgs(ProgressEvent.DownloadBytes, TransportStage.Downloaded, null),
+        new ProgressArgs(ProgressEvent.DeserializeObject, DeserializeStage.Deserialized, null),
+        new ProgressArgs(ProgressEvent.DownloadObject, _received, null),
       ]
     );
 
@@ -87,13 +85,14 @@ public sealed class ReceiveProcess : IDisposable
       return null;
     }
 
+    _received++;
     InvokeProgress();
     return id;
   }
 
   private async ValueTask<List<Transported>> OnTransport(List<string?> b)
   {
-    var batch = new List<string>();
+    var batch = new List<string>(b.Count);
     foreach (var item in b)
     {
       if (item is not null)
@@ -101,14 +100,12 @@ public sealed class ReceiveProcess : IDisposable
         batch.Add(item);
       }
     }
-    var gathered = await TransportStage.Execute(batch).ConfigureAwait(false);
-    var ret = new List<Transported>(gathered.Count);
-    foreach (var arg in gathered)
+    var gathered =  TransportStage.Execute(batch).ConfigureAwait(false);
+    var ret = new List<Transported>();
+    await foreach (var arg in gathered)
     {
-      _downloaded++;
       if (!_idToBaseCache.ContainsKey(arg.Id))
       {
-        _saved++;
         ret.Add(arg);
       }
     }
@@ -125,7 +122,6 @@ public sealed class ReceiveProcess : IDisposable
       return null;
     }
     InvokeProgress();
-    _deserialized++;
     if (_idToBaseCache.TryAdd(deserialized.Id, deserialized.BaseObject))
     {
       return deserialized;

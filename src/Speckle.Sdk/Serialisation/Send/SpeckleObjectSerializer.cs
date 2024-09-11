@@ -12,7 +12,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 using Constants = Speckle.Sdk.Helpers.Constants;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.Send;
 
 public class SpeckleObjectSerializer2
 {
