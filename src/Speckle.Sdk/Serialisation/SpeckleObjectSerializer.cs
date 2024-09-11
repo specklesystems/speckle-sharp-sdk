@@ -444,11 +444,7 @@ public class SpeckleObjectSerializer
       {
         chunks.Add(crtChunk);
       }
-      SerializeProperty(
-        chunks,
-        jsonWriter,
-        inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)
-      );
+      SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null));
       return;
     }
 
