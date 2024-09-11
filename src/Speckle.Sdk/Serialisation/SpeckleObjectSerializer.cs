@@ -427,7 +427,7 @@ public class SpeckleObjectSerializer
 
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
     {
-      List<object> chunks = new();
+      List<DataChunk> chunks = new();
       DataChunk crtChunk = new() { data = new List<object?>(detachInfo.ChunkSize) };
 
       foreach (object element in chunkableCollection)
@@ -444,6 +444,12 @@ public class SpeckleObjectSerializer
       {
         chunks.Add(crtChunk);
       }
+      SerializeProperty(
+        chunks,
+        jsonWriter,
+        inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)
+      );
+      return;
     }
 
     SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
