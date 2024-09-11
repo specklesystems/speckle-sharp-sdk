@@ -48,6 +48,9 @@ public sealed class TestDataHelper : IDisposable
   {
     Transport.Dispose();
     SqliteConnection.ClearAllPools();
-    Directory.Delete(s_basePath, true);
+    if (Directory.Exists(s_basePath))
+    {
+      Directory.Delete(s_basePath, true);
+    }
   }
 }
