@@ -71,14 +71,14 @@ public class Base : DynamicBase, ISpeckleObject
   /// </remarks>
   /// <param name="decompose">If <see langword="true"/>, will decompose the object in the process of hashing.</param>
   /// <returns>the resulting id (hash)</returns>
-  public async Task<string> GetIdAsync(bool decompose = false)
+  public Task<string> GetIdAsync(bool decompose = false)
   {
     //TODO remove me
     var transports = decompose ? [new MemoryTransport()] : Array.Empty<ITransport>();
     var serializer = new SpeckleObjectSerializer(transports);
 
-    string obj = await serializer.SerializeAsync(this).ConfigureAwait(false);
-    return JObject.Parse(obj).GetValue(nameof(id))?.ToString() ?? string.Empty;
+    string obj = serializer.Serialize(this);
+    return Task.FromResult(JObject.Parse(obj).GetValue(nameof(id))?.ToString() ?? string.Empty);
   }
 
   /// <summary>

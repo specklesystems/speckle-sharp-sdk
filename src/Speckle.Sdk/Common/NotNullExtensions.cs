@@ -5,6 +5,34 @@ namespace Speckle.Sdk.Common;
 
 public static class NotNullExtensions
 {
+  public static async ValueTask<T> NotNull<T>(
+    this ValueTask<T?> task,
+    [CallerArgumentExpression(nameof(task))] string? message = null
+  )
+    where T : class
+  {
+    var x = await task.ConfigureAwait(false);
+    if (x is null)
+    {
+      throw new ArgumentNullException(message ?? "Value is null");
+    }
+    return x;
+  }
+
+  public static async ValueTask<T> NotNull<T>(
+    this ValueTask<T?> task,
+    [CallerArgumentExpression(nameof(task))] string? message = null
+  )
+    where T : struct
+  {
+    var x = await task.ConfigureAwait(false);
+    if (x is null)
+    {
+      throw new ArgumentNullException(message ?? "Value is null");
+    }
+    return x.Value;
+  }
+
   public static async Task<T> NotNull<T>(
     this Task<T?> task,
     [CallerArgumentExpression(nameof(task))] string? message = null
