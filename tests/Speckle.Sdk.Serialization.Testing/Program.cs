@@ -26,7 +26,7 @@ Stopwatch stopwatch = new();
  long lastMs = 0;
  const int UPDATE_INTERVAL = 200;
  stopwatch.Start();
-var bases = Operations.Receive2(acc, sw.StreamId, objectId, args => {
+var rootObject = await Operations.Receive2(acc, sw.StreamId, objectId, args => {
   if (stopwatch.ElapsedMilliseconds < lastMs + UPDATE_INTERVAL)
   {
     return;
@@ -53,11 +53,6 @@ var bases = Operations.Receive2(acc, sw.StreamId, objectId, args => {
     }
   }
   Console.WriteLine(message);
-});
-
-await foreach (var b in bases)
-{
-  Console.WriteLine(b.id);
-}
-
+}).ConfigureAwait(false);
+Console.WriteLine($"Root: {rootObject.id}");
 Console.ReadLine();

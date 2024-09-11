@@ -86,16 +86,9 @@ public class GeneralDeserializer
 
     StreamWrapper sw = new(url);
     var acc = await sw.GetAccount().ConfigureAwait(false);
-    var bases = Operations.Receive2(acc, sw.StreamId, sw.BranchName!, args => {
+    var rootObject = await Operations.Receive2(acc, sw.StreamId, sw.BranchName!, args => {
     });
 
-    Base last = null;
-    await foreach (var b in bases)
-    {
-      Console.WriteLine(b.id);
-      last = b;
-    }
-
-    return last.NotNull();
+    return rootObject;
   }
 }

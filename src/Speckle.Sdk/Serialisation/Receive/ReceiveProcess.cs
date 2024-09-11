@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Common;
@@ -42,7 +42,7 @@ public sealed class ReceiveProcess : IDisposable
       _bytes = args.Count ?? 0;
       InvokeProgress();
     });
-    DeserializeStage = new(_idToBaseCache);
+    DeserializeStage = new(_idToBaseCache, EnqueueObject);
   }
 
   private Channel<string> SourceChannel { get; }
@@ -58,7 +58,7 @@ public sealed class ReceiveProcess : IDisposable
       ]
     );
 
-  public async ValueTask ReceiveAsync(string id) => await SourceChannel.Writer.WriteAsync(id).ConfigureAwait(false);
+  private async ValueTask EnqueueObject(string id) => await SourceChannel.Writer.WriteAsync(id).ConfigureAwait(false);
 
   
 
@@ -84,10 +84,11 @@ public sealed class ReceiveProcess : IDisposable
     var closures = (await ClosureParser.GetChildrenIdsAsync(rootJson, cancellationToken).ConfigureAwait(false));
     foreach (var closure in closures)
     {
-      await SourceChannel.Writer.WriteAsync(closure, cancellationToken).ConfigureAwait(false);
+      await EnqueueObject(closure).ConfigureAwait(false);
     }
-    await SourceChannel.Writer.WriteAsync(objectId, cancellationToken).ConfigureAwait(false);
-    await pipelineTask;
+    await EnqueueObject(_rootObjectId).ConfigureAwait(false);
+    var total = await pipelineTask;
+    Console.WriteLine($"Total {_idToBaseCache.Count}");
     return _rootObject.NotNull();
   }
   private async ValueTask<List<Downloaded>> OnTransport(List<string> batch)
