@@ -67,7 +67,7 @@ public class ObjectSerialization
 
     var deserialisedFeline = await Sdk.Api.Operations.DeserializeAsync(result);
 
-    Assert.That(await deserialisedFeline.GetIdAsync(), Is.EqualTo(await cat.GetIdAsync())); // If we're getting the same hash... we're probably fine!
+    Assert.That(deserialisedFeline.GetId(), Is.EqualTo(cat.GetId())); // If we're getting the same hash... we're probably fine!
   }
 
   [Test]
@@ -166,7 +166,7 @@ public class ObjectSerialization
     var serialised = Sdk.Api.Operations.Serialize(mesh);
     var deserialised = await Sdk.Api.Operations.DeserializeAsync(serialised);
 
-    Assert.That(await mesh.GetIdAsync(), Is.EqualTo(await deserialised.GetIdAsync()));
+    Assert.That(mesh.GetId(), Is.EqualTo(deserialised.GetId()));
   }
 
   [Test]

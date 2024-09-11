@@ -39,7 +39,7 @@ public class GeneralSerializerTest
   {
     SpeckleObjectSerializer sut = new([_remote]);
     Console.ReadLine();
-    var x =  sut.Serialize(_testData);
+    var x = sut.Serialize(_testData);
     Console.ReadLine();
     return x;
   }

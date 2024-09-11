@@ -18,33 +18,33 @@ public class Hashing
   }
 
   [Test(Description = "Checks that hashing (as represented by object ids) actually works.")]
-  public async Task HashChangeCheck()
+  public void HashChangeCheck()
   {
     var table = new DiningTable();
     var secondTable = new DiningTable();
 
-    Assert.That(await secondTable.GetIdAsync(), Is.EqualTo(await table.GetIdAsync()));
+    Assert.That(secondTable.GetId(), Is.EqualTo(table.GetId()));
 
     ((dynamic)secondTable).testProp = "wonderful";
 
-    Assert.That(await secondTable.GetIdAsync(), Is.Not.EqualTo(await table.GetIdAsync()));
+    Assert.That(secondTable.GetId(), Is.Not.EqualTo(table.GetId()));
   }
 
   [Test(
     Description = "Tests the convention that dynamic properties that have key names prepended with '__' are ignored."
   )]
-  public async Task IgnoredDynamicPropertiesCheck()
+  public void IgnoredDynamicPropertiesCheck()
   {
     var table = new DiningTable();
-    var originalHash = await table.GetIdAsync();
+    var originalHash = table.GetId();
 
     ((dynamic)table).__testProp = "wonderful";
 
-    Assert.That(await table.GetIdAsync(), Is.EqualTo(originalHash));
+    Assert.That(table.GetId(), Is.EqualTo(originalHash));
   }
 
   [Test(Description = "Rather stupid test as results vary wildly even on one machine.")]
-  public async Task HashingPerformance()
+  public void HashingPerformance()
   {
     var polyline = new Polyline();
 
@@ -57,9 +57,9 @@ public class Hashing
     stopWatch.Start();
 
     // Warm-up: first hashing always takes longer due to json serialisation init
-    _ = await polyline.GetIdAsync();
+    _ = polyline.GetId();
     var stopWatchStep = stopWatch.ElapsedMilliseconds;
-    _ = await polyline.GetIdAsync();
+    _ = polyline.GetId();
 
     var diff1 = stopWatch.ElapsedMilliseconds - stopWatchStep;
     Assert.That(diff1, Is.LessThan(300), $"Hashing shouldn't take that long ({diff1} ms) for the test object used.");
@@ -72,7 +72,7 @@ public class Hashing
       Z = 30
     };
     stopWatchStep = stopWatch.ElapsedMilliseconds;
-    _ = await pt.GetIdAsync();
+    _ = pt.GetId();
 
     var diff2 = stopWatch.ElapsedMilliseconds - stopWatchStep;
     Assert.That(diff2, Is.LessThan(10), $"Hashing shouldn't take that long  ({diff2} ms)for the point object used.");
@@ -80,13 +80,13 @@ public class Hashing
   }
 
   [Test(Description = "The hash of a decomposed object is different that that of a non-decomposed object.")]
-  public async Task DecompositionHashes()
+  public void DecompositionHashes()
   {
     var table = new DiningTable();
     ((dynamic)table)["@decomposeMePlease"] = new Point();
 
-    var hash1 = await table.GetIdAsync();
-    var hash2 = await table.GetIdAsync(true);
+    var hash1 = table.GetId();
+    var hash2 = table.GetId(true);
 
     Assert.That(hash2, Is.Not.EqualTo(hash1));
   }
