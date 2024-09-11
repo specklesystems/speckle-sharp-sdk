@@ -152,11 +152,6 @@ public abstract class CommitObjectBuilder<TNativeObjectData>
     );
   }
 
-  protected static void NestUnderElementsProperty(Base parent, Base child)
-  {
-    NestUnderProperty(parent, child, ELEMENTS);
-  }
-
   protected static void NestUnderProperty(Base parent, Base child, string property)
   {
     if (parent.GetDetachedProp(property) is not IList elements)

@@ -17,7 +17,7 @@ using Speckle.Sdk.Logging;
 namespace Speckle.Sdk.Api;
 
 [SuppressMessage("Maintainability", "CA1506:Avoid excessive class coupling", Justification = "Class needs refactor")]
-public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
+public sealed class Client : ISpeckleGraphQLClient, IDisposable
 {
   public ProjectResource Project { get; }
   public ModelResource Model { get; }
@@ -266,12 +266,6 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Logger.Warning(
-          ex,
-          "Subscribing to graphql {resultType} failed without a graphql response. Cause {exceptionMessage}",
-          typeof(T).Name,
-          ex.Message
-        );
         throw new SpeckleGraphQLException<T>(
           "The graphql request failed without a graphql response",
           request,

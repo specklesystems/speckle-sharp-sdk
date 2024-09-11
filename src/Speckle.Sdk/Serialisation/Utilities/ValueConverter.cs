@@ -267,33 +267,9 @@ internal static class ValueConverter
     }
 
     #region BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
-    if (type == typeof(System.Numerics.Matrix4x4) && value is IReadOnlyList<object> lMatrix)
+    if (type == typeof(System.Numerics.Matrix4x4) && value is IReadOnlyList<object>)
     {
-      SpeckleLog.Logger.Warning(
-        "This kept for backwards compatibility, no one should be using {this}",
-        "ValueConverter deserialize to System.Numerics.Matrix4x4"
-      );
-      convertedValue = new System.Numerics.Matrix4x4(
-        I(0),
-        I(1),
-        I(2),
-        I(3),
-        I(4),
-        I(5),
-        I(6),
-        I(7),
-        I(8),
-        I(9),
-        I(10),
-        I(11),
-        I(12),
-        I(13),
-        I(14),
-        I(15)
-      );
-      return true;
-
-      float I(int index) => Convert.ToSingle(lMatrix[index]);
+      throw new ArgumentException("Only Speckle.DoubleNumerics.Matrix4x4 is supported.", nameof(type));
     }
     #endregion
 

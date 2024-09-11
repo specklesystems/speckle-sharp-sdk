@@ -43,92 +43,6 @@ public static class Http
   }
 
   /// <summary>
-  /// Checks if the user has a valid internet connection by first pinging cloudfare (fast)
-  /// and then trying get from the default Speckle server (slower)
-  /// </summary>
-  /// <returns>True if the user is connected to the internet, false otherwise.</returns>
-  public static async Task<bool> UserHasInternet()
-  {
-    Uri? defaultServer = null;
-    try
-    {
-      //Perform a quick ping test e.g. to cloudflaire dns, as is quicker than pinging server
-      if (await Ping("1.1.1.1").ConfigureAwait(false))
-      {
-        return true;
-      }
-
-      defaultServer = AccountManager.GetDefaultServerUrl();
-      await HttpPing(defaultServer).ConfigureAwait(false);
-      return true;
-    }
-    catch (HttpRequestException ex)
-    {
-      using var activity = SpeckleActivityFactory.Start();
-      activity?.SetTag("defaultServer", defaultServer);
-      SpeckleLog.Logger.Warning(ex, "Failed to ping internet");
-
-      return false;
-    }
-  }
-
-  /// <summary>
-  /// Pings a specific url to verify it's accessible. Retries 3 times.
-  /// </summary>
-  /// <param name="hostnameOrAddress">The hostname or address to ping.</param>
-  /// <returns>True if the the status code is 200, false otherwise.</returns>
-  public static async Task<bool> Ping(string hostnameOrAddress)
-  {
-    SpeckleLog.Logger.Information("Pinging {hostnameOrAddress}", hostnameOrAddress);
-    var policy = Policy
-      .Handle<PingException>()
-      .Or<SocketException>()
-      .WaitAndRetryAsync(
-        DefaultDelay(),
-        (ex, timeSpan, retryAttempt, context) => {
-          //Log.Information(
-          //  ex,
-          //  "The http request failed with {exceptionType} exception retrying after {cooldown} milliseconds. This is retry attempt {retryAttempt}",
-          //  ex.GetType().Name,
-          //  timeSpan.TotalSeconds * 1000,
-          //  retryAttempt
-          //);
-        }
-      );
-    var policyResult = await policy
-      .ExecuteAndCaptureAsync(async () =>
-      {
-        Ping myPing = new();
-        var hostname =
-          Uri.CheckHostName(hostnameOrAddress) != UriHostNameType.Unknown
-            ? hostnameOrAddress
-            : new Uri(hostnameOrAddress).DnsSafeHost;
-        byte[] buffer = new byte[32];
-        int timeout = 1000;
-        PingOptions pingOptions = new();
-        PingReply reply = await myPing.SendPingAsync(hostname, timeout, buffer, pingOptions).ConfigureAwait(false);
-        if (reply.Status != IPStatus.Success)
-        {
-          throw new SpeckleException($"The ping operation failed with status {reply.Status}");
-        }
-
-        return true;
-      })
-      .ConfigureAwait(false);
-    if (policyResult.Outcome == OutcomeType.Successful)
-    {
-      return true;
-    }
-
-    SpeckleLog.Logger.Warning(
-      policyResult.FinalException,
-      "Failed to ping {hostnameOrAddress} cause: {exceptionMessage}",
-      policyResult.FinalException.Message
-    );
-    return false;
-  }
-
-  /// <summary>
   /// Sends a <c>GET</c> request to the provided <paramref name="uri"/>
   /// </summary>
   /// <param name="uri">The URI that should be pinged</param>
@@ -140,12 +54,10 @@ public static class Http
       using var httpClient = GetHttpProxyClient();
       HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
       response.EnsureSuccessStatusCode();
-      SpeckleLog.Logger.Information("Successfully pinged {uri}", uri);
       return response;
     }
     catch (HttpRequestException ex)
     {
-      SpeckleLog.Logger.Warning(ex, "Ping to {uri} was unsuccessful: {message}", uri, ex.Message);
       throw new HttpRequestException($"Ping to {uri} was unsuccessful", ex);
     }
   }
@@ -168,9 +80,7 @@ public static class Http
   {
     if (!string.IsNullOrEmpty(authToken))
     {
-      bearerHeader = authToken.NotNull().StartsWith("bearer", StringComparison.InvariantCultureIgnoreCase)
-        ? authToken
-        : $"Bearer {authToken}";
+      bearerHeader = authToken.NotNull().ToLowerInvariant().Contains("bearer") ? authToken : $"Bearer {authToken}";
       return true;
     }
 

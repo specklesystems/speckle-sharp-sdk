@@ -74,6 +74,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         _properties[key] = value;
         return;
       }
+
       try
       {
         prop.SetValue(this, value);
@@ -253,16 +254,8 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         .ToList()
         .ForEach(e =>
         {
-          var attr = e.GetCustomAttribute<SchemaComputedAttribute>().NotNull();
-          try
-          {
-            dic[attr.Name] = e.Invoke(this, null);
-          }
-          catch (Exception ex) when (!ex.IsFatal())
-          {
-            SpeckleLog.Logger.Warning(ex, "Failed to get computed member: {name}", attr.Name);
-            dic[attr.Name] = null;
-          }
+          var attr = e.GetCustomAttribute<SchemaComputedAttribute>();
+          dic[attr.Name] = e.Invoke(this, null);
         });
     }
 

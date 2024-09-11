@@ -266,8 +266,6 @@ public sealed class ServerTransport : IServerTransport
 
   private void Initialize(string baseUri)
   {
-    SpeckleLog.Logger.Information("Initializing a new Remote Transport for {baseUri}", baseUri);
-
     Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
   }
 

@@ -45,8 +45,7 @@ public static class Setup
   {
     if (s_initialized)
     {
-      SpeckleLog.Logger.Information("Setup was already initialized with {currentHostApp}", configuration.Application);
-      throw new InvalidOperationException();
+      throw new InvalidOperationException($"Setup was already initialized with {configuration.Application}");
     }
 
     s_initialized = true;
@@ -57,11 +56,12 @@ public static class Setup
     //start mutex so that Manager can detect if this process is running
     Mutex = new Mutex(false, "SpeckleConnector-" + configuration.Application);
 
-    foreach (var account in AccountManager.GetAccounts())
-    {
-      Analytics.AddConnectorToProfile(account.GetHashedEmail(), Application);
-      Analytics.IdentifyProfile(account.GetHashedEmail());
-    }
+    // foreach (var account in AccountManager.GetAccounts())
+    // {
+    //   Analytics.AddConnectorToProfile(account.GetHashedEmail(), Application);
+    //   Analytics.IdentifyProfile(account.GetHashedEmail(), Application);
+    // }
+
     return LogBuilder.Initialize(
       GetUserIdFromDefaultAccount(),
       ApplicationVersion,

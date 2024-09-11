@@ -230,31 +230,9 @@ public class SpeckleObjectSerializer
         break;
       //BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
       case System.Numerics.Matrix4x4 ms:
-        SpeckleLog.Logger.Warning(
-          "This kept for backwards compatibility, no one should be using {this}",
-          "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
-        );
-        await writer.WriteStartArrayAsync(CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M11, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M12, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M13, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M14, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M21, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M22, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M23, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M24, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M31, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M32, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M33, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M34, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M41, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M42, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M43, CancellationToken).ConfigureAwait(false);
-        await writer.WriteValueAsync((double)ms.M44, CancellationToken).ConfigureAwait(false);
-        await writer.WriteEndArrayAsync(CancellationToken).ConfigureAwait(false);
-        break;
+        throw new ArgumentException("Please use Speckle.DoubleNumerics.Matrix4x4 instead", nameof(obj));
       default:
-        throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}");
+        throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}", nameof(obj));
     }
   }
 

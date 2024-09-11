@@ -15,8 +15,6 @@ internal sealed class TokenExchangeResponse
   public string refreshToken { get; init; }
 }
 
-[ClassInterface(ClassInterfaceType.AutoDual)]
-[ComVisible(true)]
 public sealed class UserInfo
 {
   public string id { get; init; }

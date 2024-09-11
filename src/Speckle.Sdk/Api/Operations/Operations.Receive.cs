@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -73,7 +74,7 @@ public static partial class Operations
     var timer = Stopwatch.StartNew();
 
     // Receive Json
-    SpeckleLog.Logger.Information(
+    SpeckleLog.Logger.Debug(
       "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
       objectId,
       localTransport.TransportName,
@@ -88,12 +89,9 @@ public static partial class Operations
       // Fall back to remote
       if (remoteTransport is null)
       {
-        var ex = new TransportException(
+        throw new TransportException(
           $"Could not find specified object using the local transport {localTransport.TransportName}, and you didn't provide a fallback remote from which to pull it."
         );
-
-        SpeckleLog.Logger.Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
-        throw ex;
       }
 
       SpeckleLog.Logger.Debug(
@@ -111,7 +109,7 @@ public static partial class Operations
     Base res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
 
     timer.Stop();
-    SpeckleLog.Logger.Information(
+    SpeckleLog.Logger.Debug(
       "Finished receiving {objectId} from {source} in {elapsed} seconds",
       objectId,
       remoteTransport?.TransportName,

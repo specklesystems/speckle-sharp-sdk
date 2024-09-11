@@ -82,7 +82,7 @@ public static partial class Operations
     activity?.SetTag("correlationId", Guid.NewGuid().ToString());
     {
       var sendTimer = Stopwatch.StartNew();
-      SpeckleLog.Logger.Information("Starting send operation");
+      SpeckleLog.Logger.Debug("Starting send operation");
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
@@ -106,7 +106,7 @@ public static partial class Operations
           "the elapsed summary doesn't need to add up to the total elapsed... Threading magic..."
         );
         activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
-        SpeckleLog.Logger.Information(
+        SpeckleLog.Logger.Debug(
           "Finished sending objects after {elapsed}, result {objectId}",
           sendTimer.Elapsed.TotalSeconds,
           rootObjectId
