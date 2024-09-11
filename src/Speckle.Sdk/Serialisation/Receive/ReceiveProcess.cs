@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
@@ -11,7 +10,7 @@ namespace Speckle.Sdk.Serialisation.Receive;
 public record ReceiveProcessSettings(
   int MaxDownloadThreads = 4,
   int MaxDeserializeThreads = 4,
-  int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS,
+  int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS - 1,
   int BatchWaitMilliseconds = 500
 );
 
@@ -21,8 +20,6 @@ public sealed class ReceiveProcess : IDisposable
   private readonly ConcurrentDictionary<string, Base> _idToBaseCache = new(StringComparer.Ordinal);
 
   private long _received;
-  private readonly HashSet<string> _requestedIds = new();
-  private Base? _last;
 
   public ReceiveProcess(
     Uri baseUri,
@@ -36,61 +33,76 @@ public sealed class ReceiveProcess : IDisposable
       _settings = settings;
     }
     SourceChannel = Channel.CreateUnbounded<string>();
+    ReceiveChannel = Channel.CreateUnbounded<Base>();
     CachingStage = new(_idToBaseCache);
-    TransportStage = new TransportStage(baseUri, streamId, authorizationToken);
-    DeserializeStage = new() { CachingStage = CachingStage, SourceChannel = SourceChannel };
+    ServerApiStage = new ServerApiStage(baseUri, streamId, authorizationToken, args =>
+    {
+      _bytes = args.Count ?? 0;
+      InvokeProgress();
+    });
+    DeserializeStage = new(_idToBaseCache, ReceiveAsync);
   }
 
-  public Channel<string> SourceChannel { get; }
+  private Channel<string> SourceChannel { get; }
+  private Channel<Base> ReceiveChannel { get; }
 
+  private long _bytes;
   public Action<ProgressArgs[]>? Progress { get; set; }
 
   public void InvokeProgress() =>
     Progress?.Invoke(
       [
-        new ProgressArgs(ProgressEvent.DownloadBytes, TransportStage.Downloaded, null),
+        new ProgressArgs(ProgressEvent.DownloadBytes, _bytes, null),
         new ProgressArgs(ProgressEvent.DeserializeObject, DeserializeStage.Deserialized, null),
         new ProgressArgs(ProgressEvent.DownloadObject, _received, null),
       ]
     );
 
-  public async Task<Base> GetObject(
-    string initialId,
+  public async ValueTask ReceiveAsync(string id) => await SourceChannel.Writer.WriteAsync(id).ConfigureAwait(false);
+
+  
+  public IAsyncEnumerable<Base> GetBases(CancellationToken cancellationToken)
+  {
+    var enumerable = ReceiveChannel.Reader
+      .AsAsyncEnumerable(cancellationToken: cancellationToken)
+      .Select(x =>
+      {
+        _received++;
+        return x;
+      });
+    return enumerable;
+  }
+
+  public async ValueTask Start(
     Action<ProgressArgs[]>? progress,
     CancellationToken cancellationToken
   )
   {
     Progress = progress;
 
-    await SourceChannel.Writer.WriteAsync(initialId, cancellationToken).ConfigureAwait(false);
-
-    var count = await SourceChannel
-      .Reader.Pipe(1, OnCache, cancellationToken: cancellationToken)
+    var enumerable = await SourceChannel
+      .Reader
+      .PipeAsync(1, OnCache, cancellationToken: cancellationToken)
       .Batch(_settings.MaxObjectRequestSize)
       .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
       .PipeAsync(_settings.MaxDownloadThreads, OnTransport, cancellationToken: cancellationToken)
       .Join()
-      .PipeAsync(_settings.MaxDeserializeThreads, OnDeserialize, cancellationToken: cancellationToken)
-      .ReadAllAsync(async x => await OnReceive(x, initialId).ConfigureAwait(false), cancellationToken)
+      .ReadAllConcurrentlyAsync(_settings.MaxDeserializeThreads, OnDeserialize, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
-
-    Console.WriteLine($"Really Done? {count} {_idToBaseCache.Count}");
-    return _last.NotNull();
   }
 
-  private string? OnCache(string id)
+  private async ValueTask<string?> OnCache(string id)
   {
-    if (CachingStage.Cache.ContainsKey(id))
+    if (CachingStage.Cache.TryGetValue(id, out var @base))
     {
+      await ReceiveChannel.Writer.WriteAsync(@base).ConfigureAwait(false);
       return null;
     }
-
-    _received++;
     InvokeProgress();
     return id;
   }
 
-  private async ValueTask<List<Transported>> OnTransport(List<string?> b)
+  private async ValueTask<List<Downloaded>> OnTransport(List<string?> b)
   {
     var batch = new List<string>(b.Count);
     foreach (var item in b)
@@ -100,8 +112,8 @@ public sealed class ReceiveProcess : IDisposable
         batch.Add(item);
       }
     }
-    var gathered = TransportStage.Execute(batch).ConfigureAwait(false);
-    var ret = new List<Transported>();
+    var gathered = ServerApiStage.Execute(batch).ConfigureAwait(false);
+    var ret = new List<Downloaded>();
     await foreach (var arg in gathered)
     {
       if (!_idToBaseCache.ContainsKey(arg.Id))
@@ -109,50 +121,25 @@ public sealed class ReceiveProcess : IDisposable
         ret.Add(arg);
       }
     }
-
     InvokeProgress();
     return ret;
   }
 
-  private async ValueTask<Deserialized?> OnDeserialize(Transported transported)
+  private async ValueTask OnDeserialize(Downloaded transported)
   {
     var deserialized = await DeserializeStage.Execute(transported).ConfigureAwait(false);
     if (deserialized is null)
     {
-      return null;
-    }
-    InvokeProgress();
-    if (_idToBaseCache.TryAdd(deserialized.Id, deserialized.BaseObject))
-    {
-      return deserialized;
-    }
-    return null;
-  }
-
-  private async ValueTask OnReceive(Deserialized? received, string initialId)
-  {
-    if (received is null)
-    {
       return;
     }
-
-    if (_requestedIds.Add(received.Id))
-    {
-      _received++;
-    }
-
     InvokeProgress();
-    //Console.WriteLine($"Received {received.Id} - r {_received} - d {_deserialized} - g {_saved} - t {_downloaded}");
-    if (received.Id == initialId)
-    {
-      await SourceChannel.CompleteAsync().ConfigureAwait(false);
-      _last = received.BaseObject;
-    }
+    _idToBaseCache.TryAdd(deserialized.Id, deserialized.BaseObject);
+    await ReceiveChannel.Writer.WriteAsync(deserialized.BaseObject).ConfigureAwait(false);
   }
 
   public CachingStage CachingStage { get; }
-  public TransportStage TransportStage { get; }
+  public ServerApiStage ServerApiStage { get; }
   public DeserializeStage DeserializeStage { get; }
 
-  public void Dispose() => TransportStage.Dispose();
+  public void Dispose() => ServerApiStage.Dispose();
 }

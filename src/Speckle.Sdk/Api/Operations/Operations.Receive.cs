@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
@@ -12,17 +13,24 @@ namespace Speckle.Sdk.Api;
 
 public static partial class Operations
 {
-  public static async Task<Base> Receive2(
+  public static async IAsyncEnumerable<Base> Receive2(
     Account account,
     string streamId,
     string objectId,
     Action<ProgressArgs[]>? onProgressAction = null,
-    CancellationToken cancellationToken = default
+    [EnumeratorCancellation] CancellationToken cancellationToken = default
   )
   {
     using var stage = new ReceiveProcess(new Uri(account.serverInfo.url), streamId, null);
-    var @base = await stage.GetObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);
-    return @base;
+   var startTask = stage.Start(onProgressAction, cancellationToken).ConfigureAwait(false);
+   var bases = stage.GetBases(cancellationToken).ConfigureAwait(false);
+   await stage.ReceiveAsync(objectId).ConfigureAwait(false);
+   await foreach (var obj in bases)
+   {
+     yield return obj;
+   }
+
+   await startTask;
   }
 
   /// <summary>

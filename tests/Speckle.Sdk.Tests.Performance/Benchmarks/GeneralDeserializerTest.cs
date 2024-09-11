@@ -1,4 +1,4 @@
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Jobs;
@@ -6,6 +6,7 @@ using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Toolchains.CsProj;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -85,11 +86,16 @@ public class GeneralDeserializer
 
     StreamWrapper sw = new(url);
     var acc = await sw.GetAccount().ConfigureAwait(false);
-    using var client = new Client(acc);
-    var branch = await client.BranchGet(sw.StreamId, sw.BranchName!, 1).ConfigureAwait(false);
-    var objectId = branch.commits.items[0].referencedObject;
+    var bases = Operations.Receive2(acc, sw.StreamId, sw.BranchName!, args => {
+    });
 
-    using var stage = new ReceiveProcess(new Uri(acc.serverInfo.url), sw.StreamId, null, receiveProcessSettings);
-    return await stage.GetObject(objectId, args => { }, default).ConfigureAwait(false);
+    Base last = null;
+    await foreach (var b in bases)
+    {
+      Console.WriteLine(b.id);
+      last = b;
+    }
+
+    return last.NotNull();
   }
 }
