@@ -100,7 +100,7 @@ public sealed class ReceiveProcess : IDisposable
         batch.Add(item);
       }
     }
-    var gathered =  TransportStage.Execute(batch).ConfigureAwait(false);
+    var gathered = TransportStage.Execute(batch).ConfigureAwait(false);
     var ret = new List<Transported>();
     await foreach (var arg in gathered)
     {

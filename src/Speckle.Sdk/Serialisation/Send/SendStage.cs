@@ -8,6 +8,7 @@ public sealed class SendStage : IDisposable
   private readonly string _streamId;
 
   public long Sent { get; private set; }
+
   public SendStage(Uri baseUri, string streamId, string? authorizationToken)
   {
     _streamId = streamId;
@@ -24,7 +25,10 @@ public sealed class SendStage : IDisposable
       .UploadObjects(
         _streamId,
         serialized.Where(x => hasResults.ContainsKey(x.Id)).Select(x => (x.Id, x.Json)).ToArray(),
-        args => { Sent += args.Count ?? 0; }
+        args =>
+        {
+          Sent += args.Count ?? 0;
+        }
       )
       .ConfigureAwait(false);
   }

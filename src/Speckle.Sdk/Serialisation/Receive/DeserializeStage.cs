@@ -14,7 +14,7 @@ public class DeserializeStage
 
   public CachingStage? CachingStage { get; set; }
   public Channel<string> SourceChannel { get; set; }
-  
+
   public long Deserialized { get; private set; }
 
   public async ValueTask<Deserialized?> Execute(Transported message)

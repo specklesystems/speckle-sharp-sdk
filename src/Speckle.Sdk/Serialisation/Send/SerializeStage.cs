@@ -7,6 +7,7 @@ public record Serialized(string Id, string Json);
 public class SerializeStage
 {
   public long Serialized { get; private set; }
+
   public async ValueTask<Serialized> Execute(Base @base)
   {
     var serializer = new SpeckleObjectSerializer2();

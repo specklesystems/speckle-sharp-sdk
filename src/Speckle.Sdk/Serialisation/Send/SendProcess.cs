@@ -33,7 +33,7 @@ public sealed class SendProcess : IDisposable
   public void InvokeProgress() =>
     Progress?.Invoke(
       [
-          new ProgressArgs(ProgressEvent.UploadObject, _requested, null),
+        new ProgressArgs(ProgressEvent.UploadObject, _requested, null),
         new ProgressArgs(ProgressEvent.SerializeObject, SerializeStage.Serialized, null),
         new ProgressArgs(ProgressEvent.UploadBytes, SendStage.Sent, null)
       ]
