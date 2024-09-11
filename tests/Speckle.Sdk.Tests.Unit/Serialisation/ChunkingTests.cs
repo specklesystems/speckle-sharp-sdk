@@ -36,7 +36,7 @@ public class ChunkingTests
       .ToList();
 
     int numberOfChunks = serailizedObjects.Count(x =>
-      x!.TryGetValue("speckle_type", out var speckleType) && ((string)speckleType!) == "DataChunk"
+      x!.TryGetValue("speckle_type", out var speckleType) && ((string)speckleType!) == "Speckle.Core.Models.DataChunk"
     );
 
     return numberOfChunks;
