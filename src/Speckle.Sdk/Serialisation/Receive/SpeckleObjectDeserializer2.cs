@@ -5,16 +5,9 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public sealed class SpeckleObjectDeserializer2
+public sealed class SpeckleObjectDeserializer2(IReadOnlyDictionary<string, Base> references)
 {
   public CancellationToken CancellationToken { get; set; }
-
-  private readonly IReadOnlyDictionary<string, Base> _closures;
-
-  public SpeckleObjectDeserializer2(IReadOnlyDictionary<string, Base> closures)
-  {
-    _closures = closures;
-  }
 
   /// <param name="objectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
   /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="objectJson"/></returns>
@@ -99,7 +92,7 @@ public sealed class SpeckleObjectDeserializer2
     if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
     {
       var objId = (string)referencedId.NotNull();
-      if (_closures.TryGetValue(objId, out Base? closure))
+      if (references.TryGetValue(objId, out Base? closure))
       {
         return closure;
       }

@@ -1,3 +1,4 @@
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
@@ -20,5 +21,10 @@ public sealed class ServerApiStage(Uri baseUri, string streamId, string? authori
     }
   }
 
+  public async ValueTask<string> DownloadRoot(string objectId)
+  {
+    var json = await _serverApi.DownloadSingleObject(streamId, objectId, progress).ConfigureAwait(false);
+    return json.NotNull();
+  }
   public void Dispose() => _serverApi.Dispose();
 }
