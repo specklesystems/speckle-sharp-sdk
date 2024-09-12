@@ -17,10 +17,10 @@ public sealed class SendProcess : IDisposable
 {
   private readonly SendProcessSettings _settings = new();
 
-  public SendProcess(Uri baseUri, string streamId, string? authorizationToken)
+  public SendProcess(IModelTarget modelTarget)
   {
     SourceChannel = Channel.CreateUnbounded<Base>();
-    SendStage = new(baseUri, streamId, authorizationToken);
+    SendStage = new(modelTarget);
     SerializeStage = new();
   }
 

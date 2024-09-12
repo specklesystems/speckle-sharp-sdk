@@ -25,9 +25,7 @@ public sealed class ReceiveProcess : IDisposable
   private Base? _rootObject;
 
   public ReceiveProcess(
-    Uri baseUri,
-    string streamId,
-    string? authorizationToken,
+    IModelSource modelSource,
     ReceiveProcessSettings? settings = null
   )
   {
@@ -37,16 +35,7 @@ public sealed class ReceiveProcess : IDisposable
     }
     SourceChannel = Channel.CreateUnbounded<string>();
     CachingStage = new(_idToBaseCache);
-    ServerApiStage = new ServerApiStage(
-      baseUri,
-      streamId,
-      authorizationToken,
-      args =>
-      {
-        _bytes = args.Count ?? 0;
-        InvokeProgress();
-      }
-    );
+    GatherStage = new GatherStage(modelSource);
     DeserializeStage = new(_idToBaseCache, EnqueueObject);
   }
 
@@ -65,7 +54,7 @@ public sealed class ReceiveProcess : IDisposable
 
   private async ValueTask EnqueueObject(string id) => await SourceChannel.Writer.WriteAsync(id).ConfigureAwait(false);
 
-  public async ValueTask<Base> GetRootObject(
+  public async ValueTask<Base> GetObject(
     string objectId,
     Action<ProgressArgs[]>? progress,
     CancellationToken cancellationToken
@@ -82,7 +71,12 @@ public sealed class ReceiveProcess : IDisposable
       .ReadAllConcurrentlyAsync(_settings.MaxDeserializeThreads, OnDeserialize, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
 
-    var rootJson = await ServerApiStage.DownloadRoot(objectId).ConfigureAwait(false);
+    var rootJson = await GatherStage.DownloadRoot(objectId, 
+      args =>
+      {
+        _bytes += args.Count ?? 0;
+        InvokeProgress();
+      }).ConfigureAwait(false);
 
     var closures = (await ClosureParser.GetChildrenIdsAsync(rootJson, cancellationToken).ConfigureAwait(false));
     foreach (var closure in closures)
@@ -97,7 +91,12 @@ public sealed class ReceiveProcess : IDisposable
 
   private async ValueTask<List<Downloaded>> OnTransport(List<string> batch)
   {
-    var gathered = ServerApiStage.Execute(batch).ConfigureAwait(false);
+    var gathered = GatherStage.Execute(batch, 
+      args =>
+      {
+        _bytes += args.Count ?? 0;
+        InvokeProgress();
+      }).ConfigureAwait(false);
     var ret = new List<Downloaded>();
     await foreach (var arg in gathered)
     {
@@ -127,8 +126,8 @@ public sealed class ReceiveProcess : IDisposable
   }
 
   public CachingStage CachingStage { get; }
-  public ServerApiStage ServerApiStage { get; }
+  public GatherStage GatherStage { get; }
   public DeserializeStage DeserializeStage { get; }
 
-  public void Dispose() => ServerApiStage.Dispose();
+  public void Dispose() => GatherStage.Dispose();
 }

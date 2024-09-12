@@ -20,7 +20,9 @@ public static partial class Operations
     CancellationToken cancellationToken = default
   )
   {
-    using var stage = new SendProcess(new Uri(account.serverInfo.url), streamId, account.token);
+#pragma warning disable CA2000
+    using var stage = new SendProcess(new ServerTarget(new Uri(account.serverInfo.url), streamId, account.token));
+#pragma warning restore CA2000
     return await stage.SaveObject(value, onProgressAction, cancellationToken).ConfigureAwait(false);
   }
 

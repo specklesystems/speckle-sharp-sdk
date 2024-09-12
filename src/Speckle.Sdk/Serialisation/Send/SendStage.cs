@@ -1,30 +1,50 @@
-﻿using Speckle.Sdk.Transports.ServerUtils;
+﻿using System.Collections.Concurrent;
+using Speckle.Sdk.Transports;
+using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation.Send;
 
-public sealed class SendStage : IDisposable
+public interface IModelTarget : IDisposable
+{
+  ValueTask Send(IReadOnlyList<(string, string)> objects,
+    Action<ProgressArgs> progress);
+}
+
+public sealed class ServerTarget : IModelTarget
 {
   private readonly ServerApi _serverApi;
   private readonly string _streamId;
-
-  public long Sent { get; private set; }
-
-  public SendStage(Uri baseUri, string streamId, string? authorizationToken)
+  
+  public ServerTarget(Uri baseUri, string streamId, string? authorizationToken)
   {
     _streamId = streamId;
     _serverApi = new(baseUri, authorizationToken, string.Empty);
   }
 
-  public async ValueTask Execute(List<Serialized> serialized)
+  public async ValueTask Send(IReadOnlyList<(string, string)> objects ,
+    Action<ProgressArgs> progress)
   {
-    var hasResults = await _serverApi
-      .HasObjects(_streamId, serialized.Select(x => x.Id).ToArray())
-      .ConfigureAwait(false);
-
     await _serverApi
       .UploadObjects(
         _streamId,
-        serialized.Where(x => hasResults.ContainsKey(x.Id)).Select(x => (x.Id, x.Json)).ToArray(),
+        objects,
+        progress
+      )
+      .ConfigureAwait(false);
+  }
+  public void Dispose() => _serverApi.Dispose();
+  
+}
+public sealed class SendStage(IModelTarget modelTarget) : IDisposable
+{
+  public long Sent { get; private set; }
+
+
+  public async ValueTask Execute(List<Serialized> serialized)
+  {
+    await modelTarget
+      .Send(
+        serialized.Select(x => (x.Id, x.Json)).ToArray(),
         args =>
         {
           Sent += args.Count ?? 0;
@@ -33,5 +53,23 @@ public sealed class SendStage : IDisposable
       .ConfigureAwait(false);
   }
 
-  public void Dispose() => _serverApi.Dispose();
+  public void Dispose() => modelTarget.Dispose();
+}
+
+public sealed class MemoryTarget : IModelTarget
+{
+  public ConcurrentDictionary<string, string> Sent { get; } = new();
+
+  public ValueTask Send(IReadOnlyList<(string, string)> objects, Action<ProgressArgs> progress)
+  {
+    foreach (var (id, json) in objects)
+    {
+      Sent.TryAdd(id, json);
+    }
+    return new(Task.CompletedTask);
+  }
+
+  public void Dispose()
+  {
+  }
 }

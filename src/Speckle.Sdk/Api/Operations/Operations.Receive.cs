@@ -20,8 +20,10 @@ public static partial class Operations
     CancellationToken cancellationToken = default
   )
   {
-    using var stage = new ReceiveProcess(new Uri(account.serverInfo.url), streamId, null);
-    var rootObject = await stage.GetRootObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);
+#pragma warning disable CA2000
+    using var stage = new ReceiveProcess(new ServerSource(new Uri(account.serverInfo.url), streamId, null));
+#pragma warning restore CA2000
+    var rootObject = await stage.GetObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);
     return rootObject;
   }
 
