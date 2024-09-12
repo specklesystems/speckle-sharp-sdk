@@ -1,7 +1,9 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -24,20 +26,28 @@ public class GeneralSerializerTest
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     using var dataSource = new TestDataHelper();
     await dataSource
-      .SeedTransport(new("https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"))
+      .SeedTransport(
+        new Account()
+        {
+          serverInfo = new() { url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e" }
+        },
+        "2099ac4b5f",
+        "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6"
+      )
       .ConfigureAwait(false);
 
-    SpeckleObjectDeserializer deserializer = new() { ReadTransport = dataSource.Transport };
+    SpeckleObjectDeserializer deserializer =
+      new(new NullLogger<SpeckleObjectDeserializer>()) { ReadTransport = dataSource.Transport };
     string data = await dataSource.Transport.GetObject(dataSource.ObjectId).NotNull();
-    _testData = await deserializer.DeserializeJsonAsync(data).NotNull();
+    _testData = await deserializer.DeserializeAsync(data).NotNull();
   }
 
   [Benchmark]
-  public async Task<string> RunTest()
+  public string RunTest()
   {
     var remote = new NullTransport();
     SpeckleObjectSerializer sut = new([remote]);
-    var x = await sut.SerializeAsync(_testData);
+    var x = sut.Serialize(_testData);
     return x;
   }
 }

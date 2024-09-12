@@ -19,7 +19,7 @@ public partial class Operations
   /// <param name="value">The object to serialise</param>
   /// <param name="cancellationToken"></param>
   /// <returns>A json string representation of the object.</returns>
-  public async Task<string> Serialize(Base value, CancellationToken cancellationToken = default)
+  public string Serialize(Base value, CancellationToken cancellationToken = default)
   {
     var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
     return serializer.Serialize(value);
@@ -32,7 +32,7 @@ public partial class Operations
   /// </remarks>
   /// <param name="value">The json string representation of a speckle object that you want to deserialize</param>
   /// <param name="cancellationToken"></param>
-  /// <returns><inheritdoc cref="SpeckleObjectDeserializer.DeserializeJsonAsync"/></returns>
+  /// <returns><inheritdoc cref="SpeckleObjectDeserializer.DeserializeAsync"/></returns>
   /// <exception cref="ArgumentNullException"><paramref name="value"/> was null</exception>
   /// <exception cref="JsonReaderException "><paramref name="value"/> was not valid JSON</exception>
   /// <exception cref="SpeckleException"><paramref name="value"/> cannot be deserialised to type <see cref="Base"/></exception>
@@ -43,6 +43,6 @@ public partial class Operations
     {
       CancellationToken = cancellationToken
     };
-    return await deserializer.DeserializeJsonAsync(value).ConfigureAwait(false);
+    return await deserializer.DeserializeAsync(value).ConfigureAwait(false);
   }
 }

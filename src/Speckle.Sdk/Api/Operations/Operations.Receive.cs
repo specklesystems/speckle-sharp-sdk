@@ -105,7 +105,7 @@ public partial class Operations
 
     using var activity = activityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
+    Base res = await serializer.DeserializeAsync(objString).ConfigureAwait(false);
 
     timer.Stop();
     logger.LogDebug(

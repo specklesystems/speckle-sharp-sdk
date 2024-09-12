@@ -41,7 +41,7 @@ public class GeneralDeserializer : IDisposable
     SpeckleObjectDeserializer sut =
       new(new NullLogger<SpeckleObjectDeserializer>()) { ReadTransport = _dataSource.Transport };
     string data = await _dataSource.Transport.GetObject(_dataSource.ObjectId)!;
-    return await sut.DeserializeJsonAsync(data);
+    return await sut.DeserializeAsync(data);
   }
 
   [GlobalCleanup]

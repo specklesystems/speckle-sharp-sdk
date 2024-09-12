@@ -10,7 +10,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
-public sealed class SpeckleObjectDeserializer
+public sealed class SpeckleObjectDeserializer(ILogger<SpeckleObjectDeserializer> logger)
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();
@@ -23,8 +23,6 @@ public sealed class SpeckleObjectDeserializer
   /// Property that describes the type of the object.
   /// </summary>
   private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
-
-  private readonly ILogger<SpeckleObjectDeserializer> _logger;
 
   public CancellationToken CancellationToken { get; set; }
 
@@ -39,11 +37,6 @@ public sealed class SpeckleObjectDeserializer
   private readonly HashSet<string> _ids = new();
   private long _processedCount;
 
-  public SpeckleObjectDeserializer(ILogger<SpeckleObjectDeserializer> logger)
-  {
-    _logger = logger;
-  }
-
   public string? BlobStorageFolder { get; set; }
 
   /// <param name="rootObjectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
@@ -52,7 +45,7 @@ public sealed class SpeckleObjectDeserializer
   /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public async Task<Base> DeserializeJsonAsync(string rootObjectJson)
+  public async Task<Base> DeserializeAsync(string rootObjectJson)
   {
     if (_isBusy)
     {
@@ -254,7 +247,7 @@ public sealed class SpeckleObjectDeserializer
         catch (OverflowException ex)
         {
           var v = (object)(double)reader.Value.NotNull();
-          _logger.LogDebug(
+          logger.LogDebug(
             ex,
             "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
             reader.ValueType,

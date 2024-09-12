@@ -34,7 +34,7 @@ public class ObjectSerialization
     var pt = new Point(1, 2, 3);
     pt["circle"] = pt;
 
-    var test = await _operations.Serialize(pt);
+    var test = _operations.Serialize(pt);
 
     var result = await _operations.DeserializeAsync(test);
     var circle = result["circle"];
@@ -73,7 +73,7 @@ public class ObjectSerialization
       cat.Fur[i] = new Line { Start = new Point(i, i, i), End = new Point(i + 3.14, i + 3.14, i + 3.14) };
     }
 
-    var result = await _operations.Serialize(cat);
+    var result = _operations.Serialize(cat);
 
     var deserialisedFeline = await _operations.DeserializeAsync(result);
 
@@ -91,7 +91,7 @@ public class ObjectSerialization
       W = 42
     };
 
-    var str = await _operations.Serialize(superPoint);
+    var str = _operations.Serialize(superPoint);
     var sstr = await _operations.DeserializeAsync(str);
 
     Assert.That(sstr.speckle_type, Is.EqualTo(superPoint.speckle_type));
@@ -110,7 +110,7 @@ public class ObjectSerialization
 
     point["test"] = test;
 
-    var str = await _operations.Serialize(point);
+    var str = _operations.Serialize(point);
     var dsrls = await _operations.DeserializeAsync(str);
 
     var list = dsrls["test"] as List<object>; // NOTE: on dynamically added lists, we cannot infer the inner type and we always fall back to a generic list<object>.
@@ -138,9 +138,9 @@ public class ObjectSerialization
       doubleBasedChunk.data.Add(i + 0.33);
     }
 
-    var baseChunkString = await _operations.Serialize(baseBasedChunk);
-    var stringChunkString = await _operations.Serialize(stringBasedChunk);
-    var doubleChunkString = await _operations.Serialize(doubleBasedChunk);
+    var baseChunkString = _operations.Serialize(baseBasedChunk);
+    var stringChunkString = _operations.Serialize(stringBasedChunk);
+    var doubleChunkString = _operations.Serialize(doubleBasedChunk);
 
     var baseChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(baseChunkString);
     var stringChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(stringChunkString);
@@ -173,7 +173,7 @@ public class ObjectSerialization
     mesh["@(800)CustomChunk"] = customChunk;
     mesh["@()DefaultChunk"] = defaultChunk;
 
-    var serialised = await _operations.Serialize(mesh);
+    var serialised = _operations.Serialize(mesh);
     var deserialised = await _operations.DeserializeAsync(serialised);
 
     Assert.That(mesh.GetId(), Is.EqualTo(deserialised.GetId()));
@@ -194,7 +194,7 @@ public class ObjectSerialization
     test["nestedList"] = new List<object> { new List<object> { new List<object>() } };
     test["@nestedDetachableList"] = new List<object> { new List<object> { new List<object>() } };
 
-    var serialised = await _operations.Serialize(test);
+    var serialised = _operations.Serialize(test);
     var isCorrect =
       serialised.Contains("\"@(5)emptyChunks\":[]")
       && serialised.Contains("\"emptyList\":[]")
@@ -217,7 +217,7 @@ public class ObjectSerialization
     var date = new DateTime(2020, 1, 14);
     var mockBase = new DateMock { TestField = date };
 
-    var result = await _operations.Serialize(mockBase);
+    var result = _operations.Serialize(mockBase);
     var test = (DateMock)await _operations.DeserializeAsync(result);
 
     Assert.That(test.TestField, Is.EqualTo(date));
@@ -235,7 +235,7 @@ public class ObjectSerialization
     var guid = Guid.NewGuid();
     var mockBase = new GUIDMock { TestField = guid };
 
-    var result = await _operations.Serialize(mockBase);
+    var result = _operations.Serialize(mockBase);
     var test = (GUIDMock)await _operations.DeserializeAsync(result);
 
     Assert.That(test.TestField, Is.EqualTo(guid));
@@ -253,7 +253,7 @@ public class ObjectSerialization
     var color = Color.FromArgb(255, 4, 126, 251);
     var mockBase = new ColorMock { TestField = color };
 
-    var result = await _operations.Serialize(mockBase);
+    var result = _operations.Serialize(mockBase);
     var test = (ColorMock)await _operations.DeserializeAsync(result);
 
     Assert.That(test.TestField, Is.EqualTo(color));
@@ -270,7 +270,7 @@ public class ObjectSerialization
   {
     var mockBase = new StringDateTimeRegressionMock { TestField = "2021-11-12T11:32:01" };
 
-    var result = await _operations.Serialize(mockBase);
+    var result = _operations.Serialize(mockBase);
     var test = (StringDateTimeRegressionMock)await _operations.DeserializeAsync(result);
 
     Assert.That(test.TestField, Is.EqualTo(mockBase.TestField));
