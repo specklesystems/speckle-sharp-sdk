@@ -77,7 +77,7 @@ public class ObjectSerialization
 
     var deserialisedFeline = await _operations.DeserializeAsync(result);
 
-    Assert.That(await deserialisedFeline.GetIdAsync(), Is.EqualTo(await cat.GetIdAsync())); // If we're getting the same hash... we're probably fine!
+    Assert.That(deserialisedFeline.GetId(), Is.EqualTo(cat.GetId())); // If we're getting the same hash... we're probably fine!
   }
 
   [Test]
@@ -176,11 +176,11 @@ public class ObjectSerialization
     var serialised = await _operations.Serialize(mesh);
     var deserialised = await _operations.DeserializeAsync(serialised);
 
-    Assert.That(await mesh.GetIdAsync(), Is.EqualTo(await deserialised.GetIdAsync()));
+    Assert.That(mesh.GetId(), Is.EqualTo(deserialised.GetId()));
   }
 
   [Test]
-  public async Task EmptyListSerialisationTests()
+  public void EmptyListSerialisationTests()
   {
     // NOTE: expected behaviour is that empty lists should serialize as empty lists. Don't ask why, it's complicated.
     // Regarding chunkable empty lists, to prevent empty chunks, the expected behaviour is to have an empty lists, with no chunks inside.

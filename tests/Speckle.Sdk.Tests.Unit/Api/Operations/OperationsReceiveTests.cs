@@ -29,12 +29,12 @@ public sealed partial class OperationsReceiveTests
     ];
   }
 
-  public static async Task<IEnumerable<string>> TestCases()
+  public static IEnumerable<string> TestCases()
   {
     List<string> ret = new();
     foreach (var s in s_testObjects)
     {
-      ret.Add(await s.GetIdAsync(true));
+      ret.Add(s.GetId(true));
     }
 
     return ret;

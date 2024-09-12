@@ -1,17 +1,33 @@
 <Project>
-  <PropertyGroup Label="Company Info">
-    <Authors>Speckle</Authors>
-    <Company>Speckle</Company>
-    <Copyright>Copyright (c) AEC Systems Ltd</Copyright>
-  </PropertyGroup>
-
-  <PropertyGroup>
+  
+  <PropertyGroup Label="Compiler Properties">
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <IsPackable>false</IsPackable>  
+  </PropertyGroup>
+  
+  <PropertyGroup Label="Nugetspec Package Properties">
+    <!-- Defines common Nugetspec properties -->
+    <!-- Inheriting packable projects should define the rest of the nugetspec properties (PackageId, Description) -->
+    <!-- and may, if needed, override/extend any of these (e.g. PackageTags) -->
+    <Authors>Speckle</Authors>
+    <Copyright>Copyright (c) AEC Systems Ltd</Copyright>
+    <PackageProjectUrl>https://speckle.systems/</PackageProjectUrl>
+    <PackageIcon>logo.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/specklesystems/speckle-sharp-sdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>speckle</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Nuget Package Properties">
+    <IsPackable>false</IsPackable> <!--Can be set to true in inheriting .props/.csproj files for projects that should be packed-->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
@@ -45,23 +61,12 @@
       $(NoWarn)
     </NoWarn>
   </PropertyGroup>
-
-
   
   <PropertyGroup>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <PackageTags>speckle</PackageTags>
-    <PackageProjectUrl>https://speckle.systems/</PackageProjectUrl>
-    <PackageIcon>logo.png</PackageIcon>
-    <RepositoryUrl>https://github.com/specklesystems/speckle-sharp-sdk</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
     <!-- Expose the repository root to all projects -->
     <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>  
+  
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
     <None

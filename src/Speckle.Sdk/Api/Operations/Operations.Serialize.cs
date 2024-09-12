@@ -22,7 +22,7 @@ public partial class Operations
   public async Task<string> Serialize(Base value, CancellationToken cancellationToken = default)
   {
     var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
-    return await serializer.SerializeAsync(value).ConfigureAwait(false);
+    return serializer.Serialize(value);
   }
 
   /// <remarks>

@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Speckle.Sdk.Api;
@@ -52,6 +52,6 @@ public class SimpleRoundTripTests
     var result = await _operations.Serialize(testData);
     var test = await _operations.DeserializeAsync(result);
 
-    Assert.That(await testData.GetIdAsync(), Is.EqualTo(await test.GetIdAsync()));
+    Assert.That(testData.GetId(), Is.EqualTo(test.GetId()));
   }
 }

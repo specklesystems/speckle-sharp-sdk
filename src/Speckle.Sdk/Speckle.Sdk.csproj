@@ -1,26 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
+  
+  <PropertyGroup Label="Compiler Properties">
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
-    <RootNamespace>Speckle.Sdk</RootNamespace>
-    <PackageId>Speckle.Sdk</PackageId>
-    <Product>Speckle.Sdk</Product>
-    <Description>The .NET SDK for Speckle</Description>
-    <PackageTags>$(PackageTags) core sdk</PackageTags>
-    <IsPackable>true</IsPackable>
     <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
     <Configurations>Debug;Release;Local</Configurations>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="Nugetspec Package Properties">
+    <PackageId>Speckle.Sdk</PackageId>
+    <Description>The .NET SDK for Speckle</Description>
+    <PackageTags>$(PackageTags) core sdk</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Nuget Package Properties">
+    <IsPackable>true</IsPackable>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
-
-  <ItemGroup>
+  
+  <ItemGroup Label="Expose internals to test projects">
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Unit" />
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Integration" />
     <InternalsVisibleTo Include="Speckle.Sdk.Serialization.Tests" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Label="Package References">
     <PackageReference Include="GraphQL.Client"/>
     <PackageReference Include="Microsoft.CSharp" />
     <PackageReference Include="Microsoft.Data.Sqlite" />

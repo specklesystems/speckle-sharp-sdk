@@ -13,6 +13,7 @@ const string INTEGRATION = "integration";
 const string PACK = "pack";
 const string PACK_LOCAL = "pack-local";
 const string CLEAN_LOCKS = "clean-locks";
+const string PERF = "perf";
 
 Target(
   CLEAN_LOCKS,
@@ -101,6 +102,28 @@ Target(
       ;
     }
     await RunAsync("docker", "compose down").ConfigureAwait(false);
+  }
+);
+
+Target(
+  PERF,
+  Glob.Files(".", "**/*.Tests.Performance.csproj"),
+  async file =>
+  {
+    void CheckBuildDirectory(string dir, string build)
+    {
+      var binDir = Path.Combine(dir, "bin", build);
+      Console.WriteLine($"Checking: {binDir}");
+      if (Directory.Exists(binDir))
+      {
+        Directory.Delete(binDir, true);
+        Console.WriteLine($"Deleted: {binDir}");
+      }
+    }
+    var dir = Path.GetDirectoryName(file) ?? throw new InvalidOperationException();
+    CheckBuildDirectory(dir, "Release");
+    CheckBuildDirectory(dir, "Debug");
+    await RunAsync("dotnet", $"run --project {file} -c Release").ConfigureAwait(false);
   }
 );
 

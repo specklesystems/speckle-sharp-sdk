@@ -1,25 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+  <PropertyGroup Label="Compiler Properties">
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
-    <RootNamespace>Speckle.Sdk.Logging</RootNamespace>
-    <PackageId>Speckle.Sdk.Logging</PackageId>
-    <Product>Speckle.Sdk.Logging</Product>
-    <Description>The .NET Logging SDK for Speckle</Description>
-    <PackageTags>$(PackageTags) core sdk</PackageTags>
-    <IsPackable>true</IsPackable>
     <Configurations>Debug;Release;Local</Configurations>
   </PropertyGroup>
-  <PropertyGroup>
+  
+  <PropertyGroup Label="ILRepack Properties">
     <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
     <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
   </PropertyGroup>
 
-  <ItemGroup>
+  <PropertyGroup Label="Nugetspec Package Properties">
+    <PackageId>Speckle.Sdk.Logging</PackageId>
+    <Description>The .NET Logging SDK for Speckle</Description>
+    <PackageTags>$(PackageTags) core sdk</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Nuget Package Properties">
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup Label="Package References">
     <PackageReference Include="ILRepack.FullAuto">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="OpenTelemetry.Api" PrivateAssets="all"/>
   </ItemGroup>
+  
 </Project>
