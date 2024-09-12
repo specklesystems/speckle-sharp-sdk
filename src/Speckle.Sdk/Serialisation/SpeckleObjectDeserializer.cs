@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
@@ -24,6 +24,8 @@ public sealed class SpeckleObjectDeserializer
   /// </summary>
   private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
 
+  private readonly ILogger<SpeckleObjectDeserializer> _logger;
+
   public CancellationToken CancellationToken { get; set; }
 
   /// <summary>
@@ -36,6 +38,11 @@ public sealed class SpeckleObjectDeserializer
   private long _currentCount;
   private readonly HashSet<string> _ids = new();
   private long _processedCount;
+
+  public SpeckleObjectDeserializer(ILogger<SpeckleObjectDeserializer> logger)
+  {
+    _logger = logger;
+  }
 
   public string? BlobStorageFolder { get; set; }
 
@@ -247,7 +254,7 @@ public sealed class SpeckleObjectDeserializer
         catch (OverflowException ex)
         {
           var v = (object)(double)reader.Value.NotNull();
-          SpeckleLog.Logger.Debug(
+          _logger.LogDebug(
             ex,
             "Json property {tokenType} failed to deserialize {value} to {targetType}, will be deserialized as {fallbackType}",
             reader.ValueType,

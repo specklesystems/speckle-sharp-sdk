@@ -1,24 +1,13 @@
-﻿using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Serilog;
-using Serilog.Exceptions;
-using Serilog.Sinks.OpenTelemetry;
 
 namespace Speckle.Sdk.Logging;
 
-public static class LogBuilder
+public static class TracingBuilder
 {
-  public static IDisposable? Initialize(
-    string userId,
-    string applicationAndVersion,
-    string slug,
-    SpeckleLogging? speckleLogging,
-    SpeckleTracing? speckleTracing
-  )
+  public static IDisposable? Initialize(string applicationAndVersion, string slug, SpeckleTracing? speckleTracing)
   {
     var resourceBuilder = ResourceBuilder
       .CreateEmpty()
@@ -34,57 +23,8 @@ public static class LogBuilder
           new(Consts.RUNTIME_NAME, RuntimeInformation.FrameworkDescription)
         }
       );
-    var fileVersionInfo = GetFileVersionInfo();
-    var serilogLogConfiguration = new LoggerConfiguration()
-      .MinimumLevel.Is(SpeckleLogger.GetLevel(speckleLogging?.MinimumLevel ?? SpeckleLogLevel.Warning))
-      .Enrich.FromLogContext()
-      .Enrich.WithProperty("id", userId)
-      .Enrich.WithProperty("version", fileVersionInfo.FileVersion)
-      .Enrich.WithProperty("productVersion", fileVersionInfo.ProductVersion)
-      .Enrich.WithProperty("hostOs", DetermineHostOsSlug())
-      .Enrich.WithProperty("hostOsVersion", Environment.OSVersion)
-      .Enrich.WithProperty("hostOsArchitecture", RuntimeInformation.ProcessArchitecture.ToString())
-      .Enrich.WithProperty("runtime", RuntimeInformation.FrameworkDescription)
-      .Enrich.WithExceptionDetails();
 
-    if (speckleLogging?.File is not null)
-    {
-      // TODO: check if we have write permissions to the file.
-      var logFilePath = SpecklePathProvider.LogFolderPath(applicationAndVersion);
-      logFilePath = Path.Combine(logFilePath, speckleLogging.File.Path ?? "SpeckleCoreLog.txt");
-      serilogLogConfiguration = serilogLogConfiguration.WriteTo.File(
-        logFilePath,
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 10
-      );
-    }
-
-    if (speckleLogging?.Console ?? false)
-    {
-      serilogLogConfiguration = serilogLogConfiguration.WriteTo.Console();
-    }
-
-    if (speckleLogging?.Otel is not null)
-    {
-      serilogLogConfiguration = InitializeOtelLogging(serilogLogConfiguration, speckleLogging.Otel, resourceBuilder);
-    }
-    var logger = serilogLogConfiguration.CreateLogger();
-    SpeckleLog.SpeckleLogger = logger;
-
-    logger
-      .ForContext("hostApplication", applicationAndVersion)
-      .ForContext("userApplicationDataPath", SpecklePathProvider.UserApplicationDataPath())
-      .ForContext("installApplicationDataPath", SpecklePathProvider.InstallApplicationDataPath)
-      .Information(
-        "Initialized logger inside {hostApplication}/{productVersion}/{version} for user {id}. Path info {userApplicationDataPath} {installApplicationDataPath}."
-      );
     return InitializeOtelTracing(speckleTracing, resourceBuilder);
-  }
-
-  private static FileVersionInfo GetFileVersionInfo()
-  {
-    var assembly = Assembly.GetExecutingAssembly().Location;
-    return FileVersionInfo.GetVersionInfo(assembly);
   }
 
   private static string DetermineHostOsSlug()
@@ -106,19 +46,6 @@ public static class LogBuilder
 
     return RuntimeInformation.OSDescription;
   }
-
-  private static LoggerConfiguration InitializeOtelLogging(
-    LoggerConfiguration serilogLogConfiguration,
-    SpeckleOtelLogging speckleOtelLogging,
-    ResourceBuilder resourceBuilder
-  ) =>
-    serilogLogConfiguration.WriteTo.OpenTelemetry(o =>
-    {
-      o.Protocol = OtlpProtocol.HttpProtobuf;
-      o.LogsEndpoint = speckleOtelLogging.Endpoint;
-      o.Headers = speckleOtelLogging.Headers ?? o.Headers;
-      o.ResourceAttributes = resourceBuilder.Build().Attributes.ToDictionary(x => x.Key, x => x.Value);
-    });
 
   private static IDisposable? InitializeOtelTracing(SpeckleTracing? logConfiguration, ResourceBuilder resourceBuilder)
   {

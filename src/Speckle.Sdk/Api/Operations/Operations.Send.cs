@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
@@ -8,7 +9,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
-public static partial class Operations
+public  partial class Operations
 {
   /// <summary>
   /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
@@ -21,7 +22,7 @@ public static partial class Operations
   /// using ServerTransport destination = new(account, streamId);
   /// var (objectId, references) = await Send(mySpeckleObject, destination, true);
   /// </code></example>
-  public static async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
+  public  async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     ITransport transport,
     bool useDefaultCache,
@@ -58,7 +59,7 @@ public static partial class Operations
   /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
   /// <exception cref="TransportException">One or more <paramref name="transports"/> failed to send</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
-  public static async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
+  public  async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     IReadOnlyCollection<ITransport> transports,
     Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
@@ -82,7 +83,7 @@ public static partial class Operations
     activity?.SetTag("correlationId", Guid.NewGuid().ToString());
     {
       var sendTimer = Stopwatch.StartNew();
-      SpeckleLog.Logger.Debug("Starting send operation");
+      logger.LogDebug("Starting send operation");
 
       var internalProgressAction = GetInternalProgressAction(onProgressAction);
 
@@ -106,7 +107,7 @@ public static partial class Operations
           "the elapsed summary doesn't need to add up to the total elapsed... Threading magic..."
         );
         activity?.SetTag("serializerElapsed", serializerV2.Elapsed);
-        SpeckleLog.Logger.Debug(
+        logger.LogDebug(
           "Finished sending objects after {elapsed}, result {objectId}",
           sendTimer.Elapsed.TotalSeconds,
           rootObjectId
@@ -116,7 +117,7 @@ public static partial class Operations
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Logger.Information(
+        logger.LogInformation(
           ex,
           "Send operation failed after {elapsed} seconds",
           sendTimer.Elapsed.TotalSeconds
