@@ -1,15 +1,20 @@
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
 [TestFixture]
 public class CredentialInfrastructure
 {
+  private IAccountManager _accountManager;
   [OneTimeSetUp]
   public static void SetUp()
   {
+    
     s_testAccount1 = new Account
     {
       refreshToken = "bla",
@@ -42,6 +47,14 @@ public class CredentialInfrastructure
     Fixtures.UpdateOrSaveAccount(s_testAccount2);
     Fixtures.SaveLocalAccount(s_testAccount3);
   }
+  [SetUp]
+  public void Setup2()
+  {
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+    _accountManager = serviceProvider.GetRequiredService<IAccountManager>();
+  }
 
   [OneTimeTearDown]
   public static void TearDown()
@@ -58,14 +71,14 @@ public class CredentialInfrastructure
   [Test]
   public void GetAllAccounts()
   {
-    var accs = AccountManager.GetAccounts().ToList();
+    var accs = _accountManager.GetAccounts().ToList();
     Assert.That(accs, Has.Count.GreaterThanOrEqualTo(3)); // Tests are adding three accounts, you might have extra accounts on your machine when testing :D
   }
 
   [Test]
   public void GetAccount_ById()
   {
-    var result = AccountManager.GetAccount(s_testAccount1.id);
+    var result = _accountManager.GetAccount(s_testAccount1.id);
 
     Assert.That(result, Is.EqualTo(s_testAccount1));
   }
@@ -73,7 +86,7 @@ public class CredentialInfrastructure
   [Test]
   public void GetAccount_ById_ThrowsWhenNotFound()
   {
-    Assert.Throws<SpeckleAccountManagerException>(() => AccountManager.GetAccount("Non_existent_id"));
+    Assert.Throws<SpeckleAccountManagerException>(() => _accountManager.GetAccount("Non_existent_id"));
   }
 
   public static IEnumerable<Account> TestCases()
@@ -86,7 +99,7 @@ public class CredentialInfrastructure
   [TestCaseSource(nameof(TestCases))]
   public void GetAccountsForServer(Account target)
   {
-    var accs = AccountManager.GetAccounts(target.serverInfo.url).ToList();
+    var accs = _accountManager.GetAccounts(target.serverInfo.url).ToList();
 
     Assert.That(accs, Has.Count.EqualTo(1));
 

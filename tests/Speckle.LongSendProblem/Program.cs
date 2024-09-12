@@ -1,4 +1,7 @@
-﻿using Speckle.Objects.Geometry;
+﻿
+Console.WriteLine("unused");
+/*using Microsoft.Extensions.DependencyInjection;
+using Speckle.Objects.Geometry;
 using Speckle.Sdk;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
@@ -15,16 +18,17 @@ const string OBJECT_ID = "5cbf84a0061172102ef8a66ae914f232";
 
 SetupSpeckle();
 var testData = await GetSampleData(OBJECT_ID).ConfigureAwait(false);
-await SendToSpeckle(testData, modelUrl).ConfigureAwait(false);
+
+await SendToSpeckle(operations, testData, modelUrl).ConfigureAwait(false);
 
 return;
 
-static async Task SendToSpeckle(Base testData, Uri modelUrl)
+static async Task SendToSpeckle(IOperations operations, Base testData, Uri modelUrl)
 {
   SpeckleLog.Logger.Information("Starting Long Send Test Send");
   var destinationTransport = await GetDestination(modelUrl).ConfigureAwait(false);
 
-  var (res, _) = await Operations.Send(testData, new[] { destinationTransport }).ConfigureAwait(false);
+  var (res, _) = await operations.Send(testData, new[] { destinationTransport }).ConfigureAwait(false);
   SpeckleLog.Logger.Information("Starting Send was successful: {objectId}", res);
 }
 
@@ -68,3 +72,4 @@ static void SetupSpeckle()
   );
   Setup.Initialize(config);
 }
+*/

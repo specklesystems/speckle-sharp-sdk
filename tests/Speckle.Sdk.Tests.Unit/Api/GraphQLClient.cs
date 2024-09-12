@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using GraphQL;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Api;
 
@@ -16,7 +18,10 @@ public sealed class GraphQLClientTests : IDisposable
   [OneTimeSetUp]
   public void Setup()
   {
-    _client = new Client(
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+    _client = serviceProvider.GetRequiredService<IClientFactory>().Create(
       new Account
       {
         token = "this is a scam",

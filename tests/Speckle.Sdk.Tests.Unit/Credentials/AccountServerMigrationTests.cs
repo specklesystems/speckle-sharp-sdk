@@ -1,6 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
@@ -40,8 +42,11 @@ public class AccountServerMigrationTests
   public void TestServerMigration(IList<Account> accounts, string requestedUrl, IList<Account> expectedSequence)
   {
     AddAccounts(accounts);
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
+    var serviceProvider = serviceCollection.BuildServiceProvider();
 
-    var result = AccountManager.GetAccounts(requestedUrl).ToList();
+    var result =  serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
 
     Assert.That(result, Is.EquivalentTo(expectedSequence));
   }

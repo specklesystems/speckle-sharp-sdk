@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
@@ -51,7 +52,7 @@ public class SerializationTests
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var closure = await ReadAsObjects(fullName);
-    var deserializer = new SpeckleObjectDeserializer
+    var deserializer = new SpeckleObjectDeserializer(new NullLogger<SpeckleObjectDeserializer>())
     {
       ReadTransport = new TestTransport(closure),
       CancellationToken = default

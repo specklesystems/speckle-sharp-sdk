@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Transports;
 [ExcludeFromCodeCoverage] //factories don't need coverage
 public class ServerTransportFactory(ISpeckleHttp http, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory, IActivityFactory activityFactory) : IServerTransportFactory
 {
-  public IServerTransport Create(
+  public ServerTransport Create(
     Account account,
     string streamId,
     int timeoutSeconds = 60,

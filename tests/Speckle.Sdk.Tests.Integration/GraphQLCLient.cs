@@ -1,6 +1,9 @@
 using GraphQL;
+using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Integration;
 
@@ -8,12 +11,19 @@ public class GraphQLClientTests : IDisposable
 {
   private Account _account;
   private Client _client;
+  private IOperations _operations;
 
-  [OneTimeSetUp]
+  [SetUp]
   public async Task Setup()
   {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
     _account = await Fixtures.SeedUser();
-    _client = new Client(_account);
+    _client = serviceProvider.GetRequiredService<IClientFactory>().Create(_account);
   }
 
   [Test]
