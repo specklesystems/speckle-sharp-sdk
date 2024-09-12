@@ -26,7 +26,7 @@ namespace Speckle.Sdk.Credentials;
 /// Manage accounts locally for desktop applications.
 /// </summary>
 [GenerateAutoInterface]
-public class AccountManager(ILogger<AccountManager> logger, ISpeckleHttp speckleHttp) : IAccountManager
+public class AccountManager(ISpeckleApplication application, ILogger<AccountManager> logger, ISpeckleHttp speckleHttp) : IAccountManager
 {
   public const string DEFAULT_SERVER_URL = "https://app.speckle.systems";
 
@@ -649,7 +649,7 @@ public class AccountManager(ILogger<AccountManager> logger, ISpeckleHttp speckle
     }
   }
 
-  private static void TryLockAccountAddFlow(TimeSpan timespan)
+  private static void TryLockAccountAddFlow(ISpeckleApplication application, TimeSpan timespan)
   {
     // use a static variable to quickly
     // prevent launching this flow multiple times
@@ -680,7 +680,7 @@ public class AccountManager(ILogger<AccountManager> logger, ISpeckleHttp speckle
       }
     }
 
-    var lockId = Setup.ApplicationVersion + "@" + DateTime.Now.Add(timespan).ToString("o");
+    var lockId = application.ApplicationVersion + "@" + DateTime.Now.Add(timespan).ToString("o");
 
     // using the lock release time as an id and value
     // for ease of deletion and retrieval
@@ -713,7 +713,7 @@ public class AccountManager(ILogger<AccountManager> logger, ISpeckleHttp speckle
     var timeout = TimeSpan.FromMinutes(1);
     // this is not part of the try finally block
     // we do not want to clean up the existing locks
-    TryLockAccountAddFlow(timeout);
+    TryLockAccountAddFlow(application, timeout);
     var challenge = GenerateChallenge();
 
     try

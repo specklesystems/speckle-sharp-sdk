@@ -12,6 +12,7 @@ namespace Speckle.Sdk.Transports.ServerUtils;
 
 public sealed class ServerApi : IDisposable, IServerApi
 {
+  private readonly IActivityFactory _activityFactory;
   private const int BATCH_SIZE_GET_OBJECTS = 10000;
   private const int BATCH_SIZE_HAS_OBJECTS = 100000;
 
@@ -26,8 +27,9 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   private readonly HttpClient _client;
 
-  public ServerApi(ISpeckleHttp http, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory, Uri baseUri, string? authorizationToken, string blobStorageFolder, int timeoutSeconds = 120)
+  public ServerApi(ISpeckleHttp http, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,IActivityFactory activityFactory, Uri baseUri, string? authorizationToken, string blobStorageFolder, int timeoutSeconds = 120)
   {
+    _activityFactory = activityFactory;
     CancellationToken = CancellationToken.None;
 
     BlobStorageFolder = blobStorageFolder;
@@ -53,7 +55,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   public async Task<string?> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
   {
-    using var _ = SpeckleActivityFactory.Start();
+    using var _ = _activityFactory.Start();
     CancellationToken.ThrowIfCancellationRequested();
 
     // Get root object
@@ -83,7 +85,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       return;
     }
-    using var _ = SpeckleActivityFactory.Start();
+    using var _ = _activityFactory.Start();
 
     if (objectIds.Count < BATCH_SIZE_GET_OBJECTS)
     {

@@ -21,6 +21,7 @@ namespace Speckle.Sdk.Api;
 public sealed class Client : ISpeckleGraphQLClient, IDisposable
 {
   private readonly ILogger<Client> _logger;
+  private readonly IActivityFactory _activityFactory;
   public ProjectResource Project { get; }
   public ModelResource Model { get; }
   public VersionResource Version { get; }
@@ -41,9 +42,11 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
 
   /// <param name="account"></param>
   /// <exception cref="ArgumentException"><paramref name="account"/> was null</exception>
-  public Client(ILogger<Client> logger, ISpeckleHttp speckleHttp, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory, Account account)
+  public Client(ILogger<Client> logger, IActivityFactory activityFactory, 
+    ISpeckleApplication application, ISpeckleHttp speckleHttp, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory, Account account)
   {
     _logger = logger;
+    _activityFactory = activityFactory;
     Account = account ?? throw new ArgumentException("Provided account is null.");
 
     Project = new(this);
@@ -55,7 +58,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     Comment = new(this);
     Subscription = new(this);
 
-    HttpClient = CreateHttpClient(speckleHttp, speckleHttpClientHandlerFactory, account);
+    HttpClient = CreateHttpClient(application, speckleHttp, speckleHttpClientHandlerFactory, account);
 
     GQLClient = CreateGraphQLClient(speckleHttp, account, HttpClient);
   }
@@ -95,7 +98,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
-    using var activity = SpeckleActivityFactory.Start();
+    using var activity = _activityFactory.Start();
     try
     {
       var ret = await ExecuteWithResiliencePolicies(async () =>
@@ -312,12 +315,12 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     return gQLClient;
   }
 
-  private static HttpClient CreateHttpClient(ISpeckleHttp http, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory, Account account)
+  private static HttpClient CreateHttpClient(ISpeckleApplication application, ISpeckleHttp http, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory, Account account)
   {
     var httpClient = http.GetHttpProxyClient(speckleHttpClientHandlerFactory.Create(timeoutSeconds: 30));
     http.AddAuthHeader(httpClient, account.token);
 
-    httpClient.DefaultRequestHeaders.Add("apollographql-client-name", Setup.ApplicationVersion);
+    httpClient.DefaultRequestHeaders.Add("apollographql-client-name", application.ApplicationVersion);
     httpClient.DefaultRequestHeaders.Add(
       "apollographql-client-version",
       Assembly.GetExecutingAssembly().GetName().Version?.ToString()

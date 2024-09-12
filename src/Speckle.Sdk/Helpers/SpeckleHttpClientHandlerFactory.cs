@@ -4,11 +4,12 @@ using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 using Polly.Timeout;
 using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Helpers;
 
 [GenerateAutoInterface]
-public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory) : ISpeckleHttpClientHandlerFactory
+public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory,  IActivityFactory activityFactory) : ISpeckleHttpClientHandlerFactory
 {
   public const int DEFAULT_TIMEOUT_SECONDS = 60;
 
@@ -45,7 +46,7 @@ public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory
   int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
   ) =>
     new(
-      innerHandler ?? new HttpClientHandler(),
+      innerHandler ?? new HttpClientHandler(),activityFactory,
       resiliencePolicy ?? HttpAsyncPolicy(timeoutSeconds:timeoutSeconds),
       loggerFactory.CreateLogger<SpeckleHttpClientHandler>()
     );

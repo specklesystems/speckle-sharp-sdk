@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -9,7 +10,7 @@ namespace Speckle.Sdk.Api;
 /// <para>Serialize/Deserialize</para>
 /// <para>Push/Pull (methods to serialize and send data to one or more servers)</para>
 /// </summary>
-public partial class Operations(ILogger<Operations> logger, ILoggerFactory loggerFactory)
+public partial class Operations(ILogger<Operations> logger, IActivityFactory activityFactory, ILoggerFactory loggerFactory)
 {
   /// <summary>
   /// Factory for progress actions used internally inside send and receive methods.

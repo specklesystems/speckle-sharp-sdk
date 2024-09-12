@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
@@ -67,7 +66,7 @@ public  partial class Operations
       };
 
     // Setup Logging
-    using var receiveActivity = SpeckleActivityFactory.Start();
+    using var receiveActivity = activityFactory.Start();
     receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
     receiveActivity?.SetTag("localTransportContext", localTransport.TransportContext);
     receiveActivity?.SetTag("objectId", objectId);
@@ -104,7 +103,7 @@ public  partial class Operations
         .ConfigureAwait(false);
     }
 
-    using var activity = SpeckleActivityFactory.Start("Deserialize");
+    using var activity = activityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
     Base res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
 

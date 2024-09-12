@@ -10,14 +10,16 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
 {
   private readonly IAsyncPolicy<HttpResponseMessage> _resiliencePolicy;
   private readonly ILogger<SpeckleHttpClientHandler> _logger;
+  private readonly IActivityFactory _activityFactory;
 
   public SpeckleHttpClientHandler(
-    HttpMessageHandler innerHandler,
+    HttpMessageHandler innerHandler,IActivityFactory activityFactory,
     IAsyncPolicy<HttpResponseMessage> resiliencePolicy,
     ILogger<SpeckleHttpClientHandler> logger
   )
     : base(innerHandler)
   {
+    _activityFactory = activityFactory;
     _resiliencePolicy = resiliencePolicy;
     _logger = logger;
   }
@@ -33,7 +35,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
     // refactor this, when we have a better observability stack
     var sw = Stopwatch.StartNew();
     var context = new Context();
-    using var activity = SpeckleActivityFactory.Start("Http Send");
+    using var activity = _activityFactory.Start("Http Send");
     {
       _logger.LogDebug(
         "Starting execution of http request to {targetUrl} {correlationId} {traceId}",
