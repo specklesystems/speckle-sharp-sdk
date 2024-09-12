@@ -1,5 +1,6 @@
 ﻿using System.Threading.Channels;
 using Open.ChannelExtensions;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
@@ -24,6 +25,8 @@ public sealed class SendProcess : IDisposable
   }
 
   private long _requested;
+  private Serialized? _rootObjectSerialized;
+  private Base? _rootObject;
   public Channel<Base> SourceChannel { get; }
   public SerializeStage SerializeStage { get; set; }
   public SendStage SendStage { get; set; }
@@ -39,28 +42,25 @@ public sealed class SendProcess : IDisposable
       ]
     );
 
-  public async ValueTask Finish() => await SourceChannel.CompleteAsync().ConfigureAwait(false);
 
-  public async Task<long> Start(Action<ProgressArgs[]>? progress, CancellationToken cancellationToken)
-  {
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> SaveObject(Base rootObject, Action<ProgressArgs[]>? progress, CancellationToken cancellationToken)
+  { 
     Progress = progress;
+    _rootObject = rootObject;
 
-    var count = await SourceChannel
+    var sourceTask = SourceChannel
       .PipeAsync(_settings.MaxSerializeThreads, OnSerialize, cancellationToken: cancellationToken)
       .Batch(_settings.MaxObjectRequestSize)
       .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
       .ReadAllAsync(cancellationToken, OnSend)
       .ConfigureAwait(false);
 
-    Console.WriteLine($"Really Done? {count}");
-    return count;
-  }
-
-  public async Task SaveObject(Base @base, CancellationToken cancellationToken)
-  {
-    await SourceChannel.Writer.WriteAsync(@base, cancellationToken).ConfigureAwait(false);
+    await SourceChannel.Writer.WriteAsync(rootObject, cancellationToken).ConfigureAwait(false);
     _requested++;
+    var count = await sourceTask;
+    Console.WriteLine($"Really Done? {count}");
     InvokeProgress();
+    return (_rootObjectSerialized.NotNull().Id, _rootObjectSerialized.ConvertedReferences);
   }
 
   private async ValueTask<Serialized> OnSerialize(Base @base)
@@ -74,6 +74,12 @@ public sealed class SendProcess : IDisposable
   {
     await SendStage.Execute(serialized).ConfigureAwait(false);
     InvokeProgress();
+    var root = serialized.FirstOrDefault(x => x.BaseObject == _rootObject);
+    if (root is not null)
+    {
+      _rootObjectSerialized = root;
+      SourceChannel.Writer.Complete();
+    }
   }
 
   public void Dispose() => SendStage.Dispose();

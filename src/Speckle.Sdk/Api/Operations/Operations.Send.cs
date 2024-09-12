@@ -1,15 +1,29 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
 public static partial class Operations
 {
+  public static async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send2(
+    Account account,
+    string streamId,
+    Base value,
+    Action<ProgressArgs[]>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    using var stage = new SendProcess(new Uri(account.serverInfo.url), streamId, account.token);
+    return await stage.SaveObject(value, onProgressAction, cancellationToken).ConfigureAwait(false);
+  }
+  
   /// <summary>
   /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
   /// </summary>

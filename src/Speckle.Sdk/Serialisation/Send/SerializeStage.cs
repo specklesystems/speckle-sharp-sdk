@@ -2,7 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.Send;
 
-public record Serialized(string Id, string Json);
+public record Serialized(string Id, string Json, Base BaseObject, IReadOnlyDictionary<string, ObjectReference> ConvertedReferences);
 
 public class SerializeStage
 {
@@ -13,6 +13,6 @@ public class SerializeStage
     var serializer = new SpeckleObjectSerializer2();
     var json = await serializer.SerializeAsync(@base).ConfigureAwait(false);
     Serialized++;
-    return new(@base.id, json);
+    return new(@base.id, json, @base, serializer.ObjectReferences);
   }
 }
