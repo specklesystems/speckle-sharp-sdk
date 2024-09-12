@@ -4,19 +4,11 @@ using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public record Deserialized(string Id, string Json, Base BaseObject);
+public record Deserialized(string Id, Base BaseObject);
 
-public class DeserializeStage
+public class DeserializeStage(ConcurrentDictionary<string, Base> cache, Func<string, ValueTask> gatherId)
 {
   private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _closures = new();
-  private readonly ConcurrentDictionary<string, Base> _cache;
-  private readonly Func<string, ValueTask> _gatherId;
-
-  public DeserializeStage(ConcurrentDictionary<string, Base> cache, Func<string, ValueTask> gatherId)
-  {
-    _cache = cache;
-    _gatherId = gatherId;
-  }
 
   public long Deserialized { get; private set; }
 
@@ -32,32 +24,32 @@ public class DeserializeStage
     bool anyNotFound = false;
     foreach (var c in closures)
     {
-      if (_cache.TryGetValue(c, out var cached))
+      if (cache.TryGetValue(c, out var cached))
       {
         closureBases.Add(c, cached);
       }
       else
       {
-        await _gatherId(c).ConfigureAwait(false);
+        await gatherId(c).ConfigureAwait(false);
         anyNotFound = true;
       }
     }
 
     if (anyNotFound)
     {
-      await _gatherId(message.Id).ConfigureAwait(false);
+      await gatherId(message.Id).ConfigureAwait(false);
       return null;
     }
 
     var @base = await Deserialise(closureBases, message.Id, message.Json).ConfigureAwait(false);
     _closures.TryRemove(message.Id, out _);
     Deserialized++;
-    return new(message.Id, message.Json, @base);
+    return new(message.Id,  @base);
   }
 
   private async ValueTask<Base> Deserialise(IReadOnlyDictionary<string, Base> dictionary, string id, string json)
   {
-    if (_cache.TryGetValue(id, out var baseObject))
+    if (cache.TryGetValue(id, out var baseObject))
     {
       return baseObject;
     }
