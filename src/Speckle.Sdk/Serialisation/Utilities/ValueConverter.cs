@@ -5,7 +5,6 @@ using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 

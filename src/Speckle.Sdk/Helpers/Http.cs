@@ -1,13 +1,9 @@
 using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 using Polly.Timeout;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Helpers;
 
@@ -26,16 +22,16 @@ public static class Http
   )
   {
     var retryPolicy = HttpPolicyExtensions
-      .HandleTransientHttpError()
-      .Or<TimeoutRejectedException>()
-      .WaitAndRetryAsync(
-        delay ?? DefaultDelay(),
-        (ex, timeSpan, retryAttempt, context) =>
-        {
-          context.Remove("retryCount");
-          context.Add("retryCount", retryAttempt);
-        }
-      );
+                     .HandleTransientHttpError()
+                     .Or<TimeoutRejectedException>()
+                     .WaitAndRetryAsync(
+                        delay ?? DefaultDelay(),
+                        (ex, timeSpan, retryAttempt, context) =>
+                        {
+                          context.Remove("retryCount");
+                          context.Add("retryCount", retryAttempt);
+                        }
+                      );
 
     var timeoutPolicy = Policy.TimeoutAsync<HttpResponseMessage>(timeoutSeconds);
 
@@ -80,7 +76,12 @@ public static class Http
   {
     if (!string.IsNullOrEmpty(authToken))
     {
-      bearerHeader = authToken.NotNull().ToLowerInvariant().Contains("bearer") ? authToken : $"Bearer {authToken}";
+#if NET6_0_OR_GREATER
+      bearerHeader =
+        authToken.NotNull().Contains("bearer", StringComparison.OrdinalIgnoreCase) ? authToken : $"Bearer {authToken}";
+#else
+      bearerHeader = authToken.NotNull().IndexOf("bearer", StringComparison.OrdinalIgnoreCase) != -1 ? authToken : $"Bearer {authToken}";
+#endif
       return true;
     }
 

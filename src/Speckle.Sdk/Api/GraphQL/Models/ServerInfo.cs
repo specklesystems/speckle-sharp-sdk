@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-
-namespace Speckle.Sdk.Api.GraphQL.Models;
+﻿namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public sealed class ServerInfo
 {

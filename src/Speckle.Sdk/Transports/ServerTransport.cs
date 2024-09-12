@@ -41,7 +41,7 @@ public sealed class ServerTransport : IServerTransport
     AuthorizationToken = account.token;
     TimeoutSeconds = timeoutSeconds;
     BlobStorageFolder = blobStorageFolder ?? SpecklePathProvider.BlobStoragePath();
-    Initialize(account.serverInfo.url);
+    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
 
     Directory.CreateDirectory(BlobStorageFolder);
   }
@@ -262,11 +262,6 @@ public sealed class ServerTransport : IServerTransport
     _shouldSendThreadRun = false;
     _sendingThread.Join();
     _sendingThread = null;
-  }
-
-  private void Initialize(string baseUri)
-  {
-    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
   }
 
   public override string ToString()

@@ -1,6 +1,5 @@
 using System.Collections;
 using Speckle.Sdk.Logging;
-using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.Extensions;
 
 namespace Speckle.Sdk.Models;
@@ -18,7 +17,6 @@ public abstract class CommitObjectBuilder<TNativeObjectData>
 {
   /// <summary>Special appId symbol for the root object</summary>
   protected const string ROOT = "__Root";
-  private const string ELEMENTS = nameof(Collection.elements);
 
   /// <summary>app id -> base</summary>
   protected IDictionary<string, Base> Converted { get; }
