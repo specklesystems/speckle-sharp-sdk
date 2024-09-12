@@ -7,6 +7,7 @@ using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
+using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Resources;
@@ -16,6 +17,16 @@ using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Api;
+
+[GenerateAutoInterface]
+public class ClientFactory(ILoggerFactory loggerFactory, IActivityFactory activityFactory, 
+  ISpeckleApplication application, ISpeckleHttp speckleHttp, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory) : IClientFactory
+{
+  public Client Create(Account account)
+  {
+    return new Client(loggerFactory.CreateLogger<Client>(), activityFactory, application, speckleHttp, speckleHttpClientHandlerFactory, account);
+  }
+}
 
 [SuppressMessage("Maintainability", "CA1506:Avoid excessive class coupling", Justification = "Class needs refactor")]
 public sealed class Client : ISpeckleGraphQLClient, IDisposable
