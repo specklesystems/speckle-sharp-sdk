@@ -49,7 +49,7 @@ public sealed class SendProcess : IDisposable
     _rootObject = rootObject;
 
     var sourceTask = SourceChannel
-      .PipeAsync(_settings.MaxSerializeThreads, OnSerialize, cancellationToken: cancellationToken)
+      .Pipe(_settings.MaxSerializeThreads, OnSerialize, cancellationToken: cancellationToken)
       .Batch(_settings.MaxObjectRequestSize)
       .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
       .ReadAllAsync(cancellationToken, OnSend)
@@ -63,9 +63,9 @@ public sealed class SendProcess : IDisposable
     return (_rootObjectSerialized.NotNull().Id, _rootObjectSerialized.ConvertedReferences);
   }
 
-  private async ValueTask<Serialized> OnSerialize(Base @base)
+  private Serialized OnSerialize(Base @base)
   {
-    var serialized = await SerializeStage.Execute(@base).ConfigureAwait(false);
+    var serialized = SerializeStage.Execute(@base);
     InvokeProgress();
     return serialized;
   }

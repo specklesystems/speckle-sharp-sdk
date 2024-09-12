@@ -60,7 +60,6 @@ public class SpeckleObjectSerializer2
       try
       {
         var result = SerializeBase(baseObj, true, default, forceAttach).NotNull();
-        StoreObject(result.Id.NotNull(), result.Json);
         return result.Json;
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)

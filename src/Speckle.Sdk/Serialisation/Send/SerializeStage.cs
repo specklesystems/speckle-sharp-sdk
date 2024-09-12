@@ -8,10 +8,10 @@ public class SerializeStage
 {
   public long Serialized { get; private set; }
 
-  public async ValueTask<Serialized> Execute(Base @base)
+  public Serialized Execute(Base @base)
   {
     var serializer = new SpeckleObjectSerializer2();
-    var json = await serializer.SerializeAsync(@base).ConfigureAwait(false);
+    var json = serializer.Serialize(@base);
     Serialized++;
     return new(@base.id, json, @base, serializer.ObjectReferences);
   }
