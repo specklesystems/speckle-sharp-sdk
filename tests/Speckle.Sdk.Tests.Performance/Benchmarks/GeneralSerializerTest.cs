@@ -21,10 +21,13 @@ public class GeneralSerializerTest
   [GlobalSetup]
   public async Task Setup()
   {
+    var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
+
+//var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     using var dataSource = new TestDataHelper();
     await dataSource
-      .SeedTransport(new("https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"))
+      .SeedTransport(new(url))
       .ConfigureAwait(false);
 
     SpeckleObjectDeserializer deserializer = new() { ReadTransport = dataSource.Transport };
@@ -33,11 +36,11 @@ public class GeneralSerializerTest
   }
 
   [Benchmark]
-  public async Task<string> RunTest()
+  public string RunTest()
   {
     var remote = new NullTransport();
     SpeckleObjectSerializer sut = new([remote]);
-    var x = await sut.SerializeAsync(_testData);
+    var x = sut.Serialize(_testData);
     return x;
   }
 }
