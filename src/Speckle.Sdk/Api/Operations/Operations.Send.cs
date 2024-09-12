@@ -8,7 +8,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
-public  partial class Operations
+public partial class Operations
 {
   /// <summary>
   /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
@@ -21,7 +21,7 @@ public  partial class Operations
   /// using ServerTransport destination = new(account, streamId);
   /// var (objectId, references) = await Send(mySpeckleObject, destination, true);
   /// </code></example>
-  public  async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     ITransport transport,
     bool useDefaultCache,
@@ -58,7 +58,7 @@ public  partial class Operations
   /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
   /// <exception cref="TransportException">One or more <paramref name="transports"/> failed to send</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
-  public  async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     IReadOnlyCollection<ITransport> transports,
     Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
@@ -116,11 +116,7 @@ public  partial class Operations
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        logger.LogInformation(
-          ex,
-          "Send operation failed after {elapsed} seconds",
-          sendTimer.Elapsed.TotalSeconds
-        );
+        logger.LogInformation(ex, "Send operation failed after {elapsed} seconds", sendTimer.Elapsed.TotalSeconds);
         if (ex is OperationCanceledException or SpeckleException)
         {
           throw;

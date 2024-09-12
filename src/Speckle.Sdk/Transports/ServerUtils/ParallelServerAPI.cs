@@ -30,7 +30,10 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
   private readonly int _timeoutSeconds;
 
-  public ParallelServerApi(ISpeckleHttp http, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory, IActivityFactory activityFactory,
+  public ParallelServerApi(
+    ISpeckleHttp http,
+    ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
+    IActivityFactory activityFactory,
     Uri baseUri,
     string authorizationToken,
     string blobStorageFolder,
@@ -212,7 +215,16 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
   protected override void ThreadMain()
   {
-    using ServerApi serialApi = new(_http, _speckleHttpClientHandlerFactory, _activityFactory, _baseUri, _authToken, BlobStorageFolder, _timeoutSeconds);
+    using ServerApi serialApi =
+      new(
+        _http,
+        _speckleHttpClientHandlerFactory,
+        _activityFactory,
+        _baseUri,
+        _authToken,
+        BlobStorageFolder,
+        _timeoutSeconds
+      );
     serialApi.CancellationToken = CancellationToken;
     serialApi.CompressPayloads = CompressPayloads;
 

@@ -4,7 +4,6 @@ namespace Speckle.Sdk;
 
 public static class ScrutorFunctions
 {
-
   public static bool IsNonAbstractClass(this Type type)
   {
     if (type.IsSpecialName)
@@ -24,15 +23,18 @@ public static class ScrutorFunctions
 
     return false;
   }
-  public static bool HasAttribute<T>(this Type type) where T : Attribute
+
+  public static bool HasAttribute<T>(this Type type)
+    where T : Attribute
   {
     return type.HasAttribute(typeof(T));
   }
+
   public static bool HasAttribute(this Type type, Type attributeType)
   {
     return type.IsDefined(attributeType, inherit: true);
   }
-  
+
   public static IEnumerable<Type> FindMatchingInterface(this Type type)
   {
     var matchingInterfaceName = $"I{type.Name}";
@@ -55,7 +57,7 @@ public static class ScrutorFunctions
 
     yield return matchingType;
   }
-  
+
   private static IEnumerable<Type> GetImplementedInterfacesToMap(Type type)
   {
     if (!type.IsGenericType)
@@ -70,20 +72,24 @@ public static class ScrutorFunctions
 
     return FilterMatchingGenericInterfaces(type);
   }
-  
+
   private static IEnumerable<Type> FilterMatchingGenericInterfaces(Type type)
   {
     var genericArguments = type.GetGenericArguments();
 
     foreach (var current in type.GetInterfaces())
     {
-      if (current.IsGenericType && current.ContainsGenericParameters && GenericParametersMatch(genericArguments, current.GetGenericArguments()))
+      if (
+        current.IsGenericType
+        && current.ContainsGenericParameters
+        && GenericParametersMatch(genericArguments, current.GetGenericArguments())
+      )
       {
         yield return current.GetGenericTypeDefinition();
       }
     }
   }
-  
+
   private static bool GenericParametersMatch(IReadOnlyList<Type> parameters, IReadOnlyList<Type> interfaceArguments)
   {
     if (parameters.Count != interfaceArguments.Count)
@@ -101,5 +107,4 @@ public static class ScrutorFunctions
 
     return true;
   }
-
 }

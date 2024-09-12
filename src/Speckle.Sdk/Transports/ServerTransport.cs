@@ -32,8 +32,15 @@ public sealed class ServerTransport : IServerTransport
   /// <param name="timeoutSeconds"></param>
   /// <param name="blobStorageFolder">Defaults to <see cref="SpecklePathProvider.BlobStoragePath"/></param>
   /// <exception cref="ArgumentException"><paramref name="streamId"/> was not formatted as valid stream id</exception>
-  public ServerTransport(ISpeckleHttp http, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
-    IActivityFactory activityFactory, Account account, string streamId, int timeoutSeconds = 60, string? blobStorageFolder = null)
+  public ServerTransport(
+    ISpeckleHttp http,
+    ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
+    IActivityFactory activityFactory,
+    Account account,
+    string streamId,
+    int timeoutSeconds = 60,
+    string? blobStorageFolder = null
+  )
   {
     if (string.IsNullOrWhiteSpace(streamId))
     {
@@ -50,7 +57,15 @@ public sealed class ServerTransport : IServerTransport
     AuthorizationToken = account.token;
     TimeoutSeconds = timeoutSeconds;
     BlobStorageFolder = blobStorageFolder ?? SpecklePathProvider.BlobStoragePath();
-    Api = new ParallelServerApi(http, speckleHttpClientHandlerFactory, activityFactory, BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
+    Api = new ParallelServerApi(
+      http,
+      speckleHttpClientHandlerFactory,
+      activityFactory,
+      BaseUri,
+      AuthorizationToken,
+      BlobStorageFolder,
+      TimeoutSeconds
+    );
 
     Directory.CreateDirectory(BlobStorageFolder);
   }
@@ -83,7 +98,15 @@ public sealed class ServerTransport : IServerTransport
 
   public object Clone()
   {
-    return new ServerTransport(_http, _speckleHttpClientHandlerFactory, _activityFactory, Account, StreamId, TimeoutSeconds, BlobStorageFolder)
+    return new ServerTransport(
+      _http,
+      _speckleHttpClientHandlerFactory,
+      _activityFactory,
+      Account,
+      StreamId,
+      TimeoutSeconds,
+      BlobStorageFolder
+    )
     {
       OnProgressAction = OnProgressAction,
       CancellationToken = CancellationToken,
@@ -129,7 +152,16 @@ public sealed class ServerTransport : IServerTransport
 
     CancellationToken.ThrowIfCancellationRequested();
 
-    using ParallelServerApi api = new(_http, _speckleHttpClientHandlerFactory,_activityFactory,BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
+    using ParallelServerApi api =
+      new(
+        _http,
+        _speckleHttpClientHandlerFactory,
+        _activityFactory,
+        BaseUri,
+        AuthorizationToken,
+        BlobStorageFolder,
+        TimeoutSeconds
+      );
 
     var stopwatch = Stopwatch.StartNew();
     api.CancellationToken = CancellationToken;

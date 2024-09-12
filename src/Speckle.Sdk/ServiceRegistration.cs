@@ -7,14 +7,13 @@ using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk;
 
-
 [GenerateAutoInterface]
 public class SpeckleApplication : ISpeckleApplication
 {
-  public string Application { get; init; } 
-  public string Version { get; init; } 
-  public string Slug{ get; init; }
-  
+  public string Application { get; init; }
+  public string Version { get; init; }
+  public string Slug { get; init; }
+
   public string ApplicationVersion => $"{Application} {Version}";
 }
 
@@ -32,10 +31,8 @@ public static class ServiceRegistration
       new SpeckleApplication
       {
         Application = application,
-        Version = 
-          HostApplications.GetVersion(configuration.Version),
+        Version = HostApplications.GetVersion(configuration.Version),
         Slug = configuration.Application.Slug
-        
       }
     );
     serviceCollection.AddSingleton<IActivityFactory, ActivityFactory>();

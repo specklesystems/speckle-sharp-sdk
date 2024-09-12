@@ -26,7 +26,8 @@ namespace Speckle.Sdk.Credentials;
 /// Manage accounts locally for desktop applications.
 /// </summary>
 [GenerateAutoInterface]
-public class AccountManager(ISpeckleApplication application, ILogger<AccountManager> logger, ISpeckleHttp speckleHttp) : IAccountManager
+public class AccountManager(ISpeckleApplication application, ILogger<AccountManager> logger, ISpeckleHttp speckleHttp)
+  : IAccountManager
 {
   public const string DEFAULT_SERVER_URL = "https://app.speckle.systems";
 

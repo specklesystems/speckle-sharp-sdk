@@ -11,6 +11,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 public class SimpleRoundTripTests
 {
   private IOperations _operations;
+
   static SimpleRoundTripTests()
   {
     Reset();
@@ -35,12 +36,15 @@ public class SimpleRoundTripTests
   }
 
   [SetUp]
-  public void Setup() { Reset(); 
-    
+  public void Setup()
+  {
+    Reset();
+
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
     var serviceProvider = serviceCollection.BuildServiceProvider();
-    _operations = serviceProvider.GetRequiredService<IOperations>();}
+    _operations = serviceProvider.GetRequiredService<IOperations>();
+  }
 
   [TestCaseSource(nameof(TestData))]
   public async Task SimpleSerialization(Base testData)

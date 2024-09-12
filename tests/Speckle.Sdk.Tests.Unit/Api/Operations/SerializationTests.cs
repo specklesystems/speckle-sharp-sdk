@@ -16,6 +16,7 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 public class ObjectSerialization
 {
   private IOperations _operations;
+
   [SetUp]
   public void Setup()
   {

@@ -19,12 +19,24 @@ using Speckle.Sdk.Logging;
 namespace Speckle.Sdk.Api;
 
 [GenerateAutoInterface]
-public class ClientFactory(ILoggerFactory loggerFactory, IActivityFactory activityFactory, 
-  ISpeckleApplication application, ISpeckleHttp speckleHttp, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory) : IClientFactory
+public class ClientFactory(
+  ILoggerFactory loggerFactory,
+  IActivityFactory activityFactory,
+  ISpeckleApplication application,
+  ISpeckleHttp speckleHttp,
+  ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory
+) : IClientFactory
 {
   public Client Create(Account account)
   {
-    return new Client(loggerFactory.CreateLogger<Client>(), activityFactory, application, speckleHttp, speckleHttpClientHandlerFactory, account);
+    return new Client(
+      loggerFactory.CreateLogger<Client>(),
+      activityFactory,
+      application,
+      speckleHttp,
+      speckleHttpClientHandlerFactory,
+      account
+    );
   }
 }
 
@@ -53,8 +65,14 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
 
   /// <param name="account"></param>
   /// <exception cref="ArgumentException"><paramref name="account"/> was null</exception>
-  public Client(ILogger<Client> logger, IActivityFactory activityFactory, 
-    ISpeckleApplication application, ISpeckleHttp speckleHttp, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory, Account account)
+  public Client(
+    ILogger<Client> logger,
+    IActivityFactory activityFactory,
+    ISpeckleApplication application,
+    ISpeckleHttp speckleHttp,
+    ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
+    Account account
+  )
   {
     _logger = logger;
     _activityFactory = activityFactory;
@@ -303,7 +321,9 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
         WebSocketProtocol = "graphql-ws",
         ConfigureWebSocketConnectionInitPayload = _ =>
         {
-          return speckleHttp.CanAddAuth(account.token, out string? authValue) ? new { Authorization = authValue } : null;
+          return speckleHttp.CanAddAuth(account.token, out string? authValue)
+            ? new { Authorization = authValue }
+            : null;
         },
       },
       new NewtonsoftJsonSerializer(),
@@ -326,7 +346,12 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     return gQLClient;
   }
 
-  private static HttpClient CreateHttpClient(ISpeckleApplication application, ISpeckleHttp http, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory, Account account)
+  private static HttpClient CreateHttpClient(
+    ISpeckleApplication application,
+    ISpeckleHttp http,
+    ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
+    Account account
+  )
   {
     var httpClient = http.GetHttpProxyClient(speckleHttpClientHandlerFactory.Create(timeoutSeconds: 30));
     http.AddAuthHeader(httpClient, account.token);

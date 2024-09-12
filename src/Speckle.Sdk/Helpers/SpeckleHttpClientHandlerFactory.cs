@@ -9,7 +9,8 @@ using Speckle.Sdk.Logging;
 namespace Speckle.Sdk.Helpers;
 
 [GenerateAutoInterface]
-public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory,  IActivityFactory activityFactory) : ISpeckleHttpClientHandlerFactory
+public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory, IActivityFactory activityFactory)
+  : ISpeckleHttpClientHandlerFactory
 {
   public const int DEFAULT_TIMEOUT_SECONDS = 60;
 
@@ -43,11 +44,12 @@ public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory
   public SpeckleHttpClientHandler Create(
     HttpMessageHandler? innerHandler = null,
     IAsyncPolicy<HttpResponseMessage>? resiliencePolicy = null,
-  int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
+    int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
   ) =>
     new(
-      innerHandler ?? new HttpClientHandler(),activityFactory,
-      resiliencePolicy ?? HttpAsyncPolicy(timeoutSeconds:timeoutSeconds),
+      innerHandler ?? new HttpClientHandler(),
+      activityFactory,
+      resiliencePolicy ?? HttpAsyncPolicy(timeoutSeconds: timeoutSeconds),
       loggerFactory.CreateLogger<SpeckleHttpClientHandler>()
     );
 }

@@ -21,13 +21,15 @@ public sealed class GraphQLClientTests : IDisposable
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
     var serviceProvider = serviceCollection.BuildServiceProvider();
-    _client = serviceProvider.GetRequiredService<IClientFactory>().Create(
-      new Account
-      {
-        token = "this is a scam",
-        serverInfo = new ServerInfo { url = "http://goto.testing" }
-      }
-    );
+    _client = serviceProvider
+      .GetRequiredService<IClientFactory>()
+      .Create(
+        new Account
+        {
+          token = "this is a scam",
+          serverInfo = new ServerInfo { url = "http://goto.testing" }
+        }
+      );
   }
 
   public void Dispose()

@@ -18,7 +18,9 @@ public class UserServerInfoTests
   [Test]
   public async Task IsFrontEnd2True()
   {
-    ServerInfo? result = await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(new("https://app.speckle.systems/"));
+    ServerInfo? result = await Fixtures
+      .ServiceProvider.GetRequiredService<IAccountManager>()
+      .GetServerInfo(new("https://app.speckle.systems/"));
 
     Assert.That(result, Is.Not.Null);
     Assert.That(result!.frontend2, Is.True);
@@ -27,7 +29,9 @@ public class UserServerInfoTests
   [Test]
   public async Task IsFrontEnd2False()
   {
-    ServerInfo? result = await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(new("https://speckle.xyz/"));
+    ServerInfo? result = await Fixtures
+      .ServiceProvider.GetRequiredService<IAccountManager>()
+      .GetServerInfo(new("https://speckle.xyz/"));
 
     Assert.That(result, Is.Not.Null);
     Assert.That(result!.frontend2, Is.False);
@@ -44,7 +48,9 @@ public class UserServerInfoTests
   {
     Uri serverUrl = new(_acc.serverInfo.url);
 
-    Assert.ThrowsAsync<HttpRequestException>(async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl));
+    Assert.ThrowsAsync<HttpRequestException>(
+      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
+    );
   }
 
   [Test]
@@ -52,14 +58,18 @@ public class UserServerInfoTests
   {
     Uri serverUrl = new("http://invalidserver.local");
 
-    Assert.ThrowsAsync<HttpRequestException>(async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl));
+    Assert.ThrowsAsync<HttpRequestException>(
+      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
+    );
   }
 
   [Test]
   public async Task GetUserInfo()
   {
     Uri serverUrl = new(_acc.serverInfo.url);
-    UserInfo result = await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo(_acc.token, serverUrl);
+    UserInfo result = await Fixtures
+      .ServiceProvider.GetRequiredService<IAccountManager>()
+      .GetUserInfo(_acc.token, serverUrl);
 
     Assert.That(result.id, Is.EqualTo(_acc.userInfo.id));
     Assert.That(result.name, Is.EqualTo(_acc.userInfo.name));
@@ -73,7 +83,9 @@ public class UserServerInfoTests
   {
     Uri serverUrl = new("http://invalidserver.local");
 
-    Assert.ThrowsAsync<HttpRequestException>(async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo("", serverUrl));
+    Assert.ThrowsAsync<HttpRequestException>(
+      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo("", serverUrl)
+    );
   }
 
   [Test]
@@ -82,7 +94,10 @@ public class UserServerInfoTests
     Uri serverUrl = new(_acc.serverInfo.url);
 
     Assert.ThrowsAsync<GraphQLHttpRequestException>(
-      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo("Bearer 08913c3c1e7ac65d779d1e1f11b942a44ad9672ca9", serverUrl)
+      async () =>
+        await Fixtures
+          .ServiceProvider.GetRequiredService<IAccountManager>()
+          .GetUserInfo("Bearer 08913c3c1e7ac65d779d1e1f11b942a44ad9672ca9", serverUrl)
     );
   }
 }

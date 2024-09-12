@@ -19,6 +19,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 public class SerializerNonBreakingChanges : PrimitiveTestFixture
 {
   private IOperations _operations;
+
   [SetUp]
   public void Setup()
   {

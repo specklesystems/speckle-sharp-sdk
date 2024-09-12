@@ -11,10 +11,10 @@ namespace Speckle.Sdk.Tests.Unit.Credentials;
 public class CredentialInfrastructure
 {
   private IAccountManager _accountManager;
+
   [OneTimeSetUp]
   public static void SetUp()
   {
-    
     s_testAccount1 = new Account
     {
       refreshToken = "bla",
@@ -47,6 +47,7 @@ public class CredentialInfrastructure
     Fixtures.UpdateOrSaveAccount(s_testAccount2);
     Fixtures.SaveLocalAccount(s_testAccount3);
   }
+
   [SetUp]
   public void Setup2()
   {

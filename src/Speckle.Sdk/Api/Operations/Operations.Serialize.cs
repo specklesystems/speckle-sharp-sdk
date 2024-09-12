@@ -6,7 +6,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
-public  partial class Operations
+public partial class Operations
 {
   /// <summary>
   /// Serializes a given object.
@@ -19,7 +19,7 @@ public  partial class Operations
   /// <param name="value">The object to serialise</param>
   /// <param name="cancellationToken"></param>
   /// <returns>A json string representation of the object.</returns>
-  public  async Task<string> Serialize(Base value, CancellationToken cancellationToken = default)
+  public async Task<string> Serialize(Base value, CancellationToken cancellationToken = default)
   {
     var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
     return await serializer.SerializeAsync(value).ConfigureAwait(false);
@@ -37,9 +37,12 @@ public  partial class Operations
   /// <exception cref="JsonReaderException "><paramref name="value"/> was not valid JSON</exception>
   /// <exception cref="SpeckleException"><paramref name="value"/> cannot be deserialised to type <see cref="Base"/></exception>
   /// <exception cref="Speckle.Sdk.Transports.TransportException"><paramref name="value"/> contains closure references (see Remarks)</exception>
-  public  async Task<Base> DeserializeAsync(string value, CancellationToken cancellationToken = default)
+  public async Task<Base> DeserializeAsync(string value, CancellationToken cancellationToken = default)
   {
-    var deserializer = new SpeckleObjectDeserializer(loggerFactory.CreateLogger<SpeckleObjectDeserializer>()) { CancellationToken = cancellationToken };
+    var deserializer = new SpeckleObjectDeserializer(loggerFactory.CreateLogger<SpeckleObjectDeserializer>())
+    {
+      CancellationToken = cancellationToken
+    };
     return await deserializer.DeserializeJsonAsync(value).ConfigureAwait(false);
   }
 }

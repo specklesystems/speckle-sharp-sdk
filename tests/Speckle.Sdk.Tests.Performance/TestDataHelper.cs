@@ -18,7 +18,6 @@ public sealed class TestDataHelper : IDisposable
 
   public TestDataHelper()
   {
-    
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
     ServiceProvider = serviceCollection.BuildServiceProvider();
@@ -27,15 +26,17 @@ public sealed class TestDataHelper : IDisposable
   public async Task SeedTransport(Account account, string streamId, string objectId)
   {
     // Transport = new SQLiteTransport(s_basePath, APPLICATION_NAME);
-    Transport= new SQLiteTransport();
+    Transport = new SQLiteTransport();
 
     //seed SQLite transport with test data
     ObjectId = await SeedTransport(account, streamId, objectId, Transport).ConfigureAwait(false);
   }
 
-  public  async Task<string> SeedTransport(Account account, string streamId, string objectId, ITransport transport)
+  public async Task<string> SeedTransport(Account account, string streamId, string objectId, ITransport transport)
   {
-    using ServerTransport remoteTransport = ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(account, streamId);
+    using ServerTransport remoteTransport = ServiceProvider
+      .GetRequiredService<IServerTransportFactory>()
+      .Create(account, streamId);
     transport.BeginWrite();
     await remoteTransport.CopyObjectAndChildren(objectId, transport).ConfigureAwait(false);
     transport.EndWrite();
@@ -46,7 +47,10 @@ public sealed class TestDataHelper : IDisposable
 
   public async Task<Base> DeserializeBase()
   {
-    return await ServiceProvider.GetRequiredService<IOperations>().Receive(ObjectId, null, Transport).ConfigureAwait(false);
+    return await ServiceProvider
+      .GetRequiredService<IOperations>()
+      .Receive(ObjectId, null, Transport)
+      .ConfigureAwait(false);
   }
 
   public void Dispose()

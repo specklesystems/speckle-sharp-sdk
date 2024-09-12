@@ -8,9 +8,9 @@ namespace Speckle.Sdk.Logging;
 [GenerateAutoInterface]
 public sealed class ActivityFactory : IActivityFactory, IDisposable
 {
-  
   public const string TracingSource = "speckle-connectors";
-  private readonly ActivitySource? _activitySource = new(TracingSource, GetPackageVersion(Assembly.GetExecutingAssembly()));
+  private readonly ActivitySource? _activitySource =
+    new(TracingSource, GetPackageVersion(Assembly.GetExecutingAssembly()));
 
   public ISpeckleActivity? Start(string? name = null, [CallerMemberName] string source = "")
   {
@@ -23,7 +23,7 @@ public sealed class ActivityFactory : IActivityFactory, IDisposable
   }
 
   public void Dispose() => _activitySource?.Dispose();
-  
+
   private static string GetPackageVersion(Assembly assembly)
   {
     // MinVer https://github.com/adamralph/minver?tab=readme-ov-file#version-numbers
@@ -46,4 +46,3 @@ public sealed class ActivityFactory : IActivityFactory, IDisposable
     return indexOfPlusSign > 0 ? informationalVersion[..indexOfPlusSign] : informationalVersion;
   }
 }
-

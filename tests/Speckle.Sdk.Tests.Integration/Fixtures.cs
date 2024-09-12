@@ -20,15 +20,18 @@ public static class Fixtures
   public static readonly ServerInfo Server = new() { url = "http://localhost:3000", name = "Docker Server" };
 
   public static IServiceProvider ServiceProvider { get; set; }
+
   static Fixtures()
   {
-    
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
     ServiceProvider = serviceCollection.BuildServiceProvider();
   }
 
-  public static Client Unauthed => ServiceProvider.GetRequiredService<IClientFactory>().Create(new Account { serverInfo = Server, userInfo = new UserInfo() });
+  public static Client Unauthed =>
+    ServiceProvider
+      .GetRequiredService<IClientFactory>()
+      .Create(new Account { serverInfo = Server, userInfo = new UserInfo() });
 
   public static async Task<Client> SeedUserWithClient()
   {
@@ -38,7 +41,9 @@ public static class Fixtures
   public static async Task<string> CreateVersion(Client client, string projectId, string modelId)
   {
     using var remote = ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(client.Account, projectId);
-    var (objectId, _) = await ServiceProvider.GetRequiredService<IOperations>().Send(new() { applicationId = "ASDF" }, remote, false);
+    var (objectId, _) = await ServiceProvider
+      .GetRequiredService<IOperations>()
+      .Send(new() { applicationId = "ASDF" }, remote, false);
     CreateVersionInput input = new(objectId, modelId, projectId);
     return await client.Version.Create(input);
   }
@@ -108,7 +113,9 @@ public static class Fixtures
       serverInfo = Server
     };
 
-    var user1 = await ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo(acc.token, new(acc.serverInfo.url));
+    var user1 = await ServiceProvider
+      .GetRequiredService<IAccountManager>()
+      .GetUserInfo(acc.token, new(acc.serverInfo.url));
     acc.userInfo = user1;
     return acc;
   }

@@ -14,6 +14,7 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 public sealed class SendReceiveLocal : IDisposable
 {
   private IOperations _operations;
+
   [SetUp]
   public void Setup()
   {

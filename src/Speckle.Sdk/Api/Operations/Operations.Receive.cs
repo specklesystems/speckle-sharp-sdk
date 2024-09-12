@@ -8,7 +8,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
-public  partial class Operations
+public partial class Operations
 {
   /// <summary>
   /// Receives an object (and all its sub-children) from the two provided <see cref="ITransport"/>s.
@@ -31,7 +31,7 @@ public  partial class Operations
   /// <exception cref="SpeckleDeserializeException">Deserialization of the requested object(s) failed</exception>
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <returns>The requested Speckle Object</returns>
-  public  async Task<Base> Receive(
+  public async Task<Base> Receive(
     string objectId,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,

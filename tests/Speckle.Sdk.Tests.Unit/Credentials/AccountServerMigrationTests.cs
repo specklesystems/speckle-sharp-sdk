@@ -46,7 +46,7 @@ public class AccountServerMigrationTests
     serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
     var serviceProvider = serviceCollection.BuildServiceProvider();
 
-    var result =  serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
+    var result = serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
 
     Assert.That(result, Is.EquivalentTo(expectedSequence));
   }

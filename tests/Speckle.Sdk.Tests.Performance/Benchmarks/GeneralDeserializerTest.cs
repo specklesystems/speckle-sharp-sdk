@@ -24,14 +24,22 @@ public class GeneralDeserializer : IDisposable
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     _dataSource = new TestDataHelper();
     await _dataSource
-      .SeedTransport(new Account() { serverInfo = new () { url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"}}, "2099ac4b5f", "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6")
+      .SeedTransport(
+        new Account()
+        {
+          serverInfo = new() { url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e" }
+        },
+        "2099ac4b5f",
+        "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6"
+      )
       .ConfigureAwait(false);
   }
 
   [Benchmark]
   public async Task<Base> RunTest()
   {
-    SpeckleObjectDeserializer sut = new(new NullLogger<SpeckleObjectDeserializer>()) { ReadTransport = _dataSource.Transport };
+    SpeckleObjectDeserializer sut =
+      new(new NullLogger<SpeckleObjectDeserializer>()) { ReadTransport = _dataSource.Transport };
     string data = await _dataSource.Transport.GetObject(_dataSource.ObjectId)!;
     return await sut.DeserializeJsonAsync(data);
   }

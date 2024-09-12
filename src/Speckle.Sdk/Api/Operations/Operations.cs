@@ -12,7 +12,11 @@ namespace Speckle.Sdk.Api;
 /// <para>Push/Pull (methods to serialize and send data to one or more servers)</para>
 /// </summary>
 [GenerateAutoInterface]
-public partial class Operations(ILogger<Operations> logger, IActivityFactory activityFactory, ILoggerFactory loggerFactory) : IOperations
+public partial class Operations(
+  ILogger<Operations> logger,
+  IActivityFactory activityFactory,
+  ILoggerFactory loggerFactory
+) : IOperations
 {
   /// <summary>
   /// Factory for progress actions used internally inside send and receive methods.

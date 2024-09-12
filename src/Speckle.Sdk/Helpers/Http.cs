@@ -3,16 +3,12 @@ using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 
-
 namespace Speckle.Sdk.Helpers;
 
 [GenerateAutoInterface]
-public class SpeckleHttp(
-  ILogger<SpeckleHttp> logger,
-  ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory
-) : ISpeckleHttp
+public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory)
+  : ISpeckleHttp
 {
-
   /// <summary>
   /// Sends a <c>GET</c> request to the provided <paramref name="uri"/>
   /// </summary>

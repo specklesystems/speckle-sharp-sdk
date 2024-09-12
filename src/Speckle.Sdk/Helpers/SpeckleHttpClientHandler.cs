@@ -13,7 +13,8 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
   private readonly IActivityFactory _activityFactory;
 
   public SpeckleHttpClientHandler(
-    HttpMessageHandler innerHandler,IActivityFactory activityFactory,
+    HttpMessageHandler innerHandler,
+    IActivityFactory activityFactory,
     IAsyncPolicy<HttpResponseMessage> resiliencePolicy,
     ILogger<SpeckleHttpClientHandler> logger
   )

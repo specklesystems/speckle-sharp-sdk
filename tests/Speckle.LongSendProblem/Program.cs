@@ -1,5 +1,4 @@
-﻿
-Console.WriteLine("unused");
+﻿Console.WriteLine("unused");
 /*using Microsoft.Extensions.DependencyInjection;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk;

@@ -27,16 +27,26 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   private readonly HttpClient _client;
 
-  public ServerApi(ISpeckleHttp http, ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,IActivityFactory activityFactory, Uri baseUri, string? authorizationToken, string blobStorageFolder, int timeoutSeconds = 120)
+  public ServerApi(
+    ISpeckleHttp http,
+    ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
+    IActivityFactory activityFactory,
+    Uri baseUri,
+    string? authorizationToken,
+    string blobStorageFolder,
+    int timeoutSeconds = 120
+  )
   {
     _activityFactory = activityFactory;
     CancellationToken = CancellationToken.None;
 
     BlobStorageFolder = blobStorageFolder;
 
-    _client = http.GetHttpProxyClient(speckleHttpClientHandlerFactory.Create(
-      new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
-      timeoutSeconds: timeoutSeconds)
+    _client = http.GetHttpProxyClient(
+      speckleHttpClientHandlerFactory.Create(
+        new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
+        timeoutSeconds: timeoutSeconds
+      )
     );
     _client.BaseAddress = baseUri;
 

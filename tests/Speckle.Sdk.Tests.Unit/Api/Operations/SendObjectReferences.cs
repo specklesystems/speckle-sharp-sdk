@@ -10,6 +10,7 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 public class SendObjectReferences
 {
   private IOperations _operations;
+
   [SetUp]
   public void Setup()
   {
@@ -20,7 +21,7 @@ public class SendObjectReferences
     var serviceProvider = serviceCollection.BuildServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
-  
+
   [TestCase(0)]
   [TestCase(1)]
   [TestCase(10)]
