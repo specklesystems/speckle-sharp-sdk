@@ -17,10 +17,10 @@ public sealed class SerializerIdWriter : JsonWriter
     _jsonIdWriter = new JsonTextWriter(_idWriter);
   }
 
-  public async Task<(string, JsonWriter)> FinishIdWriterAsync(CancellationToken cancellationToken)
+  public (string, JsonWriter) FinishIdWriter()
   {
-    await _jsonIdWriter.WriteEndObjectAsync(cancellationToken).ConfigureAwait(false);
-    await _jsonIdWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
+    _jsonIdWriter.WriteEndObject();
+    _jsonIdWriter.Flush();
     var json = _idWriter.ToString();
     return (json, _jsonWriter);
   }

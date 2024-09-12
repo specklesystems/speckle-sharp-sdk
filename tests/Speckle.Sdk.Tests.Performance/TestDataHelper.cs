@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Models;
@@ -48,7 +48,7 @@ public sealed class TestDataHelper : IDisposable
   {
     Transport.Dispose();
     SqliteConnection.ClearAllPools();
-    if (File.Exists(s_basePath))
+    if (Directory.Exists(s_basePath))
     {
       Directory.Delete(s_basePath, true);
     }
