@@ -44,7 +44,7 @@ public class DeserializeStage(ConcurrentDictionary<string, Base> cache, Func<str
     var @base = await Deserialise(closureBases, message.Id, message.Json).ConfigureAwait(false);
     _closures.TryRemove(message.Id, out _);
     Deserialized++;
-    return new(message.Id,  @base);
+    return new(message.Id, @base);
   }
 
   private async ValueTask<Base> Deserialise(IReadOnlyDictionary<string, Base> dictionary, string id, string json)

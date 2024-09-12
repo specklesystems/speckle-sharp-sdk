@@ -21,8 +21,8 @@ public static partial class Operations
   )
   {
     using var stage = new ReceiveProcess(new Uri(account.serverInfo.url), streamId, null);
-   var rootObject = await stage.GetRootObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);
-   return rootObject;
+    var rootObject = await stage.GetRootObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);
+    return rootObject;
   }
 
   /// <summary>

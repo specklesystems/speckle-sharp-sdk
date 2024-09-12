@@ -19,40 +19,47 @@ using var client = new Client(acc);
 var branch = await client.BranchGet(sw.StreamId, sw.BranchName!, 1).ConfigureAwait(false);
 var objectId = branch.commits.items[0].referencedObject;
 
-
 Console.WriteLine(url);
 Console.ReadLine();
 Stopwatch stopwatch = new();
- long lastMs = 0;
- const int UPDATE_INTERVAL = 200;
- stopwatch.Start();
-var rootObject = await Operations.Receive2(acc, sw.StreamId, objectId, args => {
-  if (stopwatch.ElapsedMilliseconds < lastMs + UPDATE_INTERVAL)
-  {
-    return;
-  }
-  lastMs = stopwatch.ElapsedMilliseconds;
-  string message = "Preparing...";
-  if (args.Length != 0)
-  {
-    message = string.Empty;
-    foreach (var arg in args)
+long lastMs = 0;
+const int UPDATE_INTERVAL = 200;
+stopwatch.Start();
+var rootObject = await Operations
+  .Receive2(
+    acc,
+    sw.StreamId,
+    objectId,
+    args =>
     {
-      switch (arg.ProgressEvent)
+      if (stopwatch.ElapsedMilliseconds < lastMs + UPDATE_INTERVAL)
       {
-        case ProgressEvent.DownloadBytes:
-          message += $" B ({arg.Count})";
-          break;
-        case ProgressEvent.DownloadObject:
-          message += $" O ({arg.Count})";
-          break;
-        case ProgressEvent.DeserializeObject:
-          message += $" S ({arg.Count})";
-          break;
+        return;
       }
+      lastMs = stopwatch.ElapsedMilliseconds;
+      string message = "Preparing...";
+      if (args.Length != 0)
+      {
+        message = string.Empty;
+        foreach (var arg in args)
+        {
+          switch (arg.ProgressEvent)
+          {
+            case ProgressEvent.DownloadBytes:
+              message += $" B ({arg.Count})";
+              break;
+            case ProgressEvent.DownloadObject:
+              message += $" O ({arg.Count})";
+              break;
+            case ProgressEvent.DeserializeObject:
+              message += $" S ({arg.Count})";
+              break;
+          }
+        }
+      }
+      Console.WriteLine(message);
     }
-  }
-  Console.WriteLine(message);
-}).ConfigureAwait(false);
+  )
+  .ConfigureAwait(false);
 Console.WriteLine($"Root: {rootObject.id}");
 Console.ReadLine();

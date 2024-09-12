@@ -20,7 +20,7 @@ public sealed class ReceiveProcess : IDisposable
 {
   private readonly ReceiveProcessSettings _settings = new();
   private readonly ConcurrentDictionary<string, Base> _idToBaseCache = new(StringComparer.Ordinal);
-  
+
   private string? _rootObjectId;
   private Base? _rootObject;
 
@@ -37,11 +37,16 @@ public sealed class ReceiveProcess : IDisposable
     }
     SourceChannel = Channel.CreateUnbounded<string>();
     CachingStage = new(_idToBaseCache);
-    ServerApiStage = new ServerApiStage(baseUri, streamId, authorizationToken, args =>
-    {
-      _bytes = args.Count ?? 0;
-      InvokeProgress();
-    });
+    ServerApiStage = new ServerApiStage(
+      baseUri,
+      streamId,
+      authorizationToken,
+      args =>
+      {
+        _bytes = args.Count ?? 0;
+        InvokeProgress();
+      }
+    );
     DeserializeStage = new(_idToBaseCache, EnqueueObject);
   }
 
@@ -60,9 +65,8 @@ public sealed class ReceiveProcess : IDisposable
 
   private async ValueTask EnqueueObject(string id) => await SourceChannel.Writer.WriteAsync(id).ConfigureAwait(false);
 
-  
-
-  public async ValueTask<Base> GetRootObject(string objectId,
+  public async ValueTask<Base> GetRootObject(
+    string objectId,
     Action<ProgressArgs[]>? progress,
     CancellationToken cancellationToken
   )
@@ -71,14 +75,13 @@ public sealed class ReceiveProcess : IDisposable
     _rootObjectId = objectId;
 
     var pipelineTask = SourceChannel
-      .Reader
-      .Batch(_settings.MaxObjectRequestSize)
+      .Reader.Batch(_settings.MaxObjectRequestSize)
       .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
       .PipeAsync(_settings.MaxDownloadThreads, OnTransport, cancellationToken: cancellationToken)
       .Join()
       .ReadAllConcurrentlyAsync(_settings.MaxDeserializeThreads, OnDeserialize, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
-    
+
     var rootJson = await ServerApiStage.DownloadRoot(objectId).ConfigureAwait(false);
 
     var closures = (await ClosureParser.GetChildrenIdsAsync(rootJson, cancellationToken).ConfigureAwait(false));
@@ -91,6 +94,7 @@ public sealed class ReceiveProcess : IDisposable
     Console.WriteLine($"Total {_idToBaseCache.Count}");
     return _rootObject.NotNull();
   }
+
   private async ValueTask<List<Downloaded>> OnTransport(List<string> batch)
   {
     var gathered = ServerApiStage.Execute(batch).ConfigureAwait(false);

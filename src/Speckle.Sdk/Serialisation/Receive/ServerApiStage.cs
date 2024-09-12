@@ -6,7 +6,12 @@ namespace Speckle.Sdk.Serialisation.Receive;
 
 public record Downloaded(string Id, string Json);
 
-public sealed class ServerApiStage(Uri baseUri, string streamId, string? authorizationToken, Action<ProgressArgs> progress) : IDisposable
+public sealed class ServerApiStage(
+  Uri baseUri,
+  string streamId,
+  string? authorizationToken,
+  Action<ProgressArgs> progress
+) : IDisposable
 {
   private readonly ServerApi _serverApi = new(baseUri, authorizationToken, string.Empty);
 
@@ -26,5 +31,6 @@ public sealed class ServerApiStage(Uri baseUri, string streamId, string? authori
     var json = await _serverApi.DownloadSingleObject(streamId, objectId, progress).ConfigureAwait(false);
     return json.NotNull();
   }
+
   public void Dispose() => _serverApi.Dispose();
 }

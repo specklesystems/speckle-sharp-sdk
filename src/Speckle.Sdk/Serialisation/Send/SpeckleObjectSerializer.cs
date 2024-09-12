@@ -334,7 +334,12 @@ public class SpeckleObjectSerializer2
     return allProperties;
   }
 
-  private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure, bool forceAttach)
+  private string SerializeBaseObject(
+    Base baseObj,
+    JsonWriter writer,
+    IReadOnlyDictionary<string, int> closure,
+    bool forceAttach
+  )
   {
     var allProperties = ExtractAllProperties(baseObj);
 
@@ -386,7 +391,12 @@ public class SpeckleObjectSerializer2
     return id;
   }
 
-  private void SerializeProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo, bool forceAttach)
+  private void SerializeProperty(
+    object? baseValue,
+    JsonWriter jsonWriter,
+    PropertyAttributeInfo detachInfo,
+    bool forceAttach
+  )
   {
     // If there are no WriteTransports, keep everything attached.
     if (forceAttach)

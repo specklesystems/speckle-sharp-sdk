@@ -5,8 +5,12 @@ using System.Threading.Channels;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public static class Extensions {
-  public static IAsyncEnumerable<T> AsAsyncEnumerable<T>(this ChannelReader<T> reader, CancellationToken cancellationToken = default)
+public static class Extensions
+{
+  public static IAsyncEnumerable<T> AsAsyncEnumerable<T>(
+    this ChannelReader<T> reader,
+    CancellationToken cancellationToken = default
+  )
   {
     if (reader is null)
     {
@@ -17,7 +21,10 @@ public static class Extensions {
 
     return AsAsyncEnumerableCore(reader, cancellationToken);
 
-    static async IAsyncEnumerable<T> AsAsyncEnumerableCore(ChannelReader<T> reader, [EnumeratorCancellation] CancellationToken cancellationToken)
+    static async IAsyncEnumerable<T> AsAsyncEnumerableCore(
+      ChannelReader<T> reader,
+      [EnumeratorCancellation] CancellationToken cancellationToken
+    )
     {
       do
       {
@@ -25,10 +32,10 @@ public static class Extensions {
         {
           yield return item;
         }
-      }
-      while (
+      } while (
         !cancellationToken.IsCancellationRequested
-        && await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false));
+        && await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false)
+      );
     }
   }
 }

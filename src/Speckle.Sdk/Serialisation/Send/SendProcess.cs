@@ -42,9 +42,12 @@ public sealed class SendProcess : IDisposable
       ]
     );
 
-
-  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> SaveObject(Base rootObject, Action<ProgressArgs[]>? progress, CancellationToken cancellationToken)
-  { 
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> SaveObject(
+    Base rootObject,
+    Action<ProgressArgs[]>? progress,
+    CancellationToken cancellationToken
+  )
+  {
     Progress = progress;
     _rootObject = rootObject;
 

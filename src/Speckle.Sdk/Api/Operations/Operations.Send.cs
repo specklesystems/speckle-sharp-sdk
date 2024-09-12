@@ -23,7 +23,7 @@ public static partial class Operations
     using var stage = new SendProcess(new Uri(account.serverInfo.url), streamId, account.token);
     return await stage.SaveObject(value, onProgressAction, cancellationToken).ConfigureAwait(false);
   }
-  
+
   /// <summary>
   /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
   /// </summary>
