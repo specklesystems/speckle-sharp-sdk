@@ -11,4 +11,10 @@
         </NoWarn>
         <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     </PropertyGroup>
+
+  <Target Name="DeepClean">
+    <Message Text="Deep clean of $(MSBuildProjectName).csproj" Importance="high"/>
+    <RemoveDir Directories="$(BaseIntermediateOutputPath)"/>
+    <RemoveDir Directories="$(BaseOutputPath)"/>
+  </Target>
 </Project>

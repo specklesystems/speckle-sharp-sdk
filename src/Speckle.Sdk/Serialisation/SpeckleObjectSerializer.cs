@@ -228,7 +228,7 @@ public class SpeckleObjectSerializer
         await writer.WriteEndArrayAsync(CancellationToken).ConfigureAwait(false);
         break;
       //BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
-      case System.Numerics.Matrix4x4 ms:
+      case System.Numerics.Matrix4x4:
         throw new ArgumentException("Please use Speckle.DoubleNumerics.Matrix4x4 instead", nameof(obj));
       default:
         throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}", nameof(obj));
