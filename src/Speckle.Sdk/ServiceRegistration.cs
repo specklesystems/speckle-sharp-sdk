@@ -36,8 +36,16 @@ public static class ServiceRegistration
       }
     );
     serviceCollection.AddSingleton<ISdkActivityFactory, NullActivityFactory>();
+    serviceCollection.AddMatchingInterfacesAsTransient(Assembly.GetExecutingAssembly());
+    return serviceCollection;
+  }
 
-    foreach (var type in Assembly.GetExecutingAssembly().ExportedTypes.Where(t => t.IsNonAbstractClass()))
+  public static IServiceCollection AddMatchingInterfacesAsTransient(
+    this IServiceCollection serviceCollection,
+    Assembly assembly
+  )
+  {
+    foreach (var type in assembly.ExportedTypes.Where(t => t.IsNonAbstractClass()))
     {
       foreach (var matchingInterface in type.FindMatchingInterface())
       {

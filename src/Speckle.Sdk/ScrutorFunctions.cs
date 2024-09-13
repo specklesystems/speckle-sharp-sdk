@@ -2,6 +2,9 @@
 
 namespace Speckle.Sdk;
 
+/// <summary>
+/// This is from the Scrutor project (https://github.com/khellang/Scrutor) but we don't want to pull in the dependencies
+/// </summary>
 public static class ScrutorFunctions
 {
   public static bool IsNonAbstractClass(this Type type)
