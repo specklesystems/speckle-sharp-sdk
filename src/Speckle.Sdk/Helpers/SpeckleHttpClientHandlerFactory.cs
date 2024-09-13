@@ -9,7 +9,7 @@ using Speckle.Sdk.Logging;
 namespace Speckle.Sdk.Helpers;
 
 [GenerateAutoInterface]
-public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory, IActivityFactory activityFactory)
+public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory, ISdkActivityFactory activityFactory)
   : ISpeckleHttpClientHandlerFactory
 {
   public const int DEFAULT_TIMEOUT_SECONDS = 60;

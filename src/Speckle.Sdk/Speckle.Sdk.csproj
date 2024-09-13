@@ -45,8 +45,5 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Speckle.Sdk.Logging\Speckle.Sdk.Logging.csproj" />
-  </ItemGroup>
   
 </Project>

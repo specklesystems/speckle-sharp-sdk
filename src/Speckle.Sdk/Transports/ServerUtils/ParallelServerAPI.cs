@@ -25,7 +25,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
   private readonly ISpeckleHttp _http;
   private readonly ISpeckleHttpClientHandlerFactory _speckleHttpClientHandlerFactory;
-  private readonly IActivityFactory _activityFactory;
+  private readonly ISdkActivityFactory _activityFactory;
   private readonly Uri _baseUri;
 
   private readonly int _timeoutSeconds;
@@ -33,7 +33,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
   public ParallelServerApi(
     ISpeckleHttp http,
     ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
-    IActivityFactory activityFactory,
+    ISdkActivityFactory activityFactory,
     Uri baseUri,
     string authorizationToken,
     string blobStorageFolder,

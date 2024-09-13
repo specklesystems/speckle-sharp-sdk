@@ -35,7 +35,7 @@ public static class ServiceRegistration
         Slug = configuration.Application.Slug
       }
     );
-    serviceCollection.AddSingleton<IActivityFactory, ActivityFactory>();
+    serviceCollection.AddSingleton<ISdkActivityFactory, NullActivityFactory>();
 
     foreach (var type in Assembly.GetExecutingAssembly().ExportedTypes.Where(t => t.IsNonAbstractClass()))
     {

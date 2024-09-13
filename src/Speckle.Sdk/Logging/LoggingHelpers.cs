@@ -13,3 +13,4 @@ internal static class LoggingHelpers
     return new TimeSpan((long)((endingTimestamp - startingTimestamp) * s_sTickFrequency));
   }
 }
+

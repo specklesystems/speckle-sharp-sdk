@@ -6,10 +6,6 @@
     <Configurations>Debug;Release;Local</Configurations>
   </PropertyGroup>
   
-  <PropertyGroup Label="ILRepack Properties">
-    <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
-    <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
-  </PropertyGroup>
 
   <PropertyGroup Label="Nugetspec Package Properties">
     <PackageId>Speckle.Sdk.Logging</PackageId>
@@ -21,12 +17,5 @@
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup Label="Package References">
-    <PackageReference Include="ILRepack.FullAuto">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="OpenTelemetry.Api" PrivateAssets="all"/>
-  </ItemGroup>
   
 </Project>

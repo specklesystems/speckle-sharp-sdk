@@ -12,7 +12,7 @@ namespace Speckle.Sdk.Transports.ServerUtils;
 
 public sealed class ServerApi : IDisposable, IServerApi
 {
-  private readonly IActivityFactory _activityFactory;
+  private readonly ISdkActivityFactory _activityFactory;
   private const int BATCH_SIZE_GET_OBJECTS = 10000;
   private const int BATCH_SIZE_HAS_OBJECTS = 100000;
 
@@ -30,7 +30,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   public ServerApi(
     ISpeckleHttp http,
     ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
-    IActivityFactory activityFactory,
+    ISdkActivityFactory activityFactory,
     Uri baseUri,
     string? authorizationToken,
     string blobStorageFolder,

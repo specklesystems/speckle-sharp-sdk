@@ -21,7 +21,7 @@ namespace Speckle.Sdk.Api;
 [GenerateAutoInterface]
 public class ClientFactory(
   ILoggerFactory loggerFactory,
-  IActivityFactory activityFactory,
+  ISdkActivityFactory activityFactory,
   ISpeckleApplication application,
   ISpeckleHttp speckleHttp,
   ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory
@@ -44,7 +44,7 @@ public class ClientFactory(
 public sealed class Client : ISpeckleGraphQLClient, IDisposable
 {
   private readonly ILogger<Client> _logger;
-  private readonly IActivityFactory _activityFactory;
+  private readonly ISdkActivityFactory _activityFactory;
   public ProjectResource Project { get; }
   public ModelResource Model { get; }
   public VersionResource Version { get; }
@@ -67,7 +67,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
   /// <exception cref="ArgumentException"><paramref name="account"/> was null</exception>
   public Client(
     ILogger<Client> logger,
-    IActivityFactory activityFactory,
+    ISdkActivityFactory activityFactory,
     ISpeckleApplication application,
     ISpeckleHttp speckleHttp,
     ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
@@ -139,12 +139,12 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
           return result.Data;
         })
         .ConfigureAwait(false);
-      activity?.SetStatus(SpeckleActivityStatusCode.Ok);
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
       return ret;
     }
     catch (Exception e)
     {
-      activity?.SetStatus(SpeckleActivityStatusCode.Error);
+      activity?.SetStatus(SdkActivityStatusCode.Error);
       activity?.RecordException(e);
       throw;
     }

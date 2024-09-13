@@ -14,7 +14,7 @@ namespace Speckle.Sdk.Api;
 [GenerateAutoInterface]
 public partial class Operations(
   ILogger<Operations> logger,
-  IActivityFactory activityFactory,
+  ISdkActivityFactory activityFactory,
   ILoggerFactory loggerFactory
 ) : IOperations
 {

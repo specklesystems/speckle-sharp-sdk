@@ -13,7 +13,7 @@ public sealed class ServerTransport : IServerTransport
 {
   private readonly ISpeckleHttp _http;
   private readonly ISpeckleHttpClientHandlerFactory _speckleHttpClientHandlerFactory;
-  private readonly IActivityFactory _activityFactory;
+  private readonly ISdkActivityFactory _activityFactory;
   private readonly object _elapsedLock = new();
 
   private Exception? _exception;
@@ -35,7 +35,7 @@ public sealed class ServerTransport : IServerTransport
   public ServerTransport(
     ISpeckleHttp http,
     ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
-    IActivityFactory activityFactory,
+    ISdkActivityFactory activityFactory,
     Account account,
     string streamId,
     int timeoutSeconds = 60,

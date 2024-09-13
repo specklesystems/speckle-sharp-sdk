@@ -11,7 +11,7 @@ namespace Speckle.Sdk.Transports;
 public class ServerTransportFactory(
   ISpeckleHttp http,
   ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
-  IActivityFactory activityFactory
+  ISdkActivityFactory activityFactory
 ) : IServerTransportFactory
 {
   public ServerTransport Create(
