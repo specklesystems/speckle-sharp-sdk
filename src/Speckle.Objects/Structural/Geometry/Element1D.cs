@@ -1,5 +1,6 @@
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Structural.Properties;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
@@ -33,8 +34,8 @@ public class Element1D : Base, IDisplayValue<IReadOnlyList<Base>>
     this.units = units;
     this.end1Releases = end1Releases ?? new Restraint("FFFFFF");
     this.end2Releases = end2Releases ?? new Restraint("FFFFFF");
-    this.end1Offset = end1Offset ?? new Vector(0, 0, 0);
-    this.end2Offset = end2Offset ?? new Vector(0, 0, 0);
+    this.end1Offset = end1Offset ?? new Vector(0, 0, 0, units ?? Units.None);
+    this.end2Offset = end2Offset ?? new Vector(0, 0, 0, units ?? Units.None);
     this.localAxis = localAxis;
     this.orientationNode = orientationNode;
     this.orientationAngle = orientationAngle;

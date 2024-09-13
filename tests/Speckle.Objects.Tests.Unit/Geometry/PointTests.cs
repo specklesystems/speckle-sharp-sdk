@@ -1,8 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using NUnit.Framework;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Common;
 
-namespace Objects.Tests.Unit.Geometry;
+namespace Speckle.Objects.Tests.Unit.Geometry;
 
 [TestFixture, TestOf(typeof(Point))]
 public class PointTests
@@ -17,7 +18,7 @@ public class PointTests
   {
     Point? a = null;
     Point? b = null;
-    Point c = new(0, 0, 0);
+    Point c = new(0, 0, 0, Units.Meters);
 
     Assert.Multiple(() =>
     {
