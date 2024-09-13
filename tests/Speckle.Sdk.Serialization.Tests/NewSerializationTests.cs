@@ -1,12 +1,14 @@
 ﻿using System.Reflection;
-using Speckle.Newtonsoft.Json;
 using NUnit.Framework;
 using Shouldly;
+using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.BuiltElements;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.Collections;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Receive;
 using Speckle.Sdk.Serialisation.Send;
 using Speckle.Sdk.Transports;
@@ -50,7 +52,7 @@ public class NewSerializationTests
 
   [Test]
   [TestCase("RevitObject.json")]
-  public async Task Deserialize_Serialize_Test(string fileName)
+  public async Task New_Deserialize_Serialize_Test(string fileName)
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var objects = await ReadAsObjects(fullName);
@@ -76,7 +78,7 @@ public class NewSerializationTests
       starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
       starts.ShouldBeTrue($"{name} isn't expected");
     }
-    
+
     var target = new MemoryTarget();
     foreach (var (id, (objJson, baseObj)) in bases)
     {
@@ -88,4 +90,59 @@ public class NewSerializationTests
       objId.ShouldBe(id);
     }
   }
+
+  /* [Test]
+   [TestCase("7238c0e0bbd1bafbe1a287aa7fc88619.json")]
+   public async Task New_Deserialize_Serialize_Test(string fileName)
+   {
+     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
+     var closures = await ReadAsObjects(fullName);
+ 
+     using var process = new ReceiveProcess(new MemorySource(closures), new ReceiveProcessSettings(1, 1));
+     var root = await process.GetObject("7238c0e0bbd1bafbe1a287aa7fc88619", _ => { }, default);
+     root.id.ShouldBe("7238c0e0bbd1bafbe1a287aa7fc88619");
+   }*/
+
+  [Test]
+  [TestCase("RevitObjectsTop.json")]
+  public async Task Deserialize_Serialize_New_Old(string fileName)
+  {
+    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
+    var json = await ReadJson(fullName);
+
+    var dictionary = new Dictionary<string, Base>();
+    SpeckleObjectDeserializer2 deserializer = new(dictionary, new(false));
+    var @base = await deserializer.DeserializeJsonAsync(json).ConfigureAwait(false);
+    @base.id.ShouldBe("7238c0e0bbd1bafbe1a287aa7fc88619");
+    var collection = @base as Collection;
+    collection.ShouldNotBeNull();
+    collection.elements.Count.ShouldBe(78);
+
+    SpeckleObjectSerializer2 newSerializer = new();
+    var newJson = newSerializer.Serialize(@base);
+
+    SpeckleObjectSerializer oldSerializer = new();
+    var oldJson = oldSerializer.Serialize(@base);
+    newJson.Length.ShouldBe(oldJson.Length);
+  }
+
+  /* [Test]
+   [TestCase("7238c0e0bbd1bafbe1a287aa7fc88619.json")]
+   public async Task Old_Deserialize_Serialize_Test(string fileName)
+   {
+     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
+     var json = await ReadJson(fullName);
+     var closures = await ReadAsObjects(fullName);
+ 
+     SpeckleObjectDeserializer deserializer = new(new(false)) { ReadTransport = new TestTransport(closures) };
+     var @base =  await deserializer.DeserializeJsonAsync(json).ConfigureAwait(false);
+     @base.id.ShouldBe("7238c0e0bbd1bafbe1a287aa7fc88619");
+     var collection = @base as Collection;
+     collection.ShouldNotBeNull();
+     collection.elements.Count.ShouldBe(78);
+ 
+     SpeckleObjectSerializer2 serializer = new();
+     var newJson = serializer.Serialize(@base);
+     newJson.Length.ShouldBe(json.Length);
+   }*/
 }

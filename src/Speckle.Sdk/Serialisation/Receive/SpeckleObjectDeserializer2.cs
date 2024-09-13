@@ -5,16 +5,19 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public sealed class SpeckleObjectDeserializer2(IReadOnlyDictionary<string, Base> references)
-{
-  public CancellationToken CancellationToken { get; set; }
+public record DeserializedOptions(bool ThrowOnMissingReferences = true);
 
+public sealed class SpeckleObjectDeserializer2(
+  IReadOnlyDictionary<string, Base> references,
+  DeserializedOptions? options = null
+)
+{
   /// <param name="objectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
   /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="objectJson"/></returns>
   /// <exception cref="ArgumentNullException"><paramref name="objectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="objectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public async ValueTask<Base> DeserializeJsonAsync(string objectJson)
+  public async ValueTask<Base> DeserializeJsonAsync(string objectJson, CancellationToken cancellationToken = default)
   {
     if (objectJson is null)
     {
@@ -31,8 +34,8 @@ public sealed class SpeckleObjectDeserializer2(IReadOnlyDictionary<string, Base>
     Base? converted;
     try
     {
-      await reader.ReadAsync(CancellationToken).ConfigureAwait(false);
-      converted = (Base)await ReadObjectAsync(reader, CancellationToken).ConfigureAwait(false);
+      await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+      converted = (Base)await ReadObjectAsync(reader, cancellationToken).ConfigureAwait(false);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -97,7 +100,10 @@ public sealed class SpeckleObjectDeserializer2(IReadOnlyDictionary<string, Base>
         return closure;
       }
 
-      throw new InvalidOperationException("missing reference");
+      if (options is null || options.ThrowOnMissingReferences)
+      {
+        throw new InvalidOperationException($"missing reference: {objId}");
+      }
     }
 
     return DictionaryConverter.Dict2Base(dict);

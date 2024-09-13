@@ -5,33 +5,29 @@ namespace Speckle.Sdk.Transports;
 
 public interface IModelSource : IDisposable
 {
-  ValueTask<string> GetJson(string objectId,
-    Action<ProgressArgs> progress);
-  
-  IAsyncEnumerable<(string, string)> GetJsons(IReadOnlyList<string> objectIds,
-    Action<ProgressArgs> progress);
+  ValueTask<string> GetJson(string objectId, Action<ProgressArgs> progress);
+
+  IAsyncEnumerable<(string, string)> GetJsons(IReadOnlyList<string> objectIds, Action<ProgressArgs> progress);
 }
-public sealed class ServerSource(
-  Uri baseUri,
-  string streamId,
-  string? authorizationToken) : IModelSource
+
+public sealed class ServerSource(Uri baseUri, string streamId, string? authorizationToken) : IModelSource
 {
   private readonly ServerApi _serverApi = new(baseUri, authorizationToken, string.Empty);
 
-  public async ValueTask<string> GetJson(string objectId,
-    Action<ProgressArgs> progress)
+  public async ValueTask<string> GetJson(string objectId, Action<ProgressArgs> progress)
   {
     var json = await _serverApi.DownloadSingleObject(streamId, objectId, progress).ConfigureAwait(false);
     return json.NotNull();
-    
   }
 
-  public async IAsyncEnumerable<(string, string)> GetJsons(IReadOnlyList<string> objectIds,
-    Action<ProgressArgs> progress)
+  public async IAsyncEnumerable<(string, string)> GetJsons(
+    IReadOnlyList<string> objectIds,
+    Action<ProgressArgs> progress
+  )
   {
     await foreach (var (id, json) in _serverApi.DownloadObjects2(streamId, objectIds, progress))
     {
-      yield return new (id, json);
+      yield return new(id, json);
     }
   }
 
@@ -42,9 +38,13 @@ public sealed class MemorySource(IReadOnlyDictionary<string, string> idToJson) :
 {
   public void Dispose() { }
 
-  public ValueTask<string> GetJson(string objectId, Action<ProgressArgs> progress) => new(Task.FromResult(idToJson[objectId].NotNull()));
+  public ValueTask<string> GetJson(string objectId, Action<ProgressArgs> progress) =>
+    new(Task.FromResult(idToJson[objectId].NotNull()));
 
-  public async IAsyncEnumerable<(string, string)> GetJsons(IReadOnlyList<string> objectIds, Action<ProgressArgs> progress)
+  public async IAsyncEnumerable<(string, string)> GetJsons(
+    IReadOnlyList<string> objectIds,
+    Action<ProgressArgs> progress
+  )
   {
     foreach (var id in objectIds)
     {

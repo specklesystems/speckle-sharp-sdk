@@ -24,10 +24,7 @@ public sealed class ReceiveProcess : IDisposable
   private string? _rootObjectId;
   private Base? _rootObject;
 
-  public ReceiveProcess(
-    IModelSource modelSource,
-    ReceiveProcessSettings? settings = null
-  )
+  public ReceiveProcess(IModelSource modelSource, ReceiveProcessSettings? settings = null)
   {
     if (settings is not null)
     {
@@ -71,12 +68,16 @@ public sealed class ReceiveProcess : IDisposable
       .ReadAllConcurrentlyAsync(_settings.MaxDeserializeThreads, OnDeserialize, cancellationToken: cancellationToken)
       .ConfigureAwait(false);
 
-    var rootJson = await GatherStage.DownloadRoot(objectId, 
-      args =>
-      {
-        _bytes += args.Count ?? 0;
-        InvokeProgress();
-      }).ConfigureAwait(false);
+    var rootJson = await GatherStage
+      .DownloadRoot(
+        objectId,
+        args =>
+        {
+          _bytes += args.Count ?? 0;
+          InvokeProgress();
+        }
+      )
+      .ConfigureAwait(false);
 
     var closures = (await ClosureParser.GetChildrenIdsAsync(rootJson, cancellationToken).ConfigureAwait(false));
     foreach (var closure in closures)
@@ -91,12 +92,16 @@ public sealed class ReceiveProcess : IDisposable
 
   private async ValueTask<List<Downloaded>> OnTransport(List<string> batch)
   {
-    var gathered = GatherStage.Execute(batch, 
-      args =>
-      {
-        _bytes += args.Count ?? 0;
-        InvokeProgress();
-      }).ConfigureAwait(false);
+    var gathered = GatherStage
+      .Execute(
+        batch,
+        args =>
+        {
+          _bytes += args.Count ?? 0;
+          InvokeProgress();
+        }
+      )
+      .ConfigureAwait(false);
     var ret = new List<Downloaded>();
     await foreach (var arg in gathered)
     {

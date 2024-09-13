@@ -50,13 +50,13 @@ public class SerializationTests
   public async Task Basic_Namespace_Validation(string fileName)
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
-    var closure = await ReadAsObjects(fullName);
+    var closures = await ReadAsObjects(fullName);
     var deserializer = new SpeckleObjectDeserializer
     {
-      ReadTransport = new TestTransport(closure),
+      ReadTransport = new TestTransport(closures),
       CancellationToken = default
     };
-    foreach (var (id, objJson) in closure)
+    foreach (var (id, objJson) in closures)
     {
       var jObject = JObject.Parse(objJson);
       var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
