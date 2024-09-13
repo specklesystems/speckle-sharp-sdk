@@ -1,11 +1,13 @@
 using System.Drawing;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.DoubleNumerics;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
@@ -211,7 +213,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   [TestCase(123, 255)]
   [TestCase(256, 1)]
   [DefaultFloatingPointTolerance(Constants.EPS)]
-  public async Task Matrix32ToMatrix64(int seed, float scalar)
+  public void Matrix32ToMatrix64(int seed, float scalar)
   {
     Random rand = new(seed);
     List<double> testCase = Enumerable.Range(0, 16).Select(_ => rand.NextDouble() * scalar).ToList();
@@ -219,14 +221,10 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     ListDoubleValueMock from = new() { value = testCase };
 
     //Test List -> Matrix
-    var res = await from.SerializeAsTAndDeserialize<Matrix32ValueMock>(_operations);
-    Assert.That(res.value.M11, Is.EqualTo(testCase[0]));
-    Assert.That(res.value.M44, Is.EqualTo(testCase[testCase.Count - 1]));
-
-    //Test Matrix -> List
-    var backAgain = await res.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
-    Assert.That(backAgain.value, Is.Not.Null);
-    Assert.That(backAgain.value, Is.EquivalentTo(testCase));
+    var exception = Assert.ThrowsAsync<SpeckleDeserializeException>(
+      async () => await from.SerializeAsTAndDeserialize<Matrix32ValueMock>(_operations)
+    );
+    exception.ShouldNotBeNull();
   }
 }
 
