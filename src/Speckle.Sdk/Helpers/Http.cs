@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
+using Polly;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 
@@ -18,7 +19,7 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
   {
     try
     {
-      using var httpClient = GetHttpProxyClient();
+      using var httpClient = CreateHttpClient();
       HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
       response.EnsureSuccessStatusCode();
       logger.LogInformation("Successfully pinged {uri}", uri);
@@ -31,21 +32,29 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
     }
   }
 
-  public HttpClient GetHttpProxyClient(SpeckleHttpClientHandler? speckleHttpClientHandler = null)
+  public const int DEFAULT_TIMEOUT_SECONDS = 60;
+
+  public HttpClient CreateHttpClient(
+    HttpMessageHandler? innerHandler = null,
+    IAsyncPolicy<HttpResponseMessage>? resiliencePolicy = null,
+    int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS,
+    string? authorizationToken = null
+  )
   {
     IWebProxy proxy = WebRequest.GetSystemWebProxy();
     proxy.Credentials = CredentialCache.DefaultCredentials;
 
-    speckleHttpClientHandler ??= speckleHttpClientHandlerFactory.Create();
+    var speckleHandler = speckleHttpClientHandlerFactory.Create(innerHandler, resiliencePolicy, timeoutSeconds);
 
-    var client = new HttpClient(speckleHttpClientHandler)
+    var client = new HttpClient(speckleHandler)
     {
       Timeout = Timeout.InfiniteTimeSpan //timeout is configured on the SpeckleHttpClientHandler through policy
     };
+    AddAuthHeader(client, authorizationToken);
     return client;
   }
 
-  public bool CanAddAuth(string? authToken, out string? bearerHeader)
+  public static bool CanAddAuth(string? authToken, out string? bearerHeader)
   {
     if (!string.IsNullOrEmpty(authToken))
     {
@@ -59,7 +68,7 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
     return false;
   }
 
-  public void AddAuthHeader(HttpClient client, string? authToken)
+  private static void AddAuthHeader(HttpClient client, string? authToken)
   {
     if (CanAddAuth(authToken, out string? value))
     {

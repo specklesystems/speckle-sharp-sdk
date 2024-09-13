@@ -7,7 +7,6 @@ using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Resources;
@@ -17,28 +16,6 @@ using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Api;
-
-[GenerateAutoInterface]
-public class ClientFactory(
-  ILoggerFactory loggerFactory,
-  ISdkActivityFactory activityFactory,
-  ISpeckleApplication application,
-  ISpeckleHttp speckleHttp,
-  ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory
-) : IClientFactory
-{
-  public Client Create(Account account)
-  {
-    return new Client(
-      loggerFactory.CreateLogger<Client>(),
-      activityFactory,
-      application,
-      speckleHttp,
-      speckleHttpClientHandlerFactory,
-      account
-    );
-  }
-}
 
 [SuppressMessage("Maintainability", "CA1506:Avoid excessive class coupling", Justification = "Class needs refactor")]
 public sealed class Client : ISpeckleGraphQLClient, IDisposable
@@ -70,7 +47,6 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     ISdkActivityFactory activityFactory,
     ISpeckleApplication application,
     ISpeckleHttp speckleHttp,
-    ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
     Account account
   )
   {
@@ -87,9 +63,9 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     Comment = new(this);
     Subscription = new(this);
 
-    HttpClient = CreateHttpClient(application, speckleHttp, speckleHttpClientHandlerFactory, account);
+    HttpClient = CreateHttpClient(application, speckleHttp, account);
 
-    GQLClient = CreateGraphQLClient(speckleHttp, account, HttpClient);
+    GQLClient = CreateGraphQLClient(account, HttpClient);
   }
 
   public void Dispose()
@@ -311,7 +287,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     }
   }
 
-  private static GraphQLHttpClient CreateGraphQLClient(ISpeckleHttp speckleHttp, Account account, HttpClient httpClient)
+  private static GraphQLHttpClient CreateGraphQLClient(Account account, HttpClient httpClient)
   {
     var gQLClient = new GraphQLHttpClient(
       new GraphQLHttpClientOptions
@@ -321,7 +297,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
         WebSocketProtocol = "graphql-ws",
         ConfigureWebSocketConnectionInitPayload = _ =>
         {
-          return speckleHttp.CanAddAuth(account.token, out string? authValue)
+          return SpeckleHttp.CanAddAuth(account.token, out string? authValue)
             ? new { Authorization = authValue }
             : null;
         },
@@ -346,15 +322,9 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     return gQLClient;
   }
 
-  private static HttpClient CreateHttpClient(
-    ISpeckleApplication application,
-    ISpeckleHttp http,
-    ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
-    Account account
-  )
+  private static HttpClient CreateHttpClient(ISpeckleApplication application, ISpeckleHttp speckleHttp, Account account)
   {
-    var httpClient = http.GetHttpProxyClient(speckleHttpClientHandlerFactory.Create(timeoutSeconds: 30));
-    http.AddAuthHeader(httpClient, account.token);
+    var httpClient = speckleHttp.CreateHttpClient(timeoutSeconds: 30, authorizationToken: account.token);
 
     httpClient.DefaultRequestHeaders.Add("apollographql-client-name", application.ApplicationVersion);
     httpClient.DefaultRequestHeaders.Add(

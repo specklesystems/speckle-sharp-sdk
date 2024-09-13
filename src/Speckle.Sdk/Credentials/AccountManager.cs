@@ -42,7 +42,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   /// <returns></returns>
   public async Task<ServerInfo> GetServerInfo(Uri server, CancellationToken cancellationToken = default)
   {
-    using var httpClient = speckleHttp.GetHttpProxyClient();
+    using var httpClient = speckleHttp.CreateHttpClient();
 
     using var gqlClient = new GraphQLHttpClient(
       new GraphQLHttpClientOptions
@@ -102,8 +102,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   /// <returns></returns>
   public async Task<UserInfo> GetUserInfo(string token, Uri server, CancellationToken cancellationToken = default)
   {
-    using var httpClient = speckleHttp.GetHttpProxyClient();
-    speckleHttp.AddAuthHeader(httpClient, token);
+    using var httpClient = speckleHttp.CreateHttpClient(authorizationToken: token);
 
     using var gqlClient = new GraphQLHttpClient(
       new GraphQLHttpClientOptions { EndPoint = new Uri(server, "/graphql") },
@@ -149,8 +148,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   {
     try
     {
-      using var httpClient = speckleHttp.GetHttpProxyClient();
-      speckleHttp.AddAuthHeader(httpClient, token);
+      using var httpClient = speckleHttp.CreateHttpClient(authorizationToken: token);
 
       using var client = new GraphQLHttpClient(
         new GraphQLHttpClientOptions { EndPoint = new Uri(server, "/graphql") },
@@ -752,7 +750,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   {
     try
     {
-      using var client = speckleHttp.GetHttpProxyClient();
+      using var client = speckleHttp.CreateHttpClient();
 
       var body = new
       {
@@ -780,7 +778,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   {
     try
     {
-      using var client = speckleHttp.GetHttpProxyClient();
+      using var client = speckleHttp.CreateHttpClient();
 
       var body = new
       {
@@ -812,7 +810,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   /// <exception cref="HttpRequestException">Request to <paramref name="server"/> failed to send or response was not successful</exception>
   private async Task<bool> IsFrontend2Server(Uri server)
   {
-    using var httpClient = speckleHttp.GetHttpProxyClient();
+    using var httpClient = speckleHttp.CreateHttpClient();
 
     var response = await speckleHttp.HttpPing(server).ConfigureAwait(false);
 

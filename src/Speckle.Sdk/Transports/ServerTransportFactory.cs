@@ -8,25 +8,12 @@ namespace Speckle.Sdk.Transports;
 
 [GenerateAutoInterface]
 [ExcludeFromCodeCoverage] //factories don't need coverage
-public class ServerTransportFactory(
-  ISpeckleHttp http,
-  ISpeckleHttpClientHandlerFactory speckleHttpClientHandlerFactory,
-  ISdkActivityFactory activityFactory
-) : IServerTransportFactory
+public class ServerTransportFactory(ISpeckleHttp http, ISdkActivityFactory activityFactory) : IServerTransportFactory
 {
   public ServerTransport Create(
     Account account,
     string streamId,
     int timeoutSeconds = 60,
     string? blobStorageFolder = null
-  ) =>
-    new ServerTransport(
-      http,
-      speckleHttpClientHandlerFactory,
-      activityFactory,
-      account,
-      streamId,
-      timeoutSeconds,
-      blobStorageFolder
-    );
+  ) => new ServerTransport(http, activityFactory, account, streamId, timeoutSeconds, blobStorageFolder);
 }
