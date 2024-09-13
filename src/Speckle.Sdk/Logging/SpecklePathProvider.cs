@@ -5,19 +5,15 @@ namespace Speckle.Sdk.Logging;
 /// <summary>
 /// Helper class dedicated for Speckle specific Path operations.
 /// </summary>
-public static class SpecklePathProvider
+internal static class SpecklePathProvider
 {
-  private static string s_applicationName = "Speckle";
+  private const string APPLICATION_NAME = "Speckle";
 
-  private static string s_blobFolderName = "Blobs";
+  private const string BLOB_FOLDER_NAME = "Blobs";
 
-  private static string s_kitsFolderName = "Kits";
+  private const string KITS_FOLDER_NAME = "Kits";
 
-  private static string s_accountsFolderName = "Accounts";
-
-  private static string s_objectsFolderName = "Objects";
-
-  private const string LOG_FOLDER_NAME = "Logs";
+  private const string ACCOUNTS_FOLDER_NAME = "Accounts";
 
   private static string UserDataPathEnvVar => "SPECKLE_USERDATA_PATH";
   private static string? Path => Environment.GetEnvironmentVariable(UserDataPathEnvVar);
@@ -33,80 +29,26 @@ public static class SpecklePathProvider
   /// <summary>
   /// Get the path where the Speckle applications should be installed
   /// </summary>
-  public static string InstallSpeckleFolderPath => EnsureFolderExists(InstallApplicationDataPath, s_applicationName);
+  public static string InstallSpeckleFolderPath => EnsureFolderExists(InstallApplicationDataPath, APPLICATION_NAME);
 
   /// <summary>
   /// Get the folder where the user's Speckle data should be stored.
   /// </summary>
-  public static string UserSpeckleFolderPath => EnsureFolderExists(UserApplicationDataPath(), s_applicationName);
+  public static string UserSpeckleFolderPath => EnsureFolderExists(UserApplicationDataPath(), APPLICATION_NAME);
 
   /// <summary>
   /// Get the folder where the Speckle kits should be stored.
   /// </summary>
-  public static string KitsFolderPath => EnsureFolderExists(InstallSpeckleFolderPath, s_kitsFolderName);
-
-  /// <summary>
-  ///
-  /// </summary>
-  public static string ObjectsFolderPath => EnsureFolderExists(KitsFolderPath, s_objectsFolderName);
+  public static string KitsFolderPath => EnsureFolderExists(InstallSpeckleFolderPath, KITS_FOLDER_NAME);
 
   /// <summary>
   /// Get the folder where the Speckle accounts data should be stored.
   /// </summary>
-  public static string AccountsFolderPath => EnsureFolderExists(UserSpeckleFolderPath, s_accountsFolderName);
-
-  /// <summary>
-  /// Override the global Speckle application name.
-  /// </summary>
-  /// <param name="applicationName"></param>
-  public static void OverrideApplicationName(string applicationName)
-  {
-    s_applicationName = applicationName;
-  }
-
-  /// <summary>
-  /// Override the global Speckle application data path.
-  /// </summary>
-  public static void OverrideApplicationDataPath(string? path)
-  {
-    Environment.SetEnvironmentVariable(UserDataPathEnvVar, path);
-  }
-
-  /// <summary>
-  /// Override the global Blob storage folder name.
-  /// </summary>
-  public static void OverrideBlobStorageFolder(string blobFolderName)
-  {
-    s_blobFolderName = blobFolderName;
-  }
-
-  /// <summary>
-  ///  Override the global Kits folder name.
-  /// </summary>
-  public static void OverrideKitsFolderName(string kitsFolderName)
-  {
-    s_kitsFolderName = kitsFolderName;
-  }
-
-  /// <summary>
-  /// Override the global Accounts folder name.
-  /// </summary>
-  public static void OverrideAccountsFolderName(string accountsFolderName)
-  {
-    s_accountsFolderName = accountsFolderName;
-  }
-
-  /// <summary>
-  ///
-  /// </summary>
-  public static void OverrideObjectsFolderName(string objectsFolderName)
-  {
-    s_objectsFolderName = objectsFolderName;
-  }
+  public static string AccountsFolderPath => EnsureFolderExists(UserSpeckleFolderPath, ACCOUNTS_FOLDER_NAME);
 
   /// <summary>
   /// Get the platform specific user configuration folder path.<br/>
-  /// Unless overriden (see <see cref="OverrideApplicationDataPath"/>) will be the <see cref="Environment.SpecialFolder.ApplicationData"/> path e.g.:
+  /// will be the <see cref="Environment.SpecialFolder.ApplicationData"/> path e.g.:
   /// In cases such as linux servers where the above path is not permissive, we will fall back to <see cref="Environment.SpecialFolder.UserProfile"/>
   /// </summary>
   /// <remarks>
@@ -159,7 +101,7 @@ public static class SpecklePathProvider
   /// </summary>
   public static string BlobStoragePath(string? path = null)
   {
-    return EnsureFolderExists(path ?? UserSpeckleFolderPath, s_blobFolderName);
+    return EnsureFolderExists(path ?? UserSpeckleFolderPath, BLOB_FOLDER_NAME);
   }
 
   private static string EnsureFolderExists(params string[] folderName)
@@ -168,7 +110,4 @@ public static class SpecklePathProvider
     Directory.CreateDirectory(path);
     return path;
   }
-
-  internal static string LogFolderPath(string applicationAndVersion) =>
-    EnsureFolderExists(UserSpeckleFolderPath, LOG_FOLDER_NAME, applicationAndVersion);
 }
