@@ -11,8 +11,6 @@ internal static class SpecklePathProvider
 
   private const string BLOB_FOLDER_NAME = "Blobs";
 
-  private const string KITS_FOLDER_NAME = "Kits";
-
   private const string ACCOUNTS_FOLDER_NAME = "Accounts";
 
   private static string UserDataPathEnvVar => "SPECKLE_USERDATA_PATH";
@@ -27,19 +25,9 @@ internal static class SpecklePathProvider
       : UserApplicationDataPath();
 
   /// <summary>
-  /// Get the path where the Speckle applications should be installed
-  /// </summary>
-  public static string InstallSpeckleFolderPath => EnsureFolderExists(InstallApplicationDataPath, APPLICATION_NAME);
-
-  /// <summary>
   /// Get the folder where the user's Speckle data should be stored.
   /// </summary>
   public static string UserSpeckleFolderPath => EnsureFolderExists(UserApplicationDataPath(), APPLICATION_NAME);
-
-  /// <summary>
-  /// Get the folder where the Speckle kits should be stored.
-  /// </summary>
-  public static string KitsFolderPath => EnsureFolderExists(InstallSpeckleFolderPath, KITS_FOLDER_NAME);
 
   /// <summary>
   /// Get the folder where the Speckle accounts data should be stored.
@@ -99,10 +87,8 @@ internal static class SpecklePathProvider
   /// <summary>
   /// Get the folder where the user's Speckle blobs should be stored.
   /// </summary>
-  public static string BlobStoragePath(string? path = null)
-  {
-    return EnsureFolderExists(path ?? UserSpeckleFolderPath, BLOB_FOLDER_NAME);
-  }
+  public static string BlobStoragePath(string? path = null) =>
+    EnsureFolderExists(path ?? UserSpeckleFolderPath, BLOB_FOLDER_NAME);
 
   private static string EnsureFolderExists(params string[] folderName)
   {

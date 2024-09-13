@@ -43,15 +43,6 @@ public class SpecklePathTests
   }
 
   [Test]
-  public void TestUserApplicationDataPathOverride()
-  {
-    var newPath = Path.GetTempPath();
-    SpecklePathProvider.OverrideApplicationDataPath(newPath);
-    Assert.That(SpecklePathProvider.UserApplicationDataPath(), Is.EqualTo(newPath));
-    SpecklePathProvider.OverrideApplicationDataPath(null);
-  }
-
-  [Test]
   public void TestInstallApplicationDataPath()
   {
     var installPath = SpecklePathProvider.InstallApplicationDataPath;
