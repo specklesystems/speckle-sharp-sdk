@@ -11,6 +11,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Tests.Unit.Serialisation;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Integration;
@@ -23,6 +24,8 @@ public static class Fixtures
 
   static Fixtures()
   {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
     ServiceProvider = serviceCollection.BuildServiceProvider();
