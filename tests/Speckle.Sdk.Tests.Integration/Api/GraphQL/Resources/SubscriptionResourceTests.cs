@@ -6,7 +6,7 @@ using Speckle.Sdk.Api.GraphQL.Resources;
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 [TestOf(typeof(SubscriptionResource))]
-public class SubscriptionResourceTests
+public class SubscriptionResourceTests : IDisposable
 {
   private const int WAIT_PERIOD = 300;
   private Client _testUser;
@@ -117,4 +117,7 @@ public class SubscriptionResourceTests
     Assert.That(subscriptionMessage, Is.Not.Null);
     Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
   }
+
+  [OneTimeTearDown]
+  public void Dispose() => _testUser.Dispose();
 }
