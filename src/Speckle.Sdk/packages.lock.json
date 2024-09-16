@@ -35,6 +35,15 @@
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.4"
         }
       },
+      "Microsoft.IO.RecyclableMemoryStream": {
+        "type": "Direct",
+        "requested": "[3.0.1, )",
+        "resolved": "3.0.1",
+        "contentHash": "s/s20YTVY9r9TPfTrN5g8zPF1YhwxyqO6PxUkrYTGI2B+OGPe9AdajWZrLhFqXIvqIW23fnUE4+ztrUWNU1+9g==",
+        "dependencies": {
+          "System.Memory": "4.5.5"
+        }
+      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -343,6 +352,12 @@
           "Microsoft.Data.Sqlite.Core": "7.0.7",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.4"
         }
+      },
+      "Microsoft.IO.RecyclableMemoryStream": {
+        "type": "Direct",
+        "requested": "[3.0.1, )",
+        "resolved": "3.0.1",
+        "contentHash": "s/s20YTVY9r9TPfTrN5g8zPF1YhwxyqO6PxUkrYTGI2B+OGPe9AdajWZrLhFqXIvqIW23fnUE4+ztrUWNU1+9g=="
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",

@@ -16,8 +16,9 @@ namespace Speckle.Sdk.Serialisation.Send;
 
 public class SpeckleObjectSerializer2
 {
+  private readonly SpeckleObjectSerializer2Pool _pool;
+  
   private List<Dictionary<string, int>> _parentClosures = new();
-  private HashSet<object> _parentObjects = new();
   private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
   private readonly Action<ProgressArgs>? _onProgressAction;
 
@@ -38,12 +39,12 @@ public class SpeckleObjectSerializer2
   /// <param name="onProgressAction">Used to track progress.</param>
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
-  public SpeckleObjectSerializer2(
-    Action<ProgressArgs>? onProgressAction = null,
+  public SpeckleObjectSerializer2(SpeckleObjectSerializer2Pool pool, Action<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
+    _pool = pool;
     _onProgressAction = onProgressAction;
     CancellationToken = cancellationToken;
     _trackDetachedChildren = trackDetachedChildren;
@@ -58,10 +59,11 @@ public class SpeckleObjectSerializer2
     try
     {
       try
-      { 
+      {
         using var writer = new StringWriter();
-        using var jsonWriter = new JsonTextWriter(writer);
+        using var jsonWriter = _pool.GetJsonTextWriter(writer);
         SerializeBase(jsonWriter, baseObj, true, default, forceAttach);
+        writer.Flush();
         return writer.ToString();
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
@@ -72,7 +74,6 @@ public class SpeckleObjectSerializer2
     finally
     {
       _parentClosures = new List<Dictionary<string, int>>(); // cleanup in case of exceptions
-      _parentObjects = new HashSet<object>();
     }
   }
 
@@ -94,11 +95,6 @@ public class SpeckleObjectSerializer2
       return;
     }
 
-    if (obj.GetType().IsPrimitive || obj is string)
-    {
-      writer.WriteValue(obj);
-      return;
-    }
 
     switch (obj)
     {
@@ -215,7 +211,30 @@ public class SpeckleObjectSerializer2
         writer.WriteValue((double)ms.M44);
         writer.WriteEndArray();
         break;
+      case double d:
+        writer.WriteValue(d);
+        break;
+      case string s:
+        writer.WriteValue(s);
+        break;
+      case short s:
+        writer.WriteValue(s);
+        break;
+      case int i:
+        writer.WriteValue(i);
+        break;
+      case long l:
+        writer.WriteValue(l);
+        break;
+      case bool b:
+        writer.WriteValue(b);
+        break;
       default:
+        if (obj.GetType().IsPrimitive)
+        {
+          writer.WriteValue(obj);
+          return;
+        }
         throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}");
     }
   }
@@ -228,14 +247,6 @@ public class SpeckleObjectSerializer2
     bool forceAttach
   )
   {
-    // handle circular references
-    bool alreadySerialized = !_parentObjects.Add(baseObj);
-    if (alreadySerialized)
-    {
-      return;
-    }
-
-
     if (detachInfo.IsDetachable && forceAttach)
     {
       var json = SerializeBaseDetached(baseObj, computeClosures, detachInfo, forceAttach);
@@ -266,8 +277,6 @@ public class SpeckleObjectSerializer2
       _parentClosures.RemoveAt(_parentClosures.Count - 1);
     }
 
-    _parentObjects.Remove(baseObj);
-
     if (baseObj is Blob)
     {
       UpdateParentClosures($"blob:{id}");
@@ -295,12 +304,10 @@ public class SpeckleObjectSerializer2
     {
       _parentClosures.RemoveAt(_parentClosures.Count - 1);
     }
-
-    _parentObjects.Remove(baseObj);
     
       ObjectReference objRef = new() { referencedId = id };
-      using var writer2 = new StringWriter();
-      using var jsonWriter2 = new JsonTextWriter(writer2);
+      using var writer2 = new StreamWriter(_pool.GetMemoryStream());
+      using var jsonWriter2 = _pool.GetJsonTextWriter(writer2);
       SerializeProperty(objRef, jsonWriter2, default, forceAttach);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
@@ -317,7 +324,7 @@ public class SpeckleObjectSerializer2
           closure = closure
         };
       }
-      return json2;
+      return json2.NotNull();
   }
   private Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
   {
@@ -372,9 +379,12 @@ public class SpeckleObjectSerializer2
   {
     var allProperties = ExtractAllProperties(baseObj);
 
+    SerializerIdWriter? serializerIdWriter = null;
+    var orignialWriter = writer;
     if (baseObj is not Blob)
     {
-      writer = new SerializerIdWriter(writer);
+      serializerIdWriter = new SerializerIdWriter(writer, _pool);
+      writer = serializerIdWriter;
     }
 
     writer.WriteStartObject();
@@ -391,10 +401,12 @@ public class SpeckleObjectSerializer2
     }
 
     string id;
-    if (writer is SerializerIdWriter serializerIdWriter)
+    if (serializerIdWriter is not null)
     {
-      (var json, writer) = serializerIdWriter.FinishIdWriter();
+      var json = serializerIdWriter.FinishIdWriter();
+      ((IDisposable)serializerIdWriter).Dispose();
       id = ComputeId(json);
+      writer = orignialWriter;
     }
     else
     {
