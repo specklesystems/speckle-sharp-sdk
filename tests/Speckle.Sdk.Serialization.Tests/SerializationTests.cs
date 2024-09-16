@@ -52,7 +52,7 @@ public class SerializationTests
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var closure = await ReadAsObjects(fullName);
-    var deserializer = new SpeckleObjectDeserializer(new NullLogger<SpeckleObjectDeserializer>())
+    var deserializer = new SpeckleObjectDeserializer
     {
       ReadTransport = new TestTransport(closure),
       CancellationToken = default

@@ -36,8 +36,7 @@ public class GeneralSerializerTest
       )
       .ConfigureAwait(false);
 
-    SpeckleObjectDeserializer deserializer =
-      new(new NullLogger<SpeckleObjectDeserializer>()) { ReadTransport = dataSource.Transport };
+    SpeckleObjectDeserializer deserializer = new() { ReadTransport = dataSource.Transport };
     string data = await dataSource.Transport.GetObject(dataSource.ObjectId).NotNull();
     _testData = await deserializer.DeserializeAsync(data).NotNull();
   }

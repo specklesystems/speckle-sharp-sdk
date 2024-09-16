@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -39,10 +38,7 @@ public partial class Operations
   /// <exception cref="Speckle.Sdk.Transports.TransportException"><paramref name="value"/> contains closure references (see Remarks)</exception>
   public async Task<Base> DeserializeAsync(string value, CancellationToken cancellationToken = default)
   {
-    var deserializer = new SpeckleObjectDeserializer(loggerFactory.CreateLogger<SpeckleObjectDeserializer>())
-    {
-      CancellationToken = cancellationToken
-    };
+    var deserializer = new SpeckleObjectDeserializer { CancellationToken = cancellationToken };
     return await deserializer.DeserializeAsync(value).ConfigureAwait(false);
   }
 }

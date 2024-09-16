@@ -57,7 +57,7 @@ public partial class Operations
 
     // Setup Serializer
     SpeckleObjectDeserializer serializer =
-      new(loggerFactory.CreateLogger<SpeckleObjectDeserializer>())
+      new()
       {
         ReadTransport = localTransport,
         OnProgressAction = internalProgressAction,

@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Numerics;
 using System.Reflection;
-using Microsoft.Extensions.Logging;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
@@ -11,7 +10,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
-public sealed class SpeckleObjectDeserializer(ILogger<SpeckleObjectDeserializer> logger)
+public sealed class SpeckleObjectDeserializer
 {
   private bool _isBusy;
   private readonly object _callbackLock = new();

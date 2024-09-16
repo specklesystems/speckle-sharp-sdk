@@ -1,10 +1,12 @@
 using System.Drawing;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 using Matrix4x4 = Speckle.DoubleNumerics.Matrix4x4;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
@@ -91,7 +93,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new UIntValueMock { value = testCase };
 
-    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(testCase));
   }
 
