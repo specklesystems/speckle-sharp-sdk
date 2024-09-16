@@ -46,7 +46,9 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
         .ConfigureAwait(false);
       context.TryGetValue("retryCount", out var retryCount);
       activity?.SetTag("retryCount", retryCount);
-      activity?.SetStatus(policyResult.Result.IsSuccessStatusCode ? SpeckleActivityStatusCode.Ok : SpeckleActivityStatusCode.Error);
+      activity?.SetStatus(
+        policyResult.Result.IsSuccessStatusCode ? SpeckleActivityStatusCode.Ok : SpeckleActivityStatusCode.Error
+      );
       if (policyResult.FinalException != null)
       {
         activity?.RecordException(policyResult.FinalException);
