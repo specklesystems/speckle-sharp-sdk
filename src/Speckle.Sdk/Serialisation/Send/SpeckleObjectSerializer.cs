@@ -58,9 +58,11 @@ public class SpeckleObjectSerializer2
     try
     {
       try
-      {
-        var result = SerializeBase(baseObj, true, default, forceAttach).NotNull();
-        return result.Json;
+      { 
+        using var writer = new StringWriter();
+        using var jsonWriter = new JsonTextWriter(writer);
+        SerializeBase(jsonWriter, baseObj, true, default, forceAttach);
+        return writer.ToString();
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
@@ -122,15 +124,7 @@ public class SpeckleObjectSerializer2
         SerializeProperty(ret, writer, computeClosures, detachInfo, forceAttach);
         break;
       case Base b:
-        var result = SerializeBase(b, computeClosures, detachInfo, forceAttach);
-        if (result is not null)
-        {
-          writer.WriteRawValue(result.Json);
-        }
-        else
-        {
-          writer.WriteNull();
-        }
+        SerializeBase(writer, b, computeClosures, detachInfo, forceAttach);
         break;
       case IDictionary d:
         {
@@ -226,7 +220,8 @@ public class SpeckleObjectSerializer2
     }
   }
 
-  internal SerializationResult? SerializeBase(
+  private void SerializeBase(
+    JsonWriter jsonWriter,
     Base baseObj,
     bool computeClosures,
     PropertyAttributeInfo detachInfo,
@@ -237,19 +232,34 @@ public class SpeckleObjectSerializer2
     bool alreadySerialized = !_parentObjects.Add(baseObj);
     if (alreadySerialized)
     {
-      return null;
+      return;
     }
 
+
+    if (detachInfo.IsDetachable && forceAttach)
+    {
+      var json = SerializeBaseDetached(baseObj, computeClosures, detachInfo, forceAttach);
+      jsonWriter.WriteRawValue(json);
+      return;
+    }
+    SerializeBase2(jsonWriter, baseObj, computeClosures, detachInfo, forceAttach);
+  }
+  
+  internal void SerializeBase2(
+    JsonWriter jsonWriter,
+    Base baseObj,
+    bool computeClosures,
+    PropertyAttributeInfo detachInfo,
+    bool forceAttach
+  )
+  {
     Dictionary<string, int> closure = new();
     if (computeClosures || detachInfo.IsDetachable || baseObj is Blob)
     {
       _parentClosures.Add(closure);
     }
 
-    using var writer = new StringWriter();
-    using var jsonWriter = new JsonTextWriter(writer);
     string id = SerializeBaseObject(baseObj, jsonWriter, closure, forceAttach);
-    var json = writer.ToString();
 
     if (computeClosures || detachInfo.IsDetachable || baseObj is Blob)
     {
@@ -261,11 +271,33 @@ public class SpeckleObjectSerializer2
     if (baseObj is Blob)
     {
       UpdateParentClosures($"blob:{id}");
-      return new(json, id);
+    }
+  }
+
+  internal string SerializeBaseDetached(
+    Base baseObj,
+    bool computeClosures,
+    PropertyAttributeInfo detachInfo,
+    bool forceAttach
+  )
+  {
+    
+    Dictionary<string, int> closure = new();
+    if (computeClosures || detachInfo.IsDetachable || baseObj is Blob)
+    {
+      _parentClosures.Add(closure);
     }
 
-    if (detachInfo.IsDetachable && forceAttach)
+    using var jsonWriter = new JsonTextWriter(TextWriter.Null);
+    string id = SerializeBaseObject(baseObj, jsonWriter, closure, forceAttach);
+
+    if (computeClosures || detachInfo.IsDetachable || baseObj is Blob)
     {
+      _parentClosures.RemoveAt(_parentClosures.Count - 1);
+    }
+
+    _parentObjects.Remove(baseObj);
+    
       ObjectReference objRef = new() { referencedId = id };
       using var writer2 = new StringWriter();
       using var jsonWriter2 = new JsonTextWriter(writer2);
@@ -285,11 +317,8 @@ public class SpeckleObjectSerializer2
           closure = closure
         };
       }
-      return new(json2, null);
-    }
-    return new(json, id);
+      return json2;
   }
-
   private Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
   {
     IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
