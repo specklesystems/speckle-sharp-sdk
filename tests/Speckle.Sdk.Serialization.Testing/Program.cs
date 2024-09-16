@@ -22,7 +22,7 @@ Console.WriteLine("Attach");
 Console.ReadLine();
 Console.WriteLine("Executing");
 var remote = new NullTransport();
-SpeckleObjectSerializer2 sut = new();
+SpeckleObjectSerializer2 sut = new(new SpeckleObjectSerializer2Pool());
 var x = sut.Serialize(testData);
 Console.WriteLine("Detach");
 Console.ReadLine();

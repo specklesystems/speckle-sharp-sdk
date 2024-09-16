@@ -34,8 +34,7 @@ public sealed class SerializerIdWriter : JsonWriter
   {
     _jsonIdWriter.WriteEndObject();
     _jsonIdWriter.Flush();
-    var json = _memoryStream.GetReadOnlySequence();
-    return Encoding.UTF8.GetString(json.ToArray());
+    return Encoding.UTF8.GetString(_memoryStream.ToArray());
   }
 
   public override void WriteValue(string? value)

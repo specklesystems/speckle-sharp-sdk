@@ -118,7 +118,7 @@ public class NewSerializationTests
     collection.ShouldNotBeNull();
     collection.elements.Count.ShouldBe(78);
 
-    SpeckleObjectSerializer2 newSerializer = new();
+    SpeckleObjectSerializer2 newSerializer = new(new SpeckleObjectSerializer2Pool());
     var newJson = newSerializer.Serialize(@base);
 
     SpeckleObjectSerializer oldSerializer = new();
