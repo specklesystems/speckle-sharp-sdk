@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
 
 namespace Speckle.Sdk.Credentials;
@@ -25,26 +24,4 @@ public sealed class UserInfo
   public string email { get; init; }
   public string? company { get; init; }
   public string? avatar { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public Streams streams { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public Commits commits { get; init; }
-}
-
-[ClassInterface(ClassInterfaceType.AutoDual)]
-[ComVisible(true)]
-[Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-public class Streams
-{
-  public int totalCount { get; set; }
-}
-
-[ClassInterface(ClassInterfaceType.AutoDual)]
-[ComVisible(true)]
-[Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-public class Commits
-{
-  public int totalCount { get; set; }
 }

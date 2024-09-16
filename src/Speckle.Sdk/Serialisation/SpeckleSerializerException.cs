@@ -2,9 +2,11 @@
 
 public class SpeckleSerializeException : SpeckleException
 {
-  public SpeckleSerializeException(string message, Exception? inner = null)
+  public SpeckleSerializeException(string? message, Exception? inner = null)
     : base(message, inner) { }
 
-  public SpeckleSerializeException(string message)
+  public SpeckleSerializeException(string? message)
     : base(message) { }
+
+  public SpeckleSerializeException() { }
 }

@@ -43,6 +43,8 @@ public class RevitDuct : Duct, IHasMEPConnectors
   public string type { get; set; }
   public string systemName { get; set; }
   public string systemType { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public Base? parameters { get; set; }
   public string? elementId { get; set; }

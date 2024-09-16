@@ -13,6 +13,7 @@ const string INTEGRATION = "integration";
 const string PACK = "pack";
 const string PACK_LOCAL = "pack-local";
 const string CLEAN_LOCKS = "clean-locks";
+const string PERF = "perf";
 
 Target(
   CLEAN_LOCKS,
@@ -65,7 +66,7 @@ Target(
   DependsOn(RESTORE),
   async () =>
   {
-    await RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore");
+    await RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore").ConfigureAwait(false);
   }
 );
 
@@ -76,9 +77,11 @@ Target(
   async file =>
   {
     await RunAsync(
-      "dotnet",
-      $"test {file} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage /p:AltCoverVerbosity=Warning"
-    );
+        "dotnet",
+        $"test {file} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage /p:AltCoverVerbosity=Warning"
+      )
+      .ConfigureAwait(false);
+    ;
   }
 );
 
@@ -87,22 +90,47 @@ Target(
   DependsOn(BUILD),
   async () =>
   {
-    await RunAsync("docker", "compose -f docker-compose.yml up --wait");
+    await RunAsync("docker", "compose -f docker-compose.yml up --wait").ConfigureAwait(false);
+    ;
     foreach (var test in Glob.Files(".", "**/*.Tests.Integration.csproj"))
     {
       await RunAsync(
-        "dotnet",
-        $"test {test} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
-      );
+          "dotnet",
+          $"test {test} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
+        )
+        .ConfigureAwait(false);
+      ;
     }
-    await RunAsync("docker", "compose down");
+    await RunAsync("docker", "compose down").ConfigureAwait(false);
   }
 );
 
-static Task RunRestore() => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build");
+Target(
+  PERF,
+  Glob.Files(".", "**/*.Tests.Performance.csproj"),
+  async file =>
+  {
+    void CheckBuildDirectory(string dir, string build)
+    {
+      var binDir = Path.Combine(dir, "bin", build);
+      Console.WriteLine($"Checking: {binDir}");
+      if (Directory.Exists(binDir))
+      {
+        Directory.Delete(binDir, true);
+        Console.WriteLine($"Deleted: {binDir}");
+      }
+    }
+    var dir = Path.GetDirectoryName(file) ?? throw new InvalidOperationException();
+    CheckBuildDirectory(dir, "Release");
+    CheckBuildDirectory(dir, "Debug");
+    await RunAsync("dotnet", $"run --project {file} -c Release").ConfigureAwait(false);
+  }
+);
 
-Target(PACK, DependsOn(TEST), RunRestore);
-Target(PACK_LOCAL, DependsOn(BUILD), RunRestore);
+static Task RunPack() => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build");
+
+Target(PACK, DependsOn(TEST), RunPack);
+Target(PACK_LOCAL, DependsOn(BUILD), RunPack);
 
 Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
 

@@ -51,7 +51,7 @@ public class SerializationTests
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var closure = await ReadAsObjects(fullName);
-    var deserializer = new BaseObjectDeserializerV2
+    var deserializer = new SpeckleObjectDeserializer
     {
       ReadTransport = new TestTransport(closure),
       CancellationToken = default
@@ -63,8 +63,8 @@ public class SerializationTests
       var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
       starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
 
-      var baseType = deserializer.Deserialize(objJson);
-      id.ShouldBe(baseType.id);
+      var baseType = await deserializer.DeserializeJsonAsync(objJson);
+      baseType.id.ShouldBe(id);
 
       starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
       starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");

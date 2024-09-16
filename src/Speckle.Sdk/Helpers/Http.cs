@@ -49,7 +49,7 @@ public static class Http
   /// <returns>True if the user is connected to the internet, false otherwise.</returns>
   public static async Task<bool> UserHasInternet()
   {
-    string? defaultServer = null;
+    Uri? defaultServer = null;
     try
     {
       //Perform a quick ping test e.g. to cloudflaire dns, as is quicker than pinging server
@@ -59,8 +59,7 @@ public static class Http
       }
 
       defaultServer = AccountManager.GetDefaultServerUrl();
-      Uri serverUrl = new(defaultServer);
-      await HttpPing(serverUrl).ConfigureAwait(false);
+      await HttpPing(defaultServer).ConfigureAwait(false);
       return true;
     }
     catch (HttpRequestException ex)
@@ -169,7 +168,9 @@ public static class Http
   {
     if (!string.IsNullOrEmpty(authToken))
     {
-      bearerHeader = authToken.NotNull().ToLowerInvariant().Contains("bearer") ? authToken : $"Bearer {authToken}";
+      bearerHeader = authToken.NotNull().StartsWith("bearer", StringComparison.InvariantCultureIgnoreCase)
+        ? authToken
+        : $"Bearer {authToken}";
       return true;
     }
 

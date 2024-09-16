@@ -1,23 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>Speckle.Objects</RootNamespace>
-    <PackageId>Speckle.Objects</PackageId>
-    <Product>Speckle.Objects</Product>
-    <Description>Objects is the default object model for Speckle</Description>
-    <PackageTags>$(PackageTags), objects</PackageTags>
+  
+  <PropertyGroup Label="Compiler Properties">
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
     <Configurations>Debug;Release;Local</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Nugetspec Package Properties">
+    <PackageId>Speckle.Objects</PackageId>
+    <Description>Objects is the default object model for Speckle</Description>
+    <PackageTags>$(PackageTags) objects</PackageTags>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="Nuget Package Properties">
+    <IsPackable>true</IsPackable>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
-  <ItemGroup>
+  <PropertyGroup Label="Analyers">
+    <NoWarn>
+      $(NoWarn);
+      IDE0060;CA1034;CA1819;CA1708;CA1008;CA2225;CA1024;
+    </NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Label="Expose internals to test projects">
     <InternalsVisibleTo Include="Speckle.Objects.Tests.Unit" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Label="Project References">
     <ProjectReference Include="..\Speckle.Sdk\Speckle.Sdk.csproj" />
   </ItemGroup>
+  
 </Project>

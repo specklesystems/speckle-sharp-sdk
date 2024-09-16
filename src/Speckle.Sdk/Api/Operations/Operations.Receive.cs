@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -55,7 +56,7 @@ public static partial class Operations
     }
 
     // Setup Serializer
-    BaseObjectDeserializerV2 serializerV2 =
+    SpeckleObjectDeserializer serializer =
       new()
       {
         ReadTransport = localTransport,
@@ -80,7 +81,7 @@ public static partial class Operations
     );
 
     // Try Local Receive
-    string? objString = LocalReceive(objectId, localTransport, onTotalChildrenCountKnown);
+    string? objString = await LocalReceive(objectId, localTransport, onTotalChildrenCountKnown).ConfigureAwait(false);
 
     if (objString is null)
     {
@@ -107,7 +108,7 @@ public static partial class Operations
 
     using var activity = SpeckleActivityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = serializerV2.Deserialize(objString);
+    Base res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
 
     timer.Stop();
     SpeckleLog.Logger.Information(
@@ -122,29 +123,31 @@ public static partial class Operations
 
   /// <summary>
   /// Try and get the object from the local transport. If it's there, we assume all its children are there
-  /// This assumption is hard-wired into the <see cref="BaseObjectDeserializerV2"/>
+  /// This assumption is hard-wired into the <see cref="SpeckleObjectDeserializer"/>
   /// </summary>
   /// <param name="objectId"></param>
   /// <param name="localTransport"></param>
   /// <param name="onTotalChildrenCountKnown"></param>
   /// <returns></returns>
   /// <exception cref="SpeckleDeserializeException"></exception>
-  internal static string? LocalReceive(
+  internal static async Task<string?> LocalReceive(
     string objectId,
     ITransport localTransport,
     Action<int>? onTotalChildrenCountKnown
   )
   {
-    string? objString = localTransport.GetObject(objectId);
+    string? objString = await localTransport.GetObject(objectId).ConfigureAwait(false);
     if (objString is null)
     {
       return null;
     }
 
-    // Shoot out the total children count
-    var closures = TransportHelpers.GetClosureTable(objString);
+    // Shoot out the total children count, wasteful
+    var count = (
+      await ClosureParser.GetClosuresAsync(objString, localTransport.CancellationToken).ConfigureAwait(false)
+    ).Count;
 
-    onTotalChildrenCountKnown?.Invoke(closures?.Count ?? 0);
+    onTotalChildrenCountKnown?.Invoke(count);
 
     return objString;
   }

@@ -87,9 +87,9 @@ public class Plane : Base, ITransformable<Plane>
   /// </summary>
   /// <param name="list">The list of values representing this plane</param>
   /// <returns>A new <see cref="Plane"/> with the provided values.</returns>
-  public static Plane FromList(List<double> list)
+  public static Plane FromList(IReadOnlyList<double> list)
   {
-    var units = Units.GetUnitFromEncoding(list[list.Count - 1]);
+    var units = Units.GetUnitFromEncoding(list[^1]);
     var plane = new Plane
     {
       origin = new Point(list[0], list[1], list[2], units),

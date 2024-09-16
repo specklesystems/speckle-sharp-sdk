@@ -9,11 +9,8 @@ namespace Speckle.Objects.BuiltElements;
 /// <remarks>
 /// This class is not suitable for freeform rebar, which can have multiple shapes.
 /// </remarks>
-public abstract class RebarGroup<T> : Base, IHasVolume, IDisplayValue<List<ICurve>>
-  where T : RebarShape
+public abstract class RebarGroup : Base, IHasVolume, IDisplayValue<List<ICurve>>
 {
-  public RebarGroup() { }
-
   /// <summary>
   /// The shape of the rebar group
   /// </summary>

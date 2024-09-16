@@ -1,7 +1,8 @@
 using NUnit.Framework;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Common;
 
-namespace Objects.Tests.Unit.Geometry;
+namespace Speckle.Objects.Tests.Unit.Geometry;
 
 [TestFixture, TestOf(typeof(Mesh))]
 public class MeshTests
@@ -26,9 +27,10 @@ public class MeshTests
   {
     return new Mesh
     {
-      vertices = { 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0 },
-      faces = { 3, 0, 1, 2, 3, 3, 4, 5 },
-      textureCoordinates = { 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0 }
+      vertices = [0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0],
+      faces = [3, 0, 1, 2, 3, 3, 4, 5],
+      textureCoordinates = [0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0],
+      units = Units.Meters,
     };
   }
 
@@ -36,9 +38,10 @@ public class MeshTests
   {
     return new Mesh
     {
-      vertices = { 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0 },
-      faces = { 3, 0, 1, 2, 3, 0, 2, 3 },
-      textureCoordinates = { 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0 }
+      vertices = [0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0],
+      faces = [3, 0, 1, 2, 3, 0, 2, 3],
+      textureCoordinates = [0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0],
+      units = Units.Meters,
     };
   }
 }

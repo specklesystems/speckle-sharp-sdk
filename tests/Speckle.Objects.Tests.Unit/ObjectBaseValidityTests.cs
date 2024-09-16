@@ -6,7 +6,7 @@ using Speckle.Objects.Structural.GSA.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
-namespace Objects.Tests.Unit;
+namespace Speckle.Objects.Tests.Unit;
 
 public class ObjectBaseValidityTests
 {
@@ -27,7 +27,7 @@ public class ObjectBaseValidityTests
     });
     exception.ShouldNotBeNull();
     exception.Message.ShouldBe(
-      "Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute"
+      "Speckle.Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute"
     );
   }
 

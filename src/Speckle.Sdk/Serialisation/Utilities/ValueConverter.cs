@@ -1,17 +1,23 @@
-using System.Buffers;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 
 internal static class ValueConverter
 {
-  private static object[] _singleValue = new object[1];
+  private static readonly object[] s_singleValue = new object[1];
 
+  [SuppressMessage(
+    "Maintainability",
+    "CA1502:Avoid excessive complexity",
+    Justification = "To fix this requires rewrite of serializaiton"
+  )]
   public static bool ConvertValue(Type type, object? value, out object? convertedValue)
   {
     // TODO: Document list of supported values in the SDK. (and grow it as needed)
@@ -169,9 +175,9 @@ internal static class ValueConverter
       var targetType = typeof(List<>).MakeGenericType(type.GenericTypeArguments);
       Type listElementType = type.GenericTypeArguments[0];
 
-      _singleValue[0] = valueList.Count;
+      s_singleValue[0] = valueList.Count;
       //reuse array to avoid params array allocation
-      IList ret = (IList)Activator.CreateInstance(targetType, _singleValue);
+      IList ret = (IList)Activator.CreateInstance(targetType, s_singleValue).NotNull();
 
       foreach (object inputListElement in valueList)
       {
@@ -200,7 +206,7 @@ internal static class ValueConverter
       }
 
       Type dictValueType = type.GenericTypeArguments[1];
-      IDictionary ret = (IDictionary)Activator.CreateInstance(type);
+      IDictionary ret = (IDictionary)Activator.CreateInstance(type).NotNull();
 
       foreach (KeyValuePair<string, object> kv in valueDict)
       {

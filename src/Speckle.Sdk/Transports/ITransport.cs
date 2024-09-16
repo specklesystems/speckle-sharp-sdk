@@ -12,7 +12,7 @@ public enum ProgressEvent
   SerializeObject,
 }
 
-public record ProgressArgs(ProgressEvent ProgressEvent, long? Count, long? Total);
+public record ProgressArgs(ProgressEvent ProgressEvent, long? Count, long? Total, long? ProcessedTotal = null);
 
 /// <summary>
 /// Interface defining the contract for transport implementations.
@@ -72,7 +72,7 @@ public interface ITransport
   /// <param name="id">The object's hash.</param>
   /// <returns>The serialized object data, or <see langword="null"/> if the transport cannot find the object</returns>
   /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
-  public string? GetObject(string id);
+  public Task<string?> GetObject(string id);
 
   /// <summary>
   /// Copies the parent object and all its children to the provided transport.

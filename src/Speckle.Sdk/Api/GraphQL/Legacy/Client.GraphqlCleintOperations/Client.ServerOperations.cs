@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
-using Speckle.Sdk.Logging;
+using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Api;
 
@@ -28,12 +28,12 @@ public partial class Client
 
     var res = await ExecuteGraphQLRequest<ServerInfoResponse>(request, cancellationToken).ConfigureAwait(false);
 
-    if (res.serverInfo.version.Contains("dev"))
+    if (res.serverInfo.version.NotNull().Contains("dev"))
     {
       return new System.Version(999, 999, 999);
     }
 
-    ServerVersion = new System.Version(Regex.Replace(res.serverInfo.version, "[-a-zA-Z]+", ""));
-    return ServerVersion;
+    var serverVersion = new System.Version(Regex.Replace(res.serverInfo.version, "[-a-zA-Z]+", ""));
+    return serverVersion;
   }
 }

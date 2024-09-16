@@ -1,12 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Transports;
 
 public static class TransportHelpers
 {
-  public static string CopyObjectAndChildrenSync(
+  public static async Task<string> CopyObjectAndChildrenAsync(
     string id,
     ITransport sourceTransport,
     ITransport targetTransport,
@@ -21,7 +20,7 @@ public static class TransportHelpers
 
     cancellationToken.ThrowIfCancellationRequested();
 
-    var parent = sourceTransport.GetObject(id);
+    var parent = await sourceTransport.GetObject(id).ConfigureAwait(false);
     if (parent is null)
     {
       throw new TransportException(
@@ -31,47 +30,34 @@ public static class TransportHelpers
 
     targetTransport.SaveObject(id, parent);
 
-    var closures = GetClosureTable(parent);
+    var closures = (await ClosureParser.GetChildrenIdsAsync(parent, cancellationToken).ConfigureAwait(false)).ToList();
 
-    onTotalChildrenCountKnown?.Invoke(closures?.Count ?? 0);
+    onTotalChildrenCountKnown?.Invoke(closures.Count);
 
-    if (closures is not null)
+    int i = 0;
+    foreach (var closure in closures)
     {
-      int i = 0;
-      foreach (var kvp in closures)
+      cancellationToken.ThrowIfCancellationRequested();
+
+      //skips blobs because ServerTransport downloads things separately
+      if (closure.StartsWith("blob:"))
       {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var child = sourceTransport.GetObject(kvp.Key);
-        if (child is null)
-        {
-          throw new TransportException(
-            $"Closure id {kvp.Key} was not found within this transport {sourceTransport.TransportName}"
-          );
-        }
-
-        targetTransport.SaveObject(kvp.Key, child);
-        var count = i++;
-        sourceTransport.OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.UploadObject, count, closures.Count));
+        continue;
       }
+      var child = await sourceTransport.GetObject(closure).ConfigureAwait(false);
+      if (child is null)
+      {
+        throw new TransportException(
+          $"Closure id {closure} was not found within this transport {sourceTransport.TransportName}"
+        );
+      }
+
+      targetTransport.SaveObject(closure, child);
+      var count = i++;
+      sourceTransport.OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.UploadObject, count, closures.Count));
     }
 
     return parent;
-  }
-
-  /// <param name="objString">The Json object</param>
-  /// <returns>The closure table</returns>
-  /// <exception cref="SpeckleDeserializeException">Failed to deserialize the object into <see cref="Placeholder"/></exception>
-  internal static Dictionary<string, int>? GetClosureTable(string objString) //TODO: Unit Test
-  {
-    var partial = JsonConvert.DeserializeObject<Placeholder>(objString);
-
-    if (partial is null)
-    {
-      throw new SpeckleDeserializeException($"Failed to deserialize {nameof(objString)} into {nameof(Placeholder)}");
-    }
-
-    return partial.__closure;
   }
 
   [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Deserialization target for DTO")]

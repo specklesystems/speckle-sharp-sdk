@@ -38,6 +38,8 @@ public class RevitToposolid : Base, IDisplayValue<List<Mesh>>
 
   public string family { get; set; }
   public string type { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public Base? parameters { get; set; }
 }

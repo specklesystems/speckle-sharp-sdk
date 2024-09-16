@@ -74,7 +74,7 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
       radius = list[2],
       domain = new Interval { start = list[3], end = list[4] },
       plane = Plane.FromList(list.GetRange(5, 13)),
-      units = Units.GetUnitFromEncoding(list[list.Count - 1])
+      units = Units.GetUnitFromEncoding(list[^1])
     };
 
     return circle;

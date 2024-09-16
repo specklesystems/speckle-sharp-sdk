@@ -206,9 +206,8 @@ public static class AccountManager
   /// <summary>
   /// The Default Server URL for authentication, can be overridden by placing a file with the alternatrive url in the Speckle folder or with an ENV_VAR
   /// </summary>
-  public static string GetDefaultServerUrl()
+  public static Uri GetDefaultServerUrl()
   {
-    var serverUrl = DEFAULT_SERVER_URL;
     var customServerUrl = "";
 
     // first mechanism, check for local file
@@ -227,14 +226,13 @@ public static class AccountManager
 
     if (!string.IsNullOrEmpty(customServerUrl))
     {
-      Uri.TryCreate(customServerUrl, UriKind.Absolute, out Uri url);
-      if (url != null)
+      if (Uri.TryCreate(customServerUrl, UriKind.Absolute, out Uri? url))
       {
-        serverUrl = customServerUrl.TrimEnd('/');
+        return url;
       }
     }
 
-    return serverUrl;
+    return new Uri(DEFAULT_SERVER_URL);
   }
 
   /// <param name="id">The Id of the account to fetch</param>
@@ -254,7 +252,7 @@ public static class AccountManager
   {
     Account account = GetAccount(id);
 
-    if (account.serverInfo.migration.movedTo is not Uri upgradeUri)
+    if (account.serverInfo.migration?.movedTo is not Uri upgradeUri)
     {
       throw new SpeckleAccountManagerException(
         $"Server with url {account.serverInfo.url} does not have information about the upgraded server"
@@ -465,9 +463,9 @@ public static class AccountManager
     //TODO: reset default account
     s_accountStorage.DeleteObject(id);
 
-    var accounts = GetAccounts();
-    //BUG: Clearly this is a bug bug bug!
-    if (accounts.Any() && !accounts.Any(x => x.isDefault))
+    var accounts = GetAccounts().ToArray();
+
+    if (accounts.Length != 0 && !accounts.Any(x => x.isDefault))
     {
       ChangeDefaultAccount(accounts.First().id);
     }
@@ -529,10 +527,10 @@ public static class AccountManager
     return searchResult;
   }
 
-  private static string EnsureCorrectServerUrl(string server)
+  private static Uri EnsureCorrectServerUrl(Uri? server)
   {
     var localUrl = server;
-    if (string.IsNullOrEmpty(localUrl))
+    if (localUrl == null)
     {
       localUrl = GetDefaultServerUrl();
       SpeckleLog.Logger.Debug(
@@ -540,7 +538,7 @@ public static class AccountManager
         localUrl
       );
     }
-    return localUrl.TrimEnd('/');
+    return localUrl;
   }
 
   private static void EnsureGetAccessCodeFlowIsSupported()
@@ -552,7 +550,7 @@ public static class AccountManager
     }
   }
 
-  private static async Task<string> GetAccessCode(string server, string challenge, TimeSpan timeout)
+  private static async Task<string> GetAccessCode(Uri server, string challenge, TimeSpan timeout)
   {
     EnsureGetAccessCodeFlowIsSupported();
 
@@ -603,17 +601,17 @@ public static class AccountManager
         "Local auth flow failed to complete within the timeout window. Access code is {accessCode}",
         accessCode
       );
-      throw new Exception("Local auth flow failed to complete within the timeout window");
+      throw new AuthFlowException("Local auth flow failed to complete within the timeout window");
     }
 
-    if (task.IsFaulted)
+    if (task.IsFaulted && task.Exception is not null)
     {
       SpeckleLog.Logger.Error(
         task.Exception,
         "Getting access code flow failed with {exceptionMessage}",
         task.Exception.Message
       );
-      throw new Exception($"Auth flow failed: {task.Exception.Message}", task.Exception);
+      throw new AuthFlowException($"Auth flow failed: {task.Exception.Message}", task.Exception);
     }
 
     // task completed within timeout
@@ -624,12 +622,12 @@ public static class AccountManager
     return accessCode;
   }
 
-  private static async Task<Account> CreateAccount(string accessCode, string challenge, string server)
+  private static async Task<Account> CreateAccount(string accessCode, string challenge, Uri server)
   {
     try
     {
       var tokenResponse = await GetToken(accessCode, challenge, server).ConfigureAwait(false);
-      var userResponse = await GetUserServerInfo(tokenResponse.token, new(server)).ConfigureAwait(false);
+      var userResponse = await GetUserServerInfo(tokenResponse.token, server).ConfigureAwait(false);
 
       var account = new Account
       {
@@ -703,7 +701,7 @@ public static class AccountManager
   /// </summary>
   /// <param name="server">Server to use to add the account, if not provied the default Server will be used</param>
   /// <returns></returns>
-  public static async Task AddAccount(string server = "")
+  public static async Task AddAccount(Uri? server = null)
   {
     SpeckleLog.Logger.Debug("Starting to add account for {serverUrl}", server);
 
@@ -747,7 +745,7 @@ public static class AccountManager
     }
   }
 
-  private static async Task<TokenExchangeResponse> GetToken(string accessCode, string challenge, string server)
+  private static async Task<TokenExchangeResponse> GetToken(string accessCode, string challenge, Uri server)
   {
     try
     {
@@ -763,7 +761,7 @@ public static class AccountManager
 
       using var content = new StringContent(JsonConvert.SerializeObject(body));
       content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-      var response = await client.PostAsync($"{server}/auth/token", content).ConfigureAwait(false);
+      var response = await client.PostAsync(new Uri(server, "/auth/token"), content).ConfigureAwait(false);
 
       return JsonConvert
         .DeserializeObject<TokenExchangeResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false))
@@ -817,7 +815,7 @@ public static class AccountManager
 
     var headers = response.Headers;
     const string HEADER = "x-speckle-frontend-2";
-    if (!headers.TryGetValues(HEADER, out IEnumerable<string> values))
+    if (!headers.TryGetValues(HEADER, out IEnumerable<string>? values))
     {
       return false;
     }
@@ -836,10 +834,13 @@ public static class AccountManager
 
   private static string GenerateChallenge()
   {
+#if NETSTANDARD2_0
     using RNGCryptoServiceProvider rng = new();
     byte[] challengeData = new byte[32];
     rng.GetBytes(challengeData);
-
+#else
+    byte[] challengeData = RandomNumberGenerator.GetBytes(32);
+#endif
     //escaped chars like % do not play nice with the server
     return Regex.Replace(Convert.ToBase64String(challengeData), @"[^\w\.@-]", "");
   }

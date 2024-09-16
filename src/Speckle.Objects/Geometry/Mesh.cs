@@ -2,7 +2,6 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Sdk;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
@@ -10,57 +9,11 @@ namespace Speckle.Objects.Geometry;
 [SpeckleType("Objects.Geometry.Mesh")]
 public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<Mesh>
 {
-  public Mesh() { }
-
-  /// <summary>
-  /// Constructs a new mesh from it's raw values.
-  /// </summary>
-  /// <param name="vertices"></param>
-  /// <param name="faces"></param>
-  /// <param name="colors"></param>
-  /// <param name="texture_coords"></param>
-  /// <param name="units"></param>
-  /// <param name="applicationId"></param>
-  public Mesh(
-    List<double> vertices,
-    List<int> faces,
-    List<int>? colors = null,
-    List<double>? texture_coords = null,
-    string units = Units.Meters,
-    string? applicationId = null
-  )
-  {
-    this.vertices = vertices;
-    this.faces = faces;
-    this.colors = colors ?? this.colors;
-    textureCoordinates = texture_coords ?? textureCoordinates;
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  [Obsolete("Use lists constructor", true)]
-  public Mesh(
-    double[] vertices,
-    int[] faces,
-    int[]? colors = null,
-    double[]? texture_coords = null,
-    string units = Units.Meters,
-    string? applicationId = null
-  )
-    : this(
-      vertices.ToList(),
-      faces.ToList(),
-      colors?.ToList() ?? new(),
-      texture_coords?.ToList() ?? new(),
-      units,
-      applicationId
-    ) { }
-
   [DetachProperty, Chunkable(31250)]
-  public List<double> vertices { get; set; } = new();
+  public required List<double> vertices { get; set; }
 
   [DetachProperty, Chunkable(62500)]
-  public List<int> faces { get; set; } = new();
+  public required List<int> faces { get; set; }
 
   /// <summary> Vertex colors as ARGB <see cref="int"/>s</summary>
   [DetachProperty, Chunkable(62500)]
@@ -73,7 +26,7 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
   /// The unit's this <see cref="Mesh"/> is in.
   /// This should be one of <see cref="Units"/>
   /// </summary>
-  public string units { get; set; } = Units.None;
+  public required string units { get; set; }
 
   /// <inheritdoc/>
   public double area { get; set; }

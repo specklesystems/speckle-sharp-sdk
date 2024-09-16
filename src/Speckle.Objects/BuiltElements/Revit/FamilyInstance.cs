@@ -37,6 +37,8 @@ public class FamilyInstance : Base, IDisplayValue<List<Mesh>>
   public string family { get; set; }
   public string type { get; set; }
   public string category { get; set; }
+
+  [DetachProperty]
   public Level level { get; set; }
   public double rotation { get; set; }
   public bool facingFlipped { get; set; }
