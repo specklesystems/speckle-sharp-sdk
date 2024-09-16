@@ -326,20 +326,17 @@ public class SpeckleObjectSerializer2
       }
       return json2.NotNull();
   }
-  private Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
+  private IEnumerable<(string, (object? value, PropertyAttributeInfo info))> ExtractAllProperties(Base baseObj)
   {
     IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
     IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
 
-    // propertyName -> (originalValue, isDetachable, isChunkable, chunkSize)
-    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties =
-      new(typedProperties.Count + dynamicProperties.Count);
 
     // Construct `allProperties`: Add typed properties
     foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)
     {
       object? baseValue = propertyInfo.GetValue(baseObj);
-      allProperties[propertyInfo.Name] = (baseValue, detachInfo);
+      yield return (propertyInfo.Name, (baseValue, detachInfo));
     }
 
     // Construct `allProperties`: Add dynamic properties
@@ -364,10 +361,8 @@ public class SpeckleObjectSerializer2
         var match = Constants.ChunkPropertyNameRegex.Match(propName);
         isChunkable = int.TryParse(match.Groups[^1].Value, out chunkSize);
       }
-      allProperties[propName] = (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null));
+      yield return (propName,(baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null)));
     }
-
-    return allProperties;
   }
 
   private string SerializeBaseObject(
@@ -389,15 +384,15 @@ public class SpeckleObjectSerializer2
 
     writer.WriteStartObject();
     // Convert all properties
-    foreach (var prop in allProperties)
+    foreach (var (name, value) in allProperties)
     {
-      if (prop.Value.info.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
+      if (value.info.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
       {
         continue;
       }
 
-      writer.WritePropertyName(prop.Key);
-      SerializeProperty(prop.Value.value, writer, prop.Value.info, forceAttach);
+      writer.WritePropertyName(name);
+      SerializeProperty(value.value, writer,value.info, forceAttach);
     }
 
     string id;
