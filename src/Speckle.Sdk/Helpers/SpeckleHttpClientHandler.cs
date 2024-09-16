@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Polly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
