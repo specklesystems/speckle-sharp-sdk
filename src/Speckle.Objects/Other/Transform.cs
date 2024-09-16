@@ -342,123 +342,44 @@ public class Transform : Base
   /// Transform a flat list of doubles representing points
   /// </summary>
   [Obsolete("Use transform method in Point class", true)]
-  public List<double> ApplyToPoints(List<double> points)
-  {
-    if (points.Count % 3 != 0)
-    {
-      throw new SpeckleException(
-        "Cannot apply transform as the points list is malformed: expected length to be multiple of 3"
-      );
-    }
-
-    var transformed = new List<double>(points.Count);
-    for (var i = 0; i < points.Count; i += 3)
-    {
-      var point = new Point(points[i], points[i + 1], points[i + 2]);
-      point.TransformTo(this, out Point transformedPoint);
-      transformed.AddRange(transformedPoint.ToList());
-    }
-    return transformed;
-  }
+  public List<double> ApplyToPoints(List<double> points) => throw new NotImplementedException();
 
   /// <summary>
   /// Transform a flat list of speckle Points
   /// </summary>
   [Obsolete("Use transform method in Point class", true)]
-  public List<Point> ApplyToPoints(List<Point> points)
-  {
-    var transformedPoints = new List<Point>();
-    foreach (var point in points)
-    {
-      point.TransformTo(this, out Point transformedPoint);
-      transformedPoints.Add(transformedPoint);
-    }
-    return transformedPoints;
-  }
+  public List<Point> ApplyToPoints(List<Point> points) => throw new NotImplementedException();
 
   /// <summary>
   /// Transform a single speckle Point
   /// </summary>
   [Obsolete("Use transform method in Point class", true)]
-  public Point? ApplyToPoint(Point point)
-  {
-    if (point == null)
-    {
-      return null;
-    }
-
-    point.TransformTo(this, out Point transformedPoint);
-    return transformedPoint;
-  }
+  public Point? ApplyToPoint(Point point) => throw new NotImplementedException();
 
   /// <summary>
   /// Transform a list of three doubles representing a point
   /// </summary>
   [Obsolete("Use transform method in Point class", true)]
-  public List<double> ApplyToPoint(List<double> point)
-  {
-    var newPoint = new Point(point[0], point[1], point[2]);
-    newPoint.TransformTo(this, out Point transformed);
-    return transformed.ToList();
-  }
+  public List<double> ApplyToPoint(List<double> point) => throw new NotImplementedException();
 
   /// <summary>
   /// Transform a single speckle Vector
   /// </summary>
   [Obsolete("Use transform method in Vector class", true)]
-  public Vector ApplyToVector(Vector vector)
-  {
-    var newCoords = ApplyToVector(new List<double> { vector.x, vector.y, vector.z });
-
-    return new Vector(newCoords[0], newCoords[1], newCoords[2], vector.units, vector.applicationId);
-  }
+  public Vector ApplyToVector(Vector vector) => throw new NotImplementedException();
 
   /// <summary>
   /// Transform a list of three doubles representing a vector
   /// </summary>
   [Obsolete("Use transform method in Vector class", true)]
-  public List<double> ApplyToVector(List<double> vector)
-  {
-    var newPoint = new List<double>();
-
-    for (var i = 0; i < 12; i += 4)
-    {
-      newPoint.Add(vector[0] * value[i] + vector[1] * value[i + 1] + vector[2] * value[i + 2]);
-    }
-
-    return newPoint;
-  }
+  public List<double> ApplyToVector(List<double> vector) => throw new NotImplementedException();
 
   /// <summary>
   /// Transform a flat list of ICurves. Note that if any of the ICurves does not implement `ITransformable`,
   /// it will not be returned.
   /// </summary>
   [Obsolete("Use transform method in Curve class", true)]
-  public List<ICurve> ApplyToCurves(List<ICurve> curves, out bool success)
-  {
-    // TODO: move to curve class
-    success = true;
-    var transformed = new List<ICurve>();
-    foreach (var curve in curves)
-    {
-      if (curve is ITransformable c)
-      {
-        c.TransformTo(this, out ITransformable tc);
-        transformed.Add((ICurve)tc);
-      }
-      else
-      {
-        success = false;
-      }
-    }
-
-    return transformed;
-  }
-
-  public static Transform Multiply(Transform left, Transform right)
-  {
-    throw new NotImplementedException();
-  }
+  public List<ICurve> ApplyToCurves(List<ICurve> curves, out bool success) => throw new NotImplementedException();
 
   #endregion
 }

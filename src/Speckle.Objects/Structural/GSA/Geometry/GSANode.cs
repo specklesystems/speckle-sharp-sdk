@@ -45,10 +45,10 @@ public class GSANode : Node
           AxisType.Cartesian,
           new Plane()
           {
-            origin = new Point(0, 0),
-            normal = new Vector(0, 0, 1),
-            xdir = new Vector(1, 0, 0),
-            ydir = new Vector(0, 1, 0),
+            origin = new Point(0, 0, 0, units: Units.Meters), //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
+            normal = new Vector(0, 0, 1, units: Units.Meters), //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
+            xdir = new Vector(1, 0, 0, units: Units.Meters), //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
+            ydir = new Vector(0, 1, 0, units: Units.Meters), //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
             units = Units.Meters //Not sure if defaulting to meters is correct, but it was what we were doing previously inside Plane's ctor
           }
         )

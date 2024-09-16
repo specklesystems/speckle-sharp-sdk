@@ -44,6 +44,20 @@ public class NotNullTests
   }
 
   [Test]
+  public async Task NotNullClass_ValueTask()
+  {
+    var t = await NotNullExtensions.NotNull(ValueTask.FromResult<string?>("test"));
+    t.ShouldNotBeNull().ShouldBe("test");
+  }
+
+  [Test]
+  public async Task NotNullStruct_ValueTask()
+  {
+    var t = await NotNullExtensions.NotNull(ValueTask.FromResult<int?>(2));
+    t.ShouldBe(2);
+  }
+
+  [Test]
   public void NotNullClass_Exception() =>
     Assert.Throws<ArgumentNullException>(() => NotNullExtensions.NotNull((string?)null));
 
@@ -58,4 +72,16 @@ public class NotNullTests
   [Test]
   public void NotNullStruct_Task_Exception() =>
     Assert.ThrowsAsync<ArgumentNullException>(() => NotNullExtensions.NotNull(Task.FromResult((int?)null)));
+
+  [Test]
+  public void NotNullClass_ValueTask_Exception() =>
+    Assert.ThrowsAsync<ArgumentNullException>(
+      async () => await NotNullExtensions.NotNull(ValueTask.FromResult((string?)null))
+    );
+
+  [Test]
+  public void NotNullStruct_ValueTask_Exception() =>
+    Assert.ThrowsAsync<ArgumentNullException>(
+      async () => await NotNullExtensions.NotNull(ValueTask.FromResult((int?)null))
+    );
 }

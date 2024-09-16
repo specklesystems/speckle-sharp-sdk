@@ -1,13 +1,11 @@
 using System.Drawing;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
-using Shouldly;
-using Speckle.DoubleNumerics;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
+using Matrix4x4 = Speckle.DoubleNumerics.Matrix4x4;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
@@ -81,6 +79,20 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
 
     var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(default(double)));
+  }
+
+  // IMPORTANT!!: This test mimics large numbers that we sometimes see from python
+  // This is behaviour our deserializer has, but not necessarily commited to keeping
+  // Numbers outside the range of a Long are not officially supported
+  [Test]
+  [TestCaseSource(nameof(UInt64TestCases))]
+  [DefaultFloatingPointTolerance(2048)]
+  public async Task UIntToDouble(ulong testCase)
+  {
+    var from = new UIntValueMock { value = testCase };
+
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>();
+    Assert.That(res.value, Is.EqualTo(testCase));
   }
 
   [
@@ -264,6 +276,12 @@ public class IntValueMock : SerializerMock
   public long value { get; set; }
 }
 
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.IntValueMock")]
+public class UIntValueMock : SerializerMock
+{
+  public ulong value { get; set; }
+}
+
 [SpeckleType("Speckle.Core.Tests.Unit.Serialisation.StringValueMock")]
 public class StringValueMock : SerializerMock
 {
@@ -355,6 +373,7 @@ public abstract class PrimitiveTestFixture
   public static readonly short[] Int16TestCases = { short.MaxValue, short.MinValue };
   public static readonly int[] Int32TestCases = { int.MinValue, int.MaxValue };
   public static readonly long[] Int64TestCases = { long.MaxValue, long.MinValue };
+  public static readonly ulong[] UInt64TestCases = { ulong.MaxValue, ulong.MinValue };
 
   public static double[] Float64TestCases { get; } =
     {

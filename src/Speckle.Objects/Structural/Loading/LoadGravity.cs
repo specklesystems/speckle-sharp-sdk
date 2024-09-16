@@ -1,4 +1,5 @@
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
@@ -24,7 +25,7 @@ public class LoadGravity : Load
   public LoadGravity(LoadCase loadCase, Vector? gravityFactors = null, string? name = null)
   {
     this.loadCase = loadCase;
-    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1);
+    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1, Units.None);
     this.name = name;
   }
 
@@ -45,7 +46,7 @@ public class LoadGravity : Load
   {
     this.elements = elements;
     this.loadCase = loadCase;
-    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1);
+    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1, Units.None);
     this.name = name;
   }
 
@@ -74,7 +75,7 @@ public class LoadGravity : Load
     this.elements = elements;
     this.nodes = nodes;
     this.loadCase = loadCase;
-    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1);
+    this.gravityFactors = gravityFactors ?? new Vector(0, 0, -1, Units.None);
     this.name = name;
   }
 

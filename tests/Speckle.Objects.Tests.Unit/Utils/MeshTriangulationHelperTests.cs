@@ -1,11 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
+using Speckle.Sdk.Common;
 
-namespace Objects.Tests.Unit.Utils;
+namespace Speckle.Objects.Tests.Unit.Utils;
 
 [TestFixture, TestOf(typeof(MeshTriangulationHelper))]
 public class MeshTriangulationHelperTests
@@ -25,7 +23,13 @@ public class MeshTriangulationHelperTests
     List<int> faces = new(n + 1) { n };
     faces.AddRange(Enumerable.Range(0, n));
 
-    Mesh mesh = new(vertices, faces);
+    Mesh mesh =
+      new()
+      {
+        vertices = vertices,
+        faces = faces,
+        units = Units.Meters
+      };
 
     //Test
     mesh.TriangulateMesh();
@@ -55,7 +59,13 @@ public class MeshTriangulationHelperTests
 
     List<int> faces = new() { 3, 0, 1, 2 };
 
-    Mesh mesh = new(vertices, new List<int>(faces));
+    Mesh mesh =
+      new()
+      {
+        vertices = vertices,
+        faces = new List<int>(faces),
+        units = Units.Meters
+      };
 
     //Test
     mesh.TriangulateMesh();
@@ -77,9 +87,15 @@ public class MeshTriangulationHelperTests
 
     List<int> faces = new() { 4, 0, 1, 2, 3 };
 
-    Mesh mesh = new(vertices, new List<int>(faces));
+    Mesh mesh =
+      new()
+      {
+        vertices = vertices,
+        faces = new List<int>(faces),
+        units = Units.Meters
+      };
 
-    //Test
+    //Tests
     mesh.TriangulateMesh(preserveQuads);
 
     //Results

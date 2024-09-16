@@ -1,7 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
-using Speckle.Sdk;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 
@@ -12,76 +12,33 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
 {
   public Line() { }
 
-  [Obsolete("Line should not use a constructor that only sets the start point. Deprecated in 2.18.", true)]
-  public Line(double x, double y, double z = 0, string units = Units.Meters, string? applicationId = null)
-  {
-    start = new Point(x, y, z);
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type. Reason: Obsolete.
-    end = null;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type. Reason: Obsolete.
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  public Line(Point start, Point end, string units = Units.Meters, string? applicationId = null)
-  {
-    this.start = start;
-    this.end = end;
-    length = Point.Distance(start, end);
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  public Line(IList<double> coordinates, string units = Units.Meters, string? applicationId = null)
+  /// <param name="coordinates"></param>
+  /// <param name="units"></param>
+  /// <param name="applicationId"></param>
+  /// <exception cref="ArgumentException"><paramref name="coordinates"/> must have a length of 6</exception>
+  [SetsRequiredMembers]
+  public Line(IList<double> coordinates, string units, string? applicationId = null)
   {
     if (coordinates.Count < 6)
     {
-      throw new SpeckleException("Line from coordinate array requires 6 coordinates.");
+      throw new ArgumentException("Line from coordinate array requires 6 coordinates.", nameof(coordinates));
     }
 
     start = new Point(coordinates[0], coordinates[1], coordinates[2], units, applicationId);
     end = new Point(coordinates[3], coordinates[4], coordinates[5], units, applicationId);
-    length = Point.Distance(start, end);
-    this.applicationId = applicationId;
     this.units = units;
-  }
-
-  [Obsolete("Use IList constructor", true)]
-  public Line(IEnumerable<double> coordinatesArray, string units = Units.Meters, string? applicationId = null)
-    : this(coordinatesArray.ToList(), units, applicationId) { }
-
-  /// <summary>
-  /// OBSOLETE - This is just here for backwards compatibility.
-  /// You should not use this for anything. Access coordinates using start and end point.
-  /// </summary>
-
-  [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-  public List<double> value
-  {
-#pragma warning disable CS8603 // Possible null reference return. Reason: Obsolete.
-    get => null;
-#pragma warning restore CS8603 // Possible null reference return. Reason: Obsolete.
-    set
-    {
-      if (value == null)
-      {
-        return;
-      }
-
-      start = new Point(value[0], value[1], value[2]);
-      end = new Point(value[3], value[4], value[5]);
-    }
+    this.applicationId = applicationId;
   }
 
   public double area { get; set; }
 
-  public string units { get; set; }
+  public required string units { get; set; }
 
-  public Point start { get; set; }
-  public Point end { get; set; }
+  public required Point start { get; set; }
+  public required Point end { get; set; }
 
   public Interval domain { get; set; } = Interval.UnitInterval;
-  public double length { get; set; }
+  public double length => Point.Distance(start, end);
 
   public Box? bbox { get; set; }
 
@@ -95,7 +52,7 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
       end = transformedEnd,
       applicationId = applicationId,
       units = units,
-      domain = domain is null ? Interval.UnitInterval : new() { start = domain.start, end = domain.end }
+      domain = new() { start = domain.start, end = domain.end }
     };
     return true;
   }
@@ -125,10 +82,36 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
     var units = Units.GetUnitFromEncoding(list[^1]);
     var startPt = new Point(list[2], list[3], list[4], units);
     var endPt = new Point(list[5], list[6], list[7], units);
-    var line = new Line(startPt, endPt, units)
+    var line = new Line
     {
-      domain = new Interval { start = list[8], end = list[9] }
+      start = startPt,
+      end = endPt,
+      units = units,
+      domain = new Interval { start = list[8], end = list[9] },
     };
     return line;
+  }
+
+  /// <summary>
+  /// OBSOLETE - This is just here for backwards compatibility.
+  /// You should not use this for anything. Access coordinates using start and end point.
+  /// </summary>
+  [
+    JsonProperty(NullValueHandling = NullValueHandling.Ignore),
+    Obsolete("Access coordinates using start and end point", true)
+  ]
+  public List<double>? value
+  {
+    get => null;
+    set
+    {
+      if (value == null)
+      {
+        return;
+      }
+
+      start = new Point(value[0], value[1], value[2], Units.Meters);
+      end = new Point(value[3], value[4], value[5], Units.Meters);
+    }
   }
 }

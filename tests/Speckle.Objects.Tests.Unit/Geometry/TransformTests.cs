@@ -4,7 +4,7 @@ using Speckle.DoubleNumerics;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Common;
 
-namespace Objects.Tests.Unit.Geometry;
+namespace Speckle.Objects.Tests.Unit.Geometry;
 
 [TestFixture, TestOf(typeof(Transform))]
 public class TransformTests
