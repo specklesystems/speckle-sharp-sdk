@@ -22,6 +22,7 @@ public class SerializationTests
 
   [Test]
   [TestCase("RevitObject.json")]
+  [TestCase("7238c0e0bbd1bafbe1a287aa7fc88619.json.gz")]
   public async Task Basic_Namespace_Validation(string fileName)
   {
     var closures = await TestHelper.ReadAsObjectsFromResource(fileName);
