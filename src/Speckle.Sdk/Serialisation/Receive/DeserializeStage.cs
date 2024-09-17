@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.Send;
 using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Serialisation.Receive;
@@ -53,7 +54,7 @@ public class DeserializeStage(ConcurrentDictionary<string, Base> cache, Func<str
     {
       return baseObject;
     }
-    SpeckleObjectDeserializer2 deserializer = new(dictionary);
+    SpeckleObjectDeserializer2 deserializer = new(dictionary, SpeckleObjectSerializer2Pool.Instance);
     return await deserializer.DeserializeJsonAsync(json).ConfigureAwait(false);
   }
 }

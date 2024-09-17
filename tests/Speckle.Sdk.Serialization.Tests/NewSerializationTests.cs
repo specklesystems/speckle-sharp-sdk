@@ -111,14 +111,14 @@ public class NewSerializationTests
     var json = await ReadJson(fullName);
 
     var dictionary = new Dictionary<string, Base>();
-    SpeckleObjectDeserializer2 deserializer = new(dictionary, new(false));
+    SpeckleObjectDeserializer2 deserializer = new(dictionary, SpeckleObjectSerializer2Pool.Instance, new(false));
     var @base = await deserializer.DeserializeJsonAsync(json).ConfigureAwait(false);
     @base.id.ShouldBe("7238c0e0bbd1bafbe1a287aa7fc88619");
     var collection = @base as Collection;
     collection.ShouldNotBeNull();
     collection.elements.Count.ShouldBe(78);
 
-    SpeckleObjectSerializer2 newSerializer = new(new SpeckleObjectSerializer2Pool());
+    SpeckleObjectSerializer2 newSerializer = new(SpeckleObjectSerializer2Pool.Instance);
     var newJson = newSerializer.Serialize(@base);
 
     SpeckleObjectSerializer oldSerializer = new();

@@ -21,8 +21,7 @@ var testData = await deserializer.DeserializeJsonAsync(data).ConfigureAwait(fals
 Console.WriteLine("Attach");
 Console.ReadLine();
 Console.WriteLine("Executing");
-var remote = new NullTransport();
-SpeckleObjectSerializer2 sut = new(new SpeckleObjectSerializer2Pool());
+SpeckleObjectSerializer2 sut = new(SpeckleObjectSerializer2Pool.Instance);
 var x = sut.Serialize(testData);
 Console.WriteLine("Detach");
 Console.ReadLine();

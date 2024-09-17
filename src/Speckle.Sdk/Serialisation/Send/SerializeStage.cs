@@ -11,12 +11,11 @@ public record Serialized(
 
 public class SerializeStage
 {
-  private readonly SpeckleObjectSerializer2Pool _pool = new();
   public long Serialized { get; private set; }
 
   public Serialized Execute(Base @base)
   {
-    var serializer = new SpeckleObjectSerializer2(_pool);
+    var serializer = new SpeckleObjectSerializer2(SpeckleObjectSerializer2Pool.Instance);
     var json = serializer.Serialize(@base);
     Serialized++;
     return new(@base.id, json, @base, serializer.ObjectReferences);

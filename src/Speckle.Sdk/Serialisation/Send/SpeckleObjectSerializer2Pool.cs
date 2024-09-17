@@ -7,11 +7,17 @@ namespace Speckle.Sdk.Serialisation.Send;
 
 public class SpeckleObjectSerializer2Pool
 {
+  public static readonly SpeckleObjectSerializer2Pool Instance = new();
+
+  private SpeckleObjectSerializer2Pool() { }
+
   public RecyclableMemoryStream GetMemoryStream() => _recyclableMemoryStreamManager.GetStream();
 
   public JsonTextWriter GetJsonTextWriter(Stream stream) => new(new StreamWriter(stream)) { ArrayPool = _charPool };
 
   public JsonTextWriter GetJsonTextWriter(TextWriter writer) => new(writer) { ArrayPool = _charPool };
+
+  public JsonTextReader GetJsonTextReader(TextReader reader) => new(reader) { ArrayPool = _charPool };
 
   private readonly RecyclableMemoryStreamManager _recyclableMemoryStreamManager =
     new(

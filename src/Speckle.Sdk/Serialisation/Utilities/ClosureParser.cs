@@ -1,5 +1,6 @@
 ﻿using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Serialisation.Send;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 
@@ -12,7 +13,9 @@ public static class ClosureParser
   {
     try
     {
-      using JsonTextReader reader = new(new StringReader(rootObjectJson));
+      using JsonTextReader reader = SpeckleObjectSerializer2Pool.Instance.GetJsonTextReader(
+        new StringReader(rootObjectJson)
+      );
       await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
       while (reader.TokenType != JsonToken.EndObject)
       {

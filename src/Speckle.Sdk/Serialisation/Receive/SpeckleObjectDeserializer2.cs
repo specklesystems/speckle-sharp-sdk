@@ -2,6 +2,7 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.Send;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
@@ -9,6 +10,7 @@ public record DeserializedOptions(bool ThrowOnMissingReferences = true);
 
 public sealed class SpeckleObjectDeserializer2(
   IReadOnlyDictionary<string, Base> references,
+  SpeckleObjectSerializer2Pool pool,
   DeserializedOptions? options = null
 )
 {
@@ -27,7 +29,8 @@ public sealed class SpeckleObjectDeserializer2(
     // JObject doc1 = JObject.Parse(objectJson);
 
     // This is equivalent code that doesn't parse datetimes:
-    using JsonReader reader = new JsonTextReader(new StringReader(objectJson));
+    using var stringReader = new StringReader(objectJson);
+    using JsonTextReader reader = pool.GetJsonTextReader(stringReader);
 
     reader.DateParseHandling = DateParseHandling.None;
 
@@ -39,7 +42,7 @@ public sealed class SpeckleObjectDeserializer2(
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
-      throw new SpeckleDeserializeException($"Failed to deserialize", ex);
+      throw new SpeckleDeserializeException("Failed to deserialize", ex);
     }
 
     return converted;
