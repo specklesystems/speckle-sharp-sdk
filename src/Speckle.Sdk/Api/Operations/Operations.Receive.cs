@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -40,11 +39,46 @@ public static partial class Operations
     CancellationToken cancellationToken = default
   )
   {
-    // Setup Progress Reporting
-    var internalProgressAction = GetInternalProgressAction(onProgressAction);
+    using var receiveActivity = SpeckleActivityFactory.Start("Operations.Receive");
+    receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
+    receiveActivity?.SetTag("objectId", objectId);
 
+    try
+    {
+      using IDisposable? d1 = UseDefaultTransportIfNull(localTransport, out localTransport);
+      receiveActivity?.SetTag("localTransportContext", localTransport.TransportContext);
+
+      var result = await ReceiveImpl(
+          objectId,
+          remoteTransport,
+          localTransport,
+          GetInternalProgressAction(onProgressAction),
+          onTotalChildrenCountKnown,
+          cancellationToken
+        )
+        .ConfigureAwait(false);
+
+      return result;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SpeckleActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,Action{ConcurrentBag{ProgressArgs}}?,Action{int}?,CancellationToken)"/>
+  private static async Task<Base> ReceiveImpl(
+    string objectId,
+    ITransport? remoteTransport,
+    ITransport localTransport,
+    Action<ProgressArgs>? internalProgressAction,
+    Action<int>? onTotalChildrenCountKnown,
+    CancellationToken cancellationToken
+  )
+  {
     // Setup Local Transport
-    using IDisposable? d1 = UseDefaultTransportIfNull(localTransport, out localTransport);
     localTransport.OnProgressAction = internalProgressAction;
     localTransport.CancellationToken = cancellationToken;
 
@@ -65,21 +99,6 @@ public static partial class Operations
         BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder
       };
 
-    // Setup Logging
-    using var receiveActivity = SpeckleActivityFactory.Start();
-    receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
-    receiveActivity?.SetTag("localTransportContext", localTransport.TransportContext);
-    receiveActivity?.SetTag("objectId", objectId);
-    var timer = Stopwatch.StartNew();
-
-    // Receive Json
-    SpeckleLog.Logger.Information(
-      "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
-      objectId,
-      localTransport.TransportName,
-      remoteTransport?.TransportName
-    );
-
     // Try Local Receive
     string? objString = await LocalReceive(objectId, localTransport, onTotalChildrenCountKnown).ConfigureAwait(false);
 
@@ -88,12 +107,9 @@ public static partial class Operations
       // Fall back to remote
       if (remoteTransport is null)
       {
-        var ex = new TransportException(
+        throw new TransportException(
           $"Could not find specified object using the local transport {localTransport.TransportName}, and you didn't provide a fallback remote from which to pull it."
         );
-
-        SpeckleLog.Logger.Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
-        throw ex;
       }
 
       SpeckleLog.Logger.Debug(
@@ -106,17 +122,8 @@ public static partial class Operations
         .ConfigureAwait(false);
     }
 
-    using var activity = SpeckleActivityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
     Base res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
-
-    timer.Stop();
-    SpeckleLog.Logger.Information(
-      "Finished receiving {objectId} from {source} in {elapsed} seconds",
-      objectId,
-      remoteTransport?.TransportName,
-      timer.Elapsed.TotalSeconds
-    );
 
     return res;
   }

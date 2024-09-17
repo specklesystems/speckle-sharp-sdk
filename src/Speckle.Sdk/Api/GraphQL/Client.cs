@@ -93,6 +93,16 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
     using var activity = SpeckleActivityFactory.Start();
+    activity?.SetTag("responseType", typeof(T));
+    activity?.SetTag("query", request.Query);
+    activity?.SetTag("operationName", request.OperationName);
+    activity?.SetTag("variables", request.Variables);
+    activity?.SetTag("extensions", request.Extensions);
+    activity?.SetTag("endPoint", GQLClient.Options.EndPoint);
+    activity?.SetTag("medaType", GQLClient.Options.MediaType);
+    activity?.SetTag("webSocketEndPoint", GQLClient.Options.WebSocketEndPoint);
+    activity?.SetTag("webSocketProtocol", GQLClient.Options.WebSocketProtocol);
+
     try
     {
       var ret = await ExecuteWithResiliencePolicies(async () =>
@@ -107,10 +117,10 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       activity?.SetStatus(SpeckleActivityStatusCode.Ok);
       return ret;
     }
-    catch (Exception e)
+    catch (Exception ex)
     {
       activity?.SetStatus(SpeckleActivityStatusCode.Error);
-      activity?.RecordException(e);
+      activity?.RecordException(ex);
       throw;
     }
   }
