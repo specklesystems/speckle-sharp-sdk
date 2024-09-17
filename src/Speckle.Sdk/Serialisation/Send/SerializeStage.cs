@@ -15,7 +15,7 @@ public class SerializeStage
 
   public Serialized Execute(Base @base)
   {
-    var serializer = new SpeckleObjectSerializer2();
+    var serializer = new SpeckleObjectSerializer2(SpeckleObjectSerializer2Pool.Instance);
     var json = serializer.Serialize(@base);
     Serialized++;
     return new(@base.id, json, @base, serializer.ObjectReferences);

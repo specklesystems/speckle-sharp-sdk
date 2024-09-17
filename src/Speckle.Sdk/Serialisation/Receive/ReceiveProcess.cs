@@ -13,7 +13,8 @@ public record ReceiveProcessSettings(
   int MaxDownloadThreads = 4,
   int MaxDeserializeThreads = 4,
   int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS - 1,
-  int BatchWaitMilliseconds = 500
+  int BatchWaitMilliseconds = 500,
+  DeserializedOptions? DeserializedOptions = null
 );
 
 public sealed class ReceiveProcess : IDisposable
@@ -33,7 +34,7 @@ public sealed class ReceiveProcess : IDisposable
     SourceChannel = Channel.CreateUnbounded<string>();
     CachingStage = new(_idToBaseCache);
     GatherStage = new GatherStage(modelSource);
-    DeserializeStage = new(_idToBaseCache, EnqueueObject);
+    DeserializeStage = new(_idToBaseCache, EnqueueObject, _settings.DeserializedOptions);
   }
 
   private Channel<string> SourceChannel { get; }
@@ -79,7 +80,7 @@ public sealed class ReceiveProcess : IDisposable
       )
       .ConfigureAwait(false);
 
-    var closures = (await ClosureParser.GetChildrenIdsAsync(rootJson, cancellationToken).ConfigureAwait(false));
+    var closures = ClosureParser.GetChildrenIds(rootJson);
     foreach (var closure in closures)
     {
       await EnqueueObject(closure).ConfigureAwait(false);

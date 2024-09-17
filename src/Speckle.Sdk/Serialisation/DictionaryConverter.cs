@@ -17,7 +17,7 @@ public static class DictionaryConverter
 
   public static string? BlobStorageFolder { get; set; }
 
-  public static Base Dict2Base(Dictionary<string, object?> dictObj)
+  public static Base Dict2Base(Dictionary<string, object?> dictObj, bool skipInvalidConverts)
   {
     string typeName = (string)dictObj[TYPE_DISCRIMINATOR].NotNull();
     Type type = TypeLoader.GetType(typeName);
@@ -42,7 +42,12 @@ public static class DictionaryConverter
         }
 
         Type targetValueType = value.PropertyType;
-        bool conversionOk = ValueConverter.ConvertValue(targetValueType, entry.Value, out object? convertedValue);
+        bool conversionOk = ValueConverter.ConvertValue(
+          targetValueType,
+          entry.Value,
+          skipInvalidConverts,
+          out object? convertedValue
+        );
         if (conversionOk)
         {
           value.SetValue(baseObj, convertedValue);

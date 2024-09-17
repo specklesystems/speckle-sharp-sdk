@@ -1,31 +1,31 @@
 ﻿using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Serialisation.Send;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 
 public static class ClosureParser
 {
-  public static async Task<IReadOnlyList<(string, int)>> GetClosuresAsync(
-    string rootObjectJson,
-    CancellationToken cancellationToken = default
-  )
+  public static IReadOnlyList<(string, int)> GetClosures(string rootObjectJson)
   {
     try
     {
-      using JsonTextReader reader = new(new StringReader(rootObjectJson));
-      await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+      using JsonTextReader reader = SpeckleObjectSerializer2Pool.Instance.GetJsonTextReader(
+        new StringReader(rootObjectJson)
+      );
+      reader.Read();
       while (reader.TokenType != JsonToken.EndObject)
       {
         switch (reader.TokenType)
         {
           case JsonToken.StartObject:
           {
-            var closureList = await ReadObjectAsync(reader, cancellationToken).ConfigureAwait(false);
+            var closureList = ReadObject(reader);
             return closureList;
           }
           default:
-            await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-            await reader.SkipAsync(cancellationToken).ConfigureAwait(false);
+            reader.Read();
+            reader.Skip();
             break;
         }
       }
@@ -34,17 +34,12 @@ public static class ClosureParser
     return [];
   }
 
-  public static async Task<IEnumerable<string>> GetChildrenIdsAsync(
-    string rootObjectJson,
-    CancellationToken cancellationToken = default
-  ) => (await GetClosuresAsync(rootObjectJson, cancellationToken).ConfigureAwait(false)).Select(x => x.Item1);
+  public static IEnumerable<string> GetChildrenIds(string rootObjectJson) =>
+    GetClosures(rootObjectJson).Select(x => x.Item1);
 
-  private static async Task<IReadOnlyList<(string, int)>> ReadObjectAsync(
-    JsonTextReader reader,
-    CancellationToken cancellationToken
-  )
+  private static IReadOnlyList<(string, int)> ReadObject(JsonTextReader reader)
   {
-    await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+    reader.Read();
     while (reader.TokenType != JsonToken.EndObject)
     {
       switch (reader.TokenType)
@@ -53,46 +48,46 @@ public static class ClosureParser
           {
             if (reader.Value as string == "__closure")
             {
-              await reader.ReadAsync(cancellationToken).ConfigureAwait(false); //goes to prop vale
-              var closureList = await ReadClosureEnumerableAsync(reader).ConfigureAwait(false);
+              reader.Read(); //goes to prop vale
+              var closureList = ReadClosureEnumerable(reader);
               return closureList;
             }
-            await reader.ReadAsync(cancellationToken).ConfigureAwait(false); //goes to prop vale
-            await reader.SkipAsync(cancellationToken).ConfigureAwait(false);
-            await reader.ReadAsync(cancellationToken).ConfigureAwait(false); //goes to next
+            reader.Read(); //goes to prop vale
+            reader.Skip();
+            reader.Read(); //goes to next
           }
           break;
         default:
-          await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-          await reader.SkipAsync(cancellationToken).ConfigureAwait(false);
-          await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+          reader.Read();
+          reader.Skip();
+          reader.Read();
           break;
       }
     }
     return [];
   }
 
-  public static async Task<IReadOnlyList<(string, int)>> GetClosuresAsync(JsonReader reader)
+  public static IReadOnlyList<(string, int)> GetClosures(JsonReader reader)
   {
     if (reader.TokenType != JsonToken.StartObject)
     {
       return Array.Empty<(string, int)>();
     }
 
-    var closureList = await ReadClosureEnumerableAsync(reader).ConfigureAwait(false);
+    var closureList = ReadClosureEnumerable(reader);
     closureList.Sort((a, b) => b.Item2.CompareTo(a.Item2));
     return closureList;
   }
 
-  private static async Task<List<(string, int)>> ReadClosureEnumerableAsync(JsonReader reader)
+  private static List<(string, int)> ReadClosureEnumerable(JsonReader reader)
   {
     List<(string, int)> closureList = new();
-    await reader.ReadAsync().ConfigureAwait(false); //startobject
+    reader.Read(); //startobject
     while (reader.TokenType != JsonToken.EndObject)
     {
       var childId = (reader.Value as string).NotNull(); // propertyName
-      int childMinDepth = (await reader.ReadAsInt32Async().ConfigureAwait(false)).NotNull(); //propertyValue
-      await reader.ReadAsync().ConfigureAwait(false);
+      int childMinDepth = (reader.ReadAsInt32()).NotNull(); //propertyValue
+      reader.Read();
       closureList.Add((childId, childMinDepth));
     }
     return closureList;

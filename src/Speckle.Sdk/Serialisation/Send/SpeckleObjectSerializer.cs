@@ -16,8 +16,9 @@ namespace Speckle.Sdk.Serialisation.Send;
 
 public class SpeckleObjectSerializer2
 {
+  private readonly SpeckleObjectSerializer2Pool _pool;
+
   private List<Dictionary<string, int>> _parentClosures = new();
-  private HashSet<object> _parentObjects = new();
   private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
   private readonly Action<ProgressArgs>? _onProgressAction;
 
@@ -39,11 +40,13 @@ public class SpeckleObjectSerializer2
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
   public SpeckleObjectSerializer2(
+    SpeckleObjectSerializer2Pool pool,
     Action<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
+    _pool = pool;
     _onProgressAction = onProgressAction;
     CancellationToken = cancellationToken;
     _trackDetachedChildren = trackDetachedChildren;
@@ -59,8 +62,11 @@ public class SpeckleObjectSerializer2
     {
       try
       {
-        var result = SerializeBase(baseObj, true, default, forceAttach).NotNull();
-        return result.Json;
+        using var writer = new StringWriter();
+        using var jsonWriter = _pool.GetJsonTextWriter(writer);
+        SerializeBase(jsonWriter, baseObj, true, default, forceAttach);
+        writer.Flush();
+        return writer.ToString();
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
@@ -70,7 +76,6 @@ public class SpeckleObjectSerializer2
     finally
     {
       _parentClosures = new List<Dictionary<string, int>>(); // cleanup in case of exceptions
-      _parentObjects = new HashSet<object>();
     }
   }
 
@@ -92,27 +97,16 @@ public class SpeckleObjectSerializer2
       return;
     }
 
-    if (obj.GetType().IsPrimitive || obj is string)
-    {
-      writer.WriteValue(obj);
-      return;
-    }
-
     switch (obj)
     {
       // Start with object references so they're not captured by the Base class case below
       // Note: this change was needed as we've made the ObjectReference type inherit from Base for
       // the purpose of the "do not convert unchanged previously converted objects" POC.
       case ObjectReference r:
-        Dictionary<string, object> ret =
-          new()
-          {
-            ["speckle_type"] = r.speckle_type,
-            ["referencedId"] = r.referencedId,
-            ["__closure"] = r.closure
-          };
+        Dictionary<string, object> ret = new() { ["speckle_type"] = r.speckle_type, ["referencedId"] = r.referencedId };
         if (r.closure is not null)
         {
+          r["__closure"] = r.closure;
           foreach (var kvp in r.closure)
           {
             UpdateParentClosures(kvp.Key);
@@ -122,15 +116,7 @@ public class SpeckleObjectSerializer2
         SerializeProperty(ret, writer, computeClosures, detachInfo, forceAttach);
         break;
       case Base b:
-        var result = SerializeBase(b, computeClosures, detachInfo, forceAttach);
-        if (result is not null)
-        {
-          writer.WriteRawValue(result.Json);
-        }
-        else
-        {
-          writer.WriteNull();
-        }
+        SerializeBase(writer, b, computeClosures, detachInfo, forceAttach);
         break;
       case IDictionary d:
         {
@@ -221,89 +207,131 @@ public class SpeckleObjectSerializer2
         writer.WriteValue((double)ms.M44);
         writer.WriteEndArray();
         break;
+      case double d:
+        writer.WriteValue(d);
+        break;
+      case string s:
+        writer.WriteValue(s);
+        break;
+      case short s:
+        writer.WriteValue(s);
+        break;
+      case int i:
+        writer.WriteValue(i);
+        break;
+      case long l:
+        writer.WriteValue(l);
+        break;
+      case bool b:
+        writer.WriteValue(b);
+        break;
       default:
+        if (obj.GetType().IsPrimitive)
+        {
+          writer.WriteValue(obj);
+          return;
+        }
         throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}");
     }
   }
 
-  internal SerializationResult? SerializeBase(
+  private void SerializeBase(
+    JsonWriter jsonWriter,
     Base baseObj,
     bool computeClosures,
     PropertyAttributeInfo detachInfo,
     bool forceAttach
   )
   {
-    // handle circular references
-    bool alreadySerialized = !_parentObjects.Add(baseObj);
-    if (alreadySerialized)
+    if (detachInfo.IsDetachable && forceAttach)
     {
-      return null;
+      var json = SerializeBaseDetached(baseObj, computeClosures, detachInfo, forceAttach);
+      jsonWriter.WriteRawValue(json);
+      return;
     }
+    SerializeBase2(jsonWriter, baseObj, computeClosures, detachInfo, forceAttach);
+  }
 
+  internal void SerializeBase2(
+    JsonWriter jsonWriter,
+    Base baseObj,
+    bool computeClosures,
+    PropertyAttributeInfo detachInfo,
+    bool forceAttach
+  )
+  {
     Dictionary<string, int> closure = new();
     if (computeClosures || detachInfo.IsDetachable || baseObj is Blob)
     {
       _parentClosures.Add(closure);
     }
 
-    using var writer = new StringWriter();
-    using var jsonWriter = new JsonTextWriter(writer);
     string id = SerializeBaseObject(baseObj, jsonWriter, closure, forceAttach);
-    var json = writer.ToString();
 
     if (computeClosures || detachInfo.IsDetachable || baseObj is Blob)
     {
       _parentClosures.RemoveAt(_parentClosures.Count - 1);
     }
 
-    _parentObjects.Remove(baseObj);
-
     if (baseObj is Blob)
     {
       UpdateParentClosures($"blob:{id}");
-      return new(json, id);
     }
-
-    if (detachInfo.IsDetachable && forceAttach)
-    {
-      ObjectReference objRef = new() { referencedId = id };
-      using var writer2 = new StringWriter();
-      using var jsonWriter2 = new JsonTextWriter(writer2);
-      SerializeProperty(objRef, jsonWriter2, default, forceAttach);
-      var json2 = writer2.ToString();
-      UpdateParentClosures(id);
-
-      _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
-
-      // add to obj refs to return
-      if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
-      {
-        ObjectReferences[baseObj.applicationId] = new ObjectReference()
-        {
-          referencedId = id,
-          applicationId = baseObj.applicationId,
-          closure = closure
-        };
-      }
-      return new(json2, null);
-    }
-    return new(json, id);
   }
 
-  private Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
+  internal string SerializeBaseDetached(
+    Base baseObj,
+    bool computeClosures,
+    PropertyAttributeInfo detachInfo,
+    bool forceAttach
+  )
+  {
+    Dictionary<string, int> closure = new();
+    if (computeClosures || detachInfo.IsDetachable || baseObj is Blob)
+    {
+      _parentClosures.Add(closure);
+    }
+
+    using var jsonWriter = new JsonTextWriter(TextWriter.Null);
+    string id = SerializeBaseObject(baseObj, jsonWriter, closure, forceAttach);
+
+    if (computeClosures || detachInfo.IsDetachable || baseObj is Blob)
+    {
+      _parentClosures.RemoveAt(_parentClosures.Count - 1);
+    }
+
+    ObjectReference objRef = new() { referencedId = id };
+    using var writer2 = new StreamWriter(_pool.GetMemoryStream());
+    using var jsonWriter2 = _pool.GetJsonTextWriter(writer2);
+    SerializeProperty(objRef, jsonWriter2, default, forceAttach);
+    var json2 = writer2.ToString();
+    UpdateParentClosures(id);
+
+    _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
+
+    // add to obj refs to return
+    if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
+    {
+      ObjectReferences[baseObj.applicationId] = new ObjectReference()
+      {
+        referencedId = id,
+        applicationId = baseObj.applicationId,
+        closure = closure
+      };
+    }
+    return json2.NotNull();
+  }
+
+  private IEnumerable<(string, (object? value, PropertyAttributeInfo info))> ExtractAllProperties(Base baseObj)
   {
     IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
     IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
-
-    // propertyName -> (originalValue, isDetachable, isChunkable, chunkSize)
-    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties =
-      new(typedProperties.Count + dynamicProperties.Count);
 
     // Construct `allProperties`: Add typed properties
     foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)
     {
       object? baseValue = propertyInfo.GetValue(baseObj);
-      allProperties[propertyInfo.Name] = (baseValue, detachInfo);
+      yield return (propertyInfo.Name, (baseValue, detachInfo));
     }
 
     // Construct `allProperties`: Add dynamic properties
@@ -328,10 +356,8 @@ public class SpeckleObjectSerializer2
         var match = Constants.ChunkPropertyNameRegex.Match(propName);
         isChunkable = int.TryParse(match.Groups[^1].Value, out chunkSize);
       }
-      allProperties[propName] = (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null));
+      yield return (propName, (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null)));
     }
-
-    return allProperties;
   }
 
   private string SerializeBaseObject(
@@ -343,29 +369,34 @@ public class SpeckleObjectSerializer2
   {
     var allProperties = ExtractAllProperties(baseObj);
 
+    SerializerIdWriter? serializerIdWriter = null;
+    var orignialWriter = writer;
     if (baseObj is not Blob)
     {
-      writer = new SerializerIdWriter(writer);
+      serializerIdWriter = new SerializerIdWriter(writer, _pool);
+      writer = serializerIdWriter;
     }
 
     writer.WriteStartObject();
     // Convert all properties
-    foreach (var prop in allProperties)
+    foreach (var (name, value) in allProperties)
     {
-      if (prop.Value.info.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
+      if (value.info.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
       {
         continue;
       }
 
-      writer.WritePropertyName(prop.Key);
-      SerializeProperty(prop.Value.value, writer, prop.Value.info, forceAttach);
+      writer.WritePropertyName(name);
+      SerializeProperty(value.value, writer, value.info, forceAttach);
     }
 
     string id;
-    if (writer is SerializerIdWriter serializerIdWriter)
+    if (serializerIdWriter is not null)
     {
-      (var json, writer) = serializerIdWriter.FinishIdWriter();
+      var json = serializerIdWriter.FinishIdWriter();
+      ((IDisposable)serializerIdWriter).Dispose();
       id = ComputeId(json);
+      writer = orignialWriter;
     }
     else
     {

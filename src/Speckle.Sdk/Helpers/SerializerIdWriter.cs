@@ -1,4 +1,6 @@
-﻿using Speckle.Newtonsoft.Json;
+﻿using System.Text;
+using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Serialisation.Send;
 
 namespace Speckle.Sdk.Helpers;
 
@@ -7,22 +9,32 @@ public sealed class SerializerIdWriter : JsonWriter
   private readonly JsonWriter _jsonWriter;
 #pragma warning disable CA2213
   private readonly JsonWriter _jsonIdWriter;
-  private readonly StringWriter _idWriter;
+  private readonly StreamWriter _idWriter;
+  private readonly MemoryStream _memoryStream;
 #pragma warning restore CA2213
 
-  public SerializerIdWriter(JsonWriter jsonWriter)
+  protected override void Dispose(bool disposing)
   {
-    _jsonWriter = jsonWriter;
-    _idWriter = new StringWriter();
-    _jsonIdWriter = new JsonTextWriter(_idWriter);
+    base.Dispose(disposing);
+    _idWriter.Dispose();
+    _memoryStream.Dispose();
   }
 
-  public (string, JsonWriter) FinishIdWriter()
+  public SerializerIdWriter(JsonWriter jsonWriter, SpeckleObjectSerializer2Pool? pool = null)
+  {
+    _jsonWriter = jsonWriter;
+    _memoryStream = pool?.GetMemoryStream() ?? new MemoryStream();
+#pragma warning disable CA2000
+    _idWriter = new StreamWriter(_memoryStream);
+#pragma warning restore CA2000
+    _jsonIdWriter = pool?.GetJsonTextWriter(_idWriter) ?? new JsonTextWriter(_idWriter);
+  }
+
+  public string FinishIdWriter()
   {
     _jsonIdWriter.WriteEndObject();
     _jsonIdWriter.Flush();
-    var json = _idWriter.ToString();
-    return (json, _jsonWriter);
+    return Encoding.UTF8.GetString(_memoryStream.ToArray());
   }
 
   public override void WriteValue(string? value)

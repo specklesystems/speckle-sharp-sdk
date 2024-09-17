@@ -364,6 +364,7 @@
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
           "Microsoft.Data.Sqlite": "[7.0.7, )",
+          "Microsoft.IO.RecyclableMemoryStream": "[3.0.1, )",
           "Open.ChannelExtensions": "[8.4.3, )",
           "Polly": "[7.2.3, )",
           "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
@@ -405,6 +406,12 @@
           "Microsoft.Data.Sqlite.Core": "7.0.7",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.4"
         }
+      },
+      "Microsoft.IO.RecyclableMemoryStream": {
+        "type": "CentralTransitive",
+        "requested": "[3.0.1, )",
+        "resolved": "3.0.1",
+        "contentHash": "s/s20YTVY9r9TPfTrN5g8zPF1YhwxyqO6PxUkrYTGI2B+OGPe9AdajWZrLhFqXIvqIW23fnUE4+ztrUWNU1+9g=="
       },
       "Open.ChannelExtensions": {
         "type": "CentralTransitive",

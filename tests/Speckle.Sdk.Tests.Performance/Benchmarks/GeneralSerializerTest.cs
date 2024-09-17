@@ -27,7 +27,6 @@ public class GeneralSerializerTest
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     using var dataSource = new TestDataHelper();
     await dataSource.SeedTransport(new(url)).ConfigureAwait(false);
-
     SpeckleObjectDeserializer deserializer = new() { ReadTransport = dataSource.Transport };
     string data = await dataSource.Transport.GetObject(dataSource.ObjectId).NotNull();
     _testData = await deserializer.DeserializeJsonAsync(data).NotNull();
@@ -36,9 +35,14 @@ public class GeneralSerializerTest
   [Benchmark]
   public string RunTest()
   {
+    Console.WriteLine("Attach");
+    Console.ReadLine();
+    Console.WriteLine("Executing");
     var remote = new NullTransport();
     SpeckleObjectSerializer sut = new([remote]);
     var x = sut.Serialize(_testData);
+    Console.WriteLine("Detach");
+    Console.ReadLine();
     return x;
   }
 }

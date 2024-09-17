@@ -1,12 +1,17 @@
 using System.Collections.Concurrent;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.Send;
 using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
 public record Deserialized(string Id, Base BaseObject);
 
-public class DeserializeStage(ConcurrentDictionary<string, Base> cache, Func<string, ValueTask> gatherId)
+public class DeserializeStage(
+  ConcurrentDictionary<string, Base> cache,
+  Func<string, ValueTask> gatherId,
+  DeserializedOptions? deserializedOptions
+)
 {
   private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _closures = new();
 
@@ -16,7 +21,7 @@ public class DeserializeStage(ConcurrentDictionary<string, Base> cache, Func<str
   {
     if (!_closures.TryGetValue(message.Id, out var closures))
     {
-      closures = (await ClosureParser.GetChildrenIdsAsync(message.Json).ConfigureAwait(false)).ToList();
+      closures = ClosureParser.GetChildrenIds(message.Json).ToList();
       _closures.TryAdd(message.Id, closures);
     }
 
@@ -41,19 +46,20 @@ public class DeserializeStage(ConcurrentDictionary<string, Base> cache, Func<str
       return null;
     }
 
-    var @base = await Deserialise(closureBases, message.Id, message.Json).ConfigureAwait(false);
+    var @base = Deserialise(closureBases, message.Id, message.Json);
     _closures.TryRemove(message.Id, out _);
     Deserialized++;
     return new(message.Id, @base);
   }
 
-  private async ValueTask<Base> Deserialise(IReadOnlyDictionary<string, Base> dictionary, string id, string json)
+  private Base Deserialise(IReadOnlyDictionary<string, Base> dictionary, string id, string json)
   {
     if (cache.TryGetValue(id, out var baseObject))
     {
       return baseObject;
     }
-    SpeckleObjectDeserializer2 deserializer = new(dictionary);
-    return await deserializer.DeserializeJsonAsync(json).ConfigureAwait(false);
+    SpeckleObjectDeserializer2 deserializer =
+      new(dictionary, SpeckleObjectSerializer2Pool.Instance, deserializedOptions);
+    return deserializer.Deserialize(json);
   }
 }

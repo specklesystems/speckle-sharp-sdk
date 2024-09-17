@@ -25,6 +25,7 @@ public sealed class SpeckleObjectDeserializer
   private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
 
   public CancellationToken CancellationToken { get; set; }
+  public bool SkipInvalidConverts { get; set; }
 
   /// <summary>
   /// The sync transport. This transport will be used synchronously.
@@ -85,7 +86,7 @@ public sealed class SpeckleObjectDeserializer
     object? converted;
     try
     {
-      await reader.ReadAsync(CancellationToken).ConfigureAwait(false);
+      reader.Read();
       converted = await ReadObjectAsync(reader, CancellationToken).ConfigureAwait(false);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
@@ -107,7 +108,7 @@ public sealed class SpeckleObjectDeserializer
   //this should be buffered
   private async Task<List<object?>> ReadArrayAsync(JsonReader reader, CancellationToken ct)
   {
-    await reader.ReadAsync(ct).ConfigureAwait(false);
+    reader.Read();
     List<object?> retList = new();
     while (reader.TokenType != JsonToken.EndArray)
     {
@@ -120,14 +121,15 @@ public sealed class SpeckleObjectDeserializer
       {
         retList.Add(convertedValue);
       }
-      await reader.ReadAsync(ct).ConfigureAwait(false); //goes to next
+      reader.Read(); //goes to next
     }
     return retList;
   }
 
   private async Task<object?> ReadObjectAsync(JsonReader reader, CancellationToken ct)
   {
-    await reader.ReadAsync(ct).ConfigureAwait(false);
+    ct.ThrowIfCancellationRequested();
+    reader.Read();
     Dictionary<string, object?> dict = new();
     while (reader.TokenType != JsonToken.EndObject)
     {
@@ -138,8 +140,8 @@ public sealed class SpeckleObjectDeserializer
             string propName = (reader.Value?.ToString()).NotNull();
             if (propName == "__closure")
             {
-              await reader.ReadAsync(ct).ConfigureAwait(false); //goes to prop value
-              var closures = await ClosureParser.GetClosuresAsync(reader).ConfigureAwait(false);
+              reader.Read(); //goes to prop value
+              var closures = ClosureParser.GetClosures(reader);
               foreach (var closure in closures)
               {
                 _ids.Add(closure.Item1);
@@ -152,13 +154,13 @@ public sealed class SpeckleObjectDeserializer
                 // https://linear.app/speckle/issue/CXPLA-54/when-deserializing-dont-allow-closures-that-arent-downloadable
                 await TryGetDeserializedAsync(objId).ConfigureAwait(false);
               }
-              await reader.ReadAsync(ct).ConfigureAwait(false); //goes to next
+              reader.Read(); //goes to next
               continue;
             }
-            await reader.ReadAsync(ct).ConfigureAwait(false); //goes prop value
+            reader.Read(); //goes prop value
             object? convertedValue = await ReadPropertyAsync(reader, ct).ConfigureAwait(false);
             dict[propName] = convertedValue;
-            await reader.ReadAsync(ct).ConfigureAwait(false); //goes to next
+            reader.Read(); //goes to next
           }
           break;
         default:
@@ -299,7 +301,12 @@ public sealed class SpeckleObjectDeserializer
         }
 
         Type targetValueType = value.PropertyType;
-        bool conversionOk = ValueConverter.ConvertValue(targetValueType, entry.Value, out object? convertedValue);
+        bool conversionOk = ValueConverter.ConvertValue(
+          targetValueType,
+          entry.Value,
+          SkipInvalidConverts,
+          out object? convertedValue
+        );
         if (conversionOk)
         {
           value.SetValue(baseObj, convertedValue);
