@@ -86,8 +86,8 @@ public class NewSerializationTests
       var (objId, references) = await stage.SaveObject(baseObj, _ => { }, default).ConfigureAwait(false);
       var orig = JObject.Parse(target.Sent[objId]);
       var targ = JObject.Parse(objJson);
-     JToken.DeepEquals(orig, targ);
-//      objId.ShouldBe(id);
+      JToken.DeepEquals(orig, targ);
+      //      objId.ShouldBe(id);
     }
   }
 
@@ -124,7 +124,7 @@ public class NewSerializationTests
     SpeckleObjectSerializer oldSerializer = new();
     var oldJson = oldSerializer.Serialize(@base);
     newJson.Length.ShouldBe(oldJson.Length);
-    
+
     JToken.DeepEquals(JObject.Parse(newJson), JObject.Parse(oldJson)).ShouldBeTrue();
   }
 

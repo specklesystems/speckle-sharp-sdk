@@ -17,7 +17,7 @@ namespace Speckle.Sdk.Serialisation.Send;
 public class SpeckleObjectSerializer2
 {
   private readonly SpeckleObjectSerializer2Pool _pool;
-  
+
   private List<Dictionary<string, int>> _parentClosures = new();
   private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
   private readonly Action<ProgressArgs>? _onProgressAction;
@@ -39,7 +39,9 @@ public class SpeckleObjectSerializer2
   /// <param name="onProgressAction">Used to track progress.</param>
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
-  public SpeckleObjectSerializer2(SpeckleObjectSerializer2Pool pool, Action<ProgressArgs>? onProgressAction = null,
+  public SpeckleObjectSerializer2(
+    SpeckleObjectSerializer2Pool pool,
+    Action<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
@@ -94,7 +96,6 @@ public class SpeckleObjectSerializer2
       writer.WriteNull();
       return;
     }
-
 
     switch (obj)
     {
@@ -255,7 +256,7 @@ public class SpeckleObjectSerializer2
     }
     SerializeBase2(jsonWriter, baseObj, computeClosures, detachInfo, forceAttach);
   }
-  
+
   internal void SerializeBase2(
     JsonWriter jsonWriter,
     Base baseObj,
@@ -290,7 +291,6 @@ public class SpeckleObjectSerializer2
     bool forceAttach
   )
   {
-    
     Dictionary<string, int> closure = new();
     if (computeClosures || detachInfo.IsDetachable || baseObj is Blob)
     {
@@ -304,33 +304,33 @@ public class SpeckleObjectSerializer2
     {
       _parentClosures.RemoveAt(_parentClosures.Count - 1);
     }
-    
-      ObjectReference objRef = new() { referencedId = id };
-      using var writer2 = new StreamWriter(_pool.GetMemoryStream());
-      using var jsonWriter2 = _pool.GetJsonTextWriter(writer2);
-      SerializeProperty(objRef, jsonWriter2, default, forceAttach);
-      var json2 = writer2.ToString();
-      UpdateParentClosures(id);
 
-      _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
+    ObjectReference objRef = new() { referencedId = id };
+    using var writer2 = new StreamWriter(_pool.GetMemoryStream());
+    using var jsonWriter2 = _pool.GetJsonTextWriter(writer2);
+    SerializeProperty(objRef, jsonWriter2, default, forceAttach);
+    var json2 = writer2.ToString();
+    UpdateParentClosures(id);
 
-      // add to obj refs to return
-      if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
+    _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
+
+    // add to obj refs to return
+    if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
+    {
+      ObjectReferences[baseObj.applicationId] = new ObjectReference()
       {
-        ObjectReferences[baseObj.applicationId] = new ObjectReference()
-        {
-          referencedId = id,
-          applicationId = baseObj.applicationId,
-          closure = closure
-        };
-      }
-      return json2.NotNull();
+        referencedId = id,
+        applicationId = baseObj.applicationId,
+        closure = closure
+      };
+    }
+    return json2.NotNull();
   }
+
   private IEnumerable<(string, (object? value, PropertyAttributeInfo info))> ExtractAllProperties(Base baseObj)
   {
     IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
     IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
-
 
     // Construct `allProperties`: Add typed properties
     foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)
@@ -361,7 +361,7 @@ public class SpeckleObjectSerializer2
         var match = Constants.ChunkPropertyNameRegex.Match(propName);
         isChunkable = int.TryParse(match.Groups[^1].Value, out chunkSize);
       }
-      yield return (propName,(baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null)));
+      yield return (propName, (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null)));
     }
   }
 
@@ -392,7 +392,7 @@ public class SpeckleObjectSerializer2
       }
 
       writer.WritePropertyName(name);
-      SerializeProperty(value.value, writer,value.info, forceAttach);
+      SerializeProperty(value.value, writer, value.info, forceAttach);
     }
 
     string id;

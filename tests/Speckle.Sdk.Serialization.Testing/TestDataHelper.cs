@@ -6,7 +6,6 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Testing;
 
-
 public sealed class TestDataHelper : IDisposable
 {
   private static readonly string s_basePath = $"./temp {Guid.NewGuid()}";

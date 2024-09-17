@@ -35,7 +35,6 @@ public class GeneralSerializerTest
   [Benchmark]
   public string RunTest()
   {
-
     Console.WriteLine("Attach");
     Console.ReadLine();
     Console.WriteLine("Executing");
