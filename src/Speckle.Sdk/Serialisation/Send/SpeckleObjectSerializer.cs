@@ -103,12 +103,7 @@ public class SpeckleObjectSerializer2
       // Note: this change was needed as we've made the ObjectReference type inherit from Base for
       // the purpose of the "do not convert unchanged previously converted objects" POC.
       case ObjectReference r:
-        Dictionary<string, object> ret =
-          new()
-          {
-            ["speckle_type"] = r.speckle_type,
-            ["referencedId"] = r.referencedId
-          };
+        Dictionary<string, object> ret = new() { ["speckle_type"] = r.speckle_type, ["referencedId"] = r.referencedId };
         if (r.closure is not null)
         {
           r["__closure"] = r.closure;

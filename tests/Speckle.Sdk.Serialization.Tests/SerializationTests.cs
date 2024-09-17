@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.BuiltElements;
@@ -14,43 +13,18 @@ namespace Speckle.Sdk.Serialization.Tests;
 [Description("For certain types, changing property from one type to another should be implicitly backwards compatible")]
 public class SerializationTests
 {
-  private readonly Assembly _assembly = Assembly.GetExecutingAssembly();
-
   [SetUp]
   public void Setup()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Wall).Assembly, _assembly);
-  }
-
-  private async Task<string> ReadJson(string fullName)
-  {
-    await using var stream = _assembly.GetManifestResourceStream(fullName).NotNull();
-    using var reader = new StreamReader(stream);
-    return await reader.ReadToEndAsync();
-  }
-
-  private async Task<Dictionary<string, string>> ReadAsObjects(string fullName)
-  {
-    var jsonObjects = new Dictionary<string, string>();
-    var json = await ReadJson(fullName);
-    var array = JArray.Parse(json);
-    foreach (var obj in array)
-    {
-      if (obj is JObject jobj)
-      {
-        jsonObjects.Add(jobj["id"].NotNull().Value<string>().NotNull(), jobj.ToString());
-      }
-    }
-    return jsonObjects;
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Wall).Assembly);
   }
 
   [Test]
   [TestCase("RevitObject.json")]
   public async Task Basic_Namespace_Validation(string fileName)
   {
-    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
-    var closures = await ReadAsObjects(fullName);
+    var closures = await TestHelper.ReadAsObjectsFromResource(fileName);
     var deserializer = new SpeckleObjectDeserializer
     {
       ReadTransport = new TestTransport(closures),
