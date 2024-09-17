@@ -19,7 +19,7 @@ public sealed class GraphQLClientTests : IDisposable
   public void Setup()
   {
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
     var serviceProvider = serviceCollection.BuildServiceProvider();
     _client = serviceProvider
       .GetRequiredService<IClientFactory>()

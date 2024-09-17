@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Speckle.Sdk.Api;
@@ -41,7 +41,7 @@ public class SimpleRoundTripTests
     Reset();
 
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
     var serviceProvider = serviceCollection.BuildServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

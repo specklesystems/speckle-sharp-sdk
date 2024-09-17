@@ -21,18 +21,19 @@ public static class ServiceRegistration
 {
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
-    SpeckleConfiguration configuration
+    HostApplication application,
+    HostAppVersion version
   )
   {
     serviceCollection.AddLogging();
-    string application = configuration.Application.Name;
+    string name = application.Name;
 
     serviceCollection.AddSingleton<ISpeckleApplication>(
       new SpeckleApplication
       {
-        Application = application,
-        Version = HostApplications.GetVersion(configuration.Version),
-        Slug = configuration.Application.Slug
+        Application = name,
+        Version = HostApplications.GetVersion(version),
+        Slug = application.Slug
       }
     );
     serviceCollection.AddSingleton<ISdkActivityFactory, NullActivityFactory>();

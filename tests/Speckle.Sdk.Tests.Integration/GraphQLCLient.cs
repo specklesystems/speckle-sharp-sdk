@@ -19,7 +19,7 @@ public class GraphQLClientTests : IDisposable
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(new SpeckleConfiguration(HostApplications.Navisworks, HostAppVersion.v2023));
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
     var serviceProvider = serviceCollection.BuildServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
     _account = await Fixtures.SeedUser();
