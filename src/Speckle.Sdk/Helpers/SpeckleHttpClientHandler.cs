@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using Microsoft.Extensions.Logging;
 using Polly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
@@ -34,16 +32,10 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
   {
     // this is a preliminary client server correlation implementation
     // refactor this, when we have a better observability stack
-    var sw = Stopwatch.StartNew();
     var context = new Context();
-    using var activity = _activityFactory.Start("Http Send");
+    using var activity = SpeckleActivityFactory.Start("Http Request");
     {
-      _logger.LogDebug(
-        "Starting execution of http request to {targetUrl} {correlationId} {traceId}",
-        request.RequestUri,
-        context.CorrelationId,
-        activity?.TraceId
-      );
+      activity?.SetTag("http.method", request.Method);
       activity?.SetTag("http.url", request.RequestUri);
       activity?.SetTag("correlationId", context.CorrelationId);
 
@@ -62,16 +54,13 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
         .ConfigureAwait(false);
       context.TryGetValue("retryCount", out var retryCount);
       activity?.SetTag("retryCount", retryCount);
-
-      _logger.LogInformation(
-        "Execution of http request to {url} {resultStatus} with {httpStatusCode} after {elapsed} seconds and {retryCount} retries. Request correlation ID: {correlationId}",
-        request.RequestUri,
-        policyResult.Outcome == OutcomeType.Successful ? "succeeded" : "failed",
-        policyResult.Result?.StatusCode,
-        sw.Elapsed.TotalSeconds,
-        retryCount ?? 0,
-        context.CorrelationId.ToString()
+      activity?.SetStatus(
+        policyResult.Result.IsSuccessStatusCode ? SpeckleActivityStatusCode.Ok : SpeckleActivityStatusCode.Error
       );
+      if (policyResult.FinalException != null)
+      {
+        activity?.RecordException(policyResult.FinalException);
+      }
 
       if (policyResult.Outcome == OutcomeType.Successful)
       {
