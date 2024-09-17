@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using Speckle.Sdk.Logging;
+using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
@@ -8,7 +8,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
-public static partial class Operations
+public partial class Operations
 {
   /// <summary>
   /// Receives an object (and all its sub-children) from the two provided <see cref="ITransport"/>s.
@@ -31,7 +31,7 @@ public static partial class Operations
   /// <exception cref="SpeckleDeserializeException">Deserialization of the requested object(s) failed</exception>
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <returns>The requested Speckle Object</returns>
-  public static async Task<Base> Receive(
+  public async Task<Base> Receive(
     string objectId,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
@@ -66,14 +66,14 @@ public static partial class Operations
       };
 
     // Setup Logging
-    using var receiveActivity = SpeckleActivityFactory.Start();
+    using var receiveActivity = activityFactory.Start();
     receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
     receiveActivity?.SetTag("localTransportContext", localTransport.TransportContext);
     receiveActivity?.SetTag("objectId", objectId);
     var timer = Stopwatch.StartNew();
 
     // Receive Json
-    SpeckleLog.Logger.Information(
+    logger.LogDebug(
       "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
       objectId,
       localTransport.TransportName,
@@ -88,15 +88,12 @@ public static partial class Operations
       // Fall back to remote
       if (remoteTransport is null)
       {
-        var ex = new TransportException(
+        throw new TransportException(
           $"Could not find specified object using the local transport {localTransport.TransportName}, and you didn't provide a fallback remote from which to pull it."
         );
-
-        SpeckleLog.Logger.Error(ex, "Cannot receive object from the given transports {exceptionMessage}", ex.Message);
-        throw ex;
       }
 
-      SpeckleLog.Logger.Debug(
+      logger.LogDebug(
         "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
         objectId,
         remoteTransport.TransportName
@@ -106,12 +103,12 @@ public static partial class Operations
         .ConfigureAwait(false);
     }
 
-    using var activity = SpeckleActivityFactory.Start("Deserialize");
+    using var activity = activityFactory.Start("Deserialize");
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
+    Base res = await serializer.DeserializeAsync(objString).ConfigureAwait(false);
 
     timer.Stop();
-    SpeckleLog.Logger.Information(
+    logger.LogDebug(
       "Finished receiving {objectId} from {source} in {elapsed} seconds",
       objectId,
       remoteTransport?.TransportName,

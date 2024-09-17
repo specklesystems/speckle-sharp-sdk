@@ -1,9 +1,12 @@
 using System.Drawing;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 using Matrix4x4 = Speckle.DoubleNumerics.Matrix4x4;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
@@ -17,11 +20,17 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 [Description("For certain types, changing property from one type to another should be implicitly backwards compatible")]
 public class SerializerNonBreakingChanges : PrimitiveTestFixture
 {
+  private IOperations _operations;
+
   [SetUp]
   public void Setup()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(StringValueMock).Assembly);
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
   [Test, TestCaseSource(nameof(Int8TestCases)), TestCaseSource(nameof(Int32TestCases))]
@@ -29,7 +38,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new IntValueMock { value = argb };
 
-    var res = await from.SerializeAsTAndDeserialize<ColorValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<ColorValueMock>(_operations);
     Assert.That(res.value.ToArgb(), Is.EqualTo(argb));
   }
 
@@ -38,7 +47,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new ColorValueMock { value = Color.FromArgb(argb) };
 
-    var res = await from.SerializeAsTAndDeserialize<IntValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(argb));
   }
 
@@ -52,7 +61,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new IntValueMock { value = testCase };
 
-    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(testCase));
   }
 
@@ -61,7 +70,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new ObjectValueMock { value = null };
 
-    var res = await from.SerializeAsTAndDeserialize<IntValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(default(int)));
   }
 
@@ -70,7 +79,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new ObjectValueMock { value = null };
 
-    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(default(double)));
   }
 
@@ -84,7 +93,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new UIntValueMock { value = testCase };
 
-    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(testCase));
   }
 
@@ -98,7 +107,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new IntValueMock { value = testCase };
 
-    var res = await from.SerializeAsTAndDeserialize<StringValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<StringValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(testCase.ToString()));
   }
 
@@ -114,7 +123,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new ArrayDoubleValueMock { value = testCase };
 
-    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
     Assert.That(res.value, Is.EquivalentTo(testCase));
   }
 
@@ -123,7 +132,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new ListDoubleValueMock { value = testCase.ToList() };
 
-    var res = await from.SerializeAsTAndDeserialize<ArrayDoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<ArrayDoubleValueMock>(_operations);
     Assert.That(res.value, Is.EquivalentTo(testCase));
   }
 
@@ -132,7 +141,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new ListDoubleValueMock { value = testCase.ToList() };
 
-    var res = await from.SerializeAsTAndDeserialize<IReadOnlyListDoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<IReadOnlyListDoubleValueMock>(_operations);
     Assert.That(res.value, Is.EquivalentTo(testCase));
   }
 
@@ -141,7 +150,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new ListDoubleValueMock { value = testCase.ToList() };
 
-    var res = await from.SerializeAsTAndDeserialize<IListDoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<IListDoubleValueMock>(_operations);
     Assert.That(res.value, Is.EquivalentTo(testCase));
   }
 
@@ -150,7 +159,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new IListDoubleValueMock { value = testCase.ToList() };
 
-    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
     Assert.That(res.value, Is.EquivalentTo(testCase));
   }
 
@@ -159,7 +168,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new IReadOnlyListDoubleValueMock { value = testCase.ToList() };
 
-    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
     Assert.That(res.value, Is.EquivalentTo(testCase));
   }
 
@@ -168,7 +177,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new EnumValueMock { value = testCase };
 
-    var res = await from.SerializeAsTAndDeserialize<IntValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo((int)testCase));
   }
 
@@ -177,7 +186,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new IntValueMock { value = (int)testCase };
 
-    var res = await from.SerializeAsTAndDeserialize<EnumValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(testCase));
   }
 
@@ -188,7 +197,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     var from = new DoubleValueMock { value = testCase };
 
-    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
     Assert.That(res.value, Is.EqualTo(testCase));
   }
 
@@ -204,12 +213,12 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     ListDoubleValueMock from = new() { value = testCase, };
 
     //Test List -> Matrix
-    var res = await from.SerializeAsTAndDeserialize<Matrix64ValueMock>();
+    var res = await from.SerializeAsTAndDeserialize<Matrix64ValueMock>(_operations);
     Assert.That(res.value.M11, Is.EqualTo(testCase[0]));
     Assert.That(res.value.M44, Is.EqualTo(testCase[testCase.Count - 1]));
 
     //Test Matrix -> List
-    var backAgain = await res.SerializeAsTAndDeserialize<ListDoubleValueMock>();
+    var backAgain = await res.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
     Assert.That(backAgain.value, Is.Not.Null);
     Assert.That(backAgain.value, Is.EquivalentTo(testCase));
   }
@@ -218,7 +227,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   [TestCase(123, 255)]
   [TestCase(256, 1)]
   [DefaultFloatingPointTolerance(Constants.EPS)]
-  public async Task Matrix32ToMatrix64(int seed, float scalar)
+  public void Matrix32ToMatrix64(int seed, float scalar)
   {
     Random rand = new(seed);
     List<double> testCase = Enumerable.Range(0, 16).Select(_ => rand.NextDouble() * scalar).ToList();
@@ -226,14 +235,10 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     ListDoubleValueMock from = new() { value = testCase };
 
     //Test List -> Matrix
-    var res = await from.SerializeAsTAndDeserialize<Matrix32ValueMock>();
-    Assert.That(res.value.M11, Is.EqualTo(testCase[0]));
-    Assert.That(res.value.M44, Is.EqualTo(testCase[testCase.Count - 1]));
-
-    //Test Matrix -> List
-    var backAgain = await res.SerializeAsTAndDeserialize<ListDoubleValueMock>();
-    Assert.That(backAgain.value, Is.Not.Null);
-    Assert.That(backAgain.value, Is.EquivalentTo(testCase));
+    var exception = Assert.ThrowsAsync<SpeckleDeserializeException>(
+      async () => await from.SerializeAsTAndDeserialize<Matrix32ValueMock>(_operations)
+    );
+    exception.ShouldNotBeNull();
   }
 }
 
@@ -350,14 +355,14 @@ public abstract class SerializerMock : Base
     _speckle_type = target.speckle_type;
   }
 
-  internal async Task<TTo> SerializeAsTAndDeserialize<TTo>()
+  internal async Task<TTo> SerializeAsTAndDeserialize<TTo>(IOperations operations)
     where TTo : Base, new()
   {
     SerializeAs<TTo>();
 
-    var json = Operations.Serialize(this);
+    var json = operations.Serialize(this);
 
-    Base result = await Operations.DeserializeAsync(json);
+    Base result = await operations.DeserializeAsync(json);
     Assert.That(result, Is.Not.Null);
     Assert.That(result, Is.TypeOf<TTo>());
     return (TTo)result;
