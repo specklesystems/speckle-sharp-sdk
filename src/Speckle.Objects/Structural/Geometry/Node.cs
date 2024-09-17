@@ -45,10 +45,10 @@ public class Node : Base
         AxisType.Cartesian,
         new Plane
         {
-          origin = new Point(0, 0),
-          normal = new Vector(0, 0, 1),
-          xdir = new Vector(1, 0, 0),
-          ydir = new Vector(0, 1, 0),
+          origin = new Point(0, 0, 0, Units.None),
+          normal = new Vector(0, 0, 1, Units.None),
+          xdir = new Vector(1, 0, 0, Units.None),
+          ydir = new Vector(0, 1, 0, Units.None),
           units = Units.Meters, //Not sure if defaulting to meters is correct, but it was what we were doing previously inside Plane's ctor
         }
       );

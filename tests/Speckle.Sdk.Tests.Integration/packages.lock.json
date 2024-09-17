@@ -4,9 +4,9 @@
     "net8.0": {
       "altcover": {
         "type": "Direct",
-        "requested": "[8.8.74, )",
-        "resolved": "8.8.74",
-        "contentHash": "e8RZNE0vZnuBk/gOAWu9K5wm3S7dOrOlZje3PHI9PJUHqvP1cxVJD1eXAAmddFVlixowB7C7/zvC16GnunC2LQ=="
+        "requested": "[8.8.173, )",
+        "resolved": "8.8.173",
+        "contentHash": "iejmqWdC9H9ShTtsT7vSLpZ74RG4sDhheW7wllczXWl6WZAaCqGXMFGRRHi8TZGCzV/7Ah5gjXZ4GRlfAef4Eg=="
       },
       "GitVersion.MsBuild": {
         "type": "Direct",
@@ -236,7 +236,7 @@
           "Shouldly": "[4.2.1, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Sdk": "[1.0.0, )",
-          "altcover": "[8.8.74, )"
+          "altcover": "[8.8.173, )"
         }
       },
       "GraphQL.Client": {

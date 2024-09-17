@@ -67,21 +67,13 @@ public class RenderMaterial : Base
 [SpeckleType("Objects.Other.RenderMaterialProxy")]
 public class RenderMaterialProxy : Base, IProxyCollection
 {
-  public RenderMaterialProxy() { }
-
-  public RenderMaterialProxy(RenderMaterial renderMaterial, List<string> objects)
-  {
-    value = renderMaterial;
-    this.objects = objects;
-  }
-
   /// <summary>
   /// The list of application ids of objects that use this render material
   /// </summary>
-  public List<string> objects { get; set; }
+  public required List<string> objects { get; set; }
 
   /// <summary>
   /// The render material used by <see cref="objects"/>
   /// </summary>
-  public RenderMaterial value { get; set; }
+  public required RenderMaterial value { get; set; }
 }

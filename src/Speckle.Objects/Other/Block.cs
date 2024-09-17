@@ -2,6 +2,7 @@ using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.Instances;
 
 namespace Speckle.Objects.Other;
 
@@ -9,6 +10,7 @@ namespace Speckle.Objects.Other;
 /// Block definition class
 /// </summary>
 [SpeckleType("Objects.Other.BlockDefinition")]
+[Obsolete($"See {nameof(InstanceDefinitionProxy)}")]
 public class BlockDefinition : Base
 {
   public BlockDefinition() { }
@@ -17,7 +19,7 @@ public class BlockDefinition : Base
   public BlockDefinition(string name, List<Base> geometry, Point? basePoint = null)
   {
     this.name = name;
-    this.basePoint = basePoint ?? new() { units = Units.None };
+    this.basePoint = basePoint ?? new(0, 0, 0, Units.None);
     this.geometry = geometry;
   }
 
@@ -26,7 +28,7 @@ public class BlockDefinition : Base
   /// <summary>
   /// The definition base point of the block
   /// </summary>
-  public Point basePoint { get; set; } = new() { units = Units.None };
+  public Point basePoint { get; set; } = new(0, 0, 0, Units.None);
 
   [DetachProperty]
   public List<Base> geometry { get; set; }
@@ -39,8 +41,13 @@ public class BlockDefinition : Base
   /// <returns></returns>
   public Transform GetBasePointTransform()
   {
-    var translation = new Vector(-basePoint.x, -basePoint.y, -basePoint.z) { units = basePoint.units ?? Units.None };
-    var transform = new Transform(new Vector(1, 0, 0), new Vector(0, 1, 0), new Vector(1, 0, 0), translation);
+    var translation = new Vector(-basePoint.x, -basePoint.y, -basePoint.z, basePoint.units ?? Units.None);
+    var transform = new Transform(
+      new Vector(1, 0, 0, Units.None),
+      new Vector(0, 1, 0, Units.None),
+      new Vector(1, 0, 0, Units.None),
+      translation
+    );
     return transform;
   }
 }

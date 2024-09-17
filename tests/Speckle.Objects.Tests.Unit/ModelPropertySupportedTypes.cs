@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Reflection;
+﻿using System.Drawing;
 using NUnit.Framework;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
-using Speckle.Objects;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 
-namespace Objects.Tests.Unit;
+namespace Speckle.Objects.Tests.Unit;
 
 /// <summary>
 /// Tests that all Base object models in the kit have properties that are an allowed type
