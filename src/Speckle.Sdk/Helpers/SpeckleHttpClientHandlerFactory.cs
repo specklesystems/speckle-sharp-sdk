@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Polly;
+﻿using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Polly.Extensions.Http;
 using Polly.Timeout;
@@ -9,7 +8,7 @@ using Speckle.Sdk.Logging;
 namespace Speckle.Sdk.Helpers;
 
 [GenerateAutoInterface]
-public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory, ISdkActivityFactory activityFactory)
+public sealed class SpeckleHttpClientHandlerFactory(ISdkActivityFactory activityFactory)
   : ISpeckleHttpClientHandlerFactory
 {
   public IEnumerable<TimeSpan> DefaultDelay()
@@ -47,7 +46,6 @@ public sealed class SpeckleHttpClientHandlerFactory(ILoggerFactory loggerFactory
     new(
       innerHandler ?? new HttpClientHandler(),
       activityFactory,
-      resiliencePolicy ?? HttpAsyncPolicy(timeoutSeconds: timeoutSeconds),
-      loggerFactory.CreateLogger<SpeckleHttpClientHandler>()
+      resiliencePolicy ?? HttpAsyncPolicy(timeoutSeconds: timeoutSeconds)
     );
 }

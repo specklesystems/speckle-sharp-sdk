@@ -7,20 +7,17 @@ namespace Speckle.Sdk.Helpers;
 public sealed class SpeckleHttpClientHandler : DelegatingHandler
 {
   private readonly IAsyncPolicy<HttpResponseMessage> _resiliencePolicy;
-  private readonly ILogger<SpeckleHttpClientHandler> _logger;
   private readonly ISdkActivityFactory _activityFactory;
 
   public SpeckleHttpClientHandler(
     HttpMessageHandler innerHandler,
     ISdkActivityFactory activityFactory,
-    IAsyncPolicy<HttpResponseMessage> resiliencePolicy,
-    ILogger<SpeckleHttpClientHandler> logger
+    IAsyncPolicy<HttpResponseMessage> resiliencePolicy
   )
     : base(innerHandler)
   {
     _activityFactory = activityFactory;
     _resiliencePolicy = resiliencePolicy;
-    _logger = logger;
   }
 
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
@@ -33,7 +30,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
     // this is a preliminary client server correlation implementation
     // refactor this, when we have a better observability stack
     var context = new Context();
-    using var activity = SpeckleActivityFactory.Start("Http Request");
+    using var activity = _activityFactory.Start("Http Request");
     {
       activity?.SetTag("http.method", request.Method);
       activity?.SetTag("http.url", request.RequestUri);
@@ -55,7 +52,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
       context.TryGetValue("retryCount", out var retryCount);
       activity?.SetTag("retryCount", retryCount);
       activity?.SetStatus(
-        policyResult.Result.IsSuccessStatusCode ? SpeckleActivityStatusCode.Ok : SpeckleActivityStatusCode.Error
+        policyResult.Result.IsSuccessStatusCode ? SdkActivityStatusCode.Ok : SdkActivityStatusCode.Error
       );
       if (policyResult.FinalException != null)
       {
