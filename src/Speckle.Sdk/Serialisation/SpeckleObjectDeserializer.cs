@@ -219,7 +219,7 @@ public sealed class SpeckleObjectDeserializer
       return null;
     }
 
-    deserialized = DeserializeJsonAsyncInternal(objectJson);
+    deserialized = await DeserializeJsonAsyncInternal(objectJson).ConfigureAwait(false);
 
     if (_deserializedObjects.NotNull().TryAdd(objId, deserialized))
     {
