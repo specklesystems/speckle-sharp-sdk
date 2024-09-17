@@ -38,7 +38,7 @@ public sealed class SpeckleObjectDeserializer2(
     try
     {
       reader.Read();
-      converted = (Base)ReadObject(reader);
+      converted = (Base)ReadObject(reader).NotNull();
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -68,7 +68,7 @@ public sealed class SpeckleObjectDeserializer2(
     return retList;
   }
 
-  private object ReadObject(JsonReader reader)
+  private object? ReadObject(JsonReader reader)
   {
     reader.Read();
     Dictionary<string, object?> dict = new();
@@ -107,6 +107,8 @@ public sealed class SpeckleObjectDeserializer2(
       {
         throw new InvalidOperationException($"missing reference: {objId}");
       }
+      //since we don't throw on missing references, return null
+      return null;
     }
 
     return DictionaryConverter.Dict2Base(dict);
