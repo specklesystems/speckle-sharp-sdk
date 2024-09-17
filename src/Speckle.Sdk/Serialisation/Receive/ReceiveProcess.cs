@@ -79,7 +79,7 @@ public sealed class ReceiveProcess : IDisposable
       )
       .ConfigureAwait(false);
 
-    var closures = (await ClosureParser.GetChildrenIdsAsync(rootJson, cancellationToken).ConfigureAwait(false));
+    var closures = ClosureParser.GetChildrenIds(rootJson);
     foreach (var closure in closures)
     {
       await EnqueueObject(closure).ConfigureAwait(false);
