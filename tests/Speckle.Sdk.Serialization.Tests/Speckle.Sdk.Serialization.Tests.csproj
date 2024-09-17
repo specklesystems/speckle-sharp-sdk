@@ -23,6 +23,7 @@
   <ItemGroup>
     <EmbeddedResource Include="RevitObject.json" />
     <EmbeddedResource Include="RevitObjectsTop.json" />
+    <EmbeddedResource Include="7238c0e0bbd1bafbe1a287aa7fc88619.json.gz" />
   </ItemGroup>
 
 </Project>

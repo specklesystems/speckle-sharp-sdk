@@ -265,7 +265,7 @@ public sealed class SpeckleObjectDeserializer
       case JsonToken.Date:
         return (DateTime)reader.Value.NotNull();
       case JsonToken.StartArray:
-        return ReadArrayAsync(reader, ct);
+        return await ReadArrayAsync(reader, ct).ConfigureAwait(false);
       case JsonToken.StartObject:
         var dict = await ReadObjectAsync(reader, ct).ConfigureAwait(false);
         return dict;

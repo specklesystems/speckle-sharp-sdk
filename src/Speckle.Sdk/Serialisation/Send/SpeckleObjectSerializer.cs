@@ -107,11 +107,11 @@ public class SpeckleObjectSerializer2
           new()
           {
             ["speckle_type"] = r.speckle_type,
-            ["referencedId"] = r.referencedId,
-            ["__closure"] = r.closure
+            ["referencedId"] = r.referencedId
           };
         if (r.closure is not null)
         {
+          r["__closure"] = r.closure;
           foreach (var kvp in r.closure)
           {
             UpdateParentClosures(kvp.Key);
