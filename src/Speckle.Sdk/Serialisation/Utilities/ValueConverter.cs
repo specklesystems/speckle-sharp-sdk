@@ -18,7 +18,7 @@ internal static class ValueConverter
     "CA1502:Avoid excessive complexity",
     Justification = "To fix this requires rewrite of serializaiton"
   )]
-  public static bool ConvertValue(Type type, object? value, out object? convertedValue)
+  public static bool ConvertValue(Type type, object? value, bool skipInvalidConverts, out object? convertedValue)
   {
     // TODO: Document list of supported values in the SDK. (and grow it as needed)
 
@@ -59,7 +59,7 @@ internal static class ValueConverter
     switch (type.Name)
     {
       case "Nullable`1":
-        return ConvertValue(type.GenericTypeArguments[0], value, out convertedValue);
+        return ConvertValue(type.GenericTypeArguments[0], value, skipInvalidConverts, out convertedValue);
       #region Numbers
       case "Int64":
         if (valueType == typeof(long))
@@ -181,8 +181,12 @@ internal static class ValueConverter
 
       foreach (object inputListElement in valueList)
       {
-        if (!ConvertValue(listElementType, inputListElement, out object? convertedListElement))
+        if (!ConvertValue(listElementType, inputListElement, skipInvalidConverts, out object? convertedListElement))
         {
+          if (skipInvalidConverts)
+          {
+            continue;
+          }
           return false;
         }
 
@@ -210,8 +214,12 @@ internal static class ValueConverter
 
       foreach (KeyValuePair<string, object> kv in valueDict)
       {
-        if (!ConvertValue(dictValueType, kv.Value, out object? convertedDictValue))
+        if (!ConvertValue(dictValueType, kv.Value, skipInvalidConverts, out object? convertedDictValue))
         {
+          if (skipInvalidConverts)
+          {
+            continue;
+          }
           return false;
         }
 
@@ -236,8 +244,12 @@ internal static class ValueConverter
       for (int i = 0; i < valueList.Count; i++)
       {
         object inputListElement = valueList[i];
-        if (!ConvertValue(arrayElementType, inputListElement, out object? convertedListElement))
+        if (!ConvertValue(arrayElementType, inputListElement, skipInvalidConverts, out object? convertedListElement))
         {
+          if (skipInvalidConverts)
+          {
+            continue;
+          }
           return false;
         }
 

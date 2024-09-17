@@ -25,6 +25,7 @@ public sealed class SpeckleObjectDeserializer
   private const string TYPE_DISCRIMINATOR = nameof(Base.speckle_type);
 
   public CancellationToken CancellationToken { get; set; }
+  public bool SkipInvalidConverts { get; set; }
 
   /// <summary>
   /// The sync transport. This transport will be used synchronously.
@@ -300,7 +301,12 @@ public sealed class SpeckleObjectDeserializer
         }
 
         Type targetValueType = value.PropertyType;
-        bool conversionOk = ValueConverter.ConvertValue(targetValueType, entry.Value, out object? convertedValue);
+        bool conversionOk = ValueConverter.ConvertValue(
+          targetValueType,
+          entry.Value,
+          SkipInvalidConverts,
+          out object? convertedValue
+        );
         if (conversionOk)
         {
           value.SetValue(baseObj, convertedValue);

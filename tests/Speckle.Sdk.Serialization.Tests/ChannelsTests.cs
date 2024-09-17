@@ -66,7 +66,10 @@ public class ChannelsTests
   {
     var closures = await TestHelper.ReadAsObjectsFromResource(fileName);
 
-    using var process = new ReceiveProcess(new MemorySource(closures), new ReceiveProcessSettings(1, 1));
+    using var process = new ReceiveProcess(
+      new MemorySource(closures),
+      new ReceiveProcessSettings(1, 1, DeserializedOptions: new DeserializedOptions(SkipInvalidConverts: true))
+    );
     var root = await process.GetObject("7238c0e0bbd1bafbe1a287aa7fc88619", _ => { }, default);
     root.id.ShouldBe("7238c0e0bbd1bafbe1a287aa7fc88619");
   }

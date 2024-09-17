@@ -6,7 +6,7 @@ using Speckle.Sdk.Serialisation.Send;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public record DeserializedOptions(bool ThrowOnMissingReferences = true);
+public record DeserializedOptions(bool ThrowOnMissingReferences = true, bool SkipInvalidConverts = false);
 
 public sealed class SpeckleObjectDeserializer2(
   IReadOnlyDictionary<string, Base> references,
@@ -111,7 +111,7 @@ public sealed class SpeckleObjectDeserializer2(
       return null;
     }
 
-    return DictionaryConverter.Dict2Base(dict);
+    return DictionaryConverter.Dict2Base(dict, options?.SkipInvalidConverts ?? false);
   }
 
   private object? ReadProperty(JsonReader reader)

@@ -7,7 +7,11 @@ namespace Speckle.Sdk.Serialisation.Receive;
 
 public record Deserialized(string Id, Base BaseObject);
 
-public class DeserializeStage(ConcurrentDictionary<string, Base> cache, Func<string, ValueTask> gatherId)
+public class DeserializeStage(
+  ConcurrentDictionary<string, Base> cache,
+  Func<string, ValueTask> gatherId,
+  DeserializedOptions? deserializedOptions
+)
 {
   private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _closures = new();
 
@@ -54,7 +58,8 @@ public class DeserializeStage(ConcurrentDictionary<string, Base> cache, Func<str
     {
       return baseObject;
     }
-    SpeckleObjectDeserializer2 deserializer = new(dictionary, SpeckleObjectSerializer2Pool.Instance);
+    SpeckleObjectDeserializer2 deserializer =
+      new(dictionary, SpeckleObjectSerializer2Pool.Instance, deserializedOptions);
     return deserializer.Deserialize(json);
   }
 }
