@@ -369,9 +369,11 @@ public class SpeckleObjectSerializer
     var allProperties = ExtractAllProperties(baseObj);
 
     SerializerIdWriter? serializerIdWriter = null;
+    JsonWriter baseWriter = writer;
     if (baseObj is not Blob)
     {
       serializerIdWriter = new SerializerIdWriter(writer);
+      writer = serializerIdWriter;
     }
 
     writer.WriteStartObject();
@@ -392,6 +394,7 @@ public class SpeckleObjectSerializer
     {
       var json = serializerIdWriter.FinishIdWriter();
       ((IDisposable)serializerIdWriter).Dispose();
+      writer = baseWriter;
       id = ComputeId(json);
     }
     else
