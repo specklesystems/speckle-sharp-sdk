@@ -5,6 +5,7 @@ using Speckle.Objects.BuiltElements;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Receive;
 using Speckle.Sdk.Serialisation.Send;
 using Speckle.Sdk.Transports;
@@ -22,7 +23,7 @@ public class ChannelsTests
 
   [Test]
   [TestCase("RevitObject.json")]
-  public async Task Deserialize_Serialize_Channel_Test(string fileName)
+  public async Task ReceiveProcess_SendProcess(string fileName)
   {
     var objects = await TestHelper.ReadAsObjectsFromResource(fileName);
     var bases = new Dictionary<string, (string, Base)>();
@@ -33,7 +34,8 @@ public class ChannelsTests
       var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
       starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
 
-      using var stage = new ReceiveProcess(new MemorySource(objects));
+      using var stage = new ReceiveProcess(new MemorySource(objects), new ReceiveProcessSettings(1,1, 
+        SqliteManagerOptions:new (Enabled:false)));
       var baseType = await stage.GetObject(id, _ => { }, default).ConfigureAwait(false);
       baseType.id.ShouldBe(id);
       bases.Add(baseType.id, (objJson, baseType));
@@ -62,13 +64,15 @@ public class ChannelsTests
 
   [Test]
   [TestCase("7238c0e0bbd1bafbe1a287aa7fc88619.json.gz")]
-  public async Task Channels_Deserialize(string fileName)
+  public async Task ReceiveProcess(string fileName)
   {
     var closures = await TestHelper.ReadAsObjectsFromResource(fileName);
 
     using var process = new ReceiveProcess(
       new MemorySource(closures),
-      new ReceiveProcessSettings(1, 1, DeserializedOptions: new DeserializedOptions(SkipInvalidConverts: true))
+      new ReceiveProcessSettings(1, 1, 
+        SqliteManagerOptions: new (Enabled:false),
+        DeserializedOptions: new DeserializedOptions(SkipInvalidConverts: true))
     );
     var root = await process.GetObject("7238c0e0bbd1bafbe1a287aa7fc88619", _ => { }, default);
     root.id.ShouldBe("7238c0e0bbd1bafbe1a287aa7fc88619");

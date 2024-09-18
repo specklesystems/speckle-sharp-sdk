@@ -1,17 +1,8 @@
 ﻿namespace Speckle.Sdk.Serialisation.Receive;
 
-public class CachingStage
+public class CachingStage(SqliteManagerOptions options, Func<string, CancellationToken, ValueTask> notCached, Func<Downloaded, CancellationToken, ValueTask> cached)
 {
-  private readonly Func<string, ValueTask> _notCached;
-  private readonly Func<Downloaded, ValueTask> _cached;
-  private readonly SQLiteManager _sqLiteManager;
-
-  public CachingStage(Func<string, ValueTask> notCached, Func<Downloaded, ValueTask> cached)
-  {
-    _notCached = notCached;
-    _cached = cached;
-    _sqLiteManager = new();
-  }
+  private readonly SqliteManager _sqLiteManager = new(options);
 
   public async ValueTask Execute(IReadOnlyList<string> ids, CancellationToken cancellationToken)
   {
@@ -19,11 +10,11 @@ public class CachingStage
     {
       if (json is null)
       {
-        await _notCached(id).ConfigureAwait(false);
+        await notCached(id, cancellationToken).ConfigureAwait(false);
       }
       else
       {
-        await _cached(new(id, json)).ConfigureAwait(false);
+        await cached(new(id, json), cancellationToken).ConfigureAwait(false);
       }
     }
   }

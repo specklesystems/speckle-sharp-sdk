@@ -9,7 +9,7 @@ public record Deserialized(string Id, Base BaseObject);
 
 public class DeserializeStage(
   ConcurrentDictionary<string, Base> cache,
-  Func<string, ValueTask> gatherId,
+  Func<string, CancellationToken, ValueTask> gatherId,
   Action<Deserialized> done,
   DeserializedOptions? deserializedOptions
 )
@@ -18,7 +18,7 @@ public class DeserializeStage(
 
   public long Deserialized { get; private set; }
 
-  public async ValueTask Execute(Downloaded message)
+  public async ValueTask Execute(Downloaded message, CancellationToken cancellationToken)
   {
     if (!_closures.TryGetValue(message.Id, out var closures))
     {
@@ -36,14 +36,14 @@ public class DeserializeStage(
       }
       else
       {
-        await gatherId(c).ConfigureAwait(false);
+        await gatherId(c, cancellationToken).ConfigureAwait(false);
         anyNotFound = true;
       }
     }
 
     if (anyNotFound)
     {
-      await gatherId(message.Id).ConfigureAwait(false);
+      await gatherId(message.Id, cancellationToken).ConfigureAwait(false);
     }
     else
     {

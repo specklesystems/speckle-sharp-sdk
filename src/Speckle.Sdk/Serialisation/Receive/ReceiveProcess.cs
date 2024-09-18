@@ -13,6 +13,7 @@ public record ReceiveProcessSettings(
   int MaxDeserializeThreads = 4,
   int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS - 1,
   int BatchWaitMilliseconds = 500,
+  SqliteManagerOptions? SqliteManagerOptions = null,
   DeserializedOptions? DeserializedOptions = null
 );
 
@@ -33,10 +34,12 @@ public sealed class ReceiveProcess : IDisposable
     SourceChannel = Channel.CreateUnbounded<string>();
     DownloadChannel = Channel.CreateUnbounded<string>();
     DeserializeChannel = Channel.CreateUnbounded<Downloaded>();
-    CachingStage = new(SendToDownload, SendToDeserialize);
+    CachingStage = new(_settings.SqliteManagerOptions ?? new SqliteManagerOptions(), SendToDownload, SendToDeserialize);
     DownloadStage = new(SendToDeserialize, modelSource);
     DeserializeStage = new(_idToBaseCache, SendToCheckCache, Done, _settings.DeserializedOptions);
   }
+
+  private bool _isCompleted;
 
   private Channel<string> SourceChannel { get; }
   private Channel<string> DownloadChannel { get; }
@@ -56,33 +59,64 @@ public sealed class ReceiveProcess : IDisposable
       ]
     );
 
-  private async ValueTask SendToCheckCache(string id)
+  private async ValueTask SendToCheckCache(string id, CancellationToken cancellationToken)
   {
-    await SourceChannel.Writer.WriteAsync(id).ConfigureAwait(false);
+    if (_isCompleted)
+    {
+      return;
+    }
+    if (_settings.SqliteManagerOptions?.Enabled ?? true)
+    {
+      await SourceChannel.Writer.WriteAsync(id, cancellationToken).ConfigureAwait(false);
+      InvokeProgress();
+    }
+    else
+    {
+      await SendToDownload(id, cancellationToken).ConfigureAwait(false);
+    }
+  }
+
+  private async ValueTask SendToDownload(string id, CancellationToken cancellationToken)
+  {
+    if (_isCompleted)
+    {
+      return;
+    }
+    await DownloadChannel.Writer.WriteAsync(id, cancellationToken).ConfigureAwait(false);
     InvokeProgress();
   }
 
-  private async ValueTask SendToDownload(string id)
+  private async ValueTask SendToDeserialize(Downloaded id, CancellationToken cancellationToken)
   {
-    await DownloadChannel.Writer.WriteAsync(id).ConfigureAwait(false);
-    InvokeProgress();
-  }
-
-  private async ValueTask SendToDeserialize(Downloaded id)
-  {
-    await DeserializeChannel.Writer.WriteAsync(id).ConfigureAwait(false);
+    if (_isCompleted)
+    {
+      return;
+    }
+    await DeserializeChannel.Writer.WriteAsync(id, cancellationToken).ConfigureAwait(false);
     InvokeProgress();
   }
 
   private void Done(Deserialized deserialized)
   {
+    if (_isCompleted)
+    {
+      return;
+    }
     InvokeProgress();
     _idToBaseCache.TryAdd(deserialized.Id, deserialized.BaseObject);
     if (deserialized.Id == _rootObjectId)
     {
       _rootObject = deserialized.BaseObject;
-      SourceChannel.Writer.Complete();
+      Complete();
     }
+  }
+
+  private void Complete()
+  {
+    _isCompleted = true;
+    SourceChannel.Writer.Complete();
+    DownloadChannel.Writer.Complete();
+    DeserializeChannel.Writer.Complete();
   }
 
   public void Dispose() => DownloadStage.Dispose();
@@ -117,18 +151,18 @@ public sealed class ReceiveProcess : IDisposable
             {
               _bytes += args.Count ?? 0;
               InvokeProgress();
-            }
+            }, cancellationToken
           ),
         cancellationToken
       );
 
     var deserializeTask = DeserializeChannel.ReadAllConcurrentlyAsync(
       _settings.MaxDeserializeThreads,
-      DeserializeStage.Execute,
+      x => DeserializeStage.Execute(x, cancellationToken),
       cancellationToken: cancellationToken
     );
 
-    await SendToCheckCache(_rootObjectId).ConfigureAwait(false);
+    await SendToCheckCache(_rootObjectId, cancellationToken).ConfigureAwait(false);
     await pipelineTask.ConfigureAwait(false);
     await downloadTask.ConfigureAwait(false);
     await deserializeTask.ConfigureAwait(false);

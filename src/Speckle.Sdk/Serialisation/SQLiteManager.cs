@@ -4,7 +4,8 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
-public class SQLiteManager
+public record SqliteManagerOptions(bool Enabled = true, string? Path = null, string? ApplicationName = null, string? Scope = null);
+public class SqliteManager
 {
   private readonly string _rootPath;
   private readonly string _connectionString;
@@ -14,11 +15,11 @@ public class SQLiteManager
   private readonly string _scope;
   private SqliteConnection Connection { get; set; }
 
-  public SQLiteManager(string? basePath = null, string? applicationName = null, string? scope = null)
+  public SqliteManager(SqliteManagerOptions options)
   {
-    _basePath = basePath ?? SpecklePathProvider.UserApplicationDataPath();
-    _applicationName = applicationName ?? "Speckle";
-    _scope = scope ?? "Data";
+    _basePath = options.Path ?? SpecklePathProvider.UserApplicationDataPath();
+    _applicationName = options.ApplicationName ?? "Speckle";
+    _scope = options.Scope ?? "Data";
     try
     {
       var dir = Path.Combine(_basePath, _applicationName);
@@ -110,6 +111,7 @@ public class SQLiteManager
       cancellationToken.ThrowIfCancellationRequested();
       command.Parameters.AddWithValue("@hash", id);
       yield return (id, (string?)command.ExecuteScalar());
+      command.Parameters.Clear();
     }
   }
 }

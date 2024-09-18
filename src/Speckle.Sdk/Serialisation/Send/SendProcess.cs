@@ -60,8 +60,7 @@ public sealed class SendProcess : IDisposable
 
     await SourceChannel.Writer.WriteAsync(rootObject, cancellationToken).ConfigureAwait(false);
     _requested++;
-    var count = await sourceTask;
-    Console.WriteLine($"Really Done? {count}");
+    await sourceTask;
     InvokeProgress();
     return (_rootObjectSerialized.NotNull().Id, _rootObjectSerialized.ConvertedReferences);
   }
