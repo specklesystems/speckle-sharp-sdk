@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Speckle.Sdk\Speckle.Sdk.csproj" />
+      <ProjectReference Include="..\Speckle.Sdk.Tests.Performance\Speckle.Sdk.Tests.Performance.csproj" />
     </ItemGroup>
 
 </Project>

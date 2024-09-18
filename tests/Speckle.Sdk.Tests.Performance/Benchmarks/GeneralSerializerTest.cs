@@ -33,6 +33,7 @@ public class GeneralSerializerTest
     serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
     var serviceProvider = serviceCollection.BuildServiceProvider();
     using var dataSource = ActivatorUtilities.CreateInstance<TestDataHelper>(serviceProvider);
+
     await dataSource.SeedTransport(new(url)).ConfigureAwait(false);
     SpeckleObjectDeserializer deserializer = new() { ReadTransport = dataSource.Transport };
     string data = await dataSource.Transport.GetObject(dataSource.ObjectId).NotNull();

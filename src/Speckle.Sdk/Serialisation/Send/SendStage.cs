@@ -18,7 +18,11 @@ public sealed class ServerTarget : IModelTarget
 
   public ServerTarget(
     ISpeckleHttp speckleHttp,
-    ISdkActivityFactory activityFactory, Uri baseUri, string streamId, string? authorizationToken)
+    ISdkActivityFactory activityFactory,
+    Uri baseUri,
+    string streamId,
+    string? authorizationToken
+  )
   {
     _streamId = streamId;
     _serverApi = new(speckleHttp, activityFactory, baseUri, authorizationToken, string.Empty);

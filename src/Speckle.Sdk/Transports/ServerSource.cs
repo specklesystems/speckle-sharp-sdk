@@ -14,7 +14,11 @@ public interface IModelSource : IDisposable
 
 public sealed class ServerSource(
   ISpeckleHttp speckleHttp,
-  ISdkActivityFactory activityFactory, Uri baseUri, string streamId, string? authorizationToken) : IModelSource
+  ISdkActivityFactory activityFactory,
+  Uri baseUri,
+  string streamId,
+  string? authorizationToken
+) : IModelSource
 {
   private readonly ServerApi _serverApi = new(speckleHttp, activityFactory, baseUri, authorizationToken, string.Empty);
 

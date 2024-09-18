@@ -3,26 +3,22 @@ using System.Web;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 
-namespace Speckle.Sdk.Serialization.Testing;
+namespace Speckle.Sdk.Tests.Performance;
 
 public class StreamWrapper
 {
-  private Account? _account;
-
   private StreamWrapper() { }
-
-
 
   //this needs to be public so it's serialized and stored in Dynamo
   public string? OriginalInput { get; set; }
 
   public string? UserId { get; set; }
   public string ServerUrl { get; set; }
-  public string StreamId { get; set; }
+  public string ProjectId { get; set; }
   public string? CommitId { get; set; }
 
   /// <remarks>May be an ID instead for FE2 urls</remarks>
-  public string? BranchName { get; set; }
+  public string? ModelId { get; set; }
   public string? ObjectId { get; set; }
 
   /// <summary>
@@ -45,13 +41,13 @@ public class StreamWrapper
         return StreamWrapperType.Commit;
       }
 
-      if (!string.IsNullOrEmpty(BranchName))
+      if (!string.IsNullOrEmpty(ModelId))
       {
         return StreamWrapperType.Branch;
       }
 
       // If we reach here and there is no stream id, it means that the stream is invalid for some reason.
-      return !string.IsNullOrEmpty(StreamId) ? StreamWrapperType.Stream : StreamWrapperType.Undefined;
+      return !string.IsNullOrEmpty(ProjectId) ? StreamWrapperType.Stream : StreamWrapperType.Undefined;
     }
   }
 
@@ -104,8 +100,8 @@ public class StreamWrapper
     // INFO: The Branch endpoint is being updated to fallback to checking a branch ID if no name is found.
     // Assigning the BranchID as the BranchName is a workaround to support FE2 links in the old StreamWrapper.
     // A better solution must be redesigned taking into account all the new Frontend2 URL features.
-    StreamId = projectId.Value;
-    BranchName = modelRes.branchId;
+    ProjectId = projectId.Value;
+    ModelId = modelRes.branchId;
     CommitId = modelRes.commitId;
     ObjectId = modelRes.objectId;
   }
@@ -134,7 +130,7 @@ public class StreamWrapper
   }
 
 #pragma warning disable CA1054
-  public  StreamWrapper(string streamUrl)
+  public StreamWrapper(string streamUrl)
 #pragma warning restore CA1054
   {
     Uri uri = new(streamUrl);
@@ -152,15 +148,15 @@ public class StreamWrapper
     // Tests pass in Speckle.Sdk without this hack.
     if (uri.Segments.Length >= 4 && uri.Segments[3]?.ToLowerInvariant() == "branches/")
     {
-      StreamId = uri.Segments[2].Replace("/", "");
+      ProjectId = uri.Segments[2].Replace("/", "");
       if (uri.Segments.Length > 5)
       {
         var branchSegs = uri.Segments.ToList().GetRange(4, uri.Segments.Length - 4);
-        BranchName = Uri.UnescapeDataString(string.Concat(branchSegs));
+        ModelId = Uri.UnescapeDataString(string.Concat(branchSegs));
       }
       else
       {
-        BranchName = Uri.UnescapeDataString(uri.Segments[4]);
+        ModelId = Uri.UnescapeDataString(uri.Segments[4]);
       }
     }
     else
@@ -174,15 +170,15 @@ public class StreamWrapper
           }
           else
           {
-            StreamId = uri.Segments[2].Replace("/", "");
+            ProjectId = uri.Segments[2].Replace("/", "");
           }
 
           break;
         case 4: // ie https://speckle.server/streams/0c6ad366c4/globals/
           if (uri.Segments[3].StartsWith("globals", StringComparison.InvariantCultureIgnoreCase))
           {
-            StreamId = uri.Segments[2].Replace("/", "");
-            BranchName = Uri.UnescapeDataString(uri.Segments[3].Replace("/", ""));
+            ProjectId = uri.Segments[2].Replace("/", "");
+            ModelId = Uri.UnescapeDataString(uri.Segments[3].Replace("/", ""));
           }
           else
           {
@@ -195,20 +191,20 @@ public class StreamWrapper
           {
             // NOTE: this is a good practice reminder on how it should work
             case "commits/":
-              StreamId = uri.Segments[2].Replace("/", "");
+              ProjectId = uri.Segments[2].Replace("/", "");
               CommitId = uri.Segments[4].Replace("/", "");
               break;
             case "globals/":
-              StreamId = uri.Segments[2].Replace("/", "");
-              BranchName = Uri.UnescapeDataString(uri.Segments[3].Replace("/", ""));
+              ProjectId = uri.Segments[2].Replace("/", "");
+              ModelId = Uri.UnescapeDataString(uri.Segments[3].Replace("/", ""));
               CommitId = uri.Segments[4].Replace("/", "");
               break;
             case "branches/":
-              StreamId = uri.Segments[2].Replace("/", "");
-              BranchName = Uri.UnescapeDataString(uri.Segments[4].Replace("/", ""));
+              ProjectId = uri.Segments[2].Replace("/", "");
+              ModelId = Uri.UnescapeDataString(uri.Segments[4].Replace("/", ""));
               break;
             case "objects/":
-              StreamId = uri.Segments[2].Replace("/", "");
+              ProjectId = uri.Segments[2].Replace("/", "");
               ObjectId = uri.Segments[4].Replace("/", "");
               break;
             default:
@@ -226,104 +222,8 @@ public class StreamWrapper
     UserId = queryDictionary["u"];
   }
 
-  /// <summary>
-  /// Gets a valid account for this stream wrapper.
-  /// <para>Note: this method ensures that the stream exists and/or that the user has an account which has access to that stream. If used in a sync manner, make sure it's not blocking.</para>
-  /// </summary>
-  /// <exception cref="SpeckleException">Throws exception if account fetching failed. This could be due to non-existent account or stream.</exception>
-  /// <returns>The valid account object for this stream.</returns>
-  public Account GetAccount(IAccountManager accountManager)
-  {
-    if (_account != null)
-    {
-      return _account;
-    }
-
-    // Step 1: check if direct account id (?u=)
-    if (OriginalInput != null && OriginalInput.Contains("?u="))
-    {
-      var userId = OriginalInput.Split(new[] { "?u=" }, StringSplitOptions.None)[1];
-      var acc = accountManager.GetAccounts().FirstOrDefault(acc => acc.userInfo.id == userId);
-      if (acc != null)
-      {
-        _account = acc;
-        return acc;
-      }
-    }
-
-    // Step 2: check the default
-    var defAcc = accountManager.GetDefaultAccount();
-    List<Exception> err = new();
-    try
-    {
-      defAcc.NotNull();
-      _account = defAcc;
-      return defAcc;
-    }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-      err.Add(new SpeckleException($"Account {defAcc?.userInfo?.email} failed to auth stream wrapper", ex));
-    }
-
-    // Step 3: all the rest
-    var accs = accountManager.GetAccounts(new Uri(ServerUrl)).ToList();
-    if (accs.Count == 0)
-    {
-      throw new SpeckleException($"You don't have any accounts for {ServerUrl}.");
-    }
-
-    foreach (var acc in accs)
-    {
-      try
-      {
-        _account = acc;
-        return acc;
-      }
-      catch (Exception ex) when (!ex.IsFatal())
-      {
-        err.Add(new SpeckleException($"Account {acc} failed to auth stream wrapper", ex));
-      }
-    }
-
-    AggregateException inner = new(null, err);
-    throw new SpeckleException("Failed to validate stream wrapper", inner);
-  }
-
-  public void SetAccount(Account acc)
-  {
-    _account = acc;
-    UserId = _account.userInfo.id;
-  }
-
-  public bool Equals(StreamWrapper? wrapper)
-  {
-    if (wrapper == null)
-    {
-      return false;
-    }
-
-    if (Type != wrapper.Type)
-    {
-      return false;
-    }
-
-    return Type == wrapper.Type
-           && ServerUrl == wrapper.ServerUrl
-           && UserId == wrapper.UserId
-           && StreamId == wrapper.StreamId
-           && Type == StreamWrapperType.Branch
-           && BranchName == wrapper.BranchName
-           || Type == StreamWrapperType.Object && ObjectId == wrapper.ObjectId
-           || Type == StreamWrapperType.Commit && CommitId == wrapper.CommitId;
-  }
-
   public Uri ToServerUri()
   {
-    if (_account != null)
-    {
-      return _account.serverInfo.frontend2 ? ToProjectUri() : ToStreamUri();
-    }
-
     if (OriginalInput != null)
     {
       Uri uri = new(OriginalInput);
@@ -340,8 +240,8 @@ public class StreamWrapper
     var uri = new Uri(ServerUrl);
 
     // TODO: THis has to be the branch ID or it won't work.
-    var branchID = BranchName;
-    var leftPart = $"projects/{StreamId}/models/";
+    var branchID = ModelId;
+    var leftPart = $"projects/{ProjectId}/models/";
     switch (Type)
     {
       case StreamWrapperType.Commit:
@@ -363,14 +263,14 @@ public class StreamWrapper
   private Uri ToStreamUri()
   {
     var uri = new Uri(ServerUrl);
-    var leftPart = $"streams/{StreamId}";
+    var leftPart = $"streams/{ProjectId}";
     switch (Type)
     {
       case StreamWrapperType.Commit:
         leftPart += $"/commits/{CommitId}";
         break;
       case StreamWrapperType.Branch:
-        leftPart += $"/branches/{BranchName}";
+        leftPart += $"/branches/{ModelId}";
         break;
       case StreamWrapperType.Object:
         leftPart += $"/objects/{ObjectId}";

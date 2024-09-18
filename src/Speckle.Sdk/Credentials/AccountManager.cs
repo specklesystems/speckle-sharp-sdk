@@ -845,5 +845,4 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
     //escaped chars like % do not play nice with the server
     return Regex.Replace(Convert.ToBase64String(challengeData), @"[^\w\.@-]", "");
   }
-  
 }
