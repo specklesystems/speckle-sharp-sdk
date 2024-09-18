@@ -1,18 +1,11 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Engines;
-using Microsoft.Extensions.Logging.Abstractions;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Order;
-using BenchmarkDotNet.Toolchains.CsProj;
 using Speckle.Objects.Geometry;
-using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Common;
-using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Receive;
 
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;

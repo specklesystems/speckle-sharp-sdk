@@ -204,7 +204,6 @@ public class SpeckleObjectSerializer
         break;
       case Matrix4x4 md:
         writer.WriteStartArray();
-
         writer.WriteValue(md.M11);
         writer.WriteValue(md.M12);
         writer.WriteValue(md.M13);

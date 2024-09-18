@@ -1,4 +1,6 @@
 ﻿using Speckle.Sdk.Common;
+using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Transports;
@@ -10,9 +12,11 @@ public interface IModelSource : IDisposable
   IAsyncEnumerable<(string, string)> GetJsons(IReadOnlyList<string> objectIds, Action<ProgressArgs> progress);
 }
 
-public sealed class ServerSource(Uri baseUri, string streamId, string? authorizationToken) : IModelSource
+public sealed class ServerSource(
+  ISpeckleHttp speckleHttp,
+  ISdkActivityFactory activityFactory, Uri baseUri, string streamId, string? authorizationToken) : IModelSource
 {
-  private readonly ServerApi _serverApi = new(baseUri, authorizationToken, string.Empty);
+  private readonly ServerApi _serverApi = new(speckleHttp, activityFactory, baseUri, authorizationToken, string.Empty);
 
   public async ValueTask<string> GetJson(string objectId, Action<ProgressArgs> progress)
   {

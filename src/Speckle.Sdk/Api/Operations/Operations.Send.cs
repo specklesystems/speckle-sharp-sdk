@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Send;
@@ -11,7 +12,7 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
-  public static async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send2(
+  public  async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send2(
     Account account,
     string streamId,
     Base value,
@@ -20,7 +21,7 @@ public partial class Operations
   )
   {
 #pragma warning disable CA2000
-    using var stage = new SendProcess(new ServerTarget(new Uri(account.serverInfo.url), streamId, account.token));
+    using var stage = new SendProcess(new ServerTarget(speckleHttp, activityFactory, new Uri(account.serverInfo.url), streamId, account.token));
 #pragma warning restore CA2000
     return await stage.SaveObject(value, onProgressAction, cancellationToken).ConfigureAwait(false);
   }

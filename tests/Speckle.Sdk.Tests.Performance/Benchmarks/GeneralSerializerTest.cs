@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
@@ -27,11 +28,15 @@ public class GeneralSerializerTest
 
     //var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
-    using var dataSource = new TestDataHelper();
+
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+    using var dataSource = ActivatorUtilities.CreateInstance<TestDataHelper>(serviceProvider);
     await dataSource.SeedTransport(new(url)).ConfigureAwait(false);
     SpeckleObjectDeserializer deserializer = new() { ReadTransport = dataSource.Transport };
     string data = await dataSource.Transport.GetObject(dataSource.ObjectId).NotNull();
-    _testData = await deserializer.DeserializeAsync(data).NotNull();
+    _testData = await deserializer.DeserializeAsync(data);
   }
 
   [Benchmark]
@@ -55,7 +60,7 @@ public class NullTransport : ITransport
   public Dictionary<string, object> TransportContext { get; } = new();
   public TimeSpan Elapsed { get; } = TimeSpan.Zero;
   public CancellationToken CancellationToken { get; set; }
-  public Action<ProgressArgs> OnProgressAction { get; set; }
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
 
   public void BeginWrite() { }
 
@@ -68,12 +73,12 @@ public class NullTransport : ITransport
     return Task.CompletedTask;
   }
 
-  public Task<string> GetObject(string id) => throw new NotImplementedException();
+  public Task<string?> GetObject(string id) => throw new NotImplementedException();
 
   public Task<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
-    Action<int> onTotalChildrenCountKnown = null
+    Action<int>? onTotalChildrenCountKnown = null
   ) => throw new NotImplementedException();
 
   public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds) =>

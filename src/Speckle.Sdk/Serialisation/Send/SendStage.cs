@@ -1,4 +1,6 @@
 ﻿using System.Collections.Concurrent;
+using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
@@ -14,10 +16,12 @@ public sealed class ServerTarget : IModelTarget
   private readonly ServerApi _serverApi;
   private readonly string _streamId;
 
-  public ServerTarget(Uri baseUri, string streamId, string? authorizationToken)
+  public ServerTarget(
+    ISpeckleHttp speckleHttp,
+    ISdkActivityFactory activityFactory, Uri baseUri, string streamId, string? authorizationToken)
   {
     _streamId = streamId;
-    _serverApi = new(baseUri, authorizationToken, string.Empty);
+    _serverApi = new(speckleHttp, activityFactory, baseUri, authorizationToken, string.Empty);
   }
 
   public async ValueTask Send(IReadOnlyList<(string, string)> objects, Action<ProgressArgs> progress)

@@ -199,14 +199,6 @@
         "resolved": "13.0.1",
         "contentHash": "ppPFpBcvxdsfUonNcvITKqLl3bqxWbDCZIzDWHzjpdAHRFfZe0Dw9HmA0+za13IdyrgJwpkDTDA9fHaxOrt20A=="
       },
-      "Open.ChannelExtensions": {
-        "type": "Transitive",
-        "resolved": "1.0.0",
-        "contentHash": "HxUxyMBffjIh5g2JCR/lStKiBR0IdZ3Lmp4qzH0CugUyBEe/9ymEC/OCcOVbx7WTMm6F8ybc4gIUPqzdtqCQRA==",
-        "dependencies": {
-          "System.Threading.Channels": "4.5.0"
-        }
-      },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
         "resolved": "2.1.4",
@@ -274,7 +266,7 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[3.1.0, )",
           "Microsoft.Extensions.Logging": "[3.1.0, )",
           "Microsoft.IO.RecyclableMemoryStream": "[3.0.1, )",
-          "Open.ChannelExtensions": "(, )",
+          "Open.ChannelExtensions": "[8.4.3, )",
           "Polly": "[7.2.3, )",
           "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
           "Polly.Extensions.Http": "[3.0.0, )",
@@ -346,6 +338,12 @@
         "requested": "[3.0.1, )",
         "resolved": "3.0.1",
         "contentHash": "s/s20YTVY9r9TPfTrN5g8zPF1YhwxyqO6PxUkrYTGI2B+OGPe9AdajWZrLhFqXIvqIW23fnUE4+ztrUWNU1+9g=="
+      },
+      "Open.ChannelExtensions": {
+        "type": "CentralTransitive",
+        "requested": "[8.4.3, )",
+        "resolved": "8.4.3",
+        "contentHash": "ExjIyNC+MZVz31MrbVdFJoVlo0P/DdX/9IwOFKK+tXRIx0PB43rgWEwOhNfdQZeUL6TJME1NxfTDX9ca5Ljf3g=="
       },
       "Polly": {
         "type": "CentralTransitive",

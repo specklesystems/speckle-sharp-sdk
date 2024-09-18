@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Models;
@@ -6,7 +6,8 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Testing;
 
-public sealed class TestDataHelper : IDisposable
+public sealed class TestDataHelper(IAccountManager accountManager, 
+  IClientFactory clientFactory, IServerTransportFactory serverTransportFactory, IOperations operations) : IDisposable
 {
   private static readonly string s_basePath = $"./temp {Guid.NewGuid()}";
 
@@ -22,15 +23,15 @@ public sealed class TestDataHelper : IDisposable
     ObjectId = await SeedTransport(sw, Transport).ConfigureAwait(false);
   }
 
-  public static async Task<string> SeedTransport(StreamWrapper sw, ITransport transport)
+  public async Task<string> SeedTransport( StreamWrapper sw, ITransport transport)
   {
     //seed SQLite transport with test data
-    var acc = await sw.GetAccount().ConfigureAwait(false);
-    using var client = new Client(acc);
-    var branch = await client.BranchGet(sw.StreamId, sw.BranchName!, 1).ConfigureAwait(false);
-    var objectId = branch.commits.items[0].referencedObject;
+    var acc =  sw.GetAccount(accountManager);
+    using var client = clientFactory.Create(acc);
+    var branch = await client.Model.Get(sw.StreamId, sw.BranchName!, default).ConfigureAwait(false);
+    var objectId = branch.id;
 
-    using ServerTransport remoteTransport = new(acc, sw.StreamId);
+    using ServerTransport remoteTransport = serverTransportFactory.Create(acc, sw.StreamId);
     transport.BeginWrite();
     await remoteTransport.CopyObjectAndChildren(objectId, transport).ConfigureAwait(false);
     transport.EndWrite();
@@ -41,7 +42,7 @@ public sealed class TestDataHelper : IDisposable
 
   public async Task<Base> DeserializeBase()
   {
-    return await Operations.Receive(ObjectId, null, Transport).ConfigureAwait(false);
+    return await operations.Receive(ObjectId, null, Transport).ConfigureAwait(false);
   }
 
   public void Dispose()

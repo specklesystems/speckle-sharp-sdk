@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Receive;
@@ -11,7 +12,7 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
-  public static async ValueTask<Base> Receive2(
+  public  async ValueTask<Base> Receive2(
     Account account,
     string streamId,
     string objectId,
@@ -20,7 +21,7 @@ public partial class Operations
   )
   {
 #pragma warning disable CA2000
-    using var stage = new ReceiveProcess(new ServerSource(new Uri(account.serverInfo.url), streamId, null));
+    using var stage = new ReceiveProcess(new ServerSource(speckleHttp, activityFactory, new Uri(account.serverInfo.url), streamId, null));
 #pragma warning restore CA2000
     var rootObject = await stage.GetObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);
     return rootObject;

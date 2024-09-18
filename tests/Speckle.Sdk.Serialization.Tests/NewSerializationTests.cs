@@ -34,7 +34,7 @@ public class NewSerializationTests
       ReadTransport = new TestTransport(oldDictionary),
       CancellationToken = default
     };
-    var oldBase = await oldDeserializer.DeserializeJsonAsync(json);
+    var oldBase = await oldDeserializer.DeserializeAsync(json);
     oldBase.id.ShouldBe("7238c0e0bbd1bafbe1a287aa7fc88619");
     var oldCollection = oldBase as Collection;
     oldCollection.ShouldNotBeNull();
