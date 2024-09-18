@@ -58,6 +58,7 @@ public static partial class Operations
         )
         .ConfigureAwait(false);
 
+      receiveActivity?.SetStatus(SpeckleActivityStatusCode.Ok);
       return result;
     }
     catch (Exception ex)
