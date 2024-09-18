@@ -12,7 +12,7 @@
       <PackageReference Include="BenchmarkDotNet" />
       
     <ProjectReference Include="..\..\src\Speckle.Objects\Speckle.Objects.csproj" />
-      <!--       <PackageReference Include="Speckle.Objects" VersionOverride="3.1.0-dev.133"/> -->
+      <!--      <PackageReference Include="Speckle.Objects" VersionOverride="3.1.0-dev.133"/> -->
 <!--      <PackageReference Include="Speckle.Objects" VersionOverride="3.1.0-dev.109"/> -->
 <!--      <PackageReference Include="Speckle.Objects" VersionOverride="3.0.0-dev.51"/> &lt;!&ndash;Pre-optimisation&ndash;&gt;-->
     </ItemGroup>

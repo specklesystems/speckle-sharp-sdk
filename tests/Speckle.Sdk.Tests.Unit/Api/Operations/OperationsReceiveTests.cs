@@ -1,5 +1,7 @@
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
@@ -10,6 +12,7 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 public sealed partial class OperationsReceiveTests
 {
   private static readonly Base[] s_testObjects;
+  private IOperations _operations;
 
   static OperationsReceiveTests()
   {
@@ -49,20 +52,31 @@ public sealed partial class OperationsReceiveTests
   public async Task GlobalSetup()
   {
     Reset();
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
     _testCaseTransport = new MemoryTransport();
     foreach (var b in s_testObjects)
     {
-      await Sdk.Api.Operations.Send(b, _testCaseTransport, false);
+      await _operations.Send(b, _testCaseTransport, false);
     }
   }
 
   [SetUp]
-  public void Setup() => Reset();
+  public void Setup()
+  {
+    Reset();
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
+  }
 
   [Test, TestCaseSource(nameof(TestCases))]
   public async Task Receive_FromLocal_ExistingObjects(string id)
   {
-    Base result = await Sdk.Api.Operations.Receive(id, null, _testCaseTransport);
+    Base result = await _operations.Receive(id, null, _testCaseTransport);
 
     Assert.That(result.id, Is.EqualTo(id));
   }
@@ -71,7 +85,7 @@ public sealed partial class OperationsReceiveTests
   public async Task Receive_FromRemote_ExistingObjects(string id)
   {
     MemoryTransport localTransport = new();
-    Base result = await Sdk.Api.Operations.Receive(id, _testCaseTransport, localTransport);
+    Base result = await _operations.Receive(id, _testCaseTransport, localTransport);
 
     Assert.That(result.id, Is.EqualTo(id));
   }
@@ -80,7 +94,7 @@ public sealed partial class OperationsReceiveTests
   public async Task Receive_FromLocal_OnProgressActionCalled(string id)
   {
     bool wasCalled = false;
-    _ = await Sdk.Api.Operations.Receive(id, null, _testCaseTransport, onProgressAction: _ => wasCalled = true);
+    _ = await _operations.Receive(id, null, _testCaseTransport, onProgressAction: _ => wasCalled = true);
 
     Assert.That(wasCalled, Is.True);
   }
@@ -90,7 +104,7 @@ public sealed partial class OperationsReceiveTests
   {
     bool wasCalled = false;
     int children = 0;
-    var result = await Sdk.Api.Operations.Receive(
+    var result = await _operations.Receive(
       id,
       null,
       _testCaseTransport,

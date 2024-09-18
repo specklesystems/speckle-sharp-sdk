@@ -30,19 +30,17 @@ public sealed class HashUtilityTests
     );
   }
 
-  public static IEnumerable<(string input, string sha256, string md5)> LargeTestCases()
+  public static IEnumerable<TestCaseData> LargeTestCases()
   {
     Random random = new(420);
-    yield return (
+    yield return new TestCaseData(
       new string(Enumerable.Range(0, 1_000_000).Select(_ => (char)random.Next(32, 127)).ToArray()),
-      "b919b9e60cd6bb86ab395ee1408e12efd4d3e4e7b58f02b4cda6b4120086959a",
-      "d38572fdb20fe90c4871178df3f9570d"
-    );
-    yield return (
+      "b919b9e60cd6bb86ab395ee1408e12efd4d3e4e7b58f02b4cda6b4120086959a"
+    ).SetName("1_000_000 random chars");
+    yield return new TestCaseData(
       new string(Enumerable.Range(0, 10_000_000).Select(_ => (char)random.Next(32, 127)).ToArray()),
-      "f2e83101c3066c8a2983acdb92df53504ec00ac1e5afb71b7c3798cb4daf6162",
-      "a7eecf20d68f836f462963928cd0f1a1"
-    );
+      "f2e83101c3066c8a2983acdb92df53504ec00ac1e5afb71b7c3798cb4daf6162"
+    ).SetName("10_000_000 random chars");
   }
 
   [Test, TestOf(nameof(Crypt.Md5))]
@@ -86,10 +84,9 @@ public sealed class HashUtilityTests
 
   [Test, TestOf(nameof(Crypt.Sha256))]
   [TestCaseSource(nameof(LargeTestCases))]
-  public void Sha256_LargeDataTests((string input, string expected, string _) testCase)
+  public void Sha256_LargeDataTests(string input, string expected)
   {
-    var test = Crypt.Sha256(testCase.input.AsSpan());
-
-    Assert.That(test, Is.EqualTo(testCase.expected));
+    var test = Crypt.Sha256(input.AsSpan());
+    Assert.That(test, Is.EqualTo(expected));
   }
 }

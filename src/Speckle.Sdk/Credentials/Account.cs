@@ -72,12 +72,6 @@ public class Account : IEquatable<Account>
     return Crypt.Md5(CleanURL(url), "X2");
   }
 
-  public async Task<UserInfo> Validate()
-  {
-    Uri server = new(serverInfo.url);
-    return await AccountManager.GetUserInfo(token, server).ConfigureAwait(false);
-  }
-
   public override string ToString()
   {
     return $"Account ({userInfo.email} | {serverInfo.url})";

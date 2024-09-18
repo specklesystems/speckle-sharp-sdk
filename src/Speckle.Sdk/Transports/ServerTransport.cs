@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
@@ -10,6 +11,8 @@ namespace Speckle.Sdk.Transports;
 
 public sealed class ServerTransport : IServerTransport
 {
+  private readonly ISpeckleHttp _http;
+  private readonly ISdkActivityFactory _activityFactory;
   private readonly object _elapsedLock = new();
 
   private Exception? _exception;
@@ -28,12 +31,22 @@ public sealed class ServerTransport : IServerTransport
   /// <param name="timeoutSeconds"></param>
   /// <param name="blobStorageFolder">Defaults to <see cref="SpecklePathProvider.BlobStoragePath"/></param>
   /// <exception cref="ArgumentException"><paramref name="streamId"/> was not formatted as valid stream id</exception>
-  public ServerTransport(Account account, string streamId, int timeoutSeconds = 60, string? blobStorageFolder = null)
+  public ServerTransport(
+    ISpeckleHttp http,
+    ISdkActivityFactory activityFactory,
+    Account account,
+    string streamId,
+    int timeoutSeconds = 60,
+    string? blobStorageFolder = null
+  )
   {
     if (string.IsNullOrWhiteSpace(streamId))
     {
       throw new ArgumentException($"{streamId} is not a valid id", streamId);
     }
+
+    _http = http;
+    _activityFactory = activityFactory;
 
     Account = account;
     BaseUri = new(account.serverInfo.url);
@@ -41,7 +54,7 @@ public sealed class ServerTransport : IServerTransport
     AuthorizationToken = account.token;
     TimeoutSeconds = timeoutSeconds;
     BlobStorageFolder = blobStorageFolder ?? SpecklePathProvider.BlobStoragePath();
-    Initialize(account.serverInfo.url);
+    Api = new ParallelServerApi(http, activityFactory, BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
 
     Directory.CreateDirectory(BlobStorageFolder);
   }
@@ -74,7 +87,7 @@ public sealed class ServerTransport : IServerTransport
 
   public object Clone()
   {
-    return new ServerTransport(Account, StreamId, TimeoutSeconds, BlobStorageFolder)
+    return new ServerTransport(_http, _activityFactory, Account, StreamId, TimeoutSeconds, BlobStorageFolder)
     {
       OnProgressAction = OnProgressAction,
       CancellationToken = CancellationToken,
@@ -120,7 +133,8 @@ public sealed class ServerTransport : IServerTransport
 
     CancellationToken.ThrowIfCancellationRequested();
 
-    using ParallelServerApi api = new(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
+    using ParallelServerApi api =
+      new(_http, _activityFactory, BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
 
     var stopwatch = Stopwatch.StartNew();
     api.CancellationToken = CancellationToken;
@@ -260,13 +274,6 @@ public sealed class ServerTransport : IServerTransport
     _shouldSendThreadRun = false;
     _sendingThread.Join();
     _sendingThread = null;
-  }
-
-  private void Initialize(string baseUri)
-  {
-    SpeckleLog.Logger.Information("Initializing a new Remote Transport for {baseUri}", baseUri);
-
-    Api = new ParallelServerApi(BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
   }
 
   public override string ToString()

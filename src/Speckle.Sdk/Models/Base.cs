@@ -8,7 +8,6 @@ using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
 
@@ -235,24 +234,7 @@ public class Base : DynamicBase, ISpeckleObject
       {
         continue;
       }
-
-      try
-      {
-        myDuplicate[kvp.Key] = kvp.Value;
-      }
-      catch (Exception ex) when (!ex.IsFatal())
-      {
-        // avoids any last ditch unsettable or strange props.
-        SpeckleLog.Logger.Warning(
-          "Shallow copy of {type} failed to copy {propertyName} of type {propertyType} with value {valueType} - CanWrite / CanRead",
-          type,
-          kvp.Key,
-          propertyInfo?.PropertyType,
-          kvp.Value?.GetType(),
-          propertyInfo?.CanWrite,
-          propertyInfo?.CanRead
-        );
-      }
+      myDuplicate[kvp.Key] = kvp.Value;
     }
 
     return myDuplicate;

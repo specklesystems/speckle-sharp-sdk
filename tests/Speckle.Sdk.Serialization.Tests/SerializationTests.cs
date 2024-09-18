@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+using System.Reflection;
+using Microsoft.Extensions.Logging.Abstractions;
+using NUnit.Framework;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.BuiltElements;
@@ -42,7 +44,7 @@ public class SerializationTests
         || oldSpeckleType.StartsWith("Base");
       starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
 
-      var baseType = await deserializer.DeserializeJsonAsync(objJson);
+      var baseType = await deserializer.DeserializeAsync(objJson);
       baseType.id.ShouldBe(id);
 
       starts =

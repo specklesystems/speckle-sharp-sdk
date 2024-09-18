@@ -1,7 +1,9 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -29,7 +31,7 @@ public class GeneralSerializerTest
     await dataSource.SeedTransport(new(url)).ConfigureAwait(false);
     SpeckleObjectDeserializer deserializer = new() { ReadTransport = dataSource.Transport };
     string data = await dataSource.Transport.GetObject(dataSource.ObjectId).NotNull();
-    _testData = await deserializer.DeserializeJsonAsync(data).NotNull();
+    _testData = await deserializer.DeserializeAsync(data).NotNull();
   }
 
   [Benchmark]
