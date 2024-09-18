@@ -34,8 +34,10 @@ public class ChannelsTests
       var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
       starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
 
-      using var stage = new ReceiveProcess(new MemorySource(objects), new ReceiveProcessSettings(1,1, 
-        SqliteManagerOptions:new (Enabled:false)));
+      using var stage = new ReceiveProcess(
+        new MemorySource(objects),
+        new ReceiveProcessSettings(1, 1, SqliteManagerOptions: new(Enabled: false))
+      );
       var baseType = await stage.GetObject(id, _ => { }, default).ConfigureAwait(false);
       baseType.id.ShouldBe(id);
       bases.Add(baseType.id, (objJson, baseType));
@@ -70,9 +72,12 @@ public class ChannelsTests
 
     using var process = new ReceiveProcess(
       new MemorySource(closures),
-      new ReceiveProcessSettings(1, 1, 
-        SqliteManagerOptions: new (Enabled:false),
-        DeserializedOptions: new DeserializedOptions(SkipInvalidConverts: true))
+      new ReceiveProcessSettings(
+        1,
+        1,
+        SqliteManagerOptions: new(Enabled: false),
+        DeserializedOptions: new DeserializedOptions(SkipInvalidConverts: true)
+      )
     );
     var root = await process.GetObject("7238c0e0bbd1bafbe1a287aa7fc88619", _ => { }, default);
     root.id.ShouldBe("7238c0e0bbd1bafbe1a287aa7fc88619");

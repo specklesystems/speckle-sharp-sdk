@@ -119,7 +119,11 @@ public sealed class ReceiveProcess : IDisposable
     DeserializeChannel.Writer.Complete();
   }
 
-  public void Dispose() => DownloadStage.Dispose();
+  public void Dispose()
+  {
+    DownloadStage.Dispose();
+    CachingStage.Dispose();
+  }
 
   public async ValueTask<Base> GetObject(
     string objectId,
@@ -151,7 +155,8 @@ public sealed class ReceiveProcess : IDisposable
             {
               _bytes += args.Count ?? 0;
               InvokeProgress();
-            }, cancellationToken
+            },
+            cancellationToken
           ),
         cancellationToken
       );

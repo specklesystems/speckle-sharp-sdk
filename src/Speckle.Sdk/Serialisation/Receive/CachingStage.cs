@@ -1,6 +1,10 @@
 ﻿namespace Speckle.Sdk.Serialisation.Receive;
 
-public class CachingStage(SqliteManagerOptions options, Func<string, CancellationToken, ValueTask> notCached, Func<Downloaded, CancellationToken, ValueTask> cached)
+public sealed class CachingStage(
+  SqliteManagerOptions options,
+  Func<string, CancellationToken, ValueTask> notCached,
+  Func<Downloaded, CancellationToken, ValueTask> cached
+) : IDisposable
 {
   private readonly SqliteManager _sqLiteManager = new(options);
 
@@ -18,4 +22,6 @@ public class CachingStage(SqliteManagerOptions options, Func<string, Cancellatio
       }
     }
   }
+
+  public void Dispose() => _sqLiteManager.Dispose();
 }

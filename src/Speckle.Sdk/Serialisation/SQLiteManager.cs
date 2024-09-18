@@ -4,26 +4,28 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
-public record SqliteManagerOptions(bool Enabled = true, string? Path = null, string? ApplicationName = null, string? Scope = null);
-public class SqliteManager
+public record SqliteManagerOptions(
+  bool Enabled = true,
+  string? Path = null,
+  string? ApplicationName = null,
+  string? Scope = null
+);
+
+public sealed class SqliteManager : IDisposable
 {
   private readonly string _rootPath;
   private readonly string _connectionString;
-
-  private readonly string _basePath;
-  private readonly string _applicationName;
-  private readonly string _scope;
-  private SqliteConnection Connection { get; set; }
+  private readonly SqliteConnection _connection;
 
   public SqliteManager(SqliteManagerOptions options)
   {
-    _basePath = options.Path ?? SpecklePathProvider.UserApplicationDataPath();
-    _applicationName = options.ApplicationName ?? "Speckle";
-    _scope = options.Scope ?? "Data";
+    var basePath = options.Path ?? SpecklePathProvider.UserApplicationDataPath();
+    var applicationName = options.ApplicationName ?? "Speckle";
+    var scope = options.Scope ?? "Data";
     try
     {
-      var dir = Path.Combine(_basePath, _applicationName);
-      _rootPath = Path.Combine(dir, $"{_scope}.db");
+      var dir = Path.Combine(basePath, applicationName);
+      _rootPath = Path.Combine(dir, $"{scope}.db");
 
       Directory.CreateDirectory(dir); //ensure dir is there
     }
@@ -33,8 +35,14 @@ public class SqliteManager
       throw new TransportException($"Path was invalid or could not be created {_rootPath}", ex);
     }
     _connectionString = $"Data Source={_rootPath};";
-    Connection = Initialize();
-    Connection.Open();
+    _connection = Initialize();
+    _connection.Open();
+  }
+
+  public void Dispose()
+  {
+    _connection.Close();
+    _connection.Dispose();
   }
 
   /// <exception cref="SqliteException">Failed to initialize connection to the SQLite DB</exception>
@@ -76,6 +84,9 @@ public class SqliteManager
 
       using SqliteCommand cmd2 = new("PRAGMA temp_store=MEMORY;", c);
       cmd2.ExecuteNonQuery();
+
+      using SqliteCommand cmd3 = new("PRAGMA journal_size_limit =6144000;", c);
+      cmd3.ExecuteNonQuery();
     }
 
     return new SqliteConnection(_connectionString);
@@ -85,7 +96,7 @@ public class SqliteManager
   {
     cancellationToken.ThrowIfCancellationRequested();
     const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
-    using var command = new SqliteCommand(COMMAND_TEXT, Connection);
+    using var command = new SqliteCommand(COMMAND_TEXT, _connection);
 
     foreach (string objectId in objectIds)
     {
@@ -103,8 +114,8 @@ public class SqliteManager
   public IEnumerable<(string, string?)> GetObjects(IEnumerable<string> ids, CancellationToken cancellationToken)
   {
     cancellationToken.ThrowIfCancellationRequested();
-    using var command = Connection.CreateCommand();
-    command.CommandText = "SELECT * FROM objects WHERE hash = @hash LIMIT 1 ";
+    using var command = _connection.CreateCommand();
+    command.CommandText = "SELECT content FROM objects WHERE hash = @hash LIMIT 1 ";
 
     foreach (var id in ids)
     {
@@ -112,6 +123,33 @@ public class SqliteManager
       command.Parameters.AddWithValue("@hash", id);
       yield return (id, (string?)command.ExecuteScalar());
       command.Parameters.Clear();
+    }
+  }
+
+  public void SaveObjects(IReadOnlyList<(string, string)> idJsons, CancellationToken cancellationToken)
+  {
+    const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
+
+    using var t = _connection.BeginTransaction();
+    try
+    {
+      using var command = _connection.CreateCommand();
+      command.CommandText = COMMAND_TEXT;
+      foreach (var (id, json) in idJsons)
+      {
+        cancellationToken.ThrowIfCancellationRequested();
+        command.Parameters.AddWithValue("@hash", id);
+        command.Parameters.AddWithValue("@content", json);
+        command.ExecuteNonQuery();
+        command.Parameters.Clear();
+      }
+
+      t.Commit();
+    }
+    catch
+    {
+      t.Rollback();
+      throw;
     }
   }
 }
