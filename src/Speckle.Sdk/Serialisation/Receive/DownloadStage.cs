@@ -1,20 +1,20 @@
-using Speckle.Sdk.Common;
+﻿using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
 public record Downloaded(string Id, string Json);
 
-public sealed class GatherStage(IModelSource modelSource) : IDisposable
+public sealed class DownloadStage(Func<Downloaded, ValueTask> cached, IModelSource modelSource) : IDisposable
 {
   public long Downloaded { get; private set; }
 
-  public async IAsyncEnumerable<Downloaded> Execute(IReadOnlyList<string> ids, Action<ProgressArgs> progress)
+  public async ValueTask Execute(IReadOnlyList<string> ids, Action<ProgressArgs> progress)
   {
     await foreach (var (id, json) in modelSource.GetJsons(ids, progress))
     {
       Downloaded++;
-      yield return new Downloaded(id, json);
+      await cached(new(id, json)).ConfigureAwait(false);
     }
   }
 

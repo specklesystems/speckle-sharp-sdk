@@ -3,7 +3,6 @@ using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
@@ -32,12 +31,19 @@ public sealed class ReceiveProcess : IDisposable
       _settings = settings;
     }
     SourceChannel = Channel.CreateUnbounded<string>();
-    CachingStage = new(_idToBaseCache);
-    GatherStage = new GatherStage(modelSource);
-    DeserializeStage = new(_idToBaseCache, EnqueueObject, _settings.DeserializedOptions);
+    DownloadChannel = Channel.CreateUnbounded<string>();
+    DeserializeChannel = Channel.CreateUnbounded<Downloaded>();
+    CachingStage = new(SendToDownload, SendToDeserialize);
+    DownloadStage = new(SendToDeserialize, modelSource);
+    DeserializeStage = new(_idToBaseCache, SendToCheckCache, Done, _settings.DeserializedOptions);
   }
 
   private Channel<string> SourceChannel { get; }
+  private Channel<string> DownloadChannel { get; }
+  private Channel<Downloaded> DeserializeChannel { get; }
+  private CachingStage CachingStage { get; }
+  private DownloadStage DownloadStage { get; }
+  private DeserializeStage DeserializeStage { get; }
 
   private long _bytes;
   public Action<ProgressArgs[]>? Progress { get; set; }
@@ -50,7 +56,36 @@ public sealed class ReceiveProcess : IDisposable
       ]
     );
 
-  private async ValueTask EnqueueObject(string id) => await SourceChannel.Writer.WriteAsync(id).ConfigureAwait(false);
+  private async ValueTask SendToCheckCache(string id)
+  {
+    await SourceChannel.Writer.WriteAsync(id).ConfigureAwait(false);
+    InvokeProgress();
+  }
+
+  private async ValueTask SendToDownload(string id)
+  {
+    await DownloadChannel.Writer.WriteAsync(id).ConfigureAwait(false);
+    InvokeProgress();
+  }
+
+  private async ValueTask SendToDeserialize(Downloaded id)
+  {
+    await DeserializeChannel.Writer.WriteAsync(id).ConfigureAwait(false);
+    InvokeProgress();
+  }
+
+  private void Done(Deserialized deserialized)
+  {
+    InvokeProgress();
+    _idToBaseCache.TryAdd(deserialized.Id, deserialized.BaseObject);
+    if (deserialized.Id == _rootObjectId)
+    {
+      _rootObject = deserialized.BaseObject;
+      SourceChannel.Writer.Complete();
+    }
+  }
+
+  public void Dispose() => DownloadStage.Dispose();
 
   public async ValueTask<Base> GetObject(
     string objectId,
@@ -64,76 +99,39 @@ public sealed class ReceiveProcess : IDisposable
     var pipelineTask = SourceChannel
       .Reader.Batch(_settings.MaxObjectRequestSize)
       .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
-      .PipeAsync(_settings.MaxDownloadThreads, OnTransport, cancellationToken: cancellationToken)
-      .Join()
-      .ReadAllConcurrentlyAsync(_settings.MaxDeserializeThreads, OnDeserialize, cancellationToken: cancellationToken)
-      .ConfigureAwait(false);
+      .ReadAllConcurrentlyAsync(
+        _settings.MaxDownloadThreads,
+        x => CachingStage.Execute(x, cancellationToken),
+        cancellationToken: cancellationToken
+      );
 
-    var rootJson = await GatherStage
-      .DownloadRoot(
-        objectId,
-        args =>
-        {
-          _bytes += args.Count ?? 0;
-          InvokeProgress();
-        }
-      )
-      .ConfigureAwait(false);
+    var downloadTask = DownloadChannel
+      .Reader.Batch(_settings.MaxObjectRequestSize)
+      .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
+      .ReadAllConcurrentlyAsync(
+        _settings.MaxDownloadThreads,
+        x =>
+          DownloadStage.Execute(
+            x,
+            args =>
+            {
+              _bytes += args.Count ?? 0;
+              InvokeProgress();
+            }
+          ),
+        cancellationToken
+      );
 
-    var closures = ClosureParser.GetChildrenIds(rootJson);
-    foreach (var closure in closures)
-    {
-      await EnqueueObject(closure).ConfigureAwait(false);
-    }
-    await EnqueueObject(_rootObjectId).ConfigureAwait(false);
-    var total = await pipelineTask;
-    Console.WriteLine($"Total {_idToBaseCache.Count}");
+    var deserializeTask = DeserializeChannel.ReadAllConcurrentlyAsync(
+      _settings.MaxDeserializeThreads,
+      DeserializeStage.Execute,
+      cancellationToken: cancellationToken
+    );
+
+    await SendToCheckCache(_rootObjectId).ConfigureAwait(false);
+    await pipelineTask.ConfigureAwait(false);
+    await downloadTask.ConfigureAwait(false);
+    await deserializeTask.ConfigureAwait(false);
     return _rootObject.NotNull();
   }
-
-  private async ValueTask<List<Downloaded>> OnTransport(List<string> batch)
-  {
-    var gathered = GatherStage
-      .Execute(
-        batch,
-        args =>
-        {
-          _bytes += args.Count ?? 0;
-          InvokeProgress();
-        }
-      )
-      .ConfigureAwait(false);
-    var ret = new List<Downloaded>();
-    await foreach (var arg in gathered)
-    {
-      if (!_idToBaseCache.ContainsKey(arg.Id))
-      {
-        ret.Add(arg);
-      }
-    }
-    InvokeProgress();
-    return ret;
-  }
-
-  private async ValueTask OnDeserialize(Downloaded transported)
-  {
-    var deserialized = await DeserializeStage.Execute(transported).ConfigureAwait(false);
-    if (deserialized is null)
-    {
-      return;
-    }
-    InvokeProgress();
-    _idToBaseCache.TryAdd(deserialized.Id, deserialized.BaseObject);
-    if (deserialized.Id == _rootObjectId)
-    {
-      _rootObject = deserialized.BaseObject;
-      SourceChannel.Writer.Complete();
-    }
-  }
-
-  public CachingStage CachingStage { get; }
-  public GatherStage GatherStage { get; }
-  public DeserializeStage DeserializeStage { get; }
-
-  public void Dispose() => GatherStage.Dispose();
 }

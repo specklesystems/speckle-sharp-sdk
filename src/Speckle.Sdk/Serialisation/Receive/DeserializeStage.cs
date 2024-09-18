@@ -10,6 +10,7 @@ public record Deserialized(string Id, Base BaseObject);
 public class DeserializeStage(
   ConcurrentDictionary<string, Base> cache,
   Func<string, ValueTask> gatherId,
+  Action<Deserialized> done,
   DeserializedOptions? deserializedOptions
 )
 {
@@ -17,7 +18,7 @@ public class DeserializeStage(
 
   public long Deserialized { get; private set; }
 
-  public async ValueTask<Deserialized?> Execute(Downloaded message)
+  public async ValueTask Execute(Downloaded message)
   {
     if (!_closures.TryGetValue(message.Id, out var closures))
     {
@@ -43,13 +44,14 @@ public class DeserializeStage(
     if (anyNotFound)
     {
       await gatherId(message.Id).ConfigureAwait(false);
-      return null;
     }
-
-    var @base = Deserialise(closureBases, message.Id, message.Json);
-    _closures.TryRemove(message.Id, out _);
-    Deserialized++;
-    return new(message.Id, @base);
+    else
+    {
+      var @base = Deserialise(closureBases, message.Id, message.Json);
+      _closures.TryRemove(message.Id, out _);
+      Deserialized++;
+      done(new(message.Id, @base));
+    }
   }
 
   private Base Deserialise(IReadOnlyDictionary<string, Base> dictionary, string id, string json)
