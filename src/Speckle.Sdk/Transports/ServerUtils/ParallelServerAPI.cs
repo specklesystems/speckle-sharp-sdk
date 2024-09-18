@@ -218,7 +218,13 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
     while (true)
     {
+      if (IsDisposed)
+      {
+        return;
+      }
+
       var (operation, inputValue, tcs) = Tasks.Take();
+
       if (operation == ServerApiOperation.NoOp || tcs == null)
       {
         return;
