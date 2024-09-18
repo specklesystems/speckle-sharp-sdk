@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
@@ -63,7 +64,7 @@ public class SerializationTests
       var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
       starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
 
-      var baseType = await deserializer.DeserializeJsonAsync(objJson);
+      var baseType = await deserializer.DeserializeAsync(objJson);
       baseType.id.ShouldBe(id);
 
       starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");

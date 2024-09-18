@@ -1,4 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -17,11 +19,17 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 )]
 public class SerializerBreakingChanges : PrimitiveTestFixture
 {
+  private IOperations _operations;
+
   [SetUp]
   public void Setup()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
   [Test]
@@ -29,7 +37,9 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   {
     var from = new StringValueMock { value = "testValue" };
 
-    Assert.ThrowsAsync<SpeckleDeserializeException>(async () => await from.SerializeAsTAndDeserialize<IntValueMock>());
+    Assert.ThrowsAsync<SpeckleDeserializeException>(
+      async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations)
+    );
   }
 
   [Test, TestCaseSource(nameof(MyEnums))]
@@ -39,7 +49,7 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
 
     Assert.ThrowsAsync<SpeckleDeserializeException>(async () =>
     {
-      var res = await from.SerializeAsTAndDeserialize<EnumValueMock>();
+      var res = await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations);
     });
   }
 
@@ -52,6 +62,8 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   public void DoubleToInt_ShouldThrow(double testCase)
   {
     var from = new DoubleValueMock { value = testCase };
-    Assert.ThrowsAsync<SpeckleDeserializeException>(async () => await from.SerializeAsTAndDeserialize<IntValueMock>());
+    Assert.ThrowsAsync<SpeckleDeserializeException>(
+      async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations)
+    );
   }
 }

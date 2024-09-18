@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Transports.ServerUtils;
@@ -21,11 +23,15 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 {
   private readonly string _authToken;
 
+  private readonly ISpeckleHttp _http;
+  private readonly ISdkActivityFactory _activityFactory;
   private readonly Uri _baseUri;
 
   private readonly int _timeoutSeconds;
 
   public ParallelServerApi(
+    ISpeckleHttp http,
+    ISdkActivityFactory activityFactory,
     Uri baseUri,
     string authorizationToken,
     string blobStorageFolder,
@@ -34,6 +40,8 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     int numBufferedOperations = 8
   )
   {
+    _http = http;
+    _activityFactory = activityFactory;
     _baseUri = baseUri;
     _authToken = authorizationToken;
     _timeoutSeconds = timeoutSeconds;
@@ -204,7 +212,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
   protected override void ThreadMain()
   {
-    using ServerApi serialApi = new(_baseUri, _authToken, BlobStorageFolder, _timeoutSeconds);
+    using ServerApi serialApi = new(_http, _activityFactory, _baseUri, _authToken, BlobStorageFolder, _timeoutSeconds);
     serialApi.CancellationToken = CancellationToken;
     serialApi.CompressPayloads = CompressPayloads;
 

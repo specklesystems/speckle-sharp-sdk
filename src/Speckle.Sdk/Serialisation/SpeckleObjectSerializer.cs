@@ -8,7 +8,6 @@ using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 using Constants = Speckle.Sdk.Helpers.Constants;
@@ -225,32 +224,10 @@ public class SpeckleObjectSerializer
         writer.WriteEndArray();
         break;
       //BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
-      case System.Numerics.Matrix4x4 ms:
-        SpeckleLog.Logger.Warning(
-          "This kept for backwards compatibility, no one should be using {this}",
-          "BaseObjectSerializerV2 serialize System.Numerics.Matrix4x4"
-        );
-        writer.WriteStartArray();
-        writer.WriteValue((double)ms.M11);
-        writer.WriteValue((double)ms.M12);
-        writer.WriteValue((double)ms.M13);
-        writer.WriteValue((double)ms.M14);
-        writer.WriteValue((double)ms.M21);
-        writer.WriteValue((double)ms.M22);
-        writer.WriteValue((double)ms.M23);
-        writer.WriteValue((double)ms.M24);
-        writer.WriteValue((double)ms.M31);
-        writer.WriteValue((double)ms.M32);
-        writer.WriteValue((double)ms.M33);
-        writer.WriteValue((double)ms.M34);
-        writer.WriteValue((double)ms.M41);
-        writer.WriteValue((double)ms.M42);
-        writer.WriteValue((double)ms.M43);
-        writer.WriteValue((double)ms.M44);
-        writer.WriteEndArray();
-        break;
+      case System.Numerics.Matrix4x4:
+        throw new ArgumentException("Please use Speckle.DoubleNumerics.Matrix4x4 instead", nameof(obj));
       default:
-        throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}");
+        throw new ArgumentException($"Unsupported value in serialization: {obj.GetType()}", nameof(obj));
     }
   }
 

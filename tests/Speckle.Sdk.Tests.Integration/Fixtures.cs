@@ -2,13 +2,16 @@ using System.Globalization;
 using System.Net.Mime;
 using System.Text;
 using System.Web;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Tests.Unit.Serialisation;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Integration;
@@ -17,17 +20,33 @@ public static class Fixtures
 {
   public static readonly ServerInfo Server = new() { url = "http://localhost:3000", name = "Docker Server" };
 
-  public static Client Unauthed => new Client(new Account { serverInfo = Server, userInfo = new UserInfo() });
+  public static IServiceProvider ServiceProvider { get; set; }
+
+  static Fixtures()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
+    ServiceProvider = serviceCollection.BuildServiceProvider();
+  }
+
+  public static Client Unauthed =>
+    ServiceProvider
+      .GetRequiredService<IClientFactory>()
+      .Create(new Account { serverInfo = Server, userInfo = new UserInfo() });
 
   public static async Task<Client> SeedUserWithClient()
   {
-    return new Client(await SeedUser());
+    return ServiceProvider.GetRequiredService<IClientFactory>().Create(await SeedUser());
   }
 
   public static async Task<string> CreateVersion(Client client, string projectId, string modelId)
   {
-    using ServerTransport remote = new(client.Account, projectId);
-    var (objectId, _) = await Operations.Send(new() { applicationId = "ASDF" }, remote, false);
+    using var remote = ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(client.Account, projectId);
+    var (objectId, _) = await ServiceProvider
+      .GetRequiredService<IOperations>()
+      .Send(new() { applicationId = "ASDF" }, remote, false);
     CreateVersionInput input = new(objectId, modelId, projectId);
     return await client.Version.Create(input);
   }
@@ -97,7 +116,9 @@ public static class Fixtures
       serverInfo = Server
     };
 
-    var user1 = await AccountManager.GetUserInfo(acc.token, new(acc.serverInfo.url));
+    var user1 = await ServiceProvider
+      .GetRequiredService<IAccountManager>()
+      .GetUserInfo(acc.token, new(acc.serverInfo.url));
     acc.userInfo = user1;
     return acc;
   }
@@ -149,10 +170,10 @@ public static class Fixtures
 
   internal static async Task<Blob[]> SendBlobData(Account account, string projectId)
   {
-    using ServerTransport remote = new(account, projectId);
+    using var remote = ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(account, projectId);
     var blobs = Fixtures.GenerateThreeBlobs();
     Base myObject = new() { ["blobs"] = blobs };
-    await Operations.Send(myObject, remote, false);
+    await ServiceProvider.GetRequiredService<IOperations>().Send(myObject, remote, false);
     return blobs;
   }
 }
