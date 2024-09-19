@@ -18,9 +18,7 @@ public class GraphQLClientTests : IDisposable
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
-    var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
-    var serviceProvider = serviceCollection.BuildServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
     _account = await Fixtures.SeedUser();
     _client = serviceProvider.GetRequiredService<IClientFactory>().Create(_account);

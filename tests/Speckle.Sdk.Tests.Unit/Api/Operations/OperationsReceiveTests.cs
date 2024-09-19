@@ -52,9 +52,7 @@ public sealed partial class OperationsReceiveTests
   public async Task GlobalSetup()
   {
     Reset();
-    var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
-    var serviceProvider = serviceCollection.BuildServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
     _testCaseTransport = new MemoryTransport();
     foreach (var b in s_testObjects)
@@ -67,9 +65,7 @@ public sealed partial class OperationsReceiveTests
   public void Setup()
   {
     Reset();
-    var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
-    var serviceProvider = serviceCollection.BuildServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 

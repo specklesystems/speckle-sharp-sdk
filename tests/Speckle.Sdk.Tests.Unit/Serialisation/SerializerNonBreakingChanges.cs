@@ -27,9 +27,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(StringValueMock).Assembly);
-    var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
-    var serviceProvider = serviceCollection.BuildServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 

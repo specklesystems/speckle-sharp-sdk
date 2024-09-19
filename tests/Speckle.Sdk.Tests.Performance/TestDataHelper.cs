@@ -19,7 +19,7 @@ public sealed class TestDataHelper : IDisposable
   public TestDataHelper()
   {
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
     ServiceProvider = serviceCollection.BuildServiceProvider();
   }
 

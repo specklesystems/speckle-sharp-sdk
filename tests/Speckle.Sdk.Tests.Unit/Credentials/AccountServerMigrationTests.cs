@@ -42,9 +42,7 @@ public class AccountServerMigrationTests
   public void TestServerMigration(IList<Account> accounts, string requestedUrl, IList<Account> expectedSequence)
   {
     AddAccounts(accounts);
-    var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
-    var serviceProvider = serviceCollection.BuildServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
 
     var result = serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
 
