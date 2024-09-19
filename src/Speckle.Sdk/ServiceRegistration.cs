@@ -1,22 +1,10 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk;
-
-[GenerateAutoInterface]
-public class SpeckleApplication : ISpeckleApplication
-{
-  public string Application { get; init; }
-  public string AppVersion { get; init; }
-  public string Slug { get; init; }
-  public string SpeckleVersion { get; init; }
-
-  public string ApplicationAndVersion => $"{Application} {AppVersion}";
-}
 
 public static class ServiceRegistration
 {
@@ -33,9 +21,9 @@ public static class ServiceRegistration
     serviceCollection.AddSingleton<ISpeckleApplication>(
       new SpeckleApplication
       {
-        Application = name,
+        HostApplication = name,
         SpeckleVersion = speckleVersion,
-        AppVersion = HostApplications.GetVersion(version),
+        HostApplicationVersion = HostApplications.GetVersion(version),
         Slug = application.Slug
       }
     );
