@@ -11,10 +11,11 @@ namespace Speckle.Sdk;
 public class SpeckleApplication : ISpeckleApplication
 {
   public string Application { get; init; }
-  public string Version { get; init; }
+  public string AppVersion { get; init; }
   public string Slug { get; init; }
+  public string SpeckleVersion { get; init; }
 
-  public string ApplicationVersion => $"{Application} {Version}";
+  public string ApplicationAndVersion => $"{Application} {AppVersion}";
 }
 
 public static class ServiceRegistration
@@ -22,7 +23,8 @@ public static class ServiceRegistration
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
     HostApplication application,
-    HostAppVersion version
+    HostAppVersion version,
+    string speckleVersion
   )
   {
     serviceCollection.AddLogging();
@@ -32,7 +34,8 @@ public static class ServiceRegistration
       new SpeckleApplication
       {
         Application = name,
-        Version = HostApplications.GetVersion(version),
+        SpeckleVersion = speckleVersion,
+        AppVersion = HostApplications.GetVersion(version),
         Slug = application.Slug
       }
     );
