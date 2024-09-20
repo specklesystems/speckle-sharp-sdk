@@ -27,13 +27,13 @@ public sealed class SendProcess : IDisposable
   private long _requested;
   private Serialized? _rootObjectSerialized;
   private Base? _rootObject;
-  public Channel<Base> SourceChannel { get; }
-  public SerializeStage SerializeStage { get; set; }
-  public SendStage SendStage { get; set; }
+  private Channel<Base> SourceChannel { get; }
+  private SerializeStage SerializeStage { get; set; }
+  private SendStage SendStage { get; set; }
 
-  public Action<ProgressArgs[]>? Progress { get; set; }
+  private Action<ProgressArgs[]>? Progress { get; set; }
 
-  public void InvokeProgress() =>
+  private void InvokeProgress() =>
     Progress?.Invoke(
       [
         new ProgressArgs(ProgressEvent.UploadObject, _requested, null),
@@ -48,8 +48,12 @@ public sealed class SendProcess : IDisposable
     CancellationToken cancellationToken
   )
   {
-    Progress = progress;
+    if (_rootObject is not null)
+    {
+      throw new InvalidOperationException("SaveObject already been started.");
+    }
     _rootObject = rootObject;
+    Progress = progress;
 
     var sourceTask = SourceChannel
       .Pipe(_settings.MaxSerializeThreads, OnSerialize, cancellationToken: cancellationToken)

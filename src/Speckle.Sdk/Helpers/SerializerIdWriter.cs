@@ -7,11 +7,9 @@ namespace Speckle.Sdk.Helpers;
 public sealed class SerializerIdWriter : JsonWriter
 {
   private readonly JsonWriter _jsonWriter;
-#pragma warning disable CA2213
-  private readonly JsonWriter _jsonIdWriter;
+  private readonly JsonTextWriter _jsonIdWriter;
   private readonly StreamWriter _idWriter;
   private readonly MemoryStream _memoryStream;
-#pragma warning restore CA2213
 
   protected override void Dispose(bool disposing)
   {
@@ -24,9 +22,7 @@ public sealed class SerializerIdWriter : JsonWriter
   {
     _jsonWriter = jsonWriter;
     _memoryStream = pool?.GetMemoryStream() ?? new MemoryStream();
-#pragma warning disable CA2000
     _idWriter = new StreamWriter(_memoryStream);
-#pragma warning restore CA2000
     _jsonIdWriter = pool?.GetJsonTextWriter(_idWriter) ?? new JsonTextWriter(_idWriter);
   }
 
@@ -34,6 +30,7 @@ public sealed class SerializerIdWriter : JsonWriter
   {
     _jsonIdWriter.WriteEndObject();
     _jsonIdWriter.Flush();
+    ((IDisposable)_jsonIdWriter).Dispose();
     return Encoding.UTF8.GetString(_memoryStream.ToArray());
   }
 
