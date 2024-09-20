@@ -326,7 +326,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
   {
     var httpClient = speckleHttp.CreateHttpClient(timeoutSeconds: 30, authorizationToken: account.token);
 
-    httpClient.DefaultRequestHeaders.Add("apollographql-client-name", application.ApplicationVersion);
+    httpClient.DefaultRequestHeaders.Add("apollographql-client-name", application.ApplicationAndVersion);
     httpClient.DefaultRequestHeaders.Add(
       "apollographql-client-version",
       Assembly.GetExecutingAssembly().GetName().Version?.ToString()

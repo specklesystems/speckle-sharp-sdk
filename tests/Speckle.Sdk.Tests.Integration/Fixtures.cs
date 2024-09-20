@@ -26,9 +26,7 @@ public static class Fixtures
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
-    var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
-    ServiceProvider = serviceCollection.BuildServiceProvider();
+    ServiceProvider = TestServiceSetup.GetServiceProvider();
   }
 
   public static Client Unauthed =>
