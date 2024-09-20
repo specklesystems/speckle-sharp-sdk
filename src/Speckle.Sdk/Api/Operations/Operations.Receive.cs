@@ -13,9 +13,9 @@ namespace Speckle.Sdk.Api;
 public partial class Operations
 {
   public async ValueTask<Base> Receive2(
-    Account account,
     string projectId,
     string objectId,
+    Account account,
     Action<ProgressArgs[]>? onProgressAction = null,
     CancellationToken cancellationToken = default
   )
