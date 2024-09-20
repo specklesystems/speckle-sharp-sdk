@@ -27,6 +27,7 @@
 
   <ItemGroup Label="Package References">
     <PackageReference Include="GraphQL.Client"/>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
     <PackageReference Include="Microsoft.CSharp" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />

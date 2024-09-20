@@ -5,6 +5,7 @@
     <PackageVersion Include="Bullseye" Version="5.0.0" />
     <PackageVersion Include="GraphQL.Client" Version="6.0.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="1.0.0"/>
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <!-- Keep at 7 for side by side -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="7.0.7" />

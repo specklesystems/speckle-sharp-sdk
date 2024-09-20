@@ -30,7 +30,7 @@ public class GeneralSerializerTest
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
 
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023);
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
     var serviceProvider = serviceCollection.BuildServiceProvider();
     using var dataSource = ActivatorUtilities.CreateInstance<TestDataHelper>(serviceProvider);
 

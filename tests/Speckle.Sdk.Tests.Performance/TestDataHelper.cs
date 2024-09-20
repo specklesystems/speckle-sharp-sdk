@@ -1,7 +1,9 @@
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
@@ -20,13 +22,6 @@ public sealed class TestDataHelper(
   public string ObjectId { get; private set; }
 
   public async Task SeedTransport(StreamWrapper sw)
-  {
-    var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
-    ServiceProvider = serviceCollection.BuildServiceProvider();
-  }
-
-  public async Task SeedTransport(Account account, string streamId, string objectId)
   {
     // Transport = new SQLiteTransport(s_basePath, APPLICATION_NAME);
     Transport = new SQLiteTransport();
