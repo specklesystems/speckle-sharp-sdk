@@ -13,8 +13,8 @@ namespace Speckle.Sdk.Api;
 public partial class Operations
 {
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send2(
-    Account account,
     string streamId,
+    Account account,
     Base value,
     Action<ProgressArgs[]>? onProgressAction = null,
     CancellationToken cancellationToken = default
