@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <PackageReference Include="BenchmarkDotNet" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
       
     <ProjectReference Include="..\..\src\Speckle.Objects\Speckle.Objects.csproj" />
       <!--      <PackageReference Include="Speckle.Objects" VersionOverride="3.1.0-dev.133"/> -->

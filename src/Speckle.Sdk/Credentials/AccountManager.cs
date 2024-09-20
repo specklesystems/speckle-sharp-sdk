@@ -679,7 +679,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
       }
     }
 
-    var lockId = application.ApplicationVersion + "@" + DateTime.Now.Add(timespan).ToString("o");
+    var lockId = application.ApplicationAndVersion + "@" + DateTime.Now.Add(timespan).ToString("o");
 
     // using the lock release time as an id and value
     // for ease of deletion and retrieval

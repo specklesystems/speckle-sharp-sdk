@@ -21,6 +21,13 @@ public sealed class TestDataHelper(
 
   public async Task SeedTransport(StreamWrapper sw)
   {
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+    ServiceProvider = serviceCollection.BuildServiceProvider();
+  }
+
+  public async Task SeedTransport(Account account, string streamId, string objectId)
+  {
     // Transport = new SQLiteTransport(s_basePath, APPLICATION_NAME);
     Transport = new SQLiteTransport();
 
