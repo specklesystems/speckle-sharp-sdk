@@ -10,35 +10,29 @@ namespace Speckle.Sdk.Serialisation.Send;
 public record SendProcessSettings(
   int MaxSerializeThreads = 4,
   int MaxObjectRequestSize = ServerApi.BATCH_SIZE_GET_OBJECTS,
-  int BatchWaitMilliseconds = 500
+  int BatchWaitMilliseconds = 500,
+  SqliteManagerOptions? SqliteManagerOptions = null
 );
 
-public sealed class SendProcess : IDisposable
+public sealed class SendProcess(IModelTarget modelTarget, SendProcessSettings? settings = null) : IDisposable
 {
   private readonly SendProcessSettings _settings = new();
+  private readonly Channel<Base> _sourceChannel = Channel.CreateUnbounded<Base>();
+  private readonly SerializeStage _serializeStage  = new(settings?.SqliteManagerOptions ?? new());
+  private readonly SendStage _sendStage  = new(modelTarget);
 
-  public SendProcess(IModelTarget modelTarget)
-  {
-    SourceChannel = Channel.CreateUnbounded<Base>();
-    SendStage = new(modelTarget);
-    SerializeStage = new();
-  }
 
   private long _requested;
   private Serialized? _rootObjectSerialized;
   private Base? _rootObject;
-  private Channel<Base> SourceChannel { get; }
-  private SerializeStage SerializeStage { get; set; }
-  private SendStage SendStage { get; set; }
-
   private Action<ProgressArgs[]>? Progress { get; set; }
 
   private void InvokeProgress() =>
     Progress?.Invoke(
       [
         new ProgressArgs(ProgressEvent.UploadObject, _requested, null),
-        new ProgressArgs(ProgressEvent.SerializeObject, SerializeStage.Serialized, null),
-        new ProgressArgs(ProgressEvent.UploadBytes, SendStage.Sent, null)
+        new ProgressArgs(ProgressEvent.SerializeObject, _serializeStage.Serialized, null),
+        new ProgressArgs(ProgressEvent.UploadBytes, _sendStage.Sent, null)
       ]
     );
 
@@ -55,38 +49,47 @@ public sealed class SendProcess : IDisposable
     _rootObject = rootObject;
     Progress = progress;
 
-    var sourceTask = SourceChannel
-      .Pipe(_settings.MaxSerializeThreads, OnSerialize, cancellationToken: cancellationToken)
+    var sourceTask = _sourceChannel
+      .Pipe(_settings.MaxSerializeThreads, x => OnSerialize(x, cancellationToken), cancellationToken: cancellationToken)
       .Batch(_settings.MaxObjectRequestSize)
       .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
       .ReadAllAsync(cancellationToken, OnSend)
       .ConfigureAwait(false);
 
-    await SourceChannel.Writer.WriteAsync(rootObject, cancellationToken).ConfigureAwait(false);
+    await _sourceChannel.Writer.WriteAsync(rootObject, cancellationToken).ConfigureAwait(false);
     _requested++;
     await sourceTask;
     InvokeProgress();
     return (_rootObjectSerialized.NotNull().Id, _rootObjectSerialized.ConvertedReferences);
   }
 
-  private Serialized OnSerialize(Base @base)
+  private Serialized? OnSerialize(Base @base, CancellationToken cancellationToken)
   {
-    var serialized = SerializeStage.Execute(@base);
+    var serialized = _serializeStage.Execute(@base, cancellationToken);
     InvokeProgress();
     return serialized;
   }
 
-  private async ValueTask OnSend(List<Serialized> serialized)
+  private async ValueTask OnSend(List<Serialized?> serialized)
   {
-    await SendStage.Execute(serialized).ConfigureAwait(false);
+    var nonNullSerialized = serialized.Where(x => x is not null).Cast<Serialized>().ToList();
+    if (nonNullSerialized.Count == 0)
+    {
+      return;
+    }
+    await _sendStage.Execute(nonNullSerialized).ConfigureAwait(false);
     InvokeProgress();
-    var root = serialized.FirstOrDefault(x => x.BaseObject == _rootObject);
+    var root = nonNullSerialized.FirstOrDefault(x => x.BaseObject == _rootObject);
     if (root is not null)
     {
       _rootObjectSerialized = root;
-      SourceChannel.Writer.Complete();
+      _sourceChannel.Writer.Complete();
     }
   }
 
-  public void Dispose() => SendStage.Dispose();
+  public void Dispose()
+  {
+    _sendStage.Dispose();
+    _serializeStage.Dispose();
+  }
 }

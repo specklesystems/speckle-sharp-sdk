@@ -24,6 +24,14 @@ public sealed class ReceiveProcess : IDisposable
 
   private string? _rootObjectId;
   private Base? _rootObject;
+  private bool _isCompleted;
+
+  private readonly Channel<string> _sourceChannel;
+  private readonly Channel<string> _downloadChannel;
+  private readonly Channel<Downloaded> _deserializeChannel;
+  private readonly CachingStage _cachingStage;
+  private readonly DownloadStage _downloadStage;
+  private readonly DeserializeStage _deserializeStage;
 
   public ReceiveProcess(IModelSource modelSource, ReceiveProcessSettings? settings = null)
   {
@@ -31,22 +39,14 @@ public sealed class ReceiveProcess : IDisposable
     {
       _settings = settings;
     }
-    SourceChannel = Channel.CreateUnbounded<string>();
-    DownloadChannel = Channel.CreateUnbounded<string>();
-    DeserializeChannel = Channel.CreateUnbounded<Downloaded>();
-    CachingStage = new(_settings.SqliteManagerOptions ?? new SqliteManagerOptions(), SendToDownload, SendToDeserialize);
-    DownloadStage = new(SendToDeserialize, modelSource);
-    DeserializeStage = new(_idToBaseCache, SendToCheckCache, Done, _settings.DeserializedOptions);
+    _sourceChannel = Channel.CreateUnbounded<string>();
+    _downloadChannel = Channel.CreateUnbounded<string>();
+    _deserializeChannel = Channel.CreateUnbounded<Downloaded>();
+    _cachingStage = new(_settings.SqliteManagerOptions ?? new SqliteManagerOptions(), SendToDownload, SendToDeserialize);
+    _downloadStage = new(SendToDeserialize, modelSource);
+    _deserializeStage = new(_idToBaseCache, SendToCheckCache, Done, _settings.DeserializedOptions);
   }
 
-  private bool _isCompleted;
-
-  private Channel<string> SourceChannel { get; }
-  private Channel<string> DownloadChannel { get; }
-  private Channel<Downloaded> DeserializeChannel { get; }
-  private CachingStage CachingStage { get; }
-  private DownloadStage DownloadStage { get; }
-  private DeserializeStage DeserializeStage { get; }
 
   private long _bytes;
   public Action<ProgressArgs[]>? Progress { get; set; }
@@ -55,7 +55,7 @@ public sealed class ReceiveProcess : IDisposable
     Progress?.Invoke(
       [
         new ProgressArgs(ProgressEvent.DownloadBytes, _bytes, null),
-        new ProgressArgs(ProgressEvent.DeserializeObject, DeserializeStage.Deserialized, null)
+        new ProgressArgs(ProgressEvent.DeserializeObject, _deserializeStage.Deserialized, null)
       ]
     );
 
@@ -67,7 +67,7 @@ public sealed class ReceiveProcess : IDisposable
     }
     if (_settings.SqliteManagerOptions?.Enabled ?? true)
     {
-      await SourceChannel.Writer.WriteAsync(id, cancellationToken).ConfigureAwait(false);
+      await _sourceChannel.Writer.WriteAsync(id, cancellationToken).ConfigureAwait(false);
       InvokeProgress();
     }
     else
@@ -82,7 +82,7 @@ public sealed class ReceiveProcess : IDisposable
     {
       return;
     }
-    await DownloadChannel.Writer.WriteAsync(id, cancellationToken).ConfigureAwait(false);
+    await _downloadChannel.Writer.WriteAsync(id, cancellationToken).ConfigureAwait(false);
     InvokeProgress();
   }
 
@@ -92,7 +92,7 @@ public sealed class ReceiveProcess : IDisposable
     {
       return;
     }
-    await DeserializeChannel.Writer.WriteAsync(id, cancellationToken).ConfigureAwait(false);
+    await _deserializeChannel.Writer.WriteAsync(id, cancellationToken).ConfigureAwait(false);
     InvokeProgress();
   }
 
@@ -114,15 +114,15 @@ public sealed class ReceiveProcess : IDisposable
   private void Complete()
   {
     _isCompleted = true;
-    SourceChannel.Writer.Complete();
-    DownloadChannel.Writer.Complete();
-    DeserializeChannel.Writer.Complete();
+    _sourceChannel.Writer.Complete();
+    _downloadChannel.Writer.Complete();
+    _deserializeChannel.Writer.Complete();
   }
 
   public void Dispose()
   {
-    DownloadStage.Dispose();
-    CachingStage.Dispose();
+    _downloadStage.Dispose();
+    _cachingStage.Dispose();
   }
 
   public async ValueTask<Base> GetObject(
@@ -134,22 +134,22 @@ public sealed class ReceiveProcess : IDisposable
     Progress = progress;
     _rootObjectId = objectId;
 
-    var pipelineTask = SourceChannel
+    var pipelineTask = _sourceChannel
       .Reader.Batch(_settings.MaxObjectRequestSize)
       .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
       .ReadAllConcurrentlyAsync(
         _settings.MaxDownloadThreads,
-        x => CachingStage.Execute(x, cancellationToken),
+        x => _cachingStage.Execute(x, cancellationToken),
         cancellationToken: cancellationToken
       );
 
-    var downloadTask = DownloadChannel
+    var downloadTask = _downloadChannel
       .Reader.Batch(_settings.MaxObjectRequestSize)
       .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
       .ReadAllConcurrentlyAsync(
         _settings.MaxDownloadThreads,
         x =>
-          DownloadStage.Execute(
+          _downloadStage.Execute(
             x,
             args =>
             {
@@ -161,9 +161,9 @@ public sealed class ReceiveProcess : IDisposable
         cancellationToken
       );
 
-    var deserializeTask = DeserializeChannel.ReadAllConcurrentlyAsync(
+    var deserializeTask = _deserializeChannel.ReadAllConcurrentlyAsync(
       _settings.MaxDeserializeThreads,
-      x => DeserializeStage.Execute(x, cancellationToken),
+      x => _deserializeStage.Execute(x, cancellationToken),
       cancellationToken: cancellationToken
     );
 
