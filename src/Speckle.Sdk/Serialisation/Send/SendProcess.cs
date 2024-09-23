@@ -24,10 +24,10 @@ public sealed class SendProcess(IModelTarget modelTarget, SendProcessSettings? s
   private long _requested;
   private Serialized? _rootObjectSerialized;
   private Base? _rootObject;
-  private Action<ProgressArgs[]>? Progress { get; set; }
+  private Action<ProgressArgs[]>? _progress;
 
   private void InvokeProgress() =>
-    Progress?.Invoke(
+    _progress?.Invoke(
       [
         new ProgressArgs(ProgressEvent.UploadObject, _requested, null),
         new ProgressArgs(ProgressEvent.SerializeObject, _serializeStage.Serialized, null),
@@ -46,7 +46,7 @@ public sealed class SendProcess(IModelTarget modelTarget, SendProcessSettings? s
       throw new InvalidOperationException("SaveObject already been started.");
     }
     _rootObject = rootObject;
-    Progress = progress;
+    _progress = progress;
 
     var sourceTask = _sourceChannel
       .Pipe(_settings.MaxSerializeThreads, x => OnSerialize(x, cancellationToken), cancellationToken: cancellationToken)
