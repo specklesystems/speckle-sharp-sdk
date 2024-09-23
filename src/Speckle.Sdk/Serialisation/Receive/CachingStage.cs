@@ -1,16 +1,33 @@
-﻿namespace Speckle.Sdk.Serialisation.Receive;
+﻿using System.Collections.Concurrent;
+using Speckle.Sdk.Models;
+
+namespace Speckle.Sdk.Serialisation.Receive;
 
 public sealed class CachingStage(
   SqliteManagerOptions options,
+  ConcurrentDictionary<string, Base> memoryCache,
   Func<string, CancellationToken, ValueTask> notCached,
-  Func<Downloaded, CancellationToken, ValueTask> cached
+  Func<Downloaded, CancellationToken, ValueTask> sqliteCached,
+  Action<Deserialized> done
 ) : IDisposable
 {
   private readonly SqliteManager _sqLiteManager = new(options);
 
   public async ValueTask Execute(IReadOnlyList<string> ids, CancellationToken cancellationToken)
   {
-    foreach (var (id, json) in _sqLiteManager.GetObjects(ids, cancellationToken))
+    var notMemoryCached = new List<string>(ids.Count);
+    foreach (var id in ids)
+    {
+      if (memoryCache.TryGetValue(id, out var memory))
+      {
+        done(new Deserialized(id, memory));
+      }
+      else
+      {
+        notMemoryCached.Add(id);
+      }
+    }
+    foreach (var (id, json) in _sqLiteManager.GetObjects(notMemoryCached, cancellationToken))
     {
       if (json is null)
       {
@@ -18,7 +35,7 @@ public sealed class CachingStage(
       }
       else
       {
-        await cached(new(id, json), cancellationToken).ConfigureAwait(false);
+        await sqliteCached(new(id, json), cancellationToken).ConfigureAwait(false);
       }
     }
   }

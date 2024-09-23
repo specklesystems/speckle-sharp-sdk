@@ -25,7 +25,9 @@ public sealed class ReceiveProcess : IDisposable
   private string? _rootObjectId;
   private Base? _rootObject;
   private bool _isCompleted;
+  private long _bytes;
 
+  private Action<ProgressArgs[]>? _progress;
   private readonly Channel<string> _sourceChannel;
   private readonly Channel<string> _downloadChannel;
   private readonly Channel<Downloaded> _deserializeChannel;
@@ -44,18 +46,66 @@ public sealed class ReceiveProcess : IDisposable
     _deserializeChannel = Channel.CreateUnbounded<Downloaded>();
     _cachingStage = new(
       _settings.SqliteManagerOptions ?? new SqliteManagerOptions(),
+      _idToBaseCache,
       SendToDownload,
-      SendToDeserialize
+      SendToDeserialize,
+      Done
     );
     _downloadStage = new(SendToDeserialize, modelSource);
     _deserializeStage = new(_idToBaseCache, SendToCheckCache, Done, _settings.DeserializedOptions);
   }
 
-  private long _bytes;
-  public Action<ProgressArgs[]>? Progress { get; set; }
+  public async ValueTask<Base> GetObject(
+    string objectId,
+    Action<ProgressArgs[]>? progress,
+    CancellationToken cancellationToken
+  )
+  {
+    _progress = progress;
+    _rootObjectId = objectId;
 
-  public void InvokeProgress() =>
-    Progress?.Invoke(
+    var pipelineTask = _sourceChannel
+      .Reader.Batch(_settings.MaxObjectRequestSize)
+      .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
+      .ReadAllConcurrentlyAsync(
+        _settings.MaxDownloadThreads,
+        x => _cachingStage.Execute(x, cancellationToken),
+        cancellationToken: cancellationToken
+      );
+
+    var downloadTask = _downloadChannel
+      .Reader.Batch(_settings.MaxObjectRequestSize)
+      .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
+      .ReadAllConcurrentlyAsync(
+        _settings.MaxDownloadThreads,
+        x =>
+          _downloadStage.Execute(
+            x,
+            args =>
+            {
+              _bytes += args.Count ?? 0;
+              InvokeProgress();
+            },
+            cancellationToken
+          ),
+        cancellationToken
+      );
+
+    var deserializeTask = _deserializeChannel.ReadAllConcurrentlyAsync(
+      _settings.MaxDeserializeThreads,
+      x => _deserializeStage.Execute(x, cancellationToken),
+      cancellationToken: cancellationToken
+    );
+
+    await SendToCheckCache(_rootObjectId, cancellationToken).ConfigureAwait(false);
+    await pipelineTask.ConfigureAwait(false);
+    await downloadTask.ConfigureAwait(false);
+    await deserializeTask.ConfigureAwait(false);
+    return _rootObject.NotNull();
+  }
+
+  private void InvokeProgress() =>
+    _progress?.Invoke(
       [
         new ProgressArgs(ProgressEvent.DownloadBytes, _bytes, null),
         new ProgressArgs(ProgressEvent.DeserializeObject, _deserializeStage.Deserialized, null)
@@ -126,54 +176,5 @@ public sealed class ReceiveProcess : IDisposable
   {
     _downloadStage.Dispose();
     _cachingStage.Dispose();
-  }
-
-  public async ValueTask<Base> GetObject(
-    string objectId,
-    Action<ProgressArgs[]>? progress,
-    CancellationToken cancellationToken
-  )
-  {
-    Progress = progress;
-    _rootObjectId = objectId;
-
-    var pipelineTask = _sourceChannel
-      .Reader.Batch(_settings.MaxObjectRequestSize)
-      .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
-      .ReadAllConcurrentlyAsync(
-        _settings.MaxDownloadThreads,
-        x => _cachingStage.Execute(x, cancellationToken),
-        cancellationToken: cancellationToken
-      );
-
-    var downloadTask = _downloadChannel
-      .Reader.Batch(_settings.MaxObjectRequestSize)
-      .WithTimeout(TimeSpan.FromMilliseconds(_settings.BatchWaitMilliseconds))
-      .ReadAllConcurrentlyAsync(
-        _settings.MaxDownloadThreads,
-        x =>
-          _downloadStage.Execute(
-            x,
-            args =>
-            {
-              _bytes += args.Count ?? 0;
-              InvokeProgress();
-            },
-            cancellationToken
-          ),
-        cancellationToken
-      );
-
-    var deserializeTask = _deserializeChannel.ReadAllConcurrentlyAsync(
-      _settings.MaxDeserializeThreads,
-      x => _deserializeStage.Execute(x, cancellationToken),
-      cancellationToken: cancellationToken
-    );
-
-    await SendToCheckCache(_rootObjectId, cancellationToken).ConfigureAwait(false);
-    await pipelineTask.ConfigureAwait(false);
-    await downloadTask.ConfigureAwait(false);
-    await deserializeTask.ConfigureAwait(false);
-    return _rootObject.NotNull();
   }
 }
