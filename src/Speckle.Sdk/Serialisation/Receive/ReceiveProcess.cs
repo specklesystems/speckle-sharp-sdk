@@ -42,11 +42,14 @@ public sealed class ReceiveProcess : IDisposable
     _sourceChannel = Channel.CreateUnbounded<string>();
     _downloadChannel = Channel.CreateUnbounded<string>();
     _deserializeChannel = Channel.CreateUnbounded<Downloaded>();
-    _cachingStage = new(_settings.SqliteManagerOptions ?? new SqliteManagerOptions(), SendToDownload, SendToDeserialize);
+    _cachingStage = new(
+      _settings.SqliteManagerOptions ?? new SqliteManagerOptions(),
+      SendToDownload,
+      SendToDeserialize
+    );
     _downloadStage = new(SendToDeserialize, modelSource);
     _deserializeStage = new(_idToBaseCache, SendToCheckCache, Done, _settings.DeserializedOptions);
   }
-
 
   private long _bytes;
   public Action<ProgressArgs[]>? Progress { get; set; }

@@ -11,12 +11,12 @@ public record Serialized(
 
 public sealed class SerializeStage(SqliteManagerOptions options) : IDisposable
 {
-  private readonly SqliteManager _sqliteManager = new (options);
+  private readonly SqliteManager _sqliteManager = new(options);
   public long Serialized { get; private set; }
 
   public Serialized? Execute(Base @base, CancellationToken cancellationToken)
   {
-    if (_sqliteManager.HasObject(@base.id, cancellationToken))
+    if (options.Enabled && _sqliteManager.HasObject(@base.id, cancellationToken))
     {
       return null;
     }

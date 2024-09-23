@@ -55,7 +55,10 @@ public class ChannelsTests
     var target = new MemoryTarget();
     foreach (var (id, (objJson, baseObj)) in bases)
     {
-      using var stage = new SendProcess(target);
+      using var stage = new SendProcess(
+        target,
+        new SendProcessSettings(1, 1, SqliteManagerOptions: new(Enabled: false))
+      );
       var (objId, references) = await stage.SaveObject(baseObj, _ => { }, default).ConfigureAwait(false);
       var orig = JObject.Parse(target.Sent[objId]);
       var targ = JObject.Parse(objJson);

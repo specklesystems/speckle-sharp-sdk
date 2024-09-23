@@ -35,6 +35,11 @@ public class SqliteManagerTests
 
     var fullPath = Path.Combine(path, app, $"{scope}.db");
     File.Exists(fullPath).ShouldBeTrue();
+
+    using (var sqliteManager = new SqliteManager(options))
+    {
+      sqliteManager.HasObject(id, default).ShouldBeTrue();
+    }
     //can't delete this because it's pooled https://github.com/dotnet/efcore/issues/27139
     //File.Delete(fullPath);
   }

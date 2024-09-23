@@ -13,12 +13,18 @@ public record SqliteManagerOptions(
 
 public sealed class SqliteManager : IDisposable
 {
+  private readonly SqliteManagerOptions _options;
   private readonly string _rootPath;
   private readonly string _connectionString;
   private readonly SqliteConnection _connection;
 
   public SqliteManager(SqliteManagerOptions options)
   {
+    _options = options;
+    if (!options.Enabled)
+    {
+      return;
+    }
     var basePath = options.Path ?? SpecklePathProvider.UserApplicationDataPath();
     var applicationName = options.ApplicationName ?? "Speckle";
     var scope = options.Scope ?? "Data";
@@ -41,6 +47,10 @@ public sealed class SqliteManager : IDisposable
 
   public void Dispose()
   {
+    if (!_options.Enabled)
+    {
+      return;
+    }
     _connection.Close();
     _connection.Dispose();
   }
@@ -92,43 +102,32 @@ public sealed class SqliteManager : IDisposable
     return new SqliteConnection(_connectionString);
   }
 
-  public IEnumerable<(string, bool)> HasObjects(IReadOnlyList<string> objectIds, CancellationToken cancellationToken)
+  public bool HasObject(string objectId, CancellationToken cancellationToken)
   {
-    cancellationToken.ThrowIfCancellationRequested();
-    const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
-    using var command = new SqliteCommand(COMMAND_TEXT, _connection);
-
-    foreach (string objectId in objectIds)
+    if (!_options.Enabled)
     {
-      cancellationToken.ThrowIfCancellationRequested();
-
-      command.Parameters.Clear();
-      command.Parameters.AddWithValue("@hash", objectId);
-
-      using var reader = command.ExecuteReader();
-      bool rowFound = reader.Read();
-      yield return (objectId, rowFound);
+      throw new InvalidOperationException();
     }
-  }
-  
-  public  bool HasObject(string objectId, CancellationToken cancellationToken)
-  {
     cancellationToken.ThrowIfCancellationRequested();
     const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
     using var command = new SqliteCommand(COMMAND_TEXT, _connection);
 
-      cancellationToken.ThrowIfCancellationRequested();
+    cancellationToken.ThrowIfCancellationRequested();
 
-      command.Parameters.Clear();
-      command.Parameters.AddWithValue("@hash", objectId);
+    command.Parameters.Clear();
+    command.Parameters.AddWithValue("@hash", objectId);
 
-      using var reader = command.ExecuteReader();
-      bool rowFound = reader.Read();
-       return rowFound;
+    using var reader = command.ExecuteReader();
+    bool rowFound = reader.Read();
+    return rowFound;
   }
 
   public IEnumerable<(string, string?)> GetObjects(IEnumerable<string> ids, CancellationToken cancellationToken)
   {
+    if (!_options.Enabled)
+    {
+      throw new InvalidOperationException();
+    }
     cancellationToken.ThrowIfCancellationRequested();
     using var command = _connection.CreateCommand();
     command.CommandText = "SELECT content FROM objects WHERE hash = @hash LIMIT 1 ";
@@ -144,6 +143,10 @@ public sealed class SqliteManager : IDisposable
 
   public void SaveObjects(IReadOnlyList<(string, string)> idJsons, CancellationToken cancellationToken)
   {
+    if (!_options.Enabled)
+    {
+      throw new InvalidOperationException();
+    }
     const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
 
     using var t = _connection.BeginTransaction();

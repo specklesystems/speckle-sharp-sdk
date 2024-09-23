@@ -18,9 +18,8 @@ public sealed class SendProcess(IModelTarget modelTarget, SendProcessSettings? s
 {
   private readonly SendProcessSettings _settings = new();
   private readonly Channel<Base> _sourceChannel = Channel.CreateUnbounded<Base>();
-  private readonly SerializeStage _serializeStage  = new(settings?.SqliteManagerOptions ?? new());
-  private readonly SendStage _sendStage  = new(modelTarget);
-
+  private readonly SerializeStage _serializeStage = new(settings?.SqliteManagerOptions ?? new());
+  private readonly SendStage _sendStage = new(modelTarget);
 
   private long _requested;
   private Serialized? _rootObjectSerialized;
