@@ -22,7 +22,7 @@ public partial class Operations
   {
 #pragma warning disable CA2000
     using var stage = new ReceiveProcess(
-      new ServerSource(speckleHttp, activityFactory, new Uri(account.serverInfo.url), projectId, null)
+      new ServerSource(speckleHttp, activityFactory, new Uri(account.serverInfo.url), projectId, account.token)
     );
 #pragma warning restore CA2000
     var rootObject = await stage.GetObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);
