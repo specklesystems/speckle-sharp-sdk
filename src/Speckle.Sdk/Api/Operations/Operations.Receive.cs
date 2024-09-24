@@ -13,16 +13,18 @@ namespace Speckle.Sdk.Api;
 public partial class Operations
 {
   public async ValueTask<Base> Receive2(
-    string projectId,
     string objectId,
+    string projectId,
     Account account,
+    ReceiveProcessSettings? receiveProcessSettings = null,
     Action<ProgressArgs[]>? onProgressAction = null,
     CancellationToken cancellationToken = default
   )
   {
 #pragma warning disable CA2000
     using var stage = new ReceiveProcess(
-      new ServerSource(speckleHttp, activityFactory, new Uri(account.serverInfo.url), projectId, account.token)
+      new ServerSource(speckleHttp, activityFactory, new Uri(account.serverInfo.url), projectId, account.token),
+      receiveProcessSettings
     );
 #pragma warning restore CA2000
     var rootObject = await stage.GetObject(objectId, onProgressAction, cancellationToken).ConfigureAwait(false);

@@ -89,7 +89,7 @@ public class GeneralDeserializer
 
     StreamWrapper sw = new(url);
     var acc = serviceProvider.GetRequiredService<IAccountManager>().GetDefaultAccount().NotNull();
-    var rootObject = await operations.Receive2(sw.ProjectId, sw.ModelId.NotNull(), acc, args => { });
+    var rootObject = await operations.Receive2(sw.ModelId.NotNull(), sw.ProjectId, acc, null, args => { });
 
     return rootObject;
   }
