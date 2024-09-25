@@ -131,7 +131,7 @@ public partial class Operations
     using var serializerActivity = activityFactory.Start();
 
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    return await DeserializeImpl(objString, serializer).ConfigureAwait(false);
+    return await DeserializeActivity(objString, serializer).ConfigureAwait(false);
   }
 
   /// <summary>

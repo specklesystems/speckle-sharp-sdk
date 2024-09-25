@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
@@ -40,10 +41,11 @@ public partial class Operations
   public async Task<Base> DeserializeAsync(string value, CancellationToken cancellationToken = default)
   {
     var deserializer = new SpeckleObjectDeserializer { CancellationToken = cancellationToken };
-    return await DeserializeImpl(value, deserializer).ConfigureAwait(false);
+    return await DeserializeActivity(value, deserializer).ConfigureAwait(false);
   }
 
-  private async Task<Base> DeserializeImpl(string objString, SpeckleObjectDeserializer deserializer)
+  /// <inheritdoc cref="SpeckleObjectDeserializer.DeserializeAsync"/>
+  private async Task<Base> DeserializeActivity([NotNull] string? objString, SpeckleObjectDeserializer deserializer)
   {
     using var activity = activityFactory.Start();
     try
