@@ -5,6 +5,7 @@ using GraphQL.Client.Abstractions;
 using GraphQL.Client.Abstractions.Websocket;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Serialization;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Api.GraphQL.Serializer;
 
@@ -73,7 +74,7 @@ internal sealed class NewtonsoftJsonSerializer : IGraphQLWebsocketJsonSerializer
   private Task<T> DeserializeFromUtf8Stream<T>(System.IO.Stream stream)
   {
     using var sr = new StreamReader(stream);
-    using JsonReader reader = new JsonTextReader(sr);
+    using JsonReader reader = SpeckleObjectSerializerPool.Instance.GetJsonTextReader(sr);
     var serializer = JsonSerializer.Create(JsonSerializerSettings);
     return Task.FromResult(serializer.Deserialize<T>(reader));
   }
