@@ -29,6 +29,7 @@
     <PackageReference Include="GraphQL.Client"/>
     <PackageReference Include="Microsoft.CSharp" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" />
     <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
     <PackageReference Include="Polly" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" />
@@ -44,7 +45,6 @@
   <ItemGroup Condition=" '$(Framework)' != 'NET80'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" />
   </ItemGroup>
   
 </Project>
