@@ -247,12 +247,11 @@ public class SpeckleObjectSerializer2
 
     string id;
     string json;
-    using (var memoryStream = Pool.GetMemoryStream())
-    using (var writer = new StreamWriter(memoryStream))
+    using (var writer = new StringWriter())
     {
       using var jsonWriter = Pool.GetJsonTextWriter(writer);
       id = SerializeBaseObject(baseObj, jsonWriter, closure);
-      json = writer.ToString().NotNull();
+      json = writer.ToString();
     }
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
@@ -276,12 +275,11 @@ public class SpeckleObjectSerializer2
       ObjectReference objRef = new() { referencedId = id };
 
       string json2;
-      using (var memoryStream = Pool.GetMemoryStream())
-      using (var writer2 = new StreamWriter(memoryStream))
+      using (var writer = new StringWriter())
       {
-        using var jsonWriter2 = Pool.GetJsonTextWriter(writer2);
+        using var jsonWriter2 = Pool.GetJsonTextWriter(writer);
         SerializeProperty(objRef, jsonWriter2);
-        json2 = writer2.ToString().NotNull();
+        json2 = writer.ToString();
         UpdateParentClosures(id);
       }
 
