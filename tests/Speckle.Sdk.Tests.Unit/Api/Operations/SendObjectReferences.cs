@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using Microsoft.Extensions.DependencyInjection;
+using NUnit.Framework;
+using Speckle.Sdk.Api;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
@@ -6,6 +9,17 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public class SendObjectReferences
 {
+  private IOperations _operations;
+
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
+  }
+
   [TestCase(0)]
   [TestCase(1)]
   [TestCase(10)]
@@ -13,7 +27,7 @@ public class SendObjectReferences
   {
     Base testData = GenerateTestCase(testDepth, true);
     MemoryTransport transport = new();
-    var result = await Speckle.Sdk.Api.Operations.Send(testData, [transport]);
+    var result = await _operations.Send(testData, [transport]);
 
     Assert.That(result.rootObjId, Is.Not.Null);
     Assert.That(result.rootObjId, Has.Length.EqualTo(32));
@@ -28,7 +42,7 @@ public class SendObjectReferences
   {
     Base testData = GenerateTestCase(testDepth, false);
     MemoryTransport transport = new();
-    var result = await Speckle.Sdk.Api.Operations.Send(testData, [transport]);
+    var result = await _operations.Send(testData, [transport]);
 
     Assert.That(result.rootObjId, Is.Not.Null);
     Assert.That(result.rootObjId, Has.Length.EqualTo(32));

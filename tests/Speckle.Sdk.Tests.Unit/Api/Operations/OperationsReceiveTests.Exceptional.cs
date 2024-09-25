@@ -1,4 +1,8 @@
-﻿using NUnit.Framework;
+﻿using Microsoft.Extensions.DependencyInjection;
+using NUnit.Framework;
+using Speckle.Sdk.Api;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
@@ -12,7 +16,7 @@ public partial class OperationsReceiveTests
     MemoryTransport emptyTransport2 = new();
     Assert.ThrowsAsync<TransportException>(async () =>
     {
-      await Sdk.Api.Operations.Receive(id, emptyTransport1, emptyTransport2);
+      await _operations.Receive(id, emptyTransport1, emptyTransport2);
     });
   }
 
@@ -22,7 +26,7 @@ public partial class OperationsReceiveTests
     MemoryTransport emptyTransport = new();
     Assert.ThrowsAsync<TransportException>(async () =>
     {
-      await Sdk.Api.Operations.Receive(id, null, emptyTransport);
+      await _operations.Receive(id, null, emptyTransport);
     });
   }
 
@@ -35,7 +39,7 @@ public partial class OperationsReceiveTests
     MemoryTransport emptyTransport2 = new();
     Assert.CatchAsync<OperationCanceledException>(async () =>
     {
-      await Sdk.Api.Operations.Receive(id, _testCaseTransport, emptyTransport2, cancellationToken: ctc.Token);
+      await _operations.Receive(id, _testCaseTransport, emptyTransport2, cancellationToken: ctc.Token);
     });
   }
 }

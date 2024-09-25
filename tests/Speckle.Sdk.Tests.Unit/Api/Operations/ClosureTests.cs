@@ -1,5 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -12,11 +14,15 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 [TestOf(typeof(Sdk.Api.Operations))]
 public class Closures
 {
+  private IOperations _operations;
+
   [SetUp]
   public void Setup()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
   [Test(Description = "Checks whether closures are generated correctly by the serialiser.")]
@@ -45,9 +51,9 @@ public class Closures
 
     var transport = new MemoryTransport();
 
-    var sendResult = await Sdk.Api.Operations.Send(d1, transport, false);
+    var sendResult = await _operations.Send(d1, transport, false);
 
-    var test = await Sdk.Api.Operations.Receive(sendResult.rootObjId, localTransport: transport);
+    var test = await _operations.Receive(sendResult.rootObjId, localTransport: transport);
 
     test.id.NotNull();
     Assert.That(d1.GetId(true), Is.EqualTo(test.id));

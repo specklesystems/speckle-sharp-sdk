@@ -4,14 +4,12 @@ namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public abstract class UserBase
 {
-  public ResourceCollection<Activity> activity { get; init; }
   public string avatar { get; init; }
   public string bio { get; init; }
   public string company { get; set; }
   public string id { get; init; }
   public string name { get; init; }
   public string role { get; init; }
-  public ResourceCollection<Activity> timeline { get; init; }
   public bool? verified { get; init; }
 }
 

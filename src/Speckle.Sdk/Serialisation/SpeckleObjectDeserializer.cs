@@ -5,7 +5,6 @@ using System.Reflection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
@@ -47,10 +46,8 @@ public sealed class SpeckleObjectDeserializer
   /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public async Task<Base> DeserializeJsonAsync([NotNull] string? rootObjectJson)
+  public async Task<Base> DeserializeAsync([NotNull] string? rootObjectJson)
   {
-    var activity = SpeckleActivityFactory.Start();
-
     try
     {
       if (_isBusy)
@@ -73,14 +70,7 @@ public sealed class SpeckleObjectDeserializer
       _currentCount = 0;
 
       var result = (Base)await DeserializeJsonAsyncInternal(rootObjectJson).NotNull().ConfigureAwait(false);
-      activity?.SetStatus(SpeckleActivityStatusCode.Ok);
       return result;
-    }
-    catch (Exception ex)
-    {
-      activity?.SetStatus(SpeckleActivityStatusCode.Error);
-      activity?.RecordException(ex);
-      throw;
     }
     finally
     {

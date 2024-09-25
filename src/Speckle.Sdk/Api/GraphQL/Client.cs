@@ -4,6 +4,7 @@ using System.Net.WebSockets;
 using System.Reflection;
 using GraphQL;
 using GraphQL.Client.Http;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Speckle.Newtonsoft.Json;
@@ -17,8 +18,10 @@ using Speckle.Sdk.Logging;
 namespace Speckle.Sdk.Api;
 
 [SuppressMessage("Maintainability", "CA1506:Avoid excessive class coupling", Justification = "Class needs refactor")]
-public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
+public sealed class Client : ISpeckleGraphQLClient, IDisposable
 {
+  private readonly ILogger<Client> _logger;
+  private readonly ISdkActivityFactory _activityFactory;
   public ProjectResource Project { get; }
   public ModelResource Model { get; }
   public VersionResource Version { get; }
@@ -39,8 +42,16 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
 
   /// <param name="account"></param>
   /// <exception cref="ArgumentException"><paramref name="account"/> was null</exception>
-  public Client(Account account)
+  public Client(
+    ILogger<Client> logger,
+    ISdkActivityFactory activityFactory,
+    ISpeckleApplication application,
+    ISpeckleHttp speckleHttp,
+    Account account
+  )
   {
+    _logger = logger;
+    _activityFactory = activityFactory;
     Account = account ?? throw new ArgumentException("Provided account is null.");
 
     Project = new(this);
@@ -52,7 +63,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     Comment = new(this);
     Subscription = new(this);
 
-    HttpClient = CreateHttpClient(account);
+    HttpClient = CreateHttpClient(application, speckleHttp, account);
 
     GQLClient = CreateGraphQLClient(account, HttpClient);
   }
@@ -76,7 +87,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
         delay,
         (ex, timeout, _) =>
         {
-          SpeckleLog.Logger.Debug(
+          _logger.LogDebug(
             ex,
             "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
             typeof(T).Name,
@@ -92,7 +103,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
-    using var activity = SpeckleActivityFactory.Start();
+    using var activity = _activityFactory.Start();
     activity?.SetTag("responseType", typeof(T));
     activity?.SetTag("request.query", request.Query);
     activity?.SetTag("request.operationName", request.OperationName);
@@ -114,12 +125,12 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
           return result.Data;
         })
         .ConfigureAwait(false);
-      activity?.SetStatus(SpeckleActivityStatusCode.Ok);
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
       return ret;
     }
     catch (Exception ex)
     {
-      activity?.SetStatus(SpeckleActivityStatusCode.Error);
+      activity?.SetStatus(SdkActivityStatusCode.Error);
       activity?.RecordException(ex);
       throw;
     }
@@ -228,7 +239,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
               else
               {
                 // Serilog.Log.ForContext("graphqlResponse", response)
-                SpeckleLog.Logger.Error(
+                _logger.LogError(
                   "Cannot execute graphql callback for {resultType}, the response has no data.",
                   typeof(T).Name
                 );
@@ -245,7 +256,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
               /* Speckle.Sdk.Logging..ForContext("graphqlResponse", gqlException.Response)
                  .ForContext("graphqlExtensions", gqlException.Extensions)
                  .ForContext("graphqlErrorMessages", gqlException.ErrorMessages.ToList())*/
-              SpeckleLog.Logger.Warning(
+              _logger.LogWarning(
                 gqlException,
                 "Execution of the graphql request to get {resultType} failed with {graphqlExceptionType} {exceptionMessage}.",
                 typeof(T).Name,
@@ -263,7 +274,7 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
           {
             // we're logging this as an error for now, to keep track of failures
             // so far we've swallowed these errors
-            SpeckleLog.Logger.Error(
+            _logger.LogError(
               ex,
               "Subscription for {resultType} terminated unexpectedly with {exceptionMessage}",
               typeof(T).Name,
@@ -276,12 +287,6 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        SpeckleLog.Logger.Warning(
-          ex,
-          "Subscribing to graphql {resultType} failed without a graphql response. Cause {exceptionMessage}",
-          typeof(T).Name,
-          ex.Message
-        );
         throw new SpeckleGraphQLException<T>(
           "The graphql request failed without a graphql response",
           request,
@@ -302,7 +307,9 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
         WebSocketProtocol = "graphql-ws",
         ConfigureWebSocketConnectionInitPayload = _ =>
         {
-          return Http.CanAddAuth(account.token, out string? authValue) ? new { Authorization = authValue } : null;
+          return SpeckleHttp.CanAddAuth(account.token, out string? authValue)
+            ? new { Authorization = authValue }
+            : null;
         },
       },
       new NewtonsoftJsonSerializer(),
@@ -325,14 +332,11 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
     return gQLClient;
   }
 
-  private static HttpClient CreateHttpClient(Account account)
+  private static HttpClient CreateHttpClient(ISpeckleApplication application, ISpeckleHttp speckleHttp, Account account)
   {
-    var httpClient = Http.GetHttpProxyClient(
-      new SpeckleHttpClientHandler(new HttpClientHandler(), Http.HttpAsyncPolicy(timeoutSeconds: 30))
-    );
-    Http.AddAuthHeader(httpClient, account.token);
+    var httpClient = speckleHttp.CreateHttpClient(timeoutSeconds: 30, authorizationToken: account.token);
 
-    httpClient.DefaultRequestHeaders.Add("apollographql-client-name", Setup.ApplicationVersion);
+    httpClient.DefaultRequestHeaders.Add("apollographql-client-name", application.ApplicationAndVersion);
     httpClient.DefaultRequestHeaders.Add(
       "apollographql-client-version",
       Assembly.GetExecutingAssembly().GetName().Version?.ToString()

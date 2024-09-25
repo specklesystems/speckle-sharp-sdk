@@ -29,16 +29,21 @@
     <PackageReference Include="GraphQL.Client"/>
     <PackageReference Include="Microsoft.CSharp" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Polly" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" />
     <PackageReference Include="Polly.Extensions.Http"  />
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
-    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
-  <ItemGroup Label="Project References">
-    <ProjectReference Include="..\Speckle.Sdk.Logging\Speckle.Sdk.Logging.csproj" />
+  <ItemGroup Condition=" '$(Framework)' == 'NET80'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" OverrideVersion="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" OverrideVersion="8.0.0"/>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(Framework)' != 'NET80'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
   
 </Project>

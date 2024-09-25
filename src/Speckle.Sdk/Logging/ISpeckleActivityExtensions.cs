@@ -2,7 +2,7 @@
 
 public static class ISpeckleActivityExtensions
 {
-  public static void SetTags<T>(this ISpeckleActivity activity, string prefix, IReadOnlyDictionary<string, T> tags)
+  public static void SetTags<T>(this ISdkActivity activity, string prefix, IReadOnlyDictionary<string, T> tags)
   {
     foreach (var tag in tags)
     {

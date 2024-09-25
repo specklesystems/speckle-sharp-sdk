@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
@@ -8,6 +10,8 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 public class SimpleRoundTripTests
 {
+  private IOperations _operations;
+
   static SimpleRoundTripTests()
   {
     Reset();
@@ -32,13 +36,19 @@ public class SimpleRoundTripTests
   }
 
   [SetUp]
-  public void Setup() => Reset();
+  public void Setup()
+  {
+    Reset();
+
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
+  }
 
   [TestCaseSource(nameof(TestData))]
   public async Task SimpleSerialization(Base testData)
   {
-    var result = Sdk.Api.Operations.Serialize(testData);
-    var test = await Sdk.Api.Operations.DeserializeAsync(result);
+    var result = _operations.Serialize(testData);
+    var test = await _operations.DeserializeAsync(result);
 
     Assert.That(testData.GetId(), Is.EqualTo(test.GetId()));
   }

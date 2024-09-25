@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
@@ -11,6 +12,7 @@ namespace Speckle.Sdk.Tests.Integration;
 public class MemoryTransportTests
 {
   private readonly MemoryTransport _memoryTransport = new(blobStorageEnabled: true);
+  private IOperations _operations;
 
   [SetUp]
   public void Setup()
@@ -18,6 +20,8 @@ public class MemoryTransportTests
     CleanData();
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
   [TearDown]
@@ -38,12 +42,12 @@ public class MemoryTransportTests
     var myObject = Fixtures.GenerateSimpleObject();
     myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 
-    var sendResult = await Operations.Send(myObject, _memoryTransport, false);
+    var sendResult = await _operations.Send(myObject, _memoryTransport, false);
 
     // NOTE: used to debug diffing
     // await Operations.Send(myObject, new List<ITransport> { transport });
 
-    var receivedObject = await Operations.Receive(sendResult.rootObjId, _memoryTransport, new MemoryTransport());
+    var receivedObject = await _operations.Receive(sendResult.rootObjId, _memoryTransport, new MemoryTransport());
 
     var allFiles = Directory
       .GetFiles(_memoryTransport.BlobStorageFolder)

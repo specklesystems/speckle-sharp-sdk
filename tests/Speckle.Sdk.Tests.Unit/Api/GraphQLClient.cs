@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using GraphQL;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Api;
 
@@ -16,13 +18,16 @@ public sealed class GraphQLClientTests : IDisposable
   [OneTimeSetUp]
   public void Setup()
   {
-    _client = new Client(
-      new Account
-      {
-        token = "this is a scam",
-        serverInfo = new ServerInfo { url = "http://goto.testing" }
-      }
-    );
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _client = serviceProvider
+      .GetRequiredService<IClientFactory>()
+      .Create(
+        new Account
+        {
+          token = "this is a scam",
+          serverInfo = new ServerInfo { url = "http://goto.testing" }
+        }
+      );
   }
 
   public void Dispose()

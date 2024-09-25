@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -7,7 +8,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
-public static partial class Operations
+public partial class Operations
 {
   /// <summary>
   /// Receives an object (and all its sub-children) from the two provided <see cref="ITransport"/>s.
@@ -30,7 +31,7 @@ public static partial class Operations
   /// <exception cref="SpeckleDeserializeException">Deserialization of the requested object(s) failed</exception>
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <returns>The requested Speckle Object</returns>
-  public static async Task<Base> Receive(
+  public async Task<Base> Receive(
     string objectId,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
@@ -39,7 +40,7 @@ public static partial class Operations
     CancellationToken cancellationToken = default
   )
   {
-    using var receiveActivity = SpeckleActivityFactory.Start("Operations.Receive");
+    using var receiveActivity = activityFactory.Start("Operations.Receive");
 
     if (remoteTransport != null)
     {
@@ -62,19 +63,19 @@ public static partial class Operations
         )
         .ConfigureAwait(false);
 
-      receiveActivity?.SetStatus(SpeckleActivityStatusCode.Ok);
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return result;
     }
     catch (Exception ex)
     {
-      receiveActivity?.SetStatus(SpeckleActivityStatusCode.Error);
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
       receiveActivity?.RecordException(ex);
       throw;
     }
   }
 
   /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,Action{ConcurrentBag{ProgressArgs}}?,Action{int}?,CancellationToken)"/>
-  private static async Task<Base> ReceiveImpl(
+  private async Task<Base> ReceiveImpl(
     string objectId,
     ITransport? remoteTransport,
     ITransport localTransport,
@@ -117,7 +118,7 @@ public static partial class Operations
         );
       }
 
-      SpeckleLog.Logger.Debug(
+      logger.LogDebug(
         "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
         objectId,
         remoteTransport.TransportName
@@ -127,10 +128,10 @@ public static partial class Operations
         .ConfigureAwait(false);
     }
 
-    // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = await serializer.DeserializeJsonAsync(objString).ConfigureAwait(false);
+    using var serializerActivity = activityFactory.Start();
 
-    return res;
+    // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
+    return await DeserializeImpl(objString, serializer).ConfigureAwait(false);
   }
 
   /// <summary>
