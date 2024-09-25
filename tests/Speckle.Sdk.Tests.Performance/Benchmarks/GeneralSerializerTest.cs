@@ -8,6 +8,7 @@ using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
@@ -16,7 +17,7 @@ namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 /// How many threads on our Deserializer is optimal
 /// </summary>
 [MemoryDiagnoser]
-[SimpleJob(RunStrategy.Monitoring)]
+[SimpleJob(RunStrategy.Monitoring, 0, 0, 5)]
 public class GeneralSerializerTest
 {
   private Base _testData;
@@ -24,9 +25,9 @@ public class GeneralSerializerTest
   [GlobalSetup]
   public async Task Setup()
   {
-    var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
+    // var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 
-    //var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
+    var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
 
     var serviceCollection = new ServiceCollection();
@@ -40,17 +41,20 @@ public class GeneralSerializerTest
     _testData = await deserializer.DeserializeAsync(data);
   }
 
-  [Benchmark]
-  public string RunTest()
+  // [Benchmark]
+  public string SpeckleObjectSerializerTest()
   {
-    Console.WriteLine("Attach");
-    Console.ReadLine();
-    Console.WriteLine("Executing");
     var remote = new NullTransport();
     SpeckleObjectSerializer sut = new([remote]);
     var x = sut.Serialize(_testData);
-    Console.WriteLine("Detach");
-    Console.ReadLine();
+    return x;
+  }
+
+  [Benchmark]
+  public string SpeckleObjectSerializer2Test()
+  {
+    SpeckleObjectSerializer2 sut = new(SpeckleObjectSerializer2Pool.Instance);
+    var x = sut.Serialize(_testData);
     return x;
   }
 }

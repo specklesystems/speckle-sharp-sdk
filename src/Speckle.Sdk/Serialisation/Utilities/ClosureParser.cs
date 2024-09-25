@@ -6,7 +6,7 @@ namespace Speckle.Sdk.Serialisation.Utilities;
 
 public static class ClosureParser
 {
-  public static IReadOnlyList<(string, int)> GetClosures(string rootObjectJson)
+  public static IReadOnlyList<(string id, int depth)> GetClosures(string rootObjectJson)
   {
     try
     {
@@ -35,7 +35,7 @@ public static class ClosureParser
   }
 
   public static IEnumerable<string> GetChildrenIds(string rootObjectJson) =>
-    GetClosures(rootObjectJson).Select(x => x.Item1);
+    GetClosures(rootObjectJson).Select(x => x.id);
 
   private static IReadOnlyList<(string, int)> ReadObject(JsonTextReader reader)
   {
