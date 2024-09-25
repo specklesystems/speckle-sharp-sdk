@@ -1,8 +1,10 @@
+using System.Runtime.CompilerServices;
+
 namespace Speckle.Sdk.Logging;
 
 public interface ISdkActivityFactory : IDisposable
 {
-  Speckle.Sdk.Logging.ISdkActivity? Start(string? name = default, string source = "");
+  ISdkActivity? Start(string? name = default, [CallerMemberName] string source = "");
 }
 
 public sealed class NullActivityFactory : ISdkActivityFactory
