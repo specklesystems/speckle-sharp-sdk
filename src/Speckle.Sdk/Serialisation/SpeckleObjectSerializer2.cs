@@ -245,10 +245,15 @@ public class SpeckleObjectSerializer2
       _parentClosures.Add(closure);
     }
 
-    using var writer = new StringWriter();
-    using var jsonWriter = Pool.GetJsonTextWriter(writer);
-    string id = SerializeBaseObject(baseObj, jsonWriter, closure);
-    var json = writer.ToString();
+    string id;
+    string json;
+    using (var memoryStream = Pool.GetMemoryStream())
+    using (var writer = new StreamWriter(memoryStream))
+    {
+      using var jsonWriter = Pool.GetJsonTextWriter(writer);
+       id = SerializeBaseObject(baseObj, jsonWriter, closure);
+       json = writer.ToString().NotNull();
+    }
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
     {
@@ -269,11 +274,16 @@ public class SpeckleObjectSerializer2
       StoreObject(id, json);
 
       ObjectReference objRef = new() { referencedId = id };
-      using var writer2 = new StringWriter();
-      using var jsonWriter2 = new JsonTextWriter(writer2);
-      SerializeProperty(objRef, jsonWriter2);
-      var json2 = writer2.ToString();
-      UpdateParentClosures(id);
+    
+      string json2;
+      using (var memoryStream = Pool.GetMemoryStream())
+      using (var writer2 = new StreamWriter(memoryStream))
+      {
+        using var jsonWriter2 = Pool.GetJsonTextWriter(writer2);
+        SerializeProperty(objRef, jsonWriter2);
+        json2 = writer2.ToString().NotNull();
+        UpdateParentClosures(id);
+      }
 
       _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
 
