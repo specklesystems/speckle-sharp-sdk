@@ -20,7 +20,6 @@ namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 [Config(typeof(Config))]
 [RankColumn]
 [MemoryDiagnoser]
-[Orderer(SummaryOrderPolicy.FastestToSlowest)]
 public class GeneralSerializerTest
 {
   private Base _testData;

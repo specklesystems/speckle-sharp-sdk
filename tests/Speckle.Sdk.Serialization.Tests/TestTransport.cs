@@ -32,7 +32,8 @@ public class TestTransport : ITransport
 
   public ValueTask WriteComplete() => throw new NotImplementedException();
 
-  public ValueTask<string?> GetObject(string id) => ValueTask.FromResult(Objects.TryGetValue(id, out string? o) ? o : null);
+  public ValueTask<string?> GetObject(string id) =>
+    ValueTask.FromResult(Objects.TryGetValue(id, out string? o) ? o : null);
 
   public ValueTask<string> CopyObjectAndChildren(
     string id,

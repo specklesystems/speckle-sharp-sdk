@@ -96,7 +96,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     var ret = Objects.TryGetValue(id, out string? o) ? o : null;
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-    
+
 #if NETSTANDARD2_0
     return new ValueTask<string?>(ret);
 #else

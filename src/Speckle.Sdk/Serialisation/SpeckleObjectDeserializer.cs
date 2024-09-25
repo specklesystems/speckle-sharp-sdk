@@ -139,7 +139,7 @@ public sealed class SpeckleObjectDeserializer
             if (propName == "__closure")
             {
               await reader.ReadAsync(ct).ConfigureAwait(false); //goes to prop value
-              var closures = await ClosureParser.GetClosuresAsync(reader).ConfigureAwait(false);
+              var closures = ClosureParser.GetClosures(reader);
               foreach (var closure in closures)
               {
                 _ids.Add(closure.Item1);

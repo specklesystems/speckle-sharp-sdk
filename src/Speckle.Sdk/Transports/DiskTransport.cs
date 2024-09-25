@@ -69,7 +69,7 @@ public class DiskTransport : ICloneable, ITransport
 #if NETSTANDARD2_0
       return new ValueTask<string?>(File.ReadAllText(filePath, Encoding.UTF8));
 #else
-    return ValueTask.FromResult<string?>(File.ReadAllText(filePath, Encoding.UTF8));
+      return ValueTask.FromResult<string?>(File.ReadAllText(filePath, Encoding.UTF8));
 #endif
     }
 #if NETSTANDARD2_0

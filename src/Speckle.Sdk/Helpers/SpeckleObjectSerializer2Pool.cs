@@ -40,13 +40,13 @@ public class SpeckleObjectSerializer2Pool
     public void Return(T[]? array) => pool.Return(array.NotNull());
   }
 
+  public ObjectPool<Dictionary<string, object?>> DictPool { get; } =
+    new DefaultObjectPoolProvider().Create(new DictPoolPolicy());
 
-  public  ObjectPool<Dictionary<string, object?>>
-    DictPool { get; }= new DefaultObjectPoolProvider().Create(new DictPoolPolicy());
-  
   private class DictPoolPolicy : PooledObjectPolicy<Dictionary<string, object?>>
   {
-    public override Dictionary<string, object?> Create() => new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+    public override Dictionary<string, object?> Create() =>
+      new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
     public override bool Return(Dictionary<string, object?> obj)
     {
