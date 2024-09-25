@@ -175,6 +175,11 @@
           "Microsoft.Extensions.Configuration": "2.2.0"
         }
       },
+      "Microsoft.Extensions.Logging.Abstractions": {
+        "type": "Transitive",
+        "resolved": "2.2.0",
+        "contentHash": "B2WqEox8o+4KUOpL7rZPyh6qYjik8tHi2tN8Z9jZkHzED8ElYgZa/h6K+xliB435SqUcWT290Fr2aa8BtZjn8A=="
+      },
       "Microsoft.Extensions.Options": {
         "type": "Transitive",
         "resolved": "2.2.0",
@@ -302,12 +307,6 @@
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
         }
-      },
-      "Microsoft.Extensions.Logging.Abstractions": {
-        "type": "CentralTransitive",
-        "requested": "[2.2.0, )",
-        "resolved": "2.2.0",
-        "contentHash": "B2WqEox8o+4KUOpL7rZPyh6qYjik8tHi2tN8Z9jZkHzED8ElYgZa/h6K+xliB435SqUcWT290Fr2aa8BtZjn8A=="
       }
     },
     "net8.0": {
@@ -475,6 +474,11 @@
           "Microsoft.Extensions.Configuration": "2.2.0"
         }
       },
+      "Microsoft.Extensions.Logging.Abstractions": {
+        "type": "Transitive",
+        "resolved": "2.2.0",
+        "contentHash": "B2WqEox8o+4KUOpL7rZPyh6qYjik8tHi2tN8Z9jZkHzED8ElYgZa/h6K+xliB435SqUcWT290Fr2aa8BtZjn8A=="
+      },
       "Microsoft.Extensions.Options": {
         "type": "Transitive",
         "resolved": "2.2.0",
@@ -548,12 +552,6 @@
         "type": "Transitive",
         "resolved": "4.5.1",
         "contentHash": "Zh8t8oqolRaFa9vmOZfdQm/qKejdqz0J9kr7o2Fu0vPeoH3BL1EOXipKWwkWtLT1JPzjByrF19fGuFlNbmPpiw=="
-      },
-      "Microsoft.Extensions.Logging.Abstractions": {
-        "type": "CentralTransitive",
-        "requested": "[2.2.0, )",
-        "resolved": "2.2.0",
-        "contentHash": "B2WqEox8o+4KUOpL7rZPyh6qYjik8tHi2tN8Z9jZkHzED8ElYgZa/h6K+xliB435SqUcWT290Fr2aa8BtZjn8A=="
       }
     }
   }
