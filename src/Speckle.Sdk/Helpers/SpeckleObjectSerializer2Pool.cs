@@ -26,7 +26,7 @@ public class SpeckleObjectSerializer2Pool
 
   public ObjectPool<Dictionary<string, object?>> DictPool { get; } =
     new DefaultObjectPoolProvider().Create(new DictPoolPolicy());
-  
+
   private class DictPoolPolicy : PooledObjectPolicy<Dictionary<string, object?>>
   {
     public override Dictionary<string, object?> Create() => new(StringComparer.OrdinalIgnoreCase);
