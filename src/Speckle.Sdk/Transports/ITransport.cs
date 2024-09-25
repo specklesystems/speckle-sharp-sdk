@@ -67,12 +67,12 @@ public interface ITransport
   /// Awaitable method to figure out whether writing is completed.
   /// </summary>
   /// <returns></returns>
-  public Task WriteComplete();
+  public ValueTask WriteComplete();
 
   /// <param name="id">The object's hash.</param>
   /// <returns>The serialized object data, or <see langword="null"/> if the transport cannot find the object</returns>
   /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
-  public Task<string?> GetObject(string id);
+  public ValueTask<string?> GetObject(string id);
 
   /// <summary>
   /// Copies the parent object and all its children to the provided transport.
@@ -84,7 +84,7 @@ public interface ITransport
   /// <exception cref="ArgumentException">The provided arguments are not valid</exception>
   /// <exception cref="TransportException">The transport could not complete the operation</exception>
   /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
-  public Task<string> CopyObjectAndChildren(
+  public ValueTask<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
@@ -97,7 +97,7 @@ public interface ITransport
   /// <returns>A dictionary with the specified object ids as keys and boolean values, whether each object is present in the transport or not</returns>
   /// <exception cref="TransportException">The transport could not complete the operation</exception>
   /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
-  public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds);
+  public ValueTask<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds);
 }
 
 public interface IBlobCapableTransport

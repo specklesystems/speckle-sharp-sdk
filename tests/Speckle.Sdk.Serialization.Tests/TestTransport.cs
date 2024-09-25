@@ -30,16 +30,16 @@ public class TestTransport : ITransport
 
   public void SaveObject(string id, string serializedObject) => Objects[id] = serializedObject;
 
-  public Task WriteComplete() => throw new NotImplementedException();
+  public ValueTask WriteComplete() => throw new NotImplementedException();
 
-  public Task<string?> GetObject(string id) => Task.FromResult(Objects.TryGetValue(id, out string? o) ? o : null);
+  public ValueTask<string?> GetObject(string id) => ValueTask.FromResult(Objects.TryGetValue(id, out string? o) ? o : null);
 
-  public Task<string> CopyObjectAndChildren(
+  public ValueTask<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
   ) => throw new NotImplementedException();
 
-  public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds) =>
+  public ValueTask<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds) =>
     throw new NotImplementedException();
 }

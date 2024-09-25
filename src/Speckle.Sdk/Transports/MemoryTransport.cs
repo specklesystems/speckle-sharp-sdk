@@ -90,16 +90,21 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     Elapsed += stopwatch.Elapsed;
   }
 
-  public Task<string?> GetObject(string id)
+  public ValueTask<string?> GetObject(string id)
   {
     var stopwatch = Stopwatch.StartNew();
     var ret = Objects.TryGetValue(id, out string? o) ? o : null;
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
-    return Task.FromResult(ret);
+    
+#if NETSTANDARD2_0
+    return new ValueTask<string?>(ret);
+#else
+    return ValueTask.FromResult(ret);
+#endif
   }
 
-  public async Task<string> CopyObjectAndChildren(
+  public async ValueTask<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
@@ -111,20 +116,27 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     return res;
   }
 
-  public Task WriteComplete()
+  public ValueTask WriteComplete()
   {
-    return Task.CompletedTask;
+#if NETSTANDARD2_0
+    return new ValueTask(Task.CompletedTask);
+#else
+    return ValueTask.CompletedTask;
+#endif
   }
 
-  public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
+  public ValueTask<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
   {
     Dictionary<string, bool> ret = new(objectIds.Count);
     foreach (string objectId in objectIds)
     {
       ret[objectId] = Objects.ContainsKey(objectId);
     }
-
-    return Task.FromResult(ret);
+#if NETSTANDARD2_0
+    return new ValueTask<Dictionary<string, bool>>(ret);
+#else
+    return ValueTask.FromResult(ret);
+#endif
   }
 
   public override string ToString()

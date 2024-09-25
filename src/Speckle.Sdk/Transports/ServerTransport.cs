@@ -120,7 +120,7 @@ public sealed class ServerTransport : IServerTransport
   public Action<ProgressArgs>? OnProgressAction { get; set; }
   public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;
 
-  public async Task<string> CopyObjectAndChildren(
+  public async ValueTask<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
@@ -199,7 +199,7 @@ public sealed class ServerTransport : IServerTransport
     return rootObjectJson;
   }
 
-  public async Task<string?> GetObject(string id)
+  public async ValueTask<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
     var stopwatch = Stopwatch.StartNew();
@@ -209,7 +209,7 @@ public sealed class ServerTransport : IServerTransport
     return result;
   }
 
-  public async Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
+  public async ValueTask<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
   {
     return await Api.HasObjects(StreamId, objectIds).ConfigureAwait(false);
   }
@@ -241,7 +241,7 @@ public sealed class ServerTransport : IServerTransport
     _sendingThread.Start();
   }
 
-  public async Task WriteComplete()
+  public async ValueTask WriteComplete()
   {
     while (true)
     {

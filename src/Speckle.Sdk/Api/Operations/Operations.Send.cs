@@ -142,7 +142,7 @@ public partial class Operations
   )
   {
     string obj = serializer.Serialize(value);
-    Task[] transportAwaits = serializer.WriteTransports.Select(t => t.WriteComplete()).ToArray();
+    Task[] transportAwaits = serializer.WriteTransports.Select(t => t.WriteComplete().AsTask()).ToArray();
 
     cancellationToken.ThrowIfCancellationRequested();
 

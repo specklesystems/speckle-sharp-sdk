@@ -8,7 +8,7 @@ public static class Utilities
   /// <param name="condition"></param>
   /// <param name="frequency"></param>
   /// <returns></returns>
-  public static async Task WaitUntil(Func<bool> condition, int frequency = 25)
+  public static async ValueTask WaitUntil(Func<bool> condition, int frequency = 25)
   {
     while (!condition())
     {

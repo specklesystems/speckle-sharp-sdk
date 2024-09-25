@@ -5,7 +5,7 @@ namespace Speckle.Sdk.Transports;
 
 public static class TransportHelpers
 {
-  public static async Task<string> CopyObjectAndChildrenAsync(
+  public static async ValueTask<string> CopyObjectAndChildrenAsync(
     string id,
     ITransport sourceTransport,
     ITransport targetTransport,

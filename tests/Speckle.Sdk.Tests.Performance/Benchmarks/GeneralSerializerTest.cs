@@ -90,19 +90,19 @@ public class NullTransport : ITransport
 
   public void SaveObject(string id, string serializedObject) { }
 
-  public Task WriteComplete()
+  public ValueTask WriteComplete()
   {
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
-  public Task<string> GetObject(string id) => throw new NotImplementedException();
+  public ValueTask<string> GetObject(string id) => throw new NotImplementedException();
 
-  public Task<string> CopyObjectAndChildren(
+  public ValueTask<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int> onTotalChildrenCountKnown = null
   ) => throw new NotImplementedException();
 
-  public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds) =>
+  public ValueTask<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds) =>
     throw new NotImplementedException();
 }

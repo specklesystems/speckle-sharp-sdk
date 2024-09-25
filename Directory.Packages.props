@@ -26,6 +26,7 @@
     <PackageVersion Include="Speckle.DoubleNumerics" Version="4.0.1" />
     <PackageVersion Include="SimpleExec" Version="12.0.0" />
     <PackageVersion Include="Speckle.Objects" Version="3.1.0-dev.109" />
+    <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.5.4"/>
     <GlobalPackageReference Include="PolySharp" Version="1.14.1" />
     <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <GlobalPackageReference Include="GitVersion.MsBuild" Version="5.12.0" />

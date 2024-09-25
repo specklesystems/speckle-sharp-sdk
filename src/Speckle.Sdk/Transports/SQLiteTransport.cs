@@ -129,7 +129,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
   public void EndWrite() { }
 
-  public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
+  public ValueTask<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
   {
     Dictionary<string, bool> ret = new(objectIds.Count);
     // Initialize with false so that canceled queries still return a dictionary item for every object id
@@ -159,8 +159,11 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     {
       throw new TransportException("SQLite transport failed", ex);
     }
-
-    return Task.FromResult(ret);
+#if NETSTANDARD2_0
+    return new ValueTask<Dictionary<string, bool>>(ret);
+#else
+    return ValueTask.FromResult(ret);
+#endif
   }
 
   /// <exception cref="SqliteException">Failed to initialize connection to the SQLite DB</exception>
@@ -272,7 +275,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   /// Awaits untill write completion (ie, the current queue is fully consumed).
   /// </summary>
   /// <returns></returns>
-  public async Task WriteComplete() =>
+  public async ValueTask WriteComplete() =>
     await Utilities.WaitUntil(() => WriteCompletionStatus, 500).ConfigureAwait(false);
 
   /// <summary>
@@ -400,7 +403,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   /// </summary>
   /// <param name="id"></param>
   /// <returns></returns>
-  public async Task<string?> GetObject(string id)
+  public async ValueTask<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
     await _connectionLock.WaitAsync(CancellationToken).ConfigureAwait(false);
@@ -427,7 +430,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     return null; // pass on the duty of null checks to consumers
   }
 
-  public async Task<string> CopyObjectAndChildren(
+  public async ValueTask<string> CopyObjectAndChildren(
     string id,
     ITransport targetTransport,
     Action<int>? onTotalChildrenCountKnown = null
