@@ -11,7 +11,7 @@ public sealed class SerializerIdWriter2 : JsonWriter
 #pragma warning restore CA2213
   private readonly StreamWriter _idWriter;
   private readonly MemoryStream _memoryStream;
-  
+
   protected override void Dispose(bool disposing)
   {
     base.Dispose(disposing);

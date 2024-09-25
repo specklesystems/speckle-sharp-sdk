@@ -15,14 +15,7 @@ var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"
 
 using var dataSource = new TestDataHelper();
 await dataSource
-  .SeedTransport(
-    new Account()
-    {
-      serverInfo = new() { url = url }
-    },
-    "2099ac4b5f",
-    "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6"
-  )
+  .SeedTransport(new Account() { serverInfo = new() { url = url } }, "2099ac4b5f", "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6")
   .ConfigureAwait(false);
 
 SpeckleObjectDeserializer deserializer = new() { ReadTransport = dataSource.Transport };

@@ -1,6 +1,7 @@
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Performance.Testing;
+
 public class NullTransport : ITransport
 {
   public string TransportName { get; set; } = "";

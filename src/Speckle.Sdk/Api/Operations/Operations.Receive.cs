@@ -140,9 +140,7 @@ public partial class Operations
     }
 
     // Shoot out the total children count, wasteful
-    var count = 
-       ClosureParser.GetClosures(objString)
-    .Count;
+    var count = ClosureParser.GetClosures(objString).Count;
 
     onTotalChildrenCountKnown?.Invoke(count);
 

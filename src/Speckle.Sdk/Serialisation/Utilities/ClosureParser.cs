@@ -3,6 +3,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
+
 public static class ClosureParser
 {
   public static IReadOnlyList<(string, int)> GetClosures(string rootObjectJson)

@@ -24,7 +24,7 @@ namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 public class GeneralSerializerTest
 {
   private Base _testData;
-  
+
   private class Config : ManualConfig
   {
     public Config()
@@ -38,18 +38,15 @@ public class GeneralSerializerTest
   public async Task Setup()
   {
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
-    
+
     var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 
-//var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
-    
+    //var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
+
     using var dataSource = new TestDataHelper();
     await dataSource
       .SeedTransport(
-        new Account()
-        {
-          serverInfo = new() { url = url }
-        },
+        new Account() { serverInfo = new() { url = url } },
         "2099ac4b5f",
         "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6"
       )
@@ -68,7 +65,7 @@ public class GeneralSerializerTest
     var x = sut.Serialize(_testData);
     return x;
   }
-  
+
   [Benchmark]
   public string RunTest2()
   {

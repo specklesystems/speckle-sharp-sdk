@@ -85,7 +85,7 @@ public sealed class SpeckleObjectDeserializer
     object? converted;
     try
     {
-       reader.Read();
+      reader.Read();
       converted = await ReadObjectAsync(reader, CancellationToken).ConfigureAwait(false);
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
@@ -107,7 +107,7 @@ public sealed class SpeckleObjectDeserializer
   //this should be buffered
   private async ValueTask<List<object?>> ReadArrayAsync(JsonReader reader, CancellationToken ct)
   {
-     reader.Read();
+    reader.Read();
     List<object?> retList = new();
     while (reader.TokenType != JsonToken.EndArray)
     {
@@ -120,14 +120,14 @@ public sealed class SpeckleObjectDeserializer
       {
         retList.Add(convertedValue);
       }
-       reader.Read(); //goes to next
+      reader.Read(); //goes to next
     }
     return retList;
   }
 
   private async ValueTask<object?> ReadObjectAsync(JsonReader reader, CancellationToken ct)
   {
-     reader.Read();
+    reader.Read();
     Dictionary<string, object?> dict = new();
     while (reader.TokenType != JsonToken.EndObject)
     {
@@ -138,8 +138,8 @@ public sealed class SpeckleObjectDeserializer
             string propName = (reader.Value?.ToString()).NotNull();
             if (propName == "__closure")
             {
-               reader.Read(); //goes to prop value
-              var closures =  ClosureParser.GetClosures(reader);
+              reader.Read(); //goes to prop value
+              var closures = ClosureParser.GetClosures(reader);
               foreach (var closure in closures)
               {
                 _ids.Add(closure.Item1);
@@ -152,13 +152,13 @@ public sealed class SpeckleObjectDeserializer
                 // https://linear.app/speckle/issue/CXPLA-54/when-deserializing-dont-allow-closures-that-arent-downloadable
                 await TryGetDeserializedAsync(objId).ConfigureAwait(false);
               }
-               reader.Read(); //goes to next
+              reader.Read(); //goes to next
               continue;
             }
-             reader.Read(); //goes prop value
+            reader.Read(); //goes prop value
             object? convertedValue = await ReadPropertyAsync(reader, ct).ConfigureAwait(false);
             dict[propName] = convertedValue;
-             reader.Read(); //goes to next
+            reader.Read(); //goes to next
           }
           break;
         default:

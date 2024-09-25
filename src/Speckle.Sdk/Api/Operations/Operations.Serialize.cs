@@ -23,11 +23,13 @@ public partial class Operations
     var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
     return serializer.Serialize(value);
   }
+
   public string Serialize2(Base value, CancellationToken cancellationToken = default)
   {
     var serializer = new SpeckleObjectSerializer2 { CancellationToken = cancellationToken };
     return serializer.Serialize(value);
   }
+
   /// <remarks>
   /// Note: if you want to pull an object from a Speckle Transport or Server,
   /// please use
