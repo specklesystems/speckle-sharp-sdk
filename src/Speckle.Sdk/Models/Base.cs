@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
@@ -25,8 +24,6 @@ namespace Speckle.Sdk.Models;
 [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Serialized property names are camelCase by design")]
 public class Base : DynamicBase, ISpeckleObject
 {
-  private static readonly Regex s_chunkSyntax = Constants.ChunkPropertyNameRegex;
-
   private string _type;
 
   /// <summary>
@@ -133,21 +130,14 @@ public class Base : DynamicBase, ISpeckleObject
     var dynamicProps = @base.DynamicPropertyKeys;
     foreach (var propName in dynamicProps)
     {
-#if NETSTANDARD2_0
-      if (!propName.StartsWith("@"))
-#else
-      if (!propName.StartsWith('@'))
-#endif
+      if (!PropNameValidator.IsDetached(propName))
       {
         continue;
       }
 
       // Simplfied dynamic prop chunking handling
-      if (s_chunkSyntax.IsMatch(propName))
+      if (PropNameValidator.IsChunkable(propName, out int chunkSize))
       {
-        var match = s_chunkSyntax.Match(propName);
-        _ = int.TryParse(match.Groups[^1].Value, out int chunkSize);
-
         if (chunkSize != -1 && @base[propName] is IList asList)
         {
           count += asList.Count / chunkSize;
