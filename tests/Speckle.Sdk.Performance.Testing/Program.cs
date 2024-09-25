@@ -18,7 +18,7 @@ await dataSource
   .SeedTransport(new Account() { serverInfo = new() { url = url } }, "2099ac4b5f", "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6")
   .ConfigureAwait(false);
 
-SpeckleObjectDeserializer deserializer = new() { ReadTransport = dataSource.Transport };
+SpeckleObjectDeserializer2 deserializer = new() { ReadTransport = dataSource.Transport };
 string data = await dataSource.Transport.GetObject(dataSource.ObjectId).NotNull().ConfigureAwait(false);
 var testData = await deserializer.DeserializeAsync(data).ConfigureAwait(false);
 
