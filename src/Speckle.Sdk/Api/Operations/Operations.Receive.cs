@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -41,13 +40,17 @@ public static partial class Operations
   )
   {
     using var receiveActivity = SpeckleActivityFactory.Start("Operations.Receive");
-    receiveActivity?.SetTag("remoteTransportContext", JsonConvert.SerializeObject(remoteTransport?.TransportContext));
+
+    if (remoteTransport != null)
+    {
+      receiveActivity?.SetTags("remoteTransportContext", remoteTransport.TransportContext);
+    }
     receiveActivity?.SetTag("objectId", objectId);
 
     try
     {
       using IDisposable? d1 = UseDefaultTransportIfNull(localTransport, out localTransport);
-      receiveActivity?.SetTag("localTransportContext", JsonConvert.SerializeObject(localTransport.TransportContext));
+      receiveActivity?.SetTags("localTransportContext", localTransport.TransportContext);
 
       var result = await ReceiveImpl(
           objectId,

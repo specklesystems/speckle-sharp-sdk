@@ -94,14 +94,14 @@ public sealed partial class Client : ISpeckleGraphQLClient, IDisposable
   {
     using var activity = SpeckleActivityFactory.Start();
     activity?.SetTag("responseType", typeof(T));
-    activity?.SetTag("query", request.Query);
-    activity?.SetTag("operationName", request.OperationName);
-    activity?.SetTag("variables", request.Variables);
-    activity?.SetTag("extensions", request.Extensions);
-    activity?.SetTag("endPoint", GQLClient.Options.EndPoint);
-    activity?.SetTag("medaType", GQLClient.Options.MediaType);
-    activity?.SetTag("webSocketEndPoint", GQLClient.Options.WebSocketEndPoint);
-    activity?.SetTag("webSocketProtocol", GQLClient.Options.WebSocketProtocol);
+    activity?.SetTag("request.query", request.Query);
+    activity?.SetTag("request.operationName", request.OperationName);
+    activity?.SetTag("request.variables", request.Variables);
+    activity?.SetTag("request.extensions", request.Extensions);
+    activity?.SetTag("clientOptions.endPoint", GQLClient.Options.EndPoint);
+    activity?.SetTag("clientOptions.medaType", GQLClient.Options.MediaType);
+    activity?.SetTag("clientOptions.webSocketEndPoint", GQLClient.Options.WebSocketEndPoint);
+    activity?.SetTag("clientOptions.webSocketProtocol", GQLClient.Options.WebSocketProtocol);
 
     try
     {
