@@ -33,6 +33,8 @@ public class SpeckleObjectSerializer2
   /// <summary>The sync transport. This transport will be used synchronously.</summary>
   public IReadOnlyCollection<ITransport> WriteTransports { get; }
 
+  public SpeckleObjectSerializer2Pool Pool { get; } = SpeckleObjectSerializer2Pool.Instance;
+
   public CancellationToken CancellationToken { get; set; }
 
   public SpeckleObjectSerializer2()
@@ -244,7 +246,7 @@ public class SpeckleObjectSerializer2
     }
 
     using var writer = new StringWriter();
-    using var jsonWriter = new JsonTextWriter(writer);
+    using var jsonWriter = Pool.GetJsonTextWriter(writer);
     string id = SerializeBaseObject(baseObj, jsonWriter, closure);
     var json = writer.ToString();
 
@@ -337,10 +339,13 @@ public class SpeckleObjectSerializer2
   private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
   {
     var allProperties = ExtractAllProperties(baseObj);
-
+   
+    SerializerIdWriter2? serializerIdWriter = null;
+    JsonWriter baseWriter = writer;
     if (baseObj is not Blob)
     {
-      writer = new SerializerIdWriter(writer);
+      serializerIdWriter = new SerializerIdWriter2(writer, Pool);
+      writer = serializerIdWriter;
     }
 
     writer.WriteStartObject();
@@ -357,9 +362,11 @@ public class SpeckleObjectSerializer2
     }
 
     string id;
-    if (writer is SerializerIdWriter serializerIdWriter)
+    if (serializerIdWriter is not null)
     {
-      (var json, writer) = serializerIdWriter.FinishIdWriter();
+      var json = serializerIdWriter.FinishIdWriter();
+      ((IDisposable)serializerIdWriter).Dispose();
+      writer = baseWriter;
       id = ComputeId(json);
     }
     else

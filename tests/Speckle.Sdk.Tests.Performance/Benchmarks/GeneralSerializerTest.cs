@@ -49,6 +49,15 @@ public class GeneralSerializerTest
     var x = sut.Serialize(_testData);
     return x;
   }
+  
+  [Benchmark]
+  public string RunTest2()
+  {
+    var remote = new NullTransport();
+    SpeckleObjectSerializer2 sut = new([remote]);
+    var x = sut.Serialize(_testData);
+    return x;
+  }
 }
 
 public class NullTransport : ITransport

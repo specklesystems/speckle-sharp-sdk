@@ -29,6 +29,7 @@
     <PackageReference Include="GraphQL.Client"/>
     <PackageReference Include="Microsoft.CSharp" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
     <PackageReference Include="Polly" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" />
     <PackageReference Include="Polly.Extensions.Http"  />
