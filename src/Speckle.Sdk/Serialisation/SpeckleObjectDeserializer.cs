@@ -48,15 +48,15 @@ public sealed class SpeckleObjectDeserializer
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
   public async Task<Base> DeserializeAsync([NotNull] string? rootObjectJson)
   {
+    if (_isBusy)
+    {
+      throw new InvalidOperationException(
+        "A deserializer instance can deserialize only 1 object at a time. Consider creating multiple deserializer instances"
+      );
+    }
+
     try
     {
-      if (_isBusy)
-      {
-        throw new InvalidOperationException(
-          "A deserializer instance can deserialize only 1 object at a time. Consider creating multiple deserializer instances"
-        );
-      }
-
       if (rootObjectJson is null)
       {
         throw new ArgumentNullException(
