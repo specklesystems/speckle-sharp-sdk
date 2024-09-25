@@ -104,7 +104,7 @@ public interface IBlobCapableTransport
 {
   public string BlobStorageFolder { get; }
 
-  public void SaveBlob(Blob obj);
+  public ValueTask SaveBlob(Blob obj);
 
   // NOTE: not needed, should be implemented in "CopyObjectsAndChildren"
   //public void GetBlob(Blob obj);

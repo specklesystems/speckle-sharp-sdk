@@ -10,6 +10,93 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+    public async Task<Base> Receive2(
+    string objectId,
+    ServerTransport2? remoteTransport = null,
+    ITransport? localTransport = null,
+    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
+    Action<int>? onTotalChildrenCountKnown = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    // Setup Progress Reporting
+    var internalProgressAction = GetInternalProgressAction(onProgressAction);
+
+    // Setup Local Transport
+    using IDisposable? d1 = UseDefaultTransportIfNull(localTransport, out localTransport);
+    localTransport.OnProgressAction = internalProgressAction;
+    localTransport.CancellationToken = cancellationToken;
+
+    // Setup Remote Transport
+    if (remoteTransport is not null)
+    {
+      remoteTransport.OnProgressAction = internalProgressAction;
+      remoteTransport.CancellationToken = cancellationToken;
+    }
+
+    // Setup Serializer
+    SpeckleObjectDeserializer serializer =
+      new()
+      {
+        ReadTransport = localTransport,
+        OnProgressAction = internalProgressAction,
+        CancellationToken = cancellationToken,
+        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder
+      };
+
+    // Setup Logging
+    using var receiveActivity = activityFactory.Start();
+    receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
+    receiveActivity?.SetTag("localTransportContext", localTransport.TransportContext);
+    receiveActivity?.SetTag("objectId", objectId);
+    var timer = Stopwatch.StartNew();
+
+    // Receive Json
+    logger.LogDebug(
+      "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
+      objectId,
+      localTransport.TransportName,
+      remoteTransport?.TransportName
+    );
+
+    // Try Local Receive
+    string? objString = await LocalReceive(objectId, localTransport, onTotalChildrenCountKnown).ConfigureAwait(false);
+
+    if (objString is null)
+    {
+      // Fall back to remote
+      if (remoteTransport is null)
+      {
+        throw new TransportException(
+          $"Could not find specified object using the local transport {localTransport.TransportName}, and you didn't provide a fallback remote from which to pull it."
+        );
+      }
+
+      logger.LogDebug(
+        "Cannot find object {objectId} in the local transport, hitting remote {transportName}",
+        objectId,
+        remoteTransport.TransportName
+      );
+
+      objString = await RemoteReceive(objectId, remoteTransport, localTransport, onTotalChildrenCountKnown)
+        .ConfigureAwait(false);
+    }
+
+    using var activity = activityFactory.Start("Deserialize");
+    // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
+    Base res = await serializer.DeserializeAsync(objString).ConfigureAwait(false);
+
+    timer.Stop();
+    logger.LogDebug(
+      "Finished receiving {objectId} from {source} in {elapsed} seconds",
+      objectId,
+      remoteTransport?.TransportName,
+      timer.Elapsed.TotalSeconds
+    );
+
+    return res;
+  }
+  
   /// <summary>
   /// Receives an object (and all its sub-children) from the two provided <see cref="ITransport"/>s.
   /// <br/>
@@ -177,6 +264,23 @@ public partial class Operations
     return objString;
   }
 
+  private static async Task<string> RemoteReceive(
+    string objectId,
+    ServerTransport2 remoteTransport,
+    ITransport localTransport,
+    Action<int>? onTotalChildrenCountKnown
+  )
+  {
+    var objString = await remoteTransport
+      .CopyObjectAndChildren(objectId, localTransport, onTotalChildrenCountKnown)
+      .ConfigureAwait(false);
+
+    // DON'T THINK THIS IS NEEDED CopyObjectAndChildren should call this
+    // Wait for the local transport to finish "writing" - in this case, it signifies that the remote transport has done pushing copying objects into it. (TODO: I can see some scenarios where latency can screw things up, and we should rather wait on the remote transport).
+    await localTransport.WriteComplete().ConfigureAwait(false);
+
+    return objString;
+  }
   private static IDisposable? UseDefaultTransportIfNull(ITransport? userTransport, out ITransport actualLocalTransport)
   {
     if (userTransport is not null)

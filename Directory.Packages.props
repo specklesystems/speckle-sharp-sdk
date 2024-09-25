@@ -9,14 +9,15 @@
     <!-- Keep at 7 for side by side -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="7.0.7" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0"/>
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0"/>
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="2.2.0"/>
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="2.2.0" />
     <PackageVersion Include="MongoDB.Driver" Version="2.19.2" />
     <PackageVersion Include="Moq" Version="4.20.70" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="NUnit" Version="4.1.0" />
     <PackageVersion Include="NUnit.Analyzers" Version="4.2.0" />
+    <PackageVersion Include="Open.ChannelExtensions" Version="8.5.0" />
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
