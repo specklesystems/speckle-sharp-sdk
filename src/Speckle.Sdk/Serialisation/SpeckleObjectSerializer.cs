@@ -251,7 +251,7 @@ public class SpeckleObjectSerializer
     }
 
     using var writer = new StringWriter();
-    using var jsonWriter = new JsonTextWriter(writer);
+    using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
     string id = SerializeBaseObject(baseObj, jsonWriter, closure);
     var json = writer.ToString();
 
@@ -275,7 +275,7 @@ public class SpeckleObjectSerializer
 
       ObjectReference objRef = new() { referencedId = id };
       using var writer2 = new StringWriter();
-      using var jsonWriter2 = new JsonTextWriter(writer2);
+      using var jsonWriter2 = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer2);
       SerializeProperty(objRef, jsonWriter2);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
