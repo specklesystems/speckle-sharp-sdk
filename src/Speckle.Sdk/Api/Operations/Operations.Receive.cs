@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
@@ -40,11 +40,51 @@ public partial class Operations
     CancellationToken cancellationToken = default
   )
   {
-    // Setup Progress Reporting
-    var internalProgressAction = GetInternalProgressAction(onProgressAction);
+    using var receiveActivity = activityFactory.Start("Operations.Receive");
 
+    if (remoteTransport != null)
+    {
+      receiveActivity?.SetTags("remoteTransportContext", remoteTransport.TransportContext);
+    }
+    receiveActivity?.SetTag("objectId", objectId);
+
+    try
+    {
+      using IDisposable? d1 = UseDefaultTransportIfNull(localTransport, out localTransport);
+      receiveActivity?.SetTags("localTransportContext", localTransport.TransportContext);
+
+      var result = await ReceiveImpl(
+          objectId,
+          remoteTransport,
+          localTransport,
+          GetInternalProgressAction(onProgressAction),
+          onTotalChildrenCountKnown,
+          cancellationToken
+        )
+        .ConfigureAwait(false);
+
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return result;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,Action{ConcurrentBag{ProgressArgs}}?,Action{int}?,CancellationToken)"/>
+  private async Task<Base> ReceiveImpl(
+    string objectId,
+    ITransport? remoteTransport,
+    ITransport localTransport,
+    Action<ProgressArgs>? internalProgressAction,
+    Action<int>? onTotalChildrenCountKnown,
+    CancellationToken cancellationToken
+  )
+  {
     // Setup Local Transport
-    using IDisposable? d1 = UseDefaultTransportIfNull(localTransport, out localTransport);
     localTransport.OnProgressAction = internalProgressAction;
     localTransport.CancellationToken = cancellationToken;
 
@@ -64,21 +104,6 @@ public partial class Operations
         CancellationToken = cancellationToken,
         BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder
       };
-
-    // Setup Logging
-    using var receiveActivity = activityFactory.Start();
-    receiveActivity?.SetTag("remoteTransportContext", remoteTransport?.TransportContext);
-    receiveActivity?.SetTag("localTransportContext", localTransport.TransportContext);
-    receiveActivity?.SetTag("objectId", objectId);
-    var timer = Stopwatch.StartNew();
-
-    // Receive Json
-    logger.LogDebug(
-      "Starting receive {objectId} from transports {localTransport} / {remoteTransport}",
-      objectId,
-      localTransport.TransportName,
-      remoteTransport?.TransportName
-    );
 
     // Try Local Receive
     string? objString = await LocalReceive(objectId, localTransport, onTotalChildrenCountKnown).ConfigureAwait(false);
@@ -103,19 +128,10 @@ public partial class Operations
         .ConfigureAwait(false);
     }
 
-    using var activity = activityFactory.Start("Deserialize");
+    using var serializerActivity = activityFactory.Start();
+
     // Proceed to deserialize the object, now safely knowing that all its children are present in the local (fast) transport.
-    Base res = await serializer.DeserializeAsync(objString).ConfigureAwait(false);
-
-    timer.Stop();
-    logger.LogDebug(
-      "Finished receiving {objectId} from {source} in {elapsed} seconds",
-      objectId,
-      remoteTransport?.TransportName,
-      timer.Elapsed.TotalSeconds
-    );
-
-    return res;
+    return await DeserializeActivity(objString, serializer).ConfigureAwait(false);
   }
 
   /// <summary>
