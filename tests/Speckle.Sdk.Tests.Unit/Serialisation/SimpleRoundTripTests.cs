@@ -47,9 +47,9 @@ public class SimpleRoundTripTests
   [TestCaseSource(nameof(TestData))]
   public async Task SimpleSerialization(Base testData)
   {
-    var result = _operations.Serialize(testData);
+    var result = await _operations.Serialize(testData);
     var test = await _operations.DeserializeAsync(result);
 
-    Assert.That(testData.GetId(), Is.EqualTo(test.GetId()));
+    Assert.That(await testData.GetIdAsync(), Is.EqualTo(await test.GetIdAsync()));
   }
 }

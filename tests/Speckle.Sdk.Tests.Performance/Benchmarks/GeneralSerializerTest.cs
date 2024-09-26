@@ -42,11 +42,11 @@ public class GeneralSerializerTest
   }
 
   [Benchmark]
-  public string RunTest()
+  public async Task<string> RunTest()
   {
     var remote = new NullTransport();
     SpeckleObjectSerializer sut = new([remote]);
-    var x = sut.Serialize(_testData);
+    var x = await sut.Serialize(_testData);
     return x;
   }
 }

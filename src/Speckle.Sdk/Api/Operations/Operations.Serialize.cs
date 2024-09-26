@@ -18,10 +18,10 @@ public partial class Operations
   /// <param name="value">The object to serialise</param>
   /// <param name="cancellationToken"></param>
   /// <returns>A json string representation of the object.</returns>
-  public string Serialize(Base value, CancellationToken cancellationToken = default)
+  public async Task<string> Serialize(Base value, CancellationToken cancellationToken = default)
   {
     var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
-    return serializer.Serialize(value);
+    return await serializer.Serialize(value).ConfigureAwait(false);
   }
 
   /// <remarks>

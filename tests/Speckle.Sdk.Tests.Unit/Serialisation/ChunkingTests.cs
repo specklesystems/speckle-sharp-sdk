@@ -24,12 +24,12 @@ public class ChunkingTests
   }
 
   [TestCaseSource(nameof(TestCases))]
-  public int ChunkSerializationTest(Base testCase)
+  public async Task<int> ChunkSerializationTest(Base testCase)
   {
     MemoryTransport transport = new();
     var sut = new SpeckleObjectSerializer([transport]);
 
-    _ = sut.Serialize(testCase);
+    _ = await sut.Serialize(testCase);
 
     var serailizedObjects = transport
       .Objects.Values.Select(json => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json))
