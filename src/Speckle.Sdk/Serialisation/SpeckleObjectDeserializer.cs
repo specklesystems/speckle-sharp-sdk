@@ -200,7 +200,7 @@ public sealed class SpeckleObjectDeserializer
     {
       try
       {
-        deserialized = task.Result;
+        deserialized = await task.ConfigureAwait(false);
       }
       catch (AggregateException ex)
       {
@@ -216,7 +216,7 @@ public sealed class SpeckleObjectDeserializer
     {
       try
       {
-        deserialized = valueTask.Result;
+        deserialized = await valueTask.ConfigureAwait(false);
       }
       catch (AggregateException ex)
       {
