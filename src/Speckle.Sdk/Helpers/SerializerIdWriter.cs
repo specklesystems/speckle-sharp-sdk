@@ -1,4 +1,5 @@
 ﻿using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Helpers;
 
@@ -14,7 +15,7 @@ public sealed class SerializerIdWriter : JsonWriter
   {
     _jsonWriter = jsonWriter;
     _idWriter = new StringWriter();
-    _jsonIdWriter = new JsonTextWriter(_idWriter);
+    _jsonIdWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(_idWriter);
   }
 
   public (string, JsonWriter) FinishIdWriter()
