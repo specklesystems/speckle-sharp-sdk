@@ -215,7 +215,7 @@ public sealed class ServerApi : IDisposable, IServerApi
       await UploadObjectsImpl(streamId, crtRequest, progress).ConfigureAwait(false);
     }
   }
-  
+
   public async Task UploadObjects(
     string streamId,
     IReadOnlyList<(string, MemoryStream)> objects,
@@ -456,8 +456,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
     return hasObjects;
   }
-  
-  
+
   private async Task UploadObjectsImpl(
     string streamId,
     List<List<(string, MemoryStream)>> multipartedObjects,
@@ -466,8 +465,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   {
     CancellationToken.ThrowIfCancellationRequested();
 
-    using HttpRequestMessage message =
-      new();
+    using HttpRequestMessage message = new();
     message.RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative);
     message.Method = HttpMethod.Post;
 

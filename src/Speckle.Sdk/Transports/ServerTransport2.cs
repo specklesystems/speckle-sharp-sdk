@@ -1,4 +1,3 @@
-
 using System.Diagnostics;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
@@ -17,9 +16,12 @@ public sealed class ServerTransport2 : IBlobCapableTransport
   private readonly ISpeckleHttp _http;
   private readonly ISdkActivityFactory _activityFactory;
 
-
   // TODO: make send buffer more flexible to accept blobs too
-  private readonly Channel<(string id, string data)> _sourceChannel = Channel.CreateUnbounded<(string id, string data)>();
+  private readonly Channel<(string id, string data)> _sourceChannel = Channel.CreateUnbounded<(
+    string id,
+    string data
+  )>();
+
   /// <param name="account"></param>
   /// <param name="streamId"></param>
   /// <param name="timeoutSeconds"></param>
@@ -66,7 +68,8 @@ public sealed class ServerTransport2 : IBlobCapableTransport
 
   public async ValueTask Start()
   {
-    await _sourceChannel.Reader.Batch(1000)
+    await _sourceChannel
+      .Reader.Batch(1000)
       .WithTimeout(TimeSpan.FromMilliseconds(100))
       .ReadAllAsync(Send, CancellationToken)
       .ConfigureAwait(false);
@@ -120,7 +123,6 @@ public sealed class ServerTransport2 : IBlobCapableTransport
     }
 
     CancellationToken.ThrowIfCancellationRequested();
-
 
     var stopwatch = Stopwatch.StartNew();
 
@@ -203,7 +205,7 @@ public sealed class ServerTransport2 : IBlobCapableTransport
 
   public async ValueTask SaveObject(string id, string serializedObject)
   {
-      await _sourceChannel.Writer.WriteAsync((id, serializedObject)).ConfigureAwait(false);
+    await _sourceChannel.Writer.WriteAsync((id, serializedObject)).ConfigureAwait(false);
   }
 
   public override string ToString()

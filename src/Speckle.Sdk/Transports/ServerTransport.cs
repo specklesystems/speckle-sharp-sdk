@@ -217,13 +217,13 @@ public sealed class ServerTransport : IServerTransport, IWritableTransport
     return await Api.HasObjects(StreamId, objectIds).ConfigureAwait(false);
   }
 
-   Task IWritableTransport.EndWrite()
+  Task IWritableTransport.EndWrite()
   {
     EndWrite();
     return Task.CompletedTask;
   }
 
-   Task IWritableTransport.SaveObject(string id, string serializedObject)
+  Task IWritableTransport.SaveObject(string id, string serializedObject)
   {
     SaveObject(id, serializedObject);
     return Task.CompletedTask;
@@ -279,7 +279,7 @@ public sealed class ServerTransport : IServerTransport, IWritableTransport
     }
   }
 
-   Task IWritableTransport.BeginWrite()
+  Task IWritableTransport.BeginWrite()
   {
     BeginWrite();
     return Task.CompletedTask;

@@ -139,6 +139,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     SaveObject(id, serializedObject);
     return Task.CompletedTask;
   }
+
   Task IWritableTransport.BeginWrite()
   {
     BeginWrite();

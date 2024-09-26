@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
-    public async Task<Base> Receive2(
+  public async Task<Base> Receive2(
     string objectId,
     ServerTransport2? remoteTransport = null,
     ITransport? localTransport = null,
@@ -96,7 +96,7 @@ public partial class Operations
 
     return res;
   }
-  
+
   /// <summary>
   /// Receives an object (and all its sub-children) from the two provided <see cref="ITransport"/>s.
   /// <br/>
@@ -281,6 +281,7 @@ public partial class Operations
 
     return objString;
   }
+
   private static IDisposable? UseDefaultTransportIfNull(ITransport? userTransport, out ITransport actualLocalTransport)
   {
     if (userTransport is not null)

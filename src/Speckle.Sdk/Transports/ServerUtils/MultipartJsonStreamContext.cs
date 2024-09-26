@@ -4,7 +4,7 @@ namespace Speckle.Sdk.Transports.ServerUtils;
 
 public class MultipartJsonStreamContext(List<(string, MemoryStream)> data) : MultipartContent
 {
-  protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context) 
+  protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
   {
     using var writer = new StreamWriter(stream);
     writer.Write('[');

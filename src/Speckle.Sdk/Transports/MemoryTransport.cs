@@ -61,6 +61,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     SaveObject(id, serializedObject);
     return Task.CompletedTask;
   }
+
   Task IWritableTransport.BeginWrite()
   {
     BeginWrite();

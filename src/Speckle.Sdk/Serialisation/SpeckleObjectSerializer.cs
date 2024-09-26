@@ -341,7 +341,11 @@ public class SpeckleObjectSerializer
     return allProperties;
   }
 
-  private async ValueTask<string> SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
+  private async ValueTask<string> SerializeBaseObject(
+    Base baseObj,
+    JsonWriter writer,
+    IReadOnlyDictionary<string, int> closure
+  )
   {
     var allProperties = ExtractAllProperties(baseObj);
 
@@ -421,7 +425,8 @@ public class SpeckleObjectSerializer
       {
         chunks.Add(crtChunk);
       }
-      await SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)).ConfigureAwait(false);
+      await SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null))
+        .ConfigureAwait(false);
       return;
     }
 

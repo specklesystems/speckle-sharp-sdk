@@ -69,7 +69,7 @@ public class NullTransport : ITransport, IWritableTransport
   {
     return Task.CompletedTask;
   }
-  
+
   Task IWritableTransport.EndWrite()
   {
     EndWrite();
@@ -81,6 +81,7 @@ public class NullTransport : ITransport, IWritableTransport
     SaveObject(id, serializedObject);
     return Task.CompletedTask;
   }
+
   Task IWritableTransport.BeginWrite()
   {
     BeginWrite();

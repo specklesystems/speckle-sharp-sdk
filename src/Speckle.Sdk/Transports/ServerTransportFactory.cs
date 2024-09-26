@@ -18,7 +18,6 @@ public class ServerTransportFactory(ISpeckleHttp http, ISdkActivityFactory activ
   ) => new ServerTransport(http, activityFactory, account, streamId, timeoutSeconds, blobStorageFolder);
 }
 
-
 [GenerateAutoInterface]
 [ExcludeFromCodeCoverage] //factories don't need coverage
 public class ServerTransport2Factory(ISpeckleHttp http, ISdkActivityFactory activityFactory) : IServerTransport2Factory
@@ -30,8 +29,8 @@ public class ServerTransport2Factory(ISpeckleHttp http, ISdkActivityFactory acti
     string? blobStorageFolder = null
   )
   {
-   var t =  new ServerTransport2(http, activityFactory, account, streamId, timeoutSeconds, blobStorageFolder);
-   await t.Start().ConfigureAwait(false);
-   return t;
+    var t = new ServerTransport2(http, activityFactory, account, streamId, timeoutSeconds, blobStorageFolder);
+    await t.Start().ConfigureAwait(false);
+    return t;
   }
 }

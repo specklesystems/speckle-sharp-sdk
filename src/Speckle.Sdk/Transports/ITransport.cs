@@ -112,16 +112,15 @@ public interface IBlobCapableTransport
 
 public interface IWritableTransport
 {
-
   /// <summary>
   ///  Show how much time the transport was busy for.
   /// </summary>
   public TimeSpan Elapsed { get; }
+
   /// <summary>
   /// Human readable name for the transport
   /// </summary>
   public string TransportName { get; set; }
-  
 
   /// <summary>
   /// Should be checked often and gracefully stop all in progress sending if requested.
