@@ -23,10 +23,15 @@ public class ServerTransportFactory(ISpeckleHttp http, ISdkActivityFactory activ
 [ExcludeFromCodeCoverage] //factories don't need coverage
 public class ServerTransport2Factory(ISpeckleHttp http, ISdkActivityFactory activityFactory) : IServerTransport2Factory
 {
-  public ServerTransport2 Create(
+  public async ValueTask<ServerTransport2> Create(
     Account account,
     string streamId,
     int timeoutSeconds = 60,
     string? blobStorageFolder = null
-  ) => new ServerTransport2(http, activityFactory, account, streamId, timeoutSeconds, blobStorageFolder);
+  )
+  {
+   var t =  new ServerTransport2(http, activityFactory, account, streamId, timeoutSeconds, blobStorageFolder);
+   await t.Start().ConfigureAwait(false);
+   return t;
+  }
 }

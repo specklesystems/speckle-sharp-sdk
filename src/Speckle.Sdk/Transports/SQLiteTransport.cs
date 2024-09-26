@@ -75,11 +75,12 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
   public string BlobStorageFolder => SpecklePathProvider.BlobStoragePath(Path.Combine(_basePath, _applicationName));
 
-  public void SaveBlob(Blob obj)
+  public Task SaveBlob(Blob obj)
   {
     var blobPath = obj.originalPath;
     var targetPath = obj.GetLocalDestinationPath(BlobStorageFolder);
     File.Copy(blobPath, targetPath, true);
+    return Task.CompletedTask;
   }
 
   public object Clone()

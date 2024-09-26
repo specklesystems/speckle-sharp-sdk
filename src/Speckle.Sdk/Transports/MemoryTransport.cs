@@ -134,14 +134,15 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 
   public string BlobStorageFolder => SpecklePathProvider.BlobStoragePath(Path.Combine(_basePath, _applicationName));
 
-  public void SaveBlob(Blob obj)
+  public Task SaveBlob(Blob obj)
   {
     if (!_blobStorageEnabled)
     {
-      return;
+      return Task.CompletedTask;
     }
     var blobPath = obj.originalPath;
     var targetPath = obj.GetLocalDestinationPath(BlobStorageFolder);
     File.Copy(blobPath, targetPath, true);
+    return Task.CompletedTask;
   }
 }

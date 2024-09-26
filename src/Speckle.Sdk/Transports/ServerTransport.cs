@@ -70,7 +70,7 @@ public sealed class ServerTransport : IServerTransport
 
   public string BlobStorageFolder { get; set; }
 
-  public void SaveBlob(Blob obj)
+  public Task SaveBlob(Blob obj)
   {
     var hash = obj.GetFileHash();
 
@@ -83,6 +83,7 @@ public sealed class ServerTransport : IServerTransport
 
       _sendBuffer.Add(($"blob:{hash}", obj.filePath));
     }
+    return Task.CompletedTask;
   }
 
   public object Clone()

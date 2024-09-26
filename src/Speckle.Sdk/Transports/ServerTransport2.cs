@@ -72,11 +72,10 @@ public sealed class ServerTransport2 : IBlobCapableTransport
       .ConfigureAwait(false);
   }
 
-  public async ValueTask SaveBlob(Blob obj)
+  public async Task SaveBlob(Blob obj)
   {
     var hash = obj.GetFileHash();
-
-    await _sourceChannel.Writer.WriteAsync(($"blob:{hash}", obj.filePath)).ConfigureAwait(false);
+    await _sourceChannel.Writer.WriteAsync(($"blob:{hash}", obj.filePath), CancellationToken).ConfigureAwait(false);
   }
 
   public object Clone()
@@ -84,7 +83,7 @@ public sealed class ServerTransport2 : IBlobCapableTransport
     return new ServerTransport(_http, _activityFactory, Account, StreamId, TimeoutSeconds, BlobStorageFolder)
     {
       OnProgressAction = OnProgressAction,
-      CancellationToken = CancellationToken,
+      CancellationToken = CancellationToken
     };
   }
 
