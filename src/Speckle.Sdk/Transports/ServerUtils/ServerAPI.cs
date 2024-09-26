@@ -215,6 +215,76 @@ public sealed class ServerApi : IDisposable, IServerApi
       await UploadObjectsImpl(streamId, crtRequest, progress).ConfigureAwait(false);
     }
   }
+  
+  public async Task UploadObjects(
+    string streamId,
+    IReadOnlyList<(string, MemoryStream)> objects,
+    Action<ProgressArgs>? progress
+  )
+  {
+    if (objects.Count == 0)
+    {
+      return;
+    }
+
+    // 1. Split into parts of MAX_MULTIPART_SIZE size (can be exceptions until a max of MAX_OBJECT_SIZE if a single obj is larger than MAX_MULTIPART_SIZE)
+    List<List<(string, MemoryStream)>> multipartedObjects = new();
+    List<long> multipartedObjectsSize = new();
+
+    List<(string, MemoryStream)> crtMultipart = new();
+    long crtMultipartSize = 0;
+
+    foreach ((string id, MemoryStream json) in objects)
+    {
+      long objSize = json.Length;
+      if (objSize > MAX_OBJECT_SIZE)
+      {
+        throw new ArgumentException(
+          $"Object {id} too large (size {objSize}, max size {MAX_OBJECT_SIZE}). Consider using detached/chunked properties",
+          nameof(objects)
+        );
+      }
+
+      if (crtMultipartSize + objSize <= MAX_MULTIPART_SIZE)
+      {
+        crtMultipart.Add((id, json));
+        crtMultipartSize += objSize;
+        continue;
+      }
+
+      // new multipart
+      if (crtMultipart.Count > 0)
+      {
+        multipartedObjects.Add(crtMultipart);
+        multipartedObjectsSize.Add(crtMultipartSize);
+      }
+      crtMultipart = new List<(string, MemoryStream)> { (id, json) };
+      crtMultipartSize = objSize;
+    }
+    multipartedObjects.Add(crtMultipart);
+    multipartedObjectsSize.Add(crtMultipartSize);
+
+    // 2. Split multiparts into individual server requests of max size MAX_REQUEST_SIZE or max length MAX_MULTIPART_COUNT and send them
+    List<List<(string, MemoryStream)>> crtRequest = new();
+    long crtRequestSize = 0;
+    for (int i = 0; i < multipartedObjects.Count; i++)
+    {
+      List<(string, MemoryStream)> multipart = multipartedObjects[i];
+      long multipartSize = multipartedObjectsSize[i];
+      if (crtRequestSize + multipartSize > MAX_REQUEST_SIZE || crtRequest.Count >= MAX_MULTIPART_COUNT)
+      {
+        await UploadObjectsImpl(streamId, crtRequest, progress).ConfigureAwait(false);
+        crtRequest = new List<List<(string, MemoryStream)>>();
+        crtRequestSize = 0;
+      }
+      crtRequest.Add(multipart);
+      crtRequestSize += multipartSize;
+    }
+    if (crtRequest.Count > 0)
+    {
+      await UploadObjectsImpl(streamId, crtRequest, progress).ConfigureAwait(false);
+    }
+  }
 
   public async Task UploadBlobs(
     string streamId,
@@ -385,6 +455,44 @@ public sealed class ServerApi : IDisposable, IServerApi
     // Console.WriteLine($"ServerApi::HasObjects({objectIds.Count}) request in {sw.ElapsedMilliseconds / 1000.0} sec");
 
     return hasObjects;
+  }
+  
+  
+  private async Task UploadObjectsImpl(
+    string streamId,
+    List<List<(string, MemoryStream)>> multipartedObjects,
+    Action<ProgressArgs>? progress
+  )
+  {
+    CancellationToken.ThrowIfCancellationRequested();
+
+    using HttpRequestMessage message =
+      new();
+    message.RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative);
+    message.Method = HttpMethod.Post;
+
+    MultipartFormDataContent multipart = new();
+
+    int mpId = 0;
+    foreach (List<(string, MemoryStream)> mpData in multipartedObjects)
+    {
+      mpId++;
+
+      if (CompressPayloads)
+      {
+        var content = new GzipContent(new MultipartJsonStreamContext(mpData));
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/gzip");
+        multipart.Add(content, $"batch-{mpId}", $"batch-{mpId}");
+      }
+      else
+      {
+        multipart.Add(new MultipartJsonStreamContext(mpData), $"batch-{mpId}", $"batch-{mpId}");
+      }
+    }
+    message.Content = new ProgressContent(multipart, progress);
+    HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
+
+    response.EnsureSuccessStatusCode();
   }
 
   private async Task UploadObjectsImpl(
