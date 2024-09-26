@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics.Contracts;
+using System.Text.RegularExpressions;
 
 namespace Speckle.Sdk.Helpers;
 
@@ -32,6 +33,7 @@ class PropNameValidator
     return false;
   }
 
+  [Pure]
   public static bool IsDetached(string propName) =>
 #if NET5_0_OR_GREATER
     propName.StartsWith('@');
