@@ -109,3 +109,52 @@ public interface IBlobCapableTransport
   // NOTE: not needed, should be implemented in "CopyObjectsAndChildren"
   //public void GetBlob(Blob obj);
 }
+
+public interface IWritableTransport
+{
+
+  /// <summary>
+  ///  Show how much time the transport was busy for.
+  /// </summary>
+  public TimeSpan Elapsed { get; }
+  /// <summary>
+  /// Human readable name for the transport
+  /// </summary>
+  public string TransportName { get; set; }
+  
+
+  /// <summary>
+  /// Should be checked often and gracefully stop all in progress sending if requested.
+  /// </summary>
+  public CancellationToken CancellationToken { get; set; }
+
+  /// <summary>
+  /// Used to report progress during the transport's longer operations.
+  /// </summary>
+  public Action<ProgressArgs>? OnProgressAction { get; set; }
+
+  /// <summary>
+  /// Signals to the transport that writes are about to begin.
+  /// </summary>
+  public Task BeginWrite();
+
+  /// <summary>
+  /// Signals to the transport that no more items will need to be written.
+  /// </summary>
+  public Task EndWrite();
+
+  /// <summary>
+  /// Saves an object.
+  /// </summary>
+  /// <param name="id">The hash of the object.</param>
+  /// <param name="serializedObject">The full string representation of the object</param>
+  /// <exception cref="TransportException">Failed to save object</exception>
+  /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
+  public Task SaveObject(string id, string serializedObject);
+
+  /// <summary>
+  /// Awaitable method to figure out whether writing is completed.
+  /// </summary>
+  /// <returns></returns>
+  public Task WriteComplete();
+}

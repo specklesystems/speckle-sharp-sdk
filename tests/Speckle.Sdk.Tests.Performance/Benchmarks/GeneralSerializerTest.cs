@@ -51,7 +51,7 @@ public class GeneralSerializerTest
   }
 }
 
-public class NullTransport : ITransport
+public class NullTransport : ITransport, IWritableTransport
 {
   public string TransportName { get; set; } = "";
   public Dictionary<string, object> TransportContext { get; } = new();
@@ -67,6 +67,23 @@ public class NullTransport : ITransport
 
   public Task WriteComplete()
   {
+    return Task.CompletedTask;
+  }
+  
+  Task IWritableTransport.EndWrite()
+  {
+    EndWrite();
+    return Task.CompletedTask;
+  }
+
+  Task IWritableTransport.SaveObject(string id, string serializedObject)
+  {
+    SaveObject(id, serializedObject);
+    return Task.CompletedTask;
+  }
+  Task IWritableTransport.BeginWrite()
+  {
+    BeginWrite();
     return Task.CompletedTask;
   }
 

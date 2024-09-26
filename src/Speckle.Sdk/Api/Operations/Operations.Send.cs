@@ -14,7 +14,7 @@ public partial class Operations
   /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
   /// </summary>
   /// <remarks/>
-  /// <inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, Action{ConcurrentBag{ProgressArgs}}?, CancellationToken)"/>
+  /// <inheritdoc cref="Send(Base, IReadOnlyCollection{IWritableTransport}, Action{ConcurrentBag{ProgressArgs}}?, CancellationToken)"/>
   /// <param name="useDefaultCache">When <see langword="true"/>, an additional <see cref="SQLiteTransport"/> will be included</param>
   /// <exception cref="ArgumentNullException">The <paramref name="transport"/> or <paramref name="value"/> was <see langword="null"/></exception>
   /// <example><code>
@@ -23,7 +23,7 @@ public partial class Operations
   /// </code></example>
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
-    ITransport transport,
+    IWritableTransport transport,
     bool useDefaultCache,
     Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
     CancellationToken cancellationToken = default
@@ -34,7 +34,7 @@ public partial class Operations
       throw new ArgumentNullException(nameof(transport), "Expected a transport to be explicitly specified");
     }
 
-    List<ITransport> transports = new() { transport };
+    List<IWritableTransport> transports = new() { transport };
     using SQLiteTransport? localCache = useDefaultCache ? new SQLiteTransport { TransportName = "LC" } : null;
     if (localCache is not null)
     {
@@ -60,7 +60,7 @@ public partial class Operations
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
-    IReadOnlyCollection<ITransport> transports,
+    IReadOnlyCollection<IWritableTransport> transports,
     Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
     CancellationToken cancellationToken = default
   )
@@ -92,7 +92,7 @@ public partial class Operations
       {
         t.OnProgressAction = internalProgressAction;
         t.CancellationToken = cancellationToken;
-        t.BeginWrite();
+        await t.BeginWrite().ConfigureAwait(false);
       }
 
       try
@@ -128,13 +128,13 @@ public partial class Operations
       {
         foreach (var t in transports)
         {
-          t.EndWrite();
+          await t.EndWrite().ConfigureAwait(false);
         }
       }
     }
   }
 
-  /// <returns><inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, Action{ConcurrentBag{ProgressArgs}}?, CancellationToken)"/></returns>
+  /// <returns><inheritdoc cref="Send(Base, IReadOnlyCollection{IWritableTransport}, Action{ConcurrentBag{ProgressArgs}}?, CancellationToken)"/></returns>
   internal static async Task<string> SerializerSend(
     Base value,
     SpeckleObjectSerializer serializer,

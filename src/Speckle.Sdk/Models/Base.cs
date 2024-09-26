@@ -73,7 +73,7 @@ public class Base : DynamicBase, ISpeckleObject
   public string GetId(bool decompose = false)
   {
     //TODO remove me
-    var transports = decompose ? [new MemoryTransport()] : Array.Empty<ITransport>();
+    var transports = decompose ? [new MemoryTransport()] : Array.Empty<IWritableTransport>();
     var serializer = new SpeckleObjectSerializer(transports);
 
     string obj = serializer.Serialize(this);

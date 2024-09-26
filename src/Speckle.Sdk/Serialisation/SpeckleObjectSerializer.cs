@@ -33,7 +33,7 @@ public class SpeckleObjectSerializer
   public Dictionary<string, ObjectReference> ObjectReferences { get; } = new();
 
   /// <summary>The sync transport. This transport will be used synchronously.</summary>
-  public IReadOnlyCollection<ITransport> WriteTransports { get; }
+  public IReadOnlyCollection<IWritableTransport> WriteTransports { get; }
 
   public CancellationToken CancellationToken { get; set; }
 
@@ -41,7 +41,7 @@ public class SpeckleObjectSerializer
   public TimeSpan Elapsed => _stopwatch.Elapsed;
 
   public SpeckleObjectSerializer()
-    : this(Array.Empty<ITransport>()) { }
+    : this(Array.Empty<IWritableTransport>()) { }
 
   /// <summary>
   /// Creates a new Serializer instance.
@@ -51,7 +51,7 @@ public class SpeckleObjectSerializer
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
   public SpeckleObjectSerializer(
-    IReadOnlyCollection<ITransport> writeTransports,
+    IReadOnlyCollection<IWritableTransport> writeTransports,
     Action<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default

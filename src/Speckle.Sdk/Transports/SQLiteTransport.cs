@@ -9,7 +9,7 @@ using Timer = System.Timers.Timer;
 
 namespace Speckle.Sdk.Transports;
 
-public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlobCapableTransport
+public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlobCapableTransport, IWritableTransport
 {
   private bool _isWriting;
   private const int MAX_TRANSACTION_SIZE = 1000;
@@ -126,6 +126,23 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   {
     _queue = new();
     SavedObjectCount = 0;
+  }
+
+  Task IWritableTransport.EndWrite()
+  {
+    EndWrite();
+    return Task.CompletedTask;
+  }
+
+  Task IWritableTransport.SaveObject(string id, string serializedObject)
+  {
+    SaveObject(id, serializedObject);
+    return Task.CompletedTask;
+  }
+  Task IWritableTransport.BeginWrite()
+  {
+    BeginWrite();
+    return Task.CompletedTask;
   }
 
   public void EndWrite() { }

@@ -13,7 +13,7 @@ public partial class Operations
   /// <remarks>
   /// If you want to save and persist an object to Speckle Transport or Server,
   /// please use any of the "Send" methods.
-  /// <see cref="Send(Base,Speckle.Sdk.Transports.ITransport,bool,System.Action{System.Collections.Concurrent.ConcurrentBag{ProgressArgs}}?,System.Threading.CancellationToken)"/>
+  /// <see cref="Send(Base,Speckle.Sdk.Transports.IWritableTransport,bool,System.Action{System.Collections.Concurrent.ConcurrentBag{ProgressArgs}}?,System.Threading.CancellationToken)"/>
   /// </remarks>
   /// <param name="value">The object to serialise</param>
   /// <param name="cancellationToken"></param>

@@ -9,7 +9,7 @@ using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Transports;
 
-public sealed class ServerTransport : IServerTransport
+public sealed class ServerTransport : IServerTransport, IWritableTransport
 {
   private readonly ISpeckleHttp _http;
   private readonly ISdkActivityFactory _activityFactory;
@@ -217,6 +217,18 @@ public sealed class ServerTransport : IServerTransport
     return await Api.HasObjects(StreamId, objectIds).ConfigureAwait(false);
   }
 
+   Task IWritableTransport.EndWrite()
+  {
+    EndWrite();
+    return Task.CompletedTask;
+  }
+
+   Task IWritableTransport.SaveObject(string id, string serializedObject)
+  {
+    SaveObject(id, serializedObject);
+    return Task.CompletedTask;
+  }
+
   public void SaveObject(string id, string serializedObject)
   {
     lock (_sendBufferLock)
@@ -265,6 +277,12 @@ public sealed class ServerTransport : IServerTransport
 
       await Task.Delay(50, CancellationToken).ConfigureAwait(false);
     }
+  }
+
+   Task IWritableTransport.BeginWrite()
+  {
+    BeginWrite();
+    return Task.CompletedTask;
   }
 
   public void EndWrite()

@@ -8,7 +8,7 @@ namespace Speckle.Sdk.Transports;
 /// <summary>
 /// An in memory storage of speckle objects.
 /// </summary>
-public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransport
+public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransport, IWritableTransport
 {
   private readonly string _basePath;
   private readonly string _applicationName;
@@ -48,6 +48,23 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
       CancellationToken = CancellationToken,
       SavedObjectCount = SavedObjectCount
     };
+  }
+
+  Task IWritableTransport.EndWrite()
+  {
+    EndWrite();
+    return Task.CompletedTask;
+  }
+
+  Task IWritableTransport.SaveObject(string id, string serializedObject)
+  {
+    SaveObject(id, serializedObject);
+    return Task.CompletedTask;
+  }
+  Task IWritableTransport.BeginWrite()
+  {
+    BeginWrite();
+    return Task.CompletedTask;
   }
 
   public CancellationToken CancellationToken { get; set; }
