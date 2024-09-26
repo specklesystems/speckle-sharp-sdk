@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
@@ -100,7 +101,7 @@ public partial class Operations
         var rootObjectId = await SerializerSend(value, serializerV2, cancellationToken).ConfigureAwait(false);
 
         sendTimer.Stop();
-        activity?.SetTag("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed));
+        activity?.SetTags("transportElapsedBreakdown", transports.ToDictionary(t => t.TransportName, t => t.Elapsed));
         activity?.SetTag(
           "note",
           "the elapsed summary doesn't need to add up to the total elapsed... Threading magic..."

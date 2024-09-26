@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
@@ -12,7 +13,7 @@ namespace Speckle.Sdk.Serialisation;
 
 public sealed class SpeckleObjectDeserializer
 {
-  private bool _isBusy;
+  private volatile bool _isBusy;
   private readonly object _callbackLock = new();
   private readonly object?[] _invokeNull = [null];
 
@@ -45,7 +46,7 @@ public sealed class SpeckleObjectDeserializer
   /// <exception cref="ArgumentNullException"><paramref name="rootObjectJson"/> was null</exception>
   /// <exception cref="SpeckleDeserializeException"><paramref name="rootObjectJson"/> cannot be deserialised to type <see cref="Base"/></exception>
   // /// <exception cref="TransportException"><see cref="ReadTransport"/> did not contain the required json objects (closures)</exception>
-  public async ValueTask<Base> DeserializeAsync(string rootObjectJson)
+  public async ValueTask<Base> DeserializeAsync([NotNull] string? rootObjectJson)
   {
     if (_isBusy)
     {
@@ -56,10 +57,20 @@ public sealed class SpeckleObjectDeserializer
 
     try
     {
+      if (rootObjectJson is null)
+      {
+        throw new ArgumentNullException(
+          nameof(rootObjectJson),
+          $"Cannot deserialize {nameof(rootObjectJson)}, value was null"
+        );
+      }
+
       _isBusy = true;
       _deserializedObjects = new(StringComparer.Ordinal);
       _currentCount = 0;
-      return (Base)(await DeserializeJsonAsyncInternal(rootObjectJson).NotNull().ConfigureAwait(false));
+
+      var result = (Base)await DeserializeJsonAsyncInternal(rootObjectJson).NotNull().ConfigureAwait(false);
+      return result;
     }
     finally
     {
@@ -70,10 +81,6 @@ public sealed class SpeckleObjectDeserializer
 
   private async ValueTask<object?> DeserializeJsonAsyncInternal(string objectJson)
   {
-    if (objectJson is null)
-    {
-      throw new ArgumentNullException(nameof(objectJson), $"Cannot deserialize {nameof(objectJson)}, value was null");
-    }
     // Apparently this automatically parses DateTimes in strings if it matches the format:
     // JObject doc1 = JObject.Parse(objectJson);
 
@@ -89,7 +96,7 @@ public sealed class SpeckleObjectDeserializer
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
-      throw new SpeckleDeserializeException($"Failed to deserialize", ex);
+      throw new SpeckleDeserializeException("Failed to deserialize", ex);
     }
 
     lock (_callbackLock)

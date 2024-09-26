@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
@@ -39,6 +41,24 @@ public partial class Operations
   public async Task<Base> DeserializeAsync(string value, CancellationToken cancellationToken = default)
   {
     var deserializer = new SpeckleObjectDeserializer { CancellationToken = cancellationToken };
-    return await deserializer.DeserializeAsync(value).ConfigureAwait(false);
+    return await DeserializeActivity(value, deserializer).ConfigureAwait(false);
+  }
+
+  /// <inheritdoc cref="SpeckleObjectDeserializer.DeserializeAsync"/>
+  private async Task<Base> DeserializeActivity([NotNull] string? objString, SpeckleObjectDeserializer deserializer)
+  {
+    using var activity = activityFactory.Start();
+    try
+    {
+      Base res = await deserializer.DeserializeAsync(objString).ConfigureAwait(false);
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
+      return res;
+    }
+    catch (Exception ex)
+    {
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      activity?.RecordException(ex);
+      throw;
+    }
   }
 }
