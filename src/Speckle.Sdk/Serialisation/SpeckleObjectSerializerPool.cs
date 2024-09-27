@@ -14,7 +14,7 @@ public class SpeckleObjectSerializerPool
 
   public JsonTextReader GetJsonTextReader(TextReader reader) => new(reader) { ArrayPool = _charPool };
 
-  private readonly SerializerPool<char> _charPool = new(ArrayPool<char>.Create(4096, 4096));
+  private readonly SerializerPool<char> _charPool = new(ArrayPool<char>.Create()); //use default values
 
   private class SerializerPool<T>(ArrayPool<T> pool) : IArrayPool<T>
   {
