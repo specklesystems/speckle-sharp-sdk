@@ -10,7 +10,6 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
-using Constants = Speckle.Sdk.Helpers.Constants;
 
 namespace Speckle.Sdk.Serialisation;
 
@@ -131,7 +130,7 @@ public class SpeckleObjectSerializer
       // Note: this change was needed as we've made the ObjectReference type inherit from Base for
       // the purpose of the "do not convert unchanged previously converted objects" POC.
       case ObjectReference r:
-        Dictionary<string, object> ret =
+        Dictionary<string, object?> ret =
           new()
           {
             ["speckle_type"] = r.speckle_type,
@@ -251,7 +250,7 @@ public class SpeckleObjectSerializer
     }
 
     using var writer = new StringWriter();
-    using var jsonWriter = new JsonTextWriter(writer);
+    using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
     string id = SerializeBaseObject(baseObj, jsonWriter, closure);
     var json = writer.ToString();
 
@@ -275,7 +274,7 @@ public class SpeckleObjectSerializer
 
       ObjectReference objRef = new() { referencedId = id };
       using var writer2 = new StringWriter();
-      using var jsonWriter2 = new JsonTextWriter(writer2);
+      using var jsonWriter2 = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer2);
       SerializeProperty(objRef, jsonWriter2);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
@@ -322,19 +321,12 @@ public class SpeckleObjectSerializer
       }
 
       object? baseValue = baseObj[propName];
-#if NETSTANDARD2_0
-      bool isDetachable = propName.StartsWith("@");
-#else
-      bool isDetachable = propName.StartsWith('@');
-#endif
-      bool isChunkable = false;
-      int chunkSize = 1000;
 
-      if (Constants.ChunkPropertyNameRegex.IsMatch(propName))
-      {
-        var match = Constants.ChunkPropertyNameRegex.Match(propName);
-        isChunkable = int.TryParse(match.Groups[^1].Value, out chunkSize);
-      }
+      bool isDetachable = PropNameValidator.IsDetached(propName);
+
+      int chunkSize = 1000;
+      bool isChunkable = isDetachable && PropNameValidator.IsChunkable(propName, out chunkSize);
+
       allProperties[propName] = (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null));
     }
 

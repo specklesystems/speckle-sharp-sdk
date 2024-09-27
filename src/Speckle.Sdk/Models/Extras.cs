@@ -16,5 +16,5 @@ public sealed class ObjectReference : Base
 {
   public required string referencedId { get; init; }
 
-  public Dictionary<string, int> closure { get; set; }
+  public Dictionary<string, int>? closure { get; set; }
 }
