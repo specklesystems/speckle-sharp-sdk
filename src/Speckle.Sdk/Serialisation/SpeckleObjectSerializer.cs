@@ -20,7 +20,7 @@ public class SpeckleObjectSerializer
   private List<Dictionary<string, int>> _parentClosures = new();
   private HashSet<object> _parentObjects = new();
   private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
-  private readonly Action<ProgressArgs>? _onProgressAction;
+  private readonly Func<ProgressArgs, Task>? _onProgressAction;
 
   private readonly bool _trackDetachedChildren;
   private int _serializedCount;
@@ -51,7 +51,7 @@ public class SpeckleObjectSerializer
   /// <param name="cancellationToken"></param>
   public SpeckleObjectSerializer(
     IReadOnlyCollection<ITransport> writeTransports,
-    Action<ProgressArgs>? onProgressAction = null,
+    Func<ProgressArgs, Task>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
@@ -68,7 +68,7 @@ public class SpeckleObjectSerializer
   /// <exception cref="TransportException">Failed to save object in one or more <see cref="WriteTransports"/></exception>
   /// <exception cref="SpeckleSerializeException">Failed to extract (pre-serialize) properties from the <paramref name="baseObj"/></exception>
   /// <exception cref="OperationCanceledException">One or more <see cref="WriteTransports"/>'s cancellation token requested cancel</exception>
-  public string Serialize(Base baseObj)
+  public async ValueTask<string> Serialize(Base baseObj)
   {
     if (_isBusy)
     {
@@ -83,7 +83,7 @@ public class SpeckleObjectSerializer
       _isBusy = true;
       try
       {
-        var result = SerializeBase(baseObj, true).NotNull();
+        var result = await SerializeBase(baseObj, true).NotNull().ConfigureAwait(false);
         StoreObject(result.Id.NotNull(), result.Json);
         return result.Json;
       }
@@ -103,7 +103,7 @@ public class SpeckleObjectSerializer
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
-  private void SerializeProperty(
+  private async ValueTask SerializeProperty(
     object? obj,
     JsonWriter writer,
     bool computeClosures = false,
@@ -145,10 +145,10 @@ public class SpeckleObjectSerializer
           }
         }
         UpdateParentClosures(r.referencedId);
-        SerializeProperty(ret, writer);
+        await SerializeProperty(ret, writer).ConfigureAwait(false);
         break;
       case Base b:
-        var result = SerializeBase(b, computeClosures, inheritedDetachInfo);
+        var result = await SerializeBase(b, computeClosures, inheritedDetachInfo).ConfigureAwait(false);
         if (result is not null)
         {
           writer.WriteRawValue(result.Json);
@@ -173,7 +173,7 @@ public class SpeckleObjectSerializer
             }
 
             writer.WritePropertyName(key);
-            SerializeProperty(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo);
+            await SerializeProperty(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo).ConfigureAwait(false);
           }
           writer.WriteEndObject();
         }
@@ -183,7 +183,7 @@ public class SpeckleObjectSerializer
           writer.WriteStartArray();
           foreach (object? element in e)
           {
-            SerializeProperty(element, writer, inheritedDetachInfo: inheritedDetachInfo);
+            await SerializeProperty(element, writer, inheritedDetachInfo: inheritedDetachInfo).ConfigureAwait(false);
           }
           writer.WriteEndArray();
         }
@@ -230,7 +230,7 @@ public class SpeckleObjectSerializer
     }
   }
 
-  internal SerializationResult? SerializeBase(
+  internal async ValueTask<SerializationResult?> SerializeBase(
     Base baseObj,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
@@ -251,7 +251,7 @@ public class SpeckleObjectSerializer
 
     using var writer = new StringWriter();
     using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-    string id = SerializeBaseObject(baseObj, jsonWriter, closure);
+    string id = await SerializeBaseObject(baseObj, jsonWriter, closure).ConfigureAwait(false);
     var json = writer.ToString();
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
@@ -275,11 +275,14 @@ public class SpeckleObjectSerializer
       ObjectReference objRef = new() { referencedId = id };
       using var writer2 = new StringWriter();
       using var jsonWriter2 = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer2);
-      SerializeProperty(objRef, jsonWriter2);
+      await SerializeProperty(objRef, jsonWriter2).ConfigureAwait(false);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
 
-      _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
+      if (_onProgressAction is not null)
+      {
+        await _onProgressAction.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null)).ConfigureAwait(false);
+      }
 
       // add to obj refs to return
       if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
@@ -333,7 +336,7 @@ public class SpeckleObjectSerializer
     return allProperties;
   }
 
-  private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
+  private async ValueTask<string> SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
   {
     var allProperties = ExtractAllProperties(baseObj);
 
@@ -352,7 +355,7 @@ public class SpeckleObjectSerializer
       }
 
       writer.WritePropertyName(prop.Key);
-      SerializeProperty(prop.Value.value, writer, prop.Value.info);
+      await SerializeProperty(prop.Value.value, writer, prop.Value.info).ConfigureAwait(false);
     }
 
     string id;
@@ -385,12 +388,12 @@ public class SpeckleObjectSerializer
     return id;
   }
 
-  private void SerializeProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
+  private async ValueTask SerializeProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
   {
     // If there are no WriteTransports, keep everything attached.
     if (WriteTransports.Count == 0)
     {
-      SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+      await SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo).ConfigureAwait(false);
       return;
     }
 
@@ -413,11 +416,11 @@ public class SpeckleObjectSerializer
       {
         chunks.Add(crtChunk);
       }
-      SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null));
+      await SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)).ConfigureAwait(false);
       return;
     }
 
-    SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+    await SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo).ConfigureAwait(false);
   }
 
   private void UpdateParentClosures(string objectId)

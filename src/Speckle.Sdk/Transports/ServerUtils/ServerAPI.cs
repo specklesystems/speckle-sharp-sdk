@@ -59,7 +59,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     _client.Dispose();
   }
 
-  public async Task<string?> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
+  public async Task<string?> DownloadSingleObject(string streamId, string objectId, Func<ProgressArgs, Task>? progress)
   {
     using var _ = _activityFactory.Start();
     CancellationToken.ThrowIfCancellationRequested();
@@ -83,7 +83,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   public async Task DownloadObjects(
     string streamId,
     IReadOnlyList<string> objectIds,
-    Action<ProgressArgs>? progress,
+    Func<ProgressArgs, Task>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -149,7 +149,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   public async Task UploadObjects(
     string streamId,
     IReadOnlyList<(string, string)> objects,
-    Action<ProgressArgs>? progress
+    Func<ProgressArgs, Task>? progress
   )
   {
     if (objects.Count == 0)
@@ -216,10 +216,49 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
   }
 
+  public async Task UploadObjects2(
+    string streamId,
+    IReadOnlyList<(string, string)> objects,
+    Func<ProgressArgs, Task>? progress
+  )
+  {
+    if (objects.Count == 0)
+    {
+      return;
+    }
+
+    // 1. Split into parts of MAX_MULTIPART_SIZE size (can be exceptions until a max of MAX_OBJECT_SIZE if a single obj is larger than MAX_MULTIPART_SIZE)
+    List<(string, string)> crtMultipart = new();
+    int crtMultipartSize = 0;
+
+    foreach ((string id, string json) in objects)
+    {
+      int objSize = Encoding.UTF8.GetByteCount(json);
+      if (objSize > MAX_OBJECT_SIZE)
+      {
+        throw new ArgumentException(
+          $"Object {id} too large (size {objSize}, max size {MAX_OBJECT_SIZE}). Consider using detached/chunked properties",
+          nameof(objects)
+        );
+      }
+
+      if (crtMultipartSize + objSize <= MAX_MULTIPART_SIZE)
+      {
+        crtMultipart.Add((id, json));
+        crtMultipartSize += objSize;
+        continue;
+      }
+
+      await UploadObjectsImpl2(streamId, crtMultipart, progress).ConfigureAwait(false);
+      crtMultipart = new List<(string, string)> { (id, json) };
+      crtMultipartSize = objSize;
+    }
+  }
+
   public async Task UploadBlobs(
     string streamId,
     IReadOnlyList<(string, string)> objects,
-    Action<ProgressArgs>? progress
+    Func<ProgressArgs, Task>? progress
   )
   {
     CancellationToken.ThrowIfCancellationRequested();
@@ -266,7 +305,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
   }
 
-  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, Action<ProgressArgs>? progress)
+  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, Func<ProgressArgs, Task>? progress)
   {
     foreach (var blobId in blobIds)
     {
@@ -302,7 +341,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   private async Task DownloadObjectsImpl(
     string streamId,
     IReadOnlyList<string> objectIds,
-    Action<ProgressArgs>? progress,
+    Func<ProgressArgs, Task>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -330,7 +369,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   private async Task ResponseProgress(
     HttpResponseMessage childrenHttpResponse,
-    Action<ProgressArgs>? progress,
+    Func<ProgressArgs, Task>? progress,
     CbObjectDownloaded onObjectCallback,
     bool isSingle
   )
@@ -390,7 +429,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   private async Task UploadObjectsImpl(
     string streamId,
     List<List<(string, string)>> multipartedObjects,
-    Action<ProgressArgs>? progress
+    Func<ProgressArgs, Task>? progress
   )
   {
     CancellationToken.ThrowIfCancellationRequested();
@@ -428,6 +467,32 @@ public sealed class ServerApi : IDisposable, IServerApi
       {
         multipart.Add(new StringContent(ct, Encoding.UTF8), $"batch-{mpId}", $"batch-{mpId}");
       }
+    }
+    message.Content = new ProgressContent(multipart, progress);
+    HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
+
+    response.EnsureSuccessStatusCode();
+  }
+
+  private async Task UploadObjectsImpl2(
+    string streamId,
+    List<(string, string)> multipartedObjects,
+    Func<ProgressArgs, Task>? progress
+  )
+  {
+    CancellationToken.ThrowIfCancellationRequested();
+
+    using HttpRequestMessage message =
+      new() { RequestUri = new Uri($"/objects/{streamId}/v2", UriKind.Relative), Method = HttpMethod.Post };
+
+    MultipartFormDataContent multipart = new();
+
+    int mpId = 0;
+    foreach ((string, string) mpData in multipartedObjects)
+    {
+      var content = new StringContent(mpData.Item2, Encoding.UTF8);
+      content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+      multipart.Add(content, $"batch-{mpId}", $"batch-{mpId}");
     }
     message.Content = new ProgressContent(multipart, progress);
     HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);

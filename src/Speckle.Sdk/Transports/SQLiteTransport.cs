@@ -115,7 +115,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public Func<ProgressArgs, Task>? OnProgressAction { get; set; }
 
   public int SavedObjectCount { get; private set; }
 

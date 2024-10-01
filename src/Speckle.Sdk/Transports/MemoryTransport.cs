@@ -54,7 +54,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 
   public string TransportName { get; set; } = "Memory";
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public Func<ProgressArgs, Task>? OnProgressAction { get; set; }
 
   public int SavedObjectCount { get; private set; }
 

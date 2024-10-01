@@ -1,6 +1,6 @@
 ﻿namespace Speckle.Sdk.Transports;
 
-internal sealed class ProgressStream(Stream input, long? streamLength, Action<ProgressArgs>? progress, bool useBuffer)
+internal sealed class ProgressStream(Stream input, long? streamLength, Func<ProgressArgs, Task>? progress, bool useBuffer)
   : Stream
 {
   private long _position;

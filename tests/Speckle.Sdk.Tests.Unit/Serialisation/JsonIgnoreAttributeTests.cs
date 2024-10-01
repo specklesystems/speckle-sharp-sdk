@@ -41,13 +41,13 @@ public sealed class JsonIgnoreRespected
   }
 
   [TestCaseSource(nameof(IgnoredTestCases))]
-  public string? IgnoredProperties_NotIncludedInJson(string ignoredPayload, string expectedPayload)
+  public async Task<string?> IgnoredProperties_NotIncludedInJson(string ignoredPayload, string expectedPayload)
   {
     IgnoreTest testData = new(ignoredPayload, expectedPayload);
 
     SpeckleObjectSerializer sut = new();
 
-    var (json, id) = sut.SerializeBase(testData).NotNull();
+    var (json, id) = await sut.SerializeBase(testData).NotNull();
 
     Assert.That(json, Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
     Assert.That(json, Does.Not.Contain(ignoredPayload));
@@ -59,14 +59,14 @@ public sealed class JsonIgnoreRespected
   }
 
   [TestCaseSource(nameof(IgnoredCompoundTestCases))]
-  public string? IgnoredProperties_Compound_NotIncludedInJson(string ignoredPayload, string expectedPayload)
+  public async Task<string?> IgnoredProperties_Compound_NotIncludedInJson(string ignoredPayload, string expectedPayload)
   {
     IgnoredCompoundTest testData = new(ignoredPayload, expectedPayload);
 
     MemoryTransport savedObjects = new();
     SpeckleObjectSerializer sut = new(writeTransports: [savedObjects]);
 
-    var (json, id) = sut.SerializeBase(testData).NotNull();
+    var (json, id) = await sut.SerializeBase(testData).NotNull();
 
     savedObjects.SaveObject(id.NotNull(), json);
 

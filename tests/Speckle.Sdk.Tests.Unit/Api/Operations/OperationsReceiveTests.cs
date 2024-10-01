@@ -29,12 +29,12 @@ public sealed partial class OperationsReceiveTests
     ];
   }
 
-  public static IEnumerable<string> TestCases()
+  public static async Task<IEnumerable<string>> TestCases()
   {
     List<string> ret = new();
     foreach (var s in s_testObjects)
     {
-      ret.Add(s.GetId(true));
+      ret.Add(await s.GetIdAsync(true));
     }
 
     return ret;
@@ -90,7 +90,7 @@ public sealed partial class OperationsReceiveTests
   public async Task Receive_FromLocal_OnProgressActionCalled(string id)
   {
     bool wasCalled = false;
-    _ = await _operations.Receive(id, null, _testCaseTransport, onProgressAction: _ => wasCalled = true);
+    _ = await _operations.Receive(id, null, _testCaseTransport, onProgressAction: _ => Task.FromResult(wasCalled = true));
 
     Assert.That(wasCalled, Is.True);
   }

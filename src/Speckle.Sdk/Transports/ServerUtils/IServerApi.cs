@@ -4,12 +4,12 @@ public delegate void CbObjectDownloaded(string id, string json);
 
 internal interface IServerApi
 {
-  public Task<string?> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress);
+  public Task<string?> DownloadSingleObject(string streamId, string objectId, Func<ProgressArgs, Task>? progress);
 
   public Task DownloadObjects(
     string streamId,
     IReadOnlyList<string> objectIds,
-    Action<ProgressArgs>? progress,
+    Func<ProgressArgs, Task>? progress,
     CbObjectDownloaded onObjectCallback
   );
 
@@ -18,14 +18,14 @@ internal interface IServerApi
   public Task UploadObjects(
     string streamId,
     IReadOnlyList<(string id, string data)> objects,
-    Action<ProgressArgs>? progress
+    Func<ProgressArgs, Task>? progress
   );
 
   public Task UploadBlobs(
     string streamId,
     IReadOnlyList<(string id, string data)> objects,
-    Action<ProgressArgs>? progress
+    Func<ProgressArgs, Task>? progress
   );
 
-  public Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, Action<ProgressArgs>? progress);
+  public Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, Func<ProgressArgs, Task>? progress);
 }

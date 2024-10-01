@@ -42,7 +42,7 @@ public interface ITransport
   /// <summary>
   /// Used to report progress during the transport's longer operations.
   /// </summary>
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public Func<ProgressArgs, Task>? OnProgressAction { get; set; }
 
   /// <summary>
   /// Signals to the transport that writes are about to begin.

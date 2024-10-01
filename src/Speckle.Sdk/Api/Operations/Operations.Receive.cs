@@ -35,7 +35,7 @@ public partial class Operations
     string objectId,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
-    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
+    Func<ConcurrentBag<ProgressArgs>, Task>? onProgressAction = null,
     Action<int>? onTotalChildrenCountKnown = null,
     CancellationToken cancellationToken = default
   )
@@ -74,12 +74,12 @@ public partial class Operations
     }
   }
 
-  /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,Action{ConcurrentBag{ProgressArgs}}?,Action{int}?,CancellationToken)"/>
+  /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,Func{ConcurrentBag{ProgressArgs}, Task}?,Action{int}?,CancellationToken)"/>
   private async Task<Base> ReceiveImpl(
     string objectId,
     ITransport? remoteTransport,
     ITransport localTransport,
-    Action<ProgressArgs>? internalProgressAction,
+    Func<ProgressArgs, Task>? internalProgressAction,
     Action<int>? onTotalChildrenCountKnown,
     CancellationToken cancellationToken
   )

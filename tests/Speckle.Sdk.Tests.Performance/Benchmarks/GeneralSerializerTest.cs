@@ -42,11 +42,11 @@ public class GeneralSerializerTest
   }
 
   [Benchmark]
-  public string RunTest()
+  public async Task<string> RunTest()
   {
     var remote = new NullTransport();
     SpeckleObjectSerializer sut = new([remote]);
-    var x = sut.Serialize(_testData);
+    var x = await sut.Serialize(_testData);
     return x;
   }
 }
@@ -57,7 +57,7 @@ public class NullTransport : ITransport
   public Dictionary<string, object> TransportContext { get; } = new();
   public TimeSpan Elapsed { get; } = TimeSpan.Zero;
   public CancellationToken CancellationToken { get; set; }
-  public Action<ProgressArgs> OnProgressAction { get; set; }
+  public Func<ProgressArgs, Task> OnProgressAction { get; set; }
 
   public void BeginWrite() { }
 

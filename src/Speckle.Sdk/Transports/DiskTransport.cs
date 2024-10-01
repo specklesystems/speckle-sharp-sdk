@@ -44,7 +44,7 @@ public class DiskTransport : ICloneable, ITransport
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public Func<ProgressArgs, Task>? OnProgressAction { get; set; }
 
   public Action<string, Exception>? OnErrorAction { get; set; }
 

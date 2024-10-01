@@ -210,6 +210,7 @@ public sealed class SendReceiveLocal : IDisposable
       onProgressAction: dict =>
       {
         progress = dict;
+        return Task.CompletedTask;
       }
     );
     progress.NotNull();
@@ -225,6 +226,7 @@ public sealed class SendReceiveLocal : IDisposable
       onProgressAction: dict =>
       {
         progress = dict;
+        return Task.CompletedTask;
       }
     );
     progress.NotNull();

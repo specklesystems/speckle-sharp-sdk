@@ -15,21 +15,21 @@ public partial class Operations
   /// <remarks>
   /// If you want to save and persist an object to Speckle Transport or Server,
   /// please use any of the "Send" methods.
-  /// <see cref="Send(Base,Speckle.Sdk.Transports.ITransport,bool,System.Action{System.Collections.Concurrent.ConcurrentBag{ProgressArgs}}?,System.Threading.CancellationToken)"/>
+  /// <see cref="Send(Base,Speckle.Sdk.Transports.ITransport,bool,System.Func{System.Collections.Concurrent.ConcurrentBag{ProgressArgs},Task}?,System.Threading.CancellationToken)"/>
   /// </remarks>
   /// <param name="value">The object to serialise</param>
   /// <param name="cancellationToken"></param>
   /// <returns>A json string representation of the object.</returns>
-  public string Serialize(Base value, CancellationToken cancellationToken = default)
+  public async Task<string> Serialize(Base value, CancellationToken cancellationToken = default)
   {
     var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
-    return serializer.Serialize(value);
+    return await serializer.Serialize(value).ConfigureAwait(false);
   }
 
   /// <remarks>
   /// Note: if you want to pull an object from a Speckle Transport or Server,
   /// please use
-  /// <see cref="Receive(string,Speckle.Sdk.Transports.ITransport?,Speckle.Sdk.Transports.ITransport?,System.Action{System.Collections.Concurrent.ConcurrentBag{ProgressArgs}}?,System.Action{int}?,System.Threading.CancellationToken)"/>
+  /// <see cref="Receive(string,Speckle.Sdk.Transports.ITransport?,Speckle.Sdk.Transports.ITransport?,System.Func{System.Collections.Concurrent.ConcurrentBag{ProgressArgs},Task}?,System.Action{int}?,System.Threading.CancellationToken)"/>
   /// </remarks>
   /// <param name="value">The json string representation of a speckle object that you want to deserialize</param>
   /// <param name="cancellationToken"></param>
