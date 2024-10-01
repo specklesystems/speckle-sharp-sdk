@@ -60,6 +60,9 @@ internal sealed class ProgressStream(
     }
   }
 #else
+  public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+    await WriteAsync(new Memory<byte>(buffer, offset, count), cancellationToken).ConfigureAwait(false);
+
   public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
   {
     await _stream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
@@ -69,9 +72,6 @@ internal sealed class ProgressStream(
       await progress.Invoke(new(ProgressEvent.UploadBytes, _position, streamLength)).ConfigureAwait(false);
     }
   }
-
-  public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
-    await WriteAsync(new Memory<byte>(buffer, offset, count), cancellationToken).ConfigureAwait(false);
 #endif
   public override void Write(byte[] buffer, int offset, int count) => throw new NotImplementedException();
 
