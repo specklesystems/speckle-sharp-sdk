@@ -31,13 +31,6 @@ internal sealed class ProgressStream(
   public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
   {
     int n = await _stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
-
-    return n;
-  }
-
-  public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-  {
-    int n = await ReadAsync(new Memory<byte>(buffer, offset, count), cancellationToken).ConfigureAwait(false);
     _position += n;
     if (progress != null)
     {
@@ -45,6 +38,13 @@ internal sealed class ProgressStream(
     }
     return n;
   }
+
+  public override async Task<int> ReadAsync(
+    byte[] buffer,
+    int offset,
+    int count,
+    CancellationToken cancellationToken
+  ) => await ReadAsync(new Memory<byte>(buffer, offset, count), cancellationToken).ConfigureAwait(false);
 #endif
 
   public override int Read(byte[] buffer, int offset, int count) => throw new NotImplementedException();
@@ -73,6 +73,7 @@ internal sealed class ProgressStream(
     }
   }
 #endif
+
   public override void Write(byte[] buffer, int offset, int count) => throw new NotImplementedException();
 
   public override bool CanRead => true;
