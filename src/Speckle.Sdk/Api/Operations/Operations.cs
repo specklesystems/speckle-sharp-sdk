@@ -19,7 +19,9 @@ public partial class Operations(ILogger<Operations> logger, ISdkActivityFactory 
   /// </summary>
   /// <param name="onProgressAction"></param>
   /// <returns></returns>
-  private static Func<ProgressArgs, Task>? GetInternalProgressAction(Func<ConcurrentBag<ProgressArgs>, Task>? onProgressAction)
+  private static Func<ProgressArgs, Task>? GetInternalProgressAction(
+    Func<ConcurrentBag<ProgressArgs>, Task>? onProgressAction
+  )
   {
     if (onProgressAction is null)
     {
@@ -30,7 +32,7 @@ public partial class Operations(ILogger<Operations> logger, ISdkActivityFactory 
     {
       var localProgressDict = new ConcurrentBag<ProgressArgs>();
       localProgressDict.Add(args);
-        await onProgressAction.Invoke(localProgressDict).ConfigureAwait(false);
+      await onProgressAction.Invoke(localProgressDict).ConfigureAwait(false);
     };
   }
 }

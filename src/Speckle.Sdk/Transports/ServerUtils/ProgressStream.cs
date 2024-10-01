@@ -1,7 +1,11 @@
 ﻿namespace Speckle.Sdk.Transports;
 
-internal sealed class ProgressStream(Stream input, long? streamLength, Func<ProgressArgs, Task>? progress, bool useBuffer)
-  : Stream
+internal sealed class ProgressStream(
+  Stream input,
+  long? streamLength,
+  Func<ProgressArgs, Task>? progress,
+  bool useBuffer
+) : Stream
 {
   private long _position;
   private readonly Stream _stream = useBuffer ? new BufferedStream(input, 80 * 1024) : input;
@@ -12,7 +16,7 @@ internal sealed class ProgressStream(Stream input, long? streamLength, Func<Prog
 
   public override void SetLength(long value) => throw new NotImplementedException();
 
-  #if NETSTANDARD2_0
+#if NETSTANDARD2_0
   public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
   {
     int n = await _stream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
@@ -23,12 +27,11 @@ internal sealed class ProgressStream(Stream input, long? streamLength, Func<Prog
     }
     return n;
   }
-  #else
-  public override async ValueTask<int> ReadAsync(Memory<byte> buffer,
-    CancellationToken cancellationToken = default)
+#else
+  public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
   {
     int n = await _stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
- 
+
     return n;
   }
 
@@ -46,9 +49,8 @@ internal sealed class ProgressStream(Stream input, long? streamLength, Func<Prog
 
   public override int Read(byte[] buffer, int offset, int count) => throw new NotImplementedException();
 
-  #if NETSTANDARD2_0
-  public override async Task WriteAsync(byte[] buffer, int offset, int count,
-    CancellationToken cancellationToken)
+#if NETSTANDARD2_0
+  public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
   {
     await _stream.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
     _position += buffer.Length;
@@ -57,9 +59,8 @@ internal sealed class ProgressStream(Stream input, long? streamLength, Func<Prog
       await progress.Invoke(new(ProgressEvent.UploadBytes, _position, streamLength)).ConfigureAwait(false);
     }
   }
-  #else
-  public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer,
-    CancellationToken cancellationToken = default)
+#else
+  public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
   {
     await _stream.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
     _position += buffer.Length;
@@ -69,10 +70,10 @@ internal sealed class ProgressStream(Stream input, long? streamLength, Func<Prog
     }
   }
 
-  public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => await WriteAsync(new Memory<byte>(buffer, offset, count), cancellationToken).ConfigureAwait(false);
-
+  public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+    await WriteAsync(new Memory<byte>(buffer, offset, count), cancellationToken).ConfigureAwait(false);
 #endif
-  public override void Write(byte[] buffer, int offset, int count)=> throw new NotImplementedException();
+  public override void Write(byte[] buffer, int offset, int count) => throw new NotImplementedException();
 
   public override bool CanRead => true;
   public override bool CanSeek => false;

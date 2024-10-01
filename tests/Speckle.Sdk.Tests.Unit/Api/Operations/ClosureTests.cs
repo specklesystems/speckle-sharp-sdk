@@ -58,9 +58,15 @@ public class Closures
     test.id.NotNull();
     Assert.That(await d1.GetIdAsync(true), Is.EqualTo(test.id));
 
-    var d1_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d1.GetIdAsync(true)]));
-    var d2_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d2.GetIdAsync(true)]));
-    var d3_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d3.GetIdAsync(true)]));
+    var d1_ = NotNullExtensions.NotNull(
+      JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d1.GetIdAsync(true)])
+    );
+    var d2_ = NotNullExtensions.NotNull(
+      JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d2.GetIdAsync(true)])
+    );
+    var d3_ = NotNullExtensions.NotNull(
+      JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d3.GetIdAsync(true)])
+    );
     var d4_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d4.GetIdAsync(true)]);
     var d5_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[await d5.GetIdAsync(true)]);
 

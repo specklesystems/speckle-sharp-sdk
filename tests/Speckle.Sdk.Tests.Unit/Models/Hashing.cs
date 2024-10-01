@@ -57,7 +57,7 @@ public class Hashing
     stopWatch.Start();
 
     // Warm-up: first hashing always takes longer due to json serialisation init
-    _ =  await polyline.GetIdAsync();
+    _ = await polyline.GetIdAsync();
     var stopWatchStep = stopWatch.ElapsedMilliseconds;
     _ = await polyline.GetIdAsync();
 

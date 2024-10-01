@@ -11,7 +11,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
-public sealed class SpeckleObjectDeserializer 
+public sealed class SpeckleObjectDeserializer
 {
   private volatile bool _isBusy;
   private readonly object?[] _invokeNull = [null];
@@ -98,14 +98,13 @@ public sealed class SpeckleObjectDeserializer
       throw new SpeckleDeserializeException("Failed to deserialize", ex);
     }
 
-    
-      _processedCount++;
-      if (OnProgressAction is not null)
-      {
-        await OnProgressAction.Invoke(
-          new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount)
-        ).ConfigureAwait(false);
-      }
+    _processedCount++;
+    if (OnProgressAction is not null)
+    {
+      await OnProgressAction
+        .Invoke(new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount))
+        .ConfigureAwait(false);
+    }
 
     return converted;
   }
