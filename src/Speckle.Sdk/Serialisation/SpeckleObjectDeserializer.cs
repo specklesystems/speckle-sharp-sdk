@@ -98,10 +98,10 @@ public sealed class SpeckleObjectDeserializer
       throw new SpeckleDeserializeException("Failed to deserialize", ex);
     }
 
-      _processedCount++;
-      OnProgressAction?.Report(
-        new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount)
-      );
+    _processedCount++;
+    OnProgressAction?.Report(
+      new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount)
+    );
 
     return converted;
   }

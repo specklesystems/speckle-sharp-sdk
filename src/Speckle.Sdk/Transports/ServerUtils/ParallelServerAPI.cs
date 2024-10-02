@@ -177,7 +177,11 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     await Task.WhenAll(tasks.ToArray()).ConfigureAwait(false);
   }
 
-  public async Task UploadBlobs(string streamId, IReadOnlyList<(string, string)> blobs, IProgress<ProgressArgs>? progress)
+  public async Task UploadBlobs(
+    string streamId,
+    IReadOnlyList<(string, string)> blobs,
+    IProgress<ProgressArgs>? progress
+  )
   {
     EnsureStarted();
     var op = QueueOperation(ServerApiOperation.UploadBlobs, (streamId, blobs, progress));

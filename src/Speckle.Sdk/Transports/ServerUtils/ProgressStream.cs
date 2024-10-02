@@ -1,7 +1,11 @@
 ﻿namespace Speckle.Sdk.Transports;
 
-internal sealed class ProgressStream(Stream input, long? streamLength, IProgress<ProgressArgs>? progress, bool useBuffer)
-  : Stream
+internal sealed class ProgressStream(
+  Stream input,
+  long? streamLength,
+  IProgress<ProgressArgs>? progress,
+  bool useBuffer
+) : Stream
 {
   private long _position;
   private readonly Stream _stream = useBuffer ? new BufferedStream(input, 80 * 1024) : input;
