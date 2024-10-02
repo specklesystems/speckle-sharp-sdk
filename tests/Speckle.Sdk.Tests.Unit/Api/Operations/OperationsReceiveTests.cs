@@ -94,7 +94,7 @@ public sealed partial class OperationsReceiveTests
       id,
       null,
       _testCaseTransport,
-      onProgressAction: new Progress<ProgressArgs>(_ => wasCalled = true)
+      onProgressAction: new UnitTestProgress<ProgressArgs>(_ => wasCalled = true)
     );
 
     Assert.That(wasCalled, Is.True);

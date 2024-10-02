@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
@@ -207,13 +208,12 @@ public sealed class SendReceiveLocal : IDisposable
       myObject,
       _sut,
       false,
-      onProgressAction: new Progress<ProgressArgs>(x =>
+      onProgressAction: new UnitTestProgress<ProgressArgs>(x =>
       {
         progress = x;
       })
     );
-    progress.NotNull();
-    Assert.That(progress, Has.Count.GreaterThanOrEqualTo(1));
+    progress.ShouldNotBeNull();
   }
 
   [Test(Description = "Should show progress!"), Order(5)]
@@ -222,13 +222,12 @@ public sealed class SendReceiveLocal : IDisposable
     ProgressArgs? progress = null;
     await _operations.Receive(
       _commitId02.NotNull(),
-      onProgressAction: new Progress<ProgressArgs>(x =>
+      onProgressAction: new UnitTestProgress<ProgressArgs>(x =>
       {
         progress = x;
       })
     );
-    progress.NotNull();
-    Assert.That(progress, Has.Count.GreaterThanOrEqualTo(1));
+    progress.ShouldNotBeNull();
   }
 
   [Test(Description = "Should not dispose of transports if so specified.")]
