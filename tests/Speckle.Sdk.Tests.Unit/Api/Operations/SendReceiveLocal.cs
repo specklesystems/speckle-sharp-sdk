@@ -202,15 +202,15 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    ConcurrentBag<ProgressArgs>? progress = null;
+    ProgressArgs? progress = null;
     (_commitId02, _) = await _operations.Send(
       myObject,
       _sut,
       false,
-      onProgressAction: dict =>
+      onProgressAction: new Progress<ProgressArgs>(x =>
       {
-        progress = dict;
-      }
+        progress = x;
+      })
     );
     progress.NotNull();
     Assert.That(progress, Has.Count.GreaterThanOrEqualTo(1));
@@ -219,13 +219,13 @@ public sealed class SendReceiveLocal : IDisposable
   [Test(Description = "Should show progress!"), Order(5)]
   public async Task DownloadProgressReports()
   {
-    ConcurrentBag<ProgressArgs>? progress = null;
+    ProgressArgs? progress = null;
     await _operations.Receive(
       _commitId02.NotNull(),
-      onProgressAction: dict =>
+      onProgressAction: new Progress<ProgressArgs>(x =>
       {
-        progress = dict;
-      }
+        progress = x;
+      })
     );
     progress.NotNull();
     Assert.That(progress, Has.Count.GreaterThanOrEqualTo(1));

@@ -5,9 +5,9 @@ namespace Speckle.Sdk.Transports.ServerUtils;
 internal class ProgressContent : HttpContent
 {
   private readonly HttpContent _innerContent;
-  private readonly Action<ProgressArgs>? _progress;
+  private readonly IProgress<ProgressArgs>? _progress;
 
-  public ProgressContent(HttpContent innerContent, Action<ProgressArgs>? progress)
+  public ProgressContent(HttpContent innerContent, IProgress<ProgressArgs>? progress)
   {
     _innerContent = innerContent;
     _progress = progress;

@@ -54,7 +54,7 @@ public static class TransportHelpers
 
       targetTransport.SaveObject(closure, child);
       var count = i++;
-      sourceTransport.OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.UploadObject, count, closures.Count));
+      sourceTransport.OnProgressAction?.Report(new ProgressArgs(ProgressEvent.UploadObject, count, closures.Count));
     }
 
     return parent;

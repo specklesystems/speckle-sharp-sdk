@@ -21,7 +21,7 @@ public class TestTransport : ITransport
   public TimeSpan Elapsed { get; }
   public int SavedObjectCount { get; }
   public CancellationToken CancellationToken { get; set; }
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
   public Action<string, Exception>? OnErrorAction { get; set; }
 
   public void BeginWrite() => throw new NotImplementedException();

@@ -54,7 +54,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 
   public string TransportName { get; set; } = "Memory";
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 
   public int SavedObjectCount { get; private set; }
 
@@ -85,7 +85,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     _objects[id] = serializedObject;
 
     SavedObjectCount++;
-    OnProgressAction?.Invoke(new(ProgressEvent.UploadObject, 1, 1));
+    OnProgressAction?.Report(new(ProgressEvent.UploadObject, 1, 1));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
   }

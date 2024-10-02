@@ -90,7 +90,7 @@ public sealed partial class OperationsReceiveTests
   public async Task Receive_FromLocal_OnProgressActionCalled(string id)
   {
     bool wasCalled = false;
-    _ = await _operations.Receive(id, null, _testCaseTransport, onProgressAction: _ => wasCalled = true);
+    _ = await _operations.Receive(id, null, _testCaseTransport, onProgressAction: new Progress<ProgressArgs>(_ => wasCalled = true));
 
     Assert.That(wasCalled, Is.True);
   }
