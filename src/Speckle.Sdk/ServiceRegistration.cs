@@ -27,7 +27,8 @@ public static class ServiceRegistration
         Slug = application.Slug
       }
     );
-    serviceCollection.AddSingleton<ISdkActivityFactory, NullActivityFactory>();
+    serviceCollection.TryAddSingleton<ISdkActivityFactory, NullActivityFactory>();
+    serviceCollection.TryAddSingleton<ISdkMetricsFactory, NullSdkMetricsFactory>();
     serviceCollection.AddMatchingInterfacesAsTransient(Assembly.GetExecutingAssembly());
     return serviceCollection;
   }
