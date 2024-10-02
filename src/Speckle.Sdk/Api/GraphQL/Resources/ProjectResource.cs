@@ -35,6 +35,7 @@ public sealed class ProjectResource
           createdAt
           updatedAt
           sourceApps
+          workspaceId
         }
       }
       """;
@@ -170,6 +171,7 @@ public sealed class ProjectResource
               role
             }
           }
+          workspaceId
         }
       }
       """;
@@ -201,6 +203,7 @@ public sealed class ProjectResource
             createdAt
             updatedAt
             sourceApps
+            workspaceId
           }
         }
       }
@@ -232,6 +235,7 @@ public sealed class ProjectResource
             role
             createdAt
             updatedAt
+            workspaceId
           }
         }
       }
@@ -323,6 +327,7 @@ public sealed class ProjectResource
                 role
               }
             }
+            workspaceId
           }
         }
       }
