@@ -59,7 +59,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     _client.Dispose();
   }
 
-  public async Task<string?> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
+  public async Task<string?> DownloadSingleObject(string streamId, string objectId, IProgress<ProgressArgs>? progress)
   {
     using var _ = _activityFactory.Start();
     CancellationToken.ThrowIfCancellationRequested();
@@ -83,7 +83,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   public async Task DownloadObjects(
     string streamId,
     IReadOnlyList<string> objectIds,
-    Action<ProgressArgs>? progress,
+    IProgress<ProgressArgs>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -149,7 +149,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   public async Task UploadObjects(
     string streamId,
     IReadOnlyList<(string, string)> objects,
-    Action<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress
   )
   {
     if (objects.Count == 0)
@@ -219,7 +219,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   public async Task UploadBlobs(
     string streamId,
     IReadOnlyList<(string, string)> objects,
-    Action<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress
   )
   {
     CancellationToken.ThrowIfCancellationRequested();
@@ -266,7 +266,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
   }
 
-  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, Action<ProgressArgs>? progress)
+  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, IProgress<ProgressArgs>? progress)
   {
     foreach (var blobId in blobIds)
     {
@@ -302,7 +302,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   private async Task DownloadObjectsImpl(
     string streamId,
     IReadOnlyList<string> objectIds,
-    Action<ProgressArgs>? progress,
+    IProgress<ProgressArgs>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -330,7 +330,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   private async Task ResponseProgress(
     HttpResponseMessage childrenHttpResponse,
-    Action<ProgressArgs>? progress,
+    IProgress<ProgressArgs>? progress,
     CbObjectDownloaded onObjectCallback,
     bool isSingle
   )
@@ -390,7 +390,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   private async Task UploadObjectsImpl(
     string streamId,
     List<List<(string, string)>> multipartedObjects,
-    Action<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress
   )
   {
     CancellationToken.ThrowIfCancellationRequested();

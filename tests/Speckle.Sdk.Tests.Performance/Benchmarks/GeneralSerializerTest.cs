@@ -57,7 +57,7 @@ public class NullTransport : ITransport
   public Dictionary<string, object> TransportContext { get; } = new();
   public TimeSpan Elapsed { get; } = TimeSpan.Zero;
   public CancellationToken CancellationToken { get; set; }
-  public Action<ProgressArgs> OnProgressAction { get; set; }
+  public IProgress<ProgressArgs> OnProgressAction { get; set; }
 
   public void BeginWrite() { }
 

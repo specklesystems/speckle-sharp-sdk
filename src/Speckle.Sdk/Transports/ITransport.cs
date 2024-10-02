@@ -12,7 +12,12 @@ public enum ProgressEvent
   SerializeObject,
 }
 
-public record ProgressArgs(ProgressEvent ProgressEvent, long? Count, long? Total, long? ProcessedTotal = null);
+public readonly record struct ProgressArgs(
+  ProgressEvent ProgressEvent,
+  long? Count,
+  long? Total,
+  long? ProcessedTotal = null
+);
 
 /// <summary>
 /// Interface defining the contract for transport implementations.
@@ -42,7 +47,7 @@ public interface ITransport
   /// <summary>
   /// Used to report progress during the transport's longer operations.
   /// </summary>
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 
   /// <summary>
   /// Signals to the transport that writes are about to begin.

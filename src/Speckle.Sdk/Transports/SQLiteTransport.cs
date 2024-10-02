@@ -115,7 +115,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 
   public int SavedObjectCount { get; private set; }
 
@@ -330,7 +330,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
         CancellationToken.ThrowIfCancellationRequested();
       }
 
-      OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, saved, _queue.Count + 1));
+      OnProgressAction?.Report(new(ProgressEvent.DownloadObject, saved, _queue.Count + 1));
 
       CancellationToken.ThrowIfCancellationRequested();
 
