@@ -4,7 +4,7 @@ public enum MemberType1D
 {
   Beam,
   Column,
-  Generic1D
+  Generic1D,
 }
 
 public enum MemberType2D
@@ -13,5 +13,5 @@ public enum MemberType2D
   Wall,
   Generic2D,
   VoidCutter1D,
-  VoidCutter2D
+  VoidCutter2D,
 }

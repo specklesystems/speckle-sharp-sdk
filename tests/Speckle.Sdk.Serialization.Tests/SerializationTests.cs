@@ -55,7 +55,7 @@ public class SerializationTests
     var deserializer = new SpeckleObjectDeserializer
     {
       ReadTransport = new TestTransport(closure),
-      CancellationToken = default
+      CancellationToken = default,
     };
     foreach (var (id, objJson) in closure)
     {

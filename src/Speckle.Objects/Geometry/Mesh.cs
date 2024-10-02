@@ -70,7 +70,7 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
       applicationId = applicationId ?? id,
       faces = faces,
       colors = colors,
-      units = units
+      units = units,
     };
     transformed["renderMaterial"] = this["renderMaterial"];
 

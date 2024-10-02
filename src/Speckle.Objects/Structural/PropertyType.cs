@@ -10,21 +10,21 @@ public enum PropertyType2D
   Wall,
   Strain,
   Axi,
-  Load
+  Load,
 }
 
 public enum ReferenceSurface
 {
   Top,
   Middle,
-  Bottom
+  Bottom,
   //TOP_CENTRE, CENTROID,BOT_CENTRE
 }
 
 public enum PropertyType3D
 {
   Solid,
-  Infinite
+  Infinite,
 }
 
 public enum PropertyTypeSpring
@@ -38,7 +38,7 @@ public enum PropertyTypeSpring
   Connector,
   LockUp,
   Gap,
-  Friction
+  Friction,
   //Translational, //old
   //Rotational //old
 }
@@ -47,7 +47,7 @@ public enum PropertyTypeDamper
 {
   Axial, //translational
   Torsional, //rotational
-  General
+  General,
 }
 
 public enum BaseReferencePoint
@@ -60,7 +60,7 @@ public enum BaseReferencePoint
   MidRight,
   BotLeft,
   BotCentre,
-  BotRight
+  BotRight,
 }
 
 public enum ShapeType
@@ -75,5 +75,5 @@ public enum ShapeType
   Box,
   Catalogue,
   Explicit,
-  Undefined
+  Undefined,
 }

@@ -101,7 +101,7 @@ public partial class Operations
         ReadTransport = localTransport,
         OnProgressAction = internalProgressAction,
         CancellationToken = cancellationToken,
-        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder
+        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder,
       };
 
     // Try Local Receive

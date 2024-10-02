@@ -70,14 +70,14 @@ public class AccountServerMigrationTests
       {
         url = url,
         name = "myServer",
-        migration = new ServerMigration { movedTo = movedTo, movedFrom = movedFrom }
+        migration = new ServerMigration { movedTo = movedTo, movedFrom = movedFrom },
       },
       userInfo = new UserInfo
       {
         id = id,
         email = "user@example.com",
-        name = "user"
-      }
+        name = "user",
+      },
     };
   }
 

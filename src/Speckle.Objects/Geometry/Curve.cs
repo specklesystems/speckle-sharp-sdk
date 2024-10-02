@@ -80,7 +80,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
       closed = closed,
       units = units,
       applicationId = applicationId,
-      domain = domain != null ? new Interval { start = domain.start, end = domain.end } : Interval.UnitInterval
+      domain = domain != null ? new Interval { start = domain.start, end = domain.end } : Interval.UnitInterval,
     };
 
     return result;

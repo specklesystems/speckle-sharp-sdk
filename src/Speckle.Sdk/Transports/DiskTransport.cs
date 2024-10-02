@@ -28,7 +28,7 @@ public class DiskTransport : ICloneable, ITransport
       CancellationToken = CancellationToken,
       OnErrorAction = OnErrorAction,
       OnProgressAction = OnProgressAction,
-      TransportName = TransportName
+      TransportName = TransportName,
     };
   }
 
@@ -39,7 +39,7 @@ public class DiskTransport : ICloneable, ITransport
     {
       { "name", TransportName },
       { "type", GetType().Name },
-      { "basePath", RootPath }
+      { "basePath", RootPath },
     };
 
   public CancellationToken CancellationToken { get; set; }

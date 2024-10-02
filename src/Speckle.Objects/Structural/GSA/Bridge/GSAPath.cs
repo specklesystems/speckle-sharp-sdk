@@ -59,5 +59,5 @@ public enum PathType
   TRACK,
   VEHICLE,
   CWAY_1WAY,
-  CWAY_2WAY
+  CWAY_2WAY,
 }

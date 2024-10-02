@@ -8,7 +8,7 @@ namespace Speckle.Objects.Structural.Results;
 public enum CaseType
 {
   Analysis,
-  Combination
+  Combination,
 }
 
 [SpeckleType("Objects.Structural.Results.ResultSetNode")]

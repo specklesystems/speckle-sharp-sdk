@@ -68,7 +68,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     using var rootHttpMessage = new HttpRequestMessage
     {
       RequestUri = new Uri($"/objects/{streamId}/{objectId}/single", UriKind.Relative),
-      Method = HttpMethod.Get
+      Method = HttpMethod.Get,
     };
 
     HttpResponseMessage rootHttpResponse = await _client
@@ -313,7 +313,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     using var childrenHttpMessage = new HttpRequestMessage
     {
       RequestUri = new Uri($"/api/getobjects/{streamId}", UriKind.Relative),
-      Method = HttpMethod.Post
+      Method = HttpMethod.Post,
     };
 
     Dictionary<string, string> postParameters = new() { { "objects", JsonConvert.SerializeObject(objectIds) } };

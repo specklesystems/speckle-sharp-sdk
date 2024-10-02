@@ -46,7 +46,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
       TransportName = TransportName,
       OnProgressAction = OnProgressAction,
       CancellationToken = CancellationToken,
-      SavedObjectCount = SavedObjectCount
+      SavedObjectCount = SavedObjectCount,
     };
   }
 
@@ -65,7 +65,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
       { "type", GetType().Name },
       { "basePath", _basePath },
       { "applicationName", _applicationName },
-      { "blobStorageFolder", BlobStorageFolder }
+      { "blobStorageFolder", BlobStorageFolder },
     };
 
   public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;

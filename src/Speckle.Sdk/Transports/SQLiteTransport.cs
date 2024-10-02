@@ -58,7 +58,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     {
       AutoReset = true,
       Enabled = false,
-      Interval = POLL_INTERVAL
+      Interval = POLL_INTERVAL,
     };
     _writeTimer.Elapsed += WriteTimerElapsed;
   }
@@ -87,7 +87,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     return new SQLiteTransport(_basePath, _applicationName, _scope)
     {
       OnProgressAction = OnProgressAction,
-      CancellationToken = CancellationToken
+      CancellationToken = CancellationToken,
     };
   }
 
@@ -110,7 +110,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
       { "basePath", _basePath },
       { "applicationName", _applicationName },
       { "scope", _scope },
-      { "blobStorageFolder", BlobStorageFolder }
+      { "blobStorageFolder", BlobStorageFolder },
     };
 
   public CancellationToken CancellationToken { get; set; }

@@ -135,7 +135,7 @@ public class SpeckleObjectSerializer
           {
             ["speckle_type"] = r.speckle_type,
             ["referencedId"] = r.referencedId,
-            ["__closure"] = r.closure
+            ["__closure"] = r.closure,
           };
         if (r.closure is not null)
         {
@@ -288,7 +288,7 @@ public class SpeckleObjectSerializer
         {
           referencedId = id,
           applicationId = baseObj.applicationId,
-          closure = closure
+          closure = closure,
         };
       }
       return new(json2, null);

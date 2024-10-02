@@ -4,7 +4,7 @@ public enum AxisType
 {
   Cartesian,
   Cylindrical,
-  Spherical
+  Spherical,
 }
 
 public enum LoadAxisType
@@ -12,4 +12,5 @@ public enum LoadAxisType
   Global,
   Local, // local element axes
   DeformedLocal // element local axis that is embedded in the element as it deforms
+  ,
 }
