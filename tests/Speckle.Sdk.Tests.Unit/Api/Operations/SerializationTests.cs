@@ -50,7 +50,7 @@ public class ObjectSerialization
       cat.Claws[$"Claw number {i}"] = new Line
       {
         Start = new Point(i, i, i),
-        End = new Point(i + 3.14, i + 3.14, i + 3.14)
+        End = new Point(i + 3.14, i + 3.14, i + 3.14),
       };
 
       if (i % 2 == 0)
@@ -86,7 +86,7 @@ public class ObjectSerialization
       X = 10,
       Y = 10,
       Z = 10,
-      W = 42
+      W = 42,
     };
 
     var str = _operations.Serialize(superPoint);

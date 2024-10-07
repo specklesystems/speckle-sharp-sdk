@@ -19,13 +19,13 @@ public sealed partial class OperationsReceiveTests
     Reset();
     s_testObjects =
     [
-      new() { ["string prop"] = "simple test case", ["numerical prop"] = 123, },
+      new() { ["string prop"] = "simple test case", ["numerical prop"] = 123 },
       new() { ["@detachedProp"] = new Base() { ["the best prop"] = "1234!" } },
       new()
       {
         ["@detachedList"] = new List<Base> { new() { ["the worst prop"] = null } },
         ["dictionaryProp"] = new Dictionary<string, Base> { ["dict"] = new() { ["the best prop"] = "" } },
-      }
+      },
     ];
   }
 

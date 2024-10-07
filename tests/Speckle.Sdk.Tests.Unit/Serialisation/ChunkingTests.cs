@@ -45,6 +45,6 @@ public class ChunkingTests
   private static Base CreateDynamicTestCase(double numberOfChunks, int chunkSize)
   {
     List<int> value = Enumerable.Range(0, (int)Math.Floor(chunkSize * numberOfChunks)).ToList();
-    return new Base { [$"@({chunkSize})chunkedProperty"] = value, };
+    return new Base { [$"@({chunkSize})chunkedProperty"] = value };
   }
 }

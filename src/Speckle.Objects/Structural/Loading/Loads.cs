@@ -20,7 +20,7 @@ public enum LoadType
   SeismicRSA,
   SeismicAccTorsion,
   SeismicStatic,
-  Other
+  Other,
 }
 
 public enum ActionType
@@ -28,7 +28,7 @@ public enum ActionType
   None,
   Permanent,
   Variable,
-  Accidental
+  Accidental,
 }
 
 public enum BeamLoadType
@@ -37,21 +37,21 @@ public enum BeamLoadType
   Uniform,
   Linear,
   Patch,
-  TriLinear
+  TriLinear,
 }
 
 public enum FaceLoadType
 {
   Constant,
   Variable,
-  Point
+  Point,
 }
 
 public enum LoadDirection2D
 {
   X,
   Y,
-  Z
+  Z,
 }
 
 public enum LoadDirection
@@ -61,7 +61,7 @@ public enum LoadDirection
   Z,
   XX,
   YY,
-  ZZ
+  ZZ,
 }
 
 public enum CombinationType
@@ -71,4 +71,5 @@ public enum CombinationType
   AbsoluteAdd,
   SRSS,
   RangeAdd // what's this?
+  ,
 }

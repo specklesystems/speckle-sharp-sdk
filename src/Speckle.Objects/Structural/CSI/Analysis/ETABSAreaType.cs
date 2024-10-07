@@ -5,7 +5,7 @@ public enum CSIPropertyType2D
   Deck,
   Slab,
   Shell,
-  Wall
+  Wall,
 }
 
 public enum SlabType
@@ -16,7 +16,7 @@ public enum SlabType
   Waffle,
   Mat,
   Footing,
-  Null
+  Null,
 }
 
 public enum ShellType
@@ -25,7 +25,7 @@ public enum ShellType
   ShellThick,
   Membrane,
   Layered,
-  Null
+  Null,
 }
 
 public enum DeckType
@@ -33,5 +33,5 @@ public enum DeckType
   Filled,
   Unfilled,
   SolidSlab,
-  Null
+  Null,
 }

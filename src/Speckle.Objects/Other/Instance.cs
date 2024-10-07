@@ -155,7 +155,7 @@ public class BlockInstance : Instance<BlockDefinition>
       normal = new Vector(0, 0, 1, units),
       xdir = new Vector(1, 0, 0, units),
       ydir = new Vector(0, 1, 0, units),
-      units = units
+      units = units,
     };
     plane.TransformTo(transform, out Plane tPlane);
     return tPlane;

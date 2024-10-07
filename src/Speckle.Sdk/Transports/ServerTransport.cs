@@ -113,7 +113,7 @@ public sealed class ServerTransport : IServerTransport
       { "type", GetType().Name },
       { "streamId", StreamId },
       { "serverUrl", BaseUri },
-      { "blobStorageFolder", BlobStorageFolder }
+      { "blobStorageFolder", BlobStorageFolder },
     };
 
   public CancellationToken CancellationToken { get; set; }

@@ -48,7 +48,9 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
 
     var client = new HttpClient(speckleHandler)
     {
-      Timeout = Timeout.InfiniteTimeSpan //timeout is configured on the SpeckleHttpClientHandler through policy
+      Timeout =
+        Timeout.InfiniteTimeSpan //timeout is configured on the SpeckleHttpClientHandler through policy
+      ,
     };
     AddAuthHeader(client, authorizationToken);
     return client;

@@ -41,7 +41,7 @@ public class GraphTraversalTests
       {
         ListChildren = new List<Base> { expectTraverse },
         DictChildren = new Dictionary<string, Base> { ["myprop"] = expectIgnored },
-        Child = expectIgnored
+        Child = expectIgnored,
       };
 
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
@@ -73,7 +73,7 @@ public class GraphTraversalTests
       {
         ListChildren = new List<Base> { expectIgnored },
         DictChildren = new Dictionary<string, Base> { ["myprop"] = expectTraverse },
-        Child = expectIgnored
+        Child = expectIgnored,
       };
 
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
@@ -103,7 +103,7 @@ public class GraphTraversalTests
       {
         Child = expectIgnored,
         ["dynamicChild"] = expectTraverse,
-        ["dynamicListChild"] = new List<Base> { expectTraverse }
+        ["dynamicListChild"] = new List<Base> { expectTraverse },
       };
 
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
@@ -133,7 +133,7 @@ public class GraphTraversalTests
       {
         Child = expectIgnored,
         ["dynamicChild"] = expectTraverse,
-        ["dynamicListChild"] = new List<Base> { expectTraverse }
+        ["dynamicListChild"] = new List<Base> { expectTraverse },
       };
 
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();

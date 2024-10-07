@@ -104,7 +104,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
         { "a", "This is object a" },
         { "b", "This is object b" },
         { "c", "This is object c" },
-        { "d", "This is object d" }
+        { "d", "This is object d" },
       };
     int length = testData.Values.First().Length;
 

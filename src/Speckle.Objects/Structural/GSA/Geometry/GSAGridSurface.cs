@@ -49,7 +49,7 @@ public enum GridSurfaceSpanType
 {
   NotSet = 0,
   OneWay,
-  TwoWay
+  TwoWay,
 }
 
 public enum LoadExpansion
@@ -58,5 +58,5 @@ public enum LoadExpansion
   Legacy = 1,
   PlaneAspect = 2,
   PlaneSmooth = 3,
-  PlaneCorner = 4
+  PlaneCorner = 4,
 }
