@@ -10,8 +10,8 @@ public class RawEncoding : Base // note: at this stage, since we're using this f
 {
   public required string format { get; set; }
   public required string contents { get; set; }
-  
-  public RawEncoding(){}
+
+  public RawEncoding() { }
 }
 
 /// <summary>
