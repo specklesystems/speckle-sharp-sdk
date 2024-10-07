@@ -47,7 +47,7 @@ internal sealed class MapConverter : JsonConverter<Map>
       JConstructor => throw new ArgumentOutOfRangeException(nameof(token), "cannot deserialize a JSON constructor"),
       JProperty => throw new ArgumentOutOfRangeException(nameof(token), "cannot deserialize a JSON property"),
       JContainer => throw new ArgumentOutOfRangeException(nameof(token), "cannot deserialize a JSON comment"),
-      _ => throw new ArgumentOutOfRangeException(nameof(token), $"Invalid token type {token?.Type}")
+      _ => throw new ArgumentOutOfRangeException(nameof(token), $"Invalid token type {token?.Type}"),
     };
   }
 

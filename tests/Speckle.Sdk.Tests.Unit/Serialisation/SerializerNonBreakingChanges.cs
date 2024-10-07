@@ -113,7 +113,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
   {
     Array.Empty<double>(),
     new double[] { 0, 1, int.MaxValue, int.MinValue },
-    new[] { default, double.Epsilon, double.MaxValue, double.MinValue }
+    new[] { default, double.Epsilon, double.MaxValue, double.MinValue },
   };
 
   [Test, TestCaseSource(nameof(s_arrayTestCases))]
@@ -208,7 +208,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
     Random rand = new(seed);
     List<double> testCase = Enumerable.Range(0, 16).Select(_ => rand.NextDouble() * scalar).ToList();
 
-    ListDoubleValueMock from = new() { value = testCase, };
+    ListDoubleValueMock from = new() { value = testCase };
 
     //Test List -> Matrix
     var res = await from.SerializeAsTAndDeserialize<Matrix64ValueMock>(_operations);
@@ -332,7 +332,7 @@ public enum MyEnum
   Three,
   Neg = -1,
   Min = int.MinValue,
-  Max = int.MaxValue
+  Max = int.MaxValue,
 }
 
 public abstract class SerializerMock : Base
@@ -383,7 +383,7 @@ public abstract class PrimitiveTestFixture
       double.MinValue,
       double.PositiveInfinity,
       double.NegativeInfinity,
-      double.NaN
+      double.NaN,
     };
 
   public static float[] Float32TestCases { get; } =
@@ -394,7 +394,7 @@ public abstract class PrimitiveTestFixture
       float.MinValue,
       float.PositiveInfinity,
       float.NegativeInfinity,
-      float.NaN
+      float.NaN,
     };
 
   public static Half[] Float16TestCases { get; } =

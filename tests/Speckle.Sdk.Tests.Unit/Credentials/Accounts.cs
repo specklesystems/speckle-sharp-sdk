@@ -20,7 +20,7 @@ public class CredentialInfrastructure
       refreshToken = "bla",
       token = "bla",
       serverInfo = new ServerInfo { url = "https://bla.example.com", company = "bla" },
-      userInfo = new UserInfo { email = "one@two.com" }
+      userInfo = new UserInfo { email = "one@two.com" },
     };
 
     s_testAccount2 = new Account
@@ -28,7 +28,7 @@ public class CredentialInfrastructure
       refreshToken = "foo",
       token = "bar",
       serverInfo = new ServerInfo { url = "https://baz.example.com", company = "qux" },
-      userInfo = new UserInfo { email = "three@four.com" }
+      userInfo = new UserInfo { email = "three@four.com" },
     };
 
     s_testAccount3 = new Account
@@ -39,8 +39,8 @@ public class CredentialInfrastructure
       {
         email = "six@five.com",
         id = "123345",
-        name = "Test Account 3"
-      }
+        name = "Test Account 3",
+      },
     };
 
     Fixtures.UpdateOrSaveAccount(s_testAccount1);
@@ -119,13 +119,13 @@ public class CredentialInfrastructure
     var acc1 = new Account
     {
       serverInfo = new ServerInfo { url = "https://speckle.xyz" },
-      userInfo = new UserInfo { id = id }
+      userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
 
     var acc2 = new Account
     {
       serverInfo = new ServerInfo { url = "https://app.speckle.systems" },
-      userInfo = new UserInfo { id = id }
+      userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
 
     Assert.That(acc1, Is.Not.EqualTo(acc2));

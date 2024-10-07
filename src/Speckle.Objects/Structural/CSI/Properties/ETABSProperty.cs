@@ -4,26 +4,26 @@ public enum DiaphragmOption
 {
   Disconnect,
   FromShellObject,
-  DefinedDiaphragm
+  DefinedDiaphragm,
 }
 
 public enum NonLinearOptions
 {
   Linear,
   CompressionOnly,
-  TensionOnly
+  TensionOnly,
 }
 
 public enum SpringOption
 {
   Link,
-  SoilProfileFooting
+  SoilProfileFooting,
 }
 
 public enum ModelingOption
 {
   Loads,
-  Elements
+  Elements,
 }
 
 public enum DesignProcedure
@@ -34,5 +34,5 @@ public enum DesignProcedure
   CompositeBeamDesign,
   SteelJoistDesign,
   NoDesign,
-  CompositeColumnDesign
+  CompositeColumnDesign,
 }

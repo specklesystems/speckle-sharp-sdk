@@ -9,5 +9,5 @@ public enum MemberType
   Wall,
   Generic2D,
   VoidCutter1D,
-  VoidCutter2D
+  VoidCutter2D,
 }

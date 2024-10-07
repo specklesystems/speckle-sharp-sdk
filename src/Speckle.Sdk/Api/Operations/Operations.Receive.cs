@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
@@ -35,7 +34,7 @@ public partial class Operations
     string objectId,
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
-    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
+    IProgress<ProgressArgs>? onProgressAction = null,
     Action<int>? onTotalChildrenCountKnown = null,
     CancellationToken cancellationToken = default
   )
@@ -57,7 +56,7 @@ public partial class Operations
           objectId,
           remoteTransport,
           localTransport,
-          GetInternalProgressAction(onProgressAction),
+          onProgressAction,
           onTotalChildrenCountKnown,
           cancellationToken
         )
@@ -74,12 +73,12 @@ public partial class Operations
     }
   }
 
-  /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,Action{ConcurrentBag{ProgressArgs}}?,Action{int}?,CancellationToken)"/>
+  /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,IProgress{ProgressArgs}?,Action{int}?,CancellationToken)"/>
   private async Task<Base> ReceiveImpl(
     string objectId,
     ITransport? remoteTransport,
     ITransport localTransport,
-    Action<ProgressArgs>? internalProgressAction,
+    IProgress<ProgressArgs>? internalProgressAction,
     Action<int>? onTotalChildrenCountKnown,
     CancellationToken cancellationToken
   )
@@ -102,7 +101,7 @@ public partial class Operations
         ReadTransport = localTransport,
         OnProgressAction = internalProgressAction,
         CancellationToken = cancellationToken,
-        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder
+        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder,
       };
 
     // Try Local Receive

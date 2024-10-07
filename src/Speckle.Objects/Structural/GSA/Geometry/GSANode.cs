@@ -49,7 +49,9 @@ public class GSANode : Node
             normal = new Vector(0, 0, 1, units: Units.Meters), //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
             xdir = new Vector(1, 0, 0, units: Units.Meters), //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
             ydir = new Vector(0, 1, 0, units: Units.Meters), //Defaulting to meters here was probably not intentional, but previously was being done in the Vector's ctor
-            units = Units.Meters //Not sure if defaulting to meters is correct, but it was what we were doing previously inside Plane's ctor
+            units =
+              Units.Meters //Not sure if defaulting to meters is correct, but it was what we were doing previously inside Plane's ctor
+            ,
           }
         )
         : constraintAxis;

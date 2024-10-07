@@ -64,7 +64,7 @@ public enum AxisDirection6
   Z,
   XX,
   YY,
-  ZZ
+  ZZ,
 }
 
 public enum LinkageType
@@ -84,5 +84,5 @@ public enum LinkageType
   XY_PLATE_PIN,
   YZ_PLATE_PIN,
   ZX_PLATE_PIN,
-  Custom
+  Custom,
 }

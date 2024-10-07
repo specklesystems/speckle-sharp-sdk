@@ -1,7 +1,11 @@
 ﻿namespace Speckle.Sdk.Transports;
 
-internal sealed class ProgressStream(Stream input, long? streamLength, Action<ProgressArgs>? progress, bool useBuffer)
-  : Stream
+internal sealed class ProgressStream(
+  Stream input,
+  long? streamLength,
+  IProgress<ProgressArgs>? progress,
+  bool useBuffer
+) : Stream
 {
   private long _position;
   private readonly Stream _stream = useBuffer ? new BufferedStream(input, 80 * 1024) : input;
@@ -16,7 +20,7 @@ internal sealed class ProgressStream(Stream input, long? streamLength, Action<Pr
   {
     int n = _stream.Read(buffer, offset, count);
     _position += n;
-    progress?.Invoke(new(ProgressEvent.DownloadBytes, _position, streamLength));
+    progress?.Report(new(ProgressEvent.DownloadBytes, _position, streamLength));
     return n;
   }
 
@@ -24,7 +28,7 @@ internal sealed class ProgressStream(Stream input, long? streamLength, Action<Pr
   {
     _stream.Write(buffer, offset, count);
     _position += count;
-    progress?.Invoke(new(ProgressEvent.UploadBytes, _position, streamLength));
+    progress?.Report(new(ProgressEvent.UploadBytes, _position, streamLength));
   }
 
   public override bool CanRead => true;

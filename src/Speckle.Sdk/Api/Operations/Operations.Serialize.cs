@@ -15,7 +15,7 @@ public partial class Operations
   /// <remarks>
   /// If you want to save and persist an object to Speckle Transport or Server,
   /// please use any of the "Send" methods.
-  /// <see cref="Send(Base,Speckle.Sdk.Transports.ITransport,bool,System.Action{System.Collections.Concurrent.ConcurrentBag{ProgressArgs}}?,System.Threading.CancellationToken)"/>
+  /// <see cref="Send(Base,Speckle.Sdk.Transports.ITransport,bool,System.IProgress{ProgressArgs}?,System.Threading.CancellationToken)"/>
   /// </remarks>
   /// <param name="value">The object to serialise</param>
   /// <param name="cancellationToken"></param>
@@ -29,7 +29,7 @@ public partial class Operations
   /// <remarks>
   /// Note: if you want to pull an object from a Speckle Transport or Server,
   /// please use
-  /// <see cref="Receive(string,Speckle.Sdk.Transports.ITransport?,Speckle.Sdk.Transports.ITransport?,System.Action{System.Collections.Concurrent.ConcurrentBag{ProgressArgs}}?,System.Action{int}?,System.Threading.CancellationToken)"/>
+  /// <see cref="Receive(string,Speckle.Sdk.Transports.ITransport?,Speckle.Sdk.Transports.ITransport?,System.IProgress{ProgressArgs}?,System.Action{int}?,System.Threading.CancellationToken)"/>
   /// </remarks>
   /// <param name="value">The json string representation of a speckle object that you want to deserialize</param>
   /// <param name="cancellationToken"></param>

@@ -19,7 +19,7 @@ public class ShallowCopyTests
       {
         start = new Point(0, 0, 0, UNITS),
         end = new Point(3, 0, 0, UNITS),
-        units = UNITS
+        units = UNITS,
       }
     )
     {
@@ -30,15 +30,15 @@ public class ShallowCopyTests
         {
           vertices = new(),
           faces = new(),
-          units = UNITS
+          units = UNITS,
         },
         new Mesh
         {
           vertices = new(),
           faces = new(),
-          units = UNITS
+          units = UNITS,
         },
-      }
+      },
     };
 
     var shallow = wall.ShallowCopy();

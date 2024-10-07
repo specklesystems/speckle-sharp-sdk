@@ -113,11 +113,11 @@ public sealed class ServerTransport : IServerTransport
       { "type", GetType().Name },
       { "streamId", StreamId },
       { "serverUrl", BaseUri },
-      { "blobStorageFolder", BlobStorageFolder }
+      { "blobStorageFolder", BlobStorageFolder },
     };
 
   public CancellationToken CancellationToken { get; set; }
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
   public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;
 
   public async Task<string> CopyObjectAndChildren(

@@ -72,7 +72,7 @@ public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
       points = transformedPoints.SelectMany(o => o.ToList()).ToList(),
       colors = colors,
       sizes = sizes,
-      applicationId = applicationId
+      applicationId = applicationId,
     };
 
     return true;
