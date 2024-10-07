@@ -25,7 +25,7 @@ public static class GraphQLHttpClientExtensions
                     serverInfo {
                         version
                       }
-                  }"
+                  }",
     };
 
     var response = await client.SendQueryAsync<ServerInfoResponse>(request, cancellationToken).ConfigureAwait(false);

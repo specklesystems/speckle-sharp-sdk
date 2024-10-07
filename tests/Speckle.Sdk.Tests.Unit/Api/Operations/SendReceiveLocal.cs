@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
@@ -120,7 +121,7 @@ public sealed class SendReceiveLocal : IDisposable
     {
       { "a", myList },
       { "b", 2 },
-      { "c", "ciao" }
+      { "c", "ciao" },
     };
 
     var myObject = new Base();
@@ -202,33 +203,31 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    ConcurrentBag<ProgressArgs>? progress = null;
+    ProgressArgs? progress = null;
     (_commitId02, _) = await _operations.Send(
       myObject,
       _sut,
       false,
-      onProgressAction: dict =>
+      onProgressAction: new UnitTestProgress<ProgressArgs>(x =>
       {
-        progress = dict;
-      }
+        progress = x;
+      })
     );
-    progress.NotNull();
-    Assert.That(progress, Has.Count.GreaterThanOrEqualTo(1));
+    progress.ShouldNotBeNull();
   }
 
   [Test(Description = "Should show progress!"), Order(5)]
   public async Task DownloadProgressReports()
   {
-    ConcurrentBag<ProgressArgs>? progress = null;
+    ProgressArgs? progress = null;
     await _operations.Receive(
       _commitId02.NotNull(),
-      onProgressAction: dict =>
+      onProgressAction: new UnitTestProgress<ProgressArgs>(x =>
       {
-        progress = dict;
-      }
+        progress = x;
+      })
     );
-    progress.NotNull();
-    Assert.That(progress, Has.Count.GreaterThanOrEqualTo(1));
+    progress.ShouldNotBeNull();
   }
 
   [Test(Description = "Should not dispose of transports if so specified.")]

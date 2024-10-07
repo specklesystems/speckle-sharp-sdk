@@ -4,7 +4,7 @@ public enum TeklaBeamType
 {
   Beam,
   PolyBeam,
-  SpiralBeam
+  SpiralBeam,
 }
 
 public enum TeklaChamferType
@@ -16,7 +16,7 @@ public enum TeklaChamferType
   arc_point,
   square,
   square_parallel,
-  line_and_arc
+  line_and_arc,
 }
 
 public enum TeklaWeldType
@@ -47,28 +47,28 @@ public enum TeklaWeldType
   edge,
   iso_surfacing,
   fold,
-  inclined
+  inclined,
 }
 
 public enum TeklaWeldIntermittentType
 {
   continuous,
   chain_intermittent,
-  staggered_intermittent
+  staggered_intermittent,
 }
 
 public enum TeklaDepthEnum
 {
   middle,
   front,
-  behind
+  behind,
 }
 
 public enum TeklaPlaneEnum
 {
   middle,
   left,
-  right
+  right,
 }
 
 public enum TeklaRotationEnum
@@ -76,11 +76,11 @@ public enum TeklaRotationEnum
   front,
   top,
   back,
-  below
+  below,
 }
 
 public enum TeklaOpeningTypeEnum
 {
   beam,
-  contour
+  contour,
 }

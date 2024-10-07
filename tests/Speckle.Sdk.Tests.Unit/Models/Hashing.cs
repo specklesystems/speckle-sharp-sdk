@@ -69,7 +69,7 @@ public class Hashing
     {
       X = 10,
       Y = 12,
-      Z = 30
+      Z = 30,
     };
     stopWatchStep = stopWatch.ElapsedMilliseconds;
     _ = pt.GetId();

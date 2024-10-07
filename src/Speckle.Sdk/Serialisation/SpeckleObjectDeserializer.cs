@@ -14,7 +14,6 @@ namespace Speckle.Sdk.Serialisation;
 public sealed class SpeckleObjectDeserializer
 {
   private volatile bool _isBusy;
-  private readonly object _callbackLock = new();
   private readonly object?[] _invokeNull = [null];
 
   // id -> Base if already deserialized or id -> ValueTask<object> if was handled by a bg thread
@@ -32,7 +31,7 @@ public sealed class SpeckleObjectDeserializer
   /// </summary>
   public ITransport ReadTransport { get; set; }
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 
   private long _currentCount;
   private readonly HashSet<string> _ids = new();
@@ -99,13 +98,10 @@ public sealed class SpeckleObjectDeserializer
       throw new SpeckleDeserializeException("Failed to deserialize", ex);
     }
 
-    lock (_callbackLock)
-    {
-      _processedCount++;
-      OnProgressAction?.Invoke(
-        new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount)
-      );
-    }
+    _processedCount++;
+    OnProgressAction?.Report(
+      new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount)
+    );
 
     return converted;
   }

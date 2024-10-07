@@ -17,5 +17,5 @@ public enum HostAppVersion
   v26,
   v715,
   v716,
-  v717
+  v717,
 }

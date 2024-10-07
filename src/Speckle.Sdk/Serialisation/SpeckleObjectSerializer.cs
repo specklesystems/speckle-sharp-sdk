@@ -20,7 +20,7 @@ public class SpeckleObjectSerializer
   private List<Dictionary<string, int>> _parentClosures = new();
   private HashSet<object> _parentObjects = new();
   private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
-  private readonly Action<ProgressArgs>? _onProgressAction;
+  private readonly IProgress<ProgressArgs>? _onProgressAction;
 
   private readonly bool _trackDetachedChildren;
   private int _serializedCount;
@@ -51,7 +51,7 @@ public class SpeckleObjectSerializer
   /// <param name="cancellationToken"></param>
   public SpeckleObjectSerializer(
     IReadOnlyCollection<ITransport> writeTransports,
-    Action<ProgressArgs>? onProgressAction = null,
+    IProgress<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
@@ -135,7 +135,7 @@ public class SpeckleObjectSerializer
           {
             ["speckle_type"] = r.speckle_type,
             ["referencedId"] = r.referencedId,
-            ["__closure"] = r.closure
+            ["__closure"] = r.closure,
           };
         if (r.closure is not null)
         {
@@ -279,7 +279,7 @@ public class SpeckleObjectSerializer
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
 
-      _onProgressAction?.Invoke(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
+      _onProgressAction?.Report(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
 
       // add to obj refs to return
       if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
@@ -288,7 +288,7 @@ public class SpeckleObjectSerializer
         {
           referencedId = id,
           applicationId = baseObj.applicationId,
-          closure = closure
+          closure = closure,
         };
       }
       return new(json2, null);

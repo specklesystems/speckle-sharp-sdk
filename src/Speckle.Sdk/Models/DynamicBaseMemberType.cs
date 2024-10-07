@@ -41,5 +41,5 @@ public enum DynamicBaseMemberType
   /// <summary>
   /// All the members, including dynamic and instance members flagged with <see cref="ObsoleteAttribute"/> or <see cref="SchemaIgnoreAttribute"/> attributes
   /// </summary>
-  All = InstanceAll + Dynamic
+  All = InstanceAll + Dynamic,
 }

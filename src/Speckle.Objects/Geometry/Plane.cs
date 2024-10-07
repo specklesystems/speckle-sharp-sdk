@@ -50,7 +50,7 @@ public class Plane : Base, ITransformable<Plane>
       xdir = transformedXdir,
       ydir = transformedYdir,
       applicationId = applicationId,
-      units = units
+      units = units,
     };
 
     return true;

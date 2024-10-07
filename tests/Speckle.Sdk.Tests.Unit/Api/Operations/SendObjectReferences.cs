@@ -53,13 +53,13 @@ public class SendObjectReferences
   private Base GenerateTestCase(int depth, bool withAppId)
   {
     var appId = withAppId ? $"{Guid.NewGuid()}" : null;
-    var ret = new Base() { applicationId = appId, };
+    var ret = new Base() { applicationId = appId };
     if (depth > 0)
     {
       ret["@elements"] = new List<Base>
       {
         GenerateTestCase(depth - 1, withAppId),
-        GenerateTestCase(depth - 1, withAppId)
+        GenerateTestCase(depth - 1, withAppId),
       };
     }
 

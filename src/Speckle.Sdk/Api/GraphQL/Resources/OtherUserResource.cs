@@ -93,8 +93,8 @@ public sealed class OtherUserResource
         limit,
         cursor,
         archived,
-        emailOnly
-      }
+        emailOnly,
+      },
     };
 
     var response = await _client

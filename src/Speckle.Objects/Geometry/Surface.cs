@@ -129,7 +129,7 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
       domainV = domainV,
       knotsU = knotsU,
       knotsV = knotsV,
-      units = units
+      units = units,
     };
     transformed.SetControlPoints(ptMatrix);
 
@@ -239,7 +239,7 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
       closedU = list[5] == 1,
       closedV = list[6] == 1,
       domainU = new Interval { start = list[7], end = list[8] },
-      domainV = new Interval { start = list[9], end = list[10] }
+      domainV = new Interval { start = list[9], end = list[10] },
     };
 
     var pointCount = (int)list[11];

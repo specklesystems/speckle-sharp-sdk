@@ -29,7 +29,7 @@ public class GeneralSerializerTest
       .SeedTransport(
         new Account()
         {
-          serverInfo = new() { url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e" }
+          serverInfo = new() { url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e" },
         },
         "2099ac4b5f",
         "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6"
@@ -57,7 +57,7 @@ public class NullTransport : ITransport
   public Dictionary<string, object> TransportContext { get; } = new();
   public TimeSpan Elapsed { get; } = TimeSpan.Zero;
   public CancellationToken CancellationToken { get; set; }
-  public Action<ProgressArgs> OnProgressAction { get; set; }
+  public IProgress<ProgressArgs> OnProgressAction { get; set; }
 
   public void BeginWrite() { }
 

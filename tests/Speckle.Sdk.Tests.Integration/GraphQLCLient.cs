@@ -37,7 +37,7 @@ public class GraphQLClientTests : IDisposable
             adminStreams{
               totalCount
               }
-            }"
+            }",
           }
         )
     );
@@ -58,7 +58,7 @@ public class GraphQLClientTests : IDisposable
             adminStreams{
               totalCount
               }
-            }"
+            }",
           },
           tokenSource.Token
         )

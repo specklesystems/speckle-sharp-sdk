@@ -28,7 +28,7 @@ internal sealed class NewtonsoftJsonSerializer : IGraphQLWebsocketJsonSerializer
     {
       ContractResolver = new CamelCasePropertyNamesContractResolver { IgnoreIsSpecifiedMembers = true },
       MissingMemberHandling = MissingMemberHandling.Ignore,
-      Converters = { new ConstantCaseEnumConverter() }
+      Converters = { new ConstantCaseEnumConverter() },
     };
 
   public JsonSerializerSettings JsonSerializerSettings { get; }
