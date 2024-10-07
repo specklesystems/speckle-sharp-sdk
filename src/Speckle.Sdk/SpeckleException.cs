@@ -10,5 +10,3 @@ public class SpeckleException : Exception
   public SpeckleException(string? message, Exception? inner = null)
     : base(message, inner) { }
 }
-
-

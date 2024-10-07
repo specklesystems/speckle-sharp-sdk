@@ -1,7 +1,7 @@
 ﻿namespace Speckle.Sdk.Common.Exceptions;
 
 /// <summary>
-/// Exception thrown when conversion cannot be performed 
+/// Exception thrown when conversion cannot be performed
 /// </summary>
 /// <remarks>Ideally, this exception should be thrown when we can pre-emptively check for invalid data that is known to cause an exception under normal circumstances</remarks>
 /// <example>
