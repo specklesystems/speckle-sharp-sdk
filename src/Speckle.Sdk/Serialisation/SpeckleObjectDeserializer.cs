@@ -17,7 +17,8 @@ public sealed class SpeckleObjectDeserializer
   private readonly object?[] _invokeNull = [null];
 
   // id -> Base if already deserialized or id -> ValueTask<object> if was handled by a bg thread
-  private ConcurrentDictionary<string, object?>? _deserializedObjects;
+  private readonly ConcurrentDictionary<string, object?> _deserializedObjects = new(StringComparer.Ordinal);
+  private long _total;
 
   /// <summary>
   /// Property that describes the type of the object.
@@ -32,10 +33,6 @@ public sealed class SpeckleObjectDeserializer
   public ITransport ReadTransport { get; set; }
 
   public IProgress<ProgressArgs>? OnProgressAction { get; set; }
-
-  private long _currentCount;
-  private readonly HashSet<string> _ids = new();
-  private long _processedCount;
 
   public string? BlobStorageFolder { get; set; }
 
@@ -65,15 +62,12 @@ public sealed class SpeckleObjectDeserializer
       }
 
       _isBusy = true;
-      _deserializedObjects = new(StringComparer.Ordinal);
-      _currentCount = 0;
 
       var result = (Base)await DeserializeJsonAsyncInternal(rootObjectJson).NotNull().ConfigureAwait(false);
       return result;
     }
     finally
     {
-      _deserializedObjects = null;
       _isBusy = false;
     }
   }
@@ -97,11 +91,6 @@ public sealed class SpeckleObjectDeserializer
     {
       throw new SpeckleDeserializeException("Failed to deserialize", ex);
     }
-
-    _processedCount++;
-    OnProgressAction?.Report(
-      new ProgressArgs(ProgressEvent.DeserializeObject, _currentCount, _ids.Count, _processedCount)
-    );
 
     return converted;
   }
@@ -142,18 +131,18 @@ public sealed class SpeckleObjectDeserializer
             {
               reader.Read(); //goes to prop value
               var closures = ClosureParser.GetClosures(reader);
-              foreach (var closure in closures)
+              if (closures.Any())
               {
-                _ids.Add(closure.Item1);
+                _total = closures.Select(x => x.Item1).Concat(_deserializedObjects.Keys).Distinct().Count();
+                foreach (var closure in closures)
+                {
+                  string objId = closure.Item1;
+                  //don't do anything with return value but later check if null
+                  // https://linear.app/speckle/issue/CXPLA-54/when-deserializing-dont-allow-closures-that-arent-downloadable
+                  await TryGetDeserializedAsync(objId).ConfigureAwait(false);
+                }
               }
 
-              foreach (var closure in closures)
-              {
-                string objId = closure.Item1;
-                //don't do anything with return value but later check if null
-                // https://linear.app/speckle/issue/CXPLA-54/when-deserializing-dont-allow-closures-that-arent-downloadable
-                await TryGetDeserializedAsync(objId).ConfigureAwait(false);
-              }
               reader.Read(); //goes to next
               continue;
             }
@@ -203,10 +192,7 @@ public sealed class SpeckleObjectDeserializer
         throw new SpeckleDeserializeException("Failed to deserialize reference object", ex);
       }
 
-      if (_deserializedObjects.TryAdd(objId, deserialized))
-      {
-        _currentCount++;
-      }
+      _deserializedObjects.TryAdd(objId, deserialized);
     }
     if (deserialized is ValueTask<object> valueTask)
     {
@@ -219,11 +205,13 @@ public sealed class SpeckleObjectDeserializer
         throw new SpeckleDeserializeException("Failed to deserialize reference object", ex);
       }
 
-      if (_deserializedObjects.TryAdd(objId, deserialized))
-      {
-        _currentCount++;
-      }
+      _deserializedObjects.TryAdd(objId, deserialized);
     }
+
+    OnProgressAction?.Report(
+      new ProgressArgs(ProgressEvent.DeserializeObject, _deserializedObjects.Count, _total, null)
+    );
+
     if (deserialized != null)
     {
       return deserialized;
@@ -238,10 +226,7 @@ public sealed class SpeckleObjectDeserializer
 
     deserialized = await DeserializeJsonAsyncInternal(objectJson).ConfigureAwait(false);
 
-    if (_deserializedObjects.NotNull().TryAdd(objId, deserialized))
-    {
-      _currentCount++;
-    }
+    _deserializedObjects.TryAdd(objId, deserialized);
 
     return deserialized;
   }
