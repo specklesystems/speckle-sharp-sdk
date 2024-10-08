@@ -92,6 +92,8 @@ public sealed class SpeckleObjectDeserializer
       throw new SpeckleDeserializeException("Failed to deserialize", ex);
     }
 
+    OnProgressAction?.Report(new ProgressArgs(ProgressEvent.DeserializeObject, _deserializedObjects.Count, _total));
+
     return converted;
   }
 
@@ -207,10 +209,6 @@ public sealed class SpeckleObjectDeserializer
 
       _deserializedObjects.TryAdd(objId, deserialized);
     }
-
-    OnProgressAction?.Report(
-      new ProgressArgs(ProgressEvent.DeserializeObject, _deserializedObjects.Count, _total, null)
-    );
 
     if (deserialized != null)
     {
