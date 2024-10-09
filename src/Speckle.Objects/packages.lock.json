@@ -102,6 +102,11 @@
         "resolved": "2.2.0",
         "contentHash": "B2WqEox8o+4KUOpL7rZPyh6qYjik8tHi2tN8Z9jZkHzED8ElYgZa/h6K+xliB435SqUcWT290Fr2aa8BtZjn8A=="
       },
+      "Microsoft.Extensions.ObjectPool": {
+        "type": "Transitive",
+        "resolved": "8.0.10",
+        "contentHash": "u7gAG7JgxF8VSJUGPSudAcPxOt+ymJKQCSxNRxiuKV+klCQbHljQR75SilpedCTfhPWDhtUwIJpnDVtspr9nMg=="
+      },
       "Microsoft.Extensions.Options": {
         "type": "Transitive",
         "resolved": "2.2.0",
@@ -238,6 +243,7 @@
           "Microsoft.Data.Sqlite": "[7.0.7, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
           "Microsoft.Extensions.Logging": "[2.2.0, )",
+          "Microsoft.Extensions.ObjectPool": "[8.0.10, )",
           "Polly": "[7.2.3, )",
           "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
           "Polly.Extensions.Http": "[3.0.0, )",
@@ -416,6 +422,11 @@
         "resolved": "2.2.0",
         "contentHash": "B2WqEox8o+4KUOpL7rZPyh6qYjik8tHi2tN8Z9jZkHzED8ElYgZa/h6K+xliB435SqUcWT290Fr2aa8BtZjn8A=="
       },
+      "Microsoft.Extensions.ObjectPool": {
+        "type": "Transitive",
+        "resolved": "8.0.10",
+        "contentHash": "u7gAG7JgxF8VSJUGPSudAcPxOt+ymJKQCSxNRxiuKV+klCQbHljQR75SilpedCTfhPWDhtUwIJpnDVtspr9nMg=="
+      },
       "Microsoft.Extensions.Options": {
         "type": "Transitive",
         "resolved": "2.2.0",
@@ -498,6 +509,7 @@
           "Microsoft.Data.Sqlite": "[7.0.7, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
           "Microsoft.Extensions.Logging": "[2.2.0, )",
+          "Microsoft.Extensions.ObjectPool": "[8.0.10, )",
           "Polly": "[7.2.3, )",
           "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
           "Polly.Extensions.Http": "[3.0.0, )",

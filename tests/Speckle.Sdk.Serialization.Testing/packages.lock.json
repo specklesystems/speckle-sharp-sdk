@@ -2,24 +2,6 @@
   "version": 2,
   "dependencies": {
     "net8.0": {
-      "BenchmarkDotNet": {
-        "type": "Direct",
-        "requested": "[0.14.0, )",
-        "resolved": "0.14.0",
-        "contentHash": "eIPSDKi3oni734M1rt/XJAwGQQOIf9gLjRRKKJ0HuVy3vYd7gnmAIX1bTjzI9ZbAY/nPddgqqgM/TeBYitMCIg==",
-        "dependencies": {
-          "BenchmarkDotNet.Annotations": "0.14.0",
-          "CommandLineParser": "2.9.1",
-          "Gee.External.Capstone": "2.3.0",
-          "Iced": "1.17.0",
-          "Microsoft.CodeAnalysis.CSharp": "4.1.0",
-          "Microsoft.Diagnostics.Runtime": "2.2.332302",
-          "Microsoft.Diagnostics.Tracing.TraceEvent": "3.1.8",
-          "Microsoft.DotNet.PlatformAbstractions": "3.1.6",
-          "Perfolizer": "[0.3.17]",
-          "System.Management": "5.0.0"
-        }
-      },
       "GitVersion.MsBuild": {
         "type": "Direct",
         "requested": "[5.12.0, )",
@@ -376,6 +358,32 @@
           "Polly.Extensions.Http": "[3.0.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )"
+        }
+      },
+      "speckle.sdk.tests.performance": {
+        "type": "Project",
+        "dependencies": {
+          "BenchmarkDotNet": "[0.14.0, )",
+          "Microsoft.Extensions.DependencyInjection": "[2.2.0, )",
+          "Speckle.Objects": "[1.0.0, )"
+        }
+      },
+      "BenchmarkDotNet": {
+        "type": "CentralTransitive",
+        "requested": "[0.14.0, )",
+        "resolved": "0.14.0",
+        "contentHash": "eIPSDKi3oni734M1rt/XJAwGQQOIf9gLjRRKKJ0HuVy3vYd7gnmAIX1bTjzI9ZbAY/nPddgqqgM/TeBYitMCIg==",
+        "dependencies": {
+          "BenchmarkDotNet.Annotations": "0.14.0",
+          "CommandLineParser": "2.9.1",
+          "Gee.External.Capstone": "2.3.0",
+          "Iced": "1.17.0",
+          "Microsoft.CodeAnalysis.CSharp": "4.1.0",
+          "Microsoft.Diagnostics.Runtime": "2.2.332302",
+          "Microsoft.Diagnostics.Tracing.TraceEvent": "3.1.8",
+          "Microsoft.DotNet.PlatformAbstractions": "3.1.6",
+          "Perfolizer": "[0.3.17]",
+          "System.Management": "5.0.0"
         }
       },
       "GraphQL.Client": {

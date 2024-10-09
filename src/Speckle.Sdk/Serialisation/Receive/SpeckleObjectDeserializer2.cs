@@ -70,7 +70,7 @@ public sealed class SpeckleObjectDeserializer2(
   private object? ReadObject(JsonReader reader)
   {
     reader.Read();
-    Dictionary<string, object?> dict = new();
+    Dictionary<string, object?> dict = pool.ObjectDictionaries.Get();
     while (reader.TokenType != JsonToken.EndObject)
     {
       switch (reader.TokenType)
@@ -110,7 +110,9 @@ public sealed class SpeckleObjectDeserializer2(
       return null;
     }
 
-    return DictionaryConverter.Dict2Base(dict, options?.SkipInvalidConverts ?? false);
+    var b = DictionaryConverter.Dict2Base(dict, options?.SkipInvalidConverts ?? false);
+    pool.ObjectDictionaries.Return(dict);
+    return b;
   }
 
   private object? ReadProperty(JsonReader reader)
