@@ -24,13 +24,25 @@ public class SpeckleObjectSerializerPool
     public void Return(T[]? array) => pool.Return(array.NotNull());
   }
   
-  public  ObjectPool<Dictionary<string, object?>> ObjectDictionaries { get; private set; } = ObjectPool.Create<Dictionary<string, object?>>(new ObjectDictionaryPolicy());
+  public  ObjectPool<Dictionary<string, object?>> ObjectDictionaries { get; private set; } = ObjectPool.Create(new ObjectDictionaryPolicy());
 
   private class ObjectDictionaryPolicy : IPooledObjectPolicy<Dictionary<string, object?>>
   {
     public Dictionary<string, object?> Create() => new(50, StringComparer.OrdinalIgnoreCase);
 
     public bool Return(Dictionary<string, object?> obj)
+    {
+      obj.Clear();
+      return true;
+    }
+  }
+  public ObjectPool<List<string>> ListString { get; private set; } = ObjectPool.Create(new ListStringPolicy());
+
+  private class ListStringPolicy : IPooledObjectPolicy<List<string>>
+  {
+    public List<string> Create() => new(20);
+
+    public bool Return(List<string> obj)
     {
       obj.Clear();
       return true;

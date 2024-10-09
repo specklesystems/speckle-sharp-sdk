@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
@@ -6,31 +6,30 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public sealed class DeserializeProcess : IDisposable
+public sealed class DeserializeProcess(ITransport readTransport) : IDisposable
 {
   private readonly StackChannel<string> _deserializationStack = new();
   
   private readonly ConcurrentDictionary<string, Base> _cache = new();
   private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _closures = new();
-  private readonly ITransport _readTransport;
 
-  public DeserializeProcess(ITransport readTransport)
+  public async Task<Base> Deserialize(string rootId)
   {
-    _readTransport = readTransport;
-  }
-  public async Task<Base> Deserialize(string id)
-  {
-    _deserializationStack.Write(id);
-    _deserializationStack.Start(async x =>
+    _deserializationStack.Write(rootId);
+    _deserializationStack.Start(async id =>
     {
-      var json = await _readTransport.GetObject(x).ConfigureAwait(false);
-      Execute(x, json.NotNull());
-      return _cache.ContainsKey(id);
+      if (_cache.ContainsKey(id))
+      {
+        return id == rootId;
+      }
+      var json = await readTransport.GetObject(id).ConfigureAwait(false);
+      Execute(id, json.NotNull());
+      return _cache.ContainsKey(rootId);
     });
     await _deserializationStack.CompleteAndWaitForReader().ConfigureAwait(false);
-    return _cache[id];
+    return _cache[rootId];
   }
-  
+
   public void Execute(string id, string json)
   {
     if (!_closures.TryGetValue(id, out var closures))
@@ -39,7 +38,7 @@ public sealed class DeserializeProcess : IDisposable
       _closures.TryAdd(id, closures);
     }
 
-    List<string> notFoundIds = new();
+    List<string> notFoundIds = SpeckleObjectSerializerPool.Instance.ListString.Get();
     foreach (var closureId in closures)
     {
       if (!_cache.ContainsKey(closureId))
@@ -60,6 +59,7 @@ public sealed class DeserializeProcess : IDisposable
       _closures.TryRemove(id, out _);
       _cache.TryAdd(id, @base);
     }
+    SpeckleObjectSerializerPool.Instance.ListString.Return(notFoundIds);
   }
 
   private Base Deserialise(string id, string json)
