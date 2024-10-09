@@ -72,7 +72,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
         normal = new Vector(0, 0, 1, units),
         xdir = new Vector(1, 0, 0, units),
         ydir = new Vector(0, 1, 0, units),
-        units = units
+        units = units,
       },
       startPoint,
       endPoint,
@@ -237,7 +237,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
     var arc = new Arc(pln, transformedStartPoint, transformedEndPoint, angleRadians, units)
     {
       midPoint = transformedMidpoint,
-      domain = domain
+      domain = domain,
     };
     transformed = arc;
     return true;
@@ -293,7 +293,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
       angleRadians = list[5],
       domain = new Interval { start = list[6], end = list[7] },
       units = Units.GetUnitFromEncoding(list[^1]),
-      plane = Plane.FromList(list.GetRange(8, 13))
+      plane = Plane.FromList(list.GetRange(8, 13)),
     };
     arc.startPoint = Point.FromList(list.GetRange(21, 3), arc.units);
     arc.midPoint = Point.FromList(list.GetRange(24, 3), arc.units);

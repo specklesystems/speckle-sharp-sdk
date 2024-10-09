@@ -43,6 +43,6 @@ public enum shape
   HOOK_90_DEGREES = 1,
   HOOK_135_DEGREES = 2,
   HOOK_180_DEGREES = 3,
-  CUSTOM_HOOK = 4
+  CUSTOM_HOOK = 4,
 }
 #endregion

@@ -12,7 +12,12 @@ public enum ProgressEvent
   SerializeObject,
 }
 
-public record ProgressArgs(ProgressEvent ProgressEvent, long? Count, long? Total, long? ProcessedTotal = null);
+public readonly record struct ProgressArgs(
+  ProgressEvent ProgressEvent,
+  long? Count,
+  long? Total,
+  long? ProcessedTotal = null
+);
 
 /// <summary>
 /// Interface defining the contract for transport implementations.
@@ -42,7 +47,7 @@ public interface ITransport
   /// <summary>
   /// Used to report progress during the transport's longer operations.
   /// </summary>
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 
   /// <summary>
   /// Signals to the transport that writes are about to begin.
@@ -79,16 +84,11 @@ public interface ITransport
   /// </summary>
   /// <param name="id">The id of the object you want to copy.</param>
   /// <param name="targetTransport">The transport you want to copy the object to.</param>
-  /// <param name="onTotalChildrenCountKnown">(Optional) an <see cref="Action{T}"/> that will be invoked once, when the number of object children to be copied over is known.</param>
   /// <returns>The string representation of the root object.</returns>
   /// <exception cref="ArgumentException">The provided arguments are not valid</exception>
   /// <exception cref="TransportException">The transport could not complete the operation</exception>
   /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
-  public Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  );
+  public Task<string> CopyObjectAndChildren(string id, ITransport targetTransport);
 
   /// <summary>
   /// Checks if objects are present in the transport

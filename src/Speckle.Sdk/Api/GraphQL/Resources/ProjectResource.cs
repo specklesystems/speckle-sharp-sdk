@@ -101,8 +101,8 @@ public sealed class ProjectResource
           projectId,
           modelsLimit,
           modelsCursor,
-          modelsFilter
-        }
+          modelsFilter,
+        },
       };
 
     var response = await _client

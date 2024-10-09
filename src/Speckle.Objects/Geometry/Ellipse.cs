@@ -69,7 +69,7 @@ public class Ellipse : Base, ICurve, IHasArea
       secondRadius = list[3],
       domain = new Interval { start = list[4], end = list[5] },
       plane = Plane.FromList(list.GetRange(6, 13)),
-      units = Units.GetUnitFromEncoding(list[^1])
+      units = Units.GetUnitFromEncoding(list[^1]),
     };
     return ellipse;
   }

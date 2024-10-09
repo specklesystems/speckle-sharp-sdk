@@ -21,7 +21,7 @@ public class TestTransport : ITransport
   public TimeSpan Elapsed { get; }
   public int SavedObjectCount { get; }
   public CancellationToken CancellationToken { get; set; }
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
   public Action<string, Exception>? OnErrorAction { get; set; }
 
   public void BeginWrite() => throw new NotImplementedException();
@@ -34,11 +34,8 @@ public class TestTransport : ITransport
 
   public Task<string?> GetObject(string id) => Task.FromResult(Objects.TryGetValue(id, out string? o) ? o : null);
 
-  public Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  ) => throw new NotImplementedException();
+  public Task<string> CopyObjectAndChildren(string id, ITransport targetTransport) =>
+    throw new NotImplementedException();
 
   public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds) =>
     throw new NotImplementedException();

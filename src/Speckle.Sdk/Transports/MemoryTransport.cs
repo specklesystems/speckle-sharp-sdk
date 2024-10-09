@@ -46,7 +46,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
       TransportName = TransportName,
       OnProgressAction = OnProgressAction,
       CancellationToken = CancellationToken,
-      SavedObjectCount = SavedObjectCount
+      SavedObjectCount = SavedObjectCount,
     };
   }
 
@@ -54,7 +54,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
 
   public string TransportName { get; set; } = "Memory";
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 
   public int SavedObjectCount { get; private set; }
 
@@ -65,7 +65,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
       { "type", GetType().Name },
       { "basePath", _basePath },
       { "applicationName", _applicationName },
-      { "blobStorageFolder", BlobStorageFolder }
+      { "blobStorageFolder", BlobStorageFolder },
     };
 
   public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;
@@ -85,7 +85,7 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     _objects[id] = serializedObject;
 
     SavedObjectCount++;
-    OnProgressAction?.Invoke(new(ProgressEvent.UploadObject, 1, 1));
+    OnProgressAction?.Report(new(ProgressEvent.UploadObject, 1, 1));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
   }
@@ -99,14 +99,10 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     return Task.FromResult(ret);
   }
 
-  public async Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  )
+  public async Task<string> CopyObjectAndChildren(string id, ITransport targetTransport)
   {
     string res = await TransportHelpers
-      .CopyObjectAndChildrenAsync(id, this, targetTransport, onTotalChildrenCountKnown, CancellationToken)
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, CancellationToken)
       .ConfigureAwait(false);
     return res;
   }

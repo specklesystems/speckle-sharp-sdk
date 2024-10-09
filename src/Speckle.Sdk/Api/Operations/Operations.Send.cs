@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Speckle.Newtonsoft.Json.Linq;
@@ -15,7 +14,7 @@ public partial class Operations
   /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
   /// </summary>
   /// <remarks/>
-  /// <inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, Action{ConcurrentBag{ProgressArgs}}?, CancellationToken)"/>
+  /// <inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, IProgress{ProgressArgs}?, CancellationToken)"/>
   /// <param name="useDefaultCache">When <see langword="true"/>, an additional <see cref="SQLiteTransport"/> will be included</param>
   /// <exception cref="ArgumentNullException">The <paramref name="transport"/> or <paramref name="value"/> was <see langword="null"/></exception>
   /// <example><code>
@@ -26,7 +25,7 @@ public partial class Operations
     Base value,
     ITransport transport,
     bool useDefaultCache,
-    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
+    IProgress<ProgressArgs>? onProgressAction = null,
     CancellationToken cancellationToken = default
   )
   {
@@ -62,7 +61,7 @@ public partial class Operations
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     IReadOnlyCollection<ITransport> transports,
-    Action<ConcurrentBag<ProgressArgs>>? onProgressAction = null,
+    IProgress<ProgressArgs>? onProgressAction = null,
     CancellationToken cancellationToken = default
   )
   {
@@ -85,13 +84,11 @@ public partial class Operations
       var sendTimer = Stopwatch.StartNew();
       logger.LogDebug("Starting send operation");
 
-      var internalProgressAction = GetInternalProgressAction(onProgressAction);
-
-      SpeckleObjectSerializer serializerV2 = new(transports, internalProgressAction, true, cancellationToken);
+      SpeckleObjectSerializer serializerV2 = new(transports, onProgressAction, true, cancellationToken);
 
       foreach (var t in transports)
       {
-        t.OnProgressAction = internalProgressAction;
+        t.OnProgressAction = onProgressAction;
         t.CancellationToken = cancellationToken;
         t.BeginWrite();
       }
@@ -135,7 +132,7 @@ public partial class Operations
     }
   }
 
-  /// <returns><inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, Action{ConcurrentBag{ProgressArgs}}?, CancellationToken)"/></returns>
+  /// <returns><inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, IProgress{ProgressArgs}?, CancellationToken)"/></returns>
   internal static async Task<string> SerializerSend(
     Base value,
     SpeckleObjectSerializer serializer,

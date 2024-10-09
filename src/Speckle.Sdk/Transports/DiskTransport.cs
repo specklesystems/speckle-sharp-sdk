@@ -28,7 +28,7 @@ public class DiskTransport : ICloneable, ITransport
       CancellationToken = CancellationToken,
       OnErrorAction = OnErrorAction,
       OnProgressAction = OnProgressAction,
-      TransportName = TransportName
+      TransportName = TransportName,
     };
   }
 
@@ -39,12 +39,12 @@ public class DiskTransport : ICloneable, ITransport
     {
       { "name", TransportName },
       { "type", GetType().Name },
-      { "basePath", RootPath }
+      { "basePath", RootPath },
     };
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 
   public Action<string, Exception>? OnErrorAction { get; set; }
 
@@ -93,7 +93,7 @@ public class DiskTransport : ICloneable, ITransport
     }
 
     SavedObjectCount++;
-    OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, SavedObjectCount, null));
+    OnProgressAction?.Report(new(ProgressEvent.DownloadObject, SavedObjectCount, null));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
   }
@@ -103,14 +103,10 @@ public class DiskTransport : ICloneable, ITransport
     return Task.CompletedTask;
   }
 
-  public async Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  )
+  public async Task<string> CopyObjectAndChildren(string id, ITransport targetTransport)
   {
     string res = await TransportHelpers
-      .CopyObjectAndChildrenAsync(id, this, targetTransport, onTotalChildrenCountKnown, CancellationToken)
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, CancellationToken)
       .ConfigureAwait(false);
     return res;
   }

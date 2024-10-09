@@ -24,7 +24,7 @@ public static class ServiceRegistration
         HostApplication = name,
         SpeckleVersion = speckleVersion,
         HostApplicationVersion = HostApplications.GetVersion(version),
-        Slug = application.Slug
+        Slug = application.Slug,
       }
     );
     serviceCollection.AddSingleton<ISdkActivityFactory, NullActivityFactory>();

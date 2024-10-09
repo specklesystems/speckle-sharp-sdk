@@ -130,7 +130,7 @@ public sealed class ModelResource
         versionsLimit,
         versionsCursor,
         versionsFilter,
-      }
+      },
     };
 
     var response = await _client
@@ -184,8 +184,8 @@ public sealed class ModelResource
           projectId,
           modelsLimit,
           modelsCursor,
-          modelsFilter
-        }
+          modelsFilter,
+        },
       };
 
     var response = await _client

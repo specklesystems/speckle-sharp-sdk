@@ -9,7 +9,6 @@ public static class TransportHelpers
     string id,
     ITransport sourceTransport,
     ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown,
     CancellationToken cancellationToken
   )
   {
@@ -32,8 +31,6 @@ public static class TransportHelpers
 
     var closures = ClosureParser.GetChildrenIds(parent).ToList();
 
-    onTotalChildrenCountKnown?.Invoke(closures.Count);
-
     int i = 0;
     foreach (var closure in closures)
     {
@@ -54,7 +51,7 @@ public static class TransportHelpers
 
       targetTransport.SaveObject(closure, child);
       var count = i++;
-      sourceTransport.OnProgressAction?.Invoke(new ProgressArgs(ProgressEvent.UploadObject, count, closures.Count));
+      sourceTransport.OnProgressAction?.Report(new ProgressArgs(ProgressEvent.UploadObject, count, closures.Count));
     }
 
     return parent;

@@ -58,7 +58,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     {
       AutoReset = true,
       Enabled = false,
-      Interval = POLL_INTERVAL
+      Interval = POLL_INTERVAL,
     };
     _writeTimer.Elapsed += WriteTimerElapsed;
   }
@@ -87,7 +87,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     return new SQLiteTransport(_basePath, _applicationName, _scope)
     {
       OnProgressAction = OnProgressAction,
-      CancellationToken = CancellationToken
+      CancellationToken = CancellationToken,
     };
   }
 
@@ -110,12 +110,12 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
       { "basePath", _basePath },
       { "applicationName", _applicationName },
       { "scope", _scope },
-      { "blobStorageFolder", BlobStorageFolder }
+      { "blobStorageFolder", BlobStorageFolder },
     };
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 
   public int SavedObjectCount { get; private set; }
 
@@ -330,7 +330,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
         CancellationToken.ThrowIfCancellationRequested();
       }
 
-      OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, saved, _queue.Count + 1));
+      OnProgressAction?.Report(new(ProgressEvent.DownloadObject, saved, _queue.Count + 1));
 
       CancellationToken.ThrowIfCancellationRequested();
 
@@ -427,14 +427,10 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     return null; // pass on the duty of null checks to consumers
   }
 
-  public async Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  )
+  public async Task<string> CopyObjectAndChildren(string id, ITransport targetTransport)
   {
     string res = await TransportHelpers
-      .CopyObjectAndChildrenAsync(id, this, targetTransport, onTotalChildrenCountKnown, CancellationToken)
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, CancellationToken)
       .ConfigureAwait(false);
     return res;
   }

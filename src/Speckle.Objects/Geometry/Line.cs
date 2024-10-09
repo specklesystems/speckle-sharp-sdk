@@ -52,7 +52,7 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
       end = transformedEnd,
       applicationId = applicationId,
       units = units,
-      domain = new() { start = domain.start, end = domain.end }
+      domain = new() { start = domain.start, end = domain.end },
     };
     return true;
   }

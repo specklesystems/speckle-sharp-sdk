@@ -27,7 +27,7 @@ namespace Speckle.Sdk.Tests.Unit.Models
       new object[] { new Base(), "Base" },
       new object[] { new Foo(), "TestModels.Foo" },
       new object[] { new Bar(), "TestModels.Foo:TestModels.Bar" },
-      new object[] { new Baz(), "TestModels.Foo:TestModels.Bar:TestModels.Baz" }
+      new object[] { new Baz(), "TestModels.Foo:TestModels.Bar:TestModels.Baz" },
     };
   }
 }
