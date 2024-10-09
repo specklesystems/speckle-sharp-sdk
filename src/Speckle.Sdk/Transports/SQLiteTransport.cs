@@ -427,14 +427,10 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     return null; // pass on the duty of null checks to consumers
   }
 
-  public async Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  )
+  public async Task<string> CopyObjectAndChildren(string id, ITransport targetTransport)
   {
     string res = await TransportHelpers
-      .CopyObjectAndChildrenAsync(id, this, targetTransport, onTotalChildrenCountKnown, CancellationToken)
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, CancellationToken)
       .ConfigureAwait(false);
     return res;
   }

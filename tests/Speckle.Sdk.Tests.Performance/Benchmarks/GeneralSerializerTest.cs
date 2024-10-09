@@ -72,11 +72,8 @@ public class NullTransport : ITransport
 
   public Task<string> GetObject(string id) => throw new NotImplementedException();
 
-  public Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int> onTotalChildrenCountKnown = null
-  ) => throw new NotImplementedException();
+  public Task<string> CopyObjectAndChildren(string id, ITransport targetTransport) =>
+    throw new NotImplementedException();
 
   public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds) =>
     throw new NotImplementedException();
