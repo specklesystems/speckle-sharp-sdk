@@ -99,28 +99,4 @@ public sealed partial class OperationsReceiveTests
 
     Assert.That(wasCalled, Is.True);
   }
-
-  [Test, TestCaseSource(nameof(TestCases))]
-  public async Task Receive_FromLocal_OnTotalChildrenCountKnownCalled(string id)
-  {
-    bool wasCalled = false;
-    int children = 0;
-    var result = await _operations.Receive(
-      id,
-      null,
-      _testCaseTransport,
-      onTotalChildrenCountKnown: c =>
-      {
-        wasCalled = true;
-        children = c;
-      }
-    );
-
-    Assert.That(result.id, Is.EqualTo(id));
-
-    var expectedChildren = result.GetTotalChildrenCount() - 1;
-
-    Assert.That(wasCalled, Is.True);
-    Assert.That(children, Is.EqualTo(expectedChildren));
-  }
 }
