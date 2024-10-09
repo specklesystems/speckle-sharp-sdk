@@ -8,6 +8,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.Receive;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
@@ -44,6 +45,17 @@ public class SerializationTests
       }
     }
     return jsonObjects;
+  }
+  
+  [Test]
+  [TestCase("RevitObject.json")]
+  public async Task RunTest2(string fileName)
+  {   
+    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
+    var closure = await ReadAsObjects(fullName);
+    using DeserializeProcess sut = new(new TestTransport(closure));
+    var @base = await sut.Deserialize("551513ff4f3596024547fc818f1f3f70");
+    @base.ShouldNotBeNull();
   }
 
   [Test]
