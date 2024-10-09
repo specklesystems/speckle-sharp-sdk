@@ -11,12 +11,17 @@ public sealed class StackChannel<T> : IDisposable
 
   private bool _completed;
   private Func<T, Task<bool>>? _action;
+  private readonly List<Task> _tasks = new();
 
-  public void Start(Func<T, Task<bool>> action)
+  public void Start(Func<T, Task<bool>> action, int parallelism = 4)
   {
     _action = action;
-    var task = new Task(Reader, TaskCreationOptions.LongRunning);
-    task.Start();
+    for (int i = 0; i < parallelism; i++)
+    {
+      var task = new Task(Reader, TaskCreationOptions.LongRunning);
+      task.Start();
+      _tasks.Add(task);
+    }
   }
   private async void Reader()
   {
@@ -55,6 +60,7 @@ public sealed class StackChannel<T> : IDisposable
   {
     _readSemaphore.Release();
     await _readerFinishedSemaphore.WaitAsync().ConfigureAwait(false);
+    await Task.WhenAll(_tasks).ConfigureAwait(false);
   }
 
   public void Dispose()
