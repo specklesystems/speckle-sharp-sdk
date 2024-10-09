@@ -99,14 +99,10 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     return Task.FromResult(ret);
   }
 
-  public async Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  )
+  public async Task<string> CopyObjectAndChildren(string id, ITransport targetTransport)
   {
     string res = await TransportHelpers
-      .CopyObjectAndChildrenAsync(id, this, targetTransport, onTotalChildrenCountKnown, CancellationToken)
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, CancellationToken)
       .ConfigureAwait(false);
     return res;
   }
