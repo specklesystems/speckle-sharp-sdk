@@ -23,8 +23,9 @@ public class SpeckleObjectSerializerPool
 
     public void Return(T[]? array) => pool.Return(array.NotNull());
   }
-  
-  public  ObjectPool<Dictionary<string, object?>> ObjectDictionaries { get; private set; } = ObjectPool.Create(new ObjectDictionaryPolicy());
+
+
+  public ObjectPool<Dictionary<string, object?>> ObjectDictionaries { get; } = ObjectPool.Create(new ObjectDictionaryPolicy());
 
   private class ObjectDictionaryPolicy : IPooledObjectPolicy<Dictionary<string, object?>>
   {
@@ -36,7 +37,7 @@ public class SpeckleObjectSerializerPool
       return true;
     }
   }
-  public ObjectPool<List<string>> ListString { get; private set; } = ObjectPool.Create(new ListStringPolicy());
+  public ObjectPool<List<string>> ListString { get; } = ObjectPool.Create(new ListStringPolicy());
 
   private class ListStringPolicy : IPooledObjectPolicy<List<string>>
   {

@@ -404,24 +404,20 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
   {
     CancellationToken.ThrowIfCancellationRequested();
     await _connectionLock.WaitAsync(CancellationToken).ConfigureAwait(false);
+    var startTime = Stopwatch.GetTimestamp();
     try
     {
-      var startTime = Stopwatch.GetTimestamp();
-      using (var command = new SqliteCommand("SELECT * FROM objects WHERE hash = @hash LIMIT 1 ", Connection))
+      using var command = new SqliteCommand("SELECT * FROM objects WHERE hash = @hash LIMIT 1 ", Connection);
+      command.Parameters.AddWithValue("@hash", id);
+      using var reader =  command.ExecuteReader();
+      if (reader.Read())
       {
-        command.Parameters.AddWithValue("@hash", id);
-        using var reader = await command.ExecuteReaderAsync(CancellationToken).ConfigureAwait(false);
-
-        while (await reader.ReadAsync(CancellationToken).ConfigureAwait(false))
-        {
-          return reader.GetString(1);
-        }
+        return reader.GetString(1);
       }
-
-      Elapsed += LoggingHelpers.GetElapsedTime(startTime, Stopwatch.GetTimestamp());
     }
     finally
     {
+      Elapsed += LoggingHelpers.GetElapsedTime(startTime, Stopwatch.GetTimestamp());
       _connectionLock.Release();
     }
     return null; // pass on the duty of null checks to consumers
