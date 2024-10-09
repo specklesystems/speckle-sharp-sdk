@@ -9,7 +9,7 @@ namespace Speckle.Sdk.Serialisation.Receive;
 public sealed class DeserializeProcess(ITransport readTransport) : IDisposable
 {
   private readonly StackChannel<string> _deserializationStack = new();
-  
+
   private readonly ConcurrentDictionary<string, Base> _cache = new();
   private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _closures = new();
 
@@ -68,8 +68,7 @@ public sealed class DeserializeProcess(ITransport readTransport) : IDisposable
     {
       return baseObject;
     }
-    SpeckleObjectDeserializer2 deserializer =
-      new(_cache, SpeckleObjectSerializerPool.Instance);
+    SpeckleObjectDeserializer2 deserializer = new(_cache, SpeckleObjectSerializerPool.Instance);
     return deserializer.Deserialize(json);
   }
 

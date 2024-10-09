@@ -10,6 +10,7 @@ using Speckle.Sdk.Tests.Performance;
 
 TypeLoader.Reset();
 TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
+
 /*
 var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 var streamId = "a3ac1b2706";
@@ -23,12 +24,9 @@ var serviceCollection = new ServiceCollection();
 serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
 var serviceProvider = serviceCollection.BuildServiceProvider();
 using var dataSource = ActivatorUtilities.CreateInstance<TestDataHelper>(serviceProvider);
-await dataSource.SeedTransport(new Account()
-  {
-    serverInfo = new() { url = url },
-  },
-  streamId,
-  rootId).ConfigureAwait(false);
+await dataSource
+  .SeedTransport(new Account() { serverInfo = new() { url = url } }, streamId, rootId)
+  .ConfigureAwait(false);
 
 Console.WriteLine("Attach");
 Console.ReadLine();

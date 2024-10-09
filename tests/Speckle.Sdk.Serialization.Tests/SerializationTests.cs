@@ -46,11 +46,11 @@ public class SerializationTests
     }
     return jsonObjects;
   }
-  
+
   [Test]
   [TestCase("RevitObject.json")]
   public async Task RunTest2(string fileName)
-  {   
+  {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var closure = await ReadAsObjects(fullName);
     using DeserializeProcess sut = new(new TestTransport(closure));

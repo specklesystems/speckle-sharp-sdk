@@ -23,6 +23,7 @@ public sealed class StackChannel<T> : IDisposable
       _tasks.Add(task);
     }
   }
+
   private async void Reader()
   {
     _action.NotNull();
@@ -45,15 +46,17 @@ public sealed class StackChannel<T> : IDisposable
 
     _readerFinishedSemaphore.Release();
   }
+
   public void Write(T item)
   {
     _stack.Push(item);
     _readSemaphore.Release();
   }
+
   public void Write(T[] items)
   {
-      _stack.PushRange(items);
-      _readSemaphore.Release();
+    _stack.PushRange(items);
+    _readSemaphore.Release();
   }
 
   public async Task CompleteAndWaitForReader()

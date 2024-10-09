@@ -409,7 +409,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     {
       using var command = new SqliteCommand("SELECT * FROM objects WHERE hash = @hash LIMIT 1 ", Connection);
       command.Parameters.AddWithValue("@hash", id);
-      using var reader =  command.ExecuteReader();
+      using var reader = command.ExecuteReader();
       if (reader.Read())
       {
         return reader.GetString(1);
