@@ -29,7 +29,7 @@ public partial class Operations
   /// <remarks>
   /// Note: if you want to pull an object from a Speckle Transport or Server,
   /// please use
-  /// <see cref="Receive(string,Speckle.Sdk.Transports.ITransport?,Speckle.Sdk.Transports.ITransport?,System.IProgress{ProgressArgs}?,System.Action{int}?,System.Threading.CancellationToken)"/>
+  /// <see cref="Receive(string,Speckle.Sdk.Transports.ITransport?,Speckle.Sdk.Transports.ITransport?,System.IProgress{ProgressArgs}?,System.Threading.CancellationToken)"/>
   /// </remarks>
   /// <param name="value">The json string representation of a speckle object that you want to deserialize</param>
   /// <param name="cancellationToken"></param>

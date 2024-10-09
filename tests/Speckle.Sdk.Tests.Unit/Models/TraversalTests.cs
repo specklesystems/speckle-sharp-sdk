@@ -21,9 +21,9 @@ public class TraversalTests
           ["child"] = new Base
           {
             id = "break on me, go no further",
-            ["child"] = new Base { id = "should have ignored me" }
-          }
-        }
+            ["child"] = new Base { id = "should have ignored me" },
+          },
+        },
       };
 
     static bool BreakRule(Base b) => b.id.Contains("break on me");

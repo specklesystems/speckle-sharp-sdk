@@ -93,7 +93,7 @@ public sealed class CommentResource
           filter,
           repliesLimit,
           repliesCursor,
-        }
+        },
       };
 
     var response = await _client

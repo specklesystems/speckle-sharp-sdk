@@ -17,7 +17,7 @@ public static class PolylineExtensions
       {
         start = previousPoint,
         end = points[i],
-        units = polyline.units
+        units = polyline.units,
       };
       previousPoint = points[i];
     }

@@ -57,7 +57,7 @@ public static class Fixtures
       {
         ["email"] = $"{seed.Substring(0, 7)}@example.com",
         ["password"] = "12ABC3456789DEF0GHO",
-        ["name"] = $"{seed.Substring(0, 5)} Name"
+        ["name"] = $"{seed.Substring(0, 5)} Name",
       };
 
     using var httpClient = new HttpClient(
@@ -91,7 +91,7 @@ public static class Fixtures
         ["accessCode"] = accessCode,
         ["appId"] = "spklwebapp",
         ["appSecret"] = "spklwebapp",
-        ["challenge"] = "challengingchallenge"
+        ["challenge"] = "challengingchallenge",
       };
 
     var tokenResponse = await httpClient.PostAsync(
@@ -109,9 +109,9 @@ public static class Fixtures
       {
         id = user["name"],
         email = user["email"],
-        name = user["name"]
+        name = user["name"],
       },
-      serverInfo = Server
+      serverInfo = Server,
     };
 
     var user1 = await ServiceProvider
@@ -128,7 +128,7 @@ public static class Fixtures
       ["foo"] = "foo",
       ["bar"] = "bar",
       ["baz"] = "baz",
-      ["now"] = DateTime.Now.ToString(CultureInfo.InvariantCulture)
+      ["now"] = DateTime.Now.ToString(CultureInfo.InvariantCulture),
     };
 
     return @base;
@@ -140,7 +140,7 @@ public static class Fixtures
     {
       ["foo"] = "foo",
       ["bar"] = "bar",
-      ["@baz"] = new Base() { ["mux"] = "mux", ["qux"] = "qux" }
+      ["@baz"] = new Base() { ["mux"] = "mux", ["qux"] = "qux" },
     };
 
     return @base;

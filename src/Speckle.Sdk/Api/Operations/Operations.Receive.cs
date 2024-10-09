@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -24,7 +23,6 @@ public partial class Operations
   /// <param name="remoteTransport">The remote transport (slower). If <see langword="null"/>, will assume all objects are present in <paramref name="localTransport"/></param>
   /// <param name="localTransport">The local transport (faster). If <see langword="null"/>, will use a default <see cref="SQLiteTransport"/> cache</param>
   /// <param name="onProgressAction">Action invoked on progress iterations</param>
-  /// <param name="onTotalChildrenCountKnown">Action invoked once the total count of objects is known</param>
   /// <param name="cancellationToken"></param>
   /// <exception cref="TransportException">Failed to retrieve objects from the provided transport(s)</exception>
   /// <exception cref="SpeckleDeserializeException">Deserialization of the requested object(s) failed</exception>
@@ -35,7 +33,6 @@ public partial class Operations
     ITransport? remoteTransport = null,
     ITransport? localTransport = null,
     IProgress<ProgressArgs>? onProgressAction = null,
-    Action<int>? onTotalChildrenCountKnown = null,
     CancellationToken cancellationToken = default
   )
   {
@@ -53,14 +50,7 @@ public partial class Operations
       using IDisposable? d1 = UseDefaultTransportIfNull(localTransport, out localTransport);
       receiveActivity?.SetTags("localTransportContext", localTransport.TransportContext);
 
-      var result = await ReceiveImpl(
-          objectId,
-          remoteTransport,
-          localTransport,
-          onProgressAction,
-          onTotalChildrenCountKnown,
-          cancellationToken
-        )
+      var result = await ReceiveImpl(objectId, remoteTransport, localTransport, onProgressAction, cancellationToken)
         .ConfigureAwait(false);
 
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
@@ -74,13 +64,12 @@ public partial class Operations
     }
   }
 
-  /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,IProgress{ProgressArgs}?,Action{int}?,CancellationToken)"/>
+  /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,IProgress{ProgressArgs}?,CancellationToken)"/>
   private async Task<Base> ReceiveImpl(
     string objectId,
     ITransport? remoteTransport,
     ITransport localTransport,
     IProgress<ProgressArgs>? internalProgressAction,
-    Action<int>? onTotalChildrenCountKnown,
     CancellationToken cancellationToken
   )
   {
@@ -102,11 +91,11 @@ public partial class Operations
         ReadTransport = localTransport,
         OnProgressAction = internalProgressAction,
         CancellationToken = cancellationToken,
-        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder
+        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder,
       };
 
     // Try Local Receive
-    string? objString = await LocalReceive(objectId, localTransport, onTotalChildrenCountKnown).ConfigureAwait(false);
+    string? objString = await LocalReceive(objectId, localTransport).ConfigureAwait(false);
 
     if (objString is null)
     {
@@ -124,8 +113,7 @@ public partial class Operations
         remoteTransport.TransportName
       );
 
-      objString = await RemoteReceive(objectId, remoteTransport, localTransport, onTotalChildrenCountKnown)
-        .ConfigureAwait(false);
+      objString = await RemoteReceive(objectId, remoteTransport, localTransport).ConfigureAwait(false);
     }
 
     using var serializerActivity = activityFactory.Start();
@@ -140,26 +128,15 @@ public partial class Operations
   /// </summary>
   /// <param name="objectId"></param>
   /// <param name="localTransport"></param>
-  /// <param name="onTotalChildrenCountKnown"></param>
   /// <returns></returns>
   /// <exception cref="SpeckleDeserializeException"></exception>
-  internal static async Task<string?> LocalReceive(
-    string objectId,
-    ITransport localTransport,
-    Action<int>? onTotalChildrenCountKnown
-  )
+  internal static async Task<string?> LocalReceive(string objectId, ITransport localTransport)
   {
     string? objString = await localTransport.GetObject(objectId).ConfigureAwait(false);
     if (objString is null)
     {
       return null;
     }
-
-    // Shoot out the total children count, wasteful
-    var count = ClosureParser.GetClosures(objString).Count;
-
-    onTotalChildrenCountKnown?.Invoke(count);
-
     return objString;
   }
 
@@ -170,19 +147,15 @@ public partial class Operations
   /// <param name="objectId"></param>
   /// <param name="remoteTransport"></param>
   /// <param name="localTransport"></param>
-  /// <param name="onTotalChildrenCountKnown"></param>
   /// <returns></returns>
   /// <exception cref="TransportException">Remote transport was not specified</exception>
   private static async Task<string> RemoteReceive(
     string objectId,
     ITransport remoteTransport,
-    ITransport localTransport,
-    Action<int>? onTotalChildrenCountKnown
+    ITransport localTransport
   )
   {
-    var objString = await remoteTransport
-      .CopyObjectAndChildren(objectId, localTransport, onTotalChildrenCountKnown)
-      .ConfigureAwait(false);
+    var objString = await remoteTransport.CopyObjectAndChildren(objectId, localTransport).ConfigureAwait(false);
 
     // DON'T THINK THIS IS NEEDED CopyObjectAndChildren should call this
     // Wait for the local transport to finish "writing" - in this case, it signifies that the remote transport has done pushing copying objects into it. (TODO: I can see some scenarios where latency can screw things up, and we should rather wait on the remote transport).

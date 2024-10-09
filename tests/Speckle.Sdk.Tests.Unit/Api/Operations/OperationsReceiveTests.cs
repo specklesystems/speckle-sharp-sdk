@@ -19,13 +19,13 @@ public sealed partial class OperationsReceiveTests
     Reset();
     s_testObjects =
     [
-      new() { ["string prop"] = "simple test case", ["numerical prop"] = 123, },
+      new() { ["string prop"] = "simple test case", ["numerical prop"] = 123 },
       new() { ["@detachedProp"] = new Base() { ["the best prop"] = "1234!" } },
       new()
       {
         ["@detachedList"] = new List<Base> { new() { ["the worst prop"] = null } },
         ["dictionaryProp"] = new Dictionary<string, Base> { ["dict"] = new() { ["the best prop"] = "" } },
-      }
+      },
     ];
   }
 
@@ -98,29 +98,5 @@ public sealed partial class OperationsReceiveTests
     );
 
     Assert.That(wasCalled, Is.True);
-  }
-
-  [Test, TestCaseSource(nameof(TestCases))]
-  public async Task Receive_FromLocal_OnTotalChildrenCountKnownCalled(string id)
-  {
-    bool wasCalled = false;
-    int children = 0;
-    var result = await _operations.Receive(
-      id,
-      null,
-      _testCaseTransport,
-      onTotalChildrenCountKnown: c =>
-      {
-        wasCalled = true;
-        children = c;
-      }
-    );
-
-    Assert.That(result.id, Is.EqualTo(id));
-
-    var expectedChildren = result.GetTotalChildrenCount() - 1;
-
-    Assert.That(wasCalled, Is.True);
-    Assert.That(children, Is.EqualTo(expectedChildren));
   }
 }

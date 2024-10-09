@@ -220,7 +220,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
           StartIndex = startIndex,
           EndIndex = endIndex,
           ProxyCurveIsReversed = proxyReversed,
-          Domain = domain
+          Domain = domain,
         };
 
         Edges.Add(edge);
@@ -277,7 +277,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
           Brep = this,
           FaceIndex = faceIndex,
           TrimIndices = trimIndices,
-          Type = type
+          Type = type,
         };
         Loops.Add(loop);
         i += n + 1;
@@ -402,7 +402,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
           SurfaceIndex = surfIndex,
           LoopIndices = loopIndices,
           OuterLoopIndex = outerLoopIndex,
-          OrientationReversed = orientationIsReversed
+          OrientationReversed = orientationIsReversed,
         };
         Faces.Add(face);
         i += n + 1;
@@ -490,7 +490,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       Faces = new List<BrepFace>(Faces.Count),
       IsClosed = IsClosed,
       Orientation = Orientation,
-      applicationId = applicationId ?? id
+      applicationId = applicationId ?? id,
     };
 
     foreach (var e in Edges)
@@ -504,7 +504,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
           StartIndex = e.StartIndex,
           EndIndex = e.EndIndex,
           ProxyCurveIsReversed = e.ProxyCurveIsReversed,
-          Domain = e.Domain
+          Domain = e.Domain,
         }
       );
     }
@@ -517,7 +517,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
           Brep = transformed,
           FaceIndex = l.FaceIndex,
           TrimIndices = l.TrimIndices,
-          Type = l.Type
+          Type = l.Type,
         }
       );
     }
@@ -551,7 +551,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
           SurfaceIndex = f.SurfaceIndex,
           LoopIndices = f.LoopIndices,
           OuterLoopIndex = f.OuterLoopIndex,
-          OrientationReversed = f.OrientationReversed
+          OrientationReversed = f.OrientationReversed,
         }
       );
     }
@@ -670,7 +670,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
             SurfaceIndex = f.SurfaceIndex,
             LoopIndices = f.LoopIndices,
             OuterLoopIndex = f.OuterLoopIndex,
-            OrientationReversed = f.OrientationReversed
+            OrientationReversed = f.OrientationReversed,
           };
           Faces[i] = f;
         }
@@ -698,7 +698,7 @@ public enum BrepOrientation
   Outward = 1,
 
   /// Orientation is not known
-  Unknown = 2
+  Unknown = 2,
 }
 
 /// <summary>
@@ -722,7 +722,7 @@ public enum BrepLoopType
   CurveOnSurface,
 
   /// Loop is collapsed to a point.
-  PointOnSurface
+  PointOnSurface,
 }
 
 /// <summary>
@@ -737,5 +737,5 @@ public enum BrepTrimType
   Singular,
   CurveOnSurface,
   PointOnSurface,
-  Slit
+  Slit,
 }

@@ -114,7 +114,7 @@ public enum RevitCategory
   Walls = 107,
   StructConnectionWelds = 108,
   Windows = 109,
-  Railings = 110
+  Railings = 110,
 }
 
 /// <summary>
@@ -169,12 +169,12 @@ public enum RevitFamilyCategory
   TemporaryStructure = 100,
   VerticalCirculation = 103,
   Windows = 109,
-  Railings = 110
+  Railings = 110,
 }
 
 public enum LocationLine
 {
   Centerline,
   Exterior,
-  Interior
+  Interior,
 }

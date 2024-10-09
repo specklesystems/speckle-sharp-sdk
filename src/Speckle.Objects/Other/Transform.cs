@@ -215,7 +215,7 @@ public class Transform : Base
       matrix.M41,
       matrix.M42,
       matrix.M43,
-      matrix.M44
+      matrix.M44,
     };
   }
 
@@ -264,7 +264,7 @@ public class Transform : Base
       matrix.M41,
       matrix.M42,
       matrix.M43,
-      matrix.M44
+      matrix.M44,
     };
   }
 
