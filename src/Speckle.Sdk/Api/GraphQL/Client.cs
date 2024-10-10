@@ -104,15 +104,11 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
     using var activity = _activityFactory.Start();
-    activity?.SetTag("responseType", typeof(T));
-    activity?.SetTag("request.query", request.Query);
-    activity?.SetTag("request.operationName", request.OperationName);
-    activity?.SetTag("request.variables", request.Variables);
-    activity?.SetTag("request.extensions", request.Extensions);
-    activity?.SetTag("clientOptions.endPoint", GQLClient.Options.EndPoint);
-    activity?.SetTag("clientOptions.medaType", GQLClient.Options.MediaType);
-    activity?.SetTag("clientOptions.webSocketEndPoint", GQLClient.Options.WebSocketEndPoint);
-    activity?.SetTag("clientOptions.webSocketProtocol", GQLClient.Options.WebSocketProtocol);
+    activity?.SetTag("graphql.response.type", typeof(T));
+    activity?.SetTag("graphql.request.query", request.Query);
+    activity?.SetTag("graphql.request.operationName", request.OperationName);
+    activity?.SetTag("graphql.request.variables", request.Variables);
+    activity?.SetTag("graphql.request.extensions", request.Extensions);
 
     try
     {
