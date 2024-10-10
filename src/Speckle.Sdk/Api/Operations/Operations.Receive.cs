@@ -37,6 +37,7 @@ public partial class Operations
   )
   {
     using var receiveActivity = activityFactory.Start("Operations.Receive");
+    metricsFactory.CreateCounter<long>("Receive").Add(1);
 
     if (remoteTransport != null)
     {
