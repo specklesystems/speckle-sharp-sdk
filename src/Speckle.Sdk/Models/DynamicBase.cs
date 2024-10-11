@@ -114,7 +114,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
     return valid;
   }
 
-  private static readonly HashSet<char> s_disallowedPropNameChars = new() { '.', '/' };
+  private static readonly char[] s_disallowedPropNameChars = { '.', '/' };
 
   public static string RemoveDisallowedPropNameChars(string name)
   {
@@ -146,10 +146,14 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
     {
       for (int i = 0; i < len; i++)
       {
-        if (s_disallowedPropNameChars.Contains(ptr[i]))
+        for (int j = 0; j < s_disallowedPropNameChars.Length; j++)
         {
-          reason = $"Prop with name '{name}' contains invalid characters. The following characters are not allowed: ./";
-          return false;
+          if (s_disallowedPropNameChars[j] == ptr[i])
+          {
+            reason =
+              $"Prop with name '{name}' contains invalid characters. The following characters are not allowed: ./";
+            return false;
+          }
         }
       }
       // talk to ptr[0] etc; DO NOT go outside of ptr[0] <---> ptr[len-1]
