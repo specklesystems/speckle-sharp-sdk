@@ -6,7 +6,7 @@ public interface ISdkActivity : IDisposable
   void RecordException(Exception e);
   string TraceId { get; }
   void SetStatus(SdkActivityStatusCode code);
-  
+
   void InjectHeaders(Action<string, string> header);
 }
 

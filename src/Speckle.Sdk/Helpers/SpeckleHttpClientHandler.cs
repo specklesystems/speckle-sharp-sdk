@@ -39,7 +39,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
       context.Add("retryCount", 0);
 
       request.Headers.Add("x-request-id", context.CorrelationId.ToString());
-      activity?.InjectHeaders((k,v) => request.Headers.TryAddWithoutValidation(k,v));
+      activity?.InjectHeaders((k, v) => request.Headers.TryAddWithoutValidation(k, v));
 
       var policyResult = await _resiliencePolicy
         .ExecuteAndCaptureAsync(
