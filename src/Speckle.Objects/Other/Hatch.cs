@@ -39,5 +39,5 @@ public enum HatchLoopType
 {
   Unknown,
   Outer,
-  Inner
+  Inner,
 }

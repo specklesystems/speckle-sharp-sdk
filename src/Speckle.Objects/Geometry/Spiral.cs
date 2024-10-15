@@ -15,7 +15,7 @@ public enum SpiralType
   CubicParabola,
   Radioid,
   Sinusoid,
-  Unknown
+  Unknown,
 }
 
 [SpeckleType("Objects.Geometry.Spiral")]

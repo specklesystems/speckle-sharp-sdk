@@ -31,5 +31,5 @@ public enum Thermal2dLoadType
   NotSet = 0,
   Uniform,
   Gradient,
-  General
+  General,
 }

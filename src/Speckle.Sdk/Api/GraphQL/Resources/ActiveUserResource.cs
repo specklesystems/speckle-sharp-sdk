@@ -89,8 +89,8 @@ public sealed class ActiveUserResource
       {
         limit,
         cursor,
-        filter
-      }
+        filter,
+      },
     };
 
     var response = await _client

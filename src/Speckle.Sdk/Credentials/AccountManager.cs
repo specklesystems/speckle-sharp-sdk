@@ -48,7 +48,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
       new GraphQLHttpClientOptions
       {
         EndPoint = new Uri(server, "/graphql"),
-        UseWebSocketForQueriesAndMutations = false
+        UseWebSocketForQueriesAndMutations = false,
       },
       new NewtonsoftJsonSerializer(),
       httpClient
@@ -636,7 +636,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
         refreshToken = tokenResponse.refreshToken,
         isDefault = !GetAccounts().Any(),
         serverInfo = userResponse.serverInfo,
-        userInfo = userResponse.activeUser
+        userInfo = userResponse.activeUser,
       };
       logger.LogInformation("Successfully created account for {serverUrl}", server);
 
@@ -757,7 +757,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
         appId = "sca",
         appSecret = "sca",
         accessCode,
-        challenge
+        challenge,
       };
 
       using var content = new StringContent(JsonConvert.SerializeObject(body));
@@ -784,7 +784,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
       {
         appId = "sca",
         appSecret = "sca",
-        refreshToken
+        refreshToken,
       };
 
       using var content = new StringContent(JsonConvert.SerializeObject(body));

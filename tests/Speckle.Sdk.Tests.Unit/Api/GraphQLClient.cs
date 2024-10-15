@@ -25,7 +25,7 @@ public sealed class GraphQLClientTests : IDisposable
         new Account
         {
           token = "this is a scam",
-          serverInfo = new ServerInfo { url = "http://goto.testing" }
+          serverInfo = new ServerInfo { url = "http://goto.testing" },
         }
       );
   }
@@ -56,7 +56,7 @@ public sealed class GraphQLClientTests : IDisposable
           new GraphQLRequest(),
           new GraphQLResponse<FakeGqlResponseModel>
           {
-            Errors = new GraphQLError[] { new() { Extensions = extensions } }
+            Errors = new GraphQLError[] { new() { Extensions = extensions } },
           }
         )
     );

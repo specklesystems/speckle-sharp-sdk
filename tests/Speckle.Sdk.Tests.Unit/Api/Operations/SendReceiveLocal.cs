@@ -121,7 +121,7 @@ public sealed class SendReceiveLocal : IDisposable
     {
       { "a", myList },
       { "b", 2 },
-      { "c", "ciao" }
+      { "c", "ciao" },
     };
 
     var myObject = new Base();

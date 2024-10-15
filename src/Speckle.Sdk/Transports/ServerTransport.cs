@@ -113,18 +113,14 @@ public sealed class ServerTransport : IServerTransport
       { "type", GetType().Name },
       { "streamId", StreamId },
       { "serverUrl", BaseUri },
-      { "blobStorageFolder", BlobStorageFolder }
+      { "blobStorageFolder", BlobStorageFolder },
     };
 
   public CancellationToken CancellationToken { get; set; }
   public IProgress<ProgressArgs>? OnProgressAction { get; set; }
   public TimeSpan Elapsed { get; private set; } = TimeSpan.Zero;
 
-  public async Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  )
+  public async Task<string> CopyObjectAndChildren(string id, ITransport targetTransport)
   {
     if (string.IsNullOrEmpty(id))
     {
@@ -144,8 +140,6 @@ public sealed class ServerTransport : IServerTransport
 
     var childrenIds = allIds.Where(x => !x.Contains("blob:"));
     var blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x.Remove(0, 5));
-
-    onTotalChildrenCountKnown?.Invoke(allIds.Count);
 
     //
     // Objects download

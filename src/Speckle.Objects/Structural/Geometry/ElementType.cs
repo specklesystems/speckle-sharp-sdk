@@ -15,7 +15,7 @@ public enum ElementType1D
   Cable,
   Spacer,
   Other,
-  Null
+  Null,
 }
 
 public enum ElementType2D
@@ -23,7 +23,7 @@ public enum ElementType2D
   Quad4,
   Quad8,
   Triangle3,
-  Triangle6
+  Triangle6,
 }
 
 public enum ElementType3D
@@ -31,5 +31,5 @@ public enum ElementType3D
   Brick8,
   Wedge6,
   Pyramid5,
-  Tetra4
+  Tetra4,
 }

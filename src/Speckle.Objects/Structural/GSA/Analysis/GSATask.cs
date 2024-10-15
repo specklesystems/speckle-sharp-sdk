@@ -44,11 +44,11 @@ public enum SolutionType
   Stability,
   StabilityPDelta,
   BucklingNonLinear,
-  Influence
+  Influence,
 }
 
 public enum PruningOption
 {
   None,
-  Influence
+  Influence,
 }

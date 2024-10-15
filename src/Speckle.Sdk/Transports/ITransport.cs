@@ -84,16 +84,11 @@ public interface ITransport
   /// </summary>
   /// <param name="id">The id of the object you want to copy.</param>
   /// <param name="targetTransport">The transport you want to copy the object to.</param>
-  /// <param name="onTotalChildrenCountKnown">(Optional) an <see cref="Action{T}"/> that will be invoked once, when the number of object children to be copied over is known.</param>
   /// <returns>The string representation of the root object.</returns>
   /// <exception cref="ArgumentException">The provided arguments are not valid</exception>
   /// <exception cref="TransportException">The transport could not complete the operation</exception>
   /// <exception cref="OperationCanceledException"><see cref="CancellationToken"/> requested cancel</exception>
-  public Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  );
+  public Task<string> CopyObjectAndChildren(string id, ITransport targetTransport);
 
   /// <summary>
   /// Checks if objects are present in the transport

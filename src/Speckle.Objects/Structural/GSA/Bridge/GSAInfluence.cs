@@ -28,5 +28,5 @@ public enum InfluenceType
 {
   NotSet = 0,
   FORCE,
-  DISPLACEMENT
+  DISPLACEMENT,
 }

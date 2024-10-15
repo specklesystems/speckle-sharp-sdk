@@ -13,5 +13,5 @@ public enum MaterialType
   Rebar,
   Tendon,
   ColdFormed,
-  Other
+  Other,
 }

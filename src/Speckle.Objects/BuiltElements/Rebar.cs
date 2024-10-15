@@ -136,7 +136,7 @@ public enum RebarType
   Standard = 10,
   StirrupPolygonal = 20,
   StirrupSpiral = 30,
-  StirrupTapered = 40
+  StirrupTapered = 40,
 }
 
 #region Obsolete

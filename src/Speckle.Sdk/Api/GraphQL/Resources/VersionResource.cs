@@ -62,8 +62,8 @@ public sealed class VersionResource
         {
           projectId,
           modelId,
-          versionId
-        }
+          versionId,
+        },
       };
 
     var response = await _client
@@ -130,7 +130,7 @@ public sealed class VersionResource
           limit,
           cursor,
           filter,
-        }
+        },
       };
 
     var response = await _client
@@ -193,7 +193,7 @@ public sealed class VersionResource
         }
       }
       """;
-    GraphQLRequest request = new() { Query = QUERY, Variables = new { input, } };
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
       .ExecuteGraphQLRequest<VersionMutationResponse>(request, cancellationToken)
@@ -217,7 +217,7 @@ public sealed class VersionResource
         }
       }
       """;
-    GraphQLRequest request = new() { Query = QUERY, Variables = new { input, } };
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
       .ExecuteGraphQLRequest<VersionMutationResponse>(request, cancellationToken)

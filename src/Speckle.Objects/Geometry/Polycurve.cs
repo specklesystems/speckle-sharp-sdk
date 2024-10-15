@@ -66,7 +66,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
       segments = transformed,
       applicationId = applicationId,
       closed = closed,
-      units = units
+      units = units,
     };
 
     return success;
@@ -88,7 +88,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
         domain = polyline.domain,
         closed = polyline.closed,
         bbox = polyline.bbox,
-        length = polyline.length
+        length = polyline.length,
       };
 
     var points = polyline.GetPoints();
