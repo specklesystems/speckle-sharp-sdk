@@ -45,6 +45,7 @@
   <ItemGroup Condition=" '$(Framework)' != 'NET80'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces"/> 
   </ItemGroup>
   
 </Project>
