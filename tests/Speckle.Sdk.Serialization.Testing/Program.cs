@@ -5,7 +5,7 @@ using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.Receive;
 using Speckle.Sdk.Transports;
 
 TypeLoader.Reset();
@@ -31,7 +31,7 @@ Console.WriteLine("Executing");
 
 using var o = new ObjectLoader(serviceProvider.GetRequiredService<ISpeckleHttp>(), 
   serviceProvider.GetRequiredService<ISdkActivityFactory>(),
-  new Uri(url), streamId, null, rootId, null, new SQLiteTransport());
-await o.Save(default).ConfigureAwait(false);
+  new Uri(url), streamId, null, null, new SQLiteTransport());
+await o.DownloadAndCache(rootId, default).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
