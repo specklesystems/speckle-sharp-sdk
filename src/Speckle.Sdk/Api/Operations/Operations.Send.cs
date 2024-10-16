@@ -78,6 +78,7 @@ public partial class Operations
     }
 
     // make sure all logs in the operation have the proper context
+    metricsFactory.CreateCounter<long>("Send").Add(1);
     using var activity = activityFactory.Start();
     activity?.SetTag("correlationId", Guid.NewGuid().ToString());
     {
