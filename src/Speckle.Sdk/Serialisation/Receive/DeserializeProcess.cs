@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
@@ -17,29 +16,51 @@ public sealed class DeserializeProcess(
   private readonly ConcurrentDictionary<string, Base> _cache = new();
   private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _closures = new();
 
+  private long _total;
+
   public async Task<Base> Deserialize(string rootId)
   {
     var (rootJson, childrenIds) = await objectLoader.DownloadAndLoad(rootId, default).ConfigureAwait(false);
+    _total = childrenIds.Count;
+    _closures.TryAdd(rootId, childrenIds);
     Execute(rootId, rootJson);
-    var count = 0L;
-    progress?.Report(new(ProgressEvent.DeserializeObject, count, childrenIds.Count));
-    _deserializationStack.Write(childrenIds.ToArray());
-    _deserializationStack.Start(async id =>
-    {
-      if (_cache.ContainsKey(id))
-      {
-        return id == rootId;
-      }
-      var json = await sqLiteTransport.GetObject(id).ConfigureAwait(false);
-      Execute(id, json.NotNull());
-      count++;
-      progress?.Report(new(ProgressEvent.DeserializeObject, count, childrenIds.Count));
-      return _cache.ContainsKey(rootId);
-    });
-    await _deserializationStack.CompleteAndWaitForReader().ConfigureAwait(false);
+    progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, childrenIds.Count));
+    Traverse(rootId, rootJson);
     return _cache[rootId];
   }
+  
+  public void Traverse(string id, string json)
+  {
+    var tasks = new List<Task>();
+    foreach (var (childId, childJson) in GetChildrenIds(id, json))
+    {
+      // tmp is necessary because of the way closures close over loop variables
+      var tmpId = childId;
+      var tmpJson = childJson;
+#pragma warning disable CA2008
+      tasks.Add(Task.Factory.StartNew(() => Traverse(tmpId, tmpJson)));
+#pragma warning restore CA2008
+    }
 
+    if (tasks.Count > 0)
+    {
+      Task.WaitAll(tasks.ToArray());
+    }
+
+    Execute(id, json);
+    progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, _total));
+  }
+
+  public IEnumerable<(string, string)> GetChildrenIds(string id, string json)
+  {
+    if (!_closures.TryGetValue(id, out var closures))
+    {
+      closures = ClosureParser.GetClosures(json).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
+      _closures.TryAdd(id, closures);
+    }
+    
+    return sqLiteTransport.GetObjects(closures);
+  }
   public void Execute(string id, string json)
   {
     if (!_closures.TryGetValue(id, out var closures))
