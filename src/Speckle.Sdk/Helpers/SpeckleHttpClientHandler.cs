@@ -52,17 +52,16 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
         .ConfigureAwait(false);
       context.TryGetValue("retryCount", out var retryCount);
       activity?.SetTag("retryCount", retryCount);
-      activity?.SetStatus(
-        policyResult.Result.IsSuccessStatusCode ? SdkActivityStatusCode.Ok : SdkActivityStatusCode.Error
-      );
-      if (policyResult.FinalException != null)
-      {
-        activity?.RecordException(policyResult.FinalException);
-      }
 
       if (policyResult.Outcome == OutcomeType.Successful)
       {
+        activity?.SetStatus(SdkActivityStatusCode.Ok);
         return policyResult.Result.NotNull();
+      }
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      if (policyResult.FinalException != null)
+      {
+        activity?.RecordException(policyResult.FinalException);
       }
 
       // if the policy failed due to a cancellation, AND it was our cancellation token, then don't wrap the exception, and rethrow an new cancellation
@@ -71,7 +70,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
         cancellationToken.ThrowIfCancellationRequested();
       }
 
-      throw new HttpRequestException("Policy Failed", policyResult.FinalException);
+      throw new HttpRequestException("Policy Failed: " + policyResult.FinalHandledResult.StatusCode, policyResult.FinalException);
     }
   }
 }

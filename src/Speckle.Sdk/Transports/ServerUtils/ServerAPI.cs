@@ -356,9 +356,6 @@ public sealed class ServerApi : IDisposable, IServerApi
     IProgress<ProgressArgs>? progress
   )
   {
-    // Stopwatch sw = new Stopwatch(); sw.Start();
-    Console.WriteLine("Download objects " + objectIds.Count);
-
     CancellationToken.ThrowIfCancellationRequested();
 
     using var childrenHttpMessage = new HttpRequestMessage
@@ -380,7 +377,6 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       if (id is not null)
       {
-        Console.WriteLine("Returning object " + id);
         yield return (id, json);
       }
     }
@@ -466,9 +462,6 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       hasObjects[prop.Key] = (bool)prop.Value.NotNull();
     }
-
-    // Console.WriteLine($"ServerApi::HasObjects({objectIds.Count}) request in {sw.ElapsedMilliseconds / 1000.0} sec");
-
     return hasObjects;
   }
 
