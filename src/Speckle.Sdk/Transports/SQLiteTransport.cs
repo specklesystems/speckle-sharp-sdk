@@ -355,6 +355,25 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     }
   }
 
+  public async Task SaveObjects(IEnumerable<(string, string)> objects)
+  {
+    using var c = new SqliteConnection(_connectionString);
+    await c.OpenAsync().ConfigureAwait(false);
+    using var t = c.BeginTransaction();
+    const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
+
+    foreach(var (id, content) in objects) 
+    {
+      using var command = new SqliteCommand(COMMAND_TEXT, c, t);
+      command.Parameters.AddWithValue("@hash", id);
+      command.Parameters.AddWithValue("@content",content);
+      command.ExecuteNonQuery();
+    }
+
+    t.Commit();
+    CancellationToken.ThrowIfCancellationRequested();
+  }
+
   /// <summary>
   /// Adds an object to the saving queue.
   /// </summary>

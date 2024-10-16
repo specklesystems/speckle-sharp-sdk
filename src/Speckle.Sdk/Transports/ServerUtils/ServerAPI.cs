@@ -7,6 +7,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Transports.ServerUtils;
 
@@ -110,6 +111,27 @@ public sealed class ServerApi : IDisposable, IServerApi
       crtRequest.Add(id);
     }
     await DownloadObjectsImpl(streamId, crtRequest, progress, onObjectCallback).ConfigureAwait(false);
+  }
+  
+  
+  public async IAsyncEnumerable<(string, string)> DownloadObjects2(
+    string streamId,
+    IReadOnlyList<string> objectIds,
+    IProgress<ProgressArgs>? progress
+  )
+  {
+    if (objectIds.Count == 0)
+    {
+      yield break;
+    }
+    using var _ = _activityFactory.Start();
+    foreach (var idBatch in objectIds.Batch(BATCH_SIZE_GET_OBJECTS))
+    {
+        await foreach (var (id, json) in DownloadObjectsImpl2(streamId, idBatch, progress).WithCancellation(CancellationToken))
+        {
+          yield return (id, json);
+        }
+    }
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(string streamId, IReadOnlyList<string> objectIds)
@@ -327,6 +349,42 @@ public sealed class ServerApi : IDisposable, IServerApi
 
     await ResponseProgress(childrenHttpResponse, progress, onObjectCallback, false).ConfigureAwait(false);
   }
+  
+  public async IAsyncEnumerable<(string, string)> DownloadObjectsImpl2(
+    string streamId,
+    IReadOnlyList<string> objectIds,
+    IProgress<ProgressArgs>? progress
+  )
+  {
+    // Stopwatch sw = new Stopwatch(); sw.Start();
+    Console.WriteLine("Download objects " + objectIds.Count);
+
+    CancellationToken.ThrowIfCancellationRequested();
+
+    using var childrenHttpMessage = new HttpRequestMessage
+    {
+      RequestUri = new Uri($"/api/getobjects/{streamId}", UriKind.Relative),
+      Method = HttpMethod.Post,
+    };
+
+    Dictionary<string, string> postParameters = new() { { "objects", JsonConvert.SerializeObject(objectIds) } };
+    string serializedPayload = JsonConvert.SerializeObject(postParameters);
+    childrenHttpMessage.Content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
+    childrenHttpMessage.Headers.Add("Accept", "text/plain");
+
+    HttpResponseMessage childrenHttpResponse = await _client
+      .SendAsync(childrenHttpMessage, CancellationToken)
+      .ConfigureAwait(false);
+
+    await foreach (var (id, json) in ResponseProgress2(childrenHttpResponse, progress, false).WithCancellation(CancellationToken))
+    {
+      if (id is not null)
+      {
+        Console.WriteLine("Returning object " + id);
+        yield return (id, json);
+      }
+    }
+  }
 
   private async Task ResponseProgress(
     HttpResponseMessage childrenHttpResponse,
@@ -353,6 +411,33 @@ public sealed class ServerApi : IDisposable, IServerApi
       {
         onObjectCallback(string.Empty, line);
         break;
+      }
+    }
+  }
+  
+  private async IAsyncEnumerable<(string?, string)> ResponseProgress2(
+    HttpResponseMessage childrenHttpResponse,
+    IProgress<ProgressArgs>? progress,
+    bool isSingle
+  )
+  {
+    childrenHttpResponse.EnsureSuccessStatusCode();
+    var length = childrenHttpResponse.Content.Headers.ContentLength;
+    using Stream childrenStream = await childrenHttpResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
+
+    using var reader = new StreamReader(new ProgressStream(childrenStream, length, progress, true), Encoding.UTF8);
+    while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
+    {
+      CancellationToken.ThrowIfCancellationRequested();
+
+      if (!isSingle)
+      {
+        var pcs = line.Split(s_separator, 2);
+        yield return (pcs[0], pcs[1]);
+      }
+      else
+      {
+        yield return (string.Empty, line);
       }
     }
   }
