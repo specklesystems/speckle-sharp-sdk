@@ -1,8 +1,11 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
+using Microsoft.Extensions.DependencyInjection;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Receive;
@@ -38,8 +41,18 @@ public class GeneralDeserializer : IDisposable
   [Benchmark]
   public async Task<Base> RunTest_New()
   {
-    using DeserializeProcess sut = new(_dataSource.Transport);
-    return await sut.Deserialize(_dataSource.ObjectId);
+    var sqliteTransport = _dataSource.Transport;
+    using var o = new ObjectLoader(
+      TestDataHelper.ServiceProvider.GetRequiredService<ISpeckleHttp>(),
+      TestDataHelper.ServiceProvider.GetRequiredService<ISdkActivityFactory>(),
+      new Uri("https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"),
+      "2099ac4b5f",
+      null,
+      null,
+      sqliteTransport
+    );
+    using var process = new DeserializeProcess(null, o, sqliteTransport);
+    return await process.Deserialize(_dataSource.ObjectId).ConfigureAwait(false);
   }
 
   [Benchmark]
@@ -51,13 +64,7 @@ public class GeneralDeserializer : IDisposable
   }
 
   [GlobalCleanup]
-  public void Cleanup()
-  {
-    Dispose();
-  }
+  public void Cleanup() => Dispose();
 
-  public void Dispose()
-  {
-    _dataSource.Dispose();
-  }
+  public void Dispose() => _dataSource.Dispose();
 }

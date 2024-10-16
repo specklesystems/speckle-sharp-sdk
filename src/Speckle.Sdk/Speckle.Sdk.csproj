@@ -43,6 +43,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" OverrideVersion="8.0.0"/>
   </ItemGroup>
   <ItemGroup Condition=" '$(Framework)' != 'NET80'">
+    <PackageReference Include="CodeJam" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces"/> 

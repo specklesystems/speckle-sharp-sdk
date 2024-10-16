@@ -6,7 +6,11 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, ObjectLoader objectLoader, SQLiteTransport sqLiteTransport) : IDisposable
+public sealed class DeserializeProcess(
+  IProgress<ProgressArgs>? progress,
+  ObjectLoader objectLoader,
+  SQLiteTransport sqLiteTransport
+) : IDisposable
 {
   private readonly StackChannel<string> _deserializationStack = new();
 
@@ -15,11 +19,10 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, Object
 
   public async Task<Base> Deserialize(string rootId)
   {
-    var (rootJson, childrenIds) = 
-      await objectLoader.DownloadAndLoad(rootId, default).ConfigureAwait(false);
+    var (rootJson, childrenIds) = await objectLoader.DownloadAndLoad(rootId, default).ConfigureAwait(false);
     Execute(rootId, rootJson);
     var count = 0L;
-    progress?.Report(new (ProgressEvent.DeserializeObject, count, childrenIds.Count));
+    progress?.Report(new(ProgressEvent.DeserializeObject, count, childrenIds.Count));
     _deserializationStack.Write(childrenIds.ToArray());
     _deserializationStack.Start(async id =>
     {
@@ -30,7 +33,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, Object
       var json = await sqLiteTransport.GetObject(id).ConfigureAwait(false);
       Execute(id, json.NotNull());
       count++;
-      progress?.Report(new (ProgressEvent.DeserializeObject, count, childrenIds.Count));
+      progress?.Report(new(ProgressEvent.DeserializeObject, count, childrenIds.Count));
       return _cache.ContainsKey(rootId);
     });
     await _deserializationStack.CompleteAndWaitForReader().ConfigureAwait(false);

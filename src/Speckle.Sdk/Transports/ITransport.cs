@@ -4,6 +4,7 @@ namespace Speckle.Sdk.Transports;
 
 public enum ProgressEvent
 {
+  CacheCheck,
   DownloadBytes,
   UploadBytes,
   DownloadObject,

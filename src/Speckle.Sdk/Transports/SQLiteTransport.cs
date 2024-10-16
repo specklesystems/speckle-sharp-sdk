@@ -162,12 +162,12 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
 
     return Task.FromResult(ret);
   }
-  
-  
-  public IEnumerable<(string, bool)> HasObjects2(IEnumerable<string> objectIds)
+
+  public async IAsyncEnumerable<(string, bool)> HasObjects2(IEnumerable<string> objectIds)
   {
     using var c = new SqliteConnection(_connectionString);
-    c.Open();
+    await c.OpenAsync().ConfigureAwait(false);
+    await Task.Delay(10).ConfigureAwait(false);
     const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
     using var command = new SqliteCommand(COMMAND_TEXT, Connection);
     foreach (string objectId in objectIds)
@@ -374,18 +374,18 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     }
   }
 
-  public void SaveObjects(IEnumerable<(string, string)> objects)
+  public async Task SaveObjects(IEnumerable<(string, string)> objects)
   {
     using var c = new SqliteConnection(_connectionString);
-    c.Open();
+    await c.OpenAsync().ConfigureAwait(false);
     using var t = c.BeginTransaction();
     const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
 
-    foreach(var (id, content) in objects) 
+    foreach (var (id, content) in objects)
     {
       using var command = new SqliteCommand(COMMAND_TEXT, c, t);
       command.Parameters.AddWithValue("@hash", id);
-      command.Parameters.AddWithValue("@content",content);
+      command.Parameters.AddWithValue("@content", content);
       command.ExecuteNonQuery();
     }
 
@@ -460,7 +460,7 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     }
     return null; // pass on the duty of null checks to consumers
   }
-  
+
   public IEnumerable<(string, string)> GetObjects(IEnumerable<string> ids)
   {
     CancellationToken.ThrowIfCancellationRequested();

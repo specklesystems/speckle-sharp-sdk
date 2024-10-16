@@ -112,8 +112,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
     await DownloadObjectsImpl(streamId, crtRequest, progress, onObjectCallback).ConfigureAwait(false);
   }
-  
-  
+
   public async IAsyncEnumerable<(string, string)> DownloadObjects2(
     string streamId,
     IReadOnlyList<string> objectIds,
@@ -127,10 +126,12 @@ public sealed class ServerApi : IDisposable, IServerApi
     using var _ = _activityFactory.Start();
     foreach (var idBatch in objectIds.Batch(BATCH_SIZE_GET_OBJECTS))
     {
-        await foreach (var (id, json) in DownloadObjectsImpl2(streamId, idBatch, progress).WithCancellation(CancellationToken))
-        {
-          yield return (id, json);
-        }
+      await foreach (
+        var (id, json) in DownloadObjectsImpl2(streamId, idBatch, progress).WithCancellation(CancellationToken)
+      )
+      {
+        yield return (id, json);
+      }
     }
   }
 
@@ -349,7 +350,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
     await ResponseProgress(childrenHttpResponse, progress, onObjectCallback, false).ConfigureAwait(false);
   }
-  
+
   public async IAsyncEnumerable<(string, string)> DownloadObjectsImpl2(
     string streamId,
     IReadOnlyList<string> objectIds,
@@ -373,7 +374,9 @@ public sealed class ServerApi : IDisposable, IServerApi
       .SendAsync(childrenHttpMessage, CancellationToken)
       .ConfigureAwait(false);
 
-    await foreach (var (id, json) in ResponseProgress2(childrenHttpResponse, progress, false).WithCancellation(CancellationToken))
+    await foreach (
+      var (id, json) in ResponseProgress2(childrenHttpResponse, progress, false).WithCancellation(CancellationToken)
+    )
     {
       if (id is not null)
       {
@@ -410,7 +413,7 @@ public sealed class ServerApi : IDisposable, IServerApi
       }
     }
   }
-  
+
   private async IAsyncEnumerable<(string?, string)> ResponseProgress2(
     HttpResponseMessage childrenHttpResponse,
     IProgress<ProgressArgs>? progress,

@@ -48,16 +48,21 @@ public static class AsyncExtensions
   /// <summary>
   /// Helper method that returns Task with tuple of IAsyncEnumerable and it's result of MoveNextAsync.
   /// </summary>
-  private static async Task<(IAsyncEnumerator<TItem>, bool)> MoveNextWrapped<TItem>(IAsyncEnumerator<TItem> asyncEnumerator)
+  private static async Task<(IAsyncEnumerator<TItem>, bool)> MoveNextWrapped<TItem>(
+    IAsyncEnumerator<TItem> asyncEnumerator
+  )
   {
     var res = await asyncEnumerator.MoveNextAsync().ConfigureAwait(false);
     return (asyncEnumerator, res);
   }
-  
-  public static IAsyncEnumerable<TSource[]> BatchAsync<TSource>(this IAsyncEnumerable<TSource> source, int size) => AsyncEnumerableChunkIterator(source, size);
+
+  public static IAsyncEnumerable<TSource[]> BatchAsync<TSource>(this IAsyncEnumerable<TSource> source, int size) =>
+    AsyncEnumerableChunkIterator(source, size);
 
   private static async IAsyncEnumerable<TSource[]> AsyncEnumerableChunkIterator<TSource>(
-    IAsyncEnumerable<TSource> source, int size)
+    IAsyncEnumerable<TSource> source,
+    int size
+  )
   {
 #pragma warning disable CA2007
     await using IAsyncEnumerator<TSource> e = source.GetAsyncEnumerator();
@@ -97,8 +102,7 @@ public static class AsyncExtensions
         {
           // For all but the first chunk, the array will already be correctly sized.
           // We can just store into it until either it's full or MoveNext returns false.
-          TSource[]
-            local = array; // avoid bounds checks by using cached local (`array` is lifted to iterator object as a field)
+          TSource[] local = array; // avoid bounds checks by using cached local (`array` is lifted to iterator object as a field)
           Debug.Assert(local.Length == size);
           for (; (uint)i < (uint)local.Length && await e.MoveNextAsync().ConfigureAwait(false); i++)
           {
@@ -117,87 +121,82 @@ public static class AsyncExtensions
   }
 
   public static IEnumerable<TSource[]> Batch<TSource>(this IEnumerable<TSource> source, int size)
-        {
+  {
+    if (source is TSource[] array)
+    {
+      // Special-case arrays, which have an immutable length. This enables us to not only do an
+      // empty check and avoid allocating an iterator object when empty, it enables us to have a
+      // much more efficient (and simpler) implementation for chunking up the array.
+      return array.Length != 0 ? ArrayChunkIterator(array, size) : [];
+    }
 
-            if (source is TSource[] array)
+    return EnumerableChunkIterator(source, size);
+  }
+
+  private static IEnumerable<TSource[]> ArrayChunkIterator<TSource>(TSource[] source, int size)
+  {
+    int index = 0;
+    while (index < source.Length)
+    {
+      TSource[] chunk = new ReadOnlySpan<TSource>(source, index, Math.Min(size, source.Length - index)).ToArray();
+      index += chunk.Length;
+      yield return chunk;
+    }
+  }
+
+  private static IEnumerable<TSource[]> EnumerableChunkIterator<TSource>(IEnumerable<TSource> source, int size)
+  {
+    using IEnumerator<TSource> e = source.GetEnumerator();
+
+    // Before allocating anything, make sure there's at least one element.
+    if (e.MoveNext())
+    {
+      // Now that we know we have at least one item, allocate an initial storage array. This is not
+      // the array we'll yield.  It starts out small in order to avoid significantly overallocating
+      // when the source has many fewer elements than the chunk size.
+      int arraySize = Math.Min(size, 4);
+      int i;
+      do
+      {
+        var array = new TSource[arraySize];
+
+        // Store the first item.
+        array[0] = e.Current;
+        i = 1;
+
+        if (size != array.Length)
+        {
+          // This is the first chunk. As we fill the array, grow it as needed.
+          for (; i < size && e.MoveNext(); i++)
+          {
+            if (i >= array.Length)
             {
-                // Special-case arrays, which have an immutable length. This enables us to not only do an
-                // empty check and avoid allocating an iterator object when empty, it enables us to have a
-                // much more efficient (and simpler) implementation for chunking up the array.
-                return array.Length != 0 ?
-                    ArrayChunkIterator(array, size) :
-                    [];
+              arraySize = (int)Math.Min((uint)size, 2 * (uint)array.Length);
+              Array.Resize(ref array, arraySize);
             }
 
-            return EnumerableChunkIterator(source, size);
+            array[i] = e.Current;
+          }
         }
-
-        private static IEnumerable<TSource[]> ArrayChunkIterator<TSource>(TSource[] source, int size)
+        else
         {
-            int index = 0;
-            while (index < source.Length)
-            {
-                TSource[] chunk = new ReadOnlySpan<TSource>(source, index, Math.Min(size, source.Length - index)).ToArray();
-                index += chunk.Length;
-                yield return chunk;
-            }
+          // For all but the first chunk, the array will already be correctly sized.
+          // We can just store into it until either it's full or MoveNext returns false.
+          TSource[] local = array; // avoid bounds checks by using cached local (`array` is lifted to iterator object as a field)
+          Debug.Assert(local.Length == size);
+          for (; (uint)i < (uint)local.Length && e.MoveNext(); i++)
+          {
+            local[i] = e.Current;
+          }
         }
 
-        private static IEnumerable<TSource[]> EnumerableChunkIterator<TSource>(IEnumerable<TSource> source, int size)
+        if (i != array.Length)
         {
-            using IEnumerator<TSource> e = source.GetEnumerator();
-
-            // Before allocating anything, make sure there's at least one element.
-            if (e.MoveNext())
-            {
-                // Now that we know we have at least one item, allocate an initial storage array. This is not
-                // the array we'll yield.  It starts out small in order to avoid significantly overallocating
-                // when the source has many fewer elements than the chunk size.
-                int arraySize = Math.Min(size, 4);
-                int i;
-                do
-                {
-                    var array = new TSource[arraySize];
-
-                    // Store the first item.
-                    array[0] = e.Current;
-                    i = 1;
-
-                    if (size != array.Length)
-                    {
-                        // This is the first chunk. As we fill the array, grow it as needed.
-                        for (; i < size && e.MoveNext(); i++)
-                        {
-                            if (i >= array.Length)
-                            {
-                                arraySize = (int)Math.Min((uint)size, 2 * (uint)array.Length);
-                                Array.Resize(ref array, arraySize);
-                            }
-
-                            array[i] = e.Current;
-                        }
-                    }
-                    else
-                    {
-                        // For all but the first chunk, the array will already be correctly sized.
-                        // We can just store into it until either it's full or MoveNext returns false.
-                        TSource[] local = array; // avoid bounds checks by using cached local (`array` is lifted to iterator object as a field)
-                        Debug.Assert(local.Length == size);
-                        for (; (uint)i < (uint)local.Length && e.MoveNext(); i++)
-                        {
-                            local[i] = e.Current;
-                        }
-                    }
-
-                    if (i != array.Length)
-                    {
-                        Array.Resize(ref array, i);
-                    }
-
-                    yield return array;
-                }
-                while (i >= size && e.MoveNext());
-            }
+          Array.Resize(ref array, i);
         }
-    
+
+        yield return array;
+      } while (i >= size && e.MoveNext());
+    }
+  }
 }

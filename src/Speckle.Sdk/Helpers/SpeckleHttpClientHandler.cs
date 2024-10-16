@@ -70,7 +70,10 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
         cancellationToken.ThrowIfCancellationRequested();
       }
 
-      throw new HttpRequestException("Policy Failed: " + policyResult.FinalHandledResult.StatusCode, policyResult.FinalException);
+      throw new HttpRequestException(
+        "Policy Failed: " + policyResult.FinalHandledResult.StatusCode,
+        policyResult.FinalException
+      );
     }
   }
 }
