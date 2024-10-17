@@ -6,7 +6,7 @@ using System.Globalization;
 using Speckle.DoubleNumerics;
 using Speckle.Sdk.Common;
 
-namespace Speckle.Sdk.Serialisation.Receive;
+namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 internal static class ValueConverter
 {

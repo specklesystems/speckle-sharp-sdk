@@ -282,7 +282,9 @@
       "speckle.sdk": {
         "type": "Project",
         "dependencies": {
+          "CodeJam": "[4.1.0, )",
           "GraphQL.Client": "[6.0.0, )",
+          "Microsoft.Bcl.AsyncInterfaces": "[8.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
           "Microsoft.Data.Sqlite": "[7.0.7, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
@@ -295,6 +297,12 @@
           "Speckle.Newtonsoft.Json": "[13.0.2, )"
         }
       },
+      "CodeJam": {
+        "type": "CentralTransitive",
+        "requested": "[4.1.0, )",
+        "resolved": "4.1.0",
+        "contentHash": "kbOPSCFn4fx+x+mOR7lOoGt2b9QVH1fSsgKewR8CHmvVepof0gyllzIDCz5Jh+uH3kGocACvQ+kmrOzu8ETnvQ=="
+      },
       "GraphQL.Client": {
         "type": "CentralTransitive",
         "requested": "[6.0.0, )",
@@ -305,6 +313,12 @@
           "GraphQL.Client.Abstractions.Websocket": "6.0.0",
           "System.Reactive": "5.0.0"
         }
+      },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "CentralTransitive",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "3WA9q9yVqJp222P3x1wYIGDAkpjAku0TMUaaQV22g6L67AI0LdOIrVS7Ht2vJfLHGSPVuqN94vIr15qn+HEkHw=="
       },
       "Microsoft.CSharp": {
         "type": "CentralTransitive",

@@ -3,6 +3,7 @@
     <PackageVersion Include="altcover" Version="8.9.3" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Bullseye" Version="5.0.0" />
+    <PackageVersion Include="CodeJam" Version="4.1.0" />
     <PackageVersion Include="GraphQL.Client" Version="6.0.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
@@ -13,6 +14,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.2.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="2.2.0" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
     <PackageVersion Include="MongoDB.Driver" Version="2.19.2" />
     <PackageVersion Include="Moq" Version="4.20.70" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.6.0" />

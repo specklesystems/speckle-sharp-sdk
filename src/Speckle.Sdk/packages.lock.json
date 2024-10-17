@@ -2,6 +2,15 @@
   "version": 2,
   "dependencies": {
     ".NETStandard,Version=v2.0": {
+      "CodeJam": {
+        "type": "Direct",
+        "requested": "[4.1.0, )",
+        "resolved": "4.1.0",
+        "contentHash": "kbOPSCFn4fx+x+mOR7lOoGt2b9QVH1fSsgKewR8CHmvVepof0gyllzIDCz5Jh+uH3kGocACvQ+kmrOzu8ETnvQ==",
+        "dependencies": {
+          "System.ComponentModel.Annotations": "4.3.0"
+        }
+      },
       "GitVersion.MsBuild": {
         "type": "Direct",
         "requested": "[5.12.0, )",
@@ -17,6 +26,15 @@
           "GraphQL.Client.Abstractions": "6.0.0",
           "GraphQL.Client.Abstractions.Websocket": "6.0.0",
           "System.Reactive": "5.0.0"
+        }
+      },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "3WA9q9yVqJp222P3x1wYIGDAkpjAku0TMUaaQV22g6L67AI0LdOIrVS7Ht2vJfLHGSPVuqN94vIr15qn+HEkHw==",
+        "dependencies": {
+          "System.Threading.Tasks.Extensions": "4.5.4"
         }
       },
       "Microsoft.CSharp": {
@@ -316,6 +334,12 @@
       }
     },
     "net8.0": {
+      "CodeJam": {
+        "type": "Direct",
+        "requested": "[4.1.0, )",
+        "resolved": "4.1.0",
+        "contentHash": "kbOPSCFn4fx+x+mOR7lOoGt2b9QVH1fSsgKewR8CHmvVepof0gyllzIDCz5Jh+uH3kGocACvQ+kmrOzu8ETnvQ=="
+      },
       "GitVersion.MsBuild": {
         "type": "Direct",
         "requested": "[5.12.0, )",
@@ -332,6 +356,12 @@
           "GraphQL.Client.Abstractions.Websocket": "6.0.0",
           "System.Reactive": "5.0.0"
         }
+      },
+      "Microsoft.Bcl.AsyncInterfaces": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "3WA9q9yVqJp222P3x1wYIGDAkpjAku0TMUaaQV22g6L67AI0LdOIrVS7Ht2vJfLHGSPVuqN94vIr15qn+HEkHw=="
       },
       "Microsoft.CSharp": {
         "type": "Direct",

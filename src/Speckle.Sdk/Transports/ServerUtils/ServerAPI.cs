@@ -381,9 +381,6 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       hasObjects[prop.Key] = (bool)prop.Value.NotNull();
     }
-
-    // Console.WriteLine($"ServerApi::HasObjects({objectIds.Count}) request in {sw.ElapsedMilliseconds / 1000.0} sec");
-
     return hasObjects;
   }
 
