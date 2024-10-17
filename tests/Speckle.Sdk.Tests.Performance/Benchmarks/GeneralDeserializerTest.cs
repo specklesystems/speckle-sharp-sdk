@@ -1,11 +1,11 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
-using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.Receive;
 
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 
@@ -13,7 +13,7 @@ namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 /// How many threads on our Deserializer is optimal
 /// </summary>
 [MemoryDiagnoser]
-[SimpleJob(RunStrategy.Monitoring)]
+[SimpleJob(RunStrategy.Monitoring, 0, 0, 4)]
 public class GeneralDeserializer : IDisposable
 {
   private TestDataHelper _dataSource;
@@ -36,7 +36,14 @@ public class GeneralDeserializer : IDisposable
   }
 
   [Benchmark]
-  public async Task<Base> RunTest()
+  public async Task<Base> RunTest_New()
+  {
+    using DeserializeProcess sut = new(_dataSource.Transport);
+    return await sut.Deserialize(_dataSource.ObjectId);
+  }
+
+  [Benchmark]
+  public async Task<Base> RunTest_Old()
   {
     SpeckleObjectDeserializer sut = new() { ReadTransport = _dataSource.Transport };
     string data = await _dataSource.Transport.GetObject(_dataSource.ObjectId)!;
