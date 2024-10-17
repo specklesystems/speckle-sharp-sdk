@@ -1,24 +1,18 @@
 using System.Collections.Concurrent;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Helpers;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
-using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 [GenerateAutoInterface]
 public sealed class ObjectLoader(
-  ISpeckleHttp http,
-  ISdkActivityFactory activityFactory,
   ISQLiteCacheManager sqLiteCacheManager,
-  Uri serverUrl,
+  IServerObjectManager serverObjectManager,
   string streamId,
-  string? token,
   IProgress<ProgressArgs>? progress
-) : IObjectLoader, IDisposable
+) : IObjectLoader
 {
   private const int HTTP_ID_CHUNK_SIZE = 500;
   private const int CACHE_CHUNK_SIZE = 500;
@@ -27,14 +21,15 @@ public sealed class ObjectLoader(
 
   //private static readonly int MAX_PARALLELISM_CACHE = Environment.ProcessorCount * 2;
 
-  private readonly ServerApi _api = new(http, activityFactory, serverUrl, token, string.Empty);
-
-  private async Task<string> GetRootJson(string objectId)
+  private async Task<string> GetRootJson(string objectId, CancellationToken cancellationToken)
   {
     var rootJson = sqLiteCacheManager.GetObject(objectId);
     if (rootJson == null)
     {
-      rootJson = await _api.DownloadSingleObject(streamId, objectId, progress).NotNull().ConfigureAwait(false);
+      rootJson = await serverObjectManager
+        .DownloadSingleObject(streamId, objectId, progress, cancellationToken)
+        .NotNull()
+        .ConfigureAwait(false);
       sqLiteCacheManager.SaveObjectSync(objectId, rootJson);
     }
 
@@ -43,7 +38,7 @@ public sealed class ObjectLoader(
 
   public async Task<(string, IReadOnlyList<string>)> GetAndCache(string rootId, CancellationToken cancellationToken)
   {
-    var rootJson = await GetRootJson(rootId).ConfigureAwait(false);
+    var rootJson = await GetRootJson(rootId, cancellationToken).ConfigureAwait(false);
     var allChildrenIds = ClosureParser
       .GetClosures(rootJson)
       .OrderByDescending(x => x.Item2)
@@ -88,7 +83,7 @@ public sealed class ObjectLoader(
       try
       {
         await foreach (
-          var (id, json) in _api.DownloadObjectsImpl2(streamId, idBatch, progress).WithCancellation(cancellationToken)
+          var (id, json) in serverObjectManager.DownloadObjects(streamId, idBatch, progress, cancellationToken)
         )
         {
           count++;
@@ -126,6 +121,4 @@ public sealed class ObjectLoader(
 
   public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids, CancellationToken cancellationToken) =>
     sqLiteCacheManager.GetObjects(ids, cancellationToken);
-
-  public void Dispose() => _api.Dispose();
 }

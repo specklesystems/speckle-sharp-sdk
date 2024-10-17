@@ -41,16 +41,14 @@ public class GeneralDeserializer : IDisposable
   [Benchmark]
   public async Task<Base> RunTest_New()
   {
-    var sqliteTransport = new SQLiteCacheManager("2099ac4b5f");
-    using var o = new ObjectLoader(
+    var sqlite = new SQLiteCacheManager("2099ac4b5f");
+    var serverObjects = new ServerObjectManager(
       TestDataHelper.ServiceProvider.GetRequiredService<ISpeckleHttp>(),
       TestDataHelper.ServiceProvider.GetRequiredService<ISdkActivityFactory>(),
-      sqliteTransport,
       new Uri("https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"),
-      "2099ac4b5f",
-      null,
       null
     );
+    var o = new ObjectLoader(sqlite, serverObjects, "2099ac4b5f", null);
     using var process = new DeserializeProcess(null, o);
     return await process.Deserialize(_dataSource.ObjectId, default).ConfigureAwait(false);
   }

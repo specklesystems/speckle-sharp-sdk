@@ -31,15 +31,13 @@ Console.WriteLine("Executing");
 
 var progress = new Progress(true);
 var sqliteTransport = new SQLiteCacheManager(streamId);
-using var o = new ObjectLoader(
+var serverObjects = new ServerObjectManager(
   serviceProvider.GetRequiredService<ISpeckleHttp>(),
   serviceProvider.GetRequiredService<ISdkActivityFactory>(),
-  sqliteTransport,
   new Uri(url),
-  streamId,
-  null,
-  progress
+  null
 );
+var o = new ObjectLoader(sqliteTransport, serverObjects, streamId, progress);
 using var process = new DeserializeProcess(progress, o);
 await process.Deserialize(rootId, default).ConfigureAwait(false);
 Console.WriteLine("Detach");
