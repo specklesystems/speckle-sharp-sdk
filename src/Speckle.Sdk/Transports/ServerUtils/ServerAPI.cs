@@ -14,7 +14,7 @@ namespace Speckle.Sdk.Transports.ServerUtils;
 public sealed class ServerApi : IDisposable, IServerApi
 {
   private readonly ISdkActivityFactory _activityFactory;
-  private const int BATCH_SIZE_GET_OBJECTS = 10000;
+  public const int BATCH_SIZE_GET_OBJECTS = 10000;
   private const int BATCH_SIZE_HAS_OBJECTS = 100000;
 
   private const int MAX_MULTIPART_COUNT = 5;
