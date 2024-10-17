@@ -52,7 +52,7 @@ public class GeneralDeserializer : IDisposable
       sqliteTransport
     );
     using var process = new DeserializeProcess(null, o);
-    return await process.Deserialize(_dataSource.ObjectId).ConfigureAwait(false);
+    return await process.Deserialize(_dataSource.ObjectId, default).ConfigureAwait(false);
   }
 
   [Benchmark]

@@ -17,18 +17,18 @@ public sealed class DeserializeProcess(
 
   private long _total;
 
-  public async Task<Base> Deserialize(string rootId)
+  public async Task<Base> Deserialize(string rootId, CancellationToken cancellationToken)
   {
-    var (rootJson, childrenIds) = await objectLoader.GetAndCache(rootId, default).ConfigureAwait(false);
+    var (rootJson, childrenIds) = await objectLoader.GetAndCache(rootId, cancellationToken).ConfigureAwait(false);
     _total = childrenIds.Count;
     _closures.TryAdd(rootId, childrenIds);
     DecodeOrEnqueueChildren(rootId, rootJson);
     progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, childrenIds.Count));
-    Traverse(rootId, rootJson);
+    await Traverse(rootId, rootJson, cancellationToken).ConfigureAwait(false);
     return _cache[rootId];
   }
   
-  public void Traverse(string id, string json)
+  public async Task Traverse(string id, string json, CancellationToken cancellationToken)
   {
     var tasks = new List<Task>();
     foreach (var (childId, childJson) in GetChildrenIds(id, json))
@@ -37,13 +37,15 @@ public sealed class DeserializeProcess(
       var tmpId = childId;
       var tmpJson = childJson;
 #pragma warning disable CA2008
-      tasks.Add(Task.Factory.StartNew(() => Traverse(tmpId, tmpJson)));
+      Task<Task> t = Task.Factory.StartNew(() => Traverse(tmpId, tmpJson, cancellationToken), cancellationToken,
+        TaskCreationOptions.AttachedToParent, TaskScheduler.Default);
+      tasks.Add(t.Unwrap());
 #pragma warning restore CA2008
     }
 
     if (tasks.Count > 0)
     {
-      Task.WaitAll(tasks.ToArray());
+      await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     //don't redo things if the id is decoded already in the cache
