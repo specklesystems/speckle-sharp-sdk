@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
@@ -21,10 +20,11 @@ public sealed class ObjectLoader(
   SQLiteTransport transport
 ) : IObjectLoader, IDisposable
 {
-  //  private const int HTTP_ID_CHUNK_SIZE = 50;
+  private const int HTTP_ID_CHUNK_SIZE = 500;
   private const int CACHE_CHUNK_SIZE = 500;
 
-  // private const int MAX_PARALLELISM_HTTP = 4;
+  private const int MAX_PARALLELISM_HTTP = 4;
+
   //private static readonly int MAX_PARALLELISM_CACHE = Environment.ProcessorCount * 2;
 
   private readonly ServerApi _api = new(http, activityFactory, serverUrl, token, string.Empty);
@@ -50,28 +50,24 @@ public sealed class ObjectLoader(
       .Select(x => x.Item1)
       .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
       .ToList();
-    var idsToDownload = CheckCache(allChildrenIds, cancellationToken);
+    var idsToDownload = CheckCache(allChildrenIds);
     await DownloadAndCache(idsToDownload, cancellationToken).ConfigureAwait(false);
     return (rootJson, allChildrenIds);
   }
 
-  private async IAsyncEnumerable<string> CheckCache(
-    IReadOnlyList<string> childrenIds,
-    [EnumeratorCancellation] CancellationToken cancellationToken
-  )
+  private async IAsyncEnumerable<string> CheckCache(IReadOnlyList<string> childrenIds)
   {
     var count = 0L;
     progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
-    foreach (var idBatch in childrenIds.Batch(CACHE_CHUNK_SIZE))
+    await foreach (
+      var (id, result) in childrenIds.Batch(CACHE_CHUNK_SIZE).Select(x => transport.HasObjects2(x)).SelectManyAsync()
+    )
     {
-      await foreach (var (id, result) in transport.HasObjects2(idBatch).WithCancellation(cancellationToken))
+      count++;
+      progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
+      if (!result)
       {
-        count++;
-        progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
-        if (!result)
-        {
-          yield return id;
-        }
+        yield return id;
       }
     }
   }
@@ -82,21 +78,30 @@ public sealed class ObjectLoader(
     progress?.Report(new(ProgressEvent.DownloadObject, count, null));
     var toCache = new List<(string, string)>();
     var tasks = new ConcurrentBag<Task>();
-    await foreach (var idBatch in ids.BatchAsync(ServerApi.BATCH_SIZE_GET_OBJECTS).WithCancellation(cancellationToken))
+    using SemaphoreSlim ss = new(MAX_PARALLELISM_HTTP, MAX_PARALLELISM_HTTP);
+    await foreach (var idBatch in ids.BatchAsync(HTTP_ID_CHUNK_SIZE).WithCancellation(cancellationToken))
     {
-      await foreach (
-        var (id, json) in _api.DownloadObjectsImpl2(streamId, idBatch, progress).WithCancellation(cancellationToken)
-      )
+      await ss.WaitAsync(cancellationToken).ConfigureAwait(false);
+      try
       {
-        count++;
-        progress?.Report(new(ProgressEvent.DownloadObject, count, null));
-        toCache.Add((id, json));
-        if (toCache.Count >= CACHE_CHUNK_SIZE)
+        await foreach (
+          var (id, json) in _api.DownloadObjectsImpl2(streamId, idBatch, progress).WithCancellation(cancellationToken)
+        )
         {
-          var toSave = toCache;
-          toCache = new List<(string, string)>();
-          tasks.Add(transport.SaveObjects(toSave));
+          count++;
+          progress?.Report(new(ProgressEvent.DownloadObject, count, null));
+          toCache.Add((id, json));
+          if (toCache.Count >= CACHE_CHUNK_SIZE)
+          {
+            var toSave = toCache;
+            toCache = new List<(string, string)>();
+            tasks.Add(transport.SaveObjects(toSave));
+          }
         }
+      }
+      finally
+      {
+        ss.Release();
       }
     }
 
