@@ -23,6 +23,9 @@ public sealed class ObjectLoader(
 {
   private const int HTTP_ID_CHUNK_SIZE = 50;
   private const int CACHE_CHUNK_SIZE = 500;
+  private const int MAX_PARALLELISM_HTTP = 4;
+  private static readonly int MAX_PARALLELISM_CACHE = Environment.ProcessorCount * 2;
+  
   private readonly ServerApi _api = new(http, activityFactory, serverUrl, token, string.Empty);
 
   private async Task<string> GetRootJson(string objectId)
@@ -67,7 +70,7 @@ public sealed class ObjectLoader(
             }
           }
         },
-        10,
+        MAX_PARALLELISM_CACHE,
         cancellationToken
       )
       .ConfigureAwait(false);
@@ -100,7 +103,7 @@ public sealed class ObjectLoader(
             }
           }
         },
-        4,
+        MAX_PARALLELISM_HTTP,
         cancellationToken
       )
       .ConfigureAwait(false);
@@ -113,9 +116,6 @@ public sealed class ObjectLoader(
     await Task.WhenAll(tasks).ConfigureAwait(false);
   }
 
-  public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids)
-  {
-    return transport.GetObjects(ids);
-  }
+  public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids) => transport.GetObjects(ids);
   public void Dispose() => _api.Dispose();
 }
