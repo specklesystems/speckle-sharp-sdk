@@ -33,6 +33,8 @@ public class SerializationTests
       yield break;
     }
 
+    public string? LoadId(string id) => null;
+
     public void Dispose() { }
   }
 

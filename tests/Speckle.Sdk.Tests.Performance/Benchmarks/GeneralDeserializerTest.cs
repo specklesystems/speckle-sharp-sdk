@@ -17,18 +17,20 @@ namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 /// How many threads on our Deserializer is optimal
 /// </summary>
 [MemoryDiagnoser]
-[SimpleJob(RunStrategy.Monitoring, 0, 0, 4)]
+[SimpleJob(RunStrategy.Monitoring, 0, 0, 2)]
 public class GeneralDeserializer : IDisposable
 {
   private const bool skipCache = true;
-  private const string url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
-  private const string streamId = "a3ac1b2706";
-  private const string rootId = "7d53bcf28c6696ecac8781684a0aa006";
 
   /*
+  private const string url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
+  private const string streamId = "a3ac1b2706";
+  private const string rootId = "7d53bcf28c6696ecac8781684a0aa006";*/
+
+
   private const string url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
-  private const string  streamId = "2099ac4b5f";
-  private const string  rootId = "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6";*/
+  private const string streamId = "2099ac4b5f";
+  private const string rootId = "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6";
   private TestDataHelper _dataSource;
 
   [GlobalSetup]
@@ -55,7 +57,7 @@ public class GeneralDeserializer : IDisposable
     using var process = new DeserializeProcess(null, o);
     return await process.Deserialize(rootId, default, new(skipCache)).ConfigureAwait(false);
   }
-
+/*
   [Benchmark]
   public async Task<Base> RunTest_Old()
   {
@@ -63,7 +65,7 @@ public class GeneralDeserializer : IDisposable
     string data = await _dataSource.Transport.GetObject(_dataSource.ObjectId)!;
     return await sut.DeserializeAsync(data);
   }
-
+*/
   [GlobalCleanup]
   public void Cleanup() => Dispose();
 
