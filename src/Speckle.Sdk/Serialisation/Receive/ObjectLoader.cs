@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using CodeJam.Threading;
+using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
@@ -9,11 +10,7 @@ using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public interface IObjectLoader
-{
-  Task<(string, List<string>)> DownloadAndLoad(string rootId, CancellationToken cancellationToken);
-}
-
+[GenerateAutoInterface]
 public sealed class ObjectLoader(
   ISpeckleHttp http,
   ISdkActivityFactory activityFactory,
@@ -40,21 +37,27 @@ public sealed class ObjectLoader(
     return rootJson;
   }
 
-  public async Task<(string, List<string>)> DownloadAndLoad(string rootId, CancellationToken cancellationToken)
+  public async Task<(string, IReadOnlyList<string>)> GetAndCache(string rootId, CancellationToken cancellationToken)
   {
     var rootJson = await GetRootJson(rootId).ConfigureAwait(false);
-    var childrenIds = ClosureParser.GetClosures(rootJson).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
-    var allChildrenIds = childrenIds.Where(x => !x.StartsWith("blob", StringComparison.Ordinal));
+    var childrenIds = ClosureParser.GetClosures(rootJson).OrderByDescending(x => x.Item2).Select(x => x.Item1);
+    var allChildrenIds = childrenIds.Where(x => !x.StartsWith("blob", StringComparison.Ordinal)).ToList();
+    var idsToDownload = await CheckCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
+    await DownloadAndCache(idsToDownload, cancellationToken).ConfigureAwait(false);
+    return (rootJson, allChildrenIds);
+  }
 
+  private async Task<IReadOnlyCollection<string>> CheckCache(IReadOnlyList<string> childrenIds, CancellationToken cancellationToken)
+  {
     var count = 0L;
     progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
     ConcurrentBag<string> nonCachedChildIds = new();
-    await allChildrenIds
+    await childrenIds
       .Batch(CACHE_CHUNK_SIZE)
       .ForEachAsync(
         async (batch, ct) =>
         {
-          await foreach (var (id, result) in transport.HasObjects2(batch))
+          await foreach (var (id, result) in transport.HasObjects2(batch).WithCancellation(ct))
           {
             count++;
             progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
@@ -68,22 +71,26 @@ public sealed class ObjectLoader(
         cancellationToken
       )
       .ConfigureAwait(false);
+    return nonCachedChildIds;
+  }
 
-    count = 0L;
-    progress?.Report(new(ProgressEvent.DownloadObject, count, nonCachedChildIds.Count));
+  private async Task DownloadAndCache(IReadOnlyCollection<string> ids, CancellationToken cancellationToken)
+  {
+    var count = 0L;
+    progress?.Report(new(ProgressEvent.DownloadObject, count, ids.Count));
     var toCache = new List<(string, string)>();
     var tasks = new ConcurrentBag<Task>();
-    await nonCachedChildIds
+    await ids
       .Batch(HTTP_ID_CHUNK_SIZE)
       .ForEachAsync(
         async (batch, ct) =>
         {
           await foreach (
-            var (id, json) in _api.DownloadObjectsImpl2(streamId, batch, progress).WithCancellation(cancellationToken)
+            var (id, json) in _api.DownloadObjectsImpl2(streamId, batch, progress).WithCancellation(ct)
           )
           {
             count++;
-            progress?.Report(new(ProgressEvent.DownloadObject, count, nonCachedChildIds.Count));
+            progress?.Report(new(ProgressEvent.DownloadObject, count, ids.Count));
             toCache.Add((id, json));
             if (toCache.Count >= CACHE_CHUNK_SIZE)
             {
@@ -104,19 +111,11 @@ public sealed class ObjectLoader(
     }
 
     await Task.WhenAll(tasks).ConfigureAwait(false);
-    return (rootJson, childrenIds);
   }
 
-  private async IAsyncEnumerable<string> CheckCache(IEnumerable<string> objectIds)
+  public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids)
   {
-    await foreach (var (id, result) in transport.HasObjects2(objectIds))
-    {
-      if (!result)
-      {
-        yield return id;
-      }
-    }
+    return transport.GetObjects(ids);
   }
-
   public void Dispose() => _api.Dispose();
 }

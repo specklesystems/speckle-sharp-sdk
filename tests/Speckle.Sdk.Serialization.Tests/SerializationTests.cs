@@ -19,11 +19,18 @@ public class SerializationTests
 {
   private class TestLoader(string json) : IObjectLoader
   {
-    public Task<(string, List<string>)> DownloadAndLoad(string rootId, CancellationToken cancellationToken)
+    public Task<(string, IReadOnlyList<string>)> GetAndCache(string rootId, CancellationToken cancellationToken)
     {
       var childrenIds = ClosureParser.GetChildrenIds(json).ToList();
-      return Task.FromResult((json, childrenIds));
+      return Task.FromResult<(string, IReadOnlyList<string>)>((json, childrenIds));
     }
+
+    public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids)
+    {
+      yield break;
+    }
+
+    public void Dispose() { }
   }
 
   private readonly Assembly _assembly = Assembly.GetExecutingAssembly();

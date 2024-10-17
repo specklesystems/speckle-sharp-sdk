@@ -7,8 +7,7 @@ namespace Speckle.Sdk.Serialisation.Receive;
 
 public sealed class DeserializeProcess(
   IProgress<ProgressArgs>? progress,
-  ObjectLoader objectLoader,
-  SQLiteTransport sqLiteTransport
+  IObjectLoader objectLoader
 ) : IDisposable
 {
   private readonly StackChannel<string> _deserializationStack = new();
@@ -20,7 +19,7 @@ public sealed class DeserializeProcess(
 
   public async Task<Base> Deserialize(string rootId)
   {
-    var (rootJson, childrenIds) = await objectLoader.DownloadAndLoad(rootId, default).ConfigureAwait(false);
+    var (rootJson, childrenIds) = await objectLoader.GetAndCache(rootId, default).ConfigureAwait(false);
     _total = childrenIds.Count;
     _closures.TryAdd(rootId, childrenIds);
     Execute(rootId, rootJson);
@@ -59,7 +58,7 @@ public sealed class DeserializeProcess(
       _closures.TryAdd(id, closures);
     }
     
-    return sqLiteTransport.GetObjects(closures);
+    return objectLoader.LoadIds(closures);
   }
   public void Execute(string id, string json)
   {

@@ -51,7 +51,7 @@ public class GeneralDeserializer : IDisposable
       null,
       sqliteTransport
     );
-    using var process = new DeserializeProcess(null, o, sqliteTransport);
+    using var process = new DeserializeProcess(null, o);
     return await process.Deserialize(_dataSource.ObjectId).ConfigureAwait(false);
   }
 
