@@ -28,7 +28,7 @@ public class SerializationTests
       return Task.FromResult<(string, IReadOnlyList<string>)>((json, childrenIds));
     }
 
-    public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids, CancellationToken cancellationToken)
+    public IEnumerable<(string, string)> LoadIds(IEnumerable<string> ids, CancellationToken cancellationToken)
     {
       yield break;
     }

@@ -126,6 +126,8 @@ public sealed class ObjectLoader(
     await Task.WhenAll(tasks).ConfigureAwait(false);
   }
 
-  public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids, CancellationToken cancellationToken) =>
+  public IEnumerable<(string, string)> LoadIds(IEnumerable<string> ids, CancellationToken cancellationToken) =>
     sqLiteCacheManager.GetObjects(ids, cancellationToken);
+
+  public string? LoadId(string id) => sqLiteCacheManager.GetObject(id);
 }
