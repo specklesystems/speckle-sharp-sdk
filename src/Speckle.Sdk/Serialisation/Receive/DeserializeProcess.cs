@@ -22,7 +22,7 @@ public sealed class DeserializeProcess(
     var (rootJson, childrenIds) = await objectLoader.GetAndCache(rootId, default).ConfigureAwait(false);
     _total = childrenIds.Count;
     _closures.TryAdd(rootId, childrenIds);
-    Execute(rootId, rootJson);
+    DecodeOrEnqueueChildren(rootId, rootJson);
     progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, childrenIds.Count));
     Traverse(rootId, rootJson);
     return _cache[rootId];
@@ -46,8 +46,12 @@ public sealed class DeserializeProcess(
       Task.WaitAll(tasks.ToArray());
     }
 
-    Execute(id, json);
-    progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, _total));
+    //don't redo things if the id is decoded already in the cache
+    if (!_cache.ContainsKey(id))
+    {
+      DecodeOrEnqueueChildren(id, json);
+      progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, _total));
+    }
   }
 
   public IEnumerable<(string, string)> GetChildrenIds(string id, string json)
@@ -60,7 +64,7 @@ public sealed class DeserializeProcess(
     
     return objectLoader.LoadIds(closures);
   }
-  public void Execute(string id, string json)
+  public void DecodeOrEnqueueChildren(string id, string json)
   {
     if (!_closures.TryGetValue(id, out var closures))
     {
