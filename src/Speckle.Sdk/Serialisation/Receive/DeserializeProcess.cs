@@ -5,10 +5,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.Receive;
 
-public sealed class DeserializeProcess(
-  IProgress<ProgressArgs>? progress,
-  IObjectLoader objectLoader
-) : IDisposable
+public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader) : IDisposable
 {
   private readonly StackChannel<string> _deserializationStack = new();
 
@@ -27,7 +24,7 @@ public sealed class DeserializeProcess(
     await Traverse(rootId, rootJson, cancellationToken).ConfigureAwait(false);
     return _cache[rootId];
   }
-  
+
   public async Task Traverse(string id, string json, CancellationToken cancellationToken)
   {
     var tasks = new List<Task>();
@@ -37,8 +34,12 @@ public sealed class DeserializeProcess(
       var tmpId = childId;
       var tmpJson = childJson;
 #pragma warning disable CA2008
-      Task<Task> t = Task.Factory.StartNew(() => Traverse(tmpId, tmpJson, cancellationToken), cancellationToken,
-        TaskCreationOptions.AttachedToParent, TaskScheduler.Default);
+      Task<Task> t = Task.Factory.StartNew(
+        () => Traverse(tmpId, tmpJson, cancellationToken),
+        cancellationToken,
+        TaskCreationOptions.AttachedToParent,
+        TaskScheduler.Default
+      );
       tasks.Add(t.Unwrap());
 #pragma warning restore CA2008
     }
@@ -63,9 +64,10 @@ public sealed class DeserializeProcess(
       closures = ClosureParser.GetClosures(json).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
       _closures.TryAdd(id, closures);
     }
-    
+
     return objectLoader.LoadIds(closures);
   }
+
   public void DecodeOrEnqueueChildren(string id, string json)
   {
     if (!_closures.TryGetValue(id, out var closures))

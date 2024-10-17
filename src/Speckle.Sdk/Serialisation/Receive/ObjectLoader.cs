@@ -21,11 +21,12 @@ public sealed class ObjectLoader(
   SQLiteTransport transport
 ) : IObjectLoader, IDisposable
 {
-//  private const int HTTP_ID_CHUNK_SIZE = 50;
+  //  private const int HTTP_ID_CHUNK_SIZE = 50;
   private const int CACHE_CHUNK_SIZE = 500;
- // private const int MAX_PARALLELISM_HTTP = 4;
-//private static readonly int MAX_PARALLELISM_CACHE = Environment.ProcessorCount * 2;
-  
+
+  // private const int MAX_PARALLELISM_HTTP = 4;
+  //private static readonly int MAX_PARALLELISM_CACHE = Environment.ProcessorCount * 2;
+
   private readonly ServerApi _api = new(http, activityFactory, serverUrl, token, string.Empty);
 
   private async Task<string> GetRootJson(string objectId)
@@ -43,7 +44,8 @@ public sealed class ObjectLoader(
   public async Task<(string, IReadOnlyList<string>)> GetAndCache(string rootId, CancellationToken cancellationToken)
   {
     var rootJson = await GetRootJson(rootId).ConfigureAwait(false);
-    var allChildrenIds = ClosureParser.GetClosures(rootJson)
+    var allChildrenIds = ClosureParser
+      .GetClosures(rootJson)
       .OrderByDescending(x => x.Item2)
       .Select(x => x.Item1)
       .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
@@ -53,23 +55,24 @@ public sealed class ObjectLoader(
     return (rootJson, allChildrenIds);
   }
 
-  private async IAsyncEnumerable<string> CheckCache(IReadOnlyList<string> childrenIds,
-    [EnumeratorCancellation] CancellationToken cancellationToken)
+  private async IAsyncEnumerable<string> CheckCache(
+    IReadOnlyList<string> childrenIds,
+    [EnumeratorCancellation] CancellationToken cancellationToken
+  )
   {
     var count = 0L;
     progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
-    foreach (var idBatch in childrenIds
-               .Batch(CACHE_CHUNK_SIZE))
+    foreach (var idBatch in childrenIds.Batch(CACHE_CHUNK_SIZE))
     {
-        await foreach (var (id, result) in transport.HasObjects2(idBatch).WithCancellation(cancellationToken))
+      await foreach (var (id, result) in transport.HasObjects2(idBatch).WithCancellation(cancellationToken))
+      {
+        count++;
+        progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
+        if (!result)
         {
-          count++;
-          progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
-          if (!result)
-          {
-            yield return id;
-          }
+          yield return id;
         }
+      }
     }
   }
 
@@ -79,23 +82,22 @@ public sealed class ObjectLoader(
     progress?.Report(new(ProgressEvent.DownloadObject, count, null));
     var toCache = new List<(string, string)>();
     var tasks = new ConcurrentBag<Task>();
-    await foreach (var idBatch in ids
-                     .BatchAsync(ServerApi.BATCH_SIZE_GET_OBJECTS).WithCancellation(cancellationToken))
+    await foreach (var idBatch in ids.BatchAsync(ServerApi.BATCH_SIZE_GET_OBJECTS).WithCancellation(cancellationToken))
     {
-          await foreach (
-            var (id, json) in _api.DownloadObjectsImpl2(streamId, idBatch, progress).WithCancellation(cancellationToken)
-          )
-          {
-            count++;
-            progress?.Report(new(ProgressEvent.DownloadObject, count, null));
-            toCache.Add((id, json));
-            if (toCache.Count >= CACHE_CHUNK_SIZE)
-            {
-              var toSave = toCache;
-              toCache = new List<(string, string)>();
-              tasks.Add(transport.SaveObjects(toSave));
-            }
-          }
+      await foreach (
+        var (id, json) in _api.DownloadObjectsImpl2(streamId, idBatch, progress).WithCancellation(cancellationToken)
+      )
+      {
+        count++;
+        progress?.Report(new(ProgressEvent.DownloadObject, count, null));
+        toCache.Add((id, json));
+        if (toCache.Count >= CACHE_CHUNK_SIZE)
+        {
+          var toSave = toCache;
+          toCache = new List<(string, string)>();
+          tasks.Add(transport.SaveObjects(toSave));
+        }
+      }
     }
 
     if (toCache.Count > 0)
@@ -107,5 +109,6 @@ public sealed class ObjectLoader(
   }
 
   public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids) => transport.GetObjects(ids);
+
   public void Dispose() => _api.Dispose();
 }
