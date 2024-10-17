@@ -23,24 +23,33 @@ public sealed class TestDataHelper : IDisposable
     ServiceProvider = serviceCollection.BuildServiceProvider();
   }
 
-  public async Task SeedTransport(Account account, string streamId, string objectId)
+  public async Task SeedTransport(Account account, string streamId, string objectId, bool skipCache)
   {
     // Transport = new SQLiteTransport(s_basePath, APPLICATION_NAME);
     Transport = new SQLiteTransport();
 
     //seed SQLite transport with test data
-    ObjectId = await SeedTransport(account, streamId, objectId, Transport).ConfigureAwait(false);
+    ObjectId = await SeedTransport(account, streamId, objectId, Transport, skipCache).ConfigureAwait(false);
   }
 
-  public async Task<string> SeedTransport(Account account, string streamId, string objectId, ITransport transport)
+  public async Task<string> SeedTransport(
+    Account account,
+    string streamId,
+    string objectId,
+    ITransport transport,
+    bool skipCache
+  )
   {
-    using ServerTransport remoteTransport = ServiceProvider
-      .GetRequiredService<IServerTransportFactory>()
-      .Create(account, streamId);
-    transport.BeginWrite();
-    await remoteTransport.CopyObjectAndChildren(objectId, transport).ConfigureAwait(false);
-    transport.EndWrite();
-    await transport.WriteComplete().ConfigureAwait(false);
+    if (!skipCache)
+    {
+      using ServerTransport remoteTransport = ServiceProvider
+        .GetRequiredService<IServerTransportFactory>()
+        .Create(account, streamId);
+      transport.BeginWrite();
+      await remoteTransport.CopyObjectAndChildren(objectId, transport).ConfigureAwait(false);
+      transport.EndWrite();
+      await transport.WriteComplete().ConfigureAwait(false);
+    }
 
     return objectId;
   }

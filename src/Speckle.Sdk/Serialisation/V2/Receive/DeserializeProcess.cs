@@ -5,6 +5,8 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
+public record DeserializeOptions(bool? SkipCacheCheck = null);
+
 public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader) : IDisposable
 {
   private readonly StackChannel<string> _deserializationStack = new();
@@ -14,9 +16,15 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
 
   private long _total;
 
-  public async Task<Base> Deserialize(string rootId, CancellationToken cancellationToken)
+  public async Task<Base> Deserialize(
+    string rootId,
+    CancellationToken cancellationToken,
+    DeserializeOptions? options = null
+  )
   {
-    var (rootJson, childrenIds) = await objectLoader.GetAndCache(rootId, cancellationToken).ConfigureAwait(false);
+    var (rootJson, childrenIds) = await objectLoader
+      .GetAndCache(rootId, cancellationToken, options)
+      .ConfigureAwait(false);
     _total = childrenIds.Count;
     _closures.TryAdd(rootId, childrenIds);
     DecodeOrEnqueueChildren(rootId, rootJson);

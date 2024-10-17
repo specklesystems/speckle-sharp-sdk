@@ -36,7 +36,11 @@ public sealed class ObjectLoader(
     return rootJson;
   }
 
-  public async Task<(string, IReadOnlyList<string>)> GetAndCache(string rootId, CancellationToken cancellationToken)
+  public async Task<(string, IReadOnlyList<string>)> GetAndCache(
+    string rootId,
+    CancellationToken cancellationToken,
+    DeserializeOptions? options = null
+  )
   {
     var rootJson = await GetRootJson(rootId, cancellationToken).ConfigureAwait(false);
     var allChildrenIds = ClosureParser
@@ -45,8 +49,11 @@ public sealed class ObjectLoader(
       .Select(x => x.Item1)
       .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
       .ToList();
-    var idsToDownload = CheckCache(allChildrenIds);
-    await DownloadAndCache(idsToDownload, cancellationToken).ConfigureAwait(false);
+    if (!(options?.SkipCacheCheck ?? false))
+    {
+      var idsToDownload = CheckCache(allChildrenIds);
+      await DownloadAndCache(idsToDownload, cancellationToken).ConfigureAwait(false);
+    }
     return (rootJson, allChildrenIds);
   }
 

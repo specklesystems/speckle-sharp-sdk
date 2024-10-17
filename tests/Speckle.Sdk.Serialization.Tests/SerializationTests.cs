@@ -18,7 +18,11 @@ public class SerializationTests
 {
   private class TestLoader(string json) : IObjectLoader
   {
-    public Task<(string, IReadOnlyList<string>)> GetAndCache(string rootId, CancellationToken cancellationToken)
+    public Task<(string, IReadOnlyList<string>)> GetAndCache(
+      string rootId,
+      CancellationToken cancellationToken,
+      DeserializeOptions? options = null
+    )
     {
       var childrenIds = ClosureParser.GetChildrenIds(json).ToList();
       return Task.FromResult<(string, IReadOnlyList<string>)>((json, childrenIds));
