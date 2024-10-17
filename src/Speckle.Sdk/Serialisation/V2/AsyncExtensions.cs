@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.V2;
 
 public static class AsyncExtensions
 {

@@ -5,9 +5,9 @@ using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation.Receive;
+using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialization.Testing;
-using Speckle.Sdk.Transports;
 
 TypeLoader.Reset();
 TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
@@ -30,15 +30,15 @@ Console.ReadLine();
 Console.WriteLine("Executing");
 
 var progress = new Progress(true);
-var sqliteTransport = new SQLiteTransport();
+var sqliteTransport = new SQLiteCacheManager(streamId);
 using var o = new ObjectLoader(
   serviceProvider.GetRequiredService<ISpeckleHttp>(),
   serviceProvider.GetRequiredService<ISdkActivityFactory>(),
+  sqliteTransport,
   new Uri(url),
   streamId,
   null,
-  progress,
-  sqliteTransport
+  progress
 );
 using var process = new DeserializeProcess(progress, o);
 await process.Deserialize(rootId, default).ConfigureAwait(false);

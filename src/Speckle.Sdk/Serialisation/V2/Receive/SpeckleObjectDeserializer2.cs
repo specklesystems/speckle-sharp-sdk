@@ -3,7 +3,7 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk.Serialisation.Receive;
+namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 public record DeserializedOptions(bool ThrowOnMissingReferences = true, bool SkipInvalidConverts = false);
 

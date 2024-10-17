@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
@@ -8,8 +7,8 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Serialisation.Receive;
 using Speckle.Sdk.Serialisation.Utilities;
+using Speckle.Sdk.Serialisation.V2.Receive;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
@@ -25,7 +24,7 @@ public class SerializationTests
       return Task.FromResult<(string, IReadOnlyList<string>)>((json, childrenIds));
     }
 
-    public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids)
+    public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids, CancellationToken cancellationToken)
     {
       yield break;
     }

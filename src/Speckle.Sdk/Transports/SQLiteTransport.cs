@@ -163,25 +163,6 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     return Task.FromResult(ret);
   }
 
-  public async IAsyncEnumerable<(string, bool)> HasObjects2(IEnumerable<string> objectIds)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    await c.OpenAsync().ConfigureAwait(false);
-    await Task.Delay(10).ConfigureAwait(false);
-    const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
-    using var command = new SqliteCommand(COMMAND_TEXT, Connection);
-    foreach (string objectId in objectIds)
-    {
-      CancellationToken.ThrowIfCancellationRequested();
-      command.Parameters.Clear();
-      command.Parameters.AddWithValue("@hash", objectId);
-
-      using var reader = command.ExecuteReader();
-      bool rowFound = reader.Read();
-      yield return (objectId, rowFound);
-    }
-  }
-
   /// <exception cref="SqliteException">Failed to initialize connection to the SQLite DB</exception>
   private void Initialize()
   {
@@ -374,25 +355,6 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
     }
   }
 
-  public async Task SaveObjects(IEnumerable<(string, string)> objects)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    await c.OpenAsync().ConfigureAwait(false);
-    using var t = c.BeginTransaction();
-    const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
-
-    foreach (var (id, content) in objects)
-    {
-      using var command = new SqliteCommand(COMMAND_TEXT, c, t);
-      command.Parameters.AddWithValue("@hash", id);
-      command.Parameters.AddWithValue("@content", content);
-      command.ExecuteNonQuery();
-    }
-
-    t.Commit();
-    CancellationToken.ThrowIfCancellationRequested();
-  }
-
   /// <summary>
   /// Adds an object to the saving queue.
   /// </summary>
@@ -459,24 +421,6 @@ public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlob
       _connectionLock.Release();
     }
     return null; // pass on the duty of null checks to consumers
-  }
-
-  public IEnumerable<(string, string)> GetObjects(IEnumerable<string> ids)
-  {
-    CancellationToken.ThrowIfCancellationRequested();
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    using var command = new SqliteCommand("SELECT content FROM objects WHERE hash = @hash LIMIT 1 ", c);
-    foreach (var id in ids)
-    {
-      command.Parameters.Clear();
-      command.Parameters.AddWithValue("@hash", id);
-      using var reader = command.ExecuteReader();
-      if (reader.Read())
-      {
-        yield return (id, reader.GetString(0));
-      }
-    }
   }
 
   public async Task<string> CopyObjectAndChildren(string id, ITransport targetTransport)

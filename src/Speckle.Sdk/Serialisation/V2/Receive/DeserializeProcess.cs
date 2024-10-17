@@ -3,7 +3,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
-namespace Speckle.Sdk.Serialisation.Receive;
+namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader) : IDisposable
 {
@@ -28,7 +28,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
   public async Task Traverse(string id, string json, CancellationToken cancellationToken)
   {
     var tasks = new List<Task>();
-    foreach (var (childId, childJson) in GetChildrenIds(id, json))
+    foreach (var (childId, childJson) in GetChildrenIds(id, json, cancellationToken))
     {
       // tmp is necessary because of the way closures close over loop variables
       var tmpId = childId;
@@ -57,7 +57,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     }
   }
 
-  public IEnumerable<(string, string)> GetChildrenIds(string id, string json)
+  public IEnumerable<(string, string)> GetChildrenIds(string id, string json, CancellationToken cancellationToken)
   {
     if (!_closures.TryGetValue(id, out var closures))
     {
@@ -65,7 +65,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
       _closures.TryAdd(id, closures);
     }
 
-    return objectLoader.LoadIds(closures);
+    return objectLoader.LoadIds(closures, cancellationToken);
   }
 
   public void DecodeOrEnqueueChildren(string id, string json)

@@ -7,17 +7,17 @@ using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
-namespace Speckle.Sdk.Serialisation.Receive;
+namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 [GenerateAutoInterface]
 public sealed class ObjectLoader(
   ISpeckleHttp http,
   ISdkActivityFactory activityFactory,
+  ISQLiteCacheManager sqLiteCacheManager,
   Uri serverUrl,
   string streamId,
   string? token,
-  IProgress<ProgressArgs>? progress,
-  SQLiteTransport transport
+  IProgress<ProgressArgs>? progress
 ) : IObjectLoader, IDisposable
 {
   private const int HTTP_ID_CHUNK_SIZE = 500;
@@ -31,11 +31,11 @@ public sealed class ObjectLoader(
 
   private async Task<string> GetRootJson(string objectId)
   {
-    var rootJson = await transport.GetObject(objectId).ConfigureAwait(false);
+    var rootJson = sqLiteCacheManager.GetObject(objectId);
     if (rootJson == null)
     {
       rootJson = await _api.DownloadSingleObject(streamId, objectId, progress).NotNull().ConfigureAwait(false);
-      transport.SaveObjectSync(objectId, rootJson);
+      sqLiteCacheManager.SaveObjectSync(objectId, rootJson);
     }
 
     return rootJson;
@@ -60,7 +60,10 @@ public sealed class ObjectLoader(
     var count = 0L;
     progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
     await foreach (
-      var (id, result) in childrenIds.Batch(CACHE_CHUNK_SIZE).Select(x => transport.HasObjects2(x)).SelectManyAsync()
+      var (id, result) in childrenIds
+        .Batch(CACHE_CHUNK_SIZE)
+        .Select(x => sqLiteCacheManager.HasObjects2(x)) // there needs to be a Task somewhere here
+        .SelectManyAsync()
     )
     {
       count++;
@@ -95,7 +98,11 @@ public sealed class ObjectLoader(
           {
             var toSave = toCache;
             toCache = new List<(string, string)>();
-            tasks.Add(transport.SaveObjects(toSave));
+#pragma warning disable CA2008
+            tasks.Add(
+              Task.Factory.StartNew(() => sqLiteCacheManager.SaveObjects(toSave, cancellationToken), cancellationToken)
+            );
+#pragma warning restore CA2008
           }
         }
       }
@@ -107,13 +114,18 @@ public sealed class ObjectLoader(
 
     if (toCache.Count > 0)
     {
-      tasks.Add(transport.SaveObjects(toCache));
+#pragma warning disable CA2008
+      tasks.Add(
+        Task.Factory.StartNew(() => sqLiteCacheManager.SaveObjects(toCache, cancellationToken), cancellationToken)
+      );
+#pragma warning restore CA2008
     }
 
     await Task.WhenAll(tasks).ConfigureAwait(false);
   }
 
-  public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids) => transport.GetObjects(ids);
+  public IEnumerable<(string, string)> LoadIds(IReadOnlyList<string> ids, CancellationToken cancellationToken) =>
+    sqLiteCacheManager.GetObjects(ids, cancellationToken);
 
   public void Dispose() => _api.Dispose();
 }

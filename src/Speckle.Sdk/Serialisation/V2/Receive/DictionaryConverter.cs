@@ -5,7 +5,7 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 
-namespace Speckle.Sdk.Serialisation.Receive;
+namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 public static class DictionaryConverter
 {
