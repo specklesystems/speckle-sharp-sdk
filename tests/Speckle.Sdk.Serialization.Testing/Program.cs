@@ -9,7 +9,7 @@ using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialization.Testing;
 
-const bool skipCache = true;
+const bool skipCache = false;
 TypeLoader.Reset();
 TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
 

@@ -2,24 +2,6 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Transports;
 
-public enum ProgressEvent
-{
-  CacheCheck,
-  DownloadBytes,
-  UploadBytes,
-  DownloadObject,
-  UploadObject,
-  DeserializeObject,
-  SerializeObject,
-}
-
-public readonly record struct ProgressArgs(
-  ProgressEvent ProgressEvent,
-  long? Count,
-  long? Total,
-  long? ProcessedTotal = null
-);
-
 /// <summary>
 /// Interface defining the contract for transport implementations.
 /// </summary>

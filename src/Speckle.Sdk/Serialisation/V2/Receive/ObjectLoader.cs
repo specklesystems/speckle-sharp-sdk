@@ -32,7 +32,6 @@ public sealed class ObjectLoader(
         .ConfigureAwait(false);
       sqLiteCacheManager.SaveObjectSync(objectId, rootJson);
     }
-
     return rootJson;
   }
 

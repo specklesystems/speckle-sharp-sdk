@@ -11,6 +11,7 @@ public class SQLiteCacheManager : ISQLiteCacheManager
   private readonly string _rootPath;
   private readonly string _connectionString;
   private const string APPLICATION_NAME = "Speckle";
+  private const string DATA_FOLDER = "Projects";
 
   public SQLiteCacheManager(string streamId)
   {
@@ -18,7 +19,7 @@ public class SQLiteCacheManager : ISQLiteCacheManager
 
     try
     {
-      var dir = Path.Combine(basePath, APPLICATION_NAME);
+      var dir = Path.Combine(basePath, APPLICATION_NAME, DATA_FOLDER);
       _rootPath = Path.Combine(dir, $"{streamId}.db");
 
       Directory.CreateDirectory(dir); //ensure dir is there
