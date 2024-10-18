@@ -26,13 +26,13 @@ public class VersionResourceTests
 
     string versionId = await Fixtures.CreateVersion(_testUser, _project.id, _model1.id);
 
-    _version = await Sut.Get(versionId, _model1.id, _project.id);
+    _version = await Sut.Get(versionId, _project.id);
   }
 
   [Test]
   public async Task VersionGet()
   {
-    Version result = await Sut.Get(_version.id, _model1.id, _project.id);
+    Version result = await Sut.Get(_version.id, _project.id);
 
     Assert.That(result, Has.Property(nameof(Version.id)).EqualTo(_version.id));
     Assert.That(result, Has.Property(nameof(Version.message)).EqualTo(_version.message));
@@ -87,13 +87,13 @@ public class VersionResourceTests
     MoveVersionsInput input = new(_model2.name, new[] { _version.id });
     string id = await Sut.MoveToModel(input);
     Assert.That(id, Is.EqualTo(_model2.id));
-    Version movedVersion = await Sut.Get(_version.id, _model2.id, _project.id);
+    Version movedVersion = await Sut.Get(_version.id, _project.id);
 
     Assert.That(movedVersion, Has.Property(nameof(Version.id)).EqualTo(_version.id));
     Assert.That(movedVersion, Has.Property(nameof(Version.message)).EqualTo(_version.message));
     Assert.That(movedVersion, Has.Property(nameof(Version.previewUrl)).EqualTo(_version.previewUrl));
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Get(id, _model1.id, _project.id));
+    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Get(id, _project.id));
   }
 
   [Test]
@@ -104,7 +104,7 @@ public class VersionResourceTests
     bool response = await Sut.Delete(input);
     Assert.That(response, Is.True);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Get(_version.id, _model1.id, _project.id));
+    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Get(_version.id, _project.id));
     Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Delete(input));
   }
 }

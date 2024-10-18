@@ -1,6 +1,4 @@
-﻿#nullable disable
-
-namespace Speckle.Sdk.Api.GraphQL.Models;
+﻿namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public sealed class Comment
 {
@@ -10,12 +8,12 @@ public sealed class Comment
   public DateTime createdAt { get; init; }
   public bool hasParent { get; init; }
   public string id { get; init; }
-  public Comment parent { get; init; }
+  public Comment? parent { get; init; }
   public string rawText { get; init; }
   public ResourceCollection<Comment> replies { get; init; }
   public CommentReplyAuthorCollection replyAuthors { get; init; }
   public List<ResourceIdentifier> resources { get; init; }
-  public string screenshot { get; init; }
+  public string? screenshot { get; init; }
   public DateTime updatedAt { get; init; }
   public DateTime? viewedAt { get; init; }
   public List<ViewerResourceItem> viewerResources { get; init; }

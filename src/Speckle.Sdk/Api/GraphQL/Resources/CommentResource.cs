@@ -36,8 +36,8 @@ public sealed class CommentResource
     //language=graphql
     const string QUERY = """
       query CommentThreads($projectId: String!, $cursor: String, $limit: Int!, $filter: ProjectCommentsFilter, $repliesLimit: Int, $repliesCursor: String) {
-        project(id: $projectId) {
-          commentThreads(cursor: $cursor, limit: $limit, filter: $filter) {
+        data:project(id: $projectId) {
+          data:commentThreads(cursor: $cursor, limit: $limit, filter: $filter) {
             cursor
             totalArchivedCount
             totalCount
@@ -74,7 +74,6 @@ public sealed class CommentResource
                 objectId
                 versionId
               }
-              data
             }
           }
         }
@@ -97,10 +96,10 @@ public sealed class CommentResource
       };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ProjectCommentCollection>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.project.commentThreads;
+    return response.data.data;
   }
 
   /// <remarks>
@@ -117,7 +116,7 @@ public sealed class CommentResource
     const string QUERY = """
       mutation Mutation($input: CreateCommentInput!) {
         data:commentMutations {
-          create(input: $input) {
+          data:create(input: $input) {
             archived
             authorId
             createdAt
@@ -136,16 +135,15 @@ public sealed class CommentResource
               objectId
               versionId
             }
-            data
           }
         }
       }
       """;
     GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Comment>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.create;
+    return res.data.data;
   }
 
   /// <remarks><inheritdoc cref="Create"/></remarks>
@@ -159,7 +157,7 @@ public sealed class CommentResource
     const string QUERY = """
       mutation Mutation($input: EditCommentInput!) {
         data:commentMutations {
-          edit(input: $input) {
+          data:edit(input: $input) {
             archived
             authorId
             createdAt
@@ -178,16 +176,15 @@ public sealed class CommentResource
               objectId
               versionId
             }
-            data
           }
         }
       }
       """;
     GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Comment>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.edit;
+    return res.data.data;
   }
 
   /// <param name="commentId"></param>
@@ -201,15 +198,15 @@ public sealed class CommentResource
     const string QUERY = """
       mutation Mutation($commentId: String!, $archive: Boolean!) {
         data:commentMutations {
-           archive(commentId: $commentId, archived: $archive)
+           data:archive(commentId: $commentId, archived: $archive)
         }
       }
       """;
     GraphQLRequest request = new(QUERY, variables: new { commentId, archive });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.archive;
+    return res.data.data;
   }
 
   /// <param name="commentId"></param>
@@ -222,15 +219,15 @@ public sealed class CommentResource
     const string QUERY = """
       mutation Mutation($commentId: String!) {
         data:commentMutations {
-          markViewed(commentId: $commentId)
+          data:markViewed(commentId: $commentId)
         }
       }
       """;
     GraphQLRequest request = new(QUERY, variables: new { commentId });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.markViewed;
+    return res.data.data;
   }
 
   /// <remarks><inheritdoc cref="Create"/></remarks>
@@ -244,7 +241,7 @@ public sealed class CommentResource
     const string QUERY = """
       mutation Mutation($input: CreateCommentReplyInput!) {
         data:commentMutations {
-          reply(input: $input) {
+          data:reply(input: $input) {
             archived
             authorId
             createdAt
@@ -263,15 +260,14 @@ public sealed class CommentResource
               objectId
               versionId
             }
-            data
           }
         }
       }
       """;
     GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Comment>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.reply;
+    return res.data.data;
   }
 }

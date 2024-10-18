@@ -42,7 +42,7 @@ public class ProjectInviteResourceTests
 
     Assert.That(res, Has.Property(nameof(_project.id)).EqualTo(_project.id));
     Assert.That(res.invitedTeam, Has.Count.EqualTo(1));
-    Assert.That(invite.user.id, Is.EqualTo(_invitee.Account.userInfo.id));
+    Assert.That(invite.user!.id, Is.EqualTo(_invitee.Account.userInfo.id));
     Assert.That(invite.token, Is.Not.Null);
   }
 
@@ -54,7 +54,7 @@ public class ProjectInviteResourceTests
 
     Assert.That(res, Has.Property(nameof(_project.id)).EqualTo(_project.id));
     Assert.That(res.invitedTeam, Has.Count.EqualTo(1));
-    Assert.That(res.invitedTeam[0].user.id, Is.EqualTo(_invitee.Account.userInfo.id));
+    Assert.That(res.invitedTeam[0].user!.id, Is.EqualTo(_invitee.Account.userInfo.id));
   }
 
   [Test]
@@ -66,7 +66,7 @@ public class ProjectInviteResourceTests
       collaborator,
       Has.Property(nameof(PendingStreamCollaborator.inviteId)).EqualTo(_createdInvite.inviteId)
     );
-    Assert.That(collaborator!.user.id, Is.EqualTo(_createdInvite.user.id));
+    Assert.That(collaborator!.user!.id, Is.EqualTo(_createdInvite.user!.id));
   }
 
   [Test]
