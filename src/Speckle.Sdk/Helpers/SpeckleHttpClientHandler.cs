@@ -82,7 +82,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
       }
 
       throw new HttpRequestException(
-        "Policy Failed: " + policyResult.FinalHandledResult.StatusCode,
+        "Policy Failed: " + policyResult.FinalHandledResult?.StatusCode ?? "Unknown",
         policyResult.FinalException
       );
     }
