@@ -33,7 +33,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     return _cache[rootId];
   }
 
-  public async Task Traverse(string id, CancellationToken cancellationToken)
+  private async Task Traverse(string id, CancellationToken cancellationToken)
   {
     if (_cache.ContainsKey(id))
     {
