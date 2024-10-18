@@ -62,12 +62,6 @@
           "Microsoft.Extensions.Options": "2.2.0"
         }
       },
-      "Microsoft.Extensions.ObjectPool": {
-        "type": "Direct",
-        "requested": "[8.0.10, )",
-        "resolved": "8.0.10",
-        "contentHash": "u7gAG7JgxF8VSJUGPSudAcPxOt+ymJKQCSxNRxiuKV+klCQbHljQR75SilpedCTfhPWDhtUwIJpnDVtspr9nMg=="
-      },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -322,6 +316,9 @@
         "dependencies": {
           "System.Runtime.CompilerServices.Unsafe": "4.5.3"
         }
+      },
+      "speckle.sdk.serialization": {
+        "type": "Project"
       }
     },
     "net8.0": {
@@ -381,12 +378,6 @@
           "Microsoft.Extensions.Logging.Abstractions": "2.2.0",
           "Microsoft.Extensions.Options": "2.2.0"
         }
-      },
-      "Microsoft.Extensions.ObjectPool": {
-        "type": "Direct",
-        "requested": "[8.0.10, )",
-        "resolved": "8.0.10",
-        "contentHash": "u7gAG7JgxF8VSJUGPSudAcPxOt+ymJKQCSxNRxiuKV+klCQbHljQR75SilpedCTfhPWDhtUwIJpnDVtspr9nMg=="
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -579,6 +570,9 @@
         "type": "Transitive",
         "resolved": "4.5.1",
         "contentHash": "Zh8t8oqolRaFa9vmOZfdQm/qKejdqz0J9kr7o2Fu0vPeoH3BL1EOXipKWwkWtLT1JPzjByrF19fGuFlNbmPpiw=="
+      },
+      "speckle.sdk.serialization": {
+        "type": "Project"
       }
     }
   }

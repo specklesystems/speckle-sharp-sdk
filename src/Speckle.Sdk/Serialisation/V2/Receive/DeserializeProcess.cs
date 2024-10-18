@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
+using Speckle.Sdk.Serialization;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
@@ -96,7 +97,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     }
     var (json, closures) = GetClosures(id);
 
-    List<string> notFoundIds = SpeckleObjectSerializerPool.Instance.ListString.Get();
+    List<string> notFoundIds = Pools.ListString.Get();
     foreach (var closureId in closures)
     {
       if (!_cache.ContainsKey(closureId))
@@ -118,7 +119,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
       //remove from JSON cache because we've finally made the Base
       _closures.TryRemove(id, out _);
     }
-    SpeckleObjectSerializerPool.Instance.ListString.Return(notFoundIds);
+    Pools.ListString.Return(notFoundIds);
   }
 
   private Base Deserialise(string id, string json)

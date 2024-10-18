@@ -2,6 +2,7 @@ using System.Numerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialization;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
@@ -70,7 +71,7 @@ public sealed class SpeckleObjectDeserializer2(
   private object? ReadObject(JsonReader reader)
   {
     reader.Read();
-    Dictionary<string, object?> dict = pool.ObjectDictionaries.Get();
+    Dictionary<string, object?> dict = Pools.ObjectDictionaries.Get();
     while (reader.TokenType != JsonToken.EndObject)
     {
       switch (reader.TokenType)
@@ -111,7 +112,7 @@ public sealed class SpeckleObjectDeserializer2(
     }
 
     var b = DictionaryConverter.Dict2Base(dict, options?.SkipInvalidConverts ?? false);
-    pool.ObjectDictionaries.Return(dict);
+    Pools.ObjectDictionaries.Return(dict);
     return b;
   }
 

@@ -44,6 +44,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Tests.Performan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Serialization.Testing", "tests\Speckle.Sdk.Serialization.Testing\Speckle.Sdk.Serialization.Testing.csproj", "{FF922B6D-D416-4348-8CB8-0C8B28691070}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Serialization", "src\Speckle.Sdk.Serialization\Speckle.Sdk.Serialization.csproj", "{27584AB4-8ACD-4850-8CC2-7E5BC739FB78}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,6 +92,10 @@ Global
 		{FF922B6D-D416-4348-8CB8-0C8B28691070}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF922B6D-D416-4348-8CB8-0C8B28691070}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF922B6D-D416-4348-8CB8-0C8B28691070}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27584AB4-8ACD-4850-8CC2-7E5BC739FB78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27584AB4-8ACD-4850-8CC2-7E5BC739FB78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27584AB4-8ACD-4850-8CC2-7E5BC739FB78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27584AB4-8ACD-4850-8CC2-7E5BC739FB78}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A413E196-3696-4F48-B635-04B5F76BF9C9} = {5CB96C27-FC5B-4A41-86B6-951AF99B8116}
@@ -102,5 +108,6 @@ Global
 		{B623BD21-5CAA-43F9-A539-1835276C220E} = {DA2AED52-58F9-471E-8AD8-102FD36129E3}
 		{870E3396-E6F7-43AE-B120-E651FA4F46BD} = {35047EE7-AD1D-4741-80A7-8F0E874718E9}
 		{FF922B6D-D416-4348-8CB8-0C8B28691070} = {35047EE7-AD1D-4741-80A7-8F0E874718E9}
+		{27584AB4-8ACD-4850-8CC2-7E5BC739FB78} = {5CB96C27-FC5B-4A41-86B6-951AF99B8116}
 	EndGlobalSection
 EndGlobal

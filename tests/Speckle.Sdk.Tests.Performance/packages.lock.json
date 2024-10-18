@@ -361,13 +361,16 @@
           "Microsoft.Data.Sqlite": "[7.0.7, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
           "Microsoft.Extensions.Logging": "[2.2.0, )",
-          "Microsoft.Extensions.ObjectPool": "[8.0.10, )",
           "Polly": "[7.2.3, )",
           "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
           "Polly.Extensions.Http": "[3.0.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
-          "Speckle.Newtonsoft.Json": "[13.0.2, )"
+          "Speckle.Newtonsoft.Json": "[13.0.2, )",
+          "Speckle.Sdk.Serialization": "[1.0.0, )"
         }
+      },
+      "speckle.sdk.serialization": {
+        "type": "Project"
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",
@@ -419,12 +422,6 @@
           "Microsoft.Extensions.Logging.Abstractions": "2.2.0",
           "Microsoft.Extensions.Options": "2.2.0"
         }
-      },
-      "Microsoft.Extensions.ObjectPool": {
-        "type": "CentralTransitive",
-        "requested": "[8.0.10, )",
-        "resolved": "8.0.10",
-        "contentHash": "u7gAG7JgxF8VSJUGPSudAcPxOt+ymJKQCSxNRxiuKV+klCQbHljQR75SilpedCTfhPWDhtUwIJpnDVtspr9nMg=="
       },
       "Polly": {
         "type": "CentralTransitive",
