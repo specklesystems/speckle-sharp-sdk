@@ -12,8 +12,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
   private readonly StackChannel<string> _deserializationStack = new();
 
   private readonly ConcurrentDictionary<string, Base> _cache = new();
-  private readonly ConcurrentDictionary<string, string> _loaded = new();
-  private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _closures = new();
+  private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
 
   private long _total;
 
@@ -27,9 +26,8 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
       .GetAndCache(rootId, cancellationToken, options)
       .ConfigureAwait(false);
     _total = childrenIds.Count;
-    _loaded.TryAdd(rootId, rootJson);
-    _closures.TryAdd(rootId, childrenIds);
-    DecodeOrEnqueueChildren(rootId, rootJson);
+    _closures.TryAdd(rootId, (rootJson, childrenIds));
+    DecodeOrEnqueueChildren(rootId);
     progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, childrenIds.Count));
     await Traverse(rootId, cancellationToken).ConfigureAwait(false);
     return _cache[rootId];
@@ -41,9 +39,9 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     {
       return;
     }
-    var json = GetJson(id);
+    var (_, childIds) = GetClosures(id);
     var tasks = new List<Task>();
-    foreach (var childId in GetChildrenIds(id, json))
+    foreach (var childId in childIds)
     {
       if (_cache.ContainsKey(childId))
       {
@@ -68,52 +66,35 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     //don't redo things if the id is decoded already in the cache
     if (!_cache.ContainsKey(id))
     {
-      DecodeOrEnqueueChildren(id, json);
+      DecodeOrEnqueueChildren(id);
       progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, _total));
     }
   }
 
-  private IReadOnlyList<string> GetClosures(string id, string json)
+  private (string, IReadOnlyList<string>) GetClosures(string id)
   {
     if (!_closures.TryGetValue(id, out var closures))
     {
-      closures = ClosureParser.GetClosures(json).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
+      var json = objectLoader.LoadId(id);
+      if (json == null)
+      {
+        throw new InvalidOperationException();
+      }
+      var childrenIds = ClosureParser.GetClosures(json).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
+      closures = (json, childrenIds);
       _closures.TryAdd(id, closures);
     }
 
     return closures;
   }
 
-  public IEnumerable<string> GetChildrenIds(string id, string json)
-  {
-    var closures = GetClosures(id, json);
-    return closures;
-  }
-
-  public string GetJson(string id)
-  {
-    if (!_loaded.TryGetValue(id, out var json))
-    {
-      var j = objectLoader.LoadId(id);
-      if (j == null)
-      {
-        throw new InvalidOperationException();
-      }
-
-      json = j;
-      _loaded.TryAdd(id, json);
-    }
-
-    return json;
-  }
-
-  public void DecodeOrEnqueueChildren(string id, string json)
+  public void DecodeOrEnqueueChildren(string id)
   {
     if (_cache.ContainsKey(id))
     {
       return;
     }
-    var closures = GetClosures(id, json);
+    var (json, closures) = GetClosures(id);
 
     List<string> notFoundIds = SpeckleObjectSerializerPool.Instance.ListString.Get();
     foreach (var closureId in closures)
@@ -133,8 +114,9 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     else if (!_cache.ContainsKey(id))
     {
       var @base = Deserialise(id, json);
-      _closures.TryRemove(id, out _);
       _cache.TryAdd(id, @base);
+      //remove from JSON cache because we've finally made the Base
+      _closures.TryRemove(id, out _);
     }
     SpeckleObjectSerializerPool.Instance.ListString.Return(notFoundIds);
   }

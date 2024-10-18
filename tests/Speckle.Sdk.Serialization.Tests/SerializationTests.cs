@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using NUnit.Framework;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
@@ -28,14 +28,7 @@ public class SerializationTests
       return Task.FromResult<(string, IReadOnlyList<string>)>((json, childrenIds));
     }
 
-    public IEnumerable<(string, string)> LoadIds(IEnumerable<string> ids, CancellationToken cancellationToken)
-    {
-      yield break;
-    }
-
     public string? LoadId(string id) => null;
-
-    public void Dispose() { }
   }
 
   private readonly Assembly _assembly = Assembly.GetExecutingAssembly();

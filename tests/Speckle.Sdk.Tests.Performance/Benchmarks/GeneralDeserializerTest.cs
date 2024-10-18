@@ -57,15 +57,16 @@ public class GeneralDeserializer : IDisposable
     using var process = new DeserializeProcess(null, o);
     return await process.Deserialize(rootId, default, new(skipCache)).ConfigureAwait(false);
   }
-/*
-  [Benchmark]
-  public async Task<Base> RunTest_Old()
-  {
-    SpeckleObjectDeserializer sut = new() { ReadTransport = _dataSource.Transport };
-    string data = await _dataSource.Transport.GetObject(_dataSource.ObjectId)!;
-    return await sut.DeserializeAsync(data);
-  }
-*/
+
+  /*
+    [Benchmark]
+    public async Task<Base> RunTest_Old()
+    {
+      SpeckleObjectDeserializer sut = new() { ReadTransport = _dataSource.Transport };
+      string data = await _dataSource.Transport.GetObject(_dataSource.ObjectId)!;
+      return await sut.DeserializeAsync(data);
+    }
+  */
   [GlobalCleanup]
   public void Cleanup() => Dispose();
 

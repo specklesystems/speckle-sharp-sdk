@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
