@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Speckle.Newtonsoft.Json;
+using Speckle.Newtonsoft.Json.Serialization;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Api.GraphQL.Serializer;
@@ -312,7 +313,14 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
             : null;
         },
       },
-      new NewtonsoftJsonSerializer(),
+      new NewtonsoftJsonSerializer(
+        new JsonSerializerSettings()
+        {
+          ContractResolver = new CamelCasePropertyNamesContractResolver { IgnoreIsSpecifiedMembers = true }, //(Default)
+          MissingMemberHandling = MissingMemberHandling.Error, //(not default) If you query for a member that doesn't exist, this will throw (except websocket responses see https://github.com/graphql-dotnet/graphql-client/issues/660)
+          Converters = { new ConstantCaseEnumConverter() } //(Default) enums will be serialized using the GraphQL const case standard
+        }
+      ),
       httpClient
     );
 

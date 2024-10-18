@@ -1,15 +1,13 @@
-﻿#nullable disable
-
-namespace Speckle.Sdk.Api.GraphQL.Models;
+﻿namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public abstract class UserBase
 {
-  public string avatar { get; init; }
-  public string bio { get; init; }
-  public string company { get; set; }
+  public string? avatar { get; init; }
+  public string? bio { get; init; }
+  public string? company { get; set; }
   public string id { get; init; }
   public string name { get; init; }
-  public string role { get; init; }
+  public string? role { get; init; }
   public bool? verified { get; init; }
 }
 
@@ -24,7 +22,7 @@ public sealed class LimitedUser : UserBase
 public sealed class User : UserBase
 {
   public DateTime? createdAt { get; init; }
-  public string email { get; init; }
+  public string? email { get; init; }
   public bool? hasPendingVerification { get; init; }
   public bool? isOnboardingFinished { get; init; }
   public List<PendingStreamCollaborator> projectInvites { get; init; }

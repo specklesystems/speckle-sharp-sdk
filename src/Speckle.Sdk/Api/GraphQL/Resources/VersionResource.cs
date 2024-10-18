@@ -16,60 +16,42 @@ public sealed class VersionResource
   }
 
   /// <param name="projectId"></param>
-  /// <param name="modelId"></param>
   /// <param name="versionId"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<Version> Get(
-    string versionId,
-    string modelId,
-    string projectId,
-    CancellationToken cancellationToken = default
-  )
+  public async Task<Version> Get(string versionId, string projectId, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
-      query VersionGet($projectId: String!, $modelId: String!, $versionId: String!) {
-        project(id: $projectId) {
-          model(id: $modelId) {
-            version(id: $versionId) {
+      query VersionGet($projectId: String!, $versionId: String!) {
+        data:project(id: $projectId) {
+          data:version(id: $versionId) {
+            id
+            referencedObject
+            message
+            sourceApplication
+            createdAt
+            previewUrl
+            authorUser {
               id
-              referencedObject
-              message
-              sourceApplication
-              createdAt
-              previewUrl
-              authorUser {
-                id
-                name
-                bio
-                company
-                verified
-                role
-                avatar
-              }
+              name
+              bio
+              company
+              verified
+              role
+              avatar
             }
           }
         }
       }
       """;
-    GraphQLRequest request =
-      new()
-      {
-        Query = QUERY,
-        Variables = new
-        {
-          projectId,
-          modelId,
-          versionId,
-        },
-      };
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, versionId } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Version>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.project.model.version;
+    return response.data.data;
   }
 
   /// <param name="projectId"></param>
@@ -91,9 +73,9 @@ public sealed class VersionResource
     //language=graphql
     const string QUERY = """
       query VersionGetVersions($projectId: String!, $modelId: String!, $limit: Int!, $cursor: String, $filter: ModelVersionsFilter) {
-        project(id: $projectId) {
-          model(id: $modelId) {
-            versions(limit: $limit, cursor: $cursor, filter: $filter) {
+        data:project(id: $projectId) {
+          data:model(id: $modelId) {
+            data:versions(limit: $limit, cursor: $cursor, filter: $filter) {
               items {
                 id
                 referencedObject
@@ -134,9 +116,12 @@ public sealed class VersionResource
       };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ResourceCollection<Version>>>>>(
+        request,
+        cancellationToken
+      )
       .ConfigureAwait(false);
-    return response.project.model.versions;
+    return response.data.data.data;
   }
 
   /// <param name="input"></param>
@@ -148,9 +133,9 @@ public sealed class VersionResource
     //language=graphql
     const string QUERY = """
       mutation Create($input: CreateVersionInput!) {
-        versionMutations {
-          create(input: $input) {
-            id
+        data:versionMutations {
+          data:create(input: $input) {
+            data:id
           }
         }
       }
@@ -159,9 +144,9 @@ public sealed class VersionResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<VersionMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<string>>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.versionMutations.create.id;
+    return response.data.data.data;
   }
 
   /// <param name="input"></param>
@@ -172,8 +157,8 @@ public sealed class VersionResource
     //language=graphql
     const string QUERY = """
       mutation VersionUpdate($input: UpdateVersionInput!) {
-        versionMutations {
-          update(input: $input) {
+        data:versionMutations {
+          data:update(input: $input) {
             id
             referencedObject
             message
@@ -196,9 +181,9 @@ public sealed class VersionResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<VersionMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Version>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.versionMutations.update;
+    return response.data.data;
   }
 
   /// <param name="input"></param>
@@ -210,9 +195,9 @@ public sealed class VersionResource
     //language=graphql
     const string QUERY = """
       mutation VersionMoveToModel($input: MoveVersionsInput!) {
-        versionMutations {
-          moveToModel(input: $input) {
-            id
+        data:versionMutations {
+          data:moveToModel(input: $input) {
+            data:id
           }
         }
       }
@@ -220,9 +205,9 @@ public sealed class VersionResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<VersionMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<string>>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.versionMutations.moveToModel.id;
+    return response.data.data.data;
   }
 
   /// <param name="input"></param>
@@ -234,18 +219,18 @@ public sealed class VersionResource
     //language=graphql
     const string QUERY = """
       mutation VersionDelete($input: DeleteVersionsInput!) {
-        versionMutations {
-          delete(input: $input)
+        data:versionMutations {
+          data:delete(input: $input)
         }
       }
       """;
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<VersionMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.versionMutations.delete;
+    return response.data.data;
   }
 
   /// <param name="input"></param>
@@ -257,17 +242,25 @@ public sealed class VersionResource
     //language=graphql
     const string QUERY = """
       mutation MarkReceived($input: MarkReceivedVersionInput!) {
-        versionMutations {
-          markReceived(input: $input)
+        data:versionMutations {
+          data:markReceived(input: $input)
         }
       }
       """;
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<VersionMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.versionMutations.markReceived;
+    return response.data.data;
   }
+
+  [Obsolete("modelId is no longer required, use the overload that doesn't specify a model id")]
+  public Task<Version> Get(
+    string versionId,
+    string modelId,
+    string projectId,
+    CancellationToken cancellationToken = default
+  ) => throw new NotImplementedException();
 }

@@ -1,6 +1,7 @@
 ﻿namespace Speckle.Sdk.Api.GraphQL.Models.Responses;
 
 #nullable disable
+[Obsolete]
 internal sealed class ProjectMutation
 {
   public Project create { get; init; }
@@ -11,6 +12,7 @@ internal sealed class ProjectMutation
   public Project updateRole { get; init; }
 }
 
+[Obsolete]
 internal sealed class ProjectInviteMutation
 {
   public Project create { get; init; }
@@ -18,6 +20,7 @@ internal sealed class ProjectInviteMutation
   public Project cancel { get; init; }
 }
 
+[Obsolete]
 internal sealed class ModelMutation
 {
   public Model create { get; init; }
@@ -25,6 +28,7 @@ internal sealed class ModelMutation
   public bool delete { get; init; }
 }
 
+[Obsolete]
 internal sealed class VersionMutation
 {
   public Version create { get; init; }
@@ -34,6 +38,7 @@ internal sealed class VersionMutation
   public Version update { get; init; }
 }
 
+[Obsolete]
 internal sealed class CommentMutation
 {
   public bool archive { get; init; }
