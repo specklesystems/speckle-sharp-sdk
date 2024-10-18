@@ -282,7 +282,6 @@
       "speckle.sdk": {
         "type": "Project",
         "dependencies": {
-          "CodeJam": "[4.1.0, )",
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.Bcl.AsyncInterfaces": "[8.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
@@ -296,12 +295,6 @@
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )"
         }
-      },
-      "CodeJam": {
-        "type": "CentralTransitive",
-        "requested": "[4.1.0, )",
-        "resolved": "4.1.0",
-        "contentHash": "kbOPSCFn4fx+x+mOR7lOoGt2b9QVH1fSsgKewR8CHmvVepof0gyllzIDCz5Jh+uH3kGocACvQ+kmrOzu8ETnvQ=="
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",

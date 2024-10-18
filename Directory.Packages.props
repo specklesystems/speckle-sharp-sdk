@@ -3,7 +3,6 @@
     <PackageVersion Include="altcover" Version="8.9.3" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Bullseye" Version="5.0.0" />
-    <PackageVersion Include="CodeJam" Version="4.1.0" />
     <PackageVersion Include="GraphQL.Client" Version="6.0.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
