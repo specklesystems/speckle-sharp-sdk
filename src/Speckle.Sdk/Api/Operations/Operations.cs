@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Api;
@@ -12,6 +13,7 @@ namespace Speckle.Sdk.Api;
 [GenerateAutoInterface]
 public partial class Operations(
   ILogger<Operations> logger,
+  ISpeckleHttp speckleHttp,
   ISdkActivityFactory activityFactory,
   ISdkMetricsFactory metricsFactory
 ) : IOperations;

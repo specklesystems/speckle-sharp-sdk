@@ -2,12 +2,46 @@ using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  public async Task<Base> Receive2(
+    Uri url,
+    string streamId,
+    string objectId,
+    string? authorizationToken = null,
+    IProgress<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    using var receiveActivity = activityFactory.Start("Operations.Receive");
+    metricsFactory.CreateCounter<long>("Receive").Add(1);
+
+    receiveActivity?.SetTag("objectId", objectId);
+
+    try
+    {
+      var sqliteTransport = new SQLiteCacheManager(streamId);
+      var serverObjects = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
+      var o = new ObjectLoader(sqliteTransport, serverObjects, streamId, onProgressAction);
+      using var process = new DeserializeProcess(onProgressAction, o);
+      var result = await process.Deserialize(objectId, cancellationToken).ConfigureAwait(false);
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return result;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
   /// <summary>
   /// Receives an object (and all its sub-children) from the two provided <see cref="ITransport"/>s.
   /// <br/>
