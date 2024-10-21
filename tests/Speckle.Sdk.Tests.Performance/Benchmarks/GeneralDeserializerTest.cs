@@ -54,7 +54,7 @@ public class GeneralDeserializer : IDisposable
       null
     );
     var o = new ObjectLoader(sqlite, serverObjects, streamId, null);
-    using var process = new DeserializeProcess(null, o);
+    var process = new DeserializeProcess(null, o);
     return await process.Deserialize(rootId, default, new(skipCache)).ConfigureAwait(false);
   }
 

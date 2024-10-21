@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk;
 using Speckle.Sdk.Helpers;
@@ -40,7 +40,7 @@ var serverObjects = new ServerObjectManager(
   null
 );
 var o = new ObjectLoader(sqliteTransport, serverObjects, streamId, progress);
-using var process = new DeserializeProcess(progress, o);
+var process = new DeserializeProcess(progress, o);
 await process.Deserialize(rootId, default, new(skipCache)).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();

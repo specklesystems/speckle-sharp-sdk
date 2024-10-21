@@ -29,7 +29,7 @@ public partial class Operations
       var sqliteTransport = new SQLiteCacheManager(streamId);
       var serverObjects = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
       var o = new ObjectLoader(sqliteTransport, serverObjects, streamId, onProgressAction);
-      using var process = new DeserializeProcess(onProgressAction, o);
+      var process = new DeserializeProcess(onProgressAction, o);
       var result = await process.Deserialize(objectId, cancellationToken).ConfigureAwait(false);
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return result;
