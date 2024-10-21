@@ -87,18 +87,15 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
 
   public void DecodeOrEnqueueChildren(string id)
   {
-    if (!_cache.ContainsKey(id))
+    if (_cache.ContainsKey(id))
     {
-      var (json, _) = GetClosures(id);
-      var @base = Deserialise(id, json);
-      _cache.TryAdd(id, @base);
-      //remove from JSON cache because we've finally made the Base
-      _closures.TryRemove(id, out _);
+      return;
     }
-    else
-    {
-      Console.WriteLine("contained");
-    }
+    (string json, _) = GetClosures(id);
+    var @base = Deserialise(id, json);
+    _cache.TryAdd(id, @base);
+    //remove from JSON cache because we've finally made the Base
+    _closures.TryRemove(id, out _);
   }
 
   private Base Deserialise(string id, string json)
