@@ -351,16 +351,12 @@
       "speckle.sdk.dependencies": {
         "type": "Project"
       },
-      "speckle.sdk.serialization": {
-        "type": "Project"
-      },
       "speckle.sdk.tests.performance": {
         "type": "Project",
         "dependencies": {
           "BenchmarkDotNet": "[0.14.0, )",
           "Microsoft.Extensions.DependencyInjection": "[2.2.0, )",
-          "Speckle.Objects": "[1.0.0, )",
-          "Speckle.Sdk.Serialization": "[1.0.0, )"
+          "Speckle.Objects": "[1.0.0, )"
         }
       },
       "BenchmarkDotNet": {

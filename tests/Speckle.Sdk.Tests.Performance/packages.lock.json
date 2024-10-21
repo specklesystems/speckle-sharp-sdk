@@ -369,9 +369,6 @@
       "speckle.sdk.dependencies": {
         "type": "Project"
       },
-      "speckle.sdk.serialization": {
-        "type": "Project"
-      },
       "GraphQL.Client": {
         "type": "CentralTransitive",
         "requested": "[6.0.0, )",
