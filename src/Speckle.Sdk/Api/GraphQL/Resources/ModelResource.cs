@@ -65,7 +65,7 @@ public sealed class ModelResource
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
   /// <see cref="Get"/>
-  public async Task<Model> GetWithVersions(
+  public async Task<ModelWithVersions> GetWithVersions(
     string modelId,
     string projectId,
     int versionsLimit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
@@ -134,7 +134,7 @@ public sealed class ModelResource
     };
 
     var response = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Model>>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ModelWithVersions>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
     return response.data.data;

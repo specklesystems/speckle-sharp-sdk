@@ -60,7 +60,7 @@ public class VersionResourceTests
   [Test]
   public async Task ModelGetWithVersions()
   {
-    Model result = await _testUser.Model.GetWithVersions(_model1.id, _project.id);
+    var result = await _testUser.Model.GetWithVersions(_model1.id, _project.id);
 
     Assert.That(result, Has.Property(nameof(Model.id)).EqualTo(_model1.id));
     Assert.That(result.versions.items, Has.Count.EqualTo(1));

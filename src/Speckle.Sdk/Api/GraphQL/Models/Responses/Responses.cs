@@ -16,4 +16,4 @@ internal record RequiredResponse<T>([property: JsonRequired] T data);
 internal record OptionalResponse<T>(T? data);
 
 //TODO: replace with RequiredResponse{T}
-internal record ServerInfoResponse([property: JsonRequired] ServerInfo serverInfo);z
+internal record ServerInfoResponse([property: JsonRequired] ServerInfo serverInfo);

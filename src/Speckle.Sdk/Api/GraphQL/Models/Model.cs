@@ -1,10 +1,8 @@
 ﻿namespace Speckle.Sdk.Api.GraphQL.Models;
 
-public sealed class Model
+public class Model
 {
   public LimitedUser author { get; init; }
-  public List<ModelsTreeItem> childrenTree { get; init; }
-  public ResourceCollection<Comment> commentThreads { get; init; }
   public DateTime createdAt { get; init; }
   public string? description { get; init; }
   public string displayName { get; init; }
@@ -13,6 +11,9 @@ public sealed class Model
   public List<FileUpload> pendingImportedVersions { get; init; }
   public Uri? previewUrl { get; init; }
   public DateTime updatedAt { get; init; }
+}
+
+public sealed class ModelWithVersions : Model
+{
   public ResourceCollection<Version> versions { get; init; }
-  public Version version { get; init; }
 }

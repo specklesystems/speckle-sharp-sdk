@@ -3,6 +3,7 @@ using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -72,7 +73,7 @@ public class ProjectInviteResourceTests
   [Test]
   public async Task ProjectInviteUse_MemberAdded()
   {
-    ProjectInviteUseInput input = new(true, _createdInvite.projectId, _createdInvite.token);
+    ProjectInviteUseInput input = new(true, _createdInvite.projectId, _createdInvite.token.NotNull());
     var res = await _invitee.ProjectInvite.Use(input);
     Assert.That(res, Is.True);
 
