@@ -14,6 +14,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.ObjectPool" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" PrivateAssets="all" />    
+    <PackageReference Include="Polly" PrivateAssets="all" />
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" PrivateAssets="all" />
+    <PackageReference Include="Polly.Extensions.Http" PrivateAssets="all"  />
+
   </ItemGroup>
 </Project>

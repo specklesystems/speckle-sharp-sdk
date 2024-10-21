@@ -42,6 +42,27 @@
           "Microsoft.NETCore.Platforms": "1.1.0"
         }
       },
+      "Polly": {
+        "type": "Direct",
+        "requested": "[7.2.3, )",
+        "resolved": "7.2.3",
+        "contentHash": "DeCY0OFbNdNxsjntr1gTXHJ5pKUwYzp04Er2LLeN3g6pWhffsGuKVfMBLe1lw7x76HrPkLxKEFxBlpRxS2nDEQ=="
+      },
+      "Polly.Contrib.WaitAndRetry": {
+        "type": "Direct",
+        "requested": "[1.1.1, )",
+        "resolved": "1.1.1",
+        "contentHash": "1MUQLiSo4KDkQe6nzQRhIU05lm9jlexX5BVsbuw0SL82ynZ+GzAHQxJVDPVBboxV37Po3SG077aX8DuSy8TkaA=="
+      },
+      "Polly.Extensions.Http": {
+        "type": "Direct",
+        "requested": "[3.0.0, )",
+        "resolved": "3.0.0",
+        "contentHash": "drrG+hB3pYFY7w1c3BD+lSGYvH2oIclH8GRSehgfyP5kjnFnHKQuuBhuHLv+PWyFuaTDyk/vfRpnxOzd11+J8g==",
+        "dependencies": {
+          "Polly": "7.1.0"
+        }
+      },
       "PolySharp": {
         "type": "Direct",
         "requested": "[1.14.1, )",
@@ -105,6 +126,27 @@
         "dependencies": {
           "Microsoft.Build.Tasks.Git": "8.0.0",
           "Microsoft.SourceLink.Common": "8.0.0"
+        }
+      },
+      "Polly": {
+        "type": "Direct",
+        "requested": "[7.2.3, )",
+        "resolved": "7.2.3",
+        "contentHash": "DeCY0OFbNdNxsjntr1gTXHJ5pKUwYzp04Er2LLeN3g6pWhffsGuKVfMBLe1lw7x76HrPkLxKEFxBlpRxS2nDEQ=="
+      },
+      "Polly.Contrib.WaitAndRetry": {
+        "type": "Direct",
+        "requested": "[1.1.1, )",
+        "resolved": "1.1.1",
+        "contentHash": "1MUQLiSo4KDkQe6nzQRhIU05lm9jlexX5BVsbuw0SL82ynZ+GzAHQxJVDPVBboxV37Po3SG077aX8DuSy8TkaA=="
+      },
+      "Polly.Extensions.Http": {
+        "type": "Direct",
+        "requested": "[3.0.0, )",
+        "resolved": "3.0.0",
+        "contentHash": "drrG+hB3pYFY7w1c3BD+lSGYvH2oIclH8GRSehgfyP5kjnFnHKQuuBhuHLv+PWyFuaTDyk/vfRpnxOzd11+J8g==",
+        "dependencies": {
+          "Polly": "7.1.0"
         }
       },
       "PolySharp": {
