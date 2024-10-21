@@ -2,38 +2,18 @@
 
 namespace Speckle.Sdk.Api.GraphQL.Models.Responses;
 
-// This file holds simple records that represent the root GraphQL response data
-// For this reason, we're keeping them internal, allowing us to be flexible without the concern for breaking.
-// It also exposes fewer similarly named types to dependent assemblies
-
-[Obsolete]
-internal record ProjectResponse([property: JsonRequired] Project project);
-
-[Obsolete]
-internal record ActiveUserResponse(User? activeUser);
-
-[Obsolete]
-internal record LimitedUserResponse(LimitedUser? otherUser);
-
-internal record ServerInfoResponse([property: JsonRequired] ServerInfo serverInfo);
-
-[Obsolete]
-internal record ProjectMutationResponse([property: JsonRequired] ProjectMutation projectMutations);
-
-[Obsolete]
-internal record ModelMutationResponse([property: JsonRequired] ModelMutation modelMutations);
-
-[Obsolete]
-internal record VersionMutationResponse([property: JsonRequired] VersionMutation versionMutations);
-
-[Obsolete]
-internal record ProjectInviteResponse(PendingStreamCollaborator? projectInvite);
-
-[Obsolete]
-internal record UserSearchResponse([property: JsonRequired] ResourceCollection<LimitedUser> userSearch);
-
-//All of the above records could be replaced by either RequiredResponse or OptionalResponse, if we use an alias (see https://www.baeldung.com/graphql-field-name)
+/// <summary>
+/// With the power of GraphQL Aliasing, we can avoid having to craft individual response classes for each query
+/// Instead, we can alias the query object as <c>data</c>, and use either <see cref="RequiredResponse{T}"/> or <see cref="OptionalResponse{T}"/>
+/// To deserialize the response
+/// </summary>
+/// <param name="data"></param>
+/// <typeparam name="T"></typeparam>
 internal record RequiredResponse<T>([property: JsonRequired] T data);
 
+/// <inheritdoc cref="RequiredResponse{T}"/>
 [JsonObject(ItemRequired = Required.AllowNull)]
 internal record OptionalResponse<T>(T? data);
+
+//TODO: replace with RequiredResponse{T}
+internal record ServerInfoResponse([property: JsonRequired] ServerInfo serverInfo);z

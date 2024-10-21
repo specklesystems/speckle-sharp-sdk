@@ -227,14 +227,15 @@ public sealed class ProjectResource
       mutation ProjectUpdate($input: ProjectUpdateInput!) {
         data:projectMutations{
           data:update(update: $input) {
+            allowPublicComments
+            createdAt
+            description
             id
             name
-            description
-            visibility
-            allowPublicComments
             role
-            createdAt
+            sourceApps
             updatedAt
+            visibility
             workspaceId
           }
         }

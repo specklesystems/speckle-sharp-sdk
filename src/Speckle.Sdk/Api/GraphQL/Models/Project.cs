@@ -18,8 +18,6 @@ public class Project
 
 public sealed class ProjectWithModels : Project
 {
-  public List<ModelsTreeItem> modelChildrenTree { get; init; }
-  public ResourceCollection<ModelsTreeItem> modelsTree { get; init; }
   public ResourceCollection<Model> models { get; init; }
 }
 

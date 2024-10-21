@@ -12,5 +12,5 @@ public sealed class PendingStreamCollaborator
   public string role { get; init; }
   public LimitedUser invitedBy { get; init; }
   public LimitedUser? user { get; init; }
-  public string token { get; init; }
+  public string? token { get; init; }
 }
