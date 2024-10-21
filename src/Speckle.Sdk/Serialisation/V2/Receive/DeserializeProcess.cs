@@ -8,10 +8,8 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 public record DeserializeOptions(bool? SkipCacheCheck = null);
 
-public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader) : IDisposable
+public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader)
 {
-  private readonly StackChannel<string> _deserializationStack = new();
-
   private readonly ConcurrentDictionary<string, Base> _cache = new();
   private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
 
@@ -28,7 +26,6 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
       .ConfigureAwait(false);
     _total = childrenIds.Count;
     _closures.TryAdd(rootId, (rootJson, childrenIds));
-    DecodeOrEnqueueChildren(rootId);
     progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, childrenIds.Count));
     await Traverse(rootId, cancellationToken).ConfigureAwait(false);
     return _cache[rootId];
@@ -91,35 +88,18 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
 
   public void DecodeOrEnqueueChildren(string id)
   {
-    if (_cache.ContainsKey(id))
+    if (!_cache.ContainsKey(id))
     {
-      return;
-    }
-    var (json, closures) = GetClosures(id);
-
-    List<string> notFoundIds = Pools.ListString.Get();
-    foreach (var closureId in closures)
-    {
-      if (!_cache.ContainsKey(closureId))
-      {
-        notFoundIds.Add(closureId);
-      }
-    }
-
-    if (notFoundIds.Count > 0)
-    {
-      notFoundIds.Add(id);
-      notFoundIds.Reverse();
-      _deserializationStack.Write(notFoundIds.ToArray());
-    }
-    else if (!_cache.ContainsKey(id))
-    {
+      var (json, _) = GetClosures(id);
       var @base = Deserialise(id, json);
       _cache.TryAdd(id, @base);
       //remove from JSON cache because we've finally made the Base
       _closures.TryRemove(id, out _);
     }
-    Pools.ListString.Return(notFoundIds);
+    else
+    {
+      Console.WriteLine("contained");
+    }
   }
 
   private Base Deserialise(string id, string json)
@@ -131,6 +111,4 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     SpeckleObjectDeserializer2 deserializer = new(_cache, SpeckleObjectSerializerPool.Instance);
     return deserializer.Deserialize(json);
   }
-
-  public void Dispose() => _deserializationStack.Dispose();
 }
