@@ -11,8 +11,8 @@ namespace Speckle.Sdk.Helpers;
 public sealed class SpeckleHttpClientHandlerFactory(ISdkActivityFactory activityFactory)
   : ISpeckleHttpClientHandlerFactory
 {
-
   public const int DEFAULT_TIMEOUT_SECONDS = 60;
+
   public IEnumerable<TimeSpan> DefaultDelay()
   {
     return Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(200), 5);
@@ -43,10 +43,5 @@ public sealed class SpeckleHttpClientHandlerFactory(ISdkActivityFactory activity
   public SpeckleHttpClientHandler Create(
     HttpMessageHandler? innerHandler = null,
     int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
-  ) =>
-    new(
-      innerHandler ?? new HttpClientHandler(),
-      activityFactory,
-      HttpAsyncPolicy(timeoutSeconds: timeoutSeconds)
-    );
+  ) => new(innerHandler ?? new HttpClientHandler(), activityFactory, HttpAsyncPolicy(timeoutSeconds: timeoutSeconds));
 }

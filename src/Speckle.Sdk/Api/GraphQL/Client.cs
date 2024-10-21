@@ -78,16 +78,23 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
   }
 
   internal async Task<T> ExecuteWithResiliencePolicies<T>(Func<Task<T>> func) =>
-    await GraphQLRetry.ExecuteAsync<T, SpeckleGraphQLInternalErrorException>(func, ((ex, timeout) =>
-    {
-      _logger.LogDebug(
-        ex,
-        "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
-        typeof(T).Name,
-        ex.Message,
-        timeout
-      );
-    })).ConfigureAwait(false);
+    await GraphQLRetry
+      .ExecuteAsync<T, SpeckleGraphQLInternalErrorException>(
+        func,
+        (
+          (ex, timeout) =>
+          {
+            _logger.LogDebug(
+              ex,
+              "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
+              typeof(T).Name,
+              ex.Message,
+              timeout
+            );
+          }
+        )
+      )
+      .ConfigureAwait(false);
 
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
