@@ -1,6 +1,6 @@
 using Microsoft.Extensions.ObjectPool;
 
-namespace Speckle.Sdk.Serialization;
+namespace Speckle.Sdk.Dependencies;
 
 public class Pool<T>
   where T : class, new()

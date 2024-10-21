@@ -44,7 +44,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Tests.Performan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Serialization.Testing", "tests\Speckle.Sdk.Serialization.Testing\Speckle.Sdk.Serialization.Testing.csproj", "{FF922B6D-D416-4348-8CB8-0C8B28691070}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Serialization", "src\Speckle.Sdk.Serialization\Speckle.Sdk.Serialization.csproj", "{27584AB4-8ACD-4850-8CC2-7E5BC739FB78}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Dependencies", "src\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj", "{27584AB4-8ACD-4850-8CC2-7E5BC739FB78}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

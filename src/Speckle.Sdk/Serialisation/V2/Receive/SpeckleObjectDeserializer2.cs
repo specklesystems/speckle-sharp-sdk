@@ -1,8 +1,8 @@
 using System.Numerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialization;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 

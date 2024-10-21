@@ -47,7 +47,7 @@
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Speckle.Sdk.Serialization\Speckle.Sdk.Serialization.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />
   </ItemGroup>
   
 </Project>
