@@ -15,7 +15,7 @@ public sealed class ObjectLoader(
 ) : IObjectLoader
 {
   private const int HTTP_ID_CHUNK_SIZE = 500;
-  private const int CACHE_CHUNK_SIZE = 500;
+  private const int CACHE_CHUNK_SIZE = 3000;
   private const int MAX_PARALLELISM_HTTP = 4;
 
   public async Task<(string, IReadOnlyList<string>)> GetAndCache(
