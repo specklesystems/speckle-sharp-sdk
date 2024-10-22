@@ -29,8 +29,6 @@ serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v202
 var serviceProvider = serviceCollection.BuildServiceProvider();
 
 Console.WriteLine("Attach");
-Console.ReadLine();
-Console.WriteLine("Executing");
 
 var token = serviceProvider.GetRequiredService<IAccountManager>().GetDefaultAccount()?.token;
 var progress = new Progress(true);
@@ -45,8 +43,10 @@ var o = new ObjectLoader(sqliteTransport, serverObjects, streamId, progress);
 var process = new DeserializeProcess(progress, o);
 var @base = await process.Deserialize(rootId, default, new(skipCache)).ConfigureAwait(false);
 Console.WriteLine("Deserialized");
+Console.ReadLine();
+Console.WriteLine("Executing");
 
-var process2 = new SerializeProcess(progress, sqliteTransport, serverObjects);
+var process2 = new SerializeProcess(progress, sqliteTransport, new DummyServerObjectManager());
 await process2.Serialize(streamId, @base, default).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();

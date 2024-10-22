@@ -1,8 +1,8 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
-using System.Reflection;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
@@ -12,16 +12,17 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public class SpeckleObjectSerializer
+public class SpeckleObjectSerializer2
 {
   private List<Dictionary<string, int>> _parentClosures = new();
   private HashSet<object> _parentObjects = new();
-  private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
   private readonly IProgress<ProgressArgs>? _onProgressAction;
 
   private readonly bool _trackDetachedChildren;
   private readonly Func<string, string, Task> _writeJsonAsync;
   private long _serializedCount;
+  private readonly ISpeckleBasePropertyGatherer _propertyGatherer;
+  private readonly ConcurrentDictionary<string, string> _idToJson;
 
   /// <summary>
   /// Keeps track of all detached children created during serialisation that have an applicationId (provided this serializer instance has been told to track detached children).
@@ -37,14 +38,15 @@ public class SpeckleObjectSerializer
   /// <param name="onProgressAction">Used to track progress.</param>
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
-  public SpeckleObjectSerializer(
-    Func<string, string, Task> writeJsonAsync,
-    IProgress<ProgressArgs>? onProgressAction = null,
+  public SpeckleObjectSerializer2(
+    Func<string, string, Task> writeJsonAsync, ISpeckleBasePropertyGatherer propertyGatherer, ConcurrentDictionary<string, string> idToJson, IProgress<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
     _writeJsonAsync = writeJsonAsync;
+    _propertyGatherer = propertyGatherer;
+    _idToJson = idToJson;
     _onProgressAction = onProgressAction;
     CancellationToken = cancellationToken;
     _trackDetachedChildren = trackDetachedChildren;
@@ -61,7 +63,6 @@ public class SpeckleObjectSerializer
       try
       {
         var result = await SerializeBase(baseObj, true).NotNull().ConfigureAwait(false);
-        await StoreObject(result.Id.NotNull(), result.Json).ConfigureAwait(false);
         return result.Json;
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
@@ -205,6 +206,14 @@ public class SpeckleObjectSerializer
     }
   }
 
+  private async ValueTask<(string, string)> SerializeChild(Base baseObj,  Dictionary<string, int> closures)
+  {
+    using var writer = new StringWriter();
+    using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
+    string id = await SerializeBaseObject(baseObj, jsonWriter, closures).ConfigureAwait(false);
+    var json = writer.ToString();
+    return (id, json);
+  }
   private async ValueTask<SerializationResult?> SerializeBase(
     Base baseObj,
     bool computeClosures = false,
@@ -224,11 +233,12 @@ public class SpeckleObjectSerializer
       _parentClosures.Add(closure);
     }
 
-    using var writer = new StringWriter();
-    using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-    string id = await SerializeBaseObject(baseObj, jsonWriter, closure).ConfigureAwait(false);
-    var json = writer.ToString();
+    if (_idToJson.TryGetValue(baseObj.id, out var json))
+    {
+      throw new NotImplementedException("Serializing dictionaries that are not supported");
+    }
 
+    var id = baseObj.id;
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
     {
       _parentClosures.RemoveAt(_parentClosures.Count - 1);
@@ -246,8 +256,6 @@ public class SpeckleObjectSerializer
 
     if (inheritedDetachInfo.IsDetachable)
     {
-      await StoreObject(id, json).ConfigureAwait(false);
-
       ObjectReference objRef = new() { referencedId = id };
       using var writer2 = new StringWriter();
       using var jsonWriter2 = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer2);
@@ -272,42 +280,6 @@ public class SpeckleObjectSerializer
     return new(json, id);
   }
 
-  private Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
-  {
-    IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
-    IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
-
-    // propertyName -> (originalValue, isDetachable, isChunkable, chunkSize)
-    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties =
-      new(typedProperties.Count + dynamicProperties.Count);
-
-    // Construct `allProperties`: Add typed properties
-    foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)
-    {
-      object? baseValue = propertyInfo.GetValue(baseObj);
-      allProperties[propertyInfo.Name] = (baseValue, detachInfo);
-    }
-
-    // Construct `allProperties`: Add dynamic properties
-    foreach (string propName in dynamicProperties)
-    {
-      if (propName.StartsWith("__"))
-      {
-        continue;
-      }
-
-      object? baseValue = baseObj[propName];
-
-      bool isDetachable = PropNameValidator.IsDetached(propName);
-
-      int chunkSize = 1000;
-      bool isChunkable = isDetachable && PropNameValidator.IsChunkable(propName, out chunkSize);
-
-      allProperties[propName] = (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null));
-    }
-
-    return allProperties;
-  }
 
   private async ValueTask<string> SerializeBaseObject(
     Base baseObj,
@@ -315,7 +287,7 @@ public class SpeckleObjectSerializer
     IReadOnlyDictionary<string, int> closure
   )
   {
-    var allProperties = ExtractAllProperties(baseObj);
+    var allProperties = _propertyGatherer.ExtractAllProperties(baseObj);
 
     if (baseObj is not Blob)
     {
@@ -417,81 +389,5 @@ public class SpeckleObjectSerializer
     string hash = Crypt.Sha256(serialized, length: HashUtility.HASH_LENGTH);
 #endif
     return hash;
-  }
-
-  private async ValueTask StoreObject(string objectId, string objectJson)
-  {
-    await _writeJsonAsync.Invoke(objectId, objectJson).ConfigureAwait(false);
-  }
-
-  // (propertyInfo, isDetachable, isChunkable, chunkSize, JsonPropertyAttribute)
-  private IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> GetTypedPropertiesWithCache(Base baseObj)
-  {
-    Type type = baseObj.GetType();
-
-    if (
-      _typedPropertiesCache.TryGetValue(
-        type.FullName.NotNull(),
-        out List<(PropertyInfo, PropertyAttributeInfo)>? cached
-      )
-    )
-    {
-      return cached;
-    }
-
-    var typedProperties = baseObj.GetInstanceMembers().ToList();
-    List<(PropertyInfo, PropertyAttributeInfo)> ret = new(typedProperties.Count);
-
-    foreach (PropertyInfo typedProperty in typedProperties)
-    {
-      if (typedProperty.Name.StartsWith("__") || typedProperty.Name == "id")
-      {
-        continue;
-      }
-
-      bool jsonIgnore = typedProperty.IsDefined(typeof(JsonIgnoreAttribute), false);
-      if (jsonIgnore)
-      {
-        continue;
-      }
-
-      _ = typedProperty.GetValue(baseObj);
-
-      List<DetachPropertyAttribute> detachableAttributes = typedProperty
-        .GetCustomAttributes<DetachPropertyAttribute>(true)
-        .ToList();
-      List<ChunkableAttribute> chunkableAttributes = typedProperty
-        .GetCustomAttributes<ChunkableAttribute>(true)
-        .ToList();
-      bool isDetachable = detachableAttributes.Count > 0 && detachableAttributes[0].Detachable;
-      bool isChunkable = chunkableAttributes.Count > 0;
-      int chunkSize = isChunkable ? chunkableAttributes[0].MaxObjCountPerChunk : 1000;
-      JsonPropertyAttribute? jsonPropertyAttribute = typedProperty.GetCustomAttribute<JsonPropertyAttribute>();
-      ret.Add((typedProperty, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, jsonPropertyAttribute)));
-    }
-
-    _typedPropertiesCache[type.FullName] = ret;
-    return ret;
-  }
-
-  internal readonly struct PropertyAttributeInfo
-  {
-    public PropertyAttributeInfo(
-      bool isDetachable,
-      bool isChunkable,
-      int chunkSize,
-      JsonPropertyAttribute? jsonPropertyAttribute
-    )
-    {
-      IsDetachable = isDetachable || isChunkable;
-      IsChunkable = isChunkable;
-      ChunkSize = chunkSize;
-      JsonPropertyInfo = jsonPropertyAttribute;
-    }
-
-    public readonly bool IsDetachable;
-    public readonly bool IsChunkable;
-    public readonly int ChunkSize;
-    public readonly JsonPropertyAttribute? JsonPropertyInfo;
   }
 }

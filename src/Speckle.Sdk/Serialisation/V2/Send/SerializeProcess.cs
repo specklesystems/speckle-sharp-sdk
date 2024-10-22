@@ -11,6 +11,7 @@ public class SerializeProcess
   private readonly IProgress<ProgressArgs>? _progress;
   private readonly ISQLiteCacheManager _sqliteCacheManager;
   private readonly IServerObjectManager _serverObjectManager;
+  private readonly Channel<Base> _serializeChannel;
   private readonly Channel<(string, string)> _checkCacheChannel;
 
   public SerializeProcess(
@@ -22,13 +23,15 @@ public class SerializeProcess
     _progress = progress;
     _sqliteCacheManager = sqliteCacheManager;
     _serverObjectManager = serverObjectManager;
+    _serializeChannel = Channel.CreateUnbounded<Base>();
     _checkCacheChannel = Channel.CreateUnbounded<(string, string)>();
   }
 
   public async Task Serialize(string streamId, Base root, CancellationToken cancellationToken)
   {
     var task = _checkCacheChannel
-      .Reader.Pipe(4, x => CheckCache(root.id, x), cancellationToken: cancellationToken)
+      .Reader
+      .Pipe(4, x => CheckCache(root.id, x), cancellationToken: cancellationToken)
       .Filter(x => x is not null)
       .Batch(100)
       .WithTimeout(TimeSpan.FromSeconds(2))
@@ -36,22 +39,25 @@ public class SerializeProcess
         4,
         async batch => await SendToServer(root.id, streamId, batch, cancellationToken).ConfigureAwait(false),
         cancellationToken
-      )
-      .ConfigureAwait(false);
+      );
 
-    var serializer = new SpeckleObjectSerializer(
-      async (id, json) =>
-      {
-        await _checkCacheChannel.Writer.WriteAsync((id, json), cancellationToken).ConfigureAwait(false);
-      },
-      _progress,
-      false,
-      cancellationToken
-    );
-    var rootJson = await serializer.SerializeAsync(root).ConfigureAwait(true);
-    await _checkCacheChannel.Writer.WriteAsync((root.id, rootJson), cancellationToken).ConfigureAwait(false);
+    var task2 =   _serializeChannel.Reader.ReadAllConcurrentlyAsync(4, async b =>
+    {
+      var serializer = new SpeckleObjectSerializer(
+        async (id, json) =>
+        {
+          await _checkCacheChannel.Writer.WriteAsync((id, json), cancellationToken).ConfigureAwait(false);
+        },
+        _progress,
+        false,
+        cancellationToken
+      );
+      var rootJson = await serializer.SerializeAsync(root).ConfigureAwait(true);
+      await _checkCacheChannel.Writer.WriteAsync((root.id, rootJson), cancellationToken).ConfigureAwait(false);
+    }, cancellationToken: cancellationToken);
+    await _serializeChannel.Writer.WriteAsync(root, cancellationToken).ConfigureAwait(false);
 
-    await task;
+    await Task.WhenAll(task, task2).ConfigureAwait(false);
   }
 
   private (string, string)? CheckCache(string rootId, (string, string) item)
@@ -80,6 +86,7 @@ public class SerializeProcess
     if (batch.Select(x => x.NotNull().Item1).Contains(rootId))
     {
       _checkCacheChannel.Writer.Complete();
+      _serializeChannel.Writer.Complete();
     }
   }
 }
