@@ -77,6 +77,7 @@ public sealed class ProjectResource
           createdAt
           updatedAt
           sourceApps
+          workspaceId
           models(limit: $modelsLimit, cursor: $modelsCursor, filter: $modelsFilter) {
             items {
               id

@@ -8,7 +8,6 @@ public class Model
   public string displayName { get; init; }
   public string id { get; init; }
   public string name { get; init; }
-  public List<FileUpload> pendingImportedVersions { get; init; }
   public Uri? previewUrl { get; init; }
   public DateTime updatedAt { get; init; }
 }

@@ -168,6 +168,15 @@ public sealed class ModelResource
               displayName
               description
               createdAt
+              author {
+                avatar
+                bio
+                company
+                id
+                name
+                role
+                verified
+              }
             }
             totalCount
             cursor

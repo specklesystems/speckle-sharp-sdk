@@ -21,6 +21,7 @@ public class ModelResourceTests
     _model = await _testUser.Model.Create(new("Test Model", "", _project.id));
   }
 
+  [Order(1)]
   [TestCase("My Model", "My model description")]
   [TestCase("my/nested/model", null)]
   public async Task ModelCreate(string name, string description)
@@ -47,6 +48,7 @@ public class ModelResourceTests
   }
 
   [Test]
+  [Order(2)]
   public async Task GetModels()
   {
     var result = await Sut.GetModels(_project.id);
