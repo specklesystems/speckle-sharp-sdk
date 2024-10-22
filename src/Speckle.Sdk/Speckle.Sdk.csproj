@@ -37,7 +37,6 @@
     <PackageReference Include="Polly.Extensions.Http"  />
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
-    <PackageReference Include="System.Linq.Async" />
     <PackageReference Include="System.Threading.Channels" />
   </ItemGroup>
 

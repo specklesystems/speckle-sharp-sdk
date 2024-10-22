@@ -6,14 +6,14 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public class SerializationProcess
+public class SerializeProcess
 {
   private readonly IProgress<ProgressArgs>? _progress;
   private readonly ISQLiteCacheManager _sqliteCacheManager;
   private readonly IServerObjectManager _serverObjectManager;
   private readonly Channel<(string, string)> _checkCacheChannel;
 
-  public SerializationProcess(IProgress<ProgressArgs>? progress, ISQLiteCacheManager sqliteCacheManager, IServerObjectManager serverObjectManager)
+  public SerializeProcess(IProgress<ProgressArgs>? progress, ISQLiteCacheManager sqliteCacheManager, IServerObjectManager serverObjectManager)
   {
     _progress = progress;
     _sqliteCacheManager = sqliteCacheManager;
@@ -26,11 +26,11 @@ public class SerializationProcess
     CancellationToken cancellationToken
   )
   {
-    await _checkCacheChannel.Reader
-      .Pipe(4, CheckCache, cancellationToken: cancellationToken)
+    var task = _checkCacheChannel.Reader
+      .Pipe(4, x => CheckCache(root.id, x), cancellationToken: cancellationToken)
       .Filter(x => x is not null)
-      .Batch(100)
-      .ReadAllConcurrentlyAsync(4, async batch => await SendToServer(streamId, batch, cancellationToken).ConfigureAwait(false),
+      .Batch(100).WithTimeout(TimeSpan.FromSeconds(2))
+      .ReadAllConcurrentlyAsync(4, async batch => await SendToServer(root.id, streamId, batch, cancellationToken).ConfigureAwait(false),
         cancellationToken)
       .ConfigureAwait(false);
 
@@ -42,19 +42,27 @@ public class SerializationProcess
     var rootJson = await serializer.SerializeAsync(root).ConfigureAwait(true);
     await _checkCacheChannel.Writer.WriteAsync((root.id, rootJson), cancellationToken).ConfigureAwait(false);
 
-    _checkCacheChannel.Writer.Complete();
+    await task;
   }
-  private (string, string)? CheckCache((string, string) item)
+  private (string, string)? CheckCache(string rootId, (string, string) item)
   {
-      if (_sqliteCacheManager.HasObject(item.Item1))
+      if (!_sqliteCacheManager.HasObject(item.Item1))
       {
         return item;
+      }
+      if (item.Item1 == rootId)
+      {
+        _checkCacheChannel.Writer.TryComplete();
       }
       return null;
   }
   
-  private async Task SendToServer(string streamId, IReadOnlyList<(string, string)?> batch, CancellationToken cancellationToken)
+  private async Task SendToServer(string rootId, string streamId, IReadOnlyList<(string, string)?> batch, CancellationToken cancellationToken)
   {
     await _serverObjectManager.UploadObjects(streamId, batch.Select(x => x.NotNull()).ToList(), true, _progress, cancellationToken).ConfigureAwait(false);
+    if (batch.Select(x => x.NotNull().Item1).Contains(rootId))
+    {
+      _checkCacheChannel.Writer.Complete();
+    }
   }
 }
