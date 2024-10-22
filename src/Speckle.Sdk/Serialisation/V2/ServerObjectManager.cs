@@ -1,11 +1,15 @@
 using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
+using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
@@ -132,4 +136,76 @@ public class ServerObjectManager : IServerObjectManager
       }
     }
   }
+  public async Task<Dictionary<string, bool>> HasObjects(string streamId, IReadOnlyList<string> objectIds,
+    CancellationToken cancellationToken)
+  {
+    cancellationToken.ThrowIfCancellationRequested();
+
+    // Stopwatch sw = new Stopwatch(); sw.Start();
+
+    string objectsPostParameter = JsonConvert.SerializeObject(objectIds);
+    var payload = new Dictionary<string, string> { { "objects", objectsPostParameter } };
+    string serializedPayload = JsonConvert.SerializeObject(payload);
+    var uri = new Uri($"/api/diff/{streamId}", UriKind.Relative);
+
+    using StringContent stringContent = new(serializedPayload, Encoding.UTF8, "application/json");
+    using HttpResponseMessage response = await _client.PostAsync(uri, stringContent, cancellationToken).ConfigureAwait(false);
+
+    response.EnsureSuccessStatusCode();
+
+    var hasObjects = await response.Content.ReadFromJsonAsync<Dictionary<string, bool>>(cancellationToken).ConfigureAwait(false);
+    return hasObjects.NotNull();
+  }
+  
+   
+  public async Task UploadObjects(
+    string streamId,
+    IReadOnlyList<(string, string)> objects,
+    bool compressPayloads,
+    IProgress<ProgressArgs>? progress,  
+    CancellationToken cancellationToken
+  )
+  {
+    cancellationToken.ThrowIfCancellationRequested();
+
+    using HttpRequestMessage message =
+      new() { RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative), Method = HttpMethod.Post };
+
+    MultipartFormDataContent multipart = new();
+
+    int mpId = 0;
+    foreach (var (id, json) in objects)
+    {
+      mpId++;
+
+      var ctBuilder = new StringBuilder("[");
+      for (int i = 0; i < mpData.Count; i++)
+      {
+        if (i > 0)
+        {
+          ctBuilder.Append(',');
+        }
+
+        ctBuilder.Append(mpData[i].Item2);
+      }
+      ctBuilder.Append(']');
+      string ct = ctBuilder.ToString();
+
+      if (compressPayloads)
+      {
+        var content = new GzipContent(new StringContent(ct, Encoding.UTF8));
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/gzip");
+        multipart.Add(content, $"batch-{mpId}", $"batch-{mpId}");
+      }
+      else
+      {
+        multipart.Add(new StringContent(ct, Encoding.UTF8), $"batch-{mpId}", $"batch-{mpId}");
+      }
+    }
+    message.Content = new ProgressContent(multipart, progress);
+    HttpResponseMessage response = await _client.SendAsync(message, cancellationToken).ConfigureAwait(false);
+
+    response.EnsureSuccessStatusCode();
+  }
+
 }

@@ -36,6 +36,7 @@
     <PackageReference Include="Polly.Extensions.Http"  />
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
+    <PackageReference Include="System.Linq.Async" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(Framework)' == 'NET80'">
