@@ -16,24 +16,7 @@ public sealed class ObjectLoader(
 {
   private const int HTTP_ID_CHUNK_SIZE = 500;
   private const int CACHE_CHUNK_SIZE = 500;
-
   private const int MAX_PARALLELISM_HTTP = 4;
-
-  //private static readonly int MAX_PARALLELISM_CACHE = Environment.ProcessorCount * 2;
-
-  private async Task<string> GetRootJson(string objectId, CancellationToken cancellationToken)
-  {
-    var rootJson = sqLiteCacheManager.GetObject(objectId);
-    if (rootJson == null)
-    {
-      rootJson = await serverObjectManager
-        .DownloadSingleObject(streamId, objectId, progress, cancellationToken)
-        .NotNull()
-        .ConfigureAwait(false);
-      sqLiteCacheManager.SaveObjectSync(objectId, rootJson);
-    }
-    return rootJson;
-  }
 
   public async Task<(string, IReadOnlyList<string>)> GetAndCache(
     string rootId,
@@ -41,7 +24,17 @@ public sealed class ObjectLoader(
     DeserializeOptions? options = null
   )
   {
-    var rootJson = await GetRootJson(rootId, cancellationToken).ConfigureAwait(false);
+    var rootJson = sqLiteCacheManager.GetObject(rootId);
+    if (rootJson != null)
+    {
+      //assume everything exists as the root is there.
+      var allChildren = ClosureParser.GetChildrenIds(rootJson).ToList();
+      return (rootJson, allChildren);
+    }
+    rootJson = await serverObjectManager
+      .DownloadSingleObject(streamId, rootId, progress, cancellationToken)
+      .NotNull()
+      .ConfigureAwait(false);
     var allChildrenIds = ClosureParser
       .GetClosures(rootJson)
       .OrderByDescending(x => x.Item2)
@@ -53,6 +46,8 @@ public sealed class ObjectLoader(
       var idsToDownload = CheckCache(allChildrenIds);
       await DownloadAndCache(idsToDownload, cancellationToken).ConfigureAwait(false);
     }
+    //save the root last to shortcut later
+    sqLiteCacheManager.SaveObjectSync(rootId, rootJson);
     return (rootJson, allChildrenIds);
   }
 
