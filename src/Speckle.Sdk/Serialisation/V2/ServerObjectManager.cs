@@ -135,8 +135,12 @@ public class ServerObjectManager : IServerObjectManager
       }
     }
   }
-  public async Task<Dictionary<string, bool>> HasObjects(string streamId, IReadOnlyList<string> objectIds,
-    CancellationToken cancellationToken)
+
+  public async Task<Dictionary<string, bool>> HasObjects(
+    string streamId,
+    IReadOnlyList<string> objectIds,
+    CancellationToken cancellationToken
+  )
   {
     cancellationToken.ThrowIfCancellationRequested();
 
@@ -148,7 +152,9 @@ public class ServerObjectManager : IServerObjectManager
     var uri = new Uri($"/api/diff/{streamId}", UriKind.Relative);
 
     using StringContent stringContent = new(serializedPayload, Encoding.UTF8, "application/json");
-    using HttpResponseMessage response = await _client.PostAsync(uri, stringContent, cancellationToken).ConfigureAwait(false);
+    using HttpResponseMessage response = await _client
+      .PostAsync(uri, stringContent, cancellationToken)
+      .ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
 #if NET8_0_OR_GREATER
@@ -158,13 +164,12 @@ public class ServerObjectManager : IServerObjectManager
 #endif
     return JsonConvert.DeserializeObject<Dictionary<string, bool>>(hasObjects).NotNull();
   }
-  
-   
+
   public async Task UploadObjects(
     string streamId,
     IReadOnlyList<(string, string)> objects,
     bool compressPayloads,
-    IProgress<ProgressArgs>? progress,  
+    IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
   )
   {
@@ -199,11 +204,10 @@ public class ServerObjectManager : IServerObjectManager
     {
       multipart.Add(new StringContent(ct, Encoding.UTF8), $"batch-{mpId}", $"batch-{mpId}");
     }
-    
+
     message.Content = new ProgressContent(multipart, progress);
     HttpResponseMessage response = await _client.SendAsync(message, cancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
   }
-
 }

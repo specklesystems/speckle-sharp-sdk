@@ -15,7 +15,6 @@ const bool skipCache = false;
 TypeLoader.Reset();
 TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
 
-
 var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 var streamId = "a3ac1b2706";
 var rootId = "7d53bcf28c6696ecac8781684a0aa006";

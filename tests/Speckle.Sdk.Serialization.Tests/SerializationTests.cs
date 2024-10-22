@@ -73,6 +73,26 @@ public class SerializationTests
       var @base = await sut.Deserialize("551513ff4f3596024547fc818f1f3f70");
       @base.ShouldNotBeNull();
     }*/
+  public class TestObjectLoader(Dictionary<string, string> idToObject) : IObjectLoader
+  {
+    public Task<(string, IReadOnlyList<string>)> GetAndCache(
+      string rootId,
+      CancellationToken cancellationToken,
+      DeserializeOptions? options = default
+    )
+    {
+      var json = idToObject.GetValueOrDefault(rootId);
+      if (json == null)
+      {
+        throw new KeyNotFoundException("Root not found");
+      }
+
+      var allChildren = ClosureParser.GetChildrenIds(json).ToList();
+      return Task.FromResult<(string, IReadOnlyList<string>)>((json, allChildren));
+    }
+
+    public string? LoadId(string id) => idToObject.GetValueOrDefault(id);
+  }
 
   [Test]
   [TestCase("RevitObject.json")]

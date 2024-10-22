@@ -141,7 +141,7 @@ public class SQLiteCacheManager : ISQLiteCacheManager
       yield return (objectId, rowFound);
     }
   }
-  
+
   public bool HasObject(string objectId)
   {
     using var c = new SqliteConnection(_connectionString);

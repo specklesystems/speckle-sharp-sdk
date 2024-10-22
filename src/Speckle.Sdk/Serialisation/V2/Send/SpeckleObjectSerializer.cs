@@ -37,7 +37,9 @@ public class SpeckleObjectSerializer
   /// <param name="onProgressAction">Used to track progress.</param>
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
-  public SpeckleObjectSerializer(Func<string, string, Task> writeJsonAsync, IProgress<ProgressArgs>? onProgressAction = null,
+  public SpeckleObjectSerializer(
+    Func<string, string, Task> writeJsonAsync,
+    IProgress<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
@@ -307,7 +309,11 @@ public class SpeckleObjectSerializer
     return allProperties;
   }
 
-  private async ValueTask<string> SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
+  private async ValueTask<string> SerializeBaseObject(
+    Base baseObj,
+    JsonWriter writer,
+    IReadOnlyDictionary<string, int> closure
+  )
   {
     var allProperties = ExtractAllProperties(baseObj);
 
@@ -380,7 +386,8 @@ public class SpeckleObjectSerializer
       {
         chunks.Add(crtChunk);
       }
-      await SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)).ConfigureAwait(false);
+      await SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null))
+        .ConfigureAwait(false);
       return;
     }
 
@@ -414,7 +421,7 @@ public class SpeckleObjectSerializer
 
   private async ValueTask StoreObject(string objectId, string objectJson)
   {
-   await _writeJsonAsync.Invoke(objectId, objectJson).ConfigureAwait(false);
+    await _writeJsonAsync.Invoke(objectId, objectJson).ConfigureAwait(false);
   }
 
   // (propertyInfo, isDetachable, isChunkable, chunkSize, JsonPropertyAttribute)
