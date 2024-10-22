@@ -6,7 +6,6 @@
   <PropertyGroup>
     <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
     <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
-    <ILRepackExcludeAssemblies>Speckle.Sdk.dll</ILRepackExcludeAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
