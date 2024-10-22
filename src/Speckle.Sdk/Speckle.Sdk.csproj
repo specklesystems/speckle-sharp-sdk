@@ -31,12 +31,14 @@
     <PackageReference Include="Microsoft.CSharp" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Microsoft.Extensions.ObjectPool" />
+    <PackageReference Include="Open.ChannelExtensions" />
     <PackageReference Include="Polly" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" />
     <PackageReference Include="Polly.Extensions.Http"  />
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
     <PackageReference Include="System.Linq.Async" />
+    <PackageReference Include="System.Threading.Channels" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(Framework)' == 'NET80'">

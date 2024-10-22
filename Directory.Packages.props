@@ -19,6 +19,7 @@
     <PackageVersion Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageVersion Include="NUnit" Version="4.2.2" />
     <PackageVersion Include="NUnit.Analyzers" Version="4.2.0" />
+    <PackageVersion Include="Open.ChannelExtensions" Version="8.5.0" />
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
@@ -27,10 +28,10 @@
     <PackageVersion Include="Speckle.DoubleNumerics" Version="4.0.1" />
     <PackageVersion Include="SimpleExec" Version="12.0.0" />
     <PackageVersion Include="Speckle.Objects" Version="3.1.0-dev.109" />
+    <PackageVersion Include="System.Threading.Channels" Version="8.0.0" />
     <GlobalPackageReference Include="PolySharp" Version="1.14.1" />
     <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <GlobalPackageReference Include="GitVersion.MsBuild" Version="5.12.0" />
     <GlobalPackageReference Include="Speckle.InterfaceGenerator" Version="0.9.6" />
-    <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 </Project>

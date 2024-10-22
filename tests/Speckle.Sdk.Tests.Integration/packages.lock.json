@@ -238,11 +238,8 @@
       },
       "System.Linq.Async": {
         "type": "Transitive",
-        "resolved": "6.0.1",
-        "contentHash": "0YhHcaroWpQ9UCot3Pizah7ryAzQhNvobLMSxeDIGmnXfkQn8u5owvpOH0K6EVB+z9L7u6Cc4W17Br/+jyttEQ==",
-        "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "6.0.0"
-        }
+        "resolved": "4.0.0",
+        "contentHash": "WbiYEedFZeM+psmMyoCt1AKbZppAZg8Eq1ZTQ+521fGNeXqlgJj0tZYV5n1LsKRO5osQuitYxGNuzPTy3213sg=="
       },
       "System.Management": {
         "type": "Transitive",
@@ -282,12 +279,14 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
           "Microsoft.Extensions.Logging": "[2.2.0, )",
           "Microsoft.Extensions.ObjectPool": "[8.0.10, )",
+          "Open.ChannelExtensions": "[8.5.0, )",
           "Polly": "[7.2.3, )",
           "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
           "Polly.Extensions.Http": "[3.0.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
-          "System.Linq.Async": "[6.0.1, )"
+          "System.Linq.Async": "(, )",
+          "System.Threading.Channels": "[8.0.0, )"
         }
       },
       "speckle.sdk.tests.unit": {
@@ -369,6 +368,12 @@
         "resolved": "8.0.10",
         "contentHash": "u7gAG7JgxF8VSJUGPSudAcPxOt+ymJKQCSxNRxiuKV+klCQbHljQR75SilpedCTfhPWDhtUwIJpnDVtspr9nMg=="
       },
+      "Open.ChannelExtensions": {
+        "type": "CentralTransitive",
+        "requested": "[8.5.0, )",
+        "resolved": "8.5.0",
+        "contentHash": "dKD2iNfUYw+aOvwM2vCnD+q6JCtHiabkufKM1GateedRzcgv0RrtA4MoJI+7Y8N21R5A+wUA+j6P88g6mXPavA=="
+      },
       "Polly": {
         "type": "CentralTransitive",
         "requested": "[7.2.3, )",
@@ -401,6 +406,12 @@
         "requested": "[13.0.2, )",
         "resolved": "13.0.2",
         "contentHash": "g1BejUZwax5PRfL6xHgLEK23sqHWOgOj9hE7RvfRRlN00AGt8GnPYt8HedSK7UB3HiRW8zCA9Pn0iiYxCK24BA=="
+      },
+      "System.Threading.Channels": {
+        "type": "CentralTransitive",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "CMaFr7v+57RW7uZfZkPExsPB6ljwzhjACWW1gfU35Y56rk72B/Wu+sTqxVmGSk4SFUlPc3cjeKND0zktziyjBA=="
       }
     }
   }

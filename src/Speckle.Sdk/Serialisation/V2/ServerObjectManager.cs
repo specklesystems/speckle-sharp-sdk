@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Speckle.InterfaceGenerator;
@@ -152,9 +151,12 @@ public class ServerObjectManager : IServerObjectManager
     using HttpResponseMessage response = await _client.PostAsync(uri, stringContent, cancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
-
-    var hasObjects = await response.Content.ReadFromJsonAsync<Dictionary<string, bool>>(cancellationToken).ConfigureAwait(false);
-    return hasObjects.NotNull();
+#if NET8_0_OR_GREATER
+    var hasObjects = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#else
+    var hasObjects = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
+    return JsonConvert.DeserializeObject<Dictionary<string, bool>>(hasObjects).NotNull();
   }
   
    
@@ -174,34 +176,30 @@ public class ServerObjectManager : IServerObjectManager
     MultipartFormDataContent multipart = new();
 
     int mpId = 0;
-    foreach (var (id, json) in objects)
+    var ctBuilder = new StringBuilder("[");
+    for (int i = 0; i < objects.Count; i++)
     {
-      mpId++;
-
-      var ctBuilder = new StringBuilder("[");
-      for (int i = 0; i < mpData.Count; i++)
+      if (i > 0)
       {
-        if (i > 0)
-        {
-          ctBuilder.Append(',');
-        }
+        ctBuilder.Append(',');
+      }
 
-        ctBuilder.Append(mpData[i].Item2);
-      }
-      ctBuilder.Append(']');
-      string ct = ctBuilder.ToString();
-
-      if (compressPayloads)
-      {
-        var content = new GzipContent(new StringContent(ct, Encoding.UTF8));
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/gzip");
-        multipart.Add(content, $"batch-{mpId}", $"batch-{mpId}");
-      }
-      else
-      {
-        multipart.Add(new StringContent(ct, Encoding.UTF8), $"batch-{mpId}", $"batch-{mpId}");
-      }
+      ctBuilder.Append(objects[i].Item2);
     }
+    ctBuilder.Append(']');
+    string ct = ctBuilder.ToString();
+
+    if (compressPayloads)
+    {
+      var content = new GzipContent(new StringContent(ct, Encoding.UTF8));
+      content.Headers.ContentType = new MediaTypeHeaderValue("application/gzip");
+      multipart.Add(content, $"batch-{mpId}", $"batch-{mpId}");
+    }
+    else
+    {
+      multipart.Add(new StringContent(ct, Encoding.UTF8), $"batch-{mpId}", $"batch-{mpId}");
+    }
+    
     message.Content = new ProgressContent(multipart, progress);
     HttpResponseMessage response = await _client.SendAsync(message, cancellationToken).ConfigureAwait(false);
 
