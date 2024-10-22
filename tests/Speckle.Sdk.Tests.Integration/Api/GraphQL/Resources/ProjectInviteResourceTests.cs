@@ -3,6 +3,7 @@ using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -42,7 +43,7 @@ public class ProjectInviteResourceTests
 
     Assert.That(res, Has.Property(nameof(_project.id)).EqualTo(_project.id));
     Assert.That(res.invitedTeam, Has.Count.EqualTo(1));
-    Assert.That(invite.user.id, Is.EqualTo(_invitee.Account.userInfo.id));
+    Assert.That(invite.user!.id, Is.EqualTo(_invitee.Account.userInfo.id));
     Assert.That(invite.token, Is.Not.Null);
   }
 
@@ -54,7 +55,7 @@ public class ProjectInviteResourceTests
 
     Assert.That(res, Has.Property(nameof(_project.id)).EqualTo(_project.id));
     Assert.That(res.invitedTeam, Has.Count.EqualTo(1));
-    Assert.That(res.invitedTeam[0].user.id, Is.EqualTo(_invitee.Account.userInfo.id));
+    Assert.That(res.invitedTeam[0].user!.id, Is.EqualTo(_invitee.Account.userInfo.id));
   }
 
   [Test]
@@ -66,13 +67,13 @@ public class ProjectInviteResourceTests
       collaborator,
       Has.Property(nameof(PendingStreamCollaborator.inviteId)).EqualTo(_createdInvite.inviteId)
     );
-    Assert.That(collaborator!.user.id, Is.EqualTo(_createdInvite.user.id));
+    Assert.That(collaborator!.user!.id, Is.EqualTo(_createdInvite.user!.id));
   }
 
   [Test]
   public async Task ProjectInviteUse_MemberAdded()
   {
-    ProjectInviteUseInput input = new(true, _createdInvite.projectId, _createdInvite.token);
+    ProjectInviteUseInput input = new(true, _createdInvite.projectId, _createdInvite.token.NotNull());
     var res = await _invitee.ProjectInvite.Use(input);
     Assert.That(res, Is.True);
 

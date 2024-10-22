@@ -26,7 +26,7 @@ public sealed class ActiveUserResource
     //language=graphql
     const string QUERY = """
        query User {
-        activeUser {
+        data:activeUser {
           id,
           email,
           name,
@@ -34,7 +34,6 @@ public sealed class ActiveUserResource
           company,
           avatar,
           verified,
-          profiles,
           role,
         }
       }
@@ -42,10 +41,10 @@ public sealed class ActiveUserResource
     var request = new GraphQLRequest { Query = QUERY };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ActiveUserResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<OptionalResponse<User?>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.activeUser;
+    return response.data;
   }
 
   /// <param name="limit">Max number of projects to fetch</param>
@@ -64,8 +63,8 @@ public sealed class ActiveUserResource
     //language=graphql
     const string QUERY = """
        query User($limit : Int!, $cursor: String, $filter: UserProjectsFilter) {
-        activeUser {
-          projects(limit: $limit, cursor: $cursor, filter: $filter) {
+        data:activeUser {
+          data:projects(limit: $limit, cursor: $cursor, filter: $filter) {
              totalCount
              items {
                 id
@@ -94,15 +93,18 @@ public sealed class ActiveUserResource
     };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ActiveUserResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<OptionalResponse<RequiredResponse<ResourceCollection<Project>>?>>(
+        request,
+        cancellationToken
+      )
       .ConfigureAwait(false);
 
-    if (response.activeUser is null)
+    if (response.data is null)
     {
       throw new SpeckleGraphQLException("GraphQL response indicated that the ActiveUser could not be found");
     }
 
-    return response.activeUser.projects;
+    return response.data.data;
   }
 
   /// <param name="cancellationToken"></param>
@@ -113,8 +115,8 @@ public sealed class ActiveUserResource
     //language=graphql
     const string QUERY = """
       query ProjectInvites {
-        activeUser {
-          projectInvites {
+        data:activeUser {
+          data:projectInvites {
             id
             inviteId
             invitedBy {
@@ -147,14 +149,17 @@ public sealed class ActiveUserResource
     var request = new GraphQLRequest { Query = QUERY };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ActiveUserResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<OptionalResponse<RequiredResponse<List<PendingStreamCollaborator>>?>>(
+        request,
+        cancellationToken
+      )
       .ConfigureAwait(false);
 
-    if (response.activeUser is null)
+    if (response.data is null)
     {
       throw new SpeckleGraphQLException("GraphQL response indicated that the ActiveUser could not be found");
     }
 
-    return response.activeUser.projectInvites;
+    return response.data.data;
   }
 }

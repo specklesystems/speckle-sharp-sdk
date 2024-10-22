@@ -25,7 +25,7 @@ public sealed class OtherUserResource
     //language=graphql
     const string QUERY = """
       query LimitedUser($id: String!) {
-        otherUser(id: $id){
+        data:otherUser(id: $id){
           id,
           name,
           bio,
@@ -40,10 +40,10 @@ public sealed class OtherUserResource
     var request = new GraphQLRequest { Query = QUERY, Variables = new { id } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<LimitedUserResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<OptionalResponse<LimitedUser?>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.otherUser;
+    return response.data;
   }
 
   /// <summary>
@@ -69,7 +69,7 @@ public sealed class OtherUserResource
     //language=graphql
     const string QUERY = """
       query UserSearch($query: String!, $limit: Int!, $cursor: String, $archived: Boolean, $emailOnly: Boolean) {
-        userSearch(query: $query, limit: $limit, cursor: $cursor, archived: $archived, emailOnly: $emailOnly) {
+        data:userSearch(query: $query, limit: $limit, cursor: $cursor, archived: $archived, emailOnly: $emailOnly) {
           cursor,
           items {
            id
@@ -98,9 +98,9 @@ public sealed class OtherUserResource
     };
 
     var response = await _client
-      .ExecuteGraphQLRequest<UserSearchResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<ResourceCollection<LimitedUser>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.userSearch;
+    return response.data;
   }
 }
