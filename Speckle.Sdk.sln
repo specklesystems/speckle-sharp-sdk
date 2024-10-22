@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk", "src\Speckle.Sdk\Speckle.Sdk.csproj", "{A413E196-3696-4F48-B635-04B5F76BF9C9}"
 EndProject
