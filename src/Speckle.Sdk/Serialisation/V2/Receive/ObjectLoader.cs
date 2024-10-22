@@ -18,6 +18,8 @@ public sealed class ObjectLoader(
   private const int CACHE_CHUNK_SIZE = 3000;
   private const int MAX_PARALLELISM_HTTP = 4;
 
+  private int? _allChildrenCount;
+
   public async Task<(string, IReadOnlyList<string>)> GetAndCache(
     string rootId,
     CancellationToken cancellationToken,
@@ -41,6 +43,7 @@ public sealed class ObjectLoader(
       .Select(x => x.Item1)
       .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
       .ToList();
+    _allChildrenCount = allChildrenIds.Count;
     if (!(options?.SkipCacheCheck ?? false))
     {
       var idsToDownload = CheckCache(allChildrenIds);
@@ -74,7 +77,7 @@ public sealed class ObjectLoader(
   private async Task DownloadAndCache(IAsyncEnumerable<string> ids, CancellationToken cancellationToken)
   {
     var count = 0L;
-    progress?.Report(new(ProgressEvent.DownloadObject, count, null));
+    progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
     var toCache = new List<(string, string)>();
     var tasks = new ConcurrentBag<Task>();
     using SemaphoreSlim ss = new(MAX_PARALLELISM_HTTP, MAX_PARALLELISM_HTTP);
@@ -88,7 +91,7 @@ public sealed class ObjectLoader(
         )
         {
           count++;
-          progress?.Report(new(ProgressEvent.DownloadObject, count, null));
+          progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
           toCache.Add((id, json));
           if (toCache.Count >= CACHE_CHUNK_SIZE)
           {
