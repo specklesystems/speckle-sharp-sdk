@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
