@@ -74,6 +74,27 @@ public class SerializationTests
       @base.ShouldNotBeNull();
     }*/
 
+  public class TestObjectLoader(Dictionary<string, string> idToObject) : IObjectLoader
+  {
+    public Task<(string, IReadOnlyList<string>)> GetAndCache(
+      string rootId,
+      CancellationToken cancellationToken,
+      DeserializeOptions? options = default
+    )
+    {
+      var json = idToObject.GetValueOrDefault(rootId);
+      if (json == null)
+      {
+        throw new KeyNotFoundException("Root not found");
+      }
+
+      var allChildren = ClosureParser.GetChildrenIds(json).ToList();
+      return Task.FromResult<(string, IReadOnlyList<string>)>((json, allChildren));
+    }
+
+    public string? LoadId(string id) => idToObject.GetValueOrDefault(id);
+  }
+
   [Test]
   [TestCase("RevitObject.json")]
   public async Task Basic_Namespace_Validation(string fileName)
@@ -86,6 +107,7 @@ public class SerializationTests
       ReadTransport = new TestTransport(closure),
       CancellationToken = default,
     };
+
     foreach (var (id, objJson) in closure)
     {
       var jObject = JObject.Parse(objJson);
@@ -95,6 +117,35 @@ public class SerializationTests
 
       var baseType = await deserializer.DeserializeAsync(objJson);
       baseType.id.ShouldBe(id);
+
+      starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
+      starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
+
+      var type = TypeLoader.GetAtomicType(baseType.speckle_type);
+      type.ShouldNotBeNull();
+      var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException();
+      starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
+      starts.ShouldBeTrue($"{name} isn't expected");
+    }
+  }
+
+  [Test]
+  [TestCase("RevitObject.json")]
+  public async Task Basic_Namespace_Validation_New(string fileName)
+  {
+    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
+    var json = await ReadJson(fullName);
+    var closures = ReadAsObjects(json);
+    var process = new DeserializeProcess(null, new TestObjectLoader(closures));
+    await process.Deserialize("551513ff4f3596024547fc818f1f3f70", default);
+    foreach (var (id, objJson) in closures)
+    {
+      var jObject = JObject.Parse(objJson);
+      var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
+      var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
+      starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
+
+      var baseType = process.BaseCache[id];
 
       starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
       starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");

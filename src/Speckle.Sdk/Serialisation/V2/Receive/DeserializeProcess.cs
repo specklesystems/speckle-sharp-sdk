@@ -9,10 +9,10 @@ public record DeserializeOptions(bool? SkipCacheCheck = null);
 
 public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader)
 {
-  private readonly ConcurrentDictionary<string, Base> _cache = new();
   private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
-
   private long _total;
+
+  public ConcurrentDictionary<string, Base> BaseCache { get; } = new();
 
   public async Task<Base> Deserialize(
     string rootId,
@@ -25,14 +25,14 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
       .ConfigureAwait(false);
     _total = childrenIds.Count;
     _closures.TryAdd(rootId, (rootJson, childrenIds));
-    progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, childrenIds.Count));
+    progress?.Report(new(ProgressEvent.DeserializeObject, BaseCache.Count, childrenIds.Count));
     await Traverse(rootId, cancellationToken).ConfigureAwait(false);
-    return _cache[rootId];
+    return BaseCache[rootId];
   }
 
   private async Task Traverse(string id, CancellationToken cancellationToken)
   {
-    if (_cache.ContainsKey(id))
+    if (BaseCache.ContainsKey(id))
     {
       return;
     }
@@ -40,19 +40,25 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     var tasks = new List<Task>();
     foreach (var childId in childIds)
     {
-      if (_cache.ContainsKey(childId))
+      lock (BaseCache)
       {
-        continue;
+        if (BaseCache.ContainsKey(childId))
+        {
+          continue;
+        }
+
+        // tmp is necessary because of the way closures close over loop variables
+        var tmpId = childId;
+        Task t = Task
+          .Factory.StartNew(
+            () => Traverse(tmpId, cancellationToken),
+            cancellationToken,
+            TaskCreationOptions.AttachedToParent,
+            TaskScheduler.Default
+          )
+          .Unwrap();
+        tasks.Add(t);
       }
-      // tmp is necessary because of the way closures close over loop variables
-      var tmpId = childId;
-      Task<Task> t = Task.Factory.StartNew(
-        () => Traverse(tmpId, cancellationToken),
-        cancellationToken,
-        TaskCreationOptions.AttachedToParent,
-        TaskScheduler.Default
-      );
-      tasks.Add(t.Unwrap());
     }
 
     if (tasks.Count > 0)
@@ -61,10 +67,10 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     }
 
     //don't redo things if the id is decoded already in the cache
-    if (!_cache.ContainsKey(id))
+    if (!BaseCache.ContainsKey(id))
     {
       DecodeOrEnqueueChildren(id);
-      progress?.Report(new(ProgressEvent.DeserializeObject, _cache.Count, _total));
+      progress?.Report(new(ProgressEvent.DeserializeObject, BaseCache.Count, _total));
     }
   }
 
@@ -87,24 +93,24 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
 
   public void DecodeOrEnqueueChildren(string id)
   {
-    if (_cache.ContainsKey(id))
+    if (BaseCache.ContainsKey(id))
     {
       return;
     }
     (string json, _) = GetClosures(id);
     var @base = Deserialise(id, json);
-    _cache.TryAdd(id, @base);
+    BaseCache.TryAdd(id, @base);
     //remove from JSON cache because we've finally made the Base
     _closures.TryRemove(id, out _);
   }
 
   private Base Deserialise(string id, string json)
   {
-    if (_cache.TryGetValue(id, out var baseObject))
+    if (BaseCache.TryGetValue(id, out var baseObject))
     {
       return baseObject;
     }
-    SpeckleObjectDeserializer2 deserializer = new(_cache, SpeckleObjectSerializerPool.Instance);
+    SpeckleObjectDeserializer2 deserializer = new(BaseCache, SpeckleObjectSerializerPool.Instance);
     return deserializer.Deserialize(json);
   }
 }
