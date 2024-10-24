@@ -1,92 +1,126 @@
-﻿using System.Threading.Channels;
+﻿using System.Collections.Concurrent;
+using System.Threading.Channels;
 using Open.ChannelExtensions;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public class SerializeProcess
+public class SerializeProcess(
+  IProgress<ProgressArgs>? progress,
+  ISQLiteCacheManager sqliteCacheManager,
+  IServerObjectManager serverObjectManager,
+  ISpeckleBaseChildFinder speckleBaseChildFinder,
+  ISpeckleBasePropertyGatherer speckleBasePropertyGatherer)
 {
-  private readonly IProgress<ProgressArgs>? _progress;
-  private readonly ISQLiteCacheManager _sqliteCacheManager;
-  private readonly IServerObjectManager _serverObjectManager;
-  private readonly Channel<Base> _serializeChannel;
-  private readonly Channel<(string, string)> _checkCacheChannel;
+  public ConcurrentDictionary<string, string> JsonCache { get; } = new();  
+  private readonly Channel<(string, string)> _checkCacheChannel = Channel.CreateUnbounded<(string, string)>();
+  private long _total;
 
-  public SerializeProcess(
-    IProgress<ProgressArgs>? progress,
-    ISQLiteCacheManager sqliteCacheManager,
-    IServerObjectManager serverObjectManager
+  public async Task Serialize(
+    string streamId,
+    Base root,
+    CancellationToken cancellationToken
   )
   {
-    _progress = progress;
-    _sqliteCacheManager = sqliteCacheManager;
-    _serverObjectManager = serverObjectManager;
-    _serializeChannel = Channel.CreateUnbounded<Base>();
-    _checkCacheChannel = Channel.CreateUnbounded<(string, string)>();
+    var channelTask = _checkCacheChannel.Reader
+      .Pipe(Environment.ProcessorCount, CheckCache, -1, false, cancellationToken)
+      .Filter(x => x != null)
+      .Batch(1000).WithTimeout(TimeSpan.FromSeconds(2))
+      .PipeAsync(4, x => SendToServer(streamId, x, cancellationToken), -1, false, cancellationToken)
+      .Join()
+      .ReadAllConcurrently(Environment.ProcessorCount, x => SaveToCache(root.id, x), cancellationToken);
+    await Traverse(root, cancellationToken).ConfigureAwait(false);
+    await channelTask.ConfigureAwait(false);
   }
-
-  public async Task Serialize(string streamId, Base root, CancellationToken cancellationToken)
+  
+  private async Task Traverse(Base obj, CancellationToken cancellationToken)
   {
-    var task = _checkCacheChannel
-      .Reader
-      .Pipe(4, x => CheckCache(root.id, x), cancellationToken: cancellationToken)
-      .Filter(x => x is not null)
-      .Batch(100)
-      .WithTimeout(TimeSpan.FromSeconds(2))
-      .ReadAllConcurrentlyAsync(
-        4,
-        async batch => await SendToServer(root.id, streamId, batch, cancellationToken).ConfigureAwait(false),
-        cancellationToken
-      );
-
-    var task2 =   _serializeChannel.Reader.ReadAllConcurrentlyAsync(4, async b =>
+    if (JsonCache.ContainsKey(obj.id))
     {
-      var serializer = new SpeckleObjectSerializer(
-        async (id, json) =>
+      return;
+    }
+    var tasks = new List<Task>();
+    foreach (var child in speckleBaseChildFinder.GetChildren(obj))
+    {
+        if (JsonCache.ContainsKey(child.id))
         {
-          await _checkCacheChannel.Writer.WriteAsync((id, json), cancellationToken).ConfigureAwait(false);
-        },
-        _progress,
-        false,
-        cancellationToken
-      );
-      var rootJson = await serializer.SerializeAsync(root).ConfigureAwait(true);
-      await _checkCacheChannel.Writer.WriteAsync((root.id, rootJson), cancellationToken).ConfigureAwait(false);
-    }, cancellationToken: cancellationToken);
-    await _serializeChannel.Writer.WriteAsync(root, cancellationToken).ConfigureAwait(false);
+          continue;
+        }
 
-    await Task.WhenAll(task, task2).ConfigureAwait(false);
+        //await Traverse(child, cancellationToken).ConfigureAwait(false);
+        // tmp is necessary because of the way closures close over loop variables
+       var tmp = child;
+        Task t = Task
+          .Factory.StartNew(
+            () => Traverse(tmp, cancellationToken),
+            cancellationToken,
+            TaskCreationOptions.AttachedToParent,
+            TaskScheduler.Default
+          )
+          .Unwrap();
+        tasks.Add(t);
+         Interlocked.Increment(ref _total);
+    }
+
+    if (tasks.Count > 0)
+    {
+      await Task.WhenAll(tasks).ConfigureAwait(false);
+    }
+
+    //don't redo things if the id is decoded already in the cache
+    if (!JsonCache.ContainsKey(obj.id))
+    {
+      await Serialise(obj).ConfigureAwait(false);
+      progress?.Report(new(ProgressEvent.SerializeObject, JsonCache.Count, _total));
+    }
   }
 
-  private (string, string)? CheckCache(string rootId, (string, string) item)
+
+  private async ValueTask Serialise(Base obj)
   {
-    if (!_sqliteCacheManager.HasObject(item.Item1))
+    if (JsonCache.ContainsKey(obj.id))
+    {
+      return;
+    }
+    SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, JsonCache, progress);
+    var objJson = await serializer2.SerializeAsync(obj).ConfigureAwait(false);
+    JsonCache.TryAdd(obj.id, objJson);
+    await _checkCacheChannel.Writer.WriteAsync((obj.id, objJson)).ConfigureAwait(false);
+  }
+
+  private (string, string)? CheckCache((string, string) item)
+  {
+    if (!sqliteCacheManager.HasObject(item.Item1))
     {
       return item;
-    }
-    if (item.Item1 == rootId)
-    {
-      _checkCacheChannel.Writer.TryComplete();
     }
     return null;
   }
 
-  private async Task SendToServer(
-    string rootId,
+  private async ValueTask<List<(string, string)>> SendToServer(
     string streamId,
     IReadOnlyList<(string, string)?> batch,
     CancellationToken cancellationToken
   )
   {
-    await _serverObjectManager
-      .UploadObjects(streamId, batch.Select(x => x.NotNull()).ToList(), true, _progress, cancellationToken)
+    var batchToSend = batch.Where(x => x != null).Cast<(string, string)>().ToList();
+    if (batchToSend.Count == 0)
+    {
+      return batchToSend;
+    }
+    await serverObjectManager
+      .UploadObjects(streamId,batchToSend, true, progress, cancellationToken)
       .ConfigureAwait(false);
-    if (batch.Select(x => x.NotNull().Item1).Contains(rootId))
+    return batchToSend;
+  }
+
+  private void SaveToCache(string rootId, (string, string) item)
+  {
+    sqliteCacheManager.SaveObjectSync(item.Item1, item.Item2);
+    if (rootId == item.Item1)
     {
       _checkCacheChannel.Writer.Complete();
-      _serializeChannel.Writer.Complete();
     }
   }
 }

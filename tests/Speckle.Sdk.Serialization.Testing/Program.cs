@@ -46,7 +46,7 @@ Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-var process2 = new SerializeProcess(progress, sqliteTransport, new DummyServerObjectManager());
+var process2 = new SerializeProcess(progress, sqliteTransport, new DummyServerObjectManager(), new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()), new SpeckleBasePropertyGatherer());
 await process2.Serialize(streamId, @base, default).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
