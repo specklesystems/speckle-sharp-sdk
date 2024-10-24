@@ -15,11 +15,11 @@ public sealed class ActiveUserResource
   }
 
   /// <summary>
-  /// Gets the currently active user profile.
+  /// Gets the currently active user profile (as extracted from the authorization header)
   /// </summary>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
-  /// <returns>the requested user, or null if the user does not exist (i.e. <see cref="Client"/> was initialised with an unauthenticated account)</returns>
+  /// <returns>the requested user, or null if <see cref="Client"/> was initialised with an unauthenticated account</returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
   public async Task<User?> Get(CancellationToken cancellationToken = default)
   {
@@ -27,14 +27,14 @@ public sealed class ActiveUserResource
     const string QUERY = """
        query User {
         data:activeUser {
-          id,
-          email,
-          name,
-          bio,
-          company,
-          avatar,
-          verified,
-          role,
+          id
+          email
+          name
+          bio
+          company
+          avatar
+          verified
+          role
         }
       }
       """;
@@ -45,6 +45,38 @@ public sealed class ActiveUserResource
       .ConfigureAwait(false);
 
     return response.data;
+  }
+
+  /// <param name="input"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  public async Task<User> Update(UserUpdateInput input, CancellationToken cancellationToken = default)
+  {
+    //todo:test
+    //language=graphql
+    const string QUERY = """
+      mutation ActiveUserMutations($input: UserUpdateInput!) {
+        data:activeUserMutations {
+          data:update(user: $input) {
+            id
+            email
+            name
+            bio
+            company
+            avatar
+            verified
+            role
+          }
+        }
+      }
+      """;
+    var request = new GraphQLRequest { Query = QUERY, Variables = new { input } };
+
+    var response = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<User>>>(request, cancellationToken)
+      .ConfigureAwait(false);
+
+    return response.data.data;
   }
 
   /// <param name="limit">Max number of projects to fetch</param>
@@ -76,6 +108,7 @@ public sealed class ActiveUserResource
                 createdAt
                 updatedAt
                 sourceApps
+                workspaceId
              }
           }
         }
@@ -110,7 +143,7 @@ public sealed class ActiveUserResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<List<PendingStreamCollaborator>> ProjectInvites(CancellationToken cancellationToken = default)
+  public async Task<List<PendingStreamCollaborator>> GetProjectInvites(CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
@@ -162,4 +195,9 @@ public sealed class ActiveUserResource
 
     return response.data.data;
   }
+
+  /// <inheritdoc cref="GetProjectInvites"/>
+  [Obsolete($"Renamed to {nameof(GetProjectInvites)}")]
+  public async Task<List<PendingStreamCollaborator>> ProjectInvites(CancellationToken cancellationToken = default) =>
+    await GetProjectInvites(cancellationToken).ConfigureAwait(false);
 }

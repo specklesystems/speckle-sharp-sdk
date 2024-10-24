@@ -92,6 +92,7 @@ public sealed class ModelResource
                 createdAt
                 previewUrl
                 authorUser {
+                  avatar
                   id
                   name
                   bio

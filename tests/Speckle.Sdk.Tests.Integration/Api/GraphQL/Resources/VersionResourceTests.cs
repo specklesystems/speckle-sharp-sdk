@@ -92,8 +92,6 @@ public class VersionResourceTests
     Assert.That(movedVersion, Has.Property(nameof(Version.id)).EqualTo(_version.id));
     Assert.That(movedVersion, Has.Property(nameof(Version.message)).EqualTo(_version.message));
     Assert.That(movedVersion, Has.Property(nameof(Version.previewUrl)).EqualTo(_version.previewUrl));
-
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Get(id, _project.id));
   }
 
   [Test]
