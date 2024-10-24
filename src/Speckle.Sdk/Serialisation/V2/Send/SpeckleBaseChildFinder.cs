@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Models.Collections;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
@@ -38,13 +37,5 @@ public class SpeckleBaseChildFinder(ISpeckleBasePropertyGatherer propertyGathere
         }
       }
     }
-    if (obj is Collection speckleCollection)
-    {
-      foreach (var child in speckleCollection.elements)
-      {
-          yield return child;
-      }
-    }
-    
   }
 }
