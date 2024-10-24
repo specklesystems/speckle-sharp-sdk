@@ -89,7 +89,7 @@ public interface ITransformable : ISpeckleObject
 public interface ISymbolLayer
 {
   string symbolUnits { get; set; }
-  LineStyleType lineType { get; set; }
+  LineType lineType { get; set; }
   double lineWidth { get; set; }
   int lineColor { get; set; }
   int displayPriority { get; set; }
