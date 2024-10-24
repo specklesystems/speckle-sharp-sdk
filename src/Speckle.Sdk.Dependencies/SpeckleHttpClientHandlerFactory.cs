@@ -11,14 +11,16 @@ namespace Speckle.Sdk.Helpers;
 public sealed class SpeckleHttpClientHandlerFactory(ISdkActivityFactory activityFactory)
   : ISpeckleHttpClientHandlerFactory
 {
+  public const int DEFAULT_TIMEOUT_SECONDS = 60;
+
   public IEnumerable<TimeSpan> DefaultDelay()
   {
     return Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(200), 5);
   }
 
-  public IAsyncPolicy<HttpResponseMessage> HttpAsyncPolicy(
+  internal IAsyncPolicy<HttpResponseMessage> HttpAsyncPolicy(
     IEnumerable<TimeSpan>? delay = null,
-    int timeoutSeconds = SpeckleHttp.DEFAULT_TIMEOUT_SECONDS
+    int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
   )
   {
     var retryPolicy = HttpPolicyExtensions
@@ -40,12 +42,6 @@ public sealed class SpeckleHttpClientHandlerFactory(ISdkActivityFactory activity
 
   public SpeckleHttpClientHandler Create(
     HttpMessageHandler? innerHandler = null,
-    IAsyncPolicy<HttpResponseMessage>? resiliencePolicy = null,
-    int timeoutSeconds = SpeckleHttp.DEFAULT_TIMEOUT_SECONDS
-  ) =>
-    new(
-      innerHandler ?? new HttpClientHandler(),
-      activityFactory,
-      resiliencePolicy ?? HttpAsyncPolicy(timeoutSeconds: timeoutSeconds)
-    );
+    int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
+  ) => new(innerHandler ?? new HttpClientHandler(), activityFactory, HttpAsyncPolicy(timeoutSeconds: timeoutSeconds));
 }

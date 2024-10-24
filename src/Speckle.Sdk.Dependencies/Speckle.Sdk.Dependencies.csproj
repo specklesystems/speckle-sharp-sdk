@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+      <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    </PropertyGroup>
+  <PropertyGroup>
+    <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
+    <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ILRepack.FullAuto">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" PrivateAssets="all" />    
+    <PackageReference Include="Polly" PrivateAssets="all" />
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" PrivateAssets="all" />
+    <PackageReference Include="Polly.Extensions.Http" PrivateAssets="all"  />
+
+  </ItemGroup>
+</Project>

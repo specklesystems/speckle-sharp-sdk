@@ -1,5 +1,4 @@
 using Polly;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Helpers;
@@ -9,7 +8,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
   private readonly IAsyncPolicy<HttpResponseMessage> _resiliencePolicy;
   private readonly ISdkActivityFactory _activityFactory;
 
-  public SpeckleHttpClientHandler(
+  internal SpeckleHttpClientHandler(
     HttpMessageHandler innerHandler,
     ISdkActivityFactory activityFactory,
     IAsyncPolicy<HttpResponseMessage> resiliencePolicy
@@ -67,7 +66,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
       if (policyResult.Outcome == OutcomeType.Successful)
       {
         activity?.SetStatus(SdkActivityStatusCode.Ok);
-        return policyResult.Result.NotNull();
+        return policyResult.Result;
       }
       activity?.SetStatus(SdkActivityStatusCode.Error);
       if (policyResult.FinalException != null)

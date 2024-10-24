@@ -5,13 +5,12 @@ using System.Reflection;
 using GraphQL;
 using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Contrib.WaitAndRetry;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Api.GraphQL.Serializer;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 
@@ -78,27 +77,24 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     catch (Exception ex) when (!ex.IsFatal()) { }
   }
 
-  internal async Task<T> ExecuteWithResiliencePolicies<T>(Func<Task<T>> func)
-  {
-    var delay = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 5);
-    var graphqlRetry = Policy
-      .Handle<SpeckleGraphQLInternalErrorException>()
-      .WaitAndRetryAsync(
-        delay,
-        (ex, timeout, _) =>
-        {
-          _logger.LogDebug(
-            ex,
-            "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
-            typeof(T).Name,
-            ex.Message,
-            timeout
-          );
-        }
-      );
-
-    return await graphqlRetry.ExecuteAsync(func).ConfigureAwait(false);
-  }
+  internal async Task<T> ExecuteWithResiliencePolicies<T>(Func<Task<T>> func) =>
+    await GraphQLRetry
+      .ExecuteAsync<T, SpeckleGraphQLInternalErrorException>(
+        func,
+        (
+          (ex, timeout) =>
+          {
+            _logger.LogDebug(
+              ex,
+              "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
+              typeof(T).Name,
+              ex.Message,
+              timeout
+            );
+          }
+        )
+      )
+      .ConfigureAwait(false);
 
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
