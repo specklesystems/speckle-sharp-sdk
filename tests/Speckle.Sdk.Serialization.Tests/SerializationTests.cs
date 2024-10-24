@@ -73,7 +73,6 @@ public class SerializationTests
       var @base = await sut.Deserialize("551513ff4f3596024547fc818f1f3f70");
       @base.ShouldNotBeNull();
     }*/
-
   public class TestObjectLoader(Dictionary<string, string> idToObject) : IObjectLoader
   {
     public Task<(string, IReadOnlyList<string>)> GetAndCache(

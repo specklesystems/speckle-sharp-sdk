@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
@@ -140,6 +140,20 @@ public class SQLiteCacheManager : ISQLiteCacheManager
       bool rowFound = reader.Read();
       yield return (objectId, rowFound);
     }
+  }
+
+  public bool HasObject(string objectId)
+  {
+    using var c = new SqliteConnection(_connectionString);
+    c.Open();
+    const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
+    using var command = new SqliteCommand(COMMAND_TEXT, c);
+    command.Parameters.Clear();
+    command.Parameters.AddWithValue("@hash", objectId);
+
+    using var reader = command.ExecuteReader();
+    bool rowFound = reader.Read();
+    return rowFound;
   }
 
   public void SaveObjectSync(string hash, string serializedObject)
