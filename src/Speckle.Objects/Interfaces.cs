@@ -84,6 +84,17 @@ public interface ITransformable : ISpeckleObject
   bool TransformTo(Transform transform, out ITransformable transformed);
 }
 
+/// <summary>
+/// </summary>
+public interface ISymbolLayer
+{
+  string symbolUnits { get; set; }
+  LineStyleType lineType { get; set; }
+  double lineWidth { get; set; }
+  int lineColor { get; set; }
+  int displayPriority { get; set; }
+}
+
 #endregion
 
 #region GIS
