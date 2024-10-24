@@ -124,6 +124,19 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     return null; // pass on the duty of null checks to consumers
   }
 
+  public bool HasObject(string objectId)
+  {
+    using var c = new SqliteConnection(_connectionString);
+    c.Open();
+    const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
+    using var command = new SqliteCommand(COMMAND_TEXT, c);
+    command.Parameters.AddWithValue("@hash", objectId);
+
+    using var reader = command.ExecuteReader();
+    bool rowFound = reader.Read();
+    return rowFound;
+  }
+
   public async IAsyncEnumerable<(string, bool)> HasObjects2(IEnumerable<string> objectIds)
   {
     await Task.Delay(10).ConfigureAwait(false);

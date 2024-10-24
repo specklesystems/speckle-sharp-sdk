@@ -5,6 +5,7 @@ public readonly record struct ProgressArgs(ProgressEvent ProgressEvent, long Cou
 public enum ProgressEvent
 {
   CacheCheck,
+  Cached,
   DownloadBytes,
   UploadBytes,
   DownloadObject,
