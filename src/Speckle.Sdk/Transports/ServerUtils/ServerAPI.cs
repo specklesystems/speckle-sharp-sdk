@@ -25,7 +25,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   private static readonly char[] s_separator = { '\t' };
   private static readonly string[] s_filenameSeparator = { "filename=" };
 
-  private readonly HttpClient _client;
+  private readonly System.Net.Http.HttpClient _client;
 
   public ServerApi(
     ISpeckleHttp speckleHttp,
@@ -42,7 +42,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     BlobStorageFolder = blobStorageFolder;
 
     _client = speckleHttp.CreateHttpClient(
-      new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
+      new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
       timeoutSeconds: timeoutSeconds,
       authorizationToken: authorizationToken
     );
@@ -65,14 +65,14 @@ public sealed class ServerApi : IDisposable, IServerApi
     CancellationToken.ThrowIfCancellationRequested();
 
     // Get root object
-    using var rootHttpMessage = new HttpRequestMessage
+    using var rootHttpMessage = new System.Net.Http.HttpRequestMessage
     {
       RequestUri = new Uri($"/objects/{streamId}/{objectId}/single", UriKind.Relative),
-      Method = HttpMethod.Get,
+      Method = System.Net.Http.HttpMethod.Get,
     };
 
-    HttpResponseMessage rootHttpResponse = await _client
-      .SendAsync(rootHttpMessage, HttpCompletionOption.ResponseContentRead, CancellationToken)
+    var rootHttpResponse = await _client
+      .SendAsync(rootHttpMessage, System.Net.Http.HttpCompletionOption.ResponseContentRead, CancellationToken)
       .ConfigureAwait(false);
 
     string? rootObjectStr = null;
@@ -228,27 +228,27 @@ public sealed class ServerApi : IDisposable, IServerApi
       return;
     }
 
-    var multipartFormDataContent = new MultipartFormDataContent();
+    var multipartFormDataContent = new System.Net.Http.MultipartFormDataContent();
     var streams = new List<Stream>();
     foreach (var (id, filePath) in objects)
     {
       var fileName = Path.GetFileName(filePath);
       var stream = File.OpenRead(filePath);
       streams.Add(stream);
-      StreamContent fsc = new(stream);
+      System.Net.Http.StreamContent fsc = new(stream);
       var hash = id.Split(':')[1];
 
       multipartFormDataContent.Add(fsc, $"hash:{hash}", fileName);
     }
 
-    using var message = new HttpRequestMessage();
+    using var message = new System.Net.Http.HttpRequestMessage();
     message.RequestUri = new Uri($"/api/stream/{streamId}/blob", UriKind.Relative);
-    message.Method = HttpMethod.Post;
+    message.Method = System.Net.Http.HttpMethod.Post;
     message.Content = new ProgressContent(multipartFormDataContent, progress);
 
     try
     {
-      HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
+      var response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
 
       response.EnsureSuccessStatusCode();
 
@@ -272,9 +272,9 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       try
       {
-        using var blobMessage = new HttpRequestMessage();
+        using var blobMessage = new System.Net.Http.HttpRequestMessage();
         blobMessage.RequestUri = new Uri($"api/stream/{streamId}/blob/{blobId}", UriKind.Relative);
-        blobMessage.Method = HttpMethod.Get;
+        blobMessage.Method = System.Net.Http.HttpMethod.Get;
 
         using var response = await _client.SendAsync(blobMessage, CancellationToken).ConfigureAwait(false);
         response.Content.Headers.TryGetValues("Content-Disposition", out IEnumerable<string>? cdHeaderValues);
@@ -310,18 +310,18 @@ public sealed class ServerApi : IDisposable, IServerApi
 
     CancellationToken.ThrowIfCancellationRequested();
 
-    using var childrenHttpMessage = new HttpRequestMessage
+    using var childrenHttpMessage = new System.Net.Http.HttpRequestMessage
     {
       RequestUri = new Uri($"/api/getobjects/{streamId}", UriKind.Relative),
-      Method = HttpMethod.Post,
+      Method = System.Net.Http.HttpMethod.Post,
     };
 
     Dictionary<string, string> postParameters = new() { { "objects", JsonConvert.SerializeObject(objectIds) } };
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
-    childrenHttpMessage.Content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
+    childrenHttpMessage.Content = new System.Net.Http.StringContent(serializedPayload, Encoding.UTF8, "application/json");
     childrenHttpMessage.Headers.Add("Accept", "text/plain");
 
-    HttpResponseMessage childrenHttpResponse = await _client
+    System.Net.Http.HttpResponseMessage childrenHttpResponse = await _client
       .SendAsync(childrenHttpMessage, CancellationToken)
       .ConfigureAwait(false);
 
@@ -329,7 +329,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   }
 
   private async Task ResponseProgress(
-    HttpResponseMessage childrenHttpResponse,
+    System.Net.Http.HttpResponseMessage childrenHttpResponse,
     IProgress<ProgressArgs>? progress,
     CbObjectDownloaded onObjectCallback,
     bool isSingle
@@ -368,8 +368,8 @@ public sealed class ServerApi : IDisposable, IServerApi
     string serializedPayload = JsonConvert.SerializeObject(payload);
     var uri = new Uri($"/api/diff/{streamId}", UriKind.Relative);
 
-    using StringContent stringContent = new(serializedPayload, Encoding.UTF8, "application/json");
-    HttpResponseMessage response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
+    using System.Net.Http.StringContent stringContent = new(serializedPayload, Encoding.UTF8, "application/json");
+    var response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
 
@@ -392,10 +392,10 @@ public sealed class ServerApi : IDisposable, IServerApi
   {
     CancellationToken.ThrowIfCancellationRequested();
 
-    using HttpRequestMessage message =
-      new() { RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative), Method = HttpMethod.Post };
+    using System.Net.Http.HttpRequestMessage message =
+      new() { RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative), Method = System.Net.Http.HttpMethod.Post };
 
-    MultipartFormDataContent multipart = new();
+    System.Net.Http.MultipartFormDataContent multipart = new();
 
     int mpId = 0;
     foreach (List<(string, string)> mpData in multipartedObjects)
@@ -417,17 +417,17 @@ public sealed class ServerApi : IDisposable, IServerApi
 
       if (CompressPayloads)
       {
-        var content = new GzipContent(new StringContent(ct, Encoding.UTF8));
+        var content = new GzipContent(new System.Net.Http.StringContent(ct, Encoding.UTF8));
         content.Headers.ContentType = new MediaTypeHeaderValue("application/gzip");
         multipart.Add(content, $"batch-{mpId}", $"batch-{mpId}");
       }
       else
       {
-        multipart.Add(new StringContent(ct, Encoding.UTF8), $"batch-{mpId}", $"batch-{mpId}");
+        multipart.Add(new System.Net.Http.StringContent(ct, Encoding.UTF8), $"batch-{mpId}", $"batch-{mpId}");
       }
     }
     message.Content = new ProgressContent(multipart, progress);
-    HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
+    var response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
   }
@@ -439,9 +439,9 @@ public sealed class ServerApi : IDisposable, IServerApi
     var payload = JsonConvert.SerializeObject(blobIds);
     var uri = new Uri($"/api/stream/{streamId}/blob/diff", UriKind.Relative);
 
-    using StringContent stringContent = new(payload, Encoding.UTF8, "application/json");
+    using System.Net.Http.StringContent stringContent = new(payload, Encoding.UTF8, "application/json");
 
-    HttpResponseMessage response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
+    var response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
 

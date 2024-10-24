@@ -89,7 +89,7 @@ public class Account : IEquatable<Account>
 
   public override int GetHashCode()
   {
-#if NETSTANDARD2_0
+#if  NET48
     return Speckle.Sdk.Common.HashCode.Of(userInfo.email).And(serverInfo.url);
 #else
     return HashCode.Combine(userInfo.email, serverInfo.url);

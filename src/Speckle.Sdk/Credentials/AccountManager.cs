@@ -760,7 +760,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
         challenge,
       };
 
-      using var content = new StringContent(JsonConvert.SerializeObject(body));
+      using var content = new System.Net.Http.StringContent(JsonConvert.SerializeObject(body));
       content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
       var response = await client.PostAsync(new Uri(server, "/auth/token"), content).ConfigureAwait(false);
 
@@ -787,7 +787,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
         refreshToken,
       };
 
-      using var content = new StringContent(JsonConvert.SerializeObject(body));
+      using var content = new System.Net.Http.StringContent(JsonConvert.SerializeObject(body));
       content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
       var response = await client.PostAsync(new Uri(server, "/auth/token"), content).ConfigureAwait(false);
 
@@ -807,7 +807,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   /// <param name="server">Server endpoint to get header</param>
   /// <returns><see langword="true"/> if response contains FE2 header and the value was <see langword="true"/></returns>
   /// <exception cref="SpeckleException">response contained FE2 header, but the value was <see langword="null"/>, empty, or not parseable to a <see cref="Boolean"/></exception>
-  /// <exception cref="HttpRequestException">Request to <paramref name="server"/> failed to send or response was not successful</exception>
+  /// <exception cref="System.Net.Http.HttpRequestException">Request to <paramref name="server"/> failed to send or response was not successful</exception>
   private async Task<bool> IsFrontend2Server(Uri server)
   {
     using var httpClient = speckleHttp.CreateHttpClient();
@@ -835,12 +835,12 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
 
   private static string GenerateChallenge()
   {
-#if NETSTANDARD2_0
+#if NET8_0
+    byte[] challengeData = RandomNumberGenerator.GetBytes(32);
+#else
     using RNGCryptoServiceProvider rng = new();
     byte[] challengeData = new byte[32];
     rng.GetBytes(challengeData);
-#else
-    byte[] challengeData = RandomNumberGenerator.GetBytes(32);
 #endif
     //escaped chars like % do not play nice with the server
     return Regex.Replace(Convert.ToBase64String(challengeData), @"[^\w\.@-]", "");

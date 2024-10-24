@@ -220,7 +220,7 @@ public class Point : Base, ITransformable<Point>, IEquatable<Point>
 
   public override int GetHashCode()
   {
-#if NETSTANDARD2_0
+#if NET48
     return HashCode.Of(units).And(x).And(y).And(y);
 #else
     return HashCode.Combine(units, x, y, z);

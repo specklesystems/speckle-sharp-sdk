@@ -1,6 +1,8 @@
 namespace Speckle.Sdk;
 
+#pragma warning disable CA2237
 public class SpeckleException : Exception
+#pragma warning restore CA2237
 {
   public SpeckleException() { }
 

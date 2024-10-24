@@ -35,7 +35,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
   [JsonIgnore]
   public Account Account { get; }
 
-  private HttpClient HttpClient { get; }
+  private System.Net.Http.HttpClient HttpClient { get; }
 
   public GraphQLHttpClient GQLClient { get; }
 
@@ -293,7 +293,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     }
   }
 
-  private static GraphQLHttpClient CreateGraphQLClient(Account account, HttpClient httpClient)
+  private static GraphQLHttpClient CreateGraphQLClient(Account account, System.Net.Http.HttpClient httpClient)
   {
     var gQLClient = new GraphQLHttpClient(
       new GraphQLHttpClientOptions
@@ -328,7 +328,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     return gQLClient;
   }
 
-  private static HttpClient CreateHttpClient(ISpeckleApplication application, ISpeckleHttp speckleHttp, Account account)
+  private static System.Net.Http.HttpClient CreateHttpClient(ISpeckleApplication application, ISpeckleHttp speckleHttp, Account account)
   {
     var httpClient = speckleHttp.CreateHttpClient(timeoutSeconds: 30, authorizationToken: account.token);
 
