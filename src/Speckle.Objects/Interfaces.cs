@@ -86,7 +86,18 @@ public interface ITransformable : ISpeckleObject
 
 /// <summary>
 /// </summary>
-public interface ISymbolLayer
+public interface ISymbol : ISpeckleObject
+{
+  string symbolUnits { get; set; }
+  LineType lineType { get; set; }
+  double lineWidth { get; set; }
+  int lineColor { get; set; }
+  int displayPriority { get; set; }
+}
+
+/// <summary>
+/// </summary>
+public interface ISymbolLayer : ISpeckleObject
 {
   string symbolUnits { get; set; }
   LineType lineType { get; set; }

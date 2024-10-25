@@ -2,16 +2,8 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Other;
 
-[SpeckleType("Objects.Other.ObjectSymbols")]
-public class ObjectSymbols : Base
-{
-  // in QGIS: https://qgis.org/pyqgis/master/core/QgsSymbol.html
-  // in ArcGIS: https://pro.arcgis.com/en/pro-app/latest/sdk/api-reference/topic5484.html
-  public List<ISymbol> symbols { get; set; }
-}
-
-[SpeckleType("Objects.Other.MarkerSymbolLayer")]
-public class MarkerSymbolLayer : Base, ISymbolLayer
+[SpeckleType("Objects.Other.MarkerSymbol")]
+public class MarkerSymbol : Base, ISymbol
 {
   public string symbolUnits { get; set; }
   public LineType lineType { get; set; }
@@ -24,8 +16,8 @@ public class MarkerSymbolLayer : Base, ISymbolLayer
   public MarkerType type { get; set; }
 }
 
-[SpeckleType("Objects.Other.LineSymbolLayer")]
-public class LineSymbolLayer : Base, ISymbolLayer
+[SpeckleType("Objects.Other.LineSymbol")]
+public class LineSymbol : Base, ISymbol
 {
   public string symbolUnits { get; set; }
   public LineType lineType { get; set; }
@@ -34,8 +26,8 @@ public class LineSymbolLayer : Base, ISymbolLayer
   public int displayPriority { get; set; }
 }
 
-[SpeckleType("Objects.Other.FillSymbolLayer")]
-public class FillSymbolLayer : Base, ISymbolLayer
+[SpeckleType("Objects.Other.FillSymbol")]
+public class FillSymbol : Base, ISymbol
 {
   public string symbolUnits { get; set; }
   public LineType lineType { get; set; }
