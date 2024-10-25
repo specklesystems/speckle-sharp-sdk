@@ -6,11 +6,11 @@ namespace Speckle.Sdk.Transports.ServerUtils;
 /// <remarks>
 /// https://cymbeline.ch/2014/03/16/gzip-encoding-an-http-post-request-body/
 /// </remarks>
-internal sealed class GzipContent : System.Net.Http.HttpContent
+internal sealed class GzipContent : HttpContent
 {
-  private readonly System.Net.Http.HttpContent? _content;
+  private readonly HttpContent? _content;
 
-  public GzipContent(System.Net.Http.HttpContent? content)
+  public GzipContent(HttpContent? content)
   {
     _content = content;
 
@@ -38,7 +38,7 @@ internal sealed class GzipContent : System.Net.Http.HttpContent
     }
     else
     {
-      using var emptyContent = new System.Net.Http.StringContent(string.Empty);
+      using var emptyContent = new StringContent(string.Empty);
       await emptyContent.CopyToAsync(gzip).ConfigureAwait(false);
     }
     await gzip.FlushAsync().ConfigureAwait(false);

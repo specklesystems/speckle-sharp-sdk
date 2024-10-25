@@ -14,27 +14,27 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
   /// </summary>
   /// <param name="uri">The URI that should be pinged</param>
   /// <exception cref="System.Net.Http.HttpRequestException">Request to <paramref name="uri"/> failed</exception>
-  public async Task<System.Net.Http.HttpResponseMessage> HttpPing(Uri uri)
+  public async Task<HttpResponseMessage> HttpPing(Uri uri)
   {
     try
     {
       using var httpClient = CreateHttpClient();
-      System.Net.Http.HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
+      HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
       response.EnsureSuccessStatusCode();
       logger.LogInformation("Successfully pinged {uri}", uri);
       return response;
     }
-    catch (System.Net.Http.HttpRequestException ex)
+    catch (HttpRequestException ex)
     {
       logger.LogWarning(ex, "Ping to {uri} was unsuccessful: {message}", uri, ex.Message);
-      throw new System.Net.Http.HttpRequestException($"Ping to {uri} was unsuccessful", ex);
+      throw new HttpRequestException($"Ping to {uri} was unsuccessful", ex);
     }
   }
 
   public const int DEFAULT_TIMEOUT_SECONDS = 60;
 
-  public System.Net.Http.HttpClient CreateHttpClient(
-    System.Net.Http.HttpMessageHandler? innerHandler = null,
+  public HttpClient CreateHttpClient(
+    HttpMessageHandler? innerHandler = null,
     int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS,
     string? authorizationToken = null
   )
@@ -44,7 +44,7 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
 
     var speckleHandler = speckleHttpClientHandlerFactory.Create(innerHandler, timeoutSeconds);
 
-    var client = new System.Net.Http.HttpClient(speckleHandler)
+    var client = new HttpClient(speckleHandler)
     {
       Timeout =
         Timeout.InfiniteTimeSpan //timeout is configured on the SpeckleHttpClientHandler through policy
@@ -68,7 +68,7 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
     return false;
   }
 
-  private static void AddAuthHeader(System.Net.Http.HttpClient client, string? authToken)
+  private static void AddAuthHeader(HttpClient client, string? authToken)
   {
     if (CanAddAuth(authToken, out string? value))
     {

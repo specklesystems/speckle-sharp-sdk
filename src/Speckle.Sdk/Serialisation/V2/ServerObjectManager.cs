@@ -15,7 +15,7 @@ public class ServerObjectManager : IServerObjectManager
   private static readonly char[] s_separator = { '\t' };
 
   private readonly ISdkActivityFactory _activityFactory;
-  private readonly System.Net.Http.HttpClient _client;
+  private readonly HttpClient _client;
 
   public ServerObjectManager(
     ISpeckleHttp speckleHttp,
@@ -27,7 +27,7 @@ public class ServerObjectManager : IServerObjectManager
   {
     _activityFactory = activityFactory;
     _client = speckleHttp.CreateHttpClient(
-      new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
+      new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
       timeoutSeconds: timeoutSeconds,
       authorizationToken: authorizationToken
     );
@@ -44,18 +44,18 @@ public class ServerObjectManager : IServerObjectManager
     using var _ = _activityFactory.Start();
     cancellationToken.ThrowIfCancellationRequested();
 
-    using var childrenHttpMessage = new System.Net.Http.HttpRequestMessage
+    using var childrenHttpMessage = new HttpRequestMessage
     {
       RequestUri = new Uri($"/api/getobjects/{streamId}", UriKind.Relative),
-      Method = System.Net.Http.HttpMethod.Post,
+      Method = HttpMethod.Post,
     };
 
     Dictionary<string, string> postParameters = new() { { "objects", JsonConvert.SerializeObject(objectIds) } };
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
-    childrenHttpMessage.Content = new System.Net.Http.StringContent(serializedPayload, Encoding.UTF8, "application/json");
+    childrenHttpMessage.Content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
     childrenHttpMessage.Headers.Add("Accept", "text/plain");
 
-    System.Net.Http.HttpResponseMessage childrenHttpResponse = await _client
+    HttpResponseMessage childrenHttpResponse = await _client
       .SendAsync(childrenHttpMessage, cancellationToken)
       .ConfigureAwait(false);
 
@@ -79,14 +79,14 @@ public class ServerObjectManager : IServerObjectManager
     cancellationToken.ThrowIfCancellationRequested();
 
     // Get root object
-    using var rootHttpMessage = new System.Net.Http.HttpRequestMessage
+    using var rootHttpMessage = new HttpRequestMessage
     {
       RequestUri = new Uri($"/objects/{streamId}/{objectId}/single", UriKind.Relative),
-      Method = System.Net.Http.HttpMethod.Get,
+      Method = HttpMethod.Get,
     };
 
-    System.Net.Http.HttpResponseMessage rootHttpResponse = await _client
-      .SendAsync(rootHttpMessage, System.Net.Http.HttpCompletionOption.ResponseContentRead, cancellationToken)
+    HttpResponseMessage rootHttpResponse = await _client
+      .SendAsync(rootHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)
       .ConfigureAwait(false);
 
     var (_, json) = await ResponseProgress(rootHttpResponse, progress, true, cancellationToken)
@@ -96,7 +96,7 @@ public class ServerObjectManager : IServerObjectManager
   }
 
   private async IAsyncEnumerable<(string?, string)> ResponseProgress(
-    System.Net.Http.HttpResponseMessage childrenHttpResponse,
+    HttpResponseMessage childrenHttpResponse,
     IProgress<ProgressArgs>? progress,
     bool isSingle,
     [EnumeratorCancellation] CancellationToken cancellationToken

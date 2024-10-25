@@ -760,7 +760,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
         challenge,
       };
 
-      using var content = new System.Net.Http.StringContent(JsonConvert.SerializeObject(body));
+      using var content = new StringContent(JsonConvert.SerializeObject(body));
       content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
       var response = await client.PostAsync(new Uri(server, "/auth/token"), content).ConfigureAwait(false);
 
@@ -787,7 +787,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
         refreshToken,
       };
 
-      using var content = new System.Net.Http.StringContent(JsonConvert.SerializeObject(body));
+      using var content = new StringContent(JsonConvert.SerializeObject(body));
       content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
       var response = await client.PostAsync(new Uri(server, "/auth/token"), content).ConfigureAwait(false);
 
