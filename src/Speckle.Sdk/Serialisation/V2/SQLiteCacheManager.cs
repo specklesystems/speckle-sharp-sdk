@@ -73,43 +73,6 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     cmd2.ExecuteNonQuery();
   }
 
-  public IEnumerable<(string, string)> GetObjects(IEnumerable<string> ids, CancellationToken cancellationToken)
-  {
-    cancellationToken.ThrowIfCancellationRequested();
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    using var command = new SqliteCommand("SELECT content FROM objects WHERE hash = @hash LIMIT 1 ", c);
-    foreach (var id in ids)
-    {
-      command.Parameters.Clear();
-      command.Parameters.AddWithValue("@hash", id);
-      using var reader = command.ExecuteReader();
-      if (reader.Read())
-      {
-        yield return (id, reader.GetString(0));
-      }
-    }
-  }
-
-  public void SaveObjects(IEnumerable<(string, string)> objects, CancellationToken cancellationToken)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    using var t = c.BeginTransaction();
-    const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
-
-    foreach (var (id, content) in objects)
-    {
-      using var command = new SqliteCommand(COMMAND_TEXT, c, t);
-      command.Parameters.AddWithValue("@hash", id);
-      command.Parameters.AddWithValue("@content", content);
-      command.ExecuteNonQuery();
-      cancellationToken.ThrowIfCancellationRequested();
-    }
-
-    t.Commit();
-  }
-
   public string? GetObject(string id)
   {
     using var c = new SqliteConnection(_connectionString);
@@ -136,25 +99,7 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     bool rowFound = reader.Read();
     return rowFound;
   }
-
-  public async IAsyncEnumerable<(string, bool)> HasObjects2(IEnumerable<string> objectIds)
-  {
-    await Task.Delay(10).ConfigureAwait(false);
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
-    using var command = new SqliteCommand(COMMAND_TEXT, c);
-    foreach (string objectId in objectIds)
-    {
-      command.Parameters.Clear();
-      command.Parameters.AddWithValue("@hash", objectId);
-
-      using var reader = command.ExecuteReader();
-      bool rowFound = reader.Read();
-      yield return (objectId, rowFound);
-    }
-  }
-
+  
   public void SaveObjectSync(string hash, string serializedObject)
   {
     using var c = new SqliteConnection(_connectionString);

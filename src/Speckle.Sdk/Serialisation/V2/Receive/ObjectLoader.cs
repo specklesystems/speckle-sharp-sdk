@@ -1,4 +1,3 @@
-using Open.ChannelExtensions;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Serialisation.Utilities;
@@ -12,10 +11,8 @@ public sealed class ObjectLoader(
   IServerObjectManager serverObjectManager,
   string streamId,
   IProgress<ProgressArgs>? progress
-) : IObjectLoader
+) : ChannelLoader, IObjectLoader
 {
-  private const int HTTP_ID_CHUNK_SIZE = 500;
-  private const int MAX_PARALLELISM_HTTP = 4;
 
   private int? _allChildrenCount;
   private long _checkCache;
@@ -28,12 +25,12 @@ public sealed class ObjectLoader(
   )
   {
     var rootJson = sqLiteCacheManager.GetObject(rootId);
-    /*if (rootJson != null)
+    if (rootJson != null)
     {
       //assume everything exists as the root is there.
       var allChildren = ClosureParser.GetChildrenIds(rootJson).ToList();
       return (rootJson, allChildren);
-    }*/
+    }
     rootJson = await serverObjectManager
       .DownloadSingleObject(streamId, rootId, progress, cancellationToken)
       .NotNull()
@@ -45,15 +42,7 @@ public sealed class ObjectLoader(
       .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
       .ToList();
     _allChildrenCount = allChildrenIds.Count;
-    await allChildrenIds
-      .ToChannel()
-      .Pipe(Environment.ProcessorCount, CheckCache2)
-      .Filter(x => x is not null)
-      .Batch(HTTP_ID_CHUNK_SIZE)
-      .WithTimeout(TimeSpan.FromSeconds(2))
-      .PipeAsync(MAX_PARALLELISM_HTTP, DownloadAndCache2, -1, false, cancellationToken)
-      .Join()
-      .ReadAllConcurrently(Environment.ProcessorCount, SaveToCache, cancellationToken: cancellationToken)
+    await GetAndCache(allChildrenIds, cancellationToken)
       .ConfigureAwait(false);
 
     //save the root last to shortcut later
@@ -61,7 +50,8 @@ public sealed class ObjectLoader(
     return (rootJson, allChildrenIds);
   }
 
-  private string? CheckCache2(string id)
+  [AutoInterfaceIgnore]
+  public override string? CheckCache(string id)
   {
     _checkCache++;
     progress?.Report(new(ProgressEvent.CacheCheck, _checkCache, _allChildrenCount));
@@ -73,7 +63,8 @@ public sealed class ObjectLoader(
     return null;
   }
 
-  private async ValueTask<List<(string, string)>> DownloadAndCache2(List<string?> ids)
+  [AutoInterfaceIgnore]
+  public override async Task<List<(string, string)>> DownloadAndCache(List<string?> ids)
   {
     var count = 0L;
     progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
@@ -95,7 +86,8 @@ public sealed class ObjectLoader(
     return toCache;
   }
 
-  private void SaveToCache((string, string) x)
+  [AutoInterfaceIgnore]
+  public override void SaveToCache((string, string) x)
   {
     sqLiteCacheManager.SaveObjectSync(x.Item1, x.Item2);
 
