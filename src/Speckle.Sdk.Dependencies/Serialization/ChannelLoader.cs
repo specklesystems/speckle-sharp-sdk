@@ -1,19 +1,21 @@
 ﻿using Open.ChannelExtensions;
 
-namespace Speckle.Sdk.Serialisation.V2.Receive;
+namespace Speckle.Sdk.Dependencies.Serialization;
 
 public abstract class ChannelLoader
 {
-  private const int HTTP_ID_CHUNK_SIZE = 500;
+  private const int HTTP_GET_CHUNK_SIZE = 500;
   private const int MAX_PARALLELISM_HTTP = 4;
+  private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
+  private static readonly int MAX_CACHE_PARALLELISM = Environment.ProcessorCount;
 
   protected async Task GetAndCache(IEnumerable<string> allChildrenIds, CancellationToken cancellationToken = default) =>
     await allChildrenIds
       .ToChannel(cancellationToken: cancellationToken)
-      .Pipe(Environment.ProcessorCount, CheckCache, cancellationToken: cancellationToken)
+      .Pipe(MAX_CACHE_PARALLELISM, CheckCache, cancellationToken: cancellationToken)
       .Filter(x => x is not null)
-      .Batch(HTTP_ID_CHUNK_SIZE)
-      .WithTimeout(TimeSpan.FromSeconds(2))
+      .Batch(HTTP_GET_CHUNK_SIZE)
+      .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
         async x => await DownloadAndCache(x).ConfigureAwait(false),
@@ -22,7 +24,7 @@ public abstract class ChannelLoader
         cancellationToken
       )
       .Join()
-      .ReadAllConcurrently(Environment.ProcessorCount, SaveToCache, cancellationToken)
+      .ReadAllConcurrently(MAX_CACHE_PARALLELISM, SaveToCache, cancellationToken)
       .ConfigureAwait(false);
 
   public abstract string? CheckCache(string id);

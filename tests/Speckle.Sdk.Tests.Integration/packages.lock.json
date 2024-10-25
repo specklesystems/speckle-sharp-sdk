@@ -274,8 +274,7 @@
           "Microsoft.Extensions.Logging": "[2.2.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
-          "Speckle.Sdk.Dependencies": "[1.0.0, )",
-          "System.Threading.Channels": "[8.0.0, )"
+          "Speckle.Sdk.Dependencies": "[1.0.0, )"
         }
       },
       "speckle.sdk.dependencies": {
@@ -359,12 +358,6 @@
         "requested": "[13.0.2, )",
         "resolved": "13.0.2",
         "contentHash": "g1BejUZwax5PRfL6xHgLEK23sqHWOgOj9hE7RvfRRlN00AGt8GnPYt8HedSK7UB3HiRW8zCA9Pn0iiYxCK24BA=="
-      },
-      "System.Threading.Channels": {
-        "type": "CentralTransitive",
-        "requested": "[8.0.0, )",
-        "resolved": "8.0.0",
-        "contentHash": "CMaFr7v+57RW7uZfZkPExsPB6ljwzhjACWW1gfU35Y56rk72B/Wu+sTqxVmGSk4SFUlPc3cjeKND0zktziyjBA=="
       }
     }
   }

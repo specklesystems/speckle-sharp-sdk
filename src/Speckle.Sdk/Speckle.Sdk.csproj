@@ -32,7 +32,6 @@
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
-    <PackageReference Include="System.Threading.Channels" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0'">

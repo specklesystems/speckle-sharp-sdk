@@ -1,39 +1,36 @@
 using System.Collections.Concurrent;
-using System.Threading.Channels;
-using Open.ChannelExtensions;
+using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public record SerializeProcessOptions(bool SkipCache, bool SkipServer);
+
 public class SerializeProcess(
   IProgress<ProgressArgs>? progress,
   ISQLiteCacheManager sqliteCacheManager,
   IServerObjectManager serverObjectManager,
   ISpeckleBaseChildFinder speckleBaseChildFinder,
   ISpeckleBasePropertyGatherer speckleBasePropertyGatherer
-)
+) : ChannelSaver
 {
   public ConcurrentDictionary<string, string> JsonCache { get; } = new();
-  private readonly Channel<(string, string)> _checkCacheChannel = Channel.CreateUnbounded<(string, string)>();
   private long _total;
   private long _checked;
   private long _serialized;
 
   private SerializeProcessOptions _options = new(false, false);
 
-  public async Task Serialize(string streamId, Base root, CancellationToken cancellationToken, SerializeProcessOptions? options = null)
+  public async Task Serialize(
+    string streamId,
+    Base root,
+    CancellationToken cancellationToken,
+    SerializeProcessOptions? options = null
+  )
   {
     _options = options ?? _options;
-    var channelTask = _checkCacheChannel
-      .Reader.Pipe(Environment.ProcessorCount, x => CheckCache(root.id, x), -1, false, cancellationToken)
-      .Filter(x => x != null)
-      .Batch(1000)
-      .WithTimeout(TimeSpan.FromSeconds(2))
-      .PipeAsync(4, x => SendToServer(streamId, x, cancellationToken), -1, false, cancellationToken)
-      .Join()
-      .ReadAllConcurrently(Environment.ProcessorCount, x => SaveToCache(root.id, x), cancellationToken);
+    var channelTask = Start(streamId, root.id, cancellationToken);
     await Traverse(root, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
   }
@@ -55,17 +52,17 @@ public class SerializeProcess(
 
       await Traverse(child, cancellationToken).ConfigureAwait(false);
       // tmp is necessary because of the way closures close over loop variables
-/*
-      var tmp = child;
-      var t = Task
-        .Factory.StartNew(
-          () => Traverse(tmp, cancellationToken),
-          cancellationToken,
-          TaskCreationOptions.AttachedToParent,
-          TaskScheduler.Default
-        )
-        .Unwrap();
-      tasks.Add(t);*/
+      /*
+            var tmp = child;
+            var t = Task
+              .Factory.StartNew(
+                () => Traverse(tmp, cancellationToken),
+                cancellationToken,
+                TaskCreationOptions.AttachedToParent,
+                TaskScheduler.Default
+              )
+              .Unwrap();
+            tasks.Add(t);*/
     }
 
     if (tasks.Count > 0)
@@ -76,7 +73,7 @@ public class SerializeProcess(
     var json = Serialise(obj);
     if (json is not null)
     {
-      await _checkCacheChannel.Writer.WriteAsync((obj.id, json), cancellationToken).ConfigureAwait(false);
+      await Save(obj.id, json, cancellationToken).ConfigureAwait(false);
     }
   }
 
@@ -114,7 +111,7 @@ public class SerializeProcess(
   }
 
   //return null when it's cached
-  private (string, string)? CheckCache(string rootId, (string, string) item)
+  public override (string, string)? CheckCache(string rootId, (string, string) item)
   {
     Interlocked.Increment(ref _checked);
     progress?.Report(new(ProgressEvent.CacheCheck, _checked, null));
@@ -128,12 +125,12 @@ public class SerializeProcess(
 
     if (rootId == item.Item1)
     {
-      _checkCacheChannel.Writer.Complete();
+      Done();
     }
     return null;
   }
 
-  private async ValueTask<List<(string, string)>> SendToServer(
+  public override async Task<List<(string, string)>> SendToServer(
     string streamId,
     IReadOnlyList<(string, string)?> batch,
     CancellationToken cancellationToken
@@ -154,7 +151,7 @@ public class SerializeProcess(
     return batchToSend;
   }
 
-  private void SaveToCache(string rootId, (string, string) item)
+  public override void SaveToCache(string rootId, (string, string) item)
   {
     if (!_options.SkipCache)
     {
@@ -163,7 +160,7 @@ public class SerializeProcess(
 
     if (rootId == item.Item1)
     {
-      _checkCacheChannel.Writer.Complete();
+      Done();
     }
   }
 }

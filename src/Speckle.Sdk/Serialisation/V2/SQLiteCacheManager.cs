@@ -100,19 +100,6 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     return rowFound;
   }
 
-  public bool HasObject(string objectId)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
-    using var command = new SqliteCommand(COMMAND_TEXT, c);
-    command.Parameters.AddWithValue("@hash", objectId);
-
-    using var reader = command.ExecuteReader();
-    bool rowFound = reader.Read();
-    return rowFound;
-  }
-
   public void SaveObjectSync(string hash, string serializedObject)
   {
     using var c = new SqliteConnection(_connectionString);

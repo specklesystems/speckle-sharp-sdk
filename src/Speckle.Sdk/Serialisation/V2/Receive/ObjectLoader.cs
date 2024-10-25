@@ -1,5 +1,6 @@
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
