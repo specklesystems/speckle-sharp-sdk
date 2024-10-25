@@ -99,7 +99,7 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     bool rowFound = reader.Read();
     return rowFound;
   }
-  
+
   public void SaveObjectSync(string hash, string serializedObject)
   {
     using var c = new SqliteConnection(_connectionString);

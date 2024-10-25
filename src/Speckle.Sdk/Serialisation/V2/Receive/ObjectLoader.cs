@@ -13,7 +13,6 @@ public sealed class ObjectLoader(
   IProgress<ProgressArgs>? progress
 ) : ChannelLoader, IObjectLoader
 {
-
   private int? _allChildrenCount;
   private long _checkCache;
   private long _cached;
@@ -48,8 +47,7 @@ public sealed class ObjectLoader(
       .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
       .ToList();
     _allChildrenCount = allChildrenIds.Count;
-    await GetAndCache(allChildrenIds, cancellationToken)
-      .ConfigureAwait(false);
+    await GetAndCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
 
     //save the root last to shortcut later
     sqLiteCacheManager.SaveObjectSync(rootId, rootJson);
