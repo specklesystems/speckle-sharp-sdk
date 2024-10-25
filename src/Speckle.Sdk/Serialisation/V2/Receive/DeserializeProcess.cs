@@ -43,30 +43,30 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     var tasks = new List<Task>();
     foreach (var childId in childIds)
     {
-        if (BaseCache.ContainsKey(childId))
-        {
-          continue;
-        }
+      if (BaseCache.ContainsKey(childId))
+      {
+        continue;
+      }
 
-        if (_activeTasks.TryGetValue(childId, out var task))
-        {
-          tasks.Add(task);
-        }
-        else
-        {
-          // tmp is necessary because of the way closures close over loop variables
-          var tmpId = childId;
-          Task t = Task
-            .Factory.StartNew(
-              () => Traverse(tmpId, cancellationToken),
-              cancellationToken,
-              TaskCreationOptions.AttachedToParent,
-              TaskScheduler.Default
-            )
-            .Unwrap();
-          tasks.Add(t);
-          _activeTasks.TryAdd(childId, t);
-        }
+      if (_activeTasks.TryGetValue(childId, out var task))
+      {
+        tasks.Add(task);
+      }
+      else
+      {
+        // tmp is necessary because of the way closures close over loop variables
+        var tmpId = childId;
+        Task t = Task
+          .Factory.StartNew(
+            () => Traverse(tmpId, cancellationToken),
+            cancellationToken,
+            TaskCreationOptions.AttachedToParent,
+            TaskScheduler.Default
+          )
+          .Unwrap();
+        tasks.Add(t);
+        _activeTasks.TryAdd(childId, t);
+      }
     }
 
     if (tasks.Count > 0)
