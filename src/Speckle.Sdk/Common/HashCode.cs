@@ -1,4 +1,4 @@
-#if NET48
+#if NETSTANDARD2_0
 using System.ComponentModel;
 
 namespace Speckle.Sdk.Common;

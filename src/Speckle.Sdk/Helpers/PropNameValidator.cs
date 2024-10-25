@@ -35,7 +35,7 @@ class PropNameValidator
 
   [Pure]
   public static bool IsDetached(string propName) =>
-#if NET48
+#if NETSTANDARD2_0
     propName.StartsWith("@");
 #else
     propName.StartsWith('@');

@@ -79,7 +79,7 @@ public static class Crypt
   )
   {
     byte[] inputBytes = Encoding.ASCII.GetBytes(input.ToLowerInvariant());
-#if NETSTANDARD2_1 || NET48
+#if NETSTANDARD2_0
     using MD5 md5 = MD5.Create();
     byte[] hashBytes = md5.ComputeHash(inputBytes);
 #else

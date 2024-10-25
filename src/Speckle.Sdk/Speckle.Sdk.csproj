@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   
   <PropertyGroup Label="Compiler Properties">
-    <TargetFrameworks>netstandard2.1;net48;net8.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.RequiresLocationAttribute</PolySharpExcludeGeneratedTypes>
     <Configurations>Debug;Release;Local</Configurations>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -38,12 +38,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" OverrideVersion="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" OverrideVersion="8.0.0"/>
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net48'">
-    <Reference Include="System.Net.Http" />
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />  
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
