@@ -19,6 +19,7 @@ public class SerializeProcess(
   private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
   private long _total;
   private long _checked;
+  private long _cached;
   private long _serialized;
 
   private SerializeProcessOptions _options = new(false, false);
@@ -43,15 +44,13 @@ public class SerializeProcess(
       return;
     }
     var tasks = new List<Task>();
-    var children = speckleBaseChildFinder.GetChildren(obj).ToList();
-    foreach (var child in children)
+    foreach (var child in  speckleBaseChildFinder.GetChildren(obj))
     {
       if (_jsonCache.ContainsKey(child.id))
       {
         continue;
       }
 
-     // await Traverse(child, cancellationToken).ConfigureAwait(false);
       // tmp is necessary because of the way closures close over loop variables
       if (_activeTasks.TryGetValue(child.id, out var task))
       {
@@ -93,32 +92,35 @@ public class SerializeProcess(
       return null;
     }
 
-    string id = obj.id;
     string? json = null;
     if (!_options.SkipCache)
     {
-      json = sqliteCacheManager.GetObject(id);
+      json = sqliteCacheManager.GetObject(obj.id);
     }
     Interlocked.Increment(ref _total);
     if (json == null)
     {
+      string id = obj.id;
       if (!_jsonCache.TryGetValue(id, out json))
       {
-        Interlocked.Increment(ref _serialized);
         SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, _jsonCache, progress);
-        Console.WriteLine("Serialized " + _jsonCache.Count + " " + _total + " " + _serialized);
         json = serializer2.Serialize(obj);
         _jsonCache.TryAdd(id, json);
-        _jsonCache.TryAdd(obj.id, json);
-        progress?.Report(new(ProgressEvent.SerializeObject, _jsonCache.Count, _total));
+        _activeTasks.TryRemove(id, out _);
+        if (id != obj.id) //in case the ids changes which is due to id hash algorithm changing
+        {
+          _jsonCache.TryAdd(obj.id, json);
+          _activeTasks.TryRemove(obj.id, out _);
+        }
+        Interlocked.Increment(ref _serialized);
+        progress?.Report(new(ProgressEvent.SerializeObject, _serialized, _total));
       }
     }
     else
     {
-      _jsonCache.TryAdd(id, json);
       _jsonCache.TryAdd(obj.id, json);
+      _activeTasks.TryRemove(obj.id, out _);
     }
-    _activeTasks.TryRemove(id, out _);
     return json;
   }
 
@@ -126,7 +128,7 @@ public class SerializeProcess(
   public override (string, string)? CheckCache(string rootId, (string, string) item)
   {
     Interlocked.Increment(ref _checked);
-    progress?.Report(new(ProgressEvent.CacheCheck, _checked, null));
+    progress?.Report(new(ProgressEvent.CacheCheck, _checked, _total));
     if (!_options.SkipCache)
     {
       if (!sqliteCacheManager.HasObject(item.Item1))
@@ -167,7 +169,9 @@ public class SerializeProcess(
   {
     if (!_options.SkipCache)
     {
+      Interlocked.Increment(ref _cached);
       sqliteCacheManager.SaveObjectSync(item.Item1, item.Item2);
+      progress?.Report(new(ProgressEvent.Cached, _cached, null));
     }
 
     if (rootId == item.Item1)
