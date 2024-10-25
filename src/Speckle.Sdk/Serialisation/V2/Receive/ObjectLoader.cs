@@ -101,7 +101,7 @@ public sealed class ObjectLoader(
     }
 
     _cached++;
-    progress?.Report(new(ProgressEvent.Cached, _cached, null));
+    progress?.Report(new(ProgressEvent.Cached, _cached, _allChildrenCount));
   }
 
   public string? LoadId(string id) => sqLiteCacheManager.GetObject(id);
