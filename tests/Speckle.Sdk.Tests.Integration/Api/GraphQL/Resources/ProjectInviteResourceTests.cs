@@ -28,7 +28,7 @@ public class ProjectInviteResourceTests
   {
     ProjectInviteCreateInput input = new(_invitee.Account.userInfo.email, null, null, null);
     var res = await _inviter.ProjectInvite.Create(_project.id, input);
-    var invites = await _invitee.ActiveUser.ProjectInvites();
+    var invites = await _invitee.ActiveUser.GetProjectInvites();
     return invites.First(i => i.projectId == res.id);
   }
 
@@ -38,7 +38,7 @@ public class ProjectInviteResourceTests
     ProjectInviteCreateInput input = new(_invitee.Account.userInfo.email, null, null, null);
     var res = await _inviter.ProjectInvite.Create(_project.id, input);
 
-    var invites = await _invitee.ActiveUser.ProjectInvites();
+    var invites = await _invitee.ActiveUser.GetProjectInvites();
     var invite = invites.First(i => i.projectId == res.id);
 
     Assert.That(res, Has.Property(nameof(_project.id)).EqualTo(_project.id));
@@ -71,6 +71,14 @@ public class ProjectInviteResourceTests
   }
 
   [Test]
+  public async Task ProjectInviteGet_NonExisting()
+  {
+    var collaborator = await _invitee.ProjectInvite.Get(_project.id, "this is not a real token");
+
+    Assert.That(collaborator, Is.Null);
+  }
+
+  [Test]
   public async Task ProjectInviteUse_MemberAdded()
   {
     ProjectInviteUseInput input = new(true, _createdInvite.projectId, _createdInvite.token.NotNull());
@@ -93,10 +101,10 @@ public class ProjectInviteResourceTests
 
   [Test]
   [TestCase(StreamRoles.STREAM_OWNER)]
-  [TestCase(StreamRoles.STREAM_REVIEWER)]
   [TestCase(StreamRoles.STREAM_CONTRIBUTOR)]
+  [TestCase(StreamRoles.STREAM_REVIEWER)]
   [TestCase(StreamRoles.REVOKE)]
-  public async Task ProjectUpdateRole(string newRole)
+  public async Task ProjectUpdateRole(string? newRole)
   {
     await ProjectInviteUse_MemberAdded();
     ProjectUpdateRoleInput input = new(_invitee.Account.userInfo.id, _project.id, newRole);

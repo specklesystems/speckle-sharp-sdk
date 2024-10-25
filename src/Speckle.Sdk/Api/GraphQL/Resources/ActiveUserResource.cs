@@ -167,12 +167,13 @@ public sealed class ActiveUserResource
             title
             token
             user {
-              id,
-              name,
-              bio,
-              company,
-              verified,
-              role,
+              id
+              name
+              bio
+              company
+              verified
+              avatar
+              role
             }
           }
         }

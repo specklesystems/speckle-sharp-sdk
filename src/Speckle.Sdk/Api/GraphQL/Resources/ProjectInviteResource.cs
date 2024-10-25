@@ -39,7 +39,10 @@ public sealed class ProjectInviteResource
               role
               createdAt
               updatedAt
+              workspaceId
+              sourceApps
               team {
+                id
                 role
                 user {
                   id
@@ -165,7 +168,7 @@ public sealed class ProjectInviteResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, token } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<PendingStreamCollaborator>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<OptionalResponse<PendingStreamCollaborator>>(request, cancellationToken)
       .ConfigureAwait(false);
 
     return response.data;
@@ -196,7 +199,10 @@ public sealed class ProjectInviteResource
               role
               createdAt
               updatedAt
+              sourceApps
+              workspaceId
               team {
+                id
                 role
                 user {
                   id

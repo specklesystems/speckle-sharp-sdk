@@ -133,7 +133,10 @@ public sealed class ProjectResource
           role
           createdAt
           updatedAt
+          workspaceId
+          sourceApps
           team {
+            id
             role
             user {
               id
@@ -293,7 +296,10 @@ public sealed class ProjectResource
             role
             createdAt
             updatedAt
+            sourceApps
+            workspaceId
             team {
+              id
               role
               user {
                 id
@@ -332,7 +338,6 @@ public sealed class ProjectResource
                 role
               }
             }
-            workspaceId
           }
         }
       }
