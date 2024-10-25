@@ -15,7 +15,8 @@ public class SerializeProcess(
   ISpeckleBasePropertyGatherer speckleBasePropertyGatherer
 ) : ChannelSaver
 {
-  public ConcurrentDictionary<string, string> JsonCache { get; } = new();
+  private readonly ConcurrentDictionary<string, string> _jsonCache = new();
+  private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
   private long _total;
   private long _checked;
   private long _serialized;
@@ -37,7 +38,7 @@ public class SerializeProcess(
 
   private async Task Traverse(Base obj, CancellationToken cancellationToken)
   {
-    if (JsonCache.ContainsKey(obj.id))
+    if (_jsonCache.ContainsKey(obj.id))
     {
       return;
     }
@@ -45,24 +46,31 @@ public class SerializeProcess(
     var children = speckleBaseChildFinder.GetChildren(obj).ToList();
     foreach (var child in children)
     {
-      if (JsonCache.ContainsKey(child.id))
+      if (_jsonCache.ContainsKey(child.id))
       {
         continue;
       }
 
-      await Traverse(child, cancellationToken).ConfigureAwait(false);
+     // await Traverse(child, cancellationToken).ConfigureAwait(false);
       // tmp is necessary because of the way closures close over loop variables
-      /*
-            var tmp = child;
-            var t = Task
-              .Factory.StartNew(
-                () => Traverse(tmp, cancellationToken),
-                cancellationToken,
-                TaskCreationOptions.AttachedToParent,
-                TaskScheduler.Default
-              )
-              .Unwrap();
-            tasks.Add(t);*/
+      if (_activeTasks.TryGetValue(child.id, out var task))
+      {
+        tasks.Add(task);
+      }
+      else
+      {
+        var tmp = child;
+        var t = Task
+          .Factory.StartNew(
+            () => Traverse(tmp, cancellationToken),
+            cancellationToken,
+            TaskCreationOptions.AttachedToParent,
+            TaskScheduler.Default
+          )
+          .Unwrap();
+        tasks.Add(t);
+        _activeTasks.TryAdd(child.id, t);
+      }
     }
 
     if (tasks.Count > 0)
@@ -80,33 +88,37 @@ public class SerializeProcess(
   //leave this sync
   private string? Serialise(Base obj)
   {
-    if (JsonCache.ContainsKey(obj.id))
+    if (_jsonCache.ContainsKey(obj.id))
     {
       return null;
     }
 
+    string id = obj.id;
     string? json = null;
     if (!_options.SkipCache)
     {
-      json = sqliteCacheManager.GetObject(obj.id);
+      json = sqliteCacheManager.GetObject(id);
     }
     Interlocked.Increment(ref _total);
     if (json == null)
     {
-      if (!JsonCache.TryGetValue(obj.id, out json))
+      if (!_jsonCache.TryGetValue(id, out json))
       {
         Interlocked.Increment(ref _serialized);
-        SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, JsonCache, progress);
-        Console.WriteLine("Serialized " + JsonCache.Count + " " + _total + " " + _serialized);
+        SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, _jsonCache, progress);
+        Console.WriteLine("Serialized " + _jsonCache.Count + " " + _total + " " + _serialized);
         json = serializer2.Serialize(obj);
-        JsonCache.TryAdd(obj.id, json);
-        progress?.Report(new(ProgressEvent.SerializeObject, JsonCache.Count, _total));
+        _jsonCache.TryAdd(id, json);
+        _jsonCache.TryAdd(obj.id, json);
+        progress?.Report(new(ProgressEvent.SerializeObject, _jsonCache.Count, _total));
       }
     }
     else
     {
-      JsonCache.TryAdd(obj.id, json);
+      _jsonCache.TryAdd(id, json);
+      _jsonCache.TryAdd(obj.id, json);
     }
+    _activeTasks.TryRemove(id, out _);
     return json;
   }
 
