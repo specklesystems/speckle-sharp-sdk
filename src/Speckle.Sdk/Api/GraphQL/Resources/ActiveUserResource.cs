@@ -41,7 +41,7 @@ public sealed class ActiveUserResource
     var request = new GraphQLRequest { Query = QUERY };
 
     var response = await _client
-      .ExecuteGraphQLRequest<OptionalResponse<User?>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<NullableResponse<User?>>(request, cancellationToken)
       .ConfigureAwait(false);
 
     return response.data;
@@ -98,6 +98,7 @@ public sealed class ActiveUserResource
         data:activeUser {
           data:projects(limit: $limit, cursor: $cursor, filter: $filter) {
              totalCount
+             cursor
              items {
                 id
                 name
@@ -126,7 +127,7 @@ public sealed class ActiveUserResource
     };
 
     var response = await _client
-      .ExecuteGraphQLRequest<OptionalResponse<RequiredResponse<ResourceCollection<Project>>?>>(
+      .ExecuteGraphQLRequest<NullableResponse<RequiredResponse<ResourceCollection<Project>>?>>(
         request,
         cancellationToken
       )
@@ -183,7 +184,7 @@ public sealed class ActiveUserResource
     var request = new GraphQLRequest { Query = QUERY };
 
     var response = await _client
-      .ExecuteGraphQLRequest<OptionalResponse<RequiredResponse<List<PendingStreamCollaborator>>?>>(
+      .ExecuteGraphQLRequest<NullableResponse<RequiredResponse<List<PendingStreamCollaborator>>?>>(
         request,
         cancellationToken
       )

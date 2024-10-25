@@ -25,14 +25,14 @@ public sealed class OtherUserResource
     //language=graphql
     const string QUERY = """
       query LimitedUser($id: String!) {
-        data:otherUser(id: $id){
-          id,
-          name,
-          bio,
-          company,
-          avatar,
-          verified,
-          role,
+        data:otherUser(id: $id) {
+          id
+          name
+          bio
+          company
+          avatar
+          verified
+          role
         }
       }
       """;
@@ -40,14 +40,14 @@ public sealed class OtherUserResource
     var request = new GraphQLRequest { Query = QUERY, Variables = new { id } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<OptionalResponse<LimitedUser?>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<NullableResponse<LimitedUser?>>(request, cancellationToken)
       .ConfigureAwait(false);
 
     return response.data;
   }
 
   /// <summary>
-  /// Searches for a user on the server.
+  /// Searches for a user on the server, by name or email
   /// </summary>
   /// <param name="query">String to search for. Must be at least 3 characters</param>
   /// <param name="limit">Max number of users to fetch</param>
@@ -57,7 +57,7 @@ public sealed class OtherUserResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<ResourceCollection<LimitedUser>> UserSearch(
+  public async Task<UserSearchResultCollection> UserSearch(
     string query,
     int limit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
     string? cursor = null,
@@ -70,7 +70,7 @@ public sealed class OtherUserResource
     const string QUERY = """
       query UserSearch($query: String!, $limit: Int!, $cursor: String, $archived: Boolean, $emailOnly: Boolean) {
         data:userSearch(query: $query, limit: $limit, cursor: $cursor, archived: $archived, emailOnly: $emailOnly) {
-          cursor,
+          cursor
           items {
            id
            name
@@ -98,7 +98,7 @@ public sealed class OtherUserResource
     };
 
     var response = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<ResourceCollection<LimitedUser>>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<UserSearchResultCollection>>(request, cancellationToken)
       .ConfigureAwait(false);
 
     return response.data;

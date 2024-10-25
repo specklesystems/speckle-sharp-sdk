@@ -23,7 +23,7 @@ public sealed class CommentResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<ResourceCollection<Comment>> GetProjectComments(
+  public async Task<ProjectCommentCollection> GetProjectComments(
     string projectId,
     int limit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
     string? cursor = null,

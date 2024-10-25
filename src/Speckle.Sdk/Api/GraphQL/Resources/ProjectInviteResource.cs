@@ -168,7 +168,7 @@ public sealed class ProjectInviteResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, token } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<OptionalResponse<PendingStreamCollaborator>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<NullableResponse<PendingStreamCollaborator>>(request, cancellationToken)
       .ConfigureAwait(false);
 
     return response.data;
