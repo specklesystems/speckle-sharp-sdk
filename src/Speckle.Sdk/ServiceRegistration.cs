@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 
@@ -30,6 +31,7 @@ public static class ServiceRegistration
     serviceCollection.TryAddSingleton<ISdkActivityFactory, NullActivityFactory>();
     serviceCollection.TryAddSingleton<ISdkMetricsFactory, NullSdkMetricsFactory>();
     serviceCollection.AddMatchingInterfacesAsTransient(Assembly.GetExecutingAssembly());
+    serviceCollection.AddMatchingInterfacesAsTransient(typeof(GraphQLRetry).Assembly);
     return serviceCollection;
   }
 

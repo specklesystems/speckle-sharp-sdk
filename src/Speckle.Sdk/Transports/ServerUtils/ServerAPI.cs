@@ -71,7 +71,7 @@ public sealed class ServerApi : IDisposable, IServerApi
       Method = HttpMethod.Get,
     };
 
-    HttpResponseMessage rootHttpResponse = await _client
+    var rootHttpResponse = await _client
       .SendAsync(rootHttpMessage, HttpCompletionOption.ResponseContentRead, CancellationToken)
       .ConfigureAwait(false);
 
@@ -248,7 +248,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
     try
     {
-      HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
+      var response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
 
       response.EnsureSuccessStatusCode();
 
@@ -369,7 +369,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     var uri = new Uri($"/api/diff/{streamId}", UriKind.Relative);
 
     using StringContent stringContent = new(serializedPayload, Encoding.UTF8, "application/json");
-    HttpResponseMessage response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
+    var response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
 
@@ -427,7 +427,7 @@ public sealed class ServerApi : IDisposable, IServerApi
       }
     }
     message.Content = new ProgressContent(multipart, progress);
-    HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
+    var response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
   }
@@ -441,7 +441,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
     using StringContent stringContent = new(payload, Encoding.UTF8, "application/json");
 
-    HttpResponseMessage response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
+    var response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
 

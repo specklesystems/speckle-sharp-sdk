@@ -5,12 +5,13 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
-public record DeserializeOptions(bool? SkipCacheCheck = null);
+public record DeserializeOptions(bool SkipCache);
 
 public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader)
 {
   private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
   private long _total;
+  private DeserializeOptions _options = new(false);
 
   public ConcurrentDictionary<string, Base> BaseCache { get; } = new();
 
@@ -20,8 +21,9 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     DeserializeOptions? options = null
   )
   {
+    _options = options ?? _options;
     var (rootJson, childrenIds) = await objectLoader
-      .GetAndCache(rootId, cancellationToken, options)
+      .GetAndCache(rootId, _options, cancellationToken)
       .ConfigureAwait(false);
     _total = childrenIds.Count;
     _closures.TryAdd(rootId, (rootJson, childrenIds));
