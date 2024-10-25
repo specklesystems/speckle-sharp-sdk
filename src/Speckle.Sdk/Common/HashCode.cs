@@ -63,7 +63,7 @@ public readonly struct HashCode : IEquatable<HashCode>
   /// <typeparam name="T">The type of the item.</typeparam>
   /// <param name="item">The item.</param>
   /// <returns>The new hash code.</returns>
-  public HashCode And<T>(T item) => new HashCode(CombineHashCodes(this._value, GetHashCode(item)));
+  public HashCode And<T>(T item) => new HashCode(CombineHashCodes(_value, GetHashCode(item)));
 
   /// <summary>
   /// Adds the hash code of the specified items in the collection.
@@ -75,21 +75,21 @@ public readonly struct HashCode : IEquatable<HashCode>
   {
     if (items == null)
     {
-      return new HashCode(this._value);
+      return new HashCode(_value);
     }
 
-    return new HashCode(GetHashCode(items, this._value));
+    return new HashCode(GetHashCode(items, _value));
   }
 
   /// <inheritdoc />
-  public bool Equals(HashCode other) => this._value.Equals(other._value);
+  public bool Equals(HashCode other) => _value.Equals(other._value);
 
   /// <inheritdoc />
   public override bool Equals(object? obj)
   {
     if (obj is HashCode code)
     {
-      return this.Equals(code);
+      return Equals(code);
     }
 
     return false;

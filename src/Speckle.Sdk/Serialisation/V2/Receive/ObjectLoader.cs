@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Serialisation.Utilities;
@@ -12,115 +11,95 @@ public sealed class ObjectLoader(
   IServerObjectManager serverObjectManager,
   string streamId,
   IProgress<ProgressArgs>? progress
-) : IObjectLoader
+) : ChannelLoader, IObjectLoader
 {
-  private const int HTTP_ID_CHUNK_SIZE = 500;
-  private const int CACHE_CHUNK_SIZE = 3000;
-  private const int MAX_PARALLELISM_HTTP = 4;
-
   private int? _allChildrenCount;
+  private long _checkCache;
+  private long _cached;
+  private DeserializeOptions _options = new(false);
 
   public async Task<(string, IReadOnlyList<string>)> GetAndCache(
     string rootId,
-    CancellationToken cancellationToken,
-    DeserializeOptions? options = null
+    DeserializeOptions options,
+    CancellationToken cancellationToken
   )
   {
-    var rootJson = sqLiteCacheManager.GetObject(rootId);
-    if (rootJson != null)
+    _options = options;
+    string? rootJson;
+    if (!options.SkipCache)
     {
-      //assume everything exists as the root is there.
-      var allChildren = ClosureParser.GetChildrenIds(rootJson).ToList();
-      return (rootJson, allChildren);
+      rootJson = sqLiteCacheManager.GetObject(rootId);
+      if (rootJson != null)
+      {
+        //assume everything exists as the root is there.
+        var allChildren = ClosureParser.GetChildrenIds(rootJson).ToList();
+        return (rootJson, allChildren);
+      }
     }
     rootJson = await serverObjectManager
       .DownloadSingleObject(streamId, rootId, progress, cancellationToken)
       .NotNull()
       .ConfigureAwait(false);
-    var allChildrenIds = ClosureParser
+    List<string> allChildrenIds = ClosureParser
       .GetClosures(rootJson)
       .OrderByDescending(x => x.Item2)
       .Select(x => x.Item1)
       .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
       .ToList();
     _allChildrenCount = allChildrenIds.Count;
-    if (!(options?.SkipCacheCheck ?? false))
-    {
-      var idsToDownload = CheckCache(allChildrenIds);
-      await DownloadAndCache(idsToDownload, cancellationToken).ConfigureAwait(false);
-    }
+    await GetAndCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
+
     //save the root last to shortcut later
     sqLiteCacheManager.SaveObjectSync(rootId, rootJson);
     return (rootJson, allChildrenIds);
   }
 
-  private async IAsyncEnumerable<string> CheckCache(IReadOnlyList<string> childrenIds)
+  [AutoInterfaceIgnore]
+  public override string? CheckCache(string id)
   {
-    var count = 0L;
-    progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
-    await foreach (
-      var (id, result) in childrenIds
-        .Batch(CACHE_CHUNK_SIZE)
-        .Select(x => sqLiteCacheManager.HasObjects2(x)) // there needs to be a Task somewhere here
-        .SelectManyAsync()
-    )
+    _checkCache++;
+    progress?.Report(new(ProgressEvent.CacheCheck, _checkCache, _allChildrenCount));
+    if (!_options.SkipCache && !sqLiteCacheManager.HasObject(id))
     {
-      count++;
-      progress?.Report(new(ProgressEvent.CacheCheck, count, childrenIds.Count));
-      if (!result)
-      {
-        yield return id;
-      }
+      return id;
     }
+
+    return null;
   }
 
-  private async Task DownloadAndCache(IAsyncEnumerable<string> ids, CancellationToken cancellationToken)
+  [AutoInterfaceIgnore]
+  public override async Task<List<(string, string)>> DownloadAndCache(List<string?> ids)
   {
     var count = 0L;
     progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
     var toCache = new List<(string, string)>();
-    var tasks = new ConcurrentBag<Task>();
-    using SemaphoreSlim ss = new(MAX_PARALLELISM_HTTP, MAX_PARALLELISM_HTTP);
-    await foreach (var idBatch in ids.BatchAsync(HTTP_ID_CHUNK_SIZE).WithCancellation(cancellationToken))
+    await foreach (
+      var (id, json) in serverObjectManager.DownloadObjects(
+        streamId,
+        ids.Select(x => x.NotNull()).ToList(),
+        progress,
+        default
+      )
+    )
     {
-      await ss.WaitAsync(cancellationToken).ConfigureAwait(false);
-      try
-      {
-        await foreach (
-          var (id, json) in serverObjectManager.DownloadObjects(streamId, idBatch, progress, cancellationToken)
-        )
-        {
-          count++;
-          progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
-          toCache.Add((id, json));
-          if (toCache.Count >= CACHE_CHUNK_SIZE)
-          {
-            var toSave = toCache;
-            toCache = new List<(string, string)>();
-#pragma warning disable CA2008
-            tasks.Add(
-              Task.Factory.StartNew(() => sqLiteCacheManager.SaveObjects(toSave, cancellationToken), cancellationToken)
-            );
-#pragma warning restore CA2008
-          }
-        }
-      }
-      finally
-      {
-        ss.Release();
-      }
+      count++;
+      progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
+      toCache.Add((id, json));
     }
 
-    if (toCache.Count > 0)
+    return toCache;
+  }
+
+  [AutoInterfaceIgnore]
+  public override void SaveToCache((string, string) x)
+  {
+    if (!_options.SkipCache)
     {
-#pragma warning disable CA2008
-      tasks.Add(
-        Task.Factory.StartNew(() => sqLiteCacheManager.SaveObjects(toCache, cancellationToken), cancellationToken)
-      );
-#pragma warning restore CA2008
+      sqLiteCacheManager.SaveObjectSync(x.Item1, x.Item2);
     }
 
-    await Task.WhenAll(tasks).ConfigureAwait(false);
+    _cached++;
+    progress?.Report(new(ProgressEvent.Cached, _cached, _allChildrenCount));
   }
 
   public string? LoadId(string id) => sqLiteCacheManager.GetObject(id);

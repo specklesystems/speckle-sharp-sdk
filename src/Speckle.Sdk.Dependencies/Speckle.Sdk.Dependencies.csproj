@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Compiler Properties">
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
@@ -27,7 +27,9 @@
     <PackageReference Include="Microsoft.Extensions.ObjectPool" PrivateAssets="all" />    
     <PackageReference Include="Polly" PrivateAssets="all" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" PrivateAssets="all" />
-    <PackageReference Include="Polly.Extensions.Http" PrivateAssets="all"  />
+    <PackageReference Include="Polly.Extensions.Http" PrivateAssets="all" />
+    <PackageReference Include="Open.ChannelExtensions" PrivateAssets="all" />
+    <PackageReference Include="System.Threading.Channels" PrivateAssets="all" />
 
   </ItemGroup>
 </Project>

@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Dynamic;
 using System.Net.WebSockets;
 using System.Reflection;
 using GraphQL;
@@ -175,46 +174,11 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     }
   }
 
-  private Dictionary<string, object?> ConvertExpandoToDict(ExpandoObject expando)
-  {
-    var variables = new Dictionary<string, object?>();
-    foreach (KeyValuePair<string, object?> kvp in expando)
-    {
-      object? value;
-      if (kvp.Value is ExpandoObject ex)
-      {
-        value = ConvertExpandoToDict(ex);
-      }
-      else
-      {
-        value = kvp.Value;
-      }
-
-      variables[kvp.Key] = value;
-    }
-    return variables;
-  }
-
-  /* private ILogEventEnricher[] CreateEnrichers<T>(GraphQLRequest request)
-   {
-     // i know this is double  (de)serializing, but we need a recursive convert to
-     // dict<str, object> here
-     var expando = JsonConvert.DeserializeObject<ExpandoObject>(JsonConvert.SerializeObject(request.Variables));
-     var variables = request.Variables != null && expando != null ? ConvertExpandoToDict(expando) : null;
-     return new ILogEventEnricher[]
-     {
-       new PropertyEnricher("serverUrl", ServerUrl),
-       new PropertyEnricher("graphqlQuery", request.Query),
-       new PropertyEnricher("graphqlVariables", variables),
-       new PropertyEnricher("resultType", typeof(T).Name)
-     };
-   }*/
-
   IDisposable ISpeckleGraphQLClient.SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback) =>
     SubscribeTo(request, callback);
 
   /// <inheritdoc cref="ISpeckleGraphQLClient.SubscribeTo{T}"/>
-  internal IDisposable SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback)
+  private IDisposable SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback)
   {
     //using (LogContext.Push(CreateEnrichers<T>(request)))
     {

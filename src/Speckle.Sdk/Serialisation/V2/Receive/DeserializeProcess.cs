@@ -5,14 +5,16 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
-public record DeserializeOptions(bool? SkipCacheCheck = null);
+public record DeserializeOptions(bool SkipCache);
 
 public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader)
 {
   private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
   private long _total;
+  private DeserializeOptions _options = new(false);
 
   public ConcurrentDictionary<string, Base> BaseCache { get; } = new();
+  private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
 
   public async Task<Base> Deserialize(
     string rootId,
@@ -20,8 +22,9 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     DeserializeOptions? options = null
   )
   {
+    _options = options ?? _options;
     var (rootJson, childrenIds) = await objectLoader
-      .GetAndCache(rootId, cancellationToken, options)
+      .GetAndCache(rootId, _options, cancellationToken)
       .ConfigureAwait(false);
     _total = childrenIds.Count;
     _closures.TryAdd(rootId, (rootJson, childrenIds));
@@ -40,13 +43,17 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     var tasks = new List<Task>();
     foreach (var childId in childIds)
     {
-      lock (BaseCache)
+      if (BaseCache.ContainsKey(childId))
       {
-        if (BaseCache.ContainsKey(childId))
-        {
-          continue;
-        }
+        continue;
+      }
 
+      if (_activeTasks.TryGetValue(childId, out var task))
+      {
+        tasks.Add(task);
+      }
+      else
+      {
         // tmp is necessary because of the way closures close over loop variables
         var tmpId = childId;
         Task t = Task
@@ -58,6 +65,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
           )
           .Unwrap();
         tasks.Add(t);
+        _activeTasks.TryAdd(childId, t);
       }
     }
 
@@ -102,6 +110,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     BaseCache.TryAdd(id, @base);
     //remove from JSON cache because we've finally made the Base
     _closures.TryRemove(id, out _);
+    _activeTasks.TryRemove(id, out _);
   }
 
   private Base Deserialise(string id, string json)

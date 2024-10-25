@@ -835,12 +835,12 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
 
   private static string GenerateChallenge()
   {
-#if NETSTANDARD2_0
+#if NET8_0
+    byte[] challengeData = RandomNumberGenerator.GetBytes(32);
+#else
     using RNGCryptoServiceProvider rng = new();
     byte[] challengeData = new byte[32];
     rng.GetBytes(challengeData);
-#else
-    byte[] challengeData = RandomNumberGenerator.GetBytes(32);
 #endif
     //escaped chars like % do not play nice with the server
     return Regex.Replace(Convert.ToBase64String(challengeData), @"[^\w\.@-]", "");
