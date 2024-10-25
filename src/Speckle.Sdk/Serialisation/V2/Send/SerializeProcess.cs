@@ -6,6 +6,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
+public record SerializeProcessOptions(bool SkipCache, bool SkipServer);
 public class SerializeProcess(
   IProgress<ProgressArgs>? progress,
   ISQLiteCacheManager sqliteCacheManager,
@@ -20,8 +21,11 @@ public class SerializeProcess(
   private long _checked;
   private long _serialized;
 
-  public async Task Serialize(string streamId, Base root, CancellationToken cancellationToken)
+  private SerializeProcessOptions _options = new(false, false);
+
+  public async Task Serialize(string streamId, Base root, CancellationToken cancellationToken, SerializeProcessOptions? options = null)
   {
+    _options = options ?? _options;
     var channelTask = _checkCacheChannel
       .Reader.Pipe(Environment.ProcessorCount, x => CheckCache(root.id, x), -1, false, cancellationToken)
       .Filter(x => x != null)
@@ -49,9 +53,9 @@ public class SerializeProcess(
         continue;
       }
 
-      //await Traverse(child, cancellationToken).ConfigureAwait(false);
+      await Traverse(child, cancellationToken).ConfigureAwait(false);
       // tmp is necessary because of the way closures close over loop variables
-
+/*
       var tmp = child;
       var t = Task
         .Factory.StartNew(
@@ -61,7 +65,7 @@ public class SerializeProcess(
           TaskScheduler.Default
         )
         .Unwrap();
-      tasks.Add(t);
+      tasks.Add(t);*/
     }
 
     if (tasks.Count > 0)
@@ -84,11 +88,15 @@ public class SerializeProcess(
       return null;
     }
 
-    var json = sqliteCacheManager.GetObject(obj.id);
+    string? json = null;
+    if (!_options.SkipCache)
+    {
+      json = sqliteCacheManager.GetObject(obj.id);
+    }
     Interlocked.Increment(ref _total);
     if (json == null)
     {
-      if (JsonCache.TryGetValue(obj.id, out json))
+      if (!JsonCache.TryGetValue(obj.id, out json))
       {
         Interlocked.Increment(ref _serialized);
         SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, JsonCache, progress);
@@ -98,17 +106,26 @@ public class SerializeProcess(
         progress?.Report(new(ProgressEvent.SerializeObject, JsonCache.Count, _total));
       }
     }
+    else
+    {
+      JsonCache.TryAdd(obj.id, json);
+    }
     return json;
   }
 
+  //return null when it's cached
   private (string, string)? CheckCache(string rootId, (string, string) item)
   {
     Interlocked.Increment(ref _checked);
     progress?.Report(new(ProgressEvent.CacheCheck, _checked, null));
-    if (!sqliteCacheManager.HasObject(item.Item1))
+    if (!_options.SkipCache)
     {
-      return item;
+      if (!sqliteCacheManager.HasObject(item.Item1))
+      {
+        return item;
+      }
     }
+
     if (rootId == item.Item1)
     {
       _checkCacheChannel.Writer.Complete();
@@ -127,15 +144,23 @@ public class SerializeProcess(
     {
       return batchToSend;
     }
-    await serverObjectManager
-      .UploadObjects(streamId, batchToSend, true, progress, cancellationToken)
-      .ConfigureAwait(false);
+
+    if (!_options.SkipServer)
+    {
+      await serverObjectManager
+        .UploadObjects(streamId, batchToSend, true, progress, cancellationToken)
+        .ConfigureAwait(false);
+    }
     return batchToSend;
   }
 
   private void SaveToCache(string rootId, (string, string) item)
   {
-    sqliteCacheManager.SaveObjectSync(item.Item1, item.Item2);
+    if (!_options.SkipCache)
+    {
+      sqliteCacheManager.SaveObjectSync(item.Item1, item.Item2);
+    }
+
     if (rootId == item.Item1)
     {
       _checkCacheChannel.Writer.Complete();
