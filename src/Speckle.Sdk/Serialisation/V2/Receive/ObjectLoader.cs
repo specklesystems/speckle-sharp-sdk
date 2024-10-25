@@ -17,19 +17,25 @@ public sealed class ObjectLoader(
   private int? _allChildrenCount;
   private long _checkCache;
   private long _cached;
+  private DeserializeOptions _options = new(false);
 
   public async Task<(string, IReadOnlyList<string>)> GetAndCache(
     string rootId,
-    CancellationToken cancellationToken,
-    DeserializeOptions? options = null
+    DeserializeOptions options,
+    CancellationToken cancellationToken
   )
   {
-    var rootJson = sqLiteCacheManager.GetObject(rootId);
-    if (rootJson != null)
+    _options = options;
+    string? rootJson;
+    if (!options.SkipCache)
     {
-      //assume everything exists as the root is there.
-      var allChildren = ClosureParser.GetChildrenIds(rootJson).ToList();
-      return (rootJson, allChildren);
+      rootJson = sqLiteCacheManager.GetObject(rootId);
+      if (rootJson != null)
+      {
+        //assume everything exists as the root is there.
+        var allChildren = ClosureParser.GetChildrenIds(rootJson).ToList();
+        return (rootJson, allChildren);
+      }
     }
     rootJson = await serverObjectManager
       .DownloadSingleObject(streamId, rootId, progress, cancellationToken)
@@ -55,7 +61,7 @@ public sealed class ObjectLoader(
   {
     _checkCache++;
     progress?.Report(new(ProgressEvent.CacheCheck, _checkCache, _allChildrenCount));
-    if (!sqLiteCacheManager.HasObject(id))
+    if (!_options.SkipCache && !sqLiteCacheManager.HasObject(id))
     {
       return id;
     }
@@ -89,7 +95,10 @@ public sealed class ObjectLoader(
   [AutoInterfaceIgnore]
   public override void SaveToCache((string, string) x)
   {
-    sqLiteCacheManager.SaveObjectSync(x.Item1, x.Item2);
+    if (!_options.SkipCache)
+    {
+      sqLiteCacheManager.SaveObjectSync(x.Item1, x.Item2);
+    }
 
     _cached++;
     progress?.Report(new(ProgressEvent.Cached, _cached, null));
