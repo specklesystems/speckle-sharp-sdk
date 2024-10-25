@@ -807,7 +807,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   /// <param name="server">Server endpoint to get header</param>
   /// <returns><see langword="true"/> if response contains FE2 header and the value was <see langword="true"/></returns>
   /// <exception cref="SpeckleException">response contained FE2 header, but the value was <see langword="null"/>, empty, or not parseable to a <see cref="Boolean"/></exception>
-  /// <exception cref="System.Net.Http.HttpRequestException">Request to <paramref name="server"/> failed to send or response was not successful</exception>
+  /// <exception cref="HttpRequestException">Request to <paramref name="server"/> failed to send or response was not successful</exception>
   private async Task<bool> IsFrontend2Server(Uri server)
   {
     using var httpClient = speckleHttp.CreateHttpClient();
