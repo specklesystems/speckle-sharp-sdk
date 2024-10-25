@@ -26,7 +26,7 @@ public class SpeckleBaseChildFinder(ISpeckleBasePropertyGatherer propertyGathere
           }
         }
       }
-      if (kvp.Value.value  is IDictionary d)
+      if (kvp.Value.value is IDictionary d)
       {
         foreach (DictionaryEntry de in d)
         {

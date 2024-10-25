@@ -148,7 +148,6 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     c.Open();
     const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
     using var command = new SqliteCommand(COMMAND_TEXT, c);
-    command.Parameters.Clear();
     command.Parameters.AddWithValue("@hash", objectId);
 
     using var reader = command.ExecuteReader();

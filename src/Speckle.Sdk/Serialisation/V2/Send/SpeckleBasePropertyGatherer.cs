@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections.Concurrent;
+using System.Reflection;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
@@ -10,7 +11,8 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 [GenerateAutoInterface]
 public class SpeckleBasePropertyGatherer : ISpeckleBasePropertyGatherer
 {
-  private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
+  private readonly ConcurrentDictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache =
+    new();
 
   public Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
   {
@@ -48,8 +50,7 @@ public class SpeckleBasePropertyGatherer : ISpeckleBasePropertyGatherer
 
     return allProperties;
   }
-  
-  
+
   // (propertyInfo, isDetachable, isChunkable, chunkSize, JsonPropertyAttribute)
   private IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> GetTypedPropertiesWithCache(Base baseObj)
   {

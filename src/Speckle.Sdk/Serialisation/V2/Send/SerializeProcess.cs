@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Models;
@@ -11,29 +11,29 @@ public class SerializeProcess(
   ISQLiteCacheManager sqliteCacheManager,
   IServerObjectManager serverObjectManager,
   ISpeckleBaseChildFinder speckleBaseChildFinder,
-  ISpeckleBasePropertyGatherer speckleBasePropertyGatherer)
+  ISpeckleBasePropertyGatherer speckleBasePropertyGatherer
+)
 {
-  public ConcurrentDictionary<string, string> JsonCache { get; } = new();  
+  public ConcurrentDictionary<string, string> JsonCache { get; } = new();
   private readonly Channel<(string, string)> _checkCacheChannel = Channel.CreateUnbounded<(string, string)>();
   private long _total;
+  private long _checked;
+  private long _serialized;
 
-  public async Task Serialize(
-    string streamId,
-    Base root,
-    CancellationToken cancellationToken
-  )
+  public async Task Serialize(string streamId, Base root, CancellationToken cancellationToken)
   {
-    var channelTask = _checkCacheChannel.Reader
-      .Pipe(Environment.ProcessorCount, CheckCache, -1, false, cancellationToken)
+    var channelTask = _checkCacheChannel
+      .Reader.Pipe(Environment.ProcessorCount, x => CheckCache(root.id, x), -1, false, cancellationToken)
       .Filter(x => x != null)
-      .Batch(1000).WithTimeout(TimeSpan.FromSeconds(2))
+      .Batch(1000)
+      .WithTimeout(TimeSpan.FromSeconds(2))
       .PipeAsync(4, x => SendToServer(streamId, x, cancellationToken), -1, false, cancellationToken)
       .Join()
       .ReadAllConcurrently(Environment.ProcessorCount, x => SaveToCache(root.id, x), cancellationToken);
     await Traverse(root, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
   }
-  
+
   private async Task Traverse(Base obj, CancellationToken cancellationToken)
   {
     if (JsonCache.ContainsKey(obj.id))
@@ -41,26 +41,27 @@ public class SerializeProcess(
       return;
     }
     var tasks = new List<Task>();
-    foreach (var child in speckleBaseChildFinder.GetChildren(obj))
+    var children = speckleBaseChildFinder.GetChildren(obj).ToList();
+    foreach (var child in children)
     {
-        if (JsonCache.ContainsKey(child.id))
-        {
-          continue;
-        }
+      if (JsonCache.ContainsKey(child.id))
+      {
+        continue;
+      }
 
-        //await Traverse(child, cancellationToken).ConfigureAwait(false);
-        // tmp is necessary because of the way closures close over loop variables
-       var tmp = child;
-        Task t = Task
-          .Factory.StartNew(
-            () => Traverse(tmp, cancellationToken),
-            cancellationToken,
-            TaskCreationOptions.AttachedToParent,
-            TaskScheduler.Default
-          )
-          .Unwrap();
-        tasks.Add(t);
-         Interlocked.Increment(ref _total);
+      //await Traverse(child, cancellationToken).ConfigureAwait(false);
+      // tmp is necessary because of the way closures close over loop variables
+
+      var tmp = child;
+      var t = Task
+        .Factory.StartNew(
+          () => Traverse(tmp, cancellationToken),
+          cancellationToken,
+          TaskCreationOptions.AttachedToParent,
+          TaskScheduler.Default
+        )
+        .Unwrap();
+      tasks.Add(t);
     }
 
     if (tasks.Count > 0)
@@ -68,32 +69,49 @@ public class SerializeProcess(
       await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    //don't redo things if the id is decoded already in the cache
-    if (!JsonCache.ContainsKey(obj.id))
+    var json = Serialise(obj);
+    if (json is not null)
     {
-      await Serialise(obj).ConfigureAwait(false);
-      progress?.Report(new(ProgressEvent.SerializeObject, JsonCache.Count, _total));
+      await _checkCacheChannel.Writer.WriteAsync((obj.id, json), cancellationToken).ConfigureAwait(false);
     }
   }
 
-
-  private async ValueTask Serialise(Base obj)
+  //leave this sync
+  private string? Serialise(Base obj)
   {
     if (JsonCache.ContainsKey(obj.id))
     {
-      return;
+      return null;
     }
-    SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, JsonCache, progress);
-    var objJson = await serializer2.SerializeAsync(obj).ConfigureAwait(false);
-    JsonCache.TryAdd(obj.id, objJson);
-    await _checkCacheChannel.Writer.WriteAsync((obj.id, objJson)).ConfigureAwait(false);
+
+    var json = sqliteCacheManager.GetObject(obj.id);
+    Interlocked.Increment(ref _total);
+    if (json == null)
+    {
+      if (JsonCache.TryGetValue(obj.id, out json))
+      {
+        Interlocked.Increment(ref _serialized);
+        SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, JsonCache, progress);
+        Console.WriteLine("Serialized " + JsonCache.Count + " " + _total + " " + _serialized);
+        json = serializer2.Serialize(obj);
+        JsonCache.TryAdd(obj.id, json);
+        progress?.Report(new(ProgressEvent.SerializeObject, JsonCache.Count, _total));
+      }
+    }
+    return json;
   }
 
-  private (string, string)? CheckCache((string, string) item)
+  private (string, string)? CheckCache(string rootId, (string, string) item)
   {
+    Interlocked.Increment(ref _checked);
+    progress?.Report(new(ProgressEvent.CacheCheck, _checked, null));
     if (!sqliteCacheManager.HasObject(item.Item1))
     {
       return item;
+    }
+    if (rootId == item.Item1)
+    {
+      _checkCacheChannel.Writer.Complete();
     }
     return null;
   }
@@ -110,7 +128,7 @@ public class SerializeProcess(
       return batchToSend;
     }
     await serverObjectManager
-      .UploadObjects(streamId,batchToSend, true, progress, cancellationToken)
+      .UploadObjects(streamId, batchToSend, true, progress, cancellationToken)
       .ConfigureAwait(false);
     return batchToSend;
   }
