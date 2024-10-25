@@ -1,4 +1,4 @@
-﻿using Open.ChannelExtensions;
+using Open.ChannelExtensions;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
