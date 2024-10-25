@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
 using System.Reflection;
@@ -359,7 +358,7 @@ public class SpeckleObjectSerializer
     if (writer is SerializerIdWriter serializerIdWriter)
     {
       (var json, writer) = serializerIdWriter.FinishIdWriter();
-      id = ComputeId(json);
+      id = IdGenerator.ComputeId(json);
     }
     else
     {
@@ -432,17 +431,6 @@ public class SpeckleObjectSerializer
 
       _parentClosures[parentLevel][objectId] = Math.Min(currentValue, childDepth);
     }
-  }
-
-  [Pure]
-  private static string ComputeId(string serialized)
-  {
-#if NET6_0_OR_GREATER
-    string hash = Crypt.Sha256(serialized.AsSpan(), length: HashUtility.HASH_LENGTH);
-#else
-    string hash = Crypt.Sha256(serialized, length: HashUtility.HASH_LENGTH);
-#endif
-    return hash;
   }
 
   private void StoreObject(string objectId, string objectJson)

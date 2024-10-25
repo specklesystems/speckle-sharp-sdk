@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
@@ -317,7 +316,7 @@ public class SpeckleObjectSerializer2
     if (writer is SerializerIdWriter serializerIdWriter)
     {
       (var json, writer) = serializerIdWriter.FinishIdWriter();
-      id = ComputeId(json);
+      id = IdGenerator.ComputeId(json);
     }
     else
     {
@@ -396,14 +395,4 @@ public class SpeckleObjectSerializer2
     }
   }
 
-  [Pure]
-  private static string ComputeId(string serialized)
-  {
-#if NET6_0_OR_GREATER
-    string hash = Crypt.Sha256(serialized.AsSpan(), length: HashUtility.HASH_LENGTH);
-#else
-    string hash = Crypt.Sha256(serialized, length: HashUtility.HASH_LENGTH);
-#endif
-    return hash;
-  }
 }
