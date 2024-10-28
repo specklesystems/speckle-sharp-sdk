@@ -103,7 +103,7 @@ public interface IGisFeature : ISpeckleObject
 /// <example>
 /// <see cref="Base"/> objects that represent conceptual / abstract / mathematically derived geometry
 /// can use <see cref="displayValue"/> to be used in case the object lacks a natively displayable form.
-/// (e.g <see cref="Spiral"/>, <see cref="Wall"/>, <see cref="Pipe"/>)
+/// (e.g <see cref="Spiral"/>, <see cref="Wall"/>)
 /// </example>
 /// <typeparam name="T">
 /// Type of display value.
@@ -118,17 +118,4 @@ public interface IDisplayValue<out T> : ISpeckleObject
   /// </summary>
   T displayValue { get; }
 }
-
-/// <summary>
-/// Represents a calculated object for civil disciplines
-/// </summary>
-public interface ICivilCalculatedObject : ISpeckleObject
-{
-  /// <summary>
-  /// <see cref="codes"/> for this calculated object.
-  /// </summary>
-  List<string> codes { get; set; }
-}
-
-
 #endregion

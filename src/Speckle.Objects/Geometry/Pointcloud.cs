@@ -1,7 +1,6 @@
 using Speckle.Objects.Other;
 using Speckle.Sdk;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
@@ -17,22 +16,11 @@ public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
   /// </summary>
   public Pointcloud() { }
 
-  /// <param name="points">Flat list of x,y,z coordinates</param>
-  /// <param name="colors">Optional list of colors</param>
-  /// <param name="sizes">Optional list of sizes</param>
-  [SchemaInfo(nameof(Pointcloud), "Create a point cloud object", "Objects", "Geometry")]
-  public Pointcloud(List<double> points, List<int>? colors = null, List<double>? sizes = null)
-  {
-    this.points = points;
-    this.colors = colors ?? new();
-    this.sizes = sizes ?? new();
-  }
-
   /// <summary>
   /// Gets or sets the list of points of this <see cref="Pointcloud"/>, stored as a flat list of coordinates [x1,y1,z1,x2,y2,...]
   /// </summary>
   [DetachProperty, Chunkable(31250)]
-  public List<double> points { get; set; } = new();
+  public required List<double> points { get; set; } = new();
 
   /// <summary>
   /// Gets or sets the list of colors of this <see cref="Pointcloud"/>'s points., stored as ARGB <see cref="int"/>s.
