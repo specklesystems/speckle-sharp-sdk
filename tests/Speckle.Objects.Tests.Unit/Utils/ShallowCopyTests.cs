@@ -13,16 +13,15 @@ public class ShallowCopyTests
   public void CanShallowCopy_Wall()
   {
     const string UNITS = Units.Meters;
-    var wall = new Wall(
-      5,
-      new Line()
+    var wall = new Wall()
+    {
+      height = 5,
+      baseLine = new Line()
       {
         start = new Point(0, 0, 0, UNITS),
         end = new Point(3, 0, 0, UNITS),
         units = UNITS,
-      }
-    )
-    {
+      },
       units = UNITS,
       displayValue = new List<Mesh>
       {

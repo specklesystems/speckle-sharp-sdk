@@ -27,12 +27,16 @@ public class ArcTests
   public void CanCreateArc_HalfCircle()
   {
     const string UNITS = Units.Meters;
-    var arc = new Arc(TestPlane, new Point(-5, 5, 0, UNITS), new Point(5, 5, 0, UNITS), Math.PI);
+    var arc = new Arc()
+    {
+      plane = TestPlane,
+      startPoint = new Point(1, 0, 0, UNITS),
+      endPoint = new Point(-1, 0, 0, UNITS),
+      midPoint = new Point(0, 1, 0, UNITS),
+      units = UNITS,
+    };
 
-    Assert.That(arc.startAngle, Is.EqualTo(0));
-    Assert.That(arc.endAngle, Is.EqualTo(Math.PI));
-
-    Assert.That(Point.Distance(arc.midPoint, new Point(0, 0, 0, UNITS)), Is.EqualTo(0).Within(0.0001));
-    Assert.That(Point.Distance(arc.plane.origin, new Point(0, 5, 0, UNITS)), Is.EqualTo(0).Within(0.0001));
+    Assert.That(Point.Distance(arc.midPoint, new Point(0, 1, 0, UNITS)), Is.EqualTo(0).Within(0.0001));
+    Assert.That(Point.Distance(arc.plane.origin, new Point(0, 0, 0, UNITS)), Is.EqualTo(0).Within(0.0001));
   }
 }
