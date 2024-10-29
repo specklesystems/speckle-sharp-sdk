@@ -51,6 +51,15 @@ public sealed class SubscriptionResource : IDisposable
           id
           project {
             id
+            name
+            description
+            visibility
+            allowPublicComments
+            role
+            createdAt
+            updatedAt
+            sourceApps
+            workspaceId
           }
           type
         }
