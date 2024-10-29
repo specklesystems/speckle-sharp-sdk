@@ -30,7 +30,12 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
     this.applicationId = applicationId;
   }
 
-  public double area { get; set; }
+  /// <summary>
+  /// OBSOLETE - This is just here for backwards compatibility.
+  /// You should not use this for anything.
+  /// </summary>
+  [JsonIgnore, Obsolete("Area should not be on the line class", true)]
+  public double area => 0;
 
   public required string units { get; set; }
 
@@ -90,28 +95,5 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
       domain = new Interval { start = list[8], end = list[9] },
     };
     return line;
-  }
-
-  /// <summary>
-  /// OBSOLETE - This is just here for backwards compatibility.
-  /// You should not use this for anything. Access coordinates using start and end point.
-  /// </summary>
-  [
-    JsonProperty(NullValueHandling = NullValueHandling.Ignore),
-    Obsolete("Access coordinates using start and end point", true)
-  ]
-  public List<double>? value
-  {
-    get => null;
-    set
-    {
-      if (value == null)
-      {
-        return;
-      }
-
-      start = new Point(value[0], value[1], value[2], Units.Meters);
-      end = new Point(value[3], value[4], value[5], Units.Meters);
-    }
   }
 }

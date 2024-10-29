@@ -8,7 +8,7 @@ namespace Speckle.Objects.Geometry;
 /// Represents a 3-dimensional box oriented on a plane.
 /// </summary>
 [SpeckleType("Objects.Geometry.Box")]
-public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
+public class Box : Base, IHasVolume, IHasArea
 {
   /// <summary>
   /// Gets or sets the plane that defines the orientation of the <see cref="Box"/>
@@ -39,11 +39,8 @@ public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
   public required string units { get; set; }
 
   /// <inheritdoc/>
-  public double area { get; set; }
+  public double area { get; set; } // TODO: compute
 
   /// <inheritdoc/>
-  public Box? bbox { get; }
-
-  /// <inheritdoc/>
-  public double volume { get; set; }
+  public double volume { get; set; } // TODO: compute
 }

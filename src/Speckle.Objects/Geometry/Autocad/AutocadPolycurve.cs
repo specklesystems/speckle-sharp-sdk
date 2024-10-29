@@ -15,11 +15,6 @@ namespace Speckle.Objects.Geometry.Autocad;
 public class AutocadPolycurve : Polycurve
 {
   /// <summary>
-  /// Constructs a new empty <see cref="AutocadPolycurve"/> instance.
-  /// </summary>
-  public AutocadPolycurve() { }
-
-  /// <summary>
   /// Gets or sets the raw coordinates of the vertices.
   /// </summary>
   /// <remarks>
@@ -27,7 +22,7 @@ public class AutocadPolycurve : Polycurve
   /// For Polyline2d and Polyline3d types, these are xyz coordinates in the Global Coordinate System. fml.
   /// </remarks>
   [DetachProperty, Chunkable(31250)]
-  public List<double> value { get; set; } = new();
+  public required List<double> value { get; set; }
 
   /// <summary>
   /// The bulge factor at each vertex. Should be null for Polyline3d.
@@ -38,24 +33,24 @@ public class AutocadPolycurve : Polycurve
   /// made negative if the arc goes clockwise from the start point to the endpoint.
   /// A bulge of 0 indicates a straight segment, and a bulge of 1 is a semicircle.
   /// </remarks>
-  public List<double>? bulges { get; set; }
+  public required List<double>? bulges { get; set; }
 
   /// <summary>
   /// The tangent in radians at each vertex. Should be null for Polyline and Polyline3d.
   /// </summary>
-  public List<double?>? tangents { get; set; }
+  public required List<double?>? tangents { get; set; }
 
   /// <summary>
   /// The normal of the plane of the Autocad Polyline or Polyline2d. Should be null for Polyline3d.
   /// </summary>
-  public Vector? normal { get; set; }
+  public required Vector? normal { get; set; }
 
   /// <summary>
   /// The distance from the plane to the origin of the Autocad Polyline or Polyline2d. Should be null for Polyline3d.
   /// </summary>
   public double? elevation { get; set; }
 
-  public AutocadPolyType polyType { get; set; }
+  public required AutocadPolyType polyType { get; set; }
 }
 
 /// <summary>
