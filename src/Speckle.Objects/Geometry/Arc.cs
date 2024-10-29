@@ -81,7 +81,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
   /// <summary>
   /// OBSOLETE - This is just here for backwards compatibility.
   /// </summary>
-  [Obsolete("Area property does not belong on an arc", true)]
+  [JsonIgnore, Obsolete("Area property does not belong on an arc", true)]
   public double area { get; set; }
 
   /// <inheritdoc/>
