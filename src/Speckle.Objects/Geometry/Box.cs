@@ -1,3 +1,4 @@
+using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
@@ -8,7 +9,7 @@ namespace Speckle.Objects.Geometry;
 /// Represents a 3-dimensional box oriented on a plane.
 /// </summary>
 [SpeckleType("Objects.Geometry.Box")]
-public class Box : Base, IHasVolume, IHasArea
+public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
 {
   /// <summary>
   /// Gets or sets the plane that defines the orientation of the <see cref="Box"/>
@@ -40,6 +41,9 @@ public class Box : Base, IHasVolume, IHasArea
 
   /// <inheritdoc/>
   public double area { get; set; } // TODO: compute
+
+  [JsonIgnore, Obsolete("Boxs should not have a bounding box", true)]
+  public Box? bbox { get; }
 
   /// <inheritdoc/>
   public double volume { get; set; } // TODO: compute
