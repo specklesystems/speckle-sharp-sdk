@@ -125,56 +125,57 @@ public class SerializeProcess(
   }
 
   //return null when it's cached
-  public override (string, string)? CheckCache(string rootId, (string, string) item)
+  public override List<(string, string)> CheckCache(string rootId, List<(string, string)> items)
   {
-    Interlocked.Increment(ref _checked);
+    List<(string, string)> result;
     progress?.Report(new(ProgressEvent.CacheCheck, _checked, _total));
     if (!_options.SkipCache)
     {
-      if (!sqliteCacheManager.HasObject(item.Item1))
-      {
-        return item;
-      }
+      result = sqliteCacheManager.HasObjects(items);
     }
+    else
+    {
+      result = new();
+    }
+    Interlocked.Exchange(ref _checked, _checked + items.Count);
 
-    if (rootId == item.Item1)
+    if (items.Any(x => x.Item1 == rootId))
     {
       Done();
     }
-    return null;
+    return result;
   }
 
   public override async Task<List<(string, string)>> SendToServer(
     string streamId,
-    IReadOnlyList<(string, string)?> batch,
+    List<(string, string)> batch,
     CancellationToken cancellationToken
   )
   {
-    var batchToSend = batch.Where(x => x != null).Cast<(string, string)>().ToList();
-    if (batchToSend.Count == 0)
+    if (batch.Count == 0)
     {
-      return batchToSend;
+      return batch;
     }
 
     if (!_options.SkipServer)
     {
       await serverObjectManager
-        .UploadObjects(streamId, batchToSend, true, progress, cancellationToken)
+        .UploadObjects(streamId, batch, true, progress, cancellationToken)
         .ConfigureAwait(false);
     }
-    return batchToSend;
+    return batch;
   }
 
-  public override void SaveToCache(string rootId, (string, string) item)
+  public override void SaveToCache(string rootId, List<(string, string)> items)
   {
     if (!_options.SkipCache)
     {
-      Interlocked.Increment(ref _cached);
-      sqliteCacheManager.SaveObjectSync(item.Item1, item.Item2);
+      sqliteCacheManager.SaveObjects(items);
+      Interlocked.Exchange(ref _cached, _cached + items.Count);
       progress?.Report(new(ProgressEvent.Cached, _cached, null));
     }
 
-    if (rootId == item.Item1)
+    if (items.Any(x => x.Item1 == rootId))
     {
       Done();
     }

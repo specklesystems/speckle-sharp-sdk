@@ -51,7 +51,7 @@ public sealed class ObjectLoader(
     await GetAndCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
 
     //save the root last to shortcut later
-    sqLiteCacheManager.SaveObjectSync(rootId, rootJson);
+    sqLiteCacheManager.SaveObject(rootId, rootJson);
     return (rootJson, allChildrenIds);
   }
 
@@ -96,7 +96,7 @@ public sealed class ObjectLoader(
   {
     if (!_options.SkipCache)
     {
-      sqLiteCacheManager.SaveObjectSync(x.Item1, x.Item2);
+      sqLiteCacheManager.SaveObject(x.Item1, x.Item2);
     }
 
     _cached++;

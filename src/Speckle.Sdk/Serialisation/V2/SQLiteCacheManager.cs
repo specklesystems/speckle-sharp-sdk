@@ -100,7 +100,30 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     return rowFound;
   }
 
-  public void SaveObjectSync(string hash, string serializedObject)
+  public List<(string, string)> HasObjects(List<(string, string)> objectIds)
+  {
+    List<(string, string)> result = new();
+    using var c = new SqliteConnection(_connectionString);
+    c.Open();
+    using var tx = c.BeginTransaction();
+    const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
+    
+      foreach (var x in objectIds)
+      {
+        using var command =  new SqliteCommand(COMMAND_TEXT, c);
+        command.Transaction = tx;
+        command.Parameters.AddWithValue("@hash", x.Item1);
+        using var reader = command.ExecuteReader();
+        if (reader.Read())
+        {
+          result.Add(x);
+        }
+      }
+    
+    return result;
+  }
+
+  public void SaveObject(string hash, string serializedObject)
   {
     using var c = new SqliteConnection(_connectionString);
     c.Open();
@@ -110,5 +133,23 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     command.Parameters.AddWithValue("@hash", hash);
     command.Parameters.AddWithValue("@content", serializedObject);
     command.ExecuteNonQuery();
+  }
+  public void SaveObjects(List<(string , string)> items)
+  {
+    using var c = new SqliteConnection(_connectionString);
+    c.Open();
+    using var tx = c.BeginTransaction();
+    const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
+
+    foreach (var (hash, content) in items)
+    {
+      using var command = new SqliteCommand(COMMAND_TEXT, c);
+      command.Transaction = tx;
+      command.Parameters.AddWithValue("@hash", hash);
+      command.Parameters.AddWithValue("@content", content);
+      command.ExecuteNonQuery();
+    }
+
+    tx.Commit();
   }
 }
