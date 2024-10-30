@@ -278,7 +278,11 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
         {
           ContractResolver = new CamelCasePropertyNamesContractResolver { IgnoreIsSpecifiedMembers = true }, //(Default)
           MissingMemberHandling = MissingMemberHandling.Error, //(not default) If you query for a member that doesn't exist, this will throw (except websocket responses see https://github.com/graphql-dotnet/graphql-client/issues/660)
-          Converters = { new ConstantCaseEnumConverter() } //(Default) enums will be serialized using the GraphQL const case standard
+          Converters =
+          {
+            new ConstantCaseEnumConverter(),
+          } //(Default) enums will be serialized using the GraphQL const case standard
+          ,
         }
       ),
       httpClient
