@@ -124,6 +124,10 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
   public List<double> ToList()
   {
     var list = new List<double>();
+    list.Add(radius);
+    list.Add(0); // Backwards compatibility: start angle
+    list.Add(0); // Backwards compatibility: end angle
+    list.Add(measure);
     list.Add(domain?.start ?? 0);
     list.Add(domain?.end ?? 0);
     list.AddRange(plane.ToList());
@@ -149,12 +153,12 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
     Arc arc =
       new()
       {
-        startPoint = Point.FromList(list.GetRange(17, 3), units),
-        midPoint = Point.FromList(list.GetRange(20, 3), units),
-        endPoint = Point.FromList(list.GetRange(23, 3), units),
-        domain = new Interval { start = list[2], end = list[3] },
+        domain = new Interval { start = list[6], end = list[7] },
         units = units,
-        plane = Plane.FromList(list.GetRange(4, 13)),
+        plane = Plane.FromList(list.GetRange(8, 13)),
+        startPoint = Point.FromList(list.GetRange(21, 3), units),
+        midPoint = Point.FromList(list.GetRange(24, 3), units),
+        endPoint = Point.FromList(list.GetRange(27, 3), units),
       };
 
     arc.plane.units = arc.units;

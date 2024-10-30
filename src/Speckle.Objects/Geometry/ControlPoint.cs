@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Models;
 
@@ -17,6 +18,27 @@ public class ControlPoint : Point, ITransformable<ControlPoint>
   }
 
   public required double weight { get; set; }
+
+  /// <summary>
+  /// OBSOLETE - This is just here for backwards compatibility.
+  /// </summary>
+  [
+    JsonProperty(NullValueHandling = NullValueHandling.Ignore),
+    Obsolete("Access coordinates using XYZ and weight fields", true)
+  ]
+  private new List<double> value
+  {
+#pragma warning disable CS8603 // Possible null reference return. Reason: obsolete.
+    get => null;
+#pragma warning restore CS8603 // Possible null reference return. Reason: obsolete.
+    set
+    {
+      x = value[0];
+      y = value[1];
+      z = value[2];
+      weight = value.Count > 3 ? value[3] : 1;
+    }
+  }
 
   public bool TransformTo(Transform transform, out ControlPoint transformed)
   {
