@@ -160,6 +160,7 @@ public sealed class SubscriptionResource : IDisposable
             createdAt
             updatedAt
             sourceApps
+            workspaceId
           }
           type
         }
