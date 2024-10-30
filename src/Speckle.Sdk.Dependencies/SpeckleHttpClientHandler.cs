@@ -1,5 +1,4 @@
 using Polly;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Helpers;
@@ -9,7 +8,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
   private readonly IAsyncPolicy<HttpResponseMessage> _resiliencePolicy;
   private readonly ISdkActivityFactory _activityFactory;
 
-  public SpeckleHttpClientHandler(
+  internal SpeckleHttpClientHandler(
     HttpMessageHandler innerHandler,
     ISdkActivityFactory activityFactory,
     IAsyncPolicy<HttpResponseMessage> resiliencePolicy
@@ -66,7 +65,13 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
 
       if (policyResult.Outcome == OutcomeType.Successful)
       {
-        return policyResult.Result.NotNull();
+        activity?.SetStatus(SdkActivityStatusCode.Ok);
+        return policyResult.Result;
+      }
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      if (policyResult.FinalException != null)
+      {
+        activity?.RecordException(policyResult.FinalException);
       }
 
       // if the policy failed due to a cancellation, AND it was our cancellation token, then don't wrap the exception, and rethrow an new cancellation
@@ -75,7 +80,10 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
         cancellationToken.ThrowIfCancellationRequested();
       }
 
-      throw new HttpRequestException("Policy Failed", policyResult.FinalException);
+      throw new HttpRequestException(
+        "Policy Failed: " + policyResult.FinalHandledResult?.StatusCode ?? "Unknown",
+        policyResult.FinalException
+      );
     }
   }
 }

@@ -1,6 +1,5 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
-using Polly;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 
@@ -36,7 +35,6 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
 
   public HttpClient CreateHttpClient(
     HttpMessageHandler? innerHandler = null,
-    IAsyncPolicy<HttpResponseMessage>? resiliencePolicy = null,
     int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS,
     string? authorizationToken = null
   )
@@ -44,7 +42,7 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
     IWebProxy proxy = WebRequest.GetSystemWebProxy();
     proxy.Credentials = CredentialCache.DefaultCredentials;
 
-    var speckleHandler = speckleHttpClientHandlerFactory.Create(innerHandler, resiliencePolicy, timeoutSeconds);
+    var speckleHandler = speckleHttpClientHandlerFactory.Create(innerHandler, timeoutSeconds);
 
     var client = new HttpClient(speckleHandler)
     {

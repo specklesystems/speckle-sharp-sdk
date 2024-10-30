@@ -1,18 +1,16 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Dynamic;
 using System.Net.WebSockets;
 using System.Reflection;
 using GraphQL;
 using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
-using Polly;
-using Polly.Contrib.WaitAndRetry;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Serialization;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Api.GraphQL.Serializer;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 
@@ -79,27 +77,24 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     catch (Exception ex) when (!ex.IsFatal()) { }
   }
 
-  internal async Task<T> ExecuteWithResiliencePolicies<T>(Func<Task<T>> func)
-  {
-    var delay = Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromSeconds(1), 5);
-    var graphqlRetry = Policy
-      .Handle<SpeckleGraphQLInternalErrorException>()
-      .WaitAndRetryAsync(
-        delay,
-        (ex, timeout, _) =>
-        {
-          _logger.LogDebug(
-            ex,
-            "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
-            typeof(T).Name,
-            ex.Message,
-            timeout
-          );
-        }
-      );
-
-    return await graphqlRetry.ExecuteAsync(func).ConfigureAwait(false);
-  }
+  internal async Task<T> ExecuteWithResiliencePolicies<T>(Func<Task<T>> func) =>
+    await GraphQLRetry
+      .ExecuteAsync<T, SpeckleGraphQLInternalErrorException>(
+        func,
+        (
+          (ex, timeout) =>
+          {
+            _logger.LogDebug(
+              ex,
+              "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
+              typeof(T).Name,
+              ex.Message,
+              timeout
+            );
+          }
+        )
+      )
+      .ConfigureAwait(false);
 
   /// <inheritdoc/>
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
@@ -180,46 +175,11 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     }
   }
 
-  private Dictionary<string, object?> ConvertExpandoToDict(ExpandoObject expando)
-  {
-    var variables = new Dictionary<string, object?>();
-    foreach (KeyValuePair<string, object?> kvp in expando)
-    {
-      object? value;
-      if (kvp.Value is ExpandoObject ex)
-      {
-        value = ConvertExpandoToDict(ex);
-      }
-      else
-      {
-        value = kvp.Value;
-      }
-
-      variables[kvp.Key] = value;
-    }
-    return variables;
-  }
-
-  /* private ILogEventEnricher[] CreateEnrichers<T>(GraphQLRequest request)
-   {
-     // i know this is double  (de)serializing, but we need a recursive convert to
-     // dict<str, object> here
-     var expando = JsonConvert.DeserializeObject<ExpandoObject>(JsonConvert.SerializeObject(request.Variables));
-     var variables = request.Variables != null && expando != null ? ConvertExpandoToDict(expando) : null;
-     return new ILogEventEnricher[]
-     {
-       new PropertyEnricher("serverUrl", ServerUrl),
-       new PropertyEnricher("graphqlQuery", request.Query),
-       new PropertyEnricher("graphqlVariables", variables),
-       new PropertyEnricher("resultType", typeof(T).Name)
-     };
-   }*/
-
   IDisposable ISpeckleGraphQLClient.SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback) =>
     SubscribeTo(request, callback);
 
   /// <inheritdoc cref="ISpeckleGraphQLClient.SubscribeTo{T}"/>
-  internal IDisposable SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback)
+  private IDisposable SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback)
   {
     //using (LogContext.Push(CreateEnrichers<T>(request)))
     {

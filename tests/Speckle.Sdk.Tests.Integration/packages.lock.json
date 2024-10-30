@@ -272,12 +272,13 @@
           "Microsoft.Data.Sqlite": "[7.0.7, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
           "Microsoft.Extensions.Logging": "[2.2.0, )",
-          "Polly": "[7.2.3, )",
-          "Polly.Contrib.WaitAndRetry": "[1.1.1, )",
-          "Polly.Extensions.Http": "[3.0.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
-          "Speckle.Newtonsoft.Json": "[13.0.2, )"
+          "Speckle.Newtonsoft.Json": "[13.0.2, )",
+          "Speckle.Sdk.Dependencies": "[1.0.0, )"
         }
+      },
+      "speckle.sdk.dependencies": {
+        "type": "Project"
       },
       "speckle.sdk.tests.unit": {
         "type": "Project",
@@ -344,27 +345,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "2.2.0",
           "Microsoft.Extensions.Logging.Abstractions": "2.2.0",
           "Microsoft.Extensions.Options": "2.2.0"
-        }
-      },
-      "Polly": {
-        "type": "CentralTransitive",
-        "requested": "[7.2.3, )",
-        "resolved": "7.2.3",
-        "contentHash": "DeCY0OFbNdNxsjntr1gTXHJ5pKUwYzp04Er2LLeN3g6pWhffsGuKVfMBLe1lw7x76HrPkLxKEFxBlpRxS2nDEQ=="
-      },
-      "Polly.Contrib.WaitAndRetry": {
-        "type": "CentralTransitive",
-        "requested": "[1.1.1, )",
-        "resolved": "1.1.1",
-        "contentHash": "1MUQLiSo4KDkQe6nzQRhIU05lm9jlexX5BVsbuw0SL82ynZ+GzAHQxJVDPVBboxV37Po3SG077aX8DuSy8TkaA=="
-      },
-      "Polly.Extensions.Http": {
-        "type": "CentralTransitive",
-        "requested": "[3.0.0, )",
-        "resolved": "3.0.0",
-        "contentHash": "drrG+hB3pYFY7w1c3BD+lSGYvH2oIclH8GRSehgfyP5kjnFnHKQuuBhuHLv+PWyFuaTDyk/vfRpnxOzd11+J8g==",
-        "dependencies": {
-          "Polly": "7.1.0"
         }
       },
       "Speckle.DoubleNumerics": {
