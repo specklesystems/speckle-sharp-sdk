@@ -26,7 +26,7 @@ public partial class Operations
 
     try
     {
-      var sqliteTransport = new SQLiteCacheManager(streamId);
+      var sqliteTransport = new SQLiteReceiveCacheManager(streamId);
       var serverObjects = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
       var o = new ObjectLoader(sqliteTransport, serverObjects, streamId, onProgressAction);
       var process = new DeserializeProcess(onProgressAction, o);

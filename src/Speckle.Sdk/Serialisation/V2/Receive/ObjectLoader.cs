@@ -8,7 +8,7 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 [GenerateAutoInterface]
 public sealed class ObjectLoader(
-  ISQLiteCacheManager sqLiteCacheManager,
+  ISQLiteReceiveCacheManager sqliteReceiveCacheManager,
   IServerObjectManager serverObjectManager,
   string streamId,
   IProgress<ProgressArgs>? progress
@@ -29,7 +29,7 @@ public sealed class ObjectLoader(
     string? rootJson;
     if (!options.SkipCache)
     {
-      rootJson = sqLiteCacheManager.GetObject(rootId);
+      rootJson = sqliteReceiveCacheManager.GetObject(rootId);
       if (rootJson != null)
       {
         //assume everything exists as the root is there.
@@ -53,7 +53,7 @@ public sealed class ObjectLoader(
     //save the root last to shortcut later
     if (!options.SkipCache)
     {
-      sqLiteCacheManager.SaveObject(new(rootId, rootJson));
+      sqliteReceiveCacheManager.SaveObject(new(rootId, rootJson));
     }
     return (rootJson, allChildrenIds);
   }
@@ -63,7 +63,7 @@ public sealed class ObjectLoader(
   {
     _checkCache++;
     progress?.Report(new(ProgressEvent.CacheCheck, _checkCache, _allChildrenCount));
-    if (!_options.SkipCache && !sqLiteCacheManager.HasObject(id))
+    if (!_options.SkipCache && !sqliteReceiveCacheManager.HasObject(id))
     {
       return id;
     }
@@ -88,7 +88,7 @@ public sealed class ObjectLoader(
     {
       count++;
       progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
-      toCache.Add(new (id, json));
+      toCache.Add(new(id, json));
     }
 
     return toCache;
@@ -99,12 +99,12 @@ public sealed class ObjectLoader(
   {
     if (!_options.SkipCache)
     {
-      sqLiteCacheManager.SaveObject(x);
+      sqliteReceiveCacheManager.SaveObject(x);
     }
 
     _cached++;
     progress?.Report(new(ProgressEvent.Cached, _cached, _allChildrenCount));
   }
 
-  public string? LoadId(string id) => sqLiteCacheManager.GetObject(id);
+  public string? LoadId(string id) => sqliteReceiveCacheManager.GetObject(id);
 }

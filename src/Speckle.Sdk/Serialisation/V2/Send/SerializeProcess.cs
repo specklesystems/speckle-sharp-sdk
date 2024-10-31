@@ -9,7 +9,7 @@ public record SerializeProcessOptions(bool SkipCache, bool SkipServer);
 
 public class SerializeProcess(
   IProgress<ProgressArgs>? progress,
-  ISQLiteCacheManager sqliteCacheManager,
+  ISQLiteSendCacheManager sqliteSendCacheManager,
   IServerObjectManager serverObjectManager,
   ISpeckleBaseChildFinder speckleBaseChildFinder,
   ISpeckleBasePropertyGatherer speckleBasePropertyGatherer
@@ -95,7 +95,7 @@ public class SerializeProcess(
     string? json = null;
     if (!_options.SkipCache)
     {
-      json = sqliteCacheManager.GetObject(obj.id);
+      json = sqliteSendCacheManager.GetObject(obj.id);
     }
     Interlocked.Increment(ref _total);
     if (json == null)
@@ -125,26 +125,25 @@ public class SerializeProcess(
   }
 
   //return null when it's cached
-  public override BaseItem? CheckCache(string rootId, BaseItem item)
+  public override List<BaseItem> CheckCache(string rootId, List<BaseItem> items)
   {
-    bool result = true;
+    List<BaseItem> result;
     progress?.Report(new(ProgressEvent.CacheCheck, _checked, _total));
     if (!_options.SkipCache)
     {
-      result = sqliteCacheManager.HasObject(item.Id);
+      result = sqliteSendCacheManager.HasObjects(items);
     }
-    Interlocked.Increment(ref _checked);
+    else
+    {
+      result = new();
+    }
+    Interlocked.Exchange(ref _checked, _checked + items.Count);
 
-    if (item.Id == rootId)
+    if (items.Any(x => x.Id == rootId))
     {
       Done();
     }
-
-    if (result)
-    {
-      return null;
-    }
-    return item;
+    return result;
   }
 
   public override async Task<List<BaseItem>> SendToServer(
@@ -169,7 +168,7 @@ public class SerializeProcess(
   {
     if (!_options.SkipCache)
     {
-      sqliteCacheManager.SaveObjects(items);
+      sqliteSendCacheManager.SaveObjects(items);
       Interlocked.Exchange(ref _cached, _cached + items.Count);
       progress?.Report(new(ProgressEvent.Cached, _cached, null));
     }
