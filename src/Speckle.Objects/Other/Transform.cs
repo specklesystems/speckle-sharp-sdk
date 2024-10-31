@@ -60,6 +60,52 @@ public class Transform : Base
     };
   }
 
+  // Creates a matrix4x4 from a double array
+  internal static Matrix4x4 CreateMatrix(double[] value)
+  {
+    return new Matrix4x4(
+      value[0],
+      value[1],
+      value[2],
+      value[3],
+      value[4],
+      value[5],
+      value[6],
+      value[7],
+      value[8],
+      value[9],
+      value[10],
+      value[11],
+      value[12],
+      value[13],
+      value[14],
+      value[15]
+    );
+  }
+
+  // Creates a matrix from a float array
+  internal static Matrix4x4 CreateMatrix(float[] value)
+  {
+    return new Matrix4x4(
+      Convert.ToDouble(value[0]),
+      Convert.ToDouble(value[1]),
+      Convert.ToDouble(value[2]),
+      Convert.ToDouble(value[3]),
+      Convert.ToDouble(value[4]),
+      Convert.ToDouble(value[5]),
+      Convert.ToDouble(value[6]),
+      Convert.ToDouble(value[7]),
+      Convert.ToDouble(value[8]),
+      Convert.ToDouble(value[9]),
+      Convert.ToDouble(value[10]),
+      Convert.ToDouble(value[11]),
+      Convert.ToDouble(value[12]),
+      Convert.ToDouble(value[13]),
+      Convert.ToDouble(value[14]),
+      Convert.ToDouble(value[15])
+    );
+  }
+
   /// <summary>
   /// Returns the double array of the transform matrix
   /// </summary>
