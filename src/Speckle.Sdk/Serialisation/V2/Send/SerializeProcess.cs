@@ -17,7 +17,6 @@ public class SerializeProcess(
 ) : ChannelSaver
 {
   private readonly ConcurrentDictionary<string, string> _jsonCache = new();
-  private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
   private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
 
   private long _total;
@@ -56,27 +55,16 @@ public class SerializeProcess(
       }
 
       // tmp is necessary because of the way closures close over loop variables
-      if (child.id != null && _activeTasks.TryGetValue(child.id, out var task))
-      {
-        tasks.Add(task);
-      }
-      else
-      {
-        var tmp = child;
-        var t = Task
-          .Factory.StartNew(
-            () => Traverse(tmp.id, tmp, false, cancellationToken),
-            cancellationToken,
-            TaskCreationOptions.AttachedToParent,
-            TaskScheduler.Default
-          )
-          .Unwrap();
-        tasks.Add(t);
-        if (child.id != null)
-        {
-          _activeTasks.TryAdd(child.id, t);
-        }
-      }
+      var tmp = child;
+      var t = Task
+        .Factory.StartNew(
+          () => Traverse(tmp.id, tmp, false, cancellationToken),
+          cancellationToken,
+          TaskCreationOptions.AttachedToParent,
+          TaskScheduler.Default
+        )
+        .Unwrap();
+      tasks.Add(t);
     }
 
     if (tasks.Count > 0)
@@ -119,11 +107,9 @@ public class SerializeProcess(
         _jsonCache.TryAdd(obj.id, json);
         if (id is not null)
         {
-          _activeTasks.TryRemove(id, out _);
           if (id != obj.id) //in case the ids changes which is due to id hash algorithm changing
           {
             _jsonCache.TryAdd(obj.id, json);
-            _activeTasks.TryRemove(obj.id, out _);
           }
         }
         Interlocked.Increment(ref _serialized);
@@ -133,7 +119,6 @@ public class SerializeProcess(
     else if (id != null)
     {
       _jsonCache.TryAdd(id, json);
-      _activeTasks.TryRemove(id, out _);
     }
     return new BaseItem(obj.id.NotNull(), json, isEnd);
   }
