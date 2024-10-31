@@ -107,7 +107,7 @@ public class SerializeProcess(
     {
       if (id is null || !_jsonCache.TryGetValue(id, out json))
       {
-        SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, _jsonCache, progress);
+        SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, _jsonCache);
         json = serializer2.Serialize(obj);
         obj.id.NotNull();
         _jsonCache.TryAdd(obj.id, json);

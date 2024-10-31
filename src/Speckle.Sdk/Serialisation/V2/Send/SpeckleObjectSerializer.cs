@@ -7,7 +7,6 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
@@ -15,10 +14,8 @@ public class SpeckleObjectSerializer2
 {
   private List<Dictionary<string, int>> _parentClosures = new();
   private HashSet<object> _parentObjects = new();
-  private readonly IProgress<ProgressArgs>? _onProgressAction;
 
   private readonly bool _trackDetachedChildren;
-  private long _serializedCount;
   private readonly ISpeckleBasePropertyGatherer _propertyGatherer;
   private readonly ConcurrentDictionary<string, string> _idToJson;
 
@@ -33,20 +30,17 @@ public class SpeckleObjectSerializer2
   /// <summary>
   /// Creates a new Serializer instance.
   /// </summary>
-  /// <param name="onProgressAction">Used to track progress.</param>
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
   public SpeckleObjectSerializer2(
     ISpeckleBasePropertyGatherer propertyGatherer,
     ConcurrentDictionary<string, string> idToJson,
-    IProgress<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
     _propertyGatherer = propertyGatherer;
     _idToJson = idToJson;
-    _onProgressAction = onProgressAction;
     CancellationToken = cancellationToken;
     _trackDetachedChildren = trackDetachedChildren;
   }
@@ -262,8 +256,6 @@ public class SpeckleObjectSerializer2
       SerializeProperty(objRef, jsonWriter2);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
-
-      _onProgressAction?.Report(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
 
       // add to obj refs to return
       if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
