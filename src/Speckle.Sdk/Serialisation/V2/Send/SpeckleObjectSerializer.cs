@@ -394,5 +394,4 @@ public class SpeckleObjectSerializer2
       _parentClosures[parentLevel][objectId] = Math.Min(currentValue, childDepth);
     }
   }
-
 }

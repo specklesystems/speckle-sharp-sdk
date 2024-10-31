@@ -44,7 +44,7 @@ public class SerializeProcess(
       return;
     }
     var tasks = new List<Task>();
-    foreach (var child in  speckleBaseChildFinder.GetChildren(obj))
+    foreach (var child in speckleBaseChildFinder.GetChildren(obj))
     {
       if (_jsonCache.ContainsKey(child.id))
       {
@@ -159,9 +159,7 @@ public class SerializeProcess(
 
     if (!_options.SkipServer)
     {
-      await serverObjectManager
-        .UploadObjects(streamId, batch, true, progress, cancellationToken)
-        .ConfigureAwait(false);
+      await serverObjectManager.UploadObjects(streamId, batch, true, progress, cancellationToken).ConfigureAwait(false);
     }
     return batch;
   }

@@ -107,19 +107,19 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     c.Open();
     using var tx = c.BeginTransaction();
     const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
-    
-      foreach (var x in objectIds)
+
+    foreach (var x in objectIds)
+    {
+      using var command = new SqliteCommand(COMMAND_TEXT, c);
+      command.Transaction = tx;
+      command.Parameters.AddWithValue("@hash", x.Item1);
+      using var reader = command.ExecuteReader();
+      if (reader.Read())
       {
-        using var command =  new SqliteCommand(COMMAND_TEXT, c);
-        command.Transaction = tx;
-        command.Parameters.AddWithValue("@hash", x.Item1);
-        using var reader = command.ExecuteReader();
-        if (reader.Read())
-        {
-          result.Add(x);
-        }
+        result.Add(x);
       }
-    
+    }
+
     return result;
   }
 
@@ -134,7 +134,8 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     command.Parameters.AddWithValue("@content", serializedObject);
     command.ExecuteNonQuery();
   }
-  public void SaveObjects(List<(string , string)> items)
+
+  public void SaveObjects(List<(string, string)> items)
   {
     using var c = new SqliteConnection(_connectionString);
     c.Open();

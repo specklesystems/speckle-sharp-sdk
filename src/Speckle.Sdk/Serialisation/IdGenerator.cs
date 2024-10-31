@@ -6,7 +6,6 @@ namespace Speckle.Sdk.Serialisation;
 
 public static class IdGenerator
 {
-  
   [Pure]
   public static string ComputeId(string serialized)
   {
@@ -16,5 +15,5 @@ public static class IdGenerator
     string hash = Crypt.Sha256(serialized, length: HashUtility.HASH_LENGTH);
 #endif
     return hash;
-  } 
+  }
 }

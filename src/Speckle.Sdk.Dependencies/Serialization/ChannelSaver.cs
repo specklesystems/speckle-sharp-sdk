@@ -16,8 +16,7 @@ public abstract class ChannelSaver
   public Task Start(string streamId, string rootId, CancellationToken cancellationToken = default)
   {
     return _checkCacheChannel
-      .Reader
-      .Batch(SQLITE_BATCH)
+      .Reader.Batch(SQLITE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .Pipe(MAX_CACHE_PARALLELISM, x => CheckCache(rootId, x), -1, false, cancellationToken)
       .Join()
