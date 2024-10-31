@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
 
@@ -100,9 +101,9 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     return rowFound;
   }
 
-  public List<(string, string)> HasObjects(List<(string, string)> objectIds)
+  public List<BaseItem> HasObjects(List<BaseItem> objectIds)
   {
-    List<(string, string)> result = new();
+    List<BaseItem> result = new();
     using var c = new SqliteConnection(_connectionString);
     c.Open();
     using var tx = c.BeginTransaction();
@@ -112,7 +113,7 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     {
       using var command = new SqliteCommand(COMMAND_TEXT, c);
       command.Transaction = tx;
-      command.Parameters.AddWithValue("@hash", x.Item1);
+      command.Parameters.AddWithValue("@hash", x.Id);
       using var reader = command.ExecuteReader();
       if (reader.Read())
       {
@@ -123,19 +124,19 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     return result;
   }
 
-  public void SaveObject(string hash, string serializedObject)
+  public void SaveObject(BaseItem item)
   {
     using var c = new SqliteConnection(_connectionString);
     c.Open();
     const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
 
     using var command = new SqliteCommand(COMMAND_TEXT, c);
-    command.Parameters.AddWithValue("@hash", hash);
-    command.Parameters.AddWithValue("@content", serializedObject);
+    command.Parameters.AddWithValue("@hash", item.Id);
+    command.Parameters.AddWithValue("@content", item.Json);
     command.ExecuteNonQuery();
   }
 
-  public void SaveObjects(List<(string, string)> items)
+  public void SaveObjects(List<BaseItem> items)
   {
     using var c = new SqliteConnection(_connectionString);
     c.Open();

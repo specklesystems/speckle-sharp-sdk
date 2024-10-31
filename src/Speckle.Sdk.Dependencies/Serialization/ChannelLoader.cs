@@ -1,4 +1,4 @@
-using Open.ChannelExtensions;
+﻿using Open.ChannelExtensions;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
@@ -29,7 +29,7 @@ public abstract class ChannelLoader
 
   public abstract string? CheckCache(string id);
 
-  public abstract Task<List<(string, string)>> DownloadAndCache(List<string?> ids);
+  public abstract Task<List<BaseItem>> DownloadAndCache(List<string?> ids);
 
-  public abstract void SaveToCache((string, string) x);
+  public abstract void SaveToCache(BaseItem x);
 }

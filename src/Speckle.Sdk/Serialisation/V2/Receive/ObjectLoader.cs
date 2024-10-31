@@ -51,7 +51,10 @@ public sealed class ObjectLoader(
     await GetAndCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
 
     //save the root last to shortcut later
-    sqLiteCacheManager.SaveObject(rootId, rootJson);
+    if (!options.SkipCache)
+    {
+      sqLiteCacheManager.SaveObject(new(rootId, rootJson));
+    }
     return (rootJson, allChildrenIds);
   }
 
@@ -69,11 +72,11 @@ public sealed class ObjectLoader(
   }
 
   [AutoInterfaceIgnore]
-  public override async Task<List<(string, string)>> DownloadAndCache(List<string?> ids)
+  public override async Task<List<BaseItem>> DownloadAndCache(List<string?> ids)
   {
     var count = 0L;
     progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
-    var toCache = new List<(string, string)>();
+    var toCache = new List<BaseItem>();
     await foreach (
       var (id, json) in serverObjectManager.DownloadObjects(
         streamId,
@@ -85,18 +88,18 @@ public sealed class ObjectLoader(
     {
       count++;
       progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
-      toCache.Add((id, json));
+      toCache.Add(new (id, json));
     }
 
     return toCache;
   }
 
   [AutoInterfaceIgnore]
-  public override void SaveToCache((string, string) x)
+  public override void SaveToCache(BaseItem x)
   {
     if (!_options.SkipCache)
     {
-      sqLiteCacheManager.SaveObject(x.Item1, x.Item2);
+      sqLiteCacheManager.SaveObject(x);
     }
 
     _cached++;

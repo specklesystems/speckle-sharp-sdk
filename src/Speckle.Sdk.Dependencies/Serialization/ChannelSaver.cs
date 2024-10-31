@@ -3,6 +3,7 @@ using Open.ChannelExtensions;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
+public readonly record struct BaseItem(string Id, string Json);
 public abstract class ChannelSaver
 {
   private const int HTTP_SEND_CHUNK_SIZE = 500;
@@ -11,20 +12,19 @@ public abstract class ChannelSaver
   private static readonly int MAX_CACHE_PARALLELISM = Environment.ProcessorCount;
   private const int SQLITE_BATCH = 100;
 
-  private readonly Channel<(string, string)> _checkCacheChannel = Channel.CreateUnbounded<(string, string)>();
+  private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateUnbounded<BaseItem>();
 
   public Task Start(string streamId, string rootId, CancellationToken cancellationToken = default)
   {
     return _checkCacheChannel
-      .Reader.Batch(SQLITE_BATCH)
-      .WithTimeout(HTTP_BATCH_TIMEOUT)
+      .Reader
       .Pipe(MAX_CACHE_PARALLELISM, x => CheckCache(rootId, x), -1, false, cancellationToken)
-      .Join()
+      .Filter(x => x.HasValue)
       .Batch(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
-        async x => await SendToServer(streamId, x, cancellationToken).ConfigureAwait(false),
+        async x => await SendToServer(streamId, x.Cast<BaseItem>().ToList(), cancellationToken).ConfigureAwait(false),
         -1,
         false,
         cancellationToken
@@ -36,17 +36,17 @@ public abstract class ChannelSaver
   }
 
   public async Task Save(string id, string json, CancellationToken cancellationToken = default) =>
-    await _checkCacheChannel.Writer.WriteAsync((id, json), cancellationToken).ConfigureAwait(false);
+    await _checkCacheChannel.Writer.WriteAsync(new(id, json), cancellationToken).ConfigureAwait(false);
 
   public void Done() => _checkCacheChannel.Writer.TryComplete();
 
-  public abstract List<(string, string)> CheckCache(string rootId, List<(string, string)> item);
+  public abstract BaseItem? CheckCache(string rootId, BaseItem item);
 
-  public abstract Task<List<(string, string)>> SendToServer(
+  public abstract Task<List<BaseItem>> SendToServer(
     string streamId,
-    List<(string, string)> batch,
+    List<BaseItem> batch,
     CancellationToken cancellationToken
   );
 
-  public abstract void SaveToCache(string rootId, List<(string, string)> item);
+  public abstract void SaveToCache(string rootId, List<BaseItem> item);
 }

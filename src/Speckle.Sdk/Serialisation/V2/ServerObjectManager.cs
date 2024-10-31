@@ -5,6 +5,7 @@ using System.Text;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
@@ -167,7 +168,7 @@ public class ServerObjectManager : IServerObjectManager
 
   public async Task UploadObjects(
     string streamId,
-    IReadOnlyList<(string, string)> objects,
+    IReadOnlyList<BaseItem> objects,
     bool compressPayloads,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
@@ -189,7 +190,7 @@ public class ServerObjectManager : IServerObjectManager
         ctBuilder.Append(',');
       }
 
-      ctBuilder.Append(objects[i].Item2);
+      ctBuilder.Append(objects[i].Json);
     }
     ctBuilder.Append(']');
     string ct = ctBuilder.ToString();

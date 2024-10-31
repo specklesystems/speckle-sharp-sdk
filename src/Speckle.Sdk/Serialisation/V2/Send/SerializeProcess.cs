@@ -125,30 +125,31 @@ public class SerializeProcess(
   }
 
   //return null when it's cached
-  public override List<(string, string)> CheckCache(string rootId, List<(string, string)> items)
+  public override BaseItem? CheckCache(string rootId, BaseItem item)
   {
-    List<(string, string)> result;
+    bool result = true;
     progress?.Report(new(ProgressEvent.CacheCheck, _checked, _total));
     if (!_options.SkipCache)
     {
-      result = sqliteCacheManager.HasObjects(items);
+      result = sqliteCacheManager.HasObject(item.Id);
     }
-    else
-    {
-      result = new();
-    }
-    Interlocked.Exchange(ref _checked, _checked + items.Count);
+    Interlocked.Increment(ref _checked);
 
-    if (items.Any(x => x.Item1 == rootId))
+    if (item.Id == rootId)
     {
       Done();
     }
-    return result;
+
+    if (result)
+    {
+      return null;
+    }
+    return item;
   }
 
-  public override async Task<List<(string, string)>> SendToServer(
+  public override async Task<List<BaseItem>> SendToServer(
     string streamId,
-    List<(string, string)> batch,
+    List<BaseItem> batch,
     CancellationToken cancellationToken
   )
   {
@@ -164,7 +165,7 @@ public class SerializeProcess(
     return batch;
   }
 
-  public override void SaveToCache(string rootId, List<(string, string)> items)
+  public override void SaveToCache(string rootId, List<BaseItem> items)
   {
     if (!_options.SkipCache)
     {
@@ -173,7 +174,7 @@ public class SerializeProcess(
       progress?.Report(new(ProgressEvent.Cached, _cached, null));
     }
 
-    if (items.Any(x => x.Item1 == rootId))
+    if (items.Any(x => x.Id == rootId))
     {
       Done();
     }

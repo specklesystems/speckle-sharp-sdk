@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Transports;
 
@@ -28,7 +29,7 @@ public class DummyServerObjectManager : IServerObjectManager
 
   public Task UploadObjects(
     string streamId,
-    IReadOnlyList<(string, string)> objects,
+    IReadOnlyList<BaseItem> objects,
     bool compressPayloads,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
