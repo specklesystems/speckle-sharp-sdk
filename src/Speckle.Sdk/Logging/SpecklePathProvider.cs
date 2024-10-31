@@ -5,7 +5,7 @@ namespace Speckle.Sdk.Logging;
 /// <summary>
 /// Helper class dedicated for Speckle specific Path operations.
 /// </summary>
-internal static class SpecklePathProvider
+public static class SpecklePathProvider
 {
   private const string APPLICATION_NAME = "Speckle";
 
