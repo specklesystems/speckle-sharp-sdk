@@ -12,7 +12,7 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
-  public async Task<string> Send2(
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send2(
     Uri url,
     string streamId,
     string? authorizationToken,
@@ -35,9 +35,13 @@ public partial class Operations
         speckleBaseChildFinder,
         speckleBasePropertyGatherer
       );
-      var rootObjId = await process.Serialize(streamId, value, cancellationToken).ConfigureAwait(false);
+      var (rootObjId, convertedReferences) = await process
+        .Serialize(streamId, value, cancellationToken)
+        .ConfigureAwait(false);
+
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
-      return rootObjId;
+      return new(rootObjId, convertedReferences);
+
     }
     catch (Exception ex)
     {
