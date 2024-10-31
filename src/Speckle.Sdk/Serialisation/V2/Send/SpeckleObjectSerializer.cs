@@ -61,7 +61,7 @@ public class SpeckleObjectSerializer2
     {
       try
       {
-        var result = SerializeBase(baseObj, baseObj, true).NotNull();
+        var result = SerializeBase(baseObj, true).NotNull();
         return result.Json;
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
@@ -79,7 +79,6 @@ public class SpeckleObjectSerializer2
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
   private void SerializeProperty(
-    Base rootObj,
     object? obj,
     JsonWriter writer,
     bool computeClosures = false,
@@ -121,10 +120,10 @@ public class SpeckleObjectSerializer2
           }
         }
         UpdateParentClosures(r.referencedId);
-        SerializeProperty(rootObj, ret, writer);
+        SerializeProperty(ret, writer);
         break;
       case Base b:
-        var result = SerializeBase(rootObj, b, computeClosures, inheritedDetachInfo);
+        var result = SerializeBase(b, computeClosures, inheritedDetachInfo);
         if (result is not null)
         {
           writer.WriteRawValue(result.Json);
@@ -149,7 +148,7 @@ public class SpeckleObjectSerializer2
             }
 
             writer.WritePropertyName(key);
-            SerializeProperty(rootObj, kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo);
+            SerializeProperty(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo);
           }
           writer.WriteEndObject();
         }
@@ -159,7 +158,7 @@ public class SpeckleObjectSerializer2
           writer.WriteStartArray();
           foreach (object? element in e)
           {
-            SerializeProperty(rootObj, element, writer, inheritedDetachInfo: inheritedDetachInfo);
+            SerializeProperty(element, writer, inheritedDetachInfo: inheritedDetachInfo);
           }
           writer.WriteEndArray();
         }
@@ -207,7 +206,6 @@ public class SpeckleObjectSerializer2
   }
 
   private SerializationResult? SerializeBase(
-    Base rootObj,
     Base baseObj,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
@@ -226,18 +224,15 @@ public class SpeckleObjectSerializer2
       _parentClosures.Add(closure);
     }
 
-    string? json;
-    string id;
-    if (rootObj == baseObj)
+    string? id;
+
+    if (baseObj.id is null || !_idToJson.TryGetValue(baseObj.id, out string? json))
     {
       using var writer = new StringWriter();
       using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-      id = SerializeBaseObject(rootObj, baseObj, jsonWriter, closure);
+      id = SerializeBaseObject(baseObj, jsonWriter, closure);
       json = writer.ToString();
-    }
-    else if (!_idToJson.TryGetValue(baseObj.id, out json))
-    {
-      throw new KeyNotFoundException($"{baseObj.id} is not found");
+      _idToJson.TryAdd(id, json);
     }
     else
     {
@@ -261,10 +256,10 @@ public class SpeckleObjectSerializer2
 
     if (inheritedDetachInfo.IsDetachable)
     {
-      ObjectReference objRef = new() { referencedId = id };
+      ObjectReference objRef = new() { referencedId = id.NotNull() };
       using var writer2 = new StringWriter();
       using var jsonWriter2 = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer2);
-      SerializeProperty(rootObj, objRef, jsonWriter2);
+      SerializeProperty(objRef, jsonWriter2);
       var json2 = writer2.ToString();
       UpdateParentClosures(id);
 
@@ -285,12 +280,7 @@ public class SpeckleObjectSerializer2
     return new(json.NotNull(), id);
   }
 
-  private string SerializeBaseObject(
-    Base rootObj,
-    Base baseObj,
-    JsonWriter writer,
-    IReadOnlyDictionary<string, int> closure
-  )
+  private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
   {
     var allProperties = _propertyGatherer.ExtractAllProperties(baseObj);
 
@@ -309,7 +299,7 @@ public class SpeckleObjectSerializer2
       }
 
       writer.WritePropertyName(prop.Key);
-      SerializeProperty(rootObj, prop.Value.value, writer, prop.Value.info);
+      SerializeProperty(prop.Value.value, writer, prop.Value.info);
     }
 
     string id;
@@ -342,12 +332,7 @@ public class SpeckleObjectSerializer2
     return id;
   }
 
-  private void SerializeProperty(
-    Base rootObj,
-    object? baseValue,
-    JsonWriter jsonWriter,
-    PropertyAttributeInfo detachInfo
-  )
+  private void SerializeProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
   {
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
     {
@@ -369,16 +354,11 @@ public class SpeckleObjectSerializer2
         chunks.Add(crtChunk);
       }
 
-      SerializeProperty(
-        rootObj,
-        chunks,
-        jsonWriter,
-        inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null)
-      );
+      SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null));
       return;
     }
 
-    SerializeProperty(rootObj, baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+    SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
   }
 
   private void UpdateParentClosures(string objectId)

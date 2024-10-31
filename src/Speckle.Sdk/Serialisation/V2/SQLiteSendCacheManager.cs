@@ -62,12 +62,12 @@ public class SQLiteSendCacheManager(string streamId) : SQLiteCacheManager(stream
       using var tx = c.BeginTransaction();
       const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
 
-      foreach (var (hash, content) in items)
+      foreach (var item in items)
       {
         using var command = new SqliteCommand(COMMAND_TEXT, c);
         command.Transaction = tx;
-        command.Parameters.AddWithValue("@hash", hash);
-        command.Parameters.AddWithValue("@content", content);
+        command.Parameters.AddWithValue("@hash", item.Id);
+        command.Parameters.AddWithValue("@content", item.Json);
         command.ExecuteNonQuery();
       }
 

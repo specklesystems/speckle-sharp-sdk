@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
@@ -17,6 +18,7 @@ public class SerializeProcess(
 {
   private readonly ConcurrentDictionary<string, string> _jsonCache = new();
   private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
+  private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
   private long _total;
   private long _checked;
   private long _cached;
@@ -24,7 +26,7 @@ public class SerializeProcess(
 
   private SerializeProcessOptions _options = new(false, false);
 
-  public async Task Serialize(
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Serialize(
     string streamId,
     Base root,
     CancellationToken cancellationToken,
@@ -32,27 +34,28 @@ public class SerializeProcess(
   )
   {
     _options = options ?? _options;
-    var channelTask = Start(streamId, root.id, cancellationToken);
-    await Traverse(root, cancellationToken).ConfigureAwait(false);
+    var channelTask = Start(streamId, cancellationToken);
+    await Traverse(root.id, root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
+    return (root.id, _objectReferences);
   }
 
-  private async Task Traverse(Base obj, CancellationToken cancellationToken)
+  private async Task Traverse(string? id, Base obj, bool isEnd, CancellationToken cancellationToken)
   {
-    if (_jsonCache.ContainsKey(obj.id))
+    if (id != null && _jsonCache.ContainsKey(id))
     {
       return;
     }
     var tasks = new List<Task>();
     foreach (var child in speckleBaseChildFinder.GetChildren(obj))
     {
-      if (_jsonCache.ContainsKey(child.id))
+      if (child.id != null && _jsonCache.ContainsKey(child.id))
       {
         continue;
       }
 
       // tmp is necessary because of the way closures close over loop variables
-      if (_activeTasks.TryGetValue(child.id, out var task))
+      if (child.id != null && _activeTasks.TryGetValue(child.id, out var task))
       {
         tasks.Add(task);
       }
@@ -61,14 +64,17 @@ public class SerializeProcess(
         var tmp = child;
         var t = Task
           .Factory.StartNew(
-            () => Traverse(tmp, cancellationToken),
+            () => Traverse(tmp.id, tmp, false, cancellationToken),
             cancellationToken,
             TaskCreationOptions.AttachedToParent,
             TaskScheduler.Default
           )
           .Unwrap();
         tasks.Add(t);
-        _activeTasks.TryAdd(child.id, t);
+        if (child.id != null)
+        {
+          _activeTasks.TryAdd(child.id, t);
+        }
       }
     }
 
@@ -77,55 +83,62 @@ public class SerializeProcess(
       await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    var json = Serialise(obj);
-    if (json is not null)
+    var item = Serialise(obj.id, obj, isEnd);
+    if (item is not null)
     {
-      await Save(obj.id, json, cancellationToken).ConfigureAwait(false);
+      await Save(item.Value, cancellationToken).ConfigureAwait(false);
     }
   }
 
   //leave this sync
-  private string? Serialise(Base obj)
+  private BaseItem? Serialise(string? id, Base obj, bool isEnd)
   {
-    if (_jsonCache.ContainsKey(obj.id))
+    if (id != null && _jsonCache.ContainsKey(id))
     {
       return null;
     }
 
     string? json = null;
-    if (!_options.SkipCache)
+    if (!_options.SkipCache && id != null)
     {
-      json = sqliteSendCacheManager.GetObject(obj.id);
+      json = sqliteSendCacheManager.GetObject(id);
     }
     Interlocked.Increment(ref _total);
     if (json == null)
     {
-      string id = obj.id;
-      if (!_jsonCache.TryGetValue(id, out json))
+      if (id is null || !_jsonCache.TryGetValue(id, out json))
       {
         SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, _jsonCache, progress);
         json = serializer2.Serialize(obj);
-        _jsonCache.TryAdd(id, json);
-        _activeTasks.TryRemove(id, out _);
-        if (id != obj.id) //in case the ids changes which is due to id hash algorithm changing
+        obj.id.NotNull();
+        foreach (var kvp in serializer2.ObjectReferences)
         {
-          _jsonCache.TryAdd(obj.id, json);
-          _activeTasks.TryRemove(obj.id, out _);
+          _objectReferences.TryAdd(kvp.Key, kvp.Value);
+        }
+        _jsonCache.TryAdd(obj.id, json);
+        if (id is not null)
+        {
+          _activeTasks.TryRemove(id, out _);
+          if (id != obj.id) //in case the ids changes which is due to id hash algorithm changing
+          {
+            _jsonCache.TryAdd(obj.id, json);
+            _activeTasks.TryRemove(obj.id, out _);
+          }
         }
         Interlocked.Increment(ref _serialized);
         progress?.Report(new(ProgressEvent.SerializeObject, _serialized, _total));
       }
     }
-    else
+    else if (id != null)
     {
-      _jsonCache.TryAdd(obj.id, json);
-      _activeTasks.TryRemove(obj.id, out _);
+      _jsonCache.TryAdd(id, json);
+      _activeTasks.TryRemove(id, out _);
     }
-    return json;
+    return new BaseItem(obj.id.NotNull(), json, isEnd);
   }
 
   //return null when it's cached
-  public override List<BaseItem> CheckCache(string rootId, List<BaseItem> items)
+  public override List<BaseItem> CheckCache(List<BaseItem> items)
   {
     List<BaseItem> result;
     progress?.Report(new(ProgressEvent.CacheCheck, _checked, _total));
@@ -139,7 +152,7 @@ public class SerializeProcess(
     }
     Interlocked.Exchange(ref _checked, _checked + items.Count);
 
-    if (items.Any(x => x.Id == rootId))
+    if (items.Any(x => x.IsEnd))
     {
       Done();
     }
@@ -164,7 +177,7 @@ public class SerializeProcess(
     return batch;
   }
 
-  public override void SaveToCache(string rootId, List<BaseItem> items)
+  public override void SaveToCache(List<BaseItem> items)
   {
     if (!_options.SkipCache)
     {
@@ -173,7 +186,7 @@ public class SerializeProcess(
       progress?.Report(new(ProgressEvent.Cached, _cached, null));
     }
 
-    if (items.Any(x => x.Id == rootId))
+    if (items.Any(x => x.IsEnd))
     {
       Done();
     }

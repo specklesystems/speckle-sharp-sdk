@@ -3,7 +3,7 @@ using Open.ChannelExtensions;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-public readonly record struct BaseItem(string Id, string Json);
+public readonly record struct BaseItem(string Id, string Json, bool IsEnd = false);
 
 public abstract class ChannelSaver
 {
@@ -15,12 +15,11 @@ public abstract class ChannelSaver
 
   private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateUnbounded<BaseItem>();
 
-  public Task Start(string streamId, string rootId, CancellationToken cancellationToken = default)
-  {
-    return _checkCacheChannel
+  public Task Start(string streamId, CancellationToken cancellationToken = default) =>
+    _checkCacheChannel
       .Reader.Batch(SQLITE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .Pipe(MAX_CACHE_PARALLELISM, x => CheckCache(rootId, x), -1, false, cancellationToken)
+      .Pipe(MAX_CACHE_PARALLELISM, CheckCache, -1, false, cancellationToken)
       .Join()
       .Batch(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
@@ -34,15 +33,14 @@ public abstract class ChannelSaver
       .Join()
       .Batch(SQLITE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_PARALLELISM, x => SaveToCache(rootId, x), cancellationToken);
-  }
+      .ReadAllConcurrently(MAX_CACHE_PARALLELISM, SaveToCache, cancellationToken);
 
-  public async Task Save(string id, string json, CancellationToken cancellationToken = default) =>
-    await _checkCacheChannel.Writer.WriteAsync(new(id, json), cancellationToken).ConfigureAwait(false);
+  public async Task Save(BaseItem item, CancellationToken cancellationToken = default) =>
+    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
 
   public void Done() => _checkCacheChannel.Writer.TryComplete();
 
-  public abstract List<BaseItem> CheckCache(string rootId, List<BaseItem> item);
+  public abstract List<BaseItem> CheckCache(List<BaseItem> item);
 
   public abstract Task<List<BaseItem>> SendToServer(
     string streamId,
@@ -50,5 +48,5 @@ public abstract class ChannelSaver
     CancellationToken cancellationToken
   );
 
-  public abstract void SaveToCache(string rootId, List<BaseItem> item);
+  public abstract void SaveToCache(List<BaseItem> item);
 }
