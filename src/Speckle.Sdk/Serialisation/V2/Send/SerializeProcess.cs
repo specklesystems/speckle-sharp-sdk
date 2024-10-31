@@ -17,7 +17,7 @@ public class SerializeProcess(
 ) : ChannelSaver
 {
   private readonly ConcurrentDictionary<string, string> _jsonCache = new();
-  private readonly ConcurrentDictionary<string, Task> _activeTasks = new(); 
+  private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
   private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
 
   private long _total;

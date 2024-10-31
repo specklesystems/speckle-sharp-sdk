@@ -41,7 +41,6 @@ public partial class Operations
 
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return new(rootObjId, convertedReferences);
-
     }
     catch (Exception ex)
     {
