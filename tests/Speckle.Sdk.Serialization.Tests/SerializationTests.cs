@@ -49,7 +49,7 @@ public class SerializationTests
       await using var z = new GZipStream(stream, CompressionMode.Decompress);
       using var reader2 = new StreamReader(z);
       return await reader2.ReadToEndAsync();
-    }  
+    }
     using var reader = new StreamReader(stream);
     return await reader.ReadToEndAsync();
   }
