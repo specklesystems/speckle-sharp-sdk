@@ -67,8 +67,8 @@
       },
       "Microsoft.Data.Sqlite.Core": {
         "type": "Transitive",
-        "resolved": "7.0.7",
-        "contentHash": "21FRzcJhaTrlv7kTrqr/ltFcSQM2TyuTTPhUcjO8H73od7Bb3QraNW90c7lUucNI/245XPkKZG4fp7/7OsKCSg==",
+        "resolved": "7.0.5",
+        "contentHash": "FTerRmQPqHrCrnoUzhBu+E+1DNGwyrAMLqHkAqOOOu5pGfyMOj8qQUBxI/gDtWtG11p49UxSfWmBzRNlwZqfUg==",
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.4"
         }
@@ -236,7 +236,7 @@
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.Bcl.AsyncInterfaces": "[5.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
-          "Microsoft.Data.Sqlite": "[7.0.7, )",
+          "Microsoft.Data.Sqlite": "[7.0.5, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
           "Microsoft.Extensions.Logging": "[2.2.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
@@ -275,11 +275,11 @@
       },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",
-        "requested": "[7.0.7, )",
-        "resolved": "7.0.7",
-        "contentHash": "tiNmV1oPy+Z2R7Wd0bPB/FxCr8B+/5q11OpDMG751GA/YuOL7MZrBFfzv5oFRlFe08K6sjrnbrauzzGIeNrzLQ==",
+        "requested": "[7.0.5, )",
+        "resolved": "7.0.5",
+        "contentHash": "KGxbPeWsQMnmQy43DSBxAFtHz3l2JX8EWBSGUCvT3CuZ8KsuzbkqMIJMDOxWtG8eZSoCDI04aiVQjWuuV8HmSw==",
         "dependencies": {
-          "Microsoft.Data.Sqlite.Core": "7.0.7",
+          "Microsoft.Data.Sqlite.Core": "7.0.5",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.4"
         }
       },
@@ -371,8 +371,8 @@
       },
       "Microsoft.Data.Sqlite.Core": {
         "type": "Transitive",
-        "resolved": "7.0.7",
-        "contentHash": "21FRzcJhaTrlv7kTrqr/ltFcSQM2TyuTTPhUcjO8H73od7Bb3QraNW90c7lUucNI/245XPkKZG4fp7/7OsKCSg==",
+        "resolved": "7.0.5",
+        "contentHash": "FTerRmQPqHrCrnoUzhBu+E+1DNGwyrAMLqHkAqOOOu5pGfyMOj8qQUBxI/gDtWtG11p49UxSfWmBzRNlwZqfUg==",
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.4"
         }
@@ -485,7 +485,7 @@
         "dependencies": {
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
-          "Microsoft.Data.Sqlite": "[7.0.7, )",
+          "Microsoft.Data.Sqlite": "[7.0.5, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
           "Microsoft.Extensions.Logging": "[2.2.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
@@ -515,11 +515,11 @@
       },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",
-        "requested": "[7.0.7, )",
-        "resolved": "7.0.7",
-        "contentHash": "tiNmV1oPy+Z2R7Wd0bPB/FxCr8B+/5q11OpDMG751GA/YuOL7MZrBFfzv5oFRlFe08K6sjrnbrauzzGIeNrzLQ==",
+        "requested": "[7.0.5, )",
+        "resolved": "7.0.5",
+        "contentHash": "KGxbPeWsQMnmQy43DSBxAFtHz3l2JX8EWBSGUCvT3CuZ8KsuzbkqMIJMDOxWtG8eZSoCDI04aiVQjWuuV8HmSw==",
         "dependencies": {
-          "Microsoft.Data.Sqlite.Core": "7.0.7",
+          "Microsoft.Data.Sqlite.Core": "7.0.5",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.4"
         }
       },
