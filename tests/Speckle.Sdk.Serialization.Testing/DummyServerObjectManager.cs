@@ -36,9 +36,9 @@ public class DummyServerObjectManager : IServerObjectManager
   )
   {
     long totalBytes = 0;
-    foreach (var (_, json) in objects)
+    foreach (var item in objects)
     {
-      totalBytes += Encoding.Default.GetByteCount(json);
+      totalBytes += Encoding.Default.GetByteCount(item.Json);
     }
 
     progress?.Report(new(ProgressEvent.UploadBytes, totalBytes, totalBytes));
