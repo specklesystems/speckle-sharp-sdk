@@ -18,7 +18,6 @@ public class SerializeProcess(
 {
   private readonly ConcurrentDictionary<string, string> _jsonCache = new();
   private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
-  private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
   private long _total;
   private long _checked;
   private long _cached;
@@ -26,7 +25,7 @@ public class SerializeProcess(
 
   private SerializeProcessOptions _options = new(false, false);
 
-  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Serialize(
+  public async Task<string> Serialize(
     string streamId,
     Base root,
     CancellationToken cancellationToken,
@@ -37,7 +36,7 @@ public class SerializeProcess(
     var channelTask = Start(streamId, cancellationToken);
     await Traverse(root.id, root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
-    return (root.id, _objectReferences);
+    return root.id;
   }
 
   private async Task Traverse(string? id, Base obj, bool isEnd, CancellationToken cancellationToken)
@@ -111,10 +110,6 @@ public class SerializeProcess(
         SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, _jsonCache, progress);
         json = serializer2.Serialize(obj);
         obj.id.NotNull();
-        foreach (var kvp in serializer2.ObjectReferences)
-        {
-          _objectReferences.TryAdd(kvp.Key, kvp.Value);
-        }
         _jsonCache.TryAdd(obj.id, json);
         if (id is not null)
         {
