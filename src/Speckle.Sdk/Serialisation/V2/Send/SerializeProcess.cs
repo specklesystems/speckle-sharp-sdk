@@ -105,12 +105,10 @@ public class SerializeProcess(
           _objectReferences.TryAdd(kvp.Key, kvp.Value);
         }
         _jsonCache.TryAdd(obj.id, json);
-        if (id is not null)
+        if (id is not null && id != obj.id)
         {
-          if (id != obj.id) //in case the ids changes which is due to id hash algorithm changing
-          {
-            _jsonCache.TryAdd(obj.id, json);
-          }
+          //in case the ids changes which is due to id hash algorithm changing
+          _jsonCache.TryAdd(id, json);
         }
         Interlocked.Increment(ref _serialized);
         progress?.Report(new(ProgressEvent.SerializeObject, _serialized, _total));
