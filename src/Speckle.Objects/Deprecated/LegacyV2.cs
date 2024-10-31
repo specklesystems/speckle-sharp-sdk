@@ -2,6 +2,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Deprecated;
 
+[SpeckleType("Objects.Deprecated.LegacyV2")]
 [DeprecatedSpeckleType("Objects.Other.BlockInstance")]
 [DeprecatedSpeckleType("Objects.Other.Revit.RevitInstance")]
 [DeprecatedSpeckleType("Objects.BuiltElements.View")]
