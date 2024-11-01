@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Reflection;
 using NUnit.Framework;
@@ -11,6 +12,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Serialisation.V2.Receive;
+using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
@@ -181,5 +183,122 @@ public class SerializationTests
     var jsonWithoutId = jObject.ToString(Formatting.None);
     var newId = IdGenerator.ComputeId(jsonWithoutId);
     id.ShouldBe(newId);
+  }
+
+  [Test]
+  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b")]
+  public async Task Roundtrip(string fileName, string rootId)
+  {
+    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
+    var json = await ReadJson(fullName);
+    var closure = ReadAsObjects(json);
+    var deserializer = new SpeckleObjectDeserializer
+    {
+      ReadTransport = new TestTransport(closure),
+      CancellationToken = default,
+    };
+
+
+    var writtenObjects = new Dictionary<string, string>();
+    var writeTransport = new TestTransport(writtenObjects);
+    var serializer = new SpeckleObjectSerializer([writeTransport]);
+    var newIds = new Dictionary<string, string>();
+    var oldIds = new Dictionary<string, string>();
+    var idToBase = new Dictionary<string, Base>();
+    foreach (var (id, objJson) in closure)
+    {
+      var base1 = await deserializer.DeserializeAsync(objJson);
+      base1.id.ShouldBe(id);
+      var j = serializer.Serialize(base1);
+      //j.ShouldBe(objJson);
+     // closure[@base1.id].ShouldBe(j);
+     newIds.Add(base1.id, j);
+     oldIds.Add(id, j);
+     idToBase.Add(id, base1);
+    }
+    
+    var o = new ObjectLoader(new DummySqLiteReceiveManager(closure), new DummyReceiveServerObjectManager(closure), string.Empty, null);
+    var process = new DeserializeProcess(null, o);
+    var root = await process.Deserialize(rootId, default, new DeserializeOptions(true));
+
+    var newBases = GetBases(root).ToList();
+    Console.WriteLine(newBases.Count);
+    
+    
+    var newIdToJson = new ConcurrentDictionary<string, string>();
+    var serializeProcess = new SerializeProcess(null, new DummySqLiteSendManager(),
+      new DummySendServerObjectManager(newIdToJson),
+      new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()), new SpeckleBasePropertyGatherer());
+   var (rootId2, _) = await serializeProcess.Serialize(string.Empty, root, default, new SerializeProcessOptions(true, false));
+   
+   rootId2.ShouldBe(root.id);
+
+   foreach (var newKvp in newIdToJson)
+   {
+     if (newIds.TryGetValue(newKvp.Key, out var newValue))
+     {
+       newValue.ShouldBe(newKvp.Value);
+     }
+     else
+     {
+       Console.WriteLine(newKvp.Key);
+     }
+   }
+  }
+  
+  
+  [Test]
+  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 6855)]
+  public async Task Roundtrip_New(string fileName, string rootId, int count)
+  {
+    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
+    var json = await ReadJson(fullName);
+    var closure = ReadAsObjects(json);
+    
+    
+    var o = new ObjectLoader(new DummySqLiteReceiveManager(closure), new DummyReceiveServerObjectManager(closure), string.Empty, null);
+    var process = new DeserializeProcess(null, o);
+    var root = await process.Deserialize(rootId, default, new DeserializeOptions(true));
+
+    var newBases = GetBases(root).ToList();
+    var newIds = newBases.DistinctBy(x => x.id).ToList();
+    Console.WriteLine(newBases.Count);
+    
+    
+    var newIdToJson = new ConcurrentDictionary<string, string>();
+    var serializeProcess = new SerializeProcess(null, new DummySqLiteSendManager(),
+      new DummySendServerObjectManager(newIdToJson),
+      new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()), new SpeckleBasePropertyGatherer());
+   var (rootId2, _) = await serializeProcess.Serialize(string.Empty, root, default, new SerializeProcessOptions(true, false));
+   
+   rootId2.ShouldBe(root.id);
+   newIds.Count.ShouldBe(count);
+   newIdToJson.Count.ShouldBe(count);
+
+   foreach (var newKvp in newIdToJson)
+   {
+     if (closure.TryGetValue(newKvp.Key, out var newValue))
+     {
+       JToken.DeepEquals(JObject.Parse(newValue), JObject.Parse(newKvp.Value));
+     }
+     else
+     {
+       Console.WriteLine(newKvp.Key);
+     }
+   }
+  }
+
+
+  private static IEnumerable<Base> GetBases(Base current)
+  {
+    foreach (var child in new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()).GetChildren(current))
+    {
+      foreach (var childBase in GetBases(child))
+      {
+        yield return childBase;
+      }
+    }
+
+    yield return current;
   }
 }
