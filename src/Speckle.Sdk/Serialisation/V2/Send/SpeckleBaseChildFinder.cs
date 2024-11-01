@@ -12,11 +12,11 @@ public class SpeckleBaseChildFinder(ISpeckleBasePropertyGatherer propertyGathere
     var props = propertyGatherer.ExtractAllProperties(obj);
     foreach (var kvp in props)
     {
-      if (kvp.Value.value is Base child)
+      if (kvp.Value is Base child)
       {
         yield return child;
       }
-      if (kvp.Value.value is ICollection c)
+      if (kvp.Value is ICollection c)
       {
         foreach (var childC in c)
         {
@@ -26,7 +26,7 @@ public class SpeckleBaseChildFinder(ISpeckleBasePropertyGatherer propertyGathere
           }
         }
       }
-      if (kvp.Value.value is IDictionary d)
+      if (kvp.Value is IDictionary d)
       {
         foreach (DictionaryEntry de in d)
         {

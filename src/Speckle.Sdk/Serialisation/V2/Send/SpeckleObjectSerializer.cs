@@ -266,7 +266,6 @@ public class SpeckleObjectSerializer2
 
   private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
   {
-    var allProperties = _propertyGatherer.ExtractAllProperties(baseObj);
 
     if (baseObj is not Blob)
     {
@@ -275,15 +274,15 @@ public class SpeckleObjectSerializer2
 
     writer.WriteStartObject();
     // Convert all properties
-    foreach (var prop in allProperties)
+    foreach (var prop in _propertyGatherer.ExtractAllProperties(baseObj))
     {
-      if (prop.Value.info.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
+      if (prop.PropertyAttributeInfo.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
       {
         continue;
       }
 
-      writer.WritePropertyName(prop.Key);
-      SerializeProperty(prop.Value.value, writer, prop.Value.info);
+      writer.WritePropertyName(prop.Name);
+      SerializeProperty(prop.Value, writer, prop.PropertyAttributeInfo);
     }
 
     string id;

@@ -8,26 +8,24 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
+public readonly record struct Property(string Name, object? Value, PropertyAttributeInfo PropertyAttributeInfo);
+
 [GenerateAutoInterface]
 public class SpeckleBasePropertyGatherer : ISpeckleBasePropertyGatherer
 {
   private readonly ConcurrentDictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache =
     new();
 
-  public Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
+  public IEnumerable<Property> ExtractAllProperties(Base baseObj)
   {
     IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
     IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
-
-    // propertyName -> (originalValue, isDetachable, isChunkable, chunkSize)
-    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties =
-      new(typedProperties.Count + dynamicProperties.Count);
 
     // Construct `allProperties`: Add typed properties
     foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)
     {
       object? baseValue = propertyInfo.GetValue(baseObj);
-      allProperties[propertyInfo.Name] = (baseValue, detachInfo);
+      yield return new(propertyInfo.Name, baseValue, detachInfo);
     }
 
     // Construct `allProperties`: Add dynamic properties
@@ -45,10 +43,8 @@ public class SpeckleBasePropertyGatherer : ISpeckleBasePropertyGatherer
       int chunkSize = 1000;
       bool isChunkable = isDetachable && PropNameValidator.IsChunkable(propName, out chunkSize);
 
-      allProperties[propName] = (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null));
+      yield return new(propName, baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null));
     }
-
-    return allProperties;
   }
 
   // (propertyInfo, isDetachable, isChunkable, chunkSize, JsonPropertyAttribute)
