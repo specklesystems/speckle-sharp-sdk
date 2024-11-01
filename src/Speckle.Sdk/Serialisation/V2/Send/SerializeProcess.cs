@@ -132,7 +132,11 @@ public class SerializeProcess(
       Done();
     }
     progress?.Report(new(ProgressEvent.CacheCheck, _checked, null));
-    if (!_options.SkipCache && !sqliteSendCacheManager.HasObject(item.Id))
+    if (_options.SkipCache)
+    {
+      return item;
+    }
+    if (!sqliteSendCacheManager.HasObject(item.Id))
     {
       return item;
     }
