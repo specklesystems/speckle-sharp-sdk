@@ -3,15 +3,13 @@ using Open.ChannelExtensions;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-public readonly record struct BaseItem(string Id, string Json, bool IsEnd = false);
+public readonly record struct BaseItem(string Id, string Json, bool NeedsStorage);
 
 public abstract class ChannelSaver
 {
   private const int HTTP_SEND_CHUNK_SIZE = 500;
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
   private const int MAX_PARALLELISM_HTTP = 4;
-
-  private static readonly int MAX_CACHE_READ_PARALLELISM = Environment.ProcessorCount;
   private const int MAX_CACHE_WRITE_PARALLELISM = 1;
   private const int MAX_CACHE_BATCH = 100;
 
@@ -19,13 +17,11 @@ public abstract class ChannelSaver
 
   public Task Start(string streamId, CancellationToken cancellationToken = default) =>
     _checkCacheChannel
-      .Pipe(MAX_CACHE_READ_PARALLELISM, CheckCache, -1, false, cancellationToken)
-      .Filter(x => x is not null)
-      .Batch(HTTP_SEND_CHUNK_SIZE)
+      .Reader.Batch(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
-        async x => await SendToServer(streamId, x.Cast<BaseItem>().ToList(), cancellationToken).ConfigureAwait(false),
+        async x => await SendToServer(streamId, x, cancellationToken).ConfigureAwait(false),
         -1,
         false,
         cancellationToken
@@ -39,8 +35,6 @@ public abstract class ChannelSaver
     await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
 
   public void Done() => _checkCacheChannel.Writer.TryComplete();
-
-  public abstract BaseItem? CheckCache(BaseItem item);
 
   public abstract Task<List<BaseItem>> SendToServer(
     string streamId,

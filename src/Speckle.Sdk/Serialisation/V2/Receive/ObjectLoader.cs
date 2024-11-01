@@ -53,7 +53,7 @@ public sealed class ObjectLoader(
     //save the root last to shortcut later
     if (!options.SkipCache)
     {
-      sqliteReceiveCacheManager.SaveObject(new(rootId, rootJson));
+      sqliteReceiveCacheManager.SaveObject(new(rootId, rootJson, true));
     }
     return (rootJson, allChildrenIds);
   }
@@ -88,7 +88,7 @@ public sealed class ObjectLoader(
     {
       count++;
       progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
-      toCache.Add(new(id, json));
+      toCache.Add(new(id, json, true));
     }
 
     return toCache;

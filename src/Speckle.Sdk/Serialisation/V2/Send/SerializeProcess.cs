@@ -74,32 +74,34 @@ public class SerializeProcess(
       )
       .ToList();
 
-    var item = Serialise(obj, isEnd, closures);
-    if (item is not null)
+    var item = Serialise(obj, closures);
+    if (item?.NeedsStorage ?? false)
     {
       await Save(item.Value, cancellationToken).ConfigureAwait(false);
-      if (isEnd)
-      {
-        Done();
-      }
+    }
+    if (isEnd)
+    {
+      Done();
     }
     return closures;
   }
 
   //leave this sync
-  private BaseItem? Serialise(Base obj, bool isEnd, List<Dictionary<string, int>> childClosures)
+  private BaseItem? Serialise(Base obj, List<Dictionary<string, int>> childClosures)
   {
     if (obj.id != null && _jsonCache.ContainsKey(obj.id))
     {
       return null;
     }
 
+    Interlocked.Increment(ref _total);
     string? json = null;
     if (!_options.SkipCache && obj.id != null)
     {
       json = sqliteSendCacheManager.GetObject(obj.id);
+      Interlocked.Increment(ref _checked);
+      progress?.Report(new(ProgressEvent.CacheCheck, _checked, _total));
     }
-    Interlocked.Increment(ref _total);
     if (json == null)
     {
       var id = obj.id;
@@ -112,6 +114,8 @@ public class SerializeProcess(
         {
           _objectReferences.TryAdd(kvp.Key, kvp.Value);
         }
+        Interlocked.Increment(ref _serialized);
+        progress?.Report(new(ProgressEvent.SerializeObject, _serialized, _total));
 
         _jsonCache.TryAdd(obj.id, json);
         if (id is not null && id != obj.id)
@@ -119,27 +123,10 @@ public class SerializeProcess(
           //in case the ids changes which is due to id hash algorithm changing
           _jsonCache.TryAdd(id, json);
         }
-        Interlocked.Increment(ref _serialized);
-        progress?.Report(new(ProgressEvent.SerializeObject, _serialized, _total));
       }
+      return new BaseItem(obj.id.NotNull(), json, true);
     }
-    return new BaseItem(obj.id.NotNull(), json, isEnd);
-  }
-
-  //return null when it's cached
-  public override BaseItem? CheckCache(BaseItem item)
-  {
-    Interlocked.Increment(ref _checked);
-    progress?.Report(new(ProgressEvent.CacheCheck, _checked, null));
-    if (_options.SkipCache)
-    {
-      return item;
-    }
-    if (!sqliteSendCacheManager.HasObject(item.Id))
-    {
-      return item;
-    }
-    return null;
+    return new BaseItem(obj.id.NotNull(), json.NotNull(), false);
   }
 
   public override async Task<List<BaseItem>> SendToServer(
