@@ -118,25 +118,19 @@ public class SerializeProcess(
   }
 
   //return null when it's cached
-  public override List<BaseItem> CheckCache(List<BaseItem> items)
+  public override BaseItem? CheckCache(BaseItem item)
   {
-    List<BaseItem> result;
-    progress?.Report(new(ProgressEvent.CacheCheck, _checked, _total));
-    if (!_options.SkipCache)
-    {
-      result = items.Except(sqliteSendCacheManager.HasObjects(items)).ToList();
-    }
-    else
-    {
-      result = new();
-    }
-    Interlocked.Exchange(ref _checked, _checked + items.Count);
-
-    if (items.Any(x => x.IsEnd))
+    Interlocked.Increment(ref _checked);
+    if (item.IsEnd)
     {
       Done();
     }
-    return result;
+    progress?.Report(new(ProgressEvent.CacheCheck, _checked, null));
+    if (!_options.SkipCache && !sqliteSendCacheManager.HasObject(item.Id))
+    {
+      return item;
+    }
+    return null;
   }
 
   public override async Task<List<BaseItem>> SendToServer(

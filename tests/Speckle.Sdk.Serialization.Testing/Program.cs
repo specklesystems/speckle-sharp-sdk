@@ -19,6 +19,10 @@ TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
 var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 var streamId = "a3ac1b2706";
 var rootId = "7d53bcf28c6696ecac8781684a0aa006";*/
+/*
+var url = "https://latest.speckle.systems/"; //other?
+var streamId = "368f598929";
+var rootId = "67374cfe689c43ff8be12090af122244";*/
 
 
 var url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
@@ -54,6 +58,6 @@ var process2 = new SerializeProcess(
   new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
   new SpeckleBasePropertyGatherer()
 );
-await process2.Serialize(streamId, @base, default, new SerializeProcessOptions(false, true)).ConfigureAwait(false);
+await process2.Serialize(streamId, @base, default, new SerializeProcessOptions(false, true )).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();

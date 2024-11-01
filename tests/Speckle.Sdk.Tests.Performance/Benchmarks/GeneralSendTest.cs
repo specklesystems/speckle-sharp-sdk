@@ -37,8 +37,8 @@ public class GeneralSendTest
     await dataSource
       .SeedTransport(
         new Account() { serverInfo = new() { url = "https://latest.speckle.systems/" } },
-        "a3ac1b2706",
-        "7d53bcf28c6696ecac8781684a0aa006",
+        "2099ac4b5f",
+        "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6",
         false
       )
       .ConfigureAwait(false);
