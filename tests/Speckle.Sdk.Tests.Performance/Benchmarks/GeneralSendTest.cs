@@ -37,8 +37,8 @@ public class GeneralSendTest
     await dataSource
       .SeedTransport(
         new Account() { serverInfo = new() { url = "https://latest.speckle.systems/" } },
-        "2099ac4b5f",
-        "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6",
+        "a3ac1b2706",
+        "7d53bcf28c6696ecac8781684a0aa006",
         false
       )
       .ConfigureAwait(false);
@@ -54,37 +54,31 @@ public class GeneralSendTest
       .First();
 
     client = TestDataHelper.ServiceProvider.GetRequiredService<IClientFactory>().Create(acc);
-  }
-
-  [IterationSetup]
-  public void IterationSetup() => CreateInitialProject().Wait();
-
-  [Benchmark(Baseline = true)]
-  public async Task<string> Send1()
-  {
-    using SQLiteTransport local = new();
-    var res = await _operations.Send(_testData, [_remote, local]);
-    return await TagVersion(res.rootObjId);
-  }
-
-  [Benchmark]
-  public async Task<string> Send2()
-  {
-    var res = await _operations.Send2(new(acc.serverInfo.url), _project.id, acc.token, _testData);
-    return await TagVersion(res.rootObjId);
-  }
-
-  private async Task<string> TagVersion(string objectId)
-  {
-    var model = await client.Model.Create(new("Result", null, _project.id));
-    return await client.Version.Create(new(objectId, model.id, _project.id));
-  }
-
-  private async Task CreateInitialProject()
-  {
+    
     _project = await client.Project.Create(
       new($"General Send Test run {Guid.NewGuid()}", null, ProjectVisibility.Public)
     );
     _remote = TestDataHelper.ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(acc, _project.id);
+  }
+
+  [Benchmark(Baseline = true)]
+  public async Task<string> Send_old()
+  {
+    using SQLiteTransport local = new();
+    var res = await _operations.Send(_testData, [_remote, local]);
+    return await TagVersion($"Send_old {Guid.NewGuid()}",res.rootObjId);
+  }
+
+  [Benchmark]
+  public async Task<string> Send_new()
+  {
+    var res = await _operations.Send2(new(acc.serverInfo.url), _project.id, acc.token, _testData);
+    return await TagVersion($"Send_new {Guid.NewGuid()}", res.rootObjId);
+  }
+
+  private async Task<string> TagVersion(string name, string objectId)
+  {
+    var model = await client.Model.Create(new(name, null, _project.id));
+    return await client.Version.Create(new(objectId, model.id, _project.id));
   }
 }
