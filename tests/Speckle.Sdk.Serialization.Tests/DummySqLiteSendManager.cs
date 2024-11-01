@@ -5,7 +5,7 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class DummySqLiteSendManager : ISQLiteSendCacheManager
 {
-  public string? GetObject(string id) =>  throw new NotImplementedException();
+  public string? GetObject(string id) => throw new NotImplementedException();
 
   public bool HasObject(string objectId) => throw new NotImplementedException();
 

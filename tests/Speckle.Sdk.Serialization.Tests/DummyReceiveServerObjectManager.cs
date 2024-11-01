@@ -8,7 +8,6 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class DummyReceiveServerObjectManager(Dictionary<string, string> objects) : IServerObjectManager
 {
-
   public async IAsyncEnumerable<(string, string)> DownloadObjects(
     string streamId,
     IReadOnlyList<string> objectIds,
@@ -32,7 +31,6 @@ public class DummyReceiveServerObjectManager(Dictionary<string, string> objects)
   {
     await Task.CompletedTask;
     return objects[objectId];
-
   }
 
   public Task<Dictionary<string, bool>> HasObjects(

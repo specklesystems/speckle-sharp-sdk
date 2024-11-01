@@ -3,7 +3,7 @@ using Speckle.Sdk.Serialisation.V2;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
-public class DummySqLiteReceiveManager(Dictionary<string, string> savedObjects)  : ISQLiteReceiveCacheManager
+public class DummySqLiteReceiveManager(Dictionary<string, string> savedObjects) : ISQLiteReceiveCacheManager
 {
   public string? GetObject(string id) => savedObjects.GetValueOrDefault(id);
 
