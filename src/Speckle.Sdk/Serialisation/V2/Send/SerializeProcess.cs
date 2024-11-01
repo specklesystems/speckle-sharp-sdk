@@ -78,8 +78,11 @@ public class SerializeProcess(
     if (item is not null)
     {
       await Save(item.Value, cancellationToken).ConfigureAwait(false);
+      if (isEnd)
+      {
+        Done();
+      }
     }
-
     return closures;
   }
 
@@ -127,10 +130,6 @@ public class SerializeProcess(
   public override BaseItem? CheckCache(BaseItem item)
   {
     Interlocked.Increment(ref _checked);
-    if (item.IsEnd)
-    {
-      Done();
-    }
     progress?.Report(new(ProgressEvent.CacheCheck, _checked, null));
     if (_options.SkipCache)
     {
@@ -168,11 +167,6 @@ public class SerializeProcess(
       sqliteSendCacheManager.SaveObjects(items);
       Interlocked.Exchange(ref _cached, _cached + items.Count);
       progress?.Report(new(ProgressEvent.Cached, _cached, null));
-    }
-
-    if (items.Any(x => x.IsEnd))
-    {
-      Done();
     }
   }
 }
