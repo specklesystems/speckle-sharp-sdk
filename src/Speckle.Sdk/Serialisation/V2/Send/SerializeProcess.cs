@@ -15,7 +15,8 @@ public class SerializeProcess(
   ISpeckleBaseChildFinder speckleBaseChildFinder,
   ISpeckleBasePropertyGatherer speckleBasePropertyGatherer
 ) : ChannelSaver
-{
+{  
+  private readonly ConcurrentDictionary<string, string> _jsonCache = new();
   private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
 
   private long _total;
@@ -79,6 +80,11 @@ public class SerializeProcess(
   //leave this sync
   private BaseItem? Serialise(Base obj, bool isEnd, List<Dictionary<string, int>> childClosures)
   {
+    if (obj.id != null && _jsonCache.ContainsKey(obj.id))
+    {
+      return null;
+    }
+
     string? json = null;
     if (!_options.SkipCache && obj.id != null)
     {
@@ -87,6 +93,9 @@ public class SerializeProcess(
     Interlocked.Increment(ref _total);
     if (json == null)
     {
+      var id = obj.id;
+      if (id is null || !_jsonCache.TryGetValue(id, out json))
+      {
         SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, childClosures);
         json = serializer2.Serialize(obj);
         obj.id.NotNull();
@@ -94,8 +103,16 @@ public class SerializeProcess(
         {
           _objectReferences.TryAdd(kvp.Key, kvp.Value);
         }
+
+        _jsonCache.TryAdd(obj.id, json);
+        if (id is not null && id != obj.id)
+        {
+          //in case the ids changes which is due to id hash algorithm changing
+          _jsonCache.TryAdd(id, json);
+        }
         Interlocked.Increment(ref _serialized);
         progress?.Report(new(ProgressEvent.SerializeObject, _serialized, _total));
+      }
     }
     return new BaseItem(obj.id.NotNull(), json, isEnd);
   }
