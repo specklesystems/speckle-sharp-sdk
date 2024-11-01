@@ -16,7 +16,6 @@ public class SerializeProcess(
   ISpeckleBasePropertyGatherer speckleBasePropertyGatherer
 ) : ChannelSaver
 {
-  private readonly ConcurrentDictionary<string, string> _jsonCache = new();
   private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
 
   private long _total;
@@ -35,30 +34,21 @@ public class SerializeProcess(
   {
     _options = options ?? _options;
     var channelTask = Start(streamId, cancellationToken);
-    await Traverse(root.id, root, true, cancellationToken).ConfigureAwait(false);
+    await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
     return (root.id, _objectReferences);
   }
 
-  private async Task Traverse(string? id, Base obj, bool isEnd, CancellationToken cancellationToken)
+  private async Task<List<Dictionary<string, int>>> Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
   {
-    if (id != null && _jsonCache.ContainsKey(id))
-    {
-      return;
-    }
-    var tasks = new List<Task>();
+    var tasks = new List<Task<List<Dictionary<string, int>>>>();
     foreach (var child in speckleBaseChildFinder.GetChildren(obj))
     {
-      if (child.id != null && _jsonCache.ContainsKey(child.id))
-      {
-        continue;
-      }
-
       // tmp is necessary because of the way closures close over loop variables
       var tmp = child;
       var t = Task
         .Factory.StartNew(
-          () => Traverse(tmp.id, tmp, false, cancellationToken),
+          () => Traverse(tmp, false, cancellationToken),
           cancellationToken,
           TaskCreationOptions.AttachedToParent,
           TaskScheduler.Default
@@ -71,52 +61,41 @@ public class SerializeProcess(
     {
       await Task.WhenAll(tasks).ConfigureAwait(false);
     }
+    var closures = tasks.Select(t => t.Result).Aggregate(new List<Dictionary<string, int>>(), (a, s) =>
+    {
+      a.AddRange(s);
+      return a;
+    }).ToList();
 
-    var item = Serialise(obj.id, obj, isEnd);
+    var item = Serialise(obj, isEnd, closures);
     if (item is not null)
     {
       await Save(item.Value, cancellationToken).ConfigureAwait(false);
     }
+
+    return closures;
   }
 
   //leave this sync
-  private BaseItem? Serialise(string? id, Base obj, bool isEnd)
+  private BaseItem? Serialise(Base obj, bool isEnd, List<Dictionary<string, int>> childClosures)
   {
-    if (id != null && _jsonCache.ContainsKey(id))
-    {
-      return null;
-    }
-
     string? json = null;
-    if (!_options.SkipCache && id != null)
+    if (!_options.SkipCache && obj.id != null)
     {
-      json = sqliteSendCacheManager.GetObject(id);
+      json = sqliteSendCacheManager.GetObject(obj.id);
     }
     Interlocked.Increment(ref _total);
     if (json == null)
     {
-      if (id is null || !_jsonCache.TryGetValue(id, out json))
-      {
-        SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, _jsonCache);
+        SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, childClosures);
         json = serializer2.Serialize(obj);
         obj.id.NotNull();
         foreach (var kvp in serializer2.ObjectReferences)
         {
           _objectReferences.TryAdd(kvp.Key, kvp.Value);
         }
-        _jsonCache.TryAdd(obj.id, json);
-        if (id is not null && id != obj.id)
-        {
-          //in case the ids changes which is due to id hash algorithm changing
-          _jsonCache.TryAdd(id, json);
-        }
         Interlocked.Increment(ref _serialized);
         progress?.Report(new(ProgressEvent.SerializeObject, _serialized, _total));
-      }
-    }
-    else if (id != null)
-    {
-      _jsonCache.TryAdd(id, json);
     }
     return new BaseItem(obj.id.NotNull(), json, isEnd);
   }
