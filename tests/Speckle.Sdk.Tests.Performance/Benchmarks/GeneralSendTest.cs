@@ -54,7 +54,7 @@ public class GeneralSendTest
       .First();
 
     client = TestDataHelper.ServiceProvider.GetRequiredService<IClientFactory>().Create(acc);
-    
+
     _project = await client.Project.Create(
       new($"General Send Test run {Guid.NewGuid()}", null, ProjectVisibility.Public)
     );
@@ -66,7 +66,7 @@ public class GeneralSendTest
   {
     using SQLiteTransport local = new();
     var res = await _operations.Send(_testData, [_remote, local]);
-    return await TagVersion($"Send_old {Guid.NewGuid()}",res.rootObjId);
+    return await TagVersion($"Send_old {Guid.NewGuid()}", res.rootObjId);
   }
 
   [Benchmark]

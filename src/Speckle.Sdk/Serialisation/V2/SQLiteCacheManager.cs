@@ -68,16 +68,13 @@ public abstract class SQLiteCacheManager
 
     using SqliteCommand cmd2 = new("PRAGMA temp_store=MEMORY;", c);
     cmd2.ExecuteNonQuery();
-    
+
     using SqliteCommand cmd3 = new("PRAGMA mmap_size = 30000000000;", c);
     cmd3.ExecuteNonQuery();
-    
+
     using SqliteCommand cmd4 = new("PRAGMA page_size = 32768;", c);
     cmd4.ExecuteNonQuery();
   }
 
   protected string ConnectionString { get; }
-  
-  
-
 }

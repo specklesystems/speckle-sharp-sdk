@@ -58,6 +58,6 @@ var process2 = new SerializeProcess(
   new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
   new SpeckleBasePropertyGatherer()
 );
-await process2.Serialize(streamId, @base, default, new SerializeProcessOptions(false, true )).ConfigureAwait(false);
+await process2.Serialize(streamId, @base, default, new SerializeProcessOptions(false, true)).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();

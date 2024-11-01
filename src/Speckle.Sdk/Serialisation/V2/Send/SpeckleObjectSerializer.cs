@@ -24,7 +24,6 @@ public class SpeckleObjectSerializer2
   /// </summary>
   public Dictionary<string, ObjectReference> ObjectReferences { get; } = new();
 
-
   /// <summary>
   /// Creates a new Serializer instance.
   /// </summary>
@@ -221,8 +220,8 @@ public class SpeckleObjectSerializer2
 
       using var writer = new StringWriter();
       using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-       id = SerializeBaseObject(baseObj, jsonWriter, closure);
-       json = writer.ToString();
+      id = SerializeBaseObject(baseObj, jsonWriter, closure);
+      json = writer.ToString();
 
       if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
       {
@@ -266,7 +265,6 @@ public class SpeckleObjectSerializer2
 
   private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
   {
-
     if (baseObj is not Blob)
     {
       writer = new SerializerIdWriter(writer);

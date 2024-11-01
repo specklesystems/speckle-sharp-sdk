@@ -15,7 +15,7 @@ public class SerializeProcess(
   ISpeckleBaseChildFinder speckleBaseChildFinder,
   ISpeckleBasePropertyGatherer speckleBasePropertyGatherer
 ) : ChannelSaver
-{  
+{
   private readonly ConcurrentDictionary<string, string> _jsonCache = new();
   private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
 
@@ -62,11 +62,17 @@ public class SerializeProcess(
     {
       await Task.WhenAll(tasks).ConfigureAwait(false);
     }
-    var closures = tasks.Select(t => t.Result).Aggregate(new List<Dictionary<string, int>>(), (a, s) =>
-    {
-      a.AddRange(s);
-      return a;
-    }).ToList();
+    var closures = tasks
+      .Select(t => t.Result)
+      .Aggregate(
+        new List<Dictionary<string, int>>(),
+        (a, s) =>
+        {
+          a.AddRange(s);
+          return a;
+        }
+      )
+      .ToList();
 
     var item = Serialise(obj, isEnd, closures);
     if (item is not null)

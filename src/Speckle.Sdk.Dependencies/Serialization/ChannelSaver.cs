@@ -10,7 +10,7 @@ public abstract class ChannelSaver
   private const int HTTP_SEND_CHUNK_SIZE = 500;
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
   private const int MAX_PARALLELISM_HTTP = 4;
-  
+
   private static readonly int MAX_CACHE_READ_PARALLELISM = Environment.ProcessorCount;
   private const int MAX_CACHE_WRITE_PARALLELISM = 1;
   private const int MAX_CACHE_BATCH = 100;
