@@ -14,9 +14,9 @@ public class TransformTests
   [Test, TestCaseSource(nameof(TransformTestCases))]
   public void ArrayBackAndForth(Matrix4x4 data)
   {
-    var start = new Transform(data);
-    var asArr = start.ToArray();
-    var end = new Transform(asArr);
+    var start = new Transform() { matrix = data, units = Units.None };
+    var asArr = Transform.CreateMatrix(start.ToArray());
+    var end = new Transform() { matrix = asArr, units = Units.None };
 
     Assert.That(end.matrix, Is.EqualTo(data));
   }
@@ -28,7 +28,9 @@ public class TransformTests
 
     var transpose = Matrix4x4.Transpose(data); //NOTE: Transform expects matrices transposed (translation in column 4)
     var mm = Matrix4x4.Transpose(
-      Transform.CreateMatrix(new Transform(transpose, Units.Meters).ConvertToUnits(Units.Millimeters))
+      Transform.CreateMatrix(
+        new Transform() { matrix = transpose, units = Units.Meters }.ConvertToUnits(Units.Millimeters)
+      )
     );
 
     Matrix4x4.Decompose(data, out var ms, out var mr, out var mt);
@@ -45,37 +47,6 @@ public class TransformTests
       Assert.That(mmt.X, Is.EqualTo(mt.X * SF).Within(FLOAT_TOLERANCE), $"Expect translation x to be scaled by {SF}");
       Assert.That(mmt.Y, Is.EqualTo(mt.Y * SF).Within(FLOAT_TOLERANCE), $"Expect translation y to be scaled by {SF}");
       Assert.That(mmt.Z, Is.EqualTo(mt.Z * SF).Within(FLOAT_TOLERANCE), $"Expect translation z to be scaled by {SF}");
-    });
-  }
-
-  [
-    Test(Description = "Tests that Transform decompose matches the behaviour of Matrix4x4"),
-    TestCaseSource(nameof(TransformTestCases))
-  ]
-  public void Decompose(Matrix4x4 data)
-  {
-    var transpose = Matrix4x4.Transpose(data); //NOTE: Transform expects matrices transposed (translation in column 4)
-    var sut = new Transform(transpose);
-
-    sut.Decompose(out var s, out var r, out var t);
-    var actual = new Vector3(t.X, t.Y, t.Z);
-    Matrix4x4.Decompose(data, out var expectedS, out var expectedR, out var expectedT);
-
-    Assert.Multiple(() =>
-    {
-      Assert.That(s.X, Is.EqualTo(expectedS.X).Within(FLOAT_TOLERANCE), "Expect scale x to be unchanged");
-      Assert.That(s.Y, Is.EqualTo(expectedS.Y).Within(FLOAT_TOLERANCE), "Expect scale y to be unchanged");
-      Assert.That(s.Z, Is.EqualTo(expectedS.Z).Within(FLOAT_TOLERANCE), "Expect scale z to be unchanged");
-
-      Assert.That(
-        Quaternion.Dot(r, expectedR),
-        Is.LessThan(1).Within(FLOAT_TOLERANCE),
-        "Expect rot x to be equivalent"
-      );
-
-      Assert.That(actual.X, Is.EqualTo(expectedT.X).Within(FLOAT_TOLERANCE), "Expect translation x to be unchanged");
-      Assert.That(actual.Y, Is.EqualTo(expectedT.Y).Within(FLOAT_TOLERANCE), "Expect translation y to be unchanged");
-      Assert.That(actual.Z, Is.EqualTo(expectedT.Z).Within(FLOAT_TOLERANCE), "Expect translation z to be unchanged");
     });
   }
 

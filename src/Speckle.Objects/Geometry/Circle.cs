@@ -33,12 +33,12 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
   public Interval domain { get; set; } = Interval.UnitInterval;
 
   /// <inheritdoc/>
-  public double length { get; set; }
+  public double length => 2 * Math.PI * radius;
 
   //public Point center { get; set; }
 
   /// <inheritdoc/>
-  public double area { get; set; }
+  public double area => Math.PI * radius * radius;
 
   /// <inheritdoc/>
   public Box? bbox { get; set; }

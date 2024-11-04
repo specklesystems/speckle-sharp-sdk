@@ -5,7 +5,7 @@ using Speckle.Sdk.Models;
 namespace Speckle.Objects.Geometry;
 
 /// <summary>
-/// A 3-dimensional Plane consisting of an origin <see cref="Point"/>, and 3 <see cref="Vector"/> as it's X, Y and Z axis.
+/// A 3-dimensional Plane consisting of an origin <see cref="Point"/>, and 3 <see cref="Vector"/> as its X, Y and Z axis.
 /// </summary>
 [SpeckleType("Objects.Geometry.Plane")]
 public class Plane : Base, ITransformable<Plane>

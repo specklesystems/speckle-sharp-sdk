@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Reflection;
 using NUnit.Framework;
 using Shouldly;
@@ -43,6 +44,12 @@ public class SerializationTests
   private async Task<string> ReadJson(string fullName)
   {
     await using var stream = _assembly.GetManifestResourceStream(fullName).NotNull();
+    if (fullName.EndsWith(".gz"))
+    {
+      await using var z = new GZipStream(stream, CompressionMode.Decompress);
+      using var reader2 = new StreamReader(z);
+      return await reader2.ReadToEndAsync();
+    }
     using var reader = new StreamReader(stream);
     return await reader.ReadToEndAsync();
   }
@@ -96,7 +103,7 @@ public class SerializationTests
   }
 
   [Test]
-  [TestCase("RevitObject.json")]
+  [TestCase("RevitObject.json.gz")]
   public async Task Basic_Namespace_Validation(string fileName)
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
@@ -130,14 +137,14 @@ public class SerializationTests
   }
 
   [Test]
-  [TestCase("RevitObject.json")]
+  [TestCase("RevitObject.json.gz")]
   public async Task Basic_Namespace_Validation_New(string fileName)
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var json = await ReadJson(fullName);
     var closures = ReadAsObjects(json);
     var process = new DeserializeProcess(null, new TestObjectLoader(closures));
-    await process.Deserialize("551513ff4f3596024547fc818f1f3f70", default);
+    await process.Deserialize("3416d3fe01c9196115514c4a2f41617b", default);
     foreach (var (id, objJson) in closures)
     {
       var jObject = JObject.Parse(objJson);
