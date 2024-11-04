@@ -1,11 +1,19 @@
 ﻿namespace Speckle.Sdk.Api.GraphQL.Models;
 
+public sealed class AuthStrategy
+{
+  public string? color { get; init; }
+  public string icon { get; init; }
+  public string id { get; init; }
+  public string name { get; init; }
+  public string url { get; init; }
+}
+
 public sealed class ServerInfo
 {
   public string name { get; init; }
   public string? company { get; init; }
   public string? version { get; init; }
-  public string? adminContact { get; init; }
   public string? description { get; init; }
 
   /// <remarks>
@@ -28,12 +36,12 @@ public sealed class ServerInfo
 public sealed class ServerMigration
 {
   /// <summary>
-  /// New URI where this server is now deployed
-  /// </summary>
-  public Uri? movedTo { get; set; }
-
-  /// <summary>
   /// Previous URI where this server used to be deployed
   /// </summary>
   public Uri? movedFrom { get; set; }
+
+  /// <summary>
+  /// New URI where this server is now deployed
+  /// </summary>
+  public Uri? movedTo { get; set; }
 }
