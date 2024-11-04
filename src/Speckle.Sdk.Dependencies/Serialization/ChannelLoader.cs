@@ -16,20 +16,14 @@ public abstract class ChannelLoader
       .Filter(x => x is not null)
       .Batch(HTTP_GET_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .PipeAsync(
-        MAX_PARALLELISM_HTTP,
-        async x => await DownloadAndCache(x).ConfigureAwait(false),
-        -1,
-        false,
-        cancellationToken
-      )
+      .PipeAsync(MAX_PARALLELISM_HTTP, async x => await Download(x).ConfigureAwait(false), -1, false, cancellationToken)
       .Join()
       .ReadAllConcurrently(MAX_CACHE_PARALLELISM, SaveToCache, cancellationToken)
       .ConfigureAwait(false);
 
   public abstract string? CheckCache(string id);
 
-  public abstract Task<List<BaseItem>> DownloadAndCache(List<string?> ids);
+  public abstract Task<List<BaseItem>> Download(List<string?> ids);
 
   public abstract void SaveToCache(BaseItem x);
 }

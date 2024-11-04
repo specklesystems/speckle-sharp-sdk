@@ -72,7 +72,7 @@ public sealed class ObjectLoader(
   }
 
   [AutoInterfaceIgnore]
-  public override async Task<List<BaseItem>> DownloadAndCache(List<string?> ids)
+  public override async Task<List<BaseItem>> Download(List<string?> ids)
   {
     var count = 0L;
     progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
@@ -100,10 +100,9 @@ public sealed class ObjectLoader(
     if (!_options.SkipCache)
     {
       sqliteReceiveCacheManager.SaveObject(x);
+      _cached++;
+      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _allChildrenCount));
     }
-
-    _cached++;
-    progress?.Report(new(ProgressEvent.Cached, _cached, _allChildrenCount));
   }
 
   public string? LoadId(string id) => sqliteReceiveCacheManager.GetObject(id);

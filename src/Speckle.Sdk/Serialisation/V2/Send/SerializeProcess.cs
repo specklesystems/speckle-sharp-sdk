@@ -20,7 +20,6 @@ public class SerializeProcess(
   private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
 
   private long _total;
-  private long _checked;
   private long _cached;
   private long _serialized;
 
@@ -45,6 +44,7 @@ public class SerializeProcess(
     var tasks = new List<Task<List<Dictionary<string, int>>>>();
     foreach (var child in speckleBaseChildFinder.GetChildren(obj))
     {
+      Interlocked.Increment(ref _total);
       // tmp is necessary because of the way closures close over loop variables
       var tmp = child;
       var t = Task
@@ -75,6 +75,8 @@ public class SerializeProcess(
       .ToList();
 
     var item = Serialise(obj, closures);
+    Interlocked.Increment(ref _serialized);
+    progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _serialized, _total));
     if (item?.NeedsStorage ?? false)
     {
       await Save(item.Value, cancellationToken).ConfigureAwait(false);
@@ -94,13 +96,10 @@ public class SerializeProcess(
       return null;
     }
 
-    Interlocked.Increment(ref _total);
     string? json = null;
     if (!_options.SkipCache && obj.id != null)
     {
       json = sqliteSendCacheManager.GetObject(obj.id);
-      Interlocked.Increment(ref _checked);
-      progress?.Report(new(ProgressEvent.CacheCheck, _checked, _total));
     }
     if (json == null)
     {
@@ -114,8 +113,6 @@ public class SerializeProcess(
         {
           _objectReferences.TryAdd(kvp.Key, kvp.Value);
         }
-        Interlocked.Increment(ref _serialized);
-        progress?.Report(new(ProgressEvent.SerializeObject, _serialized, _total));
 
         _jsonCache.TryAdd(obj.id, json);
         if (id is not null && id != obj.id)
@@ -153,7 +150,7 @@ public class SerializeProcess(
     {
       sqliteSendCacheManager.SaveObjects(items);
       Interlocked.Exchange(ref _cached, _cached + items.Count);
-      progress?.Report(new(ProgressEvent.Cached, _cached, null));
+      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
     }
   }
 }
