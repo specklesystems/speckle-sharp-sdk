@@ -25,16 +25,16 @@ public sealed class ProjectResource
     //language=graphql
     const string QUERY = """
       query Project($projectId: String!) {
-        project(id: $projectId) {
+        data:project(id: $projectId) {
+          allowPublicComments
+          createdAt
+          description
           id
           name
-          description
-          visibility
-          allowPublicComments
           role
-          createdAt
-          updatedAt
           sourceApps
+          updatedAt
+          visibility
           workspaceId
         }
       }
@@ -42,9 +42,9 @@ public sealed class ProjectResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<Project>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.project;
+    return response.data;
   }
 
   /// <param name="projectId"></param>
@@ -56,7 +56,7 @@ public sealed class ProjectResource
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
   /// <seealso cref="Get"/>
   /// <seealso cref="GetWithTeam"/>
-  public async Task<Project> GetWithModels(
+  public async Task<ProjectWithModels> GetWithModels(
     string projectId,
     int modelsLimit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
     string? modelsCursor = null,
@@ -67,7 +67,7 @@ public sealed class ProjectResource
     //language=graphql
     const string QUERY = """
       query ProjectGetWithModels($projectId: String!, $modelsLimit: Int!, $modelsCursor: String, $modelsFilter: ProjectModelsFilter) {
-        project(id: $projectId) {
+        data:project(id: $projectId) {
           id
           name
           description
@@ -77,6 +77,7 @@ public sealed class ProjectResource
           createdAt
           updatedAt
           sourceApps
+          workspaceId
           models(limit: $modelsLimit, cursor: $modelsCursor, filter: $modelsFilter) {
             items {
               id
@@ -107,9 +108,9 @@ public sealed class ProjectResource
       };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<ProjectWithModels>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.project;
+    return response.data;
   }
 
   /// <param name="projectId"></param>
@@ -118,12 +119,12 @@ public sealed class ProjectResource
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
   /// <seealso cref="Get"/>
   /// <seealso cref="GetWithModels"/>
-  public async Task<Project> GetWithTeam(string projectId, CancellationToken cancellationToken = default)
+  public async Task<ProjectWithTeam> GetWithTeam(string projectId, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
       query ProjectGetWithTeam($projectId: String!) {
-        project(id: $projectId) {
+        data:project(id: $projectId) {
           id
           name
           description
@@ -132,7 +133,10 @@ public sealed class ProjectResource
           role
           createdAt
           updatedAt
+          workspaceId
+          sourceApps
           team {
+            id
             role
             user {
               id
@@ -178,9 +182,9 @@ public sealed class ProjectResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<ProjectWithTeam>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.project;
+    return response.data;
   }
 
   /// <param name="input"></param>
@@ -192,8 +196,8 @@ public sealed class ProjectResource
     //language=graphql
     const string QUERY = """
       mutation ProjectCreate($input: ProjectCreateInput) {
-        projectMutations {
-          create(input: $input) {
+        data:projectMutations {
+          data:create(input: $input) {
             id
             name
             description
@@ -211,9 +215,9 @@ public sealed class ProjectResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Project>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.projectMutations.create;
+    return response.data.data;
   }
 
   /// <param name="input"></param>
@@ -225,16 +229,17 @@ public sealed class ProjectResource
     //language=graphql
     const string QUERY = """
       mutation ProjectUpdate($input: ProjectUpdateInput!) {
-        projectMutations{
-          update(update: $input) {
+        data:projectMutations{
+          data:update(update: $input) {
+            allowPublicComments
+            createdAt
+            description
             id
             name
-            description
-            visibility
-            allowPublicComments
             role
-            createdAt
+            sourceApps
             updatedAt
+            visibility
             workspaceId
           }
         }
@@ -243,9 +248,9 @@ public sealed class ProjectResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Project>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.projectMutations.update;
+    return response.data.data;
   }
 
   /// <param name="projectId">The id of the Project to delete</param>
@@ -257,29 +262,32 @@ public sealed class ProjectResource
     //language=graphql
     const string QUERY = """
       mutation ProjectDelete($projectId: String!) {
-        projectMutations {
-          delete(id: $projectId)
+        data:projectMutations {
+          data:delete(id: $projectId)
         }
       }
       """;
     GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.projectMutations.delete;
+    return response.data.data;
   }
 
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<Project> UpdateRole(ProjectUpdateRoleInput input, CancellationToken cancellationToken = default)
+  public async Task<ProjectWithTeam> UpdateRole(
+    ProjectUpdateRoleInput input,
+    CancellationToken cancellationToken = default
+  )
   {
     //language=graphql
     const string QUERY = """
       mutation ProjectUpdateRole($input: ProjectUpdateRoleInput!) {
-        projectMutations {
-          updateRole(input: $input) {
+        data:projectMutations {
+          data:updateRole(input: $input) {
             id
             name
             description
@@ -288,7 +296,10 @@ public sealed class ProjectResource
             role
             createdAt
             updatedAt
+            sourceApps
+            workspaceId
             team {
+              id
               role
               user {
                 id
@@ -327,7 +338,6 @@ public sealed class ProjectResource
                 role
               }
             }
-            workspaceId
           }
         }
       }
@@ -335,8 +345,8 @@ public sealed class ProjectResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ProjectWithTeam>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.projectMutations.updateRole;
+    return response.data.data;
   }
 }
