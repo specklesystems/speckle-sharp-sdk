@@ -85,7 +85,6 @@ public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransp
     _objects[id] = serializedObject;
 
     SavedObjectCount++;
-    OnProgressAction?.Report(new(ProgressEvent.UploadObject, 1, 1));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
   }

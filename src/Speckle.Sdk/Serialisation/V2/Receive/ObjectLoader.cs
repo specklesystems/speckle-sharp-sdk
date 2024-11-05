@@ -74,8 +74,6 @@ public sealed class ObjectLoader(
   [AutoInterfaceIgnore]
   public override async Task<List<BaseItem>> Download(List<string?> ids)
   {
-    var count = 0L;
-    progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
     var toCache = new List<BaseItem>();
     await foreach (
       var (id, json) in serverObjectManager.DownloadObjects(
@@ -86,8 +84,6 @@ public sealed class ObjectLoader(
       )
     )
     {
-      count++;
-      progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
       toCache.Add(new(id, json, true));
     }
 
