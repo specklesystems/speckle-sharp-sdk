@@ -46,13 +46,13 @@ public class SerializeProcess(
     {
       Interlocked.Increment(ref _total);
       // tmp is necessary because of the way closures close over loop variables
-      var tmp = child;
-      var t = Task
-        .Factory.StartNew(
-          () => Traverse(tmp, false, cancellationToken),
-          cancellationToken,
-          TaskCreationOptions.AttachedToParent,
-          TaskScheduler.Default
+        var tmp = child;
+        var t = Task
+          .Factory.StartNew(
+            () => Traverse(tmp, false, cancellationToken),
+            cancellationToken,
+            TaskCreationOptions.AttachedToParent,
+            TaskScheduler.Default
         )
         .Unwrap();
       tasks.Add(t);
@@ -65,22 +65,26 @@ public class SerializeProcess(
     var closures = tasks
       .Select(t => t.Result)
       .Aggregate(
-        new List<Dictionary<string, int>>(),
-        (a, s) =>
-        {
-          a.AddRange(s);
-          return a;
-        }
-      )
-      .ToList();
+          new List<Dictionary<string, int>>(),
+          (a, s) =>
+          {
+            a.AddRange(s);
+            return a;
+          }
+        )
+        .ToList();
 
-    var item = Serialise(obj, closures);
-    Interlocked.Increment(ref _serialized);
-    progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _serialized, _total));
-    if (item?.NeedsStorage ?? false)
+    var items = Serialise(obj, closures);
+    foreach (var item in items)
     {
-      await Save(item.Value, cancellationToken).ConfigureAwait(false);
+      Interlocked.Increment(ref _serialized);
+      progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _serialized, _total));
+      if (item.NeedsStorage)
+      {
+        await Save(item, cancellationToken).ConfigureAwait(false);
+      }
     }
+
     if (isEnd)
     {
       Done(obj.id);
@@ -89,41 +93,50 @@ public class SerializeProcess(
   }
 
   //leave this sync
-  private BaseItem? Serialise(Base obj, List<Dictionary<string, int>> childClosures)
+  private IEnumerable<BaseItem> Serialise(Base obj, List<Dictionary<string, int>> childClosures)
   {
     if (obj.id != null && _jsonCache.ContainsKey(obj.id))
     {
-      return null;
+      yield break;
     }
 
-    string? json = null;
     if (!_options.SkipCache && obj.id != null)
     {
-      json = sqliteSendCacheManager.GetObject(obj.id);
-    }
-    if (json == null)
-    {
-      var id = obj.id;
-      if (id is null || !_jsonCache.TryGetValue(id, out json))
+      var cachedJson = sqliteSendCacheManager.GetObject(obj.id);
+      if (cachedJson != null)
       {
-        SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, childClosures);
-        json = serializer2.Serialize(obj);
-        obj.id.NotNull();
+        yield return new BaseItem(obj.id.NotNull(), cachedJson, false);
+        yield break;
+      }
+    }
+    var id = obj.id;
+    if (id is null || !_jsonCache.TryGetValue(id, out var json))
+    {
+      SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, childClosures);
+      var items = serializer2.Serialize(obj).ToList();
         foreach (var kvp in serializer2.ObjectReferences)
         {
           _objectReferences.TryAdd(kvp.Key, kvp.Value);
         }
 
-        _jsonCache.TryAdd(obj.id, json);
+        var (_, j) = items.First();
+        json = j;
+        _jsonCache.TryAdd(obj.id.NotNull(), j);
         if (id is not null && id != obj.id)
         {
           //in case the ids changes which is due to id hash algorithm changing
           _jsonCache.TryAdd(id, json);
         }
-      }
-      return new BaseItem(obj.id.NotNull(), json, true);
+
+        foreach (var (cid, cJson) in items.Skip(1))
+        {
+          if (_jsonCache.TryAdd(cid, cJson))
+          {
+            yield return new BaseItem(cid, cJson, true);
+          }
+        }
     }
-    return new BaseItem(obj.id.NotNull(), json.NotNull(), false);
+    yield return new BaseItem(obj.id.NotNull(), json, true);
   }
 
   public override async Task<List<BaseItem>> SendToServer(

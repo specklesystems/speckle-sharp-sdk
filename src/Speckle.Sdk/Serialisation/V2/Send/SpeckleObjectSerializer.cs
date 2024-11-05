@@ -23,6 +23,8 @@ public class SpeckleObjectSerializer2
   /// This is currently used to cache previously converted objects and avoid their conversion if they haven't changed. See the DUI3 send bindings in rhino or another host app.
   /// </summary>
   public Dictionary<string, ObjectReference> ObjectReferences { get; } = new();
+  
+  private readonly List<(string, string)> _chunks = new();
 
   /// <summary>
   /// Creates a new Serializer instance.
@@ -46,14 +48,14 @@ public class SpeckleObjectSerializer2
   /// <returns>The serialized JSON</returns>
   /// <exception cref="InvalidOperationException">The serializer is busy (already serializing an object)</exception>
   /// <exception cref="SpeckleSerializeException">Failed to extract (pre-serialize) properties from the <paramref name="baseObj"/></exception>
-  public string Serialize(Base baseObj)
+  public IEnumerable<(string, string)> Serialize(Base baseObj)
   {
     try
     {
       try
       {
         var result = SerializeBase(baseObj, true).NotNull();
-        return result.Json;
+        return [(result.Id.NotNull(), result.Json), .._chunks];
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
@@ -258,6 +260,7 @@ public class SpeckleObjectSerializer2
           closure = closure,
         };
       }
+        _chunks.Add((id, json));
       return new(json2, null);
     }
     return new(json.NotNull(), id);

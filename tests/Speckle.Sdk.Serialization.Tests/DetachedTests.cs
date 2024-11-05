@@ -3,6 +3,7 @@ using System.Text;
 using NUnit.Framework;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Objects.Geometry;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -19,7 +20,7 @@ public class DetachedTests
   public void Setup()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
   }
 
   [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
@@ -145,7 +146,26 @@ public class DetachedTests
   }
 
   [Test]
-  public void GetPropertiesExpected()
+  public void GetPropertiesExpected_Detached()
+  {
+    var @base = new SampleObjectBase();
+    @base["dynamicProp"] = 123;
+    @base["@prop2"] = 2;
+    @base["__prop3"] = 3;
+    @base.detachedProp = new SamplePropBase() { name = "detachedProp" };
+    @base.attachedProp = new SamplePropBase() { name = "attachedProp" };
+
+    var children = new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()).GetChildProperties(@base).ToList();
+
+    children.Count.ShouldBe(4);
+    children.First(x => x.Name == "detachedProp").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+    children.First(x => x.Name == "list").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+    children.First(x => x.Name == "arr").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+    children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+  }
+  
+  [Test]
+  public void GetPropertiesExpected_All()
   {
     var @base = new SampleObjectBase();
     @base["dynamicProp"] = 123;
@@ -167,6 +187,97 @@ public class DetachedTests
     children.First(x => x.Name == "list").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
     children.First(x => x.Name == "arr").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
     children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+  }
+  
+  
+  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  public async Task CanSerialize_New_Detached2()
+  {
+    var root = """
+          {
+              "list": [],
+              "arr": null,
+              "detachedProp": {
+                  "speckle_type": "reference",
+                  "referencedId": "d82a12551256c1887370de68b5f82621",
+                  "__closure": null
+              },
+              "detachedProp2": {
+                  "speckle_type": "reference",
+                  "referencedId": "d9503736ad55b50bb2f73a414c1db2aa",
+                  "__closure": null
+              },
+              "attachedProp": {
+                  "name": "attachedProp",
+                  "line": {
+                      "speckle_type": "reference",
+                      "referencedId": "027a7c5ffcf8d8efe432899c729a954c",
+                      "__closure": null
+                  },
+                  "applicationId": null,
+                  "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase2",
+                  "id": "c7870caa3232b9e80f4da09fb8f21935"
+              },
+              "crazyProp": null,
+              "applicationId": null,
+              "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2",
+              "dynamicProp": 123,
+              "id": "73f6add9280d862b8b25795879552067",
+              "__closure": {
+                  "8d27f5c7fac36d985d89bb6d6d8acddc": 3,
+                  "4ba53b5e84e956fb076bc8b0a03ca879": 2,
+                  "d82a12551256c1887370de68b5f82621": 1,
+                  "1afc694774efa5913d0077302cd37888": 3,
+                  "045cbee36837d589b17f9d8483c90763": 2,
+                  "d9503736ad55b50bb2f73a414c1db2aa": 1,
+                  "5b86b66b61c556ead500915b05852875": 2,
+                  "027a7c5ffcf8d8efe432899c729a954c": 1
+              }
+          }
+      """;
+    var @base = new SampleObjectBase2();
+    @base["dynamicProp"] = 123;
+    @base.detachedProp = new SamplePropBase2()
+    {
+      name = "detachedProp",
+      line = new Polyline()
+      {
+        units = "test",
+        value = [1.0,2.0]
+      }
+    };
+    @base.detachedProp2 = new SamplePropBase2()
+    {
+      name = "detachedProp2",
+      line = new Polyline()
+      {
+        units = "test",
+        value = [3.0,2.0]
+      }
+    };
+    @base.attachedProp = new SamplePropBase2() { name = "attachedProp", line = new Polyline()
+    {
+      units = "test",
+      value = [3.0,4.0]
+    } };
+
+    var objects = new Dictionary<string, string>();
+
+    var process2 = new SerializeProcess(
+      null,
+      new DummySendCacheManager(objects),
+      new DummyServerObjectManager(),
+      new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
+      new SpeckleBasePropertyGatherer()
+    );
+    await process2
+      .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
+      .ConfigureAwait(false);
+
+    objects.Count.ShouldBe(9);
+    JToken
+      .DeepEquals(JObject.Parse(root), JObject.Parse(objects["73f6add9280d862b8b25795879552067"]))
+      .ShouldBeTrue();
   }
 }
 
@@ -192,6 +303,35 @@ public class SamplePropBase : Base
 {
   public string name { get; set; }
 }
+
+
+[SpeckleType("Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2")]
+public class SampleObjectBase2 : Base
+{
+  [Chunkable, DetachProperty]
+  public List<double> list { get; set; } = new();
+
+  [Chunkable(300), DetachProperty]
+  public double[] arr { get; set; }
+
+  [DetachProperty]
+  public SamplePropBase2 detachedProp { get; set; }
+  [DetachProperty]
+  public SamplePropBase2 detachedProp2 { get; set; }
+
+  public SamplePropBase2 attachedProp { get; set; }
+
+  public string crazyProp { get; set; }
+}
+
+[SpeckleType("Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase2")]
+public class SamplePropBase2 : Base
+{
+  public string name { get; set; }
+  [DetachProperty]
+  public Polyline line { get; set; }
+}
+
 
 public class DummyServerObjectManager : IServerObjectManager
 {

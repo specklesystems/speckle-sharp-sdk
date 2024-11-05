@@ -1,4 +1,4 @@
-﻿using Speckle.Newtonsoft.Json;
+using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
