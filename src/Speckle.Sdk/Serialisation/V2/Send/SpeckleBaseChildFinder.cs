@@ -10,7 +10,7 @@ public class SpeckleBaseChildFinder(ISpeckleBasePropertyGatherer propertyGathere
   public IEnumerable<Base> GetChildren(Base obj)
   {
     var props = propertyGatherer.ExtractAllProperties(obj);
-    foreach (var kvp in props)
+    foreach (var kvp in props.Where(x => x.PropertyAttributeInfo.IsDetachable))
     {
       if (kvp.Value is Base child)
       {
