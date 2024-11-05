@@ -83,7 +83,7 @@ public class SerializeProcess(
     }
     if (isEnd)
     {
-      Done();
+      Done(obj.id);
     }
     return closures;
   }
