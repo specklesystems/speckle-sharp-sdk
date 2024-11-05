@@ -46,13 +46,13 @@ public class SerializeProcess(
     {
       Interlocked.Increment(ref _total);
       // tmp is necessary because of the way closures close over loop variables
-        var tmp = child;
-        var t = Task
-          .Factory.StartNew(
-            () => Traverse(tmp, false, cancellationToken),
-            cancellationToken,
-            TaskCreationOptions.AttachedToParent,
-            TaskScheduler.Default
+      var tmp = child;
+      var t = Task
+        .Factory.StartNew(
+          () => Traverse(tmp, false, cancellationToken),
+          cancellationToken,
+          TaskCreationOptions.AttachedToParent,
+          TaskScheduler.Default
         )
         .Unwrap();
       tasks.Add(t);
@@ -65,14 +65,14 @@ public class SerializeProcess(
     var closures = tasks
       .Select(t => t.Result)
       .Aggregate(
-          new List<Dictionary<string, int>>(),
-          (a, s) =>
-          {
-            a.AddRange(s);
-            return a;
-          }
-        )
-        .ToList();
+        new List<Dictionary<string, int>>(),
+        (a, s) =>
+        {
+          a.AddRange(s);
+          return a;
+        }
+      )
+      .ToList();
 
     var items = Serialise(obj, closures);
     foreach (var item in items)
@@ -114,27 +114,27 @@ public class SerializeProcess(
     {
       SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, childClosures);
       var items = serializer2.Serialize(obj).ToList();
-        foreach (var kvp in serializer2.ObjectReferences)
-        {
-          _objectReferences.TryAdd(kvp.Key, kvp.Value);
-        }
+      foreach (var kvp in serializer2.ObjectReferences)
+      {
+        _objectReferences.TryAdd(kvp.Key, kvp.Value);
+      }
 
-        var (_, j) = items.First();
-        json = j;
-        _jsonCache.TryAdd(obj.id.NotNull(), j);
-        if (id is not null && id != obj.id)
-        {
-          //in case the ids changes which is due to id hash algorithm changing
-          _jsonCache.TryAdd(id, json);
-        }
+      var (_, j) = items.First();
+      json = j;
+      _jsonCache.TryAdd(obj.id.NotNull(), j);
+      if (id is not null && id != obj.id)
+      {
+        //in case the ids changes which is due to id hash algorithm changing
+        _jsonCache.TryAdd(id, json);
+      }
 
-        foreach (var (cid, cJson) in items.Skip(1))
+      foreach (var (cid, cJson) in items.Skip(1))
+      {
+        if (_jsonCache.TryAdd(cid, cJson))
         {
-          if (_jsonCache.TryAdd(cid, cJson))
-          {
-            yield return new BaseItem(cid, cJson, true);
-          }
+          yield return new BaseItem(cid, cJson, true);
         }
+      }
     }
     yield return new BaseItem(obj.id.NotNull(), json, true);
   }

@@ -18,7 +18,7 @@ public abstract class ChannelSaver
 
   public Task Start(string streamId, CancellationToken cancellationToken = default)
   {
-    var t =_checkCacheChannel
+    var t = _checkCacheChannel
       .Reader.Batch(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
@@ -54,5 +54,6 @@ public abstract class ChannelSaver
       _checkCacheChannel.Writer.Complete();
     }
   }
+
   public abstract void SaveToCache(List<BaseItem> item);
 }

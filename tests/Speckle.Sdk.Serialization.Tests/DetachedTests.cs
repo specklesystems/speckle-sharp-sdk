@@ -163,7 +163,7 @@ public class DetachedTests
     children.First(x => x.Name == "arr").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
     children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
   }
-  
+
   [Test]
   public void GetPropertiesExpected_All()
   {
@@ -188,8 +188,7 @@ public class DetachedTests
     children.First(x => x.Name == "arr").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
     children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
   }
-  
-  
+
   [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
   public async Task CanSerialize_New_Detached2()
   {
@@ -240,26 +239,18 @@ public class DetachedTests
     @base.detachedProp = new SamplePropBase2()
     {
       name = "detachedProp",
-      line = new Polyline()
-      {
-        units = "test",
-        value = [1.0,2.0]
-      }
+      line = new Polyline() { units = "test", value = [1.0, 2.0] },
     };
     @base.detachedProp2 = new SamplePropBase2()
     {
       name = "detachedProp2",
-      line = new Polyline()
-      {
-        units = "test",
-        value = [3.0,2.0]
-      }
+      line = new Polyline() { units = "test", value = [3.0, 2.0] },
     };
-    @base.attachedProp = new SamplePropBase2() { name = "attachedProp", line = new Polyline()
+    @base.attachedProp = new SamplePropBase2()
     {
-      units = "test",
-      value = [3.0,4.0]
-    } };
+      name = "attachedProp",
+      line = new Polyline() { units = "test", value = [3.0, 4.0] },
+    };
 
     var objects = new Dictionary<string, string>();
 
@@ -275,9 +266,7 @@ public class DetachedTests
       .ConfigureAwait(false);
 
     objects.Count.ShouldBe(9);
-    JToken
-      .DeepEquals(JObject.Parse(root), JObject.Parse(objects["73f6add9280d862b8b25795879552067"]))
-      .ShouldBeTrue();
+    JToken.DeepEquals(JObject.Parse(root), JObject.Parse(objects["73f6add9280d862b8b25795879552067"])).ShouldBeTrue();
   }
 }
 
@@ -304,7 +293,6 @@ public class SamplePropBase : Base
   public string name { get; set; }
 }
 
-
 [SpeckleType("Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2")]
 public class SampleObjectBase2 : Base
 {
@@ -316,6 +304,7 @@ public class SampleObjectBase2 : Base
 
   [DetachProperty]
   public SamplePropBase2 detachedProp { get; set; }
+
   [DetachProperty]
   public SamplePropBase2 detachedProp2 { get; set; }
 
@@ -328,10 +317,10 @@ public class SampleObjectBase2 : Base
 public class SamplePropBase2 : Base
 {
   public string name { get; set; }
+
   [DetachProperty]
   public Polyline line { get; set; }
 }
-
 
 public class DummyServerObjectManager : IServerObjectManager
 {
