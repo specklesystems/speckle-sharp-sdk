@@ -87,6 +87,10 @@ public sealed class ObjectLoader(
       toCache.Add(new(id, json, true));
     }
 
+    if (toCache.Count != ids.Count)
+    {
+      throw new SpeckleException($"Objects in batch missing: {string.Join(",", ids.Except(toCache.Select(y => y.Id)).Take(10))}");
+    }
     return toCache;
   }
 
