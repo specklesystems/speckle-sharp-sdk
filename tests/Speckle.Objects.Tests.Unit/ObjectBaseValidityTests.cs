@@ -1,10 +1,10 @@
-﻿using NUnit.Framework;
+using NUnit.Framework;
 using Shouldly;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Geometry.Autocad;
-using Speckle.Objects.Structural.GSA.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Point = Speckle.Objects.Geometry.Point;
 
 namespace Speckle.Objects.Tests.Unit;
 
@@ -14,7 +14,7 @@ public class ObjectBaseValidityTests
   public void TestThatTypeWithoutAttributeFails()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
   }
 
   [Test]
@@ -23,7 +23,7 @@ public class ObjectBaseValidityTests
     var exception = Assert.Throws<InvalidOperationException>(() =>
     {
       TypeLoader.Reset();
-      TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly, typeof(Test).Assembly);
+      TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly, typeof(Test).Assembly);
     });
     exception.ShouldNotBeNull();
     exception.Message.ShouldBe(
@@ -35,7 +35,7 @@ public class ObjectBaseValidityTests
   public void InheritanceTest_Allow()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     var fullTypeString = TypeLoader.GetFullTypeString(typeof(AutocadPolycurve));
     fullTypeString.ShouldBe("Objects.Geometry.Polycurve:Objects.Geometry.Autocad.AutocadPolycurve");
   }

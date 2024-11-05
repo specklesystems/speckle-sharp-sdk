@@ -1,4 +1,5 @@
 ﻿using Speckle.Sdk.Api;
+using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 
@@ -29,6 +30,21 @@ public class ActiveUserResourceTests
   {
     var result = await Fixtures.Unauthed.ActiveUser.Get();
     Assert.That(result, Is.EqualTo(null));
+  }
+
+  [Test]
+  public async Task ActiveUserUpdate()
+  {
+    const string NEW_NAME = "Ron";
+    const string NEW_BIO = "Now I have a bio, isn't that nice!";
+    const string NEW_COMPANY = "Limited Cooperation Organization Inc";
+    var res = await Sut.Update(new UserUpdateInput(name: NEW_NAME, bio: NEW_BIO, company: NEW_COMPANY));
+
+    Assert.That(res, Is.Not.Null);
+    Assert.That(res.id, Is.EqualTo(_testUser.Account.userInfo.id));
+    Assert.That(res.name, Is.EqualTo(NEW_NAME));
+    Assert.That(res.company, Is.EqualTo(NEW_COMPANY));
+    Assert.That(res.bio, Is.EqualTo(NEW_BIO));
   }
 
   [Test]

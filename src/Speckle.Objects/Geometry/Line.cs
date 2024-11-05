@@ -30,7 +30,12 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
     this.applicationId = applicationId;
   }
 
-  public double area { get; set; }
+  /// <summary>
+  /// OBSOLETE - This is just here for backwards compatibility.
+  /// You should not use this for anything.
+  /// </summary>
+  [JsonIgnore, Obsolete("Area should not be on the line class", true)]
+  public double area => 0;
 
   public required string units { get; set; }
 

@@ -1,3 +1,4 @@
+using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
@@ -10,10 +11,17 @@ namespace Speckle.Objects.Geometry;
 [SpeckleType("Objects.Geometry.Box")]
 public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
 {
+  [JsonIgnore, Obsolete("Use plane property instead", true)]
+  public Plane basePlane
+  {
+    get => plane;
+    set => plane = value;
+  }
+
   /// <summary>
   /// Gets or sets the plane that defines the orientation of the <see cref="Box"/>
   /// </summary>
-  public required Plane basePlane { get; set; }
+  public required Plane plane { get; set; }
 
   /// <summary>
   /// Gets or sets the <see cref="Interval"/> that defines the min and max coordinate in the X direction
@@ -39,11 +47,11 @@ public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
   public required string units { get; set; }
 
   /// <inheritdoc/>
-  public double area { get; set; }
+  public double area => 2 * (xSize.Length * ySize.Length + xSize.Length * zSize.Length + ySize.Length * zSize.Length);
 
-  /// <inheritdoc/>
+  [JsonIgnore, Obsolete("Boxs should not have a bounding box", true)]
   public Box? bbox { get; }
 
   /// <inheritdoc/>
-  public double volume { get; set; }
+  public double volume => xSize.Length * ySize.Length * zSize.Length;
 }

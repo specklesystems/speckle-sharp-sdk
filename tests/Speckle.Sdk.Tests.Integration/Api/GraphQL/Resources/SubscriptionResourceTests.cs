@@ -1,4 +1,5 @@
 ﻿using Speckle.Sdk.Api;
+using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
@@ -41,6 +42,8 @@ public class SubscriptionResourceTests : IDisposable
 
     Assert.That(subscriptionMessage, Is.Not.Null);
     Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
+    Assert.That(subscriptionMessage.type, Is.EqualTo(UserProjectsUpdatedMessageType.ADDED));
+    Assert.That(subscriptionMessage.project, Is.Not.Null);
   }
 
   [Test]
@@ -60,6 +63,8 @@ public class SubscriptionResourceTests : IDisposable
 
     Assert.That(subscriptionMessage, Is.Not.Null);
     Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
+    Assert.That(subscriptionMessage.type, Is.EqualTo(ProjectModelsUpdatedMessageType.CREATED));
+    Assert.That(subscriptionMessage.model, Is.Not.Null);
   }
 
   [Test]
@@ -79,6 +84,8 @@ public class SubscriptionResourceTests : IDisposable
 
     Assert.That(subscriptionMessage, Is.Not.Null);
     Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
+    Assert.That(subscriptionMessage.type, Is.EqualTo(ProjectUpdatedMessageType.UPDATED));
+    Assert.That(subscriptionMessage.project, Is.Not.Null);
   }
 
   [Test]
@@ -97,6 +104,8 @@ public class SubscriptionResourceTests : IDisposable
 
     Assert.That(subscriptionMessage, Is.Not.Null);
     Assert.That(subscriptionMessage!.id, Is.EqualTo(created));
+    Assert.That(subscriptionMessage.type, Is.EqualTo(ProjectVersionsUpdatedMessageType.CREATED));
+    Assert.That(subscriptionMessage.version, Is.Not.Null);
   }
 
   [Test]
@@ -116,6 +125,8 @@ public class SubscriptionResourceTests : IDisposable
 
     Assert.That(subscriptionMessage, Is.Not.Null);
     Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
+    Assert.That(subscriptionMessage.type, Is.EqualTo(ProjectCommentsUpdatedMessageType.CREATED));
+    Assert.That(subscriptionMessage.comment, Is.Not.Null);
   }
 
   [OneTimeTearDown]

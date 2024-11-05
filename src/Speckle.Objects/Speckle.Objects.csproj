@@ -22,7 +22,7 @@
   <PropertyGroup Label="Analyers">
     <NoWarn>
       $(NoWarn);
-      IDE0060;CA1034;CA1819;CA1708;CA1008;CA2225;CA1024;
+      CA1819;CA1008;CA2225;
     </NoWarn>
   </PropertyGroup>
 

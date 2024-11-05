@@ -9,12 +9,12 @@ namespace Speckle.Objects.BuiltElements.Revit;
 [SpeckleType("Objects.BuiltElements.Revit.RevitElement")]
 public class RevitElement : Base, IDisplayValue<List<Mesh>>
 {
-  public string family { get; set; }
-  public string type { get; set; }
-  public string category { get; set; }
-  public Base parameters { get; set; }
-  public string elementId { get; set; }
+  public required string family { get; set; }
+  public required string type { get; set; }
+  public required string category { get; set; }
+  public Base? parameters { get; set; }
+  public string? elementId { get; set; }
 
   [DetachProperty]
-  public List<Mesh> displayValue { get; set; }
+  public List<Mesh> displayValue { get; set; } = new();
 }
