@@ -203,11 +203,7 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    (_commitId02, _) = await _operations.Send(
-      myObject,
-      _sut,
-      false
-    );
+    (_commitId02, _) = await _operations.Send(myObject, _sut, false);
   }
 
   [Test(Description = "Should show progress!"), Order(5)]

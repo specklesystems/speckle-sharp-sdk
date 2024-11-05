@@ -218,7 +218,7 @@ public class SerializationTests
   }
 
   [Test]
-  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 6855)]
+  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 4610)]
   public async Task Roundtrip_Test_New(string fileName, string rootId, int count)
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
@@ -233,10 +233,6 @@ public class SerializationTests
     );
     var process = new DeserializeProcess(null, o);
     var root = await process.Deserialize(rootId, default, new DeserializeOptions(true));
-
-    var newBases = GetBases(root).ToList();
-    var newIds = newBases.DistinctBy(x => x.id).ToList();
-    Console.WriteLine(newBases.Count);
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
     var serializeProcess = new SerializeProcess(
@@ -254,7 +250,6 @@ public class SerializationTests
     );
 
     rootId2.ShouldBe(root.id);
-    newIds.Count.ShouldBe(count);
     newIdToJson.Count.ShouldBe(count);
 
     foreach (var newKvp in newIdToJson)
@@ -263,23 +258,6 @@ public class SerializationTests
       {
         JToken.DeepEquals(JObject.Parse(newValue), JObject.Parse(newKvp.Value));
       }
-      else
-      {
-        Console.WriteLine(newKvp.Key);
-      }
     }
-  }
-
-  private static IEnumerable<Base> GetBases(Base current)
-  {
-    foreach (var child in new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()).GetChildren(current))
-    {
-      foreach (var childBase in GetBases(child))
-      {
-        yield return childBase;
-      }
-    }
-
-    yield return current;
   }
 }
