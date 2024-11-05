@@ -38,9 +38,11 @@ public abstract class ChannelSaver
   public async Task Save(BaseItem item, CancellationToken cancellationToken = default) =>
     await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
 
-  private async Task<List<BaseItem>> SendToServerInternal(string streamId, 
+  private async Task<List<BaseItem>> SendToServerInternal(
+    string streamId,
     List<BaseItem> batch,
-    CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken = default
+  )
   {
     var ending = batch.Select(x => x.Id).Contains(DUMMY);
     if (ending)
@@ -54,6 +56,7 @@ public abstract class ChannelSaver
     }
     return results;
   }
+
   public abstract Task<List<BaseItem>> SendToServer(
     string streamId,
     List<BaseItem> batch,

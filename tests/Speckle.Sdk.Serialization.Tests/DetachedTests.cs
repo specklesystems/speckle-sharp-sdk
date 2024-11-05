@@ -272,7 +272,7 @@ public class DetachedTests
 
     objects.Count.ShouldBe(9);
     JToken.DeepEquals(JObject.Parse(root), JObject.Parse(objects["fd4efeb8a036838c53ad1cf9e82b8992"])).ShouldBeTrue();
-    
+
     results.rootObjId.ShouldBe(@base.id);
     results.convertedReferences.Count.ShouldBe(2);
   }
