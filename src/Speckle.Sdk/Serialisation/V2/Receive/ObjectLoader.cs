@@ -1,5 +1,6 @@
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
@@ -7,7 +8,7 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 [GenerateAutoInterface]
 public sealed class ObjectLoader(
-  ISQLiteCacheManager sqLiteCacheManager,
+  ISQLiteReceiveCacheManager sqliteReceiveCacheManager,
   IServerObjectManager serverObjectManager,
   string streamId,
   IProgress<ProgressArgs>? progress
@@ -28,7 +29,7 @@ public sealed class ObjectLoader(
     string? rootJson;
     if (!options.SkipCache)
     {
-      rootJson = sqLiteCacheManager.GetObject(rootId);
+      rootJson = sqliteReceiveCacheManager.GetObject(rootId);
       if (rootJson != null)
       {
         //assume everything exists as the root is there.
@@ -50,7 +51,10 @@ public sealed class ObjectLoader(
     await GetAndCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
 
     //save the root last to shortcut later
-    sqLiteCacheManager.SaveObjectSync(rootId, rootJson);
+    if (!options.SkipCache)
+    {
+      sqliteReceiveCacheManager.SaveObject(new(rootId, rootJson, true));
+    }
     return (rootJson, allChildrenIds);
   }
 
@@ -59,7 +63,7 @@ public sealed class ObjectLoader(
   {
     _checkCache++;
     progress?.Report(new(ProgressEvent.CacheCheck, _checkCache, _allChildrenCount));
-    if (!_options.SkipCache && !sqLiteCacheManager.HasObject(id))
+    if (!_options.SkipCache && !sqliteReceiveCacheManager.HasObject(id))
     {
       return id;
     }
@@ -68,11 +72,9 @@ public sealed class ObjectLoader(
   }
 
   [AutoInterfaceIgnore]
-  public override async Task<List<(string, string)>> DownloadAndCache(List<string?> ids)
+  public override async Task<List<BaseItem>> Download(List<string?> ids)
   {
-    var count = 0L;
-    progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
-    var toCache = new List<(string, string)>();
+    var toCache = new List<BaseItem>();
     await foreach (
       var (id, json) in serverObjectManager.DownloadObjects(
         streamId,
@@ -82,25 +84,22 @@ public sealed class ObjectLoader(
       )
     )
     {
-      count++;
-      progress?.Report(new(ProgressEvent.DownloadObject, count, _allChildrenCount));
-      toCache.Add((id, json));
+      toCache.Add(new(id, json, true));
     }
 
     return toCache;
   }
 
   [AutoInterfaceIgnore]
-  public override void SaveToCache((string, string) x)
+  public override void SaveToCache(BaseItem x)
   {
     if (!_options.SkipCache)
     {
-      sqLiteCacheManager.SaveObjectSync(x.Item1, x.Item2);
+      sqliteReceiveCacheManager.SaveObject(x);
+      _cached++;
+      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _allChildrenCount));
     }
-
-    _cached++;
-    progress?.Report(new(ProgressEvent.Cached, _cached, _allChildrenCount));
   }
 
-  public string? LoadId(string id) => sqLiteCacheManager.GetObject(id);
+  public string? LoadId(string id) => sqliteReceiveCacheManager.GetObject(id);
 }

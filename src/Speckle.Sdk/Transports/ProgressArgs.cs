@@ -4,12 +4,14 @@ public readonly record struct ProgressArgs(ProgressEvent ProgressEvent, long Cou
 
 public enum ProgressEvent
 {
-  CacheCheck,
-  Cached,
-  DownloadBytes,
+  CachedToLocal, //send and receive
+
+  FromCacheOrSerialized,
   UploadBytes,
-  DownloadObject,
-  UploadObject,
+
+  CacheCheck,
+  DownloadBytes,
   DeserializeObject,
-  SerializeObject,
+
+  SerializeObject, // old
 }

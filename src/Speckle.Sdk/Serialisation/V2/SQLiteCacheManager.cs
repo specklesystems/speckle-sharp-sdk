@@ -1,19 +1,16 @@
-﻿using Microsoft.Data.Sqlite;
-using Speckle.InterfaceGenerator;
+using Microsoft.Data.Sqlite;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
-[GenerateAutoInterface]
-public class SQLiteCacheManager : ISQLiteCacheManager
+public abstract class SQLiteCacheManager
 {
   private readonly string _rootPath;
-  private readonly string _connectionString;
   private const string APPLICATION_NAME = "Speckle";
   private const string DATA_FOLDER = "Projects";
 
-  public SQLiteCacheManager(string streamId)
+  protected SQLiteCacheManager(string streamId)
   {
     var basePath = SpecklePathProvider.UserApplicationDataPath();
 
@@ -30,7 +27,7 @@ public class SQLiteCacheManager : ISQLiteCacheManager
       throw new TransportException($"Path was invalid or could not be created {_rootPath}", ex);
     }
 
-    _connectionString = $"Data Source={_rootPath};";
+    ConnectionString = $"Data Source={_rootPath};";
     Initialize();
   }
 
@@ -43,7 +40,7 @@ public class SQLiteCacheManager : ISQLiteCacheManager
     //  foreach (var str2 in HexChars)
     //    cart.Add(str + str2);
 
-    using var c = new SqliteConnection(_connectionString);
+    using var c = new SqliteConnection(ConnectionString);
     c.Open();
     const string COMMAND_TEXT =
       @"
@@ -71,44 +68,13 @@ public class SQLiteCacheManager : ISQLiteCacheManager
 
     using SqliteCommand cmd2 = new("PRAGMA temp_store=MEMORY;", c);
     cmd2.ExecuteNonQuery();
+
+    using SqliteCommand cmd3 = new("PRAGMA mmap_size = 30000000000;", c);
+    cmd3.ExecuteNonQuery();
+
+    using SqliteCommand cmd4 = new("PRAGMA page_size = 32768;", c);
+    cmd4.ExecuteNonQuery();
   }
 
-  public string? GetObject(string id)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    using var command = new SqliteCommand("SELECT * FROM objects WHERE hash = @hash LIMIT 1 ", c);
-    command.Parameters.AddWithValue("@hash", id);
-    using var reader = command.ExecuteReader();
-    if (reader.Read())
-    {
-      return reader.GetString(1);
-    }
-    return null; // pass on the duty of null checks to consumers
-  }
-
-  public bool HasObject(string objectId)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
-    using var command = new SqliteCommand(COMMAND_TEXT, c);
-    command.Parameters.AddWithValue("@hash", objectId);
-
-    using var reader = command.ExecuteReader();
-    bool rowFound = reader.Read();
-    return rowFound;
-  }
-
-  public void SaveObjectSync(string hash, string serializedObject)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
-
-    using var command = new SqliteCommand(COMMAND_TEXT, c);
-    command.Parameters.AddWithValue("@hash", hash);
-    command.Parameters.AddWithValue("@content", serializedObject);
-    command.ExecuteNonQuery();
-  }
+  protected string ConnectionString { get; }
 }

@@ -94,19 +94,6 @@ public abstract class TransportTests
   }
 
   [Test]
-  public async Task ProgressAction_Called_OnSaveObject()
-  {
-    bool wasCalled = false;
-    Sut.NotNull().OnProgressAction = new UnitTestProgress<ProgressArgs>(_ => wasCalled = true);
-
-    Sut.SaveObject("12345", "fake payload data");
-
-    await Sut.WriteComplete();
-
-    Assert.That(wasCalled, Is.True);
-  }
-
-  [Test]
   public void ToString_IsNotEmpty()
   {
     var toString = Sut.NotNull().ToString();

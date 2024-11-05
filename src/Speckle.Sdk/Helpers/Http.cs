@@ -13,7 +13,7 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
   /// Sends a <c>GET</c> request to the provided <paramref name="uri"/>
   /// </summary>
   /// <param name="uri">The URI that should be pinged</param>
-  /// <exception cref="HttpRequestException">Request to <paramref name="uri"/> failed</exception>
+  /// <exception cref="System.Net.Http.HttpRequestException">Request to <paramref name="uri"/> failed</exception>
   public async Task<HttpResponseMessage> HttpPing(Uri uri)
   {
     try

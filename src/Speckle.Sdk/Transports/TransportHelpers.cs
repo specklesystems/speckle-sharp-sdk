@@ -31,7 +31,6 @@ public static class TransportHelpers
 
     var closures = ClosureParser.GetChildrenIds(parent).ToList();
 
-    int i = 0;
     foreach (var closure in closures)
     {
       cancellationToken.ThrowIfCancellationRequested();
@@ -50,8 +49,6 @@ public static class TransportHelpers
       }
 
       targetTransport.SaveObject(closure, child);
-      var count = i++;
-      sourceTransport.OnProgressAction?.Report(new ProgressArgs(ProgressEvent.UploadObject, count, closures.Count));
     }
 
     return parent;

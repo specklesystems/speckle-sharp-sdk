@@ -46,7 +46,7 @@ public class GeneralDeserializer : IDisposable
   [Benchmark]
   public async Task<Base> RunTest_New()
   {
-    var sqlite = new SQLiteCacheManager(streamId);
+    var sqlite = new SQLiteReceiveCacheManager(streamId);
     var serverObjects = new ServerObjectManager(
       TestDataHelper.ServiceProvider.GetRequiredService<ISpeckleHttp>(),
       TestDataHelper.ServiceProvider.GetRequiredService<ISdkActivityFactory>(),

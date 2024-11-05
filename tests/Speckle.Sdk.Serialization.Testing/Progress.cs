@@ -4,7 +4,7 @@ namespace Speckle.Sdk.Serialization.Testing;
 
 public class Progress(bool write) : IProgress<ProgressArgs>
 {
-  private readonly TimeSpan DEBOUNCE = TimeSpan.FromMilliseconds(500);
+  private readonly TimeSpan DEBOUNCE = TimeSpan.FromSeconds(1);
   private DateTime _lastTime = DateTime.UtcNow;
 
   private long _totalBytes;

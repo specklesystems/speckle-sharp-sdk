@@ -135,7 +135,7 @@ public sealed class SpeckleObjectDeserializer
               var closures = ClosureParser.GetClosures(reader);
               if (closures.Any())
               {
-                _total = closures.Select(x => x.Item1).Concat(_deserializedObjects.Keys).Distinct().Count();
+                _total = 0;
                 foreach (var closure in closures)
                 {
                   string objId = closure.Item1;

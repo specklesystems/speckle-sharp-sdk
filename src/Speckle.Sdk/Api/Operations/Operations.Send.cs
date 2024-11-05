@@ -4,12 +4,52 @@ using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send2(
+    Uri url,
+    string streamId,
+    string? authorizationToken,
+    Base value,
+    IProgress<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    using var receiveActivity = activityFactory.Start("Operations.Send");
+    metricsFactory.CreateCounter<long>("Send").Add(1);
+
+    try
+    {
+      var sqliteTransport = new SQLiteSendCacheManager(streamId);
+      var serverObjects = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
+      var process = new SerializeProcess(
+        onProgressAction,
+        sqliteTransport,
+        serverObjects,
+        speckleBaseChildFinder,
+        speckleBasePropertyGatherer
+      );
+      var (rootObjId, convertedReferences) = await process
+        .Serialize(streamId, value, cancellationToken)
+        .ConfigureAwait(false);
+
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return new(rootObjId, convertedReferences);
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
   /// <summary>
   /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
   /// </summary>

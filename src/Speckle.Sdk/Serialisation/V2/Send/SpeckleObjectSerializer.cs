@@ -1,28 +1,22 @@
 using System.Collections;
-using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
-using System.Reflection;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Transports;
 
-namespace Speckle.Sdk.Serialisation;
+namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public class SpeckleObjectSerializer
+public class SpeckleObjectSerializer2
 {
-  private readonly Stopwatch _stopwatch = new();
-  private volatile bool _isBusy;
-  private List<Dictionary<string, int>> _parentClosures = new();
   private HashSet<object> _parentObjects = new();
-  private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
-  private readonly IProgress<ProgressArgs>? _onProgressAction;
+  private readonly List<Dictionary<string, int>> _childclosures;
 
   private readonly bool _trackDetachedChildren;
-  private int _serializedCount;
+  private readonly ISpeckleBasePropertyGatherer _propertyGatherer;
+  private readonly CancellationToken _cancellationToken;
 
   /// <summary>
   /// Keeps track of all detached children created during serialisation that have an applicationId (provided this serializer instance has been told to track detached children).
@@ -30,60 +24,35 @@ public class SpeckleObjectSerializer
   /// </summary>
   public Dictionary<string, ObjectReference> ObjectReferences { get; } = new();
 
-  /// <summary>The sync transport. This transport will be used synchronously.</summary>
-  public IReadOnlyCollection<ITransport> WriteTransports { get; }
-
-  public CancellationToken CancellationToken { get; set; }
-
-  /// <summary>The current total elapsed time spent serializing</summary>
-  public TimeSpan Elapsed => _stopwatch.Elapsed;
-
-  public SpeckleObjectSerializer()
-    : this(Array.Empty<ITransport>()) { }
-
   /// <summary>
   /// Creates a new Serializer instance.
   /// </summary>
-  /// <param name="writeTransports">The transports detached children should be persisted to.</param>
-  /// <param name="onProgressAction">Used to track progress.</param>
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
-  public SpeckleObjectSerializer(
-    IReadOnlyCollection<ITransport> writeTransports,
-    IProgress<ProgressArgs>? onProgressAction = null,
+  public SpeckleObjectSerializer2(
+    ISpeckleBasePropertyGatherer propertyGatherer,
+    List<Dictionary<string, int>> childclosures,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
-    WriteTransports = writeTransports;
-    _onProgressAction = onProgressAction;
-    CancellationToken = cancellationToken;
+    _childclosures = childclosures;
+    _propertyGatherer = propertyGatherer;
+    _cancellationToken = cancellationToken;
     _trackDetachedChildren = trackDetachedChildren;
   }
 
   /// <param name="baseObj">The object to serialize</param>
   /// <returns>The serialized JSON</returns>
   /// <exception cref="InvalidOperationException">The serializer is busy (already serializing an object)</exception>
-  /// <exception cref="TransportException">Failed to save object in one or more <see cref="WriteTransports"/></exception>
   /// <exception cref="SpeckleSerializeException">Failed to extract (pre-serialize) properties from the <paramref name="baseObj"/></exception>
-  /// <exception cref="OperationCanceledException">One or more <see cref="WriteTransports"/>'s cancellation token requested cancel</exception>
   public string Serialize(Base baseObj)
   {
-    if (_isBusy)
-    {
-      throw new InvalidOperationException(
-        "A serializer instance can serialize only 1 object at a time. Consider creating multiple serializer instances"
-      );
-    }
-
     try
     {
-      _stopwatch.Start();
-      _isBusy = true;
       try
       {
         var result = SerializeBase(baseObj, true).NotNull();
-        StoreObject(result.Id.NotNull(), result.Json);
         return result.Json;
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
@@ -93,10 +62,7 @@ public class SpeckleObjectSerializer
     }
     finally
     {
-      _parentClosures = new List<Dictionary<string, int>>(); // cleanup in case of exceptions
       _parentObjects = new HashSet<object>();
-      _isBusy = false;
-      _stopwatch.Stop();
     }
   }
 
@@ -109,7 +75,7 @@ public class SpeckleObjectSerializer
     PropertyAttributeInfo inheritedDetachInfo = default
   )
   {
-    CancellationToken.ThrowIfCancellationRequested();
+    _cancellationToken.ThrowIfCancellationRequested();
 
     if (obj == null)
     {
@@ -140,10 +106,10 @@ public class SpeckleObjectSerializer
         {
           foreach (var kvp in r.closure)
           {
-            UpdateParentClosures(kvp.Key);
+            UpdateChildClosures(kvp.Key);
           }
         }
-        UpdateParentClosures(r.referencedId);
+        UpdateChildClosures(r.referencedId);
         SerializeProperty(ret, writer);
         break;
       case Base b:
@@ -229,7 +195,7 @@ public class SpeckleObjectSerializer
     }
   }
 
-  internal SerializationResult? SerializeBase(
+  private SerializationResult? SerializeBase(
     Base baseObj,
     bool computeClosures = false,
     PropertyAttributeInfo inheritedDetachInfo = default
@@ -243,42 +209,44 @@ public class SpeckleObjectSerializer
     }
 
     Dictionary<string, int> closure = new();
-    if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
+    string id;
+    string json;
+    lock (_childclosures)
     {
-      _parentClosures.Add(closure);
-    }
+      if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
+      {
+        _childclosures.Add(closure);
+      }
 
-    using var writer = new StringWriter();
-    using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-    string id = SerializeBaseObject(baseObj, jsonWriter, closure);
-    var json = writer.ToString();
+      using var writer = new StringWriter();
+      using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
+      id = SerializeBaseObject(baseObj, jsonWriter, closure);
+      json = writer.ToString();
 
-    if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
-    {
-      _parentClosures.RemoveAt(_parentClosures.Count - 1);
+      if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
+      {
+        _childclosures.RemoveAt(_childclosures.Count - 1);
+      }
     }
 
     _parentObjects.Remove(baseObj);
 
-    if (baseObj is Blob myBlob)
+    if (baseObj is Blob)
     {
-      StoreBlob(myBlob);
+      throw new NotSupportedException();
+      /*StoreBlob(myBlob);
       UpdateParentClosures($"blob:{id}");
-      return new(json, id);
+      return new(json, id);*/
     }
 
-    if (inheritedDetachInfo.IsDetachable && WriteTransports.Count > 0)
+    if (inheritedDetachInfo.IsDetachable)
     {
-      StoreObject(id, json);
-
-      ObjectReference objRef = new() { referencedId = id };
+      ObjectReference objRef = new() { referencedId = id.NotNull() };
       using var writer2 = new StringWriter();
       using var jsonWriter2 = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer2);
       SerializeProperty(objRef, jsonWriter2);
       var json2 = writer2.ToString();
-      UpdateParentClosures(id);
-
-      _onProgressAction?.Report(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
+      UpdateChildClosures(id);
 
       // add to obj refs to return
       if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
@@ -292,50 +260,11 @@ public class SpeckleObjectSerializer
       }
       return new(json2, null);
     }
-    return new(json, id);
-  }
-
-  private Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
-  {
-    IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
-    IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
-
-    // propertyName -> (originalValue, isDetachable, isChunkable, chunkSize)
-    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties =
-      new(typedProperties.Count + dynamicProperties.Count);
-
-    // Construct `allProperties`: Add typed properties
-    foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)
-    {
-      object? baseValue = propertyInfo.GetValue(baseObj);
-      allProperties[propertyInfo.Name] = (baseValue, detachInfo);
-    }
-
-    // Construct `allProperties`: Add dynamic properties
-    foreach (string propName in dynamicProperties)
-    {
-      if (propName.StartsWith("__"))
-      {
-        continue;
-      }
-
-      object? baseValue = baseObj[propName];
-
-      bool isDetachable = PropNameValidator.IsDetached(propName);
-
-      int chunkSize = 1000;
-      bool isChunkable = isDetachable && PropNameValidator.IsChunkable(propName, out chunkSize);
-
-      allProperties[propName] = (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null));
-    }
-
-    return allProperties;
+    return new(json.NotNull(), id);
   }
 
   private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
   {
-    var allProperties = ExtractAllProperties(baseObj);
-
     if (baseObj is not Blob)
     {
       writer = new SerializerIdWriter(writer);
@@ -343,15 +272,15 @@ public class SpeckleObjectSerializer
 
     writer.WriteStartObject();
     // Convert all properties
-    foreach (var prop in allProperties)
+    foreach (var prop in _propertyGatherer.ExtractAllProperties(baseObj))
     {
-      if (prop.Value.info.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
+      if (prop.PropertyAttributeInfo.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
       {
         continue;
       }
 
-      writer.WritePropertyName(prop.Key);
-      SerializeProperty(prop.Value.value, writer, prop.Value.info);
+      writer.WritePropertyName(prop.Name);
+      SerializeProperty(prop.Value, writer, prop.PropertyAttributeInfo);
     }
 
     string id;
@@ -386,13 +315,6 @@ public class SpeckleObjectSerializer
 
   private void SerializeProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
   {
-    // If there are no WriteTransports, keep everything attached.
-    if (WriteTransports.Count == 0)
-    {
-      SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
-      return;
-    }
-
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
     {
       List<DataChunk> chunks = new();
@@ -412,6 +334,7 @@ public class SpeckleObjectSerializer
       {
         chunks.Add(crtChunk);
       }
+
       SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null));
       return;
     }
@@ -419,123 +342,20 @@ public class SpeckleObjectSerializer
     SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
   }
 
-  private void UpdateParentClosures(string objectId)
+  private void UpdateChildClosures(string objectId)
   {
-    for (int parentLevel = 0; parentLevel < _parentClosures.Count; parentLevel++)
+    lock (_childclosures)
     {
-      int childDepth = _parentClosures.Count - parentLevel;
-      if (!_parentClosures[parentLevel].TryGetValue(objectId, out int currentValue))
+      for (int i = 0; i < _childclosures.Count; i++)
       {
-        currentValue = childDepth;
-      }
+        int childDepth = _childclosures.Count - i;
+        if (!_childclosures[i].TryGetValue(objectId, out int currentValue))
+        {
+          currentValue = childDepth;
+        }
 
-      _parentClosures[parentLevel][objectId] = Math.Min(currentValue, childDepth);
-    }
-  }
-
-  private void StoreObject(string objectId, string objectJson)
-  {
-    _stopwatch.Stop();
-    foreach (var transport in WriteTransports)
-    {
-      transport.SaveObject(objectId, objectJson);
-    }
-
-    _stopwatch.Start();
-  }
-
-  private void StoreBlob(Blob obj)
-  {
-    bool hasBlobTransport = false;
-
-    _stopwatch.Stop();
-
-    foreach (var transport in WriteTransports)
-    {
-      if (transport is IBlobCapableTransport blobTransport)
-      {
-        hasBlobTransport = true;
-        blobTransport.SaveBlob(obj);
+        _childclosures[i][objectId] = Math.Min(currentValue, childDepth);
       }
     }
-
-    _stopwatch.Start();
-    if (!hasBlobTransport)
-    {
-      throw new InvalidOperationException(
-        "Object tree contains a Blob (file), but the serializer has no blob saving capable transports."
-      );
-    }
-  }
-
-  // (propertyInfo, isDetachable, isChunkable, chunkSize, JsonPropertyAttribute)
-  private IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> GetTypedPropertiesWithCache(Base baseObj)
-  {
-    Type type = baseObj.GetType();
-
-    if (
-      _typedPropertiesCache.TryGetValue(
-        type.FullName.NotNull(),
-        out List<(PropertyInfo, PropertyAttributeInfo)>? cached
-      )
-    )
-    {
-      return cached;
-    }
-
-    var typedProperties = baseObj.GetInstanceMembers().ToList();
-    List<(PropertyInfo, PropertyAttributeInfo)> ret = new(typedProperties.Count);
-
-    foreach (PropertyInfo typedProperty in typedProperties)
-    {
-      if (typedProperty.Name.StartsWith("__") || typedProperty.Name == "id")
-      {
-        continue;
-      }
-
-      bool jsonIgnore = typedProperty.IsDefined(typeof(JsonIgnoreAttribute), false);
-      if (jsonIgnore)
-      {
-        continue;
-      }
-
-      _ = typedProperty.GetValue(baseObj);
-
-      List<DetachPropertyAttribute> detachableAttributes = typedProperty
-        .GetCustomAttributes<DetachPropertyAttribute>(true)
-        .ToList();
-      List<ChunkableAttribute> chunkableAttributes = typedProperty
-        .GetCustomAttributes<ChunkableAttribute>(true)
-        .ToList();
-      bool isDetachable = detachableAttributes.Count > 0 && detachableAttributes[0].Detachable;
-      bool isChunkable = chunkableAttributes.Count > 0;
-      int chunkSize = isChunkable ? chunkableAttributes[0].MaxObjCountPerChunk : 1000;
-      JsonPropertyAttribute? jsonPropertyAttribute = typedProperty.GetCustomAttribute<JsonPropertyAttribute>();
-      ret.Add((typedProperty, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, jsonPropertyAttribute)));
-    }
-
-    _typedPropertiesCache[type.FullName] = ret;
-    return ret;
-  }
-
-  internal readonly struct PropertyAttributeInfo
-  {
-    public PropertyAttributeInfo(
-      bool isDetachable,
-      bool isChunkable,
-      int chunkSize,
-      JsonPropertyAttribute? jsonPropertyAttribute
-    )
-    {
-      IsDetachable = isDetachable || isChunkable;
-      IsChunkable = isChunkable;
-      ChunkSize = chunkSize;
-      JsonPropertyInfo = jsonPropertyAttribute;
-    }
-
-    public readonly bool IsDetachable;
-    public readonly bool IsChunkable;
-    public readonly int ChunkSize;
-    public readonly JsonPropertyAttribute? JsonPropertyInfo;
   }
 }
