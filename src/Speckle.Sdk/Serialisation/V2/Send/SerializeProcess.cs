@@ -87,7 +87,7 @@ public class SerializeProcess(
 
     if (isEnd)
     {
-      Done(obj.id);
+      await Done().ConfigureAwait(false);
     }
     return closures;
   }
