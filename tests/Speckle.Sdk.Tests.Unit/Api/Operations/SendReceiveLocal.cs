@@ -203,17 +203,11 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    ProgressArgs? progress = null;
     (_commitId02, _) = await _operations.Send(
       myObject,
       _sut,
-      false,
-      onProgressAction: new UnitTestProgress<ProgressArgs>(x =>
-      {
-        progress = x;
-      })
+      false
     );
-    progress.ShouldNotBeNull();
   }
 
   [Test(Description = "Should show progress!"), Order(5)]
