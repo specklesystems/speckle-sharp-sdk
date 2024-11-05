@@ -286,6 +286,19 @@
       "speckle.sdk.dependencies": {
         "type": "Project"
       },
+      "speckle.sdk.tests.unit": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection": "[2.2.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.11.1, )",
+          "NUnit": "[4.2.2, )",
+          "NUnit3TestAdapter": "[4.6.0, )",
+          "Shouldly": "[4.2.1, )",
+          "Speckle.DoubleNumerics": "[4.0.1, )",
+          "Speckle.Sdk": "[1.0.0, )",
+          "altcover": "[8.9.3, )"
+        }
+      },
       "GraphQL.Client": {
         "type": "CentralTransitive",
         "requested": "[6.0.0, )",
@@ -311,6 +324,15 @@
         "dependencies": {
           "Microsoft.Data.Sqlite.Core": "7.0.5",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.4"
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection": {
+        "type": "CentralTransitive",
+        "requested": "[2.2.0, )",
+        "resolved": "2.2.0",
+        "contentHash": "MZtBIwfDFork5vfjpJdG5g8wuJFt7d/y3LOSVVtDK/76wlbtz6cjltfKHqLx2TKVqTj5/c41t77m1+h20zqtPA==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "2.2.0"
         }
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {

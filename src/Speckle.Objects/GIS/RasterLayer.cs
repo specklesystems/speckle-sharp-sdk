@@ -11,9 +11,5 @@ public class RasterLayer : Collection
   public CRS? rasterCrs { get; set; }
   public string? geomType { get; set; }
   public Dictionary<string, object>? renderer { get; set; }
-
-  public RasterLayer()
-  {
-    collectionType = "RasterLayer";
-  }
+  
 }

@@ -15,7 +15,6 @@ public class VectorLayer : Collection
 
   public VectorLayer()
   {
-    collectionType = "VectorLayer";
     attributes = new Base();
   }
 }
