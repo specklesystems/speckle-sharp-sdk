@@ -122,21 +122,38 @@ public class SerializeProcess(
       var (_, j) = items.First();
       json = j;
       _jsonCache.TryAdd(obj.id.NotNull(), j);
+      yield return CheckCache(obj.id.NotNull(), j);
       if (id is not null && id != obj.id)
       {
         //in case the ids changes which is due to id hash algorithm changing
         _jsonCache.TryAdd(id, json);
       }
-
       foreach (var (cid, cJson) in items.Skip(1))
       {
         if (_jsonCache.TryAdd(cid, cJson))
         {
-          yield return new BaseItem(cid, cJson, true);
+          yield return CheckCache(cid, cJson);
         }
       }
     }
-    yield return new BaseItem(obj.id.NotNull(), json, true);
+    else
+    {
+      yield return new BaseItem(obj.id.NotNull(), json, true);
+    }
+  }
+
+  private BaseItem CheckCache(string id, string json)
+  {
+    if (!_options.SkipCache)
+    {
+      var cachedJson = sqliteSendCacheManager.GetObject(id);
+      if (cachedJson != null)
+      {
+        return new BaseItem(id, cachedJson, false);
+      }
+      return new BaseItem(id, json, true);
+    }
+    return new BaseItem(id, json, false);
   }
 
   public override async Task<List<BaseItem>> SendToServer(
