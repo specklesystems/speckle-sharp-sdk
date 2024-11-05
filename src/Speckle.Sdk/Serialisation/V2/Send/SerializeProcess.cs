@@ -112,7 +112,7 @@ public class SerializeProcess(
     var id = obj.id;
     if (id is null || !_jsonCache.TryGetValue(id, out var json))
     {
-      SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, childClosures);
+      SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, childClosures, true);
       var items = serializer2.Serialize(obj).ToList();
       foreach (var kvp in serializer2.ObjectReferences)
       {

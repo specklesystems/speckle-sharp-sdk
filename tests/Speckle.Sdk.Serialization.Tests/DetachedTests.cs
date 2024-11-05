@@ -193,62 +193,67 @@ public class DetachedTests
   public async Task CanSerialize_New_Detached2()
   {
     var root = """
-          {
-              "list": [],
-              "arr": null,
-              "detachedProp": {
+         
+      {
+          "list": [],
+          "arr": null,
+          "detachedProp": {
+              "speckle_type": "reference",
+              "referencedId": "32a385e7ddeda810e037b21ab26381b7",
+              "__closure": null
+          },
+          "detachedProp2": {
+              "speckle_type": "reference",
+              "referencedId": "c3858f47dd3e7a308a1b465375f1645f",
+              "__closure": null
+          },
+          "attachedProp": {
+              "name": "attachedProp",
+              "line": {
                   "speckle_type": "reference",
-                  "referencedId": "d82a12551256c1887370de68b5f82621",
+                  "referencedId": "027a7c5ffcf8d8efe432899c729a954c",
                   "__closure": null
               },
-              "detachedProp2": {
-                  "speckle_type": "reference",
-                  "referencedId": "d9503736ad55b50bb2f73a414c1db2aa",
-                  "__closure": null
-              },
-              "attachedProp": {
-                  "name": "attachedProp",
-                  "line": {
-                      "speckle_type": "reference",
-                      "referencedId": "027a7c5ffcf8d8efe432899c729a954c",
-                      "__closure": null
-                  },
-                  "applicationId": null,
-                  "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase2",
-                  "id": "c7870caa3232b9e80f4da09fb8f21935"
-              },
-              "crazyProp": null,
-              "applicationId": null,
-              "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2",
-              "dynamicProp": 123,
-              "id": "73f6add9280d862b8b25795879552067",
-              "__closure": {
-                  "8d27f5c7fac36d985d89bb6d6d8acddc": 3,
-                  "4ba53b5e84e956fb076bc8b0a03ca879": 2,
-                  "d82a12551256c1887370de68b5f82621": 1,
-                  "1afc694774efa5913d0077302cd37888": 3,
-                  "045cbee36837d589b17f9d8483c90763": 2,
-                  "d9503736ad55b50bb2f73a414c1db2aa": 1,
-                  "5b86b66b61c556ead500915b05852875": 2,
-                  "027a7c5ffcf8d8efe432899c729a954c": 1
-              }
+              "applicationId": "4",
+              "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase2",
+              "id": "c5dd540ee1299c0349829d045c04ef2d"
+          },
+          "crazyProp": null,
+          "applicationId": "1",
+          "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2",
+          "dynamicProp": 123,
+          "id": "fd4efeb8a036838c53ad1cf9e82b8992",
+          "__closure": {
+              "8d27f5c7fac36d985d89bb6d6d8acddc": 3,
+              "4ba53b5e84e956fb076bc8b0a03ca879": 2,
+              "32a385e7ddeda810e037b21ab26381b7": 1,
+              "1afc694774efa5913d0077302cd37888": 3,
+              "045cbee36837d589b17f9d8483c90763": 2,
+              "c3858f47dd3e7a308a1b465375f1645f": 1,
+              "5b86b66b61c556ead500915b05852875": 2,
+              "027a7c5ffcf8d8efe432899c729a954c": 1
           }
+      }
       """;
     var @base = new SampleObjectBase2();
     @base["dynamicProp"] = 123;
+    @base.applicationId = "1";
     @base.detachedProp = new SamplePropBase2()
     {
       name = "detachedProp",
+      applicationId = "2",
       line = new Polyline() { units = "test", value = [1.0, 2.0] },
     };
     @base.detachedProp2 = new SamplePropBase2()
     {
       name = "detachedProp2",
+      applicationId = "3",
       line = new Polyline() { units = "test", value = [3.0, 2.0] },
     };
     @base.attachedProp = new SamplePropBase2()
     {
       name = "attachedProp",
+      applicationId = "4",
       line = new Polyline() { units = "test", value = [3.0, 4.0] },
     };
 
@@ -261,12 +266,15 @@ public class DetachedTests
       new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
       new SpeckleBasePropertyGatherer()
     );
-    await process2
+    var results = await process2
       .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
       .ConfigureAwait(false);
 
     objects.Count.ShouldBe(9);
-    JToken.DeepEquals(JObject.Parse(root), JObject.Parse(objects["73f6add9280d862b8b25795879552067"])).ShouldBeTrue();
+    JToken.DeepEquals(JObject.Parse(root), JObject.Parse(objects["fd4efeb8a036838c53ad1cf9e82b8992"])).ShouldBeTrue();
+    
+    results.rootObjId.ShouldBe(@base.id);
+    results.convertedReferences.Count.ShouldBe(2);
   }
 }
 
