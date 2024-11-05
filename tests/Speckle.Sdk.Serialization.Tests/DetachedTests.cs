@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Dependencies.Serialization;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
@@ -14,6 +15,13 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class DetachedTests
 {
+  [SetUp]
+  public void Setup()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly);
+  }
+
   [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
   public async Task CanSerialize_New_Detached()
   {
@@ -134,6 +142,31 @@ public class DetachedTests
     JToken
       .DeepEquals(JObject.Parse(detachedJson), JObject.Parse(objects["d3dd4621b2f68c3058c2b9c023a9de19"]))
       .ShouldBeTrue();
+  }
+
+  [Test]
+  public void GetPropertiesExpected()
+  {
+    var @base = new SampleObjectBase();
+    @base["dynamicProp"] = 123;
+    @base["@prop2"] = 2;
+    @base["__prop3"] = 3;
+    @base.detachedProp = new SamplePropBase() { name = "detachedProp" };
+    @base.attachedProp = new SamplePropBase() { name = "attachedProp" };
+
+    var children = new SpeckleBasePropertyGatherer().ExtractAllProperties(@base).ToList();
+
+    children.Count.ShouldBe(9);
+    children.First(x => x.Name == "dynamicProp").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
+    children.First(x => x.Name == "attachedProp").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
+    children.First(x => x.Name == "crazyProp").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
+    children.First(x => x.Name == "speckle_type").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
+    children.First(x => x.Name == "applicationId").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
+
+    children.First(x => x.Name == "detachedProp").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+    children.First(x => x.Name == "list").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+    children.First(x => x.Name == "arr").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+    children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
   }
 }
 
