@@ -8,6 +8,7 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
@@ -271,11 +272,7 @@ public class SpeckleObjectSerializer
     {
       StoreObject(id, json);
 
-      ObjectReference objRef = new() { referencedId = id };
-      using var writer2 = new StringWriter();
-      using var jsonWriter2 = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer2);
-      SerializeProperty(objRef, jsonWriter2);
-      var json2 = writer2.ToString();
+      var json2 = ReferenceGenerator.CreateReference(id);
       UpdateParentClosures(id);
 
       _onProgressAction?.Report(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
