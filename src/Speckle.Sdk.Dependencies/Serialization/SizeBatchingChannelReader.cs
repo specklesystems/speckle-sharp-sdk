@@ -4,8 +4,12 @@ using Speckle.Sdk.Dependencies.Serialization;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public class SizeBatchingChannelReader(ChannelReader<BaseItem> source, int batchSize, bool singleReader, bool syncCont = false)
-  : BatchingChannelReader<BaseItem, List<BaseItem>>(source, batchSize, singleReader, syncCont)
+public class SizeBatchingChannelReader(
+  ChannelReader<BaseItem> source,
+  int batchSize,
+  bool singleReader,
+  bool syncCont = false
+) : BatchingChannelReader<BaseItem, List<BaseItem>>(source, batchSize, singleReader, syncCont)
 {
   protected override List<BaseItem> CreateBatch(int capacity) => new();
 

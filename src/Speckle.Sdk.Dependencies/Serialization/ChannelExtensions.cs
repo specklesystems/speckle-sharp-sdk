@@ -10,7 +10,12 @@ public static class ChannelExtensions
     this ChannelReader<BaseItem> source,
     int batchSize,
     bool singleReader = false,
-    bool allowSynchronousContinuations = false)
-    => new SizeBatchingChannelReader(source ?? throw new ArgumentNullException(nameof(source)), batchSize, singleReader, allowSynchronousContinuations);
-
+    bool allowSynchronousContinuations = false
+  ) =>
+    new SizeBatchingChannelReader(
+      source ?? throw new ArgumentNullException(nameof(source)),
+      batchSize,
+      singleReader,
+      allowSynchronousContinuations
+    );
 }
