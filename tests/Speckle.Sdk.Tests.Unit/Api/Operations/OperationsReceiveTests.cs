@@ -1,14 +1,15 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[TestFixture, TestOf(nameof(Sdk.Api.Operations.Receive))]
 public sealed partial class OperationsReceiveTests
 {
   private static readonly Base[] s_testObjects;
@@ -29,12 +30,12 @@ public sealed partial class OperationsReceiveTests
     ];
   }
 
-  public static IEnumerable<string> TestCases()
+  public static IEnumerable<object[]> TestCases()
   {
-    List<string> ret = new();
+    List<object[]> ret = new();
     foreach (var s in s_testObjects)
     {
-      ret.Add(s.GetId(true));
+      ret.Add([s.GetId(true)]);
     }
 
     return ret;
@@ -48,8 +49,7 @@ public sealed partial class OperationsReceiveTests
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
 
-  [OneTimeSetUp]
-  public async Task GlobalSetup()
+  public OperationsReceiveTests()
   {
     Reset();
     var serviceProvider = TestServiceSetup.GetServiceProvider();
@@ -57,36 +57,28 @@ public sealed partial class OperationsReceiveTests
     _testCaseTransport = new MemoryTransport();
     foreach (var b in s_testObjects)
     {
-      await _operations.Send(b, _testCaseTransport, false);
+      _operations.Send(b, _testCaseTransport, false).Wait();
     }
   }
 
-  [SetUp]
-  public void Setup()
-  {
-    Reset();
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
-    _operations = serviceProvider.GetRequiredService<IOperations>();
-  }
-
-  [Test, TestCaseSource(nameof(TestCases))]
+  [Theory, MemberData(nameof(TestCases))]
   public async Task Receive_FromLocal_ExistingObjects(string id)
   {
     Base result = await _operations.Receive(id, null, _testCaseTransport);
 
-    Assert.That(result.id, Is.EqualTo(id));
+    result.id.ShouldBe(id);
   }
 
-  [Test, TestCaseSource(nameof(TestCases))]
+  [Theory, MemberData(nameof(TestCases))]
   public async Task Receive_FromRemote_ExistingObjects(string id)
   {
     MemoryTransport localTransport = new();
     Base result = await _operations.Receive(id, _testCaseTransport, localTransport);
 
-    Assert.That(result.id, Is.EqualTo(id));
+    result.id.ShouldBe(id);
   }
 
-  [Test, TestCaseSource(nameof(TestCases))]
+  [Theory, MemberData(nameof(TestCases))]
   public async Task Receive_FromLocal_OnProgressActionCalled(string id)
   {
     bool wasCalled = false;
@@ -97,6 +89,6 @@ public sealed partial class OperationsReceiveTests
       onProgressAction: new UnitTestProgress<ProgressArgs>(_ => wasCalled = true)
     );
 
-    Assert.That(wasCalled, Is.True);
+    wasCalled.ShouldBeTrue();
   }
 }

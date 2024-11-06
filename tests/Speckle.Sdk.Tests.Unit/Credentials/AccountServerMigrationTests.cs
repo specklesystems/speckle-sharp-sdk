@@ -1,16 +1,18 @@
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
-public class AccountServerMigrationTests
+public class AccountServerMigrationTests : IDisposable
 {
   private readonly List<Account> _accountsToCleanUp = new();
 
-  public static IEnumerable<TestCaseData> MigrationTestCase()
+  public static IEnumerable<object[]> MigrationTestCase()
   {
     const string OLD_URL = "https://old.example.com";
     const string NEW_URL = "https://new.example.com";
@@ -22,23 +24,17 @@ public class AccountServerMigrationTests
 
     List<Account> givenAccounts = new() { oldAccount, newAccount, otherAccount };
 
-    yield return new TestCaseData(givenAccounts, NEW_URL, new[] { newAccount })
-      .SetName("Get New")
-      .SetDescription("When requesting for new account, ensure only this account is returned");
+    yield return [givenAccounts, NEW_URL, new[] { newAccount }];
 
-    yield return new TestCaseData(givenAccounts, OLD_URL, new[] { newAccount })
-      .SetName("Get New via Old")
-      .SetDescription("When requesting for old account, ensure migrated account is returned first");
+    yield return [givenAccounts, OLD_URL, new[] { newAccount }];
 
     var reversed = Enumerable.Reverse(givenAccounts).ToList();
 
-    yield return new TestCaseData(reversed, OLD_URL, new[] { newAccount })
-      .SetName("Get New via Old (Reversed order)")
-      .SetDescription("Account order shouldn't matter");
+    yield return [reversed, OLD_URL, new[] { newAccount }];
   }
 
-  [Test]
-  [TestCaseSource(nameof(MigrationTestCase))]
+  [Theory]
+  [MemberData(nameof(MigrationTestCase))]
   public void TestServerMigration(IList<Account> accounts, string requestedUrl, IList<Account> expectedSequence)
   {
     AddAccounts(accounts);
@@ -46,11 +42,10 @@ public class AccountServerMigrationTests
 
     var result = serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
 
-    Assert.That(result, Is.EquivalentTo(expectedSequence));
+    result.ShouldBeEquivalentTo(expectedSequence);
   }
 
-  [TearDown]
-  public void TearDown()
+  public void Dispose()
   {
     //Clean up any of the test accounts we made
     foreach (var acc in _accountsToCleanUp)

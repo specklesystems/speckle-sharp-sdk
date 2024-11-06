@@ -1,23 +1,22 @@
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[TestFixture]
-[TestOf(typeof(Sdk.Api.Operations))]
 public class Closures
 {
   private IOperations _operations;
 
-  [SetUp]
-  public void Setup()
+  public Closures()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);
@@ -25,7 +24,7 @@ public class Closures
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
-  [Test(Description = "Checks whether closures are generated correctly by the serialiser.")]
+  [Fact]
   public async Task CorrectDecompositionTracking()
   {
     var d5 = new Base();
@@ -56,7 +55,7 @@ public class Closures
     var test = await _operations.Receive(sendResult.rootObjId, localTransport: transport);
 
     test.id.NotNull();
-    Assert.That(d1.GetId(true), Is.EqualTo(test.id));
+    d1.GetId(true).ShouldBe(test.id);
 
     var d1_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d1.GetId(true)]));
     var d2_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d2.GetId(true)]));
@@ -65,22 +64,22 @@ public class Closures
     var d5_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d5.GetId(true)]);
 
     var depthOf_d5_in_d1 = int.Parse((string)d1_.__closure[d5.GetId(true)]);
-    Assert.That(depthOf_d5_in_d1, Is.EqualTo(1));
+    depthOf_d5_in_d1.ShouldBe(1);
 
     var depthOf_d4_in_d1 = int.Parse((string)d1_.__closure[d4.GetId(true)]);
-    Assert.That(depthOf_d4_in_d1, Is.EqualTo(3));
+   depthOf_d4_in_d1.ShouldBe(3);
 
     var depthOf_d5_in_d3 = int.Parse((string)d3_.__closure[d5.GetId(true)]);
-    Assert.That(depthOf_d5_in_d3, Is.EqualTo(2));
+   depthOf_d5_in_d3.ShouldBe(2);
 
     var depthOf_d4_in_d3 = int.Parse((string)d3_.__closure[d4.GetId(true)]);
-    Assert.That(depthOf_d4_in_d3, Is.EqualTo(1));
+  depthOf_d4_in_d3.ShouldBe(1);
 
     var depthOf_d5_in_d2 = int.Parse((string)d2_.__closure[d5.GetId(true)]);
-    Assert.That(depthOf_d5_in_d2, Is.EqualTo(1));
+   depthOf_d5_in_d2.ShouldBe(1);
   }
 
-  [Test]
+  [Fact]
   public void DescendantsCounting()
   {
     Base myBase = new();
@@ -119,17 +118,17 @@ public class Closures
     myBase["@detachTheDictionary"] = dictionary;
 
     var count = myBase.GetTotalChildrenCount();
-    Assert.That(count, Is.EqualTo(112));
+    count.ShouldBe(112);
 
     var tableTest = new DiningTable();
     var tableKidsCount = tableTest.GetTotalChildrenCount();
-    Assert.That(tableKidsCount, Is.EqualTo(10));
+    tableKidsCount.ShouldBe(10);
 
     // Explicitely test for recurisve references!
     var recursiveRef = new Base { applicationId = "random" };
     recursiveRef["@recursive"] = recursiveRef;
 
     var supriseCount = recursiveRef.GetTotalChildrenCount();
-    Assert.That(supriseCount, Is.EqualTo(2));
+   supriseCount.ShouldBe(2);
   }
 }
