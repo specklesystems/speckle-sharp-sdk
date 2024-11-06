@@ -256,7 +256,7 @@ public sealed class VersionResource
     return response.data.data;
   }
 
-  [Obsolete("modelId is no longer required, use the overload that doesn't specify a model id")]
+  [Obsolete("modelId is no longer required, use the overload that doesn't specify a model id", true)]
   public Task<Version> Get(
     string versionId,
     string modelId,
