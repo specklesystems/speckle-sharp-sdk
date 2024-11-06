@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Models;
 
@@ -7,10 +7,13 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 [GenerateAutoInterface]
 public class SpeckleBaseChildFinder(ISpeckleBasePropertyGatherer propertyGatherer) : ISpeckleBaseChildFinder
 {
+  public IEnumerable<Property> GetChildProperties(Base obj) =>
+    propertyGatherer.ExtractAllProperties(obj).Where(x => x.PropertyAttributeInfo.IsDetachable);
+
   public IEnumerable<Base> GetChildren(Base obj)
   {
-    var props = propertyGatherer.ExtractAllProperties(obj);
-    foreach (var kvp in props.Where(x => x.PropertyAttributeInfo.IsDetachable))
+    var props = GetChildProperties(obj).ToList();
+    foreach (var kvp in props)
     {
       if (kvp.Value is Base child)
       {

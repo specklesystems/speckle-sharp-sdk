@@ -5,6 +5,7 @@
     <Configurations>Debug;Release;Local</Configurations>
     <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
     <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
+    <ILRepackMergeDebugSymbols>true</ILRepackMergeDebugSymbols>
   </PropertyGroup>
   
   <PropertyGroup Label="Nugetspec Package Properties">

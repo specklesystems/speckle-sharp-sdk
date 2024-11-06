@@ -19,7 +19,9 @@ public class SerializeProcess(
   private readonly ConcurrentDictionary<string, string> _jsonCache = new();
   private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
 
-  private long _total;
+  private long _totalFound;
+  private long _totalToUpload;
+  private long _uploaded;
   private long _cached;
   private long _serialized;
 
@@ -44,7 +46,8 @@ public class SerializeProcess(
     var tasks = new List<Task<List<Dictionary<string, int>>>>();
     foreach (var child in speckleBaseChildFinder.GetChildren(obj))
     {
-      Interlocked.Increment(ref _total);
+      Interlocked.Increment(ref _totalFound);
+      progress?.Report(new(ProgressEvent.FindingChildren, _totalFound, null));
       // tmp is necessary because of the way closures close over loop variables
       var tmp = child;
       var t = Task
@@ -74,56 +77,87 @@ public class SerializeProcess(
       )
       .ToList();
 
-    var item = Serialise(obj, closures);
-    Interlocked.Increment(ref _serialized);
-    progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _serialized, _total));
-    if (item?.NeedsStorage ?? false)
+    var items = Serialise(obj, closures);
+    foreach (var item in items)
     {
-      await Save(item.Value, cancellationToken).ConfigureAwait(false);
+      Interlocked.Increment(ref _serialized);
+      progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _serialized, _totalFound));
+      if (item.NeedsStorage)
+      {
+        Interlocked.Increment(ref _totalToUpload);
+        await Save(item, cancellationToken).ConfigureAwait(false);
+      }
     }
+
     if (isEnd)
     {
-      Done();
+      await Done().ConfigureAwait(false);
     }
     return closures;
   }
 
   //leave this sync
-  private BaseItem? Serialise(Base obj, List<Dictionary<string, int>> childClosures)
+  private IEnumerable<BaseItem> Serialise(Base obj, List<Dictionary<string, int>> childClosures)
   {
     if (obj.id != null && _jsonCache.ContainsKey(obj.id))
     {
-      return null;
+      yield break;
     }
 
-    string? json = null;
     if (!_options.SkipCache && obj.id != null)
     {
-      json = sqliteSendCacheManager.GetObject(obj.id);
-    }
-    if (json == null)
-    {
-      var id = obj.id;
-      if (id is null || !_jsonCache.TryGetValue(id, out json))
+      var cachedJson = sqliteSendCacheManager.GetObject(obj.id);
+      if (cachedJson != null)
       {
-        SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, childClosures);
-        json = serializer2.Serialize(obj);
-        obj.id.NotNull();
-        foreach (var kvp in serializer2.ObjectReferences)
-        {
-          _objectReferences.TryAdd(kvp.Key, kvp.Value);
-        }
+        yield return new BaseItem(obj.id.NotNull(), cachedJson, false);
+        yield break;
+      }
+    }
+    var id = obj.id;
+    if (id is null || !_jsonCache.TryGetValue(id, out var json))
+    {
+      SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, childClosures, true);
+      var items = serializer2.Serialize(obj).ToList();
+      foreach (var kvp in serializer2.ObjectReferences)
+      {
+        _objectReferences.TryAdd(kvp.Key, kvp.Value);
+      }
 
-        _jsonCache.TryAdd(obj.id, json);
-        if (id is not null && id != obj.id)
+      var (_, j) = items.First();
+      json = j;
+      _jsonCache.TryAdd(obj.id.NotNull(), j);
+      yield return CheckCache(obj.id.NotNull(), j);
+      if (id is not null && id != obj.id)
+      {
+        //in case the ids changes which is due to id hash algorithm changing
+        _jsonCache.TryAdd(id, json);
+      }
+      foreach (var (cid, cJson) in items.Skip(1))
+      {
+        if (_jsonCache.TryAdd(cid, cJson))
         {
-          //in case the ids changes which is due to id hash algorithm changing
-          _jsonCache.TryAdd(id, json);
+          Interlocked.Increment(ref _totalFound);
+          yield return CheckCache(cid, cJson);
         }
       }
-      return new BaseItem(obj.id.NotNull(), json, true);
     }
-    return new BaseItem(obj.id.NotNull(), json.NotNull(), false);
+    else
+    {
+      yield return new BaseItem(obj.id.NotNull(), json, true);
+    }
+  }
+
+  private BaseItem CheckCache(string id, string json)
+  {
+    if (!_options.SkipCache)
+    {
+      var cachedJson = sqliteSendCacheManager.GetObject(id);
+      if (cachedJson != null)
+      {
+        return new BaseItem(id, cachedJson, false);
+      }
+    }
+    return new BaseItem(id, json, true);
   }
 
   public override async Task<List<BaseItem>> SendToServer(
@@ -134,12 +168,15 @@ public class SerializeProcess(
   {
     if (batch.Count == 0)
     {
+      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _totalToUpload));
       return batch;
     }
 
     if (!_options.SkipServer)
     {
       await serverObjectManager.UploadObjects(streamId, batch, true, progress, cancellationToken).ConfigureAwait(false);
+      Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
+      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _totalToUpload));
     }
     return batch;
   }
@@ -148,6 +185,11 @@ public class SerializeProcess(
   {
     if (!_options.SkipCache)
     {
+      if (items.Count == 0)
+      {
+        progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
+        return;
+      }
       sqliteSendCacheManager.SaveObjects(items);
       Interlocked.Exchange(ref _cached, _cached + items.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));

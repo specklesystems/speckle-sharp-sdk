@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Reflection;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;

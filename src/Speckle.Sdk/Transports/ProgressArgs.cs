@@ -7,7 +7,9 @@ public enum ProgressEvent
   CachedToLocal, //send and receive
 
   FromCacheOrSerialized,
+  FindingChildren,
   UploadBytes,
+  UploadedObjects,
 
   CacheCheck,
   DownloadBytes,

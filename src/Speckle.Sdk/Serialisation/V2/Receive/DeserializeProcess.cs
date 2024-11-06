@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Data;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
@@ -90,7 +89,7 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
       var json = objectLoader.LoadId(id);
       if (json == null)
       {
-        throw new MissingPrimaryKeyException($"Missing object id in SQLite cache: {id}");
+        throw new SpeckleException($"Missing object id in SQLite cache: {id}");
       }
       var childrenIds = ClosureParser.GetClosures(json).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
       closures = (json, childrenIds);
