@@ -218,7 +218,7 @@ public class SerializationTests
   }
 
   [Test]
-  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 4610)]
+  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Roundtrip_Test_New(string fileName, string rootId, int count)
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));

@@ -19,7 +19,9 @@ public class SerializeProcess(
   private readonly ConcurrentDictionary<string, string> _jsonCache = new();
   private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
 
-  private long _total;
+  private long _totalFound;
+  private long _totalToUpload;
+  private long _uploaded;
   private long _cached;
   private long _serialized;
 
@@ -44,7 +46,8 @@ public class SerializeProcess(
     var tasks = new List<Task<List<Dictionary<string, int>>>>();
     foreach (var child in speckleBaseChildFinder.GetChildren(obj))
     {
-      Interlocked.Increment(ref _total);
+      Interlocked.Increment(ref _totalFound);
+      progress?.Report(new(ProgressEvent.FindingChildren, _totalFound, null));
       // tmp is necessary because of the way closures close over loop variables
       var tmp = child;
       var t = Task
@@ -78,9 +81,10 @@ public class SerializeProcess(
     foreach (var item in items)
     {
       Interlocked.Increment(ref _serialized);
-      progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _serialized, _total));
+      progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _serialized, _totalFound));
       if (item.NeedsStorage)
       {
+        Interlocked.Increment(ref _totalToUpload);
         await Save(item, cancellationToken).ConfigureAwait(false);
       }
     }
@@ -132,6 +136,7 @@ public class SerializeProcess(
       {
         if (_jsonCache.TryAdd(cid, cJson))
         {
+          Interlocked.Increment(ref _totalFound);
           yield return CheckCache(cid, cJson);
         }
       }
@@ -151,9 +156,8 @@ public class SerializeProcess(
       {
         return new BaseItem(id, cachedJson, false);
       }
-      return new BaseItem(id, json, true);
     }
-    return new BaseItem(id, json, false);
+    return new BaseItem(id, json, true);
   }
 
   public override async Task<List<BaseItem>> SendToServer(
@@ -164,12 +168,15 @@ public class SerializeProcess(
   {
     if (batch.Count == 0)
     {
+      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _totalToUpload));
       return batch;
     }
 
     if (!_options.SkipServer)
     {
       await serverObjectManager.UploadObjects(streamId, batch, true, progress, cancellationToken).ConfigureAwait(false);
+      Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
+      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _totalToUpload));
     }
     return batch;
   }
@@ -178,6 +185,11 @@ public class SerializeProcess(
   {
     if (!_options.SkipCache)
     {
+      if (items.Count == 0)
+      {
+        progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
+        return;
+      }
       sqliteSendCacheManager.SaveObjects(items);
       Interlocked.Exchange(ref _cached, _cached + items.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));

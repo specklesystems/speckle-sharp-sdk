@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Serialisation.V2.Send;
@@ -24,7 +24,7 @@ public abstract class ChannelSaver
   public Task Start(string streamId, CancellationToken cancellationToken = default)
   {
     var t = _checkCacheChannel
-      .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
+      .Reader.Batch(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
