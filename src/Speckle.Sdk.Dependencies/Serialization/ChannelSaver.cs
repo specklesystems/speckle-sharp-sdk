@@ -11,11 +11,11 @@ public readonly record struct BaseItem(string Id, string Json, bool NeedsStorage
 
 public abstract class ChannelSaver
 {
-  private const int HTTP_SEND_CHUNK_SIZE = 10000000;
+  private const int HTTP_SEND_CHUNK_SIZE = 100_000_000; //bytes
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
   private const int MAX_PARALLELISM_HTTP = 4;
   private const int MAX_CACHE_WRITE_PARALLELISM = 1;
-  private const int MAX_CACHE_BATCH = 100;
+  private const int MAX_CACHE_BATCH = 200;
   private const string DUMMY = "dummy";
 
   private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateUnbounded<BaseItem>();
