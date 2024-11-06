@@ -1,7 +1,6 @@
 using System.Text;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
-using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
