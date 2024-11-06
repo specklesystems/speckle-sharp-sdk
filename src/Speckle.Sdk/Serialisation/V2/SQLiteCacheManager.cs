@@ -5,13 +5,11 @@ namespace Speckle.Sdk.Serialisation.V2;
 
 public abstract class SQLiteCacheManager
 {
-  private readonly string _rootPath;
-
   protected SQLiteCacheManager(string streamId)
   {
-    _rootPath = SqlitePaths.GetDBPath(streamId);
+    string rootPath = SqlitePaths.GetDBPath(streamId);
 
-    ConnectionString = $"Data Source={_rootPath};";
+    ConnectionString = $"Data Source={rootPath};";
     Initialize();
   }
 
