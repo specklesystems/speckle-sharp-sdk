@@ -1,26 +1,27 @@
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;
 
-[TestFixture, TestOf(typeof(Mesh))]
 public class MeshTests
 {
-  private static Mesh[] s_testCaseSource = { CreateBlenderStylePolygon(), CreateRhinoStylePolygon() };
+  public static readonly IEnumerable<object[]> TestCaseSource = new object[][] {[CreateBlenderStylePolygon()], [CreateRhinoStylePolygon()] };
 
-  [Test, TestCaseSource(nameof(s_testCaseSource))]
+  [Theory, MemberData(nameof(TestCaseSource))]
   public void CanAlignVertices(Mesh inPolygon)
   {
     inPolygon.AlignVerticesWithTexCoordsByIndex();
 
-    Assert.That(inPolygon.VerticesCount, Is.EqualTo(inPolygon.TextureCoordinatesCount));
+    inPolygon.VerticesCount.ShouldBe(inPolygon.TextureCoordinatesCount);
 
     var expectedPolygon = CreateRhinoStylePolygon();
 
-    Assert.That(inPolygon.vertices, Is.EquivalentTo(expectedPolygon.vertices));
-    Assert.That(inPolygon.faces, Is.EquivalentTo(expectedPolygon.faces));
-    Assert.That(inPolygon.textureCoordinates, Is.EquivalentTo(expectedPolygon.textureCoordinates));
+    inPolygon.vertices.ShouldBeEquivalentTo(expectedPolygon.vertices);
+    inPolygon.faces.ShouldBeEquivalentTo(expectedPolygon.faces);
+    inPolygon.textureCoordinates.ShouldBeEquivalentTo(expectedPolygon.textureCoordinates);
   }
 
   private static Mesh CreateRhinoStylePolygon()

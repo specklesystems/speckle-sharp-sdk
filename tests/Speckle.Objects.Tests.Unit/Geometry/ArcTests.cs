@@ -1,10 +1,11 @@
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;
 
-[TestFixture, TestOf(typeof(Arc))]
 public class ArcTests
 {
   private Plane TestPlaneCounterClockwise
@@ -39,7 +40,7 @@ public class ArcTests
     }
   }
 
-  [Test]
+  [Fact]
   public void CanCreateArc_HalfCircle_CounterClockwise()
   {
     const string UNITS = Units.Meters;
@@ -52,17 +53,14 @@ public class ArcTests
       units = UNITS,
     };
 
-    Assert.That(Point.Distance(counterClockwiseArc.midPoint, new Point(0, 1, 0, UNITS)), Is.EqualTo(0).Within(0.0001));
-    Assert.That(
-      Point.Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, UNITS)),
-      Is.EqualTo(0).Within(0.0001)
-    );
-    Assert.That(counterClockwiseArc.measure - Math.PI, Is.EqualTo(0).Within(0.0001));
-    Assert.That(counterClockwiseArc.radius, Is.EqualTo(1).Within(0.0001));
-    Assert.That(counterClockwiseArc.length, Is.EqualTo(Math.PI).Within(0.0001));
+    Point.Distance(counterClockwiseArc.midPoint, new Point(0, 1, 0, UNITS)).ShouldBe(0, 0.0001);
+   Point.Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, UNITS)).ShouldBe(0, 0.0001);
+   ( counterClockwiseArc.measure - Math.PI).ShouldBe(0, 0.0001);
+  counterClockwiseArc.radius.ShouldBe(1, 0.0001);
+  counterClockwiseArc.length.ShouldBe(Math.PI, 0.0001);
   }
 
-  [Test]
+  [Fact]
   public void CanCreateArc_HalfCircle_Clockwise()
   {
     const string UNITS = Units.Meters;
@@ -75,13 +73,10 @@ public class ArcTests
       units = UNITS,
     };
 
-    Assert.That(Point.Distance(counterClockwiseArc.midPoint, new Point(0, 1, 0, UNITS)), Is.EqualTo(0).Within(0.0001));
-    Assert.That(
-      Point.Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, UNITS)),
-      Is.EqualTo(0).Within(0.0001)
-    );
-    Assert.That(counterClockwiseArc.measure - Math.PI, Is.EqualTo(0).Within(0.0001));
-    Assert.That(counterClockwiseArc.radius, Is.EqualTo(1).Within(0.0001));
-    Assert.That(counterClockwiseArc.length, Is.EqualTo(Math.PI).Within(0.0001));
+    Point.Distance(counterClockwiseArc.midPoint, new Point(0, 1, 0, UNITS)).ShouldBe(0, 0.0001);
+    Point.Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, UNITS)).ShouldBe(0, 0.0001);
+    ( counterClockwiseArc.measure - Math.PI).ShouldBe(0, 0.0001);
+    counterClockwiseArc.radius.ShouldBe(1, 0.0001);
+    counterClockwiseArc.length.ShouldBe(Math.PI, 0.0001);
   }
 }

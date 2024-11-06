@@ -3,7 +3,6 @@ using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Tests.Unit.Common;
 
-[TestOf(typeof(Units))]
 public class UnitsTest
 {
   private const double EPS = 0.00022;

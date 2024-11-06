@@ -2,21 +2,21 @@ using System.Diagnostics;
 using GraphQL;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api;
 
-[TestOf(typeof(Client))]
 public sealed class GraphQLClientTests : IDisposable
 {
   private Client _client;
 
-  [OneTimeSetUp]
-  public void Setup()
+  public GraphQLClientTests()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _client = serviceProvider
@@ -35,18 +35,18 @@ public sealed class GraphQLClientTests : IDisposable
     _client?.Dispose();
   }
 
-  private static IEnumerable<TestCaseData> ErrorCases()
+  public static IEnumerable<object[]> ErrorCases()
   {
-    yield return new TestCaseData(typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "FORBIDDEN" } });
-    yield return new TestCaseData(typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "UNAUTHENTICATED" } });
-    yield return new TestCaseData(
+    yield return [typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "FORBIDDEN" } }];
+    yield return [typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "UNAUTHENTICATED" } }];
+    yield return [
       typeof(SpeckleGraphQLInternalErrorException),
       new Map { { "code", "INTERNAL_SERVER_ERROR" } }
-    );
-    yield return new TestCaseData(typeof(SpeckleGraphQLException<FakeGqlResponseModel>), new Map { { "foo", "bar" } });
+    ];
+    yield return [typeof(SpeckleGraphQLException<FakeGqlResponseModel>), new Map { { "foo", "bar" } }];
   }
 
-  [Test, TestCaseSource(nameof(ErrorCases))]
+  [Theory, MemberData(nameof(ErrorCases))]
   public void TestExceptionThrowingFromGraphQLErrors(Type exType, Map extensions)
   {
     Assert.Throws(
@@ -62,18 +62,18 @@ public sealed class GraphQLClientTests : IDisposable
     );
   }
 
-  [Test]
+  [Fact]
   public void TestMaybeThrowsDoesntThrowForNoErrors()
   {
-    Assert.DoesNotThrow(() => _client.MaybeThrowFromGraphQLErrors(new GraphQLRequest(), new GraphQLResponse<string>()));
+    _client.MaybeThrowFromGraphQLErrors(new GraphQLRequest(), new GraphQLResponse<string>());
   }
 
-  [Test]
-  public void TestExecuteWithResiliencePoliciesDoesntRetryTaskCancellation()
+  [Fact]
+  public async Task TestExecuteWithResiliencePoliciesDoesntRetryTaskCancellation()
   {
     var timer = new Stopwatch();
     timer.Start();
-    Assert.ThrowsAsync<TaskCanceledException>(async () =>
+    await Assert.ThrowsAsync<TaskCanceledException>(async () =>
     {
       var tokenSource = new CancellationTokenSource();
       tokenSource.Cancel();
@@ -94,10 +94,10 @@ public sealed class GraphQLClientTests : IDisposable
 
     // the default retry policy would retry 5 times with 1 second jitter backoff each
     // if the elapsed is less than a second, this was def not retried
-    Assert.That(elapsed, Is.LessThan(1000));
+    elapsed.ShouldBeLessThan(1000);
   }
 
-  [Test]
+  [Fact]
   public async Task TestExecuteWithResiliencePoliciesRetry()
   {
     var counter = 0;
@@ -117,8 +117,8 @@ public sealed class GraphQLClientTests : IDisposable
     });
     timer.Stop();
     // The baseline for wait is 1 seconds between the jittered retry
-    Assert.That(timer.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(5000));
-    Assert.That(counter, Is.EqualTo(maxRetryCount));
+    timer.ElapsedMilliseconds.ShouldBeGreaterThanOrEqualTo(5000);
+   counter.ShouldBe(maxRetryCount);
   }
 
   public class FakeGqlResponseModel { }

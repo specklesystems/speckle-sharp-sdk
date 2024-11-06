@@ -1,10 +1,11 @@
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;
 
-[TestFixture, TestOf(typeof(Circle))]
 public class CircleTests
 {
   private Plane TestPlane
@@ -23,7 +24,7 @@ public class CircleTests
     }
   }
 
-  [Test]
+  [Fact]
   public void CanCreateCircle()
   {
     const string UNITS = Units.Meters;
@@ -34,7 +35,7 @@ public class CircleTests
       units = UNITS,
     };
 
-    Assert.That(circle.length, Is.EqualTo(2 * Math.PI * 5).Within(0.0001));
-    Assert.That(circle.area, Is.EqualTo(Math.PI * 5 * 5).Within(0.0001));
+    circle.length.ShouldBe(2 * Math.PI * 5,0.0001);
+    circle.area.ShouldBe(Math.PI * 5 * 5,0.0001);
   }
 }

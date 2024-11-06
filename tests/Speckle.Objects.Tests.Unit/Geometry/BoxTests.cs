@@ -1,10 +1,11 @@
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;
 
-[TestFixture, TestOf(typeof(Box))]
 public class BoxTests
 {
   private Plane TestPlane
@@ -23,7 +24,7 @@ public class BoxTests
     }
   }
 
-  [Test]
+  [Fact]
   public void CanCreateBox()
   {
     const string UNITS = Units.Meters;
@@ -36,7 +37,7 @@ public class BoxTests
       units = UNITS,
     };
 
-    Assert.That(box.area, Is.EqualTo(2 * (2 * 4 + 2 * 6 + 4 * 6)).Within(0.0001));
-    Assert.That(box.volume, Is.EqualTo(2 * 4 * 6).Within(0.0001));
+    box.area.ShouldBe(2 * (2 * 4 + 2 * 6 + 4 * 6), 0.0001);
+   box.volume.ShouldBe(2 * 4 * 6,0.0001);
   }
 }

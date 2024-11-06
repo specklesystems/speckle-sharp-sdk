@@ -11,19 +11,19 @@ using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
 public class DetachedTests
 {
-  [SetUp]
-  public void Setup()
+  public DetachedTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
   }
 
-  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact]
   public async Task CanSerialize_New_Detached()
   {
     var expectedJson = """
@@ -74,8 +74,7 @@ public class DetachedTests
       new SpeckleBasePropertyGatherer()
     );
     await process2
-      .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
-      .ConfigureAwait(false);
+      .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true));
 
     objects.Count.ShouldBe(2);
     objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").ShouldBeTrue();
@@ -88,7 +87,7 @@ public class DetachedTests
       .ShouldBeTrue();
   }
 
-  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact]
   public void CanSerialize_Old_Detached()
   {
     var expectedJson = """
@@ -145,7 +144,7 @@ public class DetachedTests
       .ShouldBeTrue();
   }
 
-  [Test]
+  [Fact]
   public void GetPropertiesExpected_Detached()
   {
     var @base = new SampleObjectBase();
@@ -164,7 +163,7 @@ public class DetachedTests
     children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
   }
 
-  [Test]
+  [Fact]
   public void GetPropertiesExpected_All()
   {
     var @base = new SampleObjectBase();
@@ -189,7 +188,7 @@ public class DetachedTests
     children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
   }
 
-  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact]
   public async Task CanSerialize_New_Detached2()
   {
     var root = """
@@ -267,8 +266,7 @@ public class DetachedTests
       new SpeckleBasePropertyGatherer()
     );
     var results = await process2
-      .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
-      .ConfigureAwait(false);
+        .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true));
 
     objects.Count.ShouldBe(9);
     JToken.DeepEquals(JObject.Parse(root), JObject.Parse(objects["fd4efeb8a036838c53ad1cf9e82b8992"])).ShouldBeTrue();

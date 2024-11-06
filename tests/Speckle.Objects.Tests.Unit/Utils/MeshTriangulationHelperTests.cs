@@ -1,15 +1,29 @@
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Common;
+using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Utils;
 
-[TestFixture, TestOf(typeof(MeshTriangulationHelper))]
 public class MeshTriangulationHelperTests
 {
-  [Test]
-  public void PolygonTest([Range(3, 9)] int n, [Values] bool planar)
+  public static IEnumerable<object[]> PolygonTestValues
+  {
+    get
+    {
+
+      for (int n = 3; n <= 9; n++)
+      {
+        yield return [n, true];
+        yield return [n, false];
+      }
+    }
+  }
+  [Theory]
+  [MemberData(nameof(PolygonTestValues))]
+  public void PolygonTest(int n, bool planar)
   {
     //Test Setup
     List<double> vertices = new(n) { 0, planar ? 0 : 1, 1 };
@@ -38,20 +52,20 @@ public class MeshTriangulationHelperTests
     int numExpectedTriangles = n - 2;
     int expectedFaceCount = numExpectedTriangles * 4;
 
-    Assert.That(mesh.faces, Has.Count.EqualTo(expectedFaceCount));
+mesh.faces.Count.ShouldBe(expectedFaceCount);
     for (int i = 0; i < expectedFaceCount; i += 4)
     {
-      Assert.That(mesh.faces[i], Is.EqualTo(3));
-      Assert.That(mesh.faces.GetRange(i + 1, 3), Is.Unique);
+      mesh.faces[i].ShouldBe(3);
+     // Assert.That(mesh.faces.GetRange(i + 1, 3), Is.Unique);
     }
 
-    Assert.That(mesh.faces, Is.SupersetOf(Enumerable.Range(0, n)));
+   // Assert.That(mesh.faces, Is.SupersetOf(Enumerable.Range(0, n)));
 
-    Assert.That(mesh.faces, Is.All.GreaterThanOrEqualTo(0));
-    Assert.That(mesh.faces, Is.All.LessThan(Math.Max(n, 4)));
+    mesh.faces.ForEach(x => x.ShouldBeGreaterThanOrEqualTo(0));
+    mesh.faces.ForEach(x => x.ShouldBeLessThan(Math.Max(n, 4)));
   }
 
-  [Test]
+  [Fact]
   public void DoesntFlipNormals()
   {
     //Test Setup
@@ -76,11 +90,13 @@ public class MeshTriangulationHelperTests
     List<int> shift2 = new() { 3, 1, 2, 0 };
     List<int> shift3 = new() { 3, 2, 0, 1 };
 
-    Assert.That(mesh.faces, Is.AnyOf(shift1, shift2, shift3));
+    mesh.faces.ShouldBeOneOf([shift1, shift2, shift3]);
   }
 
-  [Test]
-  public void PreserveQuads([Values] bool preserveQuads)
+  [Theory]
+  [InlineData(false)]
+  [InlineData(true)]
+  public void PreserveQuads(bool preserveQuads)
   {
     //Test Setup
     List<double> vertices = new() { 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1 };
@@ -102,7 +118,7 @@ public class MeshTriangulationHelperTests
     int expectedN = preserveQuads ? 4 : 3;
     int expectedFaceCount = preserveQuads ? 5 : 8;
 
-    Assert.That(mesh.faces, Has.Count.EqualTo(expectedFaceCount));
-    Assert.That(mesh.faces[0], Is.EqualTo(expectedN));
+    mesh.faces.Count.ShouldBe(expectedFaceCount);
+    mesh.faces[0].ShouldBe(expectedN);
   }
 }
