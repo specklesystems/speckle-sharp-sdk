@@ -1,6 +1,7 @@
 using System.Text;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
+using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
@@ -11,7 +12,7 @@ public readonly record struct BaseItem(string Id, string Json, bool NeedsStorage
 
 public abstract class ChannelSaver
 {
-  private const int HTTP_SEND_CHUNK_SIZE = 100_000_000; //bytes
+  private const int HTTP_SEND_CHUNK_SIZE = 25_000_000; //bytes
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
   private const int MAX_PARALLELISM_HTTP = 4;
   private const int MAX_CACHE_WRITE_PARALLELISM = 1;
@@ -23,7 +24,7 @@ public abstract class ChannelSaver
   public Task Start(string streamId, CancellationToken cancellationToken = default)
   {
     var t = _checkCacheChannel
-      .Reader.Batch(HTTP_SEND_CHUNK_SIZE)
+      .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
