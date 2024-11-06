@@ -1,31 +1,15 @@
 using Microsoft.Data.Sqlite;
-using Speckle.Sdk.Logging;
-using Speckle.Sdk.Transports;
+using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
 public abstract class SQLiteCacheManager
 {
   private readonly string _rootPath;
-  private const string APPLICATION_NAME = "Speckle";
-  private const string DATA_FOLDER = "Projects";
 
   protected SQLiteCacheManager(string streamId)
   {
-    var basePath = SpecklePathProvider.UserApplicationDataPath();
-
-    try
-    {
-      var dir = Path.Combine(basePath, APPLICATION_NAME, DATA_FOLDER);
-      _rootPath = Path.Combine(dir, $"{streamId}.db");
-
-      Directory.CreateDirectory(dir); //ensure dir is there
-    }
-    catch (Exception ex)
-      when (ex is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
-    {
-      throw new TransportException($"Path was invalid or could not be created {_rootPath}", ex);
-    }
+    _rootPath = SqlitePaths.GetDBPath(streamId);
 
     ConnectionString = $"Data Source={_rootPath};";
     Initialize();
