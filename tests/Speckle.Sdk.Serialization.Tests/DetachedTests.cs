@@ -66,13 +66,7 @@ public class DetachedTests
 
     var objects = new Dictionary<string, string>();
 
-    var process2 = new SerializeProcess(
-      null,
-      new DummySendCacheManager(objects),
-      new DummyServerObjectManager(),
-      new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
-      new SpeckleBasePropertyGatherer()
-    );
+    var process2 = new SerializeProcess(null, new DummySendCacheManager(objects), new DummyServerObjectManager());
     await process2
       .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
       .ConfigureAwait(false);
@@ -259,13 +253,7 @@ public class DetachedTests
 
     var objects = new Dictionary<string, string>();
 
-    var process2 = new SerializeProcess(
-      null,
-      new DummySendCacheManager(objects),
-      new DummyServerObjectManager(),
-      new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
-      new SpeckleBasePropertyGatherer()
-    );
+    var process2 = new SerializeProcess(null, new DummySendCacheManager(objects), new DummyServerObjectManager());
     var results = await process2
       .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
       .ConfigureAwait(false);

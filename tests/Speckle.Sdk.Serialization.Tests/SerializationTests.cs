@@ -238,9 +238,7 @@ public class SerializationTests
     var serializeProcess = new SerializeProcess(
       null,
       new DummySqLiteSendManager(),
-      new DummySendServerObjectManager(newIdToJson),
-      new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
-      new SpeckleBasePropertyGatherer()
+      new DummySendServerObjectManager(newIdToJson)
     );
     var (rootId2, _) = await serializeProcess.Serialize(
       string.Empty,

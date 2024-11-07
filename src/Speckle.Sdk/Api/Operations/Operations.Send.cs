@@ -28,13 +28,7 @@ public partial class Operations
     {
       var sqliteTransport = new SQLiteSendCacheManager(streamId);
       var serverObjects = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
-      var process = new SerializeProcess(
-        onProgressAction,
-        sqliteTransport,
-        serverObjects,
-        speckleBaseChildFinder,
-        speckleBasePropertyGatherer
-      );
+      var process = new SerializeProcess(onProgressAction, sqliteTransport, serverObjects);
       var (rootObjId, convertedReferences) = await process
         .Serialize(streamId, value, cancellationToken)
         .ConfigureAwait(false);

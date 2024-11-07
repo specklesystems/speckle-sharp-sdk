@@ -35,7 +35,7 @@ public abstract class ChannelSaver
     return t;
   }
 
-  public async Task Save(BaseItem item, CancellationToken cancellationToken = default) =>
+  public async ValueTask Save(BaseItem item, CancellationToken cancellationToken = default) =>
     await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
 
   private async Task<List<BaseItem>> SendToServerInternal(
