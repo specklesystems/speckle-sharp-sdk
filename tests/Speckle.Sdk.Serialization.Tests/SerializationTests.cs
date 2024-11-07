@@ -238,7 +238,8 @@ public class SerializationTests
     var serializeProcess = new SerializeProcess(
       null,
       new DummySqLiteSendManager(),
-      new DummySendServerObjectManager(newIdToJson)
+      new DummySendServerObjectManager(newIdToJson),
+      new BasePropertyGatherer()
     );
     var (rootId2, _) = await serializeProcess.Serialize(
       string.Empty,

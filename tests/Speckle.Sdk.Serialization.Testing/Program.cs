@@ -52,7 +52,12 @@ Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-var process2 = new SerializeProcess(progress, new SQLiteSendCacheManager(streamId), new DummyServerObjectManager());
+var process2 = new SerializeProcess(
+  progress,
+  new SQLiteSendCacheManager(streamId),
+  new DummyServerObjectManager(),
+  new BasePropertyGatherer()
+);
 await process2.Serialize(streamId, @base, default, new SerializeProcessOptions(skipCache, true)).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();

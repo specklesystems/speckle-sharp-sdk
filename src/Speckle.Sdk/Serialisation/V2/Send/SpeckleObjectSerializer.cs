@@ -10,6 +10,8 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
+// ReSharper disable MethodHasAsyncOverloadWithCancellation
+
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public sealed class SpeckleObjectSerializer2
@@ -17,6 +19,7 @@ public sealed class SpeckleObjectSerializer2
   private readonly HashSet<object> _parentObjects = new();
   private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
   private readonly IProgress<ProgressArgs>? _onProgressAction;
+  private readonly IBasePropertyGatherer _basePropertyGatherer;
 
   private readonly bool _trackDetachedChildren;
   private int _serializedCount;
@@ -34,12 +37,14 @@ public sealed class SpeckleObjectSerializer2
 
   public SpeckleObjectSerializer2(
     SerializeProcess serializeProcess,
+    IBasePropertyGatherer basePropertyGatherer,
     IProgress<ProgressArgs>? onProgressAction = null,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
     SerializeProcess = serializeProcess;
+    _basePropertyGatherer = basePropertyGatherer;
     _onProgressAction = onProgressAction;
     CancellationToken = cancellationToken;
     _trackDetachedChildren = trackDetachedChildren;
@@ -234,6 +239,8 @@ public sealed class SpeckleObjectSerializer2
 
     if (inheritedDetachInfo.IsDetachable)
     {
+      await StoreObject(id, json).ConfigureAwait(false);
+
       var json2 = ReferenceGenerator.CreateReference(id);
       UpdateParentClosures(closures, id);
 
@@ -252,43 +259,6 @@ public sealed class SpeckleObjectSerializer2
     return new(json, id);
   }
 
-  private Dictionary<string, (object? value, PropertyAttributeInfo info)> ExtractAllProperties(Base baseObj)
-  {
-    IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
-    IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
-
-    // propertyName -> (originalValue, isDetachable, isChunkable, chunkSize)
-    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties =
-      new(typedProperties.Count + dynamicProperties.Count);
-
-    // Construct `allProperties`: Add typed properties
-    foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)
-    {
-      object? baseValue = propertyInfo.GetValue(baseObj);
-      allProperties[propertyInfo.Name] = (baseValue, detachInfo);
-    }
-
-    // Construct `allProperties`: Add dynamic properties
-    foreach (string propName in dynamicProperties)
-    {
-      if (propName.StartsWith("__"))
-      {
-        continue;
-      }
-
-      object? baseValue = baseObj[propName];
-
-      bool isDetachable = PropNameValidator.IsDetached(propName);
-
-      int chunkSize = 1000;
-      bool isChunkable = isDetachable && PropNameValidator.IsChunkable(propName, out chunkSize);
-
-      allProperties[propName] = (baseValue, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, null));
-    }
-
-    return allProperties;
-  }
-
   private async ValueTask<string> SerializeBaseObject(
     Base baseObj,
     JsonWriter writer,
@@ -296,8 +266,6 @@ public sealed class SpeckleObjectSerializer2
     List<Dictionary<string, int>> closures
   )
   {
-    var allProperties = ExtractAllProperties(baseObj);
-
     if (baseObj is not Blob)
     {
       writer = new SerializerIdWriter(writer);
@@ -305,15 +273,16 @@ public sealed class SpeckleObjectSerializer2
 
     writer.WriteStartObject();
     // Convert all properties
-    foreach (var prop in allProperties)
+    foreach (var prop in _basePropertyGatherer.ExtractAllProperties(baseObj))
     {
-      if (prop.Value.info.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
+      if (prop.PropertyAttributeInfo.JsonPropertyInfo is { NullValueHandling: NullValueHandling.Ignore })
       {
         continue;
       }
 
-      writer.WritePropertyName(prop.Key);
-      await SerializeMaybeChunksProperty(prop.Value.value, writer, closures, prop.Value.info).ConfigureAwait(false);
+      writer.WritePropertyName(prop.Name);
+      await SerializeMaybeChunksProperty(prop.Value, writer, closures, prop.PropertyAttributeInfo)
+        .ConfigureAwait(false);
     }
 
     string id;
@@ -453,26 +422,5 @@ public sealed class SpeckleObjectSerializer2
 
     _typedPropertiesCache[type.FullName] = ret;
     return ret;
-  }
-
-  internal readonly struct PropertyAttributeInfo
-  {
-    public PropertyAttributeInfo(
-      bool isDetachable,
-      bool isChunkable,
-      int chunkSize,
-      JsonPropertyAttribute? jsonPropertyAttribute
-    )
-    {
-      IsDetachable = isDetachable || isChunkable;
-      IsChunkable = isChunkable;
-      ChunkSize = chunkSize;
-      JsonPropertyInfo = jsonPropertyAttribute;
-    }
-
-    public readonly bool IsDetachable;
-    public readonly bool IsChunkable;
-    public readonly int ChunkSize;
-    public readonly JsonPropertyAttribute? JsonPropertyInfo;
   }
 }

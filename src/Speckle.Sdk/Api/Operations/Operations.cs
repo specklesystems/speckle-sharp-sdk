@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
+using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Api;
 
@@ -15,5 +16,6 @@ public partial class Operations(
   ILogger<Operations> logger,
   ISpeckleHttp speckleHttp,
   ISdkActivityFactory activityFactory,
-  ISdkMetricsFactory metricsFactory
+  ISdkMetricsFactory metricsFactory,
+  IBasePropertyGatherer basePropertyGatherer
 ) : IOperations;

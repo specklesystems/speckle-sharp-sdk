@@ -66,7 +66,12 @@ public class DetachedTests
 
     var objects = new Dictionary<string, string>();
 
-    var process2 = new SerializeProcess(null, new DummySendCacheManager(objects), new DummyServerObjectManager());
+    var process2 = new SerializeProcess(
+      null,
+      new DummySendCacheManager(objects),
+      new DummyServerObjectManager(),
+      new BasePropertyGatherer()
+    );
     await process2
       .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
       .ConfigureAwait(false);
@@ -149,7 +154,10 @@ public class DetachedTests
     @base.detachedProp = new SamplePropBase() { name = "detachedProp" };
     @base.attachedProp = new SamplePropBase() { name = "attachedProp" };
 
-    var children = new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()).GetChildProperties(@base).ToList();
+    var children = new BasePropertyGatherer()
+      .ExtractAllProperties(@base)
+      .Where(x => x.PropertyAttributeInfo.IsDetachable)
+      .ToList();
 
     children.Count.ShouldBe(4);
     children.First(x => x.Name == "detachedProp").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
@@ -168,7 +176,7 @@ public class DetachedTests
     @base.detachedProp = new SamplePropBase() { name = "detachedProp" };
     @base.attachedProp = new SamplePropBase() { name = "attachedProp" };
 
-    var children = new SpeckleBasePropertyGatherer().ExtractAllProperties(@base).ToList();
+    var children = new BasePropertyGatherer().ExtractAllProperties(@base).ToList();
 
     children.Count.ShouldBe(9);
     children.First(x => x.Name == "dynamicProp").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
@@ -253,7 +261,12 @@ public class DetachedTests
 
     var objects = new Dictionary<string, string>();
 
-    var process2 = new SerializeProcess(null, new DummySendCacheManager(objects), new DummyServerObjectManager());
+    var process2 = new SerializeProcess(
+      null,
+      new DummySendCacheManager(objects),
+      new DummyServerObjectManager(),
+      new BasePropertyGatherer()
+    );
     var results = await process2
       .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
       .ConfigureAwait(false);

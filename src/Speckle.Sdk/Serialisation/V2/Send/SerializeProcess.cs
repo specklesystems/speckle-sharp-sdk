@@ -9,7 +9,8 @@ public record SerializeProcessOptions(bool SkipCache, bool SkipServer);
 public class SerializeProcess(
   IProgress<ProgressArgs>? progress,
   ISQLiteSendCacheManager sqliteSendCacheManager,
-  IServerObjectManager serverObjectManager
+  IServerObjectManager serverObjectManager,
+  IBasePropertyGatherer basePropertyGatherer
 ) : ChannelSaver
 {
   private long _uploaded;
@@ -26,7 +27,7 @@ public class SerializeProcess(
   {
     _options = options ?? _options;
     var channelTask = Start(streamId, cancellationToken);
-    var serializer2 = new SpeckleObjectSerializer2(this, progress, true, cancellationToken);
+    var serializer2 = new SpeckleObjectSerializer2(this, basePropertyGatherer, progress, true, cancellationToken);
     await serializer2.Serialize(root).ConfigureAwait(false);
     await Done().ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
