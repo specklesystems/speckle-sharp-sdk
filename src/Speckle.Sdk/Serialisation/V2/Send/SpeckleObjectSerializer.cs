@@ -59,7 +59,7 @@ public class SpeckleObjectSerializer2
       {
         var item = SerializeBase(baseObj, true).NotNull();
         _baseCache.TryAdd(baseObj, (item.Json, _currentClosures));
-        return [new (item.Id, item.Json), .. _chunks];
+        return [new(item.Id, item.Json), .. _chunks];
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
@@ -240,7 +240,7 @@ public class SpeckleObjectSerializer2
           closure = childClosures,
         };
       }
-      _chunks.Add(new(json, id));
+      _chunks.Add(new(id, json));
       return new(id, json2, true);
     }
     return new(id, json, true);
