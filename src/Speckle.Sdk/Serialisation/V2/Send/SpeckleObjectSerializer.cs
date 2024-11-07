@@ -333,5 +333,5 @@ public class SpeckleObjectSerializer2
     }
   }
 
-  private void AddClosure(string id) => _currentClosures.Add(id, 100);
+  private void AddClosure(string id) => _currentClosures[id] = 100;
 }
