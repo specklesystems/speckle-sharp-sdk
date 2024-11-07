@@ -2,6 +2,7 @@
 using System.Text;
 using NUnit.Framework;
 using Shouldly;
+using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Dependencies.Serialization;
@@ -47,7 +48,7 @@ public class DetachedTests
           "dynamicProp": 123,
           "id": "9ff8efb13c62fa80f3d1c4519376ba13",
           "__closure": {
-              "d3dd4621b2f68c3058c2b9c023a9de19": 1
+              "d3dd4621b2f68c3058c2b9c023a9de19": 100
           }
       }
       """;
@@ -224,14 +225,14 @@ public class DetachedTests
           "dynamicProp": 123,
           "id": "fd4efeb8a036838c53ad1cf9e82b8992",
           "__closure": {
-              "8d27f5c7fac36d985d89bb6d6d8acddc": 3,
-              "4ba53b5e84e956fb076bc8b0a03ca879": 2,
-              "32a385e7ddeda810e037b21ab26381b7": 1,
-              "1afc694774efa5913d0077302cd37888": 3,
-              "045cbee36837d589b17f9d8483c90763": 2,
-              "c3858f47dd3e7a308a1b465375f1645f": 1,
-              "5b86b66b61c556ead500915b05852875": 2,
-              "027a7c5ffcf8d8efe432899c729a954c": 1
+              "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
+              "4ba53b5e84e956fb076bc8b0a03ca879": 100,
+              "32a385e7ddeda810e037b21ab26381b7": 100,
+              "1afc694774efa5913d0077302cd37888": 100,
+              "045cbee36837d589b17f9d8483c90763": 100,
+              "c3858f47dd3e7a308a1b465375f1645f": 100,
+              "5b86b66b61c556ead500915b05852875": 100,
+              "027a7c5ffcf8d8efe432899c729a954c": 100
           }
       }
       """;
@@ -271,7 +272,10 @@ public class DetachedTests
       .ConfigureAwait(false);
 
     objects.Count.ShouldBe(9);
-    JToken.DeepEquals(JObject.Parse(root), JObject.Parse(objects["fd4efeb8a036838c53ad1cf9e82b8992"])).ShouldBeTrue();
+    var x = JObject.Parse(objects["fd4efeb8a036838c53ad1cf9e82b8992"]);
+    var y = x.ToString(Formatting.Indented);
+    Console.WriteLine(y);
+    JToken.DeepEquals(JObject.Parse(root), x).ShouldBeTrue();
 
     results.rootObjId.ShouldBe(@base.id);
     results.convertedReferences.Count.ShouldBe(2);
