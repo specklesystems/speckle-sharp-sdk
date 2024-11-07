@@ -63,6 +63,42 @@ public partial class Operations
   /// </code></example>
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
+    IServerTransport transport,
+    bool useDefaultCache,
+    IProgress<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    if (transport is null)
+    {
+      throw new ArgumentNullException(nameof(transport), "Expected a transport to be explicitly specified");
+    }
+
+    List<ITransport> transports = new() { transport };
+    using SQLiteTransport2? localCache = useDefaultCache
+      ? new SQLiteTransport2(transport.StreamId) { TransportName = "LC2" }
+      : null;
+    if (localCache is not null)
+    {
+      transports.Add(localCache);
+    }
+
+    return await Send(value, transports, onProgressAction, cancellationToken).ConfigureAwait(false);
+  }
+
+  /// <summary>
+  /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
+  /// </summary>
+  /// <remarks/>
+  /// <inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, IProgress{ProgressArgs}?, CancellationToken)"/>
+  /// <param name="useDefaultCache">When <see langword="true"/>, an additional <see cref="SQLiteTransport"/> will be included</param>
+  /// <exception cref="ArgumentNullException">The <paramref name="transport"/> or <paramref name="value"/> was <see langword="null"/></exception>
+  /// <example><code>
+  /// using ServerTransport destination = new(account, streamId);
+  /// var (objectId, references) = await Send(mySpeckleObject, destination, true);
+  /// </code></example>
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
+    Base value,
     ITransport transport,
     bool useDefaultCache,
     IProgress<ProgressArgs>? onProgressAction = null,
