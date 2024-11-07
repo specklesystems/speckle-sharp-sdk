@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Drawing;
 using System.Globalization;
-using System.Reflection;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
@@ -17,7 +16,6 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 public sealed class SpeckleObjectSerializer2
 {
   private readonly HashSet<object> _parentObjects = new();
-  private readonly Dictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache = new();
   private readonly IProgress<ProgressArgs>? _onProgressAction;
   private readonly IBasePropertyGatherer _basePropertyGatherer;
 
