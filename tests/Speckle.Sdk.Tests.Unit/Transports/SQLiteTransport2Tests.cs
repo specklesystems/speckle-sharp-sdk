@@ -7,7 +7,7 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Tests.Unit.Transports;
 
 [TestFixture]
-[TestOf(nameof(SQLiteTransport))]
+[TestOf(nameof(SQLiteTransport2))]
 public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
 {
   protected override ITransport? Sut => _sqlite;
