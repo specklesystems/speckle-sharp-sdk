@@ -132,7 +132,7 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
   [Repeat(10)]
   [TestCase(6, 32)]
   [Description(
-    $"Tests that the {nameof(SQLiteTransport.GetAllObjects)} function can be called concurrently from multiple threads"
+    $"Tests that the {nameof(SQLiteTransport2.GetAllObjects)} function can be called concurrently from multiple threads"
   )]
   public void GetAllObjects_IsThreadSafe(int dataSize, int parallelism)
   {
