@@ -6,6 +6,7 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
@@ -243,11 +244,7 @@ public class SpeckleObjectSerializer2
 
     if (inheritedDetachInfo.IsDetachable)
     {
-      ObjectReference objRef = new() { referencedId = id.NotNull() };
-      using var writer2 = new StringWriter();
-      using var jsonWriter2 = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer2);
-      SerializeProperty(objRef, jsonWriter2);
-      var json2 = writer2.ToString();
+      var json2 = ReferenceGenerator.CreateReference(id);
       UpdateChildClosures(id);
 
       // add to obj refs to return
