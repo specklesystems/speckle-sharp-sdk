@@ -5,7 +5,7 @@ using Speckle.Sdk.Models;
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 [GenerateAutoInterface]
-public class BaseChildFinder(BasePropertyGatherer propertyGatherer) : IBaseChildFinder
+public class BaseChildFinder(IBasePropertyGatherer propertyGatherer) : IBaseChildFinder
 {
   public IEnumerable<Property> GetChildProperties(Base obj) =>
     propertyGatherer.ExtractAllProperties(obj).Where(x => x.PropertyAttributeInfo.IsDetachable);
