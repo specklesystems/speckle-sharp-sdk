@@ -1,4 +1,5 @@
 using System.Numerics;
+using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
@@ -6,13 +7,12 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
-public record DeserializedOptions(bool ThrowOnMissingReferences = true, bool SkipInvalidConverts = false);
-
-public sealed class SpeckleObjectDeserializer2(
+[GenerateAutoInterface]
+public sealed class ObjectDeserializer(
   IReadOnlyDictionary<string, Base> references,
   SpeckleObjectSerializerPool pool,
-  DeserializedOptions? options = null
-)
+  DeserializeOptions? options = null
+) : IObjectDeserializer
 {
   /// <param name="objectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>
   /// <returns>A <see cref="Base"/> typed object deserialized from the <paramref name="objectJson"/></returns>

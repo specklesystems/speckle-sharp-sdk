@@ -26,7 +26,8 @@ public class SerializeProcessFactory(
   ISpeckleHttp speckleHttp,
   ISdkActivityFactory activityFactory,
   IBaseChildFinder baseChildFinder,
-  IObjectSerializerFactory objectSerializerFactory
+  IObjectSerializerFactory objectSerializerFactory,
+  IObjectDeserializerFactory objectDeserializerFactory
 ) : ISerializeProcessFactory
 {
   public ISerializeProcess CreateSerializeProcess(
@@ -58,6 +59,6 @@ public class SerializeProcessFactory(
     var serverObjectManager = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
 
     var objectLoader = new ObjectLoader(sqliteSendCacheManager, serverObjectManager, streamId, progress);
-    return new DeserializeProcess(progress, objectLoader);
+    return new DeserializeProcess(progress, objectLoader, objectDeserializerFactory);
   }
 }

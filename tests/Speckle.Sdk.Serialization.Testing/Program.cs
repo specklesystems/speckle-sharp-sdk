@@ -1,3 +1,4 @@
+#pragma warning disable CA1506
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk;
@@ -45,7 +46,7 @@ var serverObjects = new ServerObjectManager(
   token
 );
 var o = new ObjectLoader(sqliteTransport, serverObjects, streamId, progress);
-var process = new DeserializeProcess(progress, o);
+var process = new DeserializeProcess(progress, o, new ObjectDeserializerFactory());
 var @base = await process.Deserialize(rootId, default, new(skipCache)).ConfigureAwait(false);
 Console.WriteLine("Deserialized");
 Console.ReadLine();
@@ -61,3 +62,4 @@ var process2 = new SerializeProcess(
 await process2.Serialize(streamId, @base, default, new SerializeProcessOptions(skipCache, true)).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
+#pragma warning restore CA1506

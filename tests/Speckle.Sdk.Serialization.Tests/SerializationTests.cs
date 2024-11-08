@@ -146,7 +146,7 @@ public class SerializationTests
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var json = await ReadJson(fullName);
     var closures = ReadAsObjects(json);
-    var process = new DeserializeProcess(null, new TestObjectLoader(closures));
+    var process = new DeserializeProcess(null, new TestObjectLoader(closures), new ObjectDeserializerFactory());
     await process.Deserialize("3416d3fe01c9196115514c4a2f41617b", default);
     foreach (var (id, objJson) in closures)
     {
@@ -231,7 +231,7 @@ public class SerializationTests
       string.Empty,
       null
     );
-    var process = new DeserializeProcess(null, o);
+    var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory());
     var root = await process.Deserialize(rootId, default, new DeserializeOptions(true));
 
     var newIdToJson = new ConcurrentDictionary<string, string>();

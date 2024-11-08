@@ -6,11 +6,18 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
-public record DeserializeOptions(bool SkipCache);
+public record DeserializeOptions(
+  bool SkipCache,
+  bool ThrowOnMissingReferences = true,
+  bool SkipInvalidConverts = false
+);
 
 [GenerateAutoInterface]
-public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader)
-  : IDeserializeProcess
+public sealed class DeserializeProcess(
+  IProgress<ProgressArgs>? progress,
+  IObjectLoader objectLoader,
+  IObjectDeserializerFactory objectDeserializerFactory
+) : IDeserializeProcess
 {
   private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
   private long _total;
@@ -122,7 +129,8 @@ public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjec
     {
       return baseObject;
     }
-    SpeckleObjectDeserializer2 deserializer = new(BaseCache, SpeckleObjectSerializerPool.Instance);
+
+    var deserializer = objectDeserializerFactory.Create(BaseCache);
     return deserializer.Deserialize(json);
   }
 }
