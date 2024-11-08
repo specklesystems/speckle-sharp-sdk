@@ -277,8 +277,8 @@ public class DetachedTests
     Console.WriteLine(y);
     JToken.DeepEquals(JObject.Parse(root), x).ShouldBeTrue();
 
-    results.rootObjId.ShouldBe(@base.id);
-    results.convertedReferences.Count.ShouldBe(2);
+    results.RootId.ShouldBe(@base.id);
+    results.ConvertedReferences.Count.ShouldBe(2);
   }
 }
 

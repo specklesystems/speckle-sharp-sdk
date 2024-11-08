@@ -181,8 +181,8 @@ public class SerializationTests
     jObject.Remove("id");
     jObject.Remove("__closure");
     var jsonWithoutId = jObject.ToString(Formatting.None);
-    var newId = IdGenerator.ComputeId(jsonWithoutId);
-    id.ShouldBe(newId);
+    var newId = IdGenerator.ComputeId(new Json(jsonWithoutId));
+    id.ShouldBe(newId.Value);
   }
 
   [Test]

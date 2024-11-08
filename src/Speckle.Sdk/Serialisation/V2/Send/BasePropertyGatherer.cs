@@ -13,12 +13,13 @@ public readonly record struct Property(string Name, object? Value, PropertyAttri
 [GenerateAutoInterface]
 public class BasePropertyGatherer : IBasePropertyGatherer
 {
-  private readonly ConcurrentDictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache =
-    new();
+  private readonly record struct TypeProperty(PropertyInfo PropertyInfo, PropertyAttributeInfo PropertyAttributeInfo);
+
+  private readonly ConcurrentDictionary<string, List<TypeProperty>> _typedPropertiesCache = new();
 
   public IEnumerable<Property> ExtractAllProperties(Base baseObj)
   {
-    IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> typedProperties = GetTypedPropertiesWithCache(baseObj);
+    IReadOnlyList<TypeProperty> typedProperties = GetTypedPropertiesWithCache(baseObj);
     IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
 
     // Construct `allProperties`: Add typed properties
@@ -48,22 +49,17 @@ public class BasePropertyGatherer : IBasePropertyGatherer
   }
 
   // (propertyInfo, isDetachable, isChunkable, chunkSize, JsonPropertyAttribute)
-  private IReadOnlyList<(PropertyInfo, PropertyAttributeInfo)> GetTypedPropertiesWithCache(Base baseObj)
+  private IReadOnlyList<TypeProperty> GetTypedPropertiesWithCache(Base baseObj)
   {
     Type type = baseObj.GetType();
 
-    if (
-      _typedPropertiesCache.TryGetValue(
-        type.FullName.NotNull(),
-        out List<(PropertyInfo, PropertyAttributeInfo)>? cached
-      )
-    )
+    if (_typedPropertiesCache.TryGetValue(type.FullName.NotNull(), out List<TypeProperty>? cached))
     {
       return cached;
     }
 
     var typedProperties = baseObj.GetInstanceMembers().ToList();
-    List<(PropertyInfo, PropertyAttributeInfo)> ret = new(typedProperties.Count);
+    List<TypeProperty> ret = new(typedProperties.Count);
 
     foreach (PropertyInfo typedProperty in typedProperties)
     {
@@ -90,7 +86,9 @@ public class BasePropertyGatherer : IBasePropertyGatherer
       bool isChunkable = chunkableAttributes.Count > 0;
       int chunkSize = isChunkable ? chunkableAttributes[0].MaxObjCountPerChunk : 1000;
       JsonPropertyAttribute? jsonPropertyAttribute = typedProperty.GetCustomAttribute<JsonPropertyAttribute>();
-      ret.Add((typedProperty, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, jsonPropertyAttribute)));
+      ret.Add(
+        new(typedProperty, new PropertyAttributeInfo(isDetachable, isChunkable, chunkSize, jsonPropertyAttribute))
+      );
     }
 
     _typedPropertiesCache[type.FullName] = ret;

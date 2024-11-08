@@ -18,11 +18,11 @@ public sealed class SerializerIdWriter : JsonWriter
     _jsonIdWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(_idWriter);
   }
 
-  public (string, JsonWriter) FinishIdWriter()
+  public (Json, JsonWriter) FinishIdWriter()
   {
     _jsonIdWriter.WriteEndObject();
     _jsonIdWriter.Flush();
-    var json = _idWriter.ToString();
+    var json = new Json(_idWriter.ToString());
     return (json, _jsonWriter);
   }
 

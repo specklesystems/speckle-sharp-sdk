@@ -4,13 +4,14 @@ using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
-  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send2(
+  public async Task<SerializeProcessResults> Send2(
     Uri url,
     string streamId,
     string? authorizationToken,
@@ -25,12 +26,10 @@ public partial class Operations
     try
     {
       var process = serializeProcessFactory.CreateSerializeProcess(url, streamId, authorizationToken, onProgressAction);
-      var (rootObjId, convertedReferences) = await process
-        .Serialize(streamId, value, cancellationToken)
-        .ConfigureAwait(false);
+      var results = await process.Serialize(streamId, value, cancellationToken).ConfigureAwait(false);
 
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
-      return new(rootObjId, convertedReferences);
+      return results;
     }
     catch (Exception ex)
     {
