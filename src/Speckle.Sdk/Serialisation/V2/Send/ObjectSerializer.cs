@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
+using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies.Serialization;
@@ -11,14 +12,15 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public class SpeckleObjectSerializer2
+[GenerateAutoInterface]
+public class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
   private readonly Dictionary<string, int> _currentClosures = new();
   private readonly ConcurrentDictionary<Base, (string, Dictionary<string, int>)> _baseCache;
 
   private readonly bool _trackDetachedChildren;
-  private readonly ISpeckleBasePropertyGatherer _propertyGatherer;
+  private readonly IBasePropertyGatherer _propertyGatherer;
   private readonly CancellationToken _cancellationToken;
 
   /// <summary>
@@ -34,8 +36,8 @@ public class SpeckleObjectSerializer2
   /// </summary>
   /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
-  public SpeckleObjectSerializer2(
-    ISpeckleBasePropertyGatherer propertyGatherer,
+  public ObjectSerializer(
+    IBasePropertyGatherer propertyGatherer,
     ConcurrentDictionary<Base, (string, Dictionary<string, int>)> baseCache,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default

@@ -239,8 +239,8 @@ public class SerializationTests
       null,
       new DummySqLiteSendManager(),
       new DummySendServerObjectManager(newIdToJson),
-      new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
-      new SpeckleBasePropertyGatherer()
+      new BaseChildFinder(new BasePropertyGatherer()),
+      new ObjectSerializerFactory(new BasePropertyGatherer())
     );
     var (rootId2, _) = await serializeProcess.Serialize(
       string.Empty,

@@ -55,8 +55,8 @@ var process2 = new SerializeProcess(
   progress,
   new SQLiteSendCacheManager(streamId),
   new DummyServerObjectManager(),
-  new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
-  new SpeckleBasePropertyGatherer()
+  new BaseChildFinder(new BasePropertyGatherer()),
+  new ObjectSerializerFactory(new BasePropertyGatherer())
 );
 await process2.Serialize(streamId, @base, default, new SerializeProcessOptions(skipCache, true)).ConfigureAwait(false);
 Console.WriteLine("Detach");

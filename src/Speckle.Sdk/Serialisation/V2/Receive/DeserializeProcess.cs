@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
@@ -7,7 +8,9 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 public record DeserializeOptions(bool SkipCache);
 
+[GenerateAutoInterface]
 public sealed class DeserializeProcess(IProgress<ProgressArgs>? progress, IObjectLoader objectLoader)
+  : IDeserializeProcess
 {
   private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
   private long _total;

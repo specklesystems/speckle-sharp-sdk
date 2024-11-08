@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
@@ -8,13 +9,14 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public record SerializeProcessOptions(bool SkipCache, bool SkipServer);
 
+[GenerateAutoInterface]
 public class SerializeProcess(
   IProgress<ProgressArgs>? progress,
   ISQLiteSendCacheManager sqliteSendCacheManager,
   IServerObjectManager serverObjectManager,
-  ISpeckleBaseChildFinder speckleBaseChildFinder,
-  ISpeckleBasePropertyGatherer speckleBasePropertyGatherer
-) : ChannelSaver
+  IBaseChildFinder baseChildFinder,
+  IObjectSerializerFactory objectSerializerFactory
+) : ChannelSaver, ISerializeProcess
 {
   private readonly ConcurrentDictionary<string, string> _jsonCache = new();
   private readonly ConcurrentDictionary<Base, (string, Dictionary<string, int>)> _baseCache = new();
@@ -45,7 +47,7 @@ public class SerializeProcess(
   private async Task Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
   {
     var tasks = new List<Task>();
-    foreach (var child in speckleBaseChildFinder.GetChildren(obj))
+    foreach (var child in baseChildFinder.GetChildren(obj))
     {
       Interlocked.Increment(ref _totalFound);
       progress?.Report(new(ProgressEvent.FindingChildren, _totalFound, null));
@@ -67,7 +69,7 @@ public class SerializeProcess(
       await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    var items = Serialise(obj);
+    var items = Serialise(obj, cancellationToken);
     foreach (var item in items)
     {
       Interlocked.Increment(ref _serialized);
@@ -86,7 +88,7 @@ public class SerializeProcess(
   }
 
   //leave this sync
-  private IEnumerable<BaseItem> Serialise(Base obj)
+  private IEnumerable<BaseItem> Serialise(Base obj, CancellationToken cancellationToken)
   {
     if (obj.id != null && _jsonCache.ContainsKey(obj.id))
     {
@@ -105,7 +107,7 @@ public class SerializeProcess(
     var id = obj.id;
     if (id is null || !_jsonCache.TryGetValue(id, out var json))
     {
-      SpeckleObjectSerializer2 serializer2 = new(speckleBasePropertyGatherer, _baseCache, true);
+      var serializer2 = objectSerializerFactory.Create(_baseCache, cancellationToken);
       var items = serializer2.Serialize(obj).ToList();
       foreach (var kvp in serializer2.ObjectReferences)
       {
