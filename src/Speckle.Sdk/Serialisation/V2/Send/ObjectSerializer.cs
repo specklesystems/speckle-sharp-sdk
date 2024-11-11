@@ -242,7 +242,7 @@ public class ObjectSerializer : IObjectSerializer
         {
           referencedId = id.Value,
           applicationId = baseObj.applicationId,
-          closure = childClosures?.ToDictionary(x => x.Key.Value, x => x.Value),
+          closure = childClosures.ToDictionary(x => x.Key.Value, x => x.Value),
         };
       }
       _chunks.Add(new(id, json));
