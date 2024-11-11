@@ -152,13 +152,7 @@ public class SerializeProcess(
 
   public override async Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken)
   {
-    if (batch.Count == 0)
-    {
-      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _totalToUpload));
-      return batch;
-    }
-
-    if (!_options.SkipServer)
+    if (!_options.SkipServer && batch.Count != 0)
     {
       await serverObjectManager.UploadObjects(batch, true, progress, cancellationToken).ConfigureAwait(false);
       Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
@@ -167,17 +161,12 @@ public class SerializeProcess(
     return batch;
   }
 
-  public override void SaveToCache(List<BaseItem> items)
+  public override void SaveToCache(List<BaseItem> batch)
   {
-    if (!_options.SkipCacheWrite)
+    if (!_options.SkipCacheWrite && batch.Count != 0)
     {
-      if (items.Count == 0)
-      {
-        progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
-        return;
-      }
-      sqliteSendCacheManager.SaveObjects(items);
-      Interlocked.Exchange(ref _cached, _cached + items.Count);
+      sqliteSendCacheManager.SaveObjects(batch);
+      Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
     }
   }

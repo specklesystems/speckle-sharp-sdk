@@ -16,7 +16,7 @@ namespace Speckle.Sdk.Serialisation.V2;
 [GenerateAutoInterface]
 public class ServerObjectManager : IServerObjectManager
 {
-  private static readonly char[] s_separator = { '\t' };
+  private static readonly char[] s_separator = ['\t'];
 
   private readonly ISdkActivityFactory _activityFactory;
   private readonly HttpClient _client;
