@@ -282,7 +282,7 @@ public class ObjectSerializer : IObjectSerializer
       id = new Id(((Blob)baseObj).id);
     }
     writer.WritePropertyName("id");
-    writer.WriteValue(id);
+    writer.WriteValue(id.Value);
     baseObj.id = id.Value;
 
     if (closure.Count > 0)
