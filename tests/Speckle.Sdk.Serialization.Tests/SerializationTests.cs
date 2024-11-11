@@ -228,7 +228,6 @@ public class SerializationTests
     var o = new ObjectLoader(
       new DummySqLiteReceiveManager(closure),
       new DummyReceiveServerObjectManager(closure),
-      string.Empty,
       null
     );
     var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory());
@@ -242,12 +241,7 @@ public class SerializationTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer())
     );
-    var (rootId2, _) = await serializeProcess.Serialize(
-      string.Empty,
-      root,
-      default,
-      new SerializeProcessOptions(true, false)
-    );
+    var (rootId2, _) = await serializeProcess.Serialize(root, default, new SerializeProcessOptions(true, true, false));
 
     rootId2.ShouldBe(root.id);
     newIdToJson.Count.ShouldBe(count);

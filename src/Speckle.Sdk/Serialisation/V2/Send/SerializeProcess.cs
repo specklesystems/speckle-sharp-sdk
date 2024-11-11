@@ -7,7 +7,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public record SerializeProcessOptions(bool SkipCache, bool SkipServer);
+public record SerializeProcessOptions(bool SkipCacheRead, bool SkipCacheWrite, bool SkipServer);
 
 [GenerateAutoInterface]
 public class SerializeProcess(
@@ -28,17 +28,16 @@ public class SerializeProcess(
   private long _cached;
   private long _serialized;
 
-  private SerializeProcessOptions _options = new(false, false);
+  private SerializeProcessOptions _options = new(false, false, false);
 
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Serialize(
-    string streamId,
     Base root,
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
   )
   {
     _options = options ?? _options;
-    var channelTask = Start(streamId, cancellationToken);
+    var channelTask = Start(cancellationToken);
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
     return (root.id, _objectReferences);
@@ -95,7 +94,7 @@ public class SerializeProcess(
       yield break;
     }
 
-    if (!_options.SkipCache && obj.id != null)
+    if (!_options.SkipCacheRead && obj.id != null)
     {
       var cachedJson = sqliteSendCacheManager.GetObject(obj.id);
       if (cachedJson != null)
@@ -140,7 +139,7 @@ public class SerializeProcess(
 
   private BaseItem CheckCache(string id, string json)
   {
-    if (!_options.SkipCache)
+    if (!_options.SkipCacheRead)
     {
       var cachedJson = sqliteSendCacheManager.GetObject(id);
       if (cachedJson != null)
@@ -151,11 +150,7 @@ public class SerializeProcess(
     return new BaseItem(id, json, true);
   }
 
-  public override async Task<List<BaseItem>> SendToServer(
-    string streamId,
-    List<BaseItem> batch,
-    CancellationToken cancellationToken
-  )
+  public override async Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken)
   {
     if (batch.Count == 0)
     {
@@ -165,7 +160,7 @@ public class SerializeProcess(
 
     if (!_options.SkipServer)
     {
-      await serverObjectManager.UploadObjects(streamId, batch, true, progress, cancellationToken).ConfigureAwait(false);
+      await serverObjectManager.UploadObjects(batch, true, progress, cancellationToken).ConfigureAwait(false);
       Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
       progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _totalToUpload));
     }
@@ -174,7 +169,7 @@ public class SerializeProcess(
 
   public override void SaveToCache(List<BaseItem> items)
   {
-    if (!_options.SkipCache)
+    if (!_options.SkipCacheWrite)
     {
       if (items.Count == 0)
       {

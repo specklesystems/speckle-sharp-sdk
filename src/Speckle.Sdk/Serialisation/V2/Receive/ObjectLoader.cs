@@ -10,7 +10,6 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 public sealed class ObjectLoader(
   ISQLiteReceiveCacheManager sqliteReceiveCacheManager,
   IServerObjectManager serverObjectManager,
-  string streamId,
   IProgress<ProgressArgs>? progress
 ) : ChannelLoader, IObjectLoader
 {
@@ -38,7 +37,7 @@ public sealed class ObjectLoader(
       }
     }
     rootJson = await serverObjectManager
-      .DownloadSingleObject(streamId, rootId, progress, cancellationToken)
+      .DownloadSingleObject(rootId, progress, cancellationToken)
       .NotNull()
       .ConfigureAwait(false);
     List<string> allChildrenIds = ClosureParser
@@ -76,12 +75,7 @@ public sealed class ObjectLoader(
   {
     var toCache = new List<BaseItem>();
     await foreach (
-      var (id, json) in serverObjectManager.DownloadObjects(
-        streamId,
-        ids.Select(x => x.NotNull()).ToList(),
-        progress,
-        default
-      )
+      var (id, json) in serverObjectManager.DownloadObjects(ids.Select(x => x.NotNull()).ToList(), progress, default)
     )
     {
       toCache.Add(new(id, json, true));

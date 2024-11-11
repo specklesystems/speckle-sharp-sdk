@@ -20,11 +20,13 @@ public class ServerObjectManager : IServerObjectManager
 
   private readonly ISdkActivityFactory _activityFactory;
   private readonly HttpClient _client;
+  private readonly string _streamId;
 
   public ServerObjectManager(
     ISpeckleHttp speckleHttp,
     ISdkActivityFactory activityFactory,
     Uri baseUri,
+    string streamId,
     string? authorizationToken,
     int timeoutSeconds = 120
   )
@@ -36,10 +38,10 @@ public class ServerObjectManager : IServerObjectManager
       authorizationToken: authorizationToken
     );
     _client.BaseAddress = baseUri;
+    _streamId = streamId;
   }
 
   public async IAsyncEnumerable<(string, string)> DownloadObjects(
-    string streamId,
     IReadOnlyList<string> objectIds,
     IProgress<ProgressArgs>? progress,
     [EnumeratorCancellation] CancellationToken cancellationToken
@@ -50,7 +52,7 @@ public class ServerObjectManager : IServerObjectManager
 
     using var childrenHttpMessage = new HttpRequestMessage
     {
-      RequestUri = new Uri($"/api/getobjects/{streamId}", UriKind.Relative),
+      RequestUri = new Uri($"/api/getobjects/{_streamId}", UriKind.Relative),
       Method = HttpMethod.Post,
     };
 
@@ -73,7 +75,6 @@ public class ServerObjectManager : IServerObjectManager
   }
 
   public async Task<string?> DownloadSingleObject(
-    string streamId,
     string objectId,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
@@ -85,7 +86,7 @@ public class ServerObjectManager : IServerObjectManager
     // Get root object
     using var rootHttpMessage = new HttpRequestMessage
     {
-      RequestUri = new Uri($"/objects/{streamId}/{objectId}/single", UriKind.Relative),
+      RequestUri = new Uri($"/objects/{_streamId}/{objectId}/single", UriKind.Relative),
       Method = HttpMethod.Get,
     };
 
@@ -138,7 +139,6 @@ public class ServerObjectManager : IServerObjectManager
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(
-    string streamId,
     IReadOnlyList<string> objectIds,
     CancellationToken cancellationToken
   )
@@ -150,7 +150,7 @@ public class ServerObjectManager : IServerObjectManager
     string objectsPostParameter = JsonConvert.SerializeObject(objectIds);
     var payload = new Dictionary<string, string> { { "objects", objectsPostParameter } };
     string serializedPayload = JsonConvert.SerializeObject(payload);
-    var uri = new Uri($"/api/diff/{streamId}", UriKind.Relative);
+    var uri = new Uri($"/api/diff/{_streamId}", UriKind.Relative);
 
     using StringContent stringContent = new(serializedPayload, Encoding.UTF8, "application/json");
     using HttpResponseMessage response = await _client
@@ -167,7 +167,6 @@ public class ServerObjectManager : IServerObjectManager
   }
 
   public async Task UploadObjects(
-    string streamId,
     IReadOnlyList<BaseItem> objects,
     bool compressPayloads,
     IProgress<ProgressArgs>? progress,
@@ -177,7 +176,7 @@ public class ServerObjectManager : IServerObjectManager
     cancellationToken.ThrowIfCancellationRequested();
 
     using HttpRequestMessage message =
-      new() { RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative), Method = HttpMethod.Post };
+      new() { RequestUri = new Uri($"/objects/{_streamId}", UriKind.Relative), Method = HttpMethod.Post };
 
     MultipartFormDataContent multipart = new();
 

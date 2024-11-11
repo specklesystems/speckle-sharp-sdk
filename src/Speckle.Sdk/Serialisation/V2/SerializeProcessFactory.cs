@@ -38,7 +38,7 @@ public class SerializeProcessFactory(
   )
   {
     var sqliteSendCacheManager = new SQLiteSendCacheManager(streamId);
-    var serverObjectManager = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
+    var serverObjectManager = new ServerObjectManager(speckleHttp, activityFactory, url, streamId, authorizationToken);
     return new SerializeProcess(
       progress,
       sqliteSendCacheManager,
@@ -56,9 +56,9 @@ public class SerializeProcessFactory(
   )
   {
     var sqliteSendCacheManager = new SQLiteReceiveCacheManager(streamId);
-    var serverObjectManager = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
+    var serverObjectManager = new ServerObjectManager(speckleHttp, activityFactory, url, streamId, authorizationToken);
 
-    var objectLoader = new ObjectLoader(sqliteSendCacheManager, serverObjectManager, streamId, progress);
+    var objectLoader = new ObjectLoader(sqliteSendCacheManager, serverObjectManager, progress);
     return new DeserializeProcess(progress, objectLoader, objectDeserializerFactory);
   }
 }

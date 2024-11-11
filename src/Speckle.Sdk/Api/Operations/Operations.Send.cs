@@ -25,9 +25,7 @@ public partial class Operations
     try
     {
       var process = serializeProcessFactory.CreateSerializeProcess(url, streamId, authorizationToken, onProgressAction);
-      var (rootObjId, convertedReferences) = await process
-        .Serialize(streamId, value, cancellationToken)
-        .ConfigureAwait(false);
+      var (rootObjId, convertedReferences) = await process.Serialize(value, cancellationToken).ConfigureAwait(false);
 
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return new(rootObjId, convertedReferences);

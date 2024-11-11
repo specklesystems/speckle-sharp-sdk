@@ -21,14 +21,14 @@ public abstract class ChannelSaver
 
   private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateUnbounded<BaseItem>();
 
-  public Task Start(string streamId, CancellationToken cancellationToken = default)
+  public Task Start(CancellationToken cancellationToken = default)
   {
     var t = _checkCacheChannel
       .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
-        async x => await SendToServerInternal(streamId, x, cancellationToken).ConfigureAwait(false),
+        async x => await SendToServerInternal(x, cancellationToken).ConfigureAwait(false),
         -1,
         false,
         cancellationToken
@@ -44,7 +44,6 @@ public abstract class ChannelSaver
     await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
 
   private async Task<List<BaseItem>> SendToServerInternal(
-    string streamId,
     List<BaseItem> batch,
     CancellationToken cancellationToken = default
   )
@@ -54,7 +53,7 @@ public abstract class ChannelSaver
     {
       batch.RemoveAll(x => x.Id == DUMMY);
     }
-    var results = await SendToServer(streamId, batch, cancellationToken).ConfigureAwait(false);
+    var results = await SendToServer(batch, cancellationToken).ConfigureAwait(false);
     if (ending)
     {
       results.Add(new BaseItem(DUMMY, DUMMY, false));
@@ -62,11 +61,7 @@ public abstract class ChannelSaver
     return results;
   }
 
-  public abstract Task<List<BaseItem>> SendToServer(
-    string streamId,
-    List<BaseItem> batch,
-    CancellationToken cancellationToken
-  );
+  public abstract Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken);
 
   public async Task Done() => await Save(new BaseItem(DUMMY, DUMMY, false)).ConfigureAwait(false);
 

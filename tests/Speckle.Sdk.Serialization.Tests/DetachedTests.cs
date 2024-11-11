@@ -74,9 +74,7 @@ public class DetachedTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer())
     );
-    await process2
-      .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
-      .ConfigureAwait(false);
+    await process2.Serialize(@base, default, new SerializeProcessOptions(false, false, true)).ConfigureAwait(false);
 
     objects.Count.ShouldBe(2);
     objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").ShouldBeTrue();
@@ -268,7 +266,7 @@ public class DetachedTests
       new ObjectSerializerFactory(new BasePropertyGatherer())
     );
     var results = await process2
-      .Serialize(string.Empty, @base, default, new SerializeProcessOptions(false, true))
+      .Serialize(@base, default, new SerializeProcessOptions(false, false, true))
       .ConfigureAwait(false);
 
     objects.Count.ShouldBe(9);
@@ -337,27 +335,23 @@ public class SamplePropBase2 : Base
 public class DummyServerObjectManager : IServerObjectManager
 {
   public IAsyncEnumerable<(string, string)> DownloadObjects(
-    string streamId,
     IReadOnlyList<string> objectIds,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
   public Task<string?> DownloadSingleObject(
-    string streamId,
     string objectId,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
   public Task<Dictionary<string, bool>> HasObjects(
-    string streamId,
     IReadOnlyList<string> objectIds,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
   public Task UploadObjects(
-    string streamId,
     IReadOnlyList<BaseItem> objects,
     bool compressPayloads,
     IProgress<ProgressArgs>? progress,
