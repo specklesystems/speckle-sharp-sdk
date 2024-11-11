@@ -49,11 +49,11 @@ public sealed class JsonIgnoreRespected
 
     var (json, id) = sut.SerializeBase(testData).NotNull();
 
-    Assert.That(json, Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
-    Assert.That(json, Does.Not.Contain(ignoredPayload));
+    Assert.That(json.ToString(), Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
+    Assert.That(json.ToString(), Does.Not.Contain(ignoredPayload));
 
-    Assert.That(json, Does.Contain(nameof(testData.ShouldBeIncluded)));
-    Assert.That(json, Does.Contain(expectedPayload));
+    Assert.That(json.ToString(), Does.Contain(nameof(testData.ShouldBeIncluded)));
+    Assert.That(json.ToString(), Does.Contain(expectedPayload));
 
     return id?.Value;
   }
