@@ -10,6 +10,7 @@ using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
