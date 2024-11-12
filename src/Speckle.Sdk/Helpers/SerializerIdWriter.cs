@@ -1,4 +1,6 @@
-﻿using Speckle.Newtonsoft.Json;
+using System.Text;
+using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Helpers;
@@ -9,12 +11,14 @@ public sealed class SerializerIdWriter : JsonWriter
 #pragma warning disable CA2213
   private readonly JsonWriter _jsonIdWriter;
   private readonly StringWriter _idWriter;
+  private readonly StringBuilder _stringBuilder;
 #pragma warning restore CA2213
 
   public SerializerIdWriter(JsonWriter jsonWriter)
   {
     _jsonWriter = jsonWriter;
-    _idWriter = new StringWriter();
+    _stringBuilder = Pools.StringBuilders.Get();
+    _idWriter = new StringWriter(_stringBuilder);
     _jsonIdWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(_idWriter);
   }
 
@@ -22,7 +26,8 @@ public sealed class SerializerIdWriter : JsonWriter
   {
     _jsonIdWriter.WriteEndObject();
     _jsonIdWriter.Flush();
-    var json = new Json(_idWriter.ToString());
+    var json = _idWriter.ToString();
+    Pools.StringBuilders.Return(_stringBuilder);
     return (json, _jsonWriter);
   }
 

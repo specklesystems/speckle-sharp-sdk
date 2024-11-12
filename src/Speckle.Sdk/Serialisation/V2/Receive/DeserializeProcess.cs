@@ -19,12 +19,14 @@ public sealed class DeserializeProcess(
   IObjectDeserializerFactory objectDeserializerFactory
 ) : IDeserializeProcess
 {
-  private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
   private long _total;
   private DeserializeOptions _options = new(false);
 
-  public ConcurrentDictionary<string, Base> BaseCache { get; } = new();
+  private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
+  private readonly ConcurrentDictionary<string, Base> _baseCache = new();
   private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
+
+  public IReadOnlyDictionary<string, Base> BaseCache => _baseCache;
 
   public async Task<Base> Deserialize(
     string rootId,
@@ -38,14 +40,14 @@ public sealed class DeserializeProcess(
       .ConfigureAwait(false);
     _total = childrenIds.Count;
     _closures.TryAdd(rootId, (rootJson, childrenIds));
-    progress?.Report(new(ProgressEvent.DeserializeObject, BaseCache.Count, childrenIds.Count));
+    progress?.Report(new(ProgressEvent.DeserializeObject, _baseCache.Count, childrenIds.Count));
     await Traverse(rootId, cancellationToken).ConfigureAwait(false);
-    return BaseCache[rootId];
+    return _baseCache[rootId];
   }
 
   private async Task Traverse(string id, CancellationToken cancellationToken)
   {
-    if (BaseCache.ContainsKey(id))
+    if (_baseCache.ContainsKey(id))
     {
       return;
     }
@@ -53,7 +55,7 @@ public sealed class DeserializeProcess(
     var tasks = new List<Task>();
     foreach (var childId in childIds)
     {
-      if (BaseCache.ContainsKey(childId))
+      if (_baseCache.ContainsKey(childId))
       {
         continue;
       }
@@ -85,10 +87,10 @@ public sealed class DeserializeProcess(
     }
 
     //don't redo things if the id is decoded already in the cache
-    if (!BaseCache.ContainsKey(id))
+    if (!_baseCache.ContainsKey(id))
     {
       DecodeOrEnqueueChildren(id);
-      progress?.Report(new(ProgressEvent.DeserializeObject, BaseCache.Count, _total));
+      progress?.Report(new(ProgressEvent.DeserializeObject, _baseCache.Count, _total));
     }
   }
 
@@ -111,13 +113,13 @@ public sealed class DeserializeProcess(
 
   public void DecodeOrEnqueueChildren(string id)
   {
-    if (BaseCache.ContainsKey(id))
+    if (_baseCache.ContainsKey(id))
     {
       return;
     }
     (string json, _) = GetClosures(id);
     var @base = Deserialise(id, json);
-    BaseCache.TryAdd(id, @base);
+    _baseCache.TryAdd(id, @base);
     //remove from JSON cache because we've finally made the Base
     _closures.TryRemove(id, out _);
     _activeTasks.TryRemove(id, out _);
@@ -125,12 +127,12 @@ public sealed class DeserializeProcess(
 
   private Base Deserialise(string id, string json)
   {
-    if (BaseCache.TryGetValue(id, out var baseObject))
+    if (_baseCache.TryGetValue(id, out var baseObject))
     {
       return baseObject;
     }
 
-    var deserializer = objectDeserializerFactory.Create(BaseCache);
+    var deserializer = objectDeserializerFactory.Create(_baseCache);
     return deserializer.Deserialize(json);
   }
 }

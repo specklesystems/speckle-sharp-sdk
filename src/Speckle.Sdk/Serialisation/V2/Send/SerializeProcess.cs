@@ -7,7 +7,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public record SerializeProcessOptions(bool SkipCache, bool SkipServer);
+public record SerializeProcessOptions(bool SkipCacheRead, bool SkipCacheWrite, bool SkipServer);
 
 public readonly record struct SerializeProcessResults(
   string RootId,
@@ -33,17 +33,16 @@ public class SerializeProcess(
   private long _cached;
   private long _serialized;
 
-  private SerializeProcessOptions _options = new(false, false);
+  private SerializeProcessOptions _options = new(false, false, false);
 
-  public async Task<SerializeProcessResults> Serialize(
-    string streamId,
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Serialize(
     Base root,
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
   )
   {
     _options = options ?? _options;
-    var channelTask = Start(streamId, cancellationToken);
+    var channelTask = Start(cancellationToken);
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
     return new(root.id, _objectReferences);
@@ -101,7 +100,7 @@ public class SerializeProcess(
       yield break;
     }
 
-    if (!_options.SkipCache && obj.id != null)
+    if (!_options.SkipCacheRead && obj.id != null)
     {
       var cachedJson = sqliteSendCacheManager.GetObject(obj.id);
       if (cachedJson != null)
@@ -146,7 +145,7 @@ public class SerializeProcess(
 
   private BaseItem CheckCache(Id id, Json json)
   {
-    if (!_options.SkipCache)
+    if (!_options.SkipCacheRead)
     {
       var cachedJson = sqliteSendCacheManager.GetObject(id.Value);
       if (cachedJson != null)
@@ -157,38 +156,23 @@ public class SerializeProcess(
     return new BaseItem(id.Value, json.Value, true);
   }
 
-  public override async Task<List<BaseItem>> SendToServer(
-    string streamId,
-    List<BaseItem> batch,
-    CancellationToken cancellationToken
-  )
+  public override async Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken)
   {
-    if (batch.Count == 0)
+    if (!_options.SkipServer && batch.Count != 0)
     {
-      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _totalToUpload));
-      return batch;
-    }
-
-    if (!_options.SkipServer)
-    {
-      await serverObjectManager.UploadObjects(streamId, batch, true, progress, cancellationToken).ConfigureAwait(false);
+      await serverObjectManager.UploadObjects(batch, true, progress, cancellationToken).ConfigureAwait(false);
       Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
       progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _totalToUpload));
     }
     return batch;
   }
 
-  public override void SaveToCache(List<BaseItem> items)
+  public override void SaveToCache(List<BaseItem> batch)
   {
-    if (!_options.SkipCache)
+    if (!_options.SkipCacheWrite && batch.Count != 0)
     {
-      if (items.Count == 0)
-      {
-        progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
-        return;
-      }
-      sqliteSendCacheManager.SaveObjects(items);
-      Interlocked.Exchange(ref _cached, _cached + items.Count);
+      sqliteSendCacheManager.SaveObjects(batch);
+      Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
     }
   }

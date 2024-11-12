@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Models;
 

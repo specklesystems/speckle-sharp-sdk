@@ -6,6 +6,8 @@ using Speckle.DoubleNumerics;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies;
+using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
@@ -207,18 +209,20 @@ public class ObjectSerializer : IObjectSerializer
     Json json;
     if (_baseCache.TryGetValue(baseObj, out var info))
     {
-      id = new Id(baseObj.id);
-      childClosures = info.Closures;
-      json = info.Json;
+      id = baseObj.id;
+      childClosures = info.Item2;
+      json = info.Item1;
       MergeClosures(_currentClosures, childClosures);
     }
     else
     {
       childClosures = isRoot ? _currentClosures : new();
-      using var writer = new StringWriter();
+      var sb = Pools.StringBuilders.Get();
+      using var writer = new StringWriter(sb);
       using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
       id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
-      json = new Json(writer.ToString());
+      json = writer.ToString();
+      Pools.StringBuilders.Return(sb);
     }
 
     _parentObjects.Remove(baseObj);
@@ -242,7 +246,7 @@ public class ObjectSerializer : IObjectSerializer
         {
           referencedId = id.Value,
           applicationId = baseObj.applicationId,
-          closure = childClosures.ToDictionary(x => x.Key.Value, x => x.Value),
+          closure = childClosures,
         };
       }
       _chunks.Add(new(id, json));

@@ -51,9 +51,10 @@ public class GeneralDeserializer : IDisposable
       TestDataHelper.ServiceProvider.GetRequiredService<ISpeckleHttp>(),
       TestDataHelper.ServiceProvider.GetRequiredService<ISdkActivityFactory>(),
       new Uri(url),
+      streamId,
       null
     );
-    var o = new ObjectLoader(sqlite, serverObjects, streamId, null);
+    var o = new ObjectLoader(sqlite, serverObjects, null);
     var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory());
     return await process.Deserialize(rootId, default, new(skipCache)).ConfigureAwait(false);
   }
