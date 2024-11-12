@@ -91,12 +91,12 @@ public sealed class ObjectLoader(
   }
 
   [AutoInterfaceIgnore]
-  public override void SaveToCache(BaseItem x)
+  public override void SaveToCache(List<BaseItem> batch)
   {
     if (!_options.SkipCache)
     {
-      sqliteReceiveCacheManager.SaveObject(x);
-      _cached++;
+      sqliteReceiveCacheManager.SaveObjects(batch);
+      Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _allChildrenCount));
     }
   }
