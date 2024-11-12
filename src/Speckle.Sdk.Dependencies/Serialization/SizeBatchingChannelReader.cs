@@ -12,6 +12,7 @@ public class SizeBatchingChannelReader(
 ) : BatchingChannelReader<BaseItem, List<BaseItem>>(source, batchSize, singleReader, syncCont)
 {
   private readonly int _batchSize = batchSize;
+
   protected override List<BaseItem> CreateBatch(int capacity) => new();
 
   protected override void TrimBatch(List<BaseItem> batch) => batch.TrimExcess();
