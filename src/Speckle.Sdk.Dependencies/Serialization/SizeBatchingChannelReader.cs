@@ -11,6 +11,7 @@ public class SizeBatchingChannelReader(
   bool syncCont = false
 ) : BatchingChannelReader<BaseItem, List<BaseItem>>(source, batchSize, singleReader, syncCont)
 {
+  private readonly int _batchSize = batchSize;
   protected override List<BaseItem> CreateBatch(int capacity) => new();
 
   protected override void TrimBatch(List<BaseItem> batch) => batch.TrimExcess();
@@ -23,6 +24,11 @@ public class SizeBatchingChannelReader(
     foreach (BaseItem item in batch)
     {
       size += item.Size;
+    }
+
+    if (size >= _batchSize)
+    {
+      return _batchSize;
     }
     return size;
   }
