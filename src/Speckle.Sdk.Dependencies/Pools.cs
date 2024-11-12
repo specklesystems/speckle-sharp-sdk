@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.ObjectPool;
+﻿using System.Text;
+using Microsoft.Extensions.ObjectPool;
 
 namespace Speckle.Sdk.Dependencies;
 
@@ -29,4 +30,11 @@ public static class Pools
       return true;
     }
   }
+  
+  
+
+  public static Pool<StringBuilder> StringBuilders { get; } = new(new StringBuilderPooledObjectPolicy()
+  {
+    MaximumRetainedCapacity = 100 * 1024 * 1024
+  });
 }

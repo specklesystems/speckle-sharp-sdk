@@ -26,6 +26,8 @@ public sealed class DeserializeProcess(
   private readonly ConcurrentDictionary<string, Base> _baseCache = new();
   private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
 
+  public IReadOnlyDictionary<string, Base> BaseCache => _baseCache;
+
   public async Task<Base> Deserialize(
     string rootId,
     CancellationToken cancellationToken,

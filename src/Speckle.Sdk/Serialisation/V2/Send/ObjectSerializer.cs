@@ -6,6 +6,7 @@ using Speckle.DoubleNumerics;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
@@ -212,10 +213,12 @@ public class ObjectSerializer : IObjectSerializer
     else
     {
       childClosures = isRoot ? _currentClosures : new();
-      using var writer = new StringWriter();
+      var sb = Pools.StringBuilders.Get();
+      using var writer = new StringWriter(sb);
       using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
       id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
       json = writer.ToString();
+      Pools.StringBuilders.Return(sb);
     }
 
     _parentObjects.Remove(baseObj);
