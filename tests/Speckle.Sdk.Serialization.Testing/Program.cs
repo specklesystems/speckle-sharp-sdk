@@ -48,9 +48,8 @@ var factory = new SerializeProcessFactory(
   new ObjectSerializerFactory(new BasePropertyGatherer()),
   new ObjectDeserializerFactory()
 );
-var o = new ObjectLoader(sqliteTransport, serverObjects, streamId, progress);
-var process = new DeserializeProcess(progress, o, new ObjectDeserializerFactory());
-var @base = await process.Deserialize(rootId, default, new(skipCache)).ConfigureAwait(false);
+var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress);
+var @base = await process.Deserialize(rootId, default, new(skipCacheReceive)).ConfigureAwait(false);
 Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");

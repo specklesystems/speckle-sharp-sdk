@@ -253,8 +253,8 @@ public class SpeckleObjectSerializer
     var stringBuilder = Pools.StringBuilders.Get();
     using var writer = new StringWriter();
     using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-    string id = SerializeBaseObject(baseObj, jsonWriter, closure);
-    var json = writer.ToString();
+    var id = SerializeBaseObject(baseObj, jsonWriter, closure);
+    var json = new Json(writer.ToString());
     Pools.StringBuilders.Return(stringBuilder);
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)

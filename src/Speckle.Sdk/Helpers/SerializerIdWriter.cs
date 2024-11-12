@@ -26,7 +26,7 @@ public sealed class SerializerIdWriter : JsonWriter
   {
     _jsonIdWriter.WriteEndObject();
     _jsonIdWriter.Flush();
-    var json = _idWriter.ToString();
+    var json = new Json(_idWriter.ToString());
     Pools.StringBuilders.Return(_stringBuilder);
     return (json, _jsonWriter);
   }

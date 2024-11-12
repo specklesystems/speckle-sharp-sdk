@@ -4,6 +4,7 @@ using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -25,7 +26,7 @@ public partial class Operations
     try
     {
       var process = serializeProcessFactory.CreateSerializeProcess(url, streamId, authorizationToken, onProgressAction);
-      var results = await process.Serialize(streamId, value, cancellationToken).ConfigureAwait(false);
+      var results = await process.Serialize(value, cancellationToken).ConfigureAwait(false);
 
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return results;

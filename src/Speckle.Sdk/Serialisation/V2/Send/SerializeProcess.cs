@@ -35,7 +35,7 @@ public class SerializeProcess(
 
   private SerializeProcessOptions _options = new(false, false, false);
 
-  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Serialize(
+  public async Task<SerializeProcessResults> Serialize(
     Base root,
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
