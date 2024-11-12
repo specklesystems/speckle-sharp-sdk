@@ -9,7 +9,6 @@ namespace Speckle.Sdk.Serialization.Tests;
 public class DummyReceiveServerObjectManager(Dictionary<string, string> objects) : IServerObjectManager
 {
   public async IAsyncEnumerable<(string, string)> DownloadObjects(
-    string streamId,
     IReadOnlyList<string> objectIds,
     IProgress<ProgressArgs>? progress,
     [EnumeratorCancellation] CancellationToken cancellationToken
@@ -23,7 +22,6 @@ public class DummyReceiveServerObjectManager(Dictionary<string, string> objects)
   }
 
   public async Task<string?> DownloadSingleObject(
-    string streamId,
     string objectId,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
@@ -34,13 +32,11 @@ public class DummyReceiveServerObjectManager(Dictionary<string, string> objects)
   }
 
   public Task<Dictionary<string, bool>> HasObjects(
-    string streamId,
     IReadOnlyList<string> objectIds,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
   public Task UploadObjects(
-    string streamId,
     IReadOnlyList<BaseItem> objects,
     bool compressPayloads,
     IProgress<ProgressArgs>? progress,

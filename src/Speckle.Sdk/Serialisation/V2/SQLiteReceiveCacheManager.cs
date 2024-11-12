@@ -34,6 +34,26 @@ public class SQLiteReceiveCacheManager(string streamId) : SQLiteCacheManager(str
     command.ExecuteNonQuery();
   }
 
+  public void SaveObjects(List<BaseItem> items)
+  {
+    using var c = new SqliteConnection(ConnectionString);
+    c.Open();
+    using var t = c.BeginTransaction();
+    const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
+
+    using var command = new SqliteCommand(COMMAND_TEXT, c);
+    command.Transaction = t;
+    var idParam = command.Parameters.Add("@hash", SqliteType.Text);
+    var jsonParam = command.Parameters.Add("@content", SqliteType.Text);
+    foreach (var item in items)
+    {
+      idParam.Value = item.Id;
+      jsonParam.Value = item.Json;
+      command.ExecuteNonQuery();
+    }
+    t.Commit();
+  }
+
   public bool HasObject(string objectId)
   {
     using var c = new SqliteConnection(ConnectionString);

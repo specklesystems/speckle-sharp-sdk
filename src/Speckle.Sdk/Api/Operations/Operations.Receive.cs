@@ -2,8 +2,6 @@ using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Serialisation.V2;
-using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -26,10 +24,12 @@ public partial class Operations
 
     try
     {
-      var sqliteTransport = new SQLiteReceiveCacheManager(streamId);
-      var serverObjects = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
-      var o = new ObjectLoader(sqliteTransport, serverObjects, streamId, onProgressAction);
-      var process = new DeserializeProcess(onProgressAction, o);
+      var process = serializeProcessFactory.CreateDeserializeProcess(
+        url,
+        streamId,
+        authorizationToken,
+        onProgressAction
+      );
       var result = await process.Deserialize(objectId, cancellationToken).ConfigureAwait(false);
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return result;

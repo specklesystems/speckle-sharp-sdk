@@ -5,14 +5,14 @@ using Speckle.Sdk.Models;
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 [GenerateAutoInterface]
-public class SpeckleBaseChildFinder(ISpeckleBasePropertyGatherer propertyGatherer) : ISpeckleBaseChildFinder
+public class BaseChildFinder(IBasePropertyGatherer propertyGatherer) : IBaseChildFinder
 {
   public IEnumerable<Property> GetChildProperties(Base obj) =>
     propertyGatherer.ExtractAllProperties(obj).Where(x => x.PropertyAttributeInfo.IsDetachable);
 
   public IEnumerable<Base> GetChildren(Base obj)
   {
-    var props = GetChildProperties(obj).ToList();
+    var props = GetChildProperties(obj);
     foreach (var kvp in props)
     {
       if (kvp.Value is Base child)

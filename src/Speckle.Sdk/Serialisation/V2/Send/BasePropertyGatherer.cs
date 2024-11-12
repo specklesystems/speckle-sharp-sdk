@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Reflection;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
@@ -11,7 +11,7 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 public readonly record struct Property(string Name, object? Value, PropertyAttributeInfo PropertyAttributeInfo);
 
 [GenerateAutoInterface]
-public class SpeckleBasePropertyGatherer : ISpeckleBasePropertyGatherer
+public class BasePropertyGatherer : IBasePropertyGatherer
 {
   private readonly ConcurrentDictionary<string, List<(PropertyInfo, PropertyAttributeInfo)>> _typedPropertiesCache =
     new();

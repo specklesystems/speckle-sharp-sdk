@@ -9,5 +9,7 @@ public class DummySqLiteReceiveManager(Dictionary<string, string> savedObjects) 
 
   public void SaveObject(BaseItem item) => throw new NotImplementedException();
 
+  public void SaveObjects(List<BaseItem> item) => throw new NotImplementedException();
+
   public bool HasObject(string objectId) => throw new NotImplementedException();
 }
