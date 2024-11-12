@@ -42,11 +42,7 @@ public sealed class DeserializeProcess(
     _closures.TryAdd(rootId, (rootJson, childrenIds));
     progress?.Report(new(ProgressEvent.DeserializeObject, _baseCache.Count, childrenIds.Count));
     await Traverse(rootId, cancellationToken).ConfigureAwait(false);
-    var b = _baseCache[rootId];
-    _closures.Clear();
-    _baseCache.Clear();
-    _activeTasks.Clear();
-    return b;
+    return _baseCache[rootId];
   }
 
   private async Task Traverse(string id, CancellationToken cancellationToken)
