@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Models.GraphTraversal;
@@ -73,6 +74,7 @@ public interface ITraversalBuilderWhen
   /// </summary>
   /// <param name="condition"></param>
   /// <returns>Traversal rule in a building (unusable) state</returns>
+  [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Legacy")]
   ITraversalBuilderTraverse When(WhenCondition condition);
 }
 
