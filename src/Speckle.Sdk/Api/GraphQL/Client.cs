@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Net.WebSockets;
 using System.Reflection;
 using GraphQL;
@@ -117,7 +118,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
           GraphQLResponse<T> result = await GQLClient
             .SendMutationAsync<T>(request, cancellationToken)
             .ConfigureAwait(false);
-          MaybeThrowFromGraphQLErrors(request, result);
+          Client.EnsureGraphQLSuccess(result.Errors);
           return result.Data;
         })
         .ConfigureAwait(false);
@@ -132,47 +133,49 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     }
   }
 
-  internal void MaybeThrowFromGraphQLErrors<T>(GraphQLRequest request, GraphQLResponse<T> response)
+  /// <exception cref="AggregateException"></exception>
+  internal static void EnsureGraphQLSuccess(IReadOnlyList<GraphQLError>? errors)
   {
     // The errors reflect the Apollo server v2 API, which is deprecated. It is bound to change,
     // once we migrate to a newer version.
-    var errors = response.Errors;
-    if (errors != null && errors.Length != 0)
+    if (errors == null || errors.Count == 0)
     {
-      if (
-        errors.Any(e =>
-          e.Extensions != null
-          && (
-            e.Extensions.Contains(new KeyValuePair<string, object>("code", "FORBIDDEN"))
-            || e.Extensions.Contains(new KeyValuePair<string, object>("code", "UNAUTHENTICATED"))
-          )
-        )
-      )
-      {
-        throw new SpeckleGraphQLForbiddenException(request, response);
-      }
-
-      if (
-        errors.Any(e =>
-          e.Extensions != null && e.Extensions.Contains(new KeyValuePair<string, object>("code", "STREAM_NOT_FOUND"))
-        )
-      )
-      {
-        throw new SpeckleGraphQLStreamNotFoundException(request, response);
-      }
-
-      if (
-        errors.Any(e =>
-          e.Extensions != null
-          && e.Extensions.Contains(new KeyValuePair<string, object>("code", "INTERNAL_SERVER_ERROR"))
-        )
-      )
-      {
-        throw new SpeckleGraphQLInternalErrorException(request, response);
-      }
-
-      throw new SpeckleGraphQLException<T>("Request failed with errors", request, response);
+      return;
     }
+
+    List<SpeckleGraphQLException> exceptions = new(errors.Count);
+    foreach (var error in errors)
+    {
+      object? code = null;
+      _ = error.Extensions?.TryGetValue("code", out code);
+
+      var message = FormatErrorMessage(error, code);
+      var ex = code switch
+      {
+        "GRAPHQL_PARSE_FAILED" or "GRAPHQL_VALIDATION_FAILED" => new SpeckleGraphQLInvalidQueryException(message),
+        "FORBIDDEN" or "UNAUTHENTICATED" => new SpeckleGraphQLForbiddenException(message),
+        "STREAM_NOT_FOUND" => new SpeckleGraphQLStreamNotFoundException(message),
+        "BAD_USER_INPUT" => new SpeckleGraphQLBadInputException(message),
+        "INTERNAL_SERVER_ERROR" => new SpeckleGraphQLInternalErrorException(message),
+        _ => new SpeckleGraphQLException(message),
+      };
+      exceptions.Add(ex);
+    }
+
+    throw new AggregateException("Request failed with GraphQL errors, see inner exceptions", exceptions);
+  }
+
+  [Pure]
+  private static string FormatErrorMessage(GraphQLError error, object? code)
+  {
+    code ??= "ERROR";
+    string? path = null;
+    if (error.Path is not null)
+    {
+      path = error.Path is not null ? string.Join(',', error.Path) : null;
+      path = $", at {path}";
+    }
+    return $"{code}: {error.Message}{path}";
   }
 
   IDisposable ISpeckleGraphQLClient.SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback) =>
@@ -191,7 +194,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
           {
             try
             {
-              MaybeThrowFromGraphQLErrors(request, response);
+              EnsureGraphQLSuccess(request, response);
 
               if (response.Data != null)
               {

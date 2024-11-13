@@ -52,7 +52,7 @@ public sealed class GraphQLClientTests : IDisposable
     Assert.Throws(
       exType,
       () =>
-        _client.MaybeThrowFromGraphQLErrors(
+        _client.EnsureGraphQLSuccess(
           new GraphQLRequest(),
           new GraphQLResponse<FakeGqlResponseModel>
           {
@@ -65,7 +65,7 @@ public sealed class GraphQLClientTests : IDisposable
   [Test]
   public void TestMaybeThrowsDoesntThrowForNoErrors()
   {
-    Assert.DoesNotThrow(() => _client.MaybeThrowFromGraphQLErrors(new GraphQLRequest(), new GraphQLResponse<string>()));
+    Assert.DoesNotThrow(() => _client.EnsureGraphQLSuccess(new GraphQLRequest(), new GraphQLResponse<string>()));
   }
 
   [Test]
