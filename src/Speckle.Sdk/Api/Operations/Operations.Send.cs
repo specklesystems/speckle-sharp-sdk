@@ -4,8 +4,6 @@ using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Serialisation.V2;
-using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -26,18 +24,8 @@ public partial class Operations
 
     try
     {
-      var sqliteTransport = new SQLiteSendCacheManager(streamId);
-      var serverObjects = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
-      var process = new SerializeProcess(
-        onProgressAction,
-        sqliteTransport,
-        serverObjects,
-        speckleBaseChildFinder,
-        speckleBasePropertyGatherer
-      );
-      var (rootObjId, convertedReferences) = await process
-        .Serialize(streamId, value, cancellationToken)
-        .ConfigureAwait(false);
+      var process = serializeProcessFactory.CreateSerializeProcess(url, streamId, authorizationToken, onProgressAction);
+      var (rootObjId, convertedReferences) = await process.Serialize(value, cancellationToken).ConfigureAwait(false);
 
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return new(rootObjId, convertedReferences);
