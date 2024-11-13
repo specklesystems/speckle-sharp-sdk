@@ -74,7 +74,6 @@ public interface ITraversalBuilderWhen
   /// </summary>
   /// <param name="condition"></param>
   /// <returns>Traversal rule in a building (unusable) state</returns>
-  [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Legacy")]
   ITraversalBuilderTraverse When(WhenCondition condition);
 }
 
