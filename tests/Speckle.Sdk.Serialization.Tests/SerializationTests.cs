@@ -128,7 +128,7 @@ public class SerializationTests
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var json = await ReadJson(fullName);
     var closures = ReadAsObjects(json);
-    var process = new DeserializeProcess(null, new TestObjectLoader(closures));
+    var process = new DeserializeProcess(null, new TestObjectLoader(closures), new ObjectDeserializerFactory());
     await process.Deserialize("3416d3fe01c9196115514c4a2f41617b", default);
     foreach (var (id, objJson) in closures)
     {
@@ -211,10 +211,9 @@ public class SerializationTests
     var o = new ObjectLoader(
       new DummySqLiteReceiveManager(closure),
       new DummyReceiveServerObjectManager(closure),
-      string.Empty,
       null
     );
-    var process = new DeserializeProcess(null, o);
+    var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory());
     var root = await process.Deserialize(rootId, default, new DeserializeOptions(true));
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
@@ -222,15 +221,10 @@ public class SerializationTests
       null,
       new DummySqLiteSendManager(),
       new DummySendServerObjectManager(newIdToJson),
-      new SpeckleBaseChildFinder(new SpeckleBasePropertyGatherer()),
-      new SpeckleBasePropertyGatherer()
+      new BaseChildFinder(new BasePropertyGatherer()),
+      new ObjectSerializerFactory(new BasePropertyGatherer())
     );
-    var (rootId2, _) = await serializeProcess.Serialize(
-      string.Empty,
-      root,
-      default,
-      new SerializeProcessOptions(true, false)
-    );
+    var (rootId2, _) = await serializeProcess.Serialize(root, default, new SerializeProcessOptions(true, true, false));
 
     rootId2.ShouldBe(root.id);
     newIdToJson.Count.ShouldBe(count);

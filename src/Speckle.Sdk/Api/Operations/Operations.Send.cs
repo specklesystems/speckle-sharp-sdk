@@ -4,8 +4,6 @@ using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Serialisation.V2;
-using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -26,18 +24,8 @@ public partial class Operations
 
     try
     {
-      var sqliteTransport = new SQLiteSendCacheManager(streamId);
-      var serverObjects = new ServerObjectManager(speckleHttp, activityFactory, url, authorizationToken);
-      var process = new SerializeProcess(
-        onProgressAction,
-        sqliteTransport,
-        serverObjects,
-        speckleBaseChildFinder,
-        speckleBasePropertyGatherer
-      );
-      var (rootObjId, convertedReferences) = await process
-        .Serialize(streamId, value, cancellationToken)
-        .ConfigureAwait(false);
+      var process = serializeProcessFactory.CreateSerializeProcess(url, streamId, authorizationToken, onProgressAction);
+      var (rootObjId, convertedReferences) = await process.Serialize(value, cancellationToken).ConfigureAwait(false);
 
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return new(rootObjId, convertedReferences);
@@ -48,6 +36,42 @@ public partial class Operations
       receiveActivity?.RecordException(ex);
       throw;
     }
+  }
+
+  /// <summary>
+  /// Sends a Speckle Object to the provided <paramref name="transport"/> and (optionally) the default local cache
+  /// </summary>
+  /// <remarks/>
+  /// <inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, IProgress{ProgressArgs}?, CancellationToken)"/>
+  /// <param name="useDefaultCache">When <see langword="true"/>, an additional <see cref="SQLiteTransport"/> will be included</param>
+  /// <exception cref="ArgumentNullException">The <paramref name="transport"/> or <paramref name="value"/> was <see langword="null"/></exception>
+  /// <example><code>
+  /// using ServerTransport destination = new(account, streamId);
+  /// var (objectId, references) = await Send(mySpeckleObject, destination, true);
+  /// </code></example>
+  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
+    Base value,
+    IServerTransport transport,
+    bool useDefaultCache,
+    IProgress<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    if (transport is null)
+    {
+      throw new ArgumentNullException(nameof(transport), "Expected a transport to be explicitly specified");
+    }
+
+    List<ITransport> transports = new() { transport };
+    using SQLiteTransport2? localCache = useDefaultCache
+      ? new SQLiteTransport2(transport.StreamId) { TransportName = "LC2" }
+      : null;
+    if (localCache is not null)
+    {
+      transports.Add(localCache);
+    }
+
+    return await Send(value, transports, onProgressAction, cancellationToken).ConfigureAwait(false);
   }
 
   /// <summary>
