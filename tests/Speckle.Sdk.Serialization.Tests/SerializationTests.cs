@@ -16,6 +16,7 @@ using Speckle.Sdk.Serialisation.V2.Send;
 using Xunit;
 
 namespace Speckle.Sdk.Serialization.Tests;
+
 public class SerializationTests
 {
   private readonly Assembly _assembly = Assembly.GetExecutingAssembly();

@@ -27,7 +27,7 @@ public class PointTests
       (a != b).ShouldBeFalse();
       (b == a).ShouldBeTrue();
       (b != a).ShouldBeFalse();
-      
+
       (a == c).ShouldBeTrue();
       (a != c).ShouldBeFalse();
       (c == a).ShouldBeTrue();
@@ -44,7 +44,17 @@ public class PointTests
   [InlineData(1, 1, 1, "m", 1, 1, 1, "meters", false)]
   [InlineData(1, 1, 1, "m", 1, 1, 1, "M", false)]
   // Units
-  public void TestEqual(double x1, double y1, double z1, string units1, double x2, double y2, double z2, string units2, bool result)
+  public void TestEqual(
+    double x1,
+    double y1,
+    double z1,
+    string units1,
+    double x2,
+    double y2,
+    double z2,
+    string units2,
+    bool result
+  )
   {
     Point p1 = new(x1, y1, z1, units1);
     Point p2 = new(x2, y2, z2, units2);

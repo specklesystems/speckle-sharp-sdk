@@ -38,6 +38,6 @@ public class BoxTests
     };
 
     box.area.ShouldBe(2 * (2 * 4 + 2 * 6 + 4 * 6), 0.0001);
-   box.volume.ShouldBe(2 * 4 * 6,0.0001);
+    box.volume.ShouldBe(2 * 4 * 6, 0.0001);
   }
 }

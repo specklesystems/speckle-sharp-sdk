@@ -6,29 +6,34 @@ namespace Speckle.Sdk.Tests.Unit.Common;
 public class UnitsTest
 {
   public static List<string> OfficiallySupportedUnits() => Units.SupportedUnits;
-  public static List<string> NotSupportedUnits() => new [] {"feeters", "liters", "us_ft"}.ToList();
+
+  public static List<string> NotSupportedUnits() => new[] { "feeters", "liters", "us_ft" }.ToList();
+
   public static List<string?> ConversionSupport => [.. OfficiallySupportedUnits(), null];
 
   public static List<string?> ConversionSupportStrings => [.. Units.SupportedUnits, null];
+
   public static IEnumerable<(string?, string?)> TestUnitConversionData()
   {
-      foreach (var from in ConversionSupportStrings)
+    foreach (var from in ConversionSupportStrings)
+    {
+      foreach (var to in ConversionSupportStrings)
       {
-        foreach (var to in ConversionSupportStrings)
-        {
-          yield return (from, to);
-        }
+        yield return (from, to);
+      }
     }
   }
+
   [Test]
   [MethodDataSource(nameof(TestUnitConversionData))]
-  public void TestUnitConversion( string? from,string? to)
+  public void TestUnitConversion(string? from, string? to)
   {
     var forwards = Units.GetConversionFactor(from, to);
     var backwards = Units.GetConversionFactor(to, from);
 
-   (
-      backwards * forwards).ShouldBe(1d, 0.5d,
+    (backwards * forwards).ShouldBe(
+      1d,
+      0.001d,
       $"Behaviour says that 1{from} == {forwards}{to}, and 1{to} == {backwards}{from}"
     );
   }
@@ -60,14 +65,12 @@ public class UnitsTest
     upper.ShouldBe(unit);
   }
 
-
   [Test]
   [MethodDataSource(nameof(NotSupportedUnits))]
   public void GetUnitsFromString_ThrowsUnSupported(string unit)
   {
     Assert.Throws<ArgumentOutOfRangeException>(() => _ = Units.GetUnitsFromString(unit));
   }
-
 
   [Test]
   [MethodDataSource(nameof(OfficiallySupportedUnits))]

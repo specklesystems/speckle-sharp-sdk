@@ -17,7 +17,7 @@ namespace Speckle.Objects.Tests.Unit;
 /// </summary>
 public class ModelPropertySupportedTypes
 {
-  public  ModelPropertySupportedTypes()
+  public ModelPropertySupportedTypes()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Speckle.Objects.Geometry.Arc).Assembly);
@@ -82,10 +82,8 @@ public class ModelPropertySupportedTypes
 
         Type propType = prop.PropertyType;
         Type typeDef = propType.IsGenericType ? propType.GetGenericTypeDefinition() : propType;
-        
-          _allowedTypes.ShouldContain(typeDef,
-          $"{typeDef} was not in allowedTypes. (Origin: {type}.{prop.Name})"
-        );
+
+        _allowedTypes.ShouldContain(typeDef, $"{typeDef} was not in allowedTypes. (Origin: {type}.{prop.Name})");
       }
     }
   }

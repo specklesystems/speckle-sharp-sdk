@@ -14,13 +14,13 @@ public class ChunkingTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
 
-    yield return (CreateDynamicTestCase(10, 100),10);
-    yield return (CreateDynamicTestCase(0.5, 100),1);
-    yield return (CreateDynamicTestCase(20.5, 100),21);
+    yield return (CreateDynamicTestCase(10, 100), 10);
+    yield return (CreateDynamicTestCase(0.5, 100), 1);
+    yield return (CreateDynamicTestCase(20.5, 100), 21);
 
-    yield return (CreateDynamicTestCase(10, 1000),10);
-    yield return (CreateDynamicTestCase(0.5, 1000),1);
-    yield return (CreateDynamicTestCase(20.5, 1000),21);
+    yield return (CreateDynamicTestCase(10, 1000), 10);
+    yield return (CreateDynamicTestCase(0.5, 1000), 1);
+    yield return (CreateDynamicTestCase(20.5, 1000), 21);
   }
 
   [MethodDataSource(nameof(TestCases))]
@@ -39,7 +39,7 @@ public class ChunkingTests
       x!.TryGetValue("speckle_type", out var speckleType) && ((string)speckleType!) == "Speckle.Core.Models.DataChunk"
     );
 
-     numberOfChunks.ShouldBe(ret);
+    numberOfChunks.ShouldBe(ret);
   }
 
   private static Base CreateDynamicTestCase(double numberOfChunks, int chunkSize)

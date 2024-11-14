@@ -54,10 +54,10 @@ public class ArcTests
     };
 
     Point.Distance(counterClockwiseArc.midPoint, new Point(0, 1, 0, UNITS)).ShouldBe(0, 0.0001);
-   Point.Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, UNITS)).ShouldBe(0, 0.0001);
-   ( counterClockwiseArc.measure - Math.PI).ShouldBe(0, 0.0001);
-  counterClockwiseArc.radius.ShouldBe(1, 0.0001);
-  counterClockwiseArc.length.ShouldBe(Math.PI, 0.0001);
+    Point.Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, UNITS)).ShouldBe(0, 0.0001);
+    (counterClockwiseArc.measure - Math.PI).ShouldBe(0, 0.0001);
+    counterClockwiseArc.radius.ShouldBe(1, 0.0001);
+    counterClockwiseArc.length.ShouldBe(Math.PI, 0.0001);
   }
 
   [Fact]
@@ -75,7 +75,7 @@ public class ArcTests
 
     Point.Distance(counterClockwiseArc.midPoint, new Point(0, 1, 0, UNITS)).ShouldBe(0, 0.0001);
     Point.Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, UNITS)).ShouldBe(0, 0.0001);
-    ( counterClockwiseArc.measure - Math.PI).ShouldBe(0, 0.0001);
+    (counterClockwiseArc.measure - Math.PI).ShouldBe(0, 0.0001);
     counterClockwiseArc.radius.ShouldBe(1, 0.0001);
     counterClockwiseArc.length.ShouldBe(Math.PI, 0.0001);
   }

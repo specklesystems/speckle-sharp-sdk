@@ -13,7 +13,7 @@ public class ObjectSerialization
 {
   private IOperations _operations;
 
-  public  ObjectSerialization()
+  public ObjectSerialization()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly, typeof(ColorMock).Assembly);
@@ -139,8 +139,8 @@ public class ObjectSerialization
     var stringChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(stringChunkString);
     var doubleChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(doubleChunkString);
 
-   baseChunkDeserialised.data.Count.ShouldBe(baseBasedChunk.data.Count);
-   stringChunkDeserialised.data.Count.ShouldBe(stringBasedChunk.data.Count);
+    baseChunkDeserialised.data.Count.ShouldBe(baseBasedChunk.data.Count);
+    stringChunkDeserialised.data.Count.ShouldBe(stringBasedChunk.data.Count);
     doubleChunkDeserialised.data.Count.ShouldBe(doubleBasedChunk.data.Count);
   }
 

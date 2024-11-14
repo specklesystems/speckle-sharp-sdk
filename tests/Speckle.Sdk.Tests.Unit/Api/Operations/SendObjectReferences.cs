@@ -11,7 +11,7 @@ public class SendObjectReferences
 {
   private IOperations _operations;
 
-  public  SendObjectReferences()
+  public SendObjectReferences()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
@@ -32,7 +32,7 @@ public class SendObjectReferences
     result.rootObjId.ShouldNotBeNull();
     result.rootObjId.Length.ShouldBe(32);
 
-   result.convertedReferences.Count.ShouldBe((int)Math.Pow(2, testDepth + 1) - 2);
+    result.convertedReferences.Count.ShouldBe((int)Math.Pow(2, testDepth + 1) - 2);
   }
 
   [Test]

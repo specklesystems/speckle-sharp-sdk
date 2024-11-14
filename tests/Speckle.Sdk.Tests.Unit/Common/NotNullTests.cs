@@ -10,11 +10,11 @@ public class NotNullTests
     public static IEnumerable<(string[]?, int)> Empty()
     {
       yield return (null, 0);
-      yield return  ([], 0);
+      yield return ([], 0);
       yield return (["yay"], 1);
     }
   }
-  
+
   [Test]
   [MethodDataSource(typeof(Sources), nameof(Sources.Empty))]
   public void Empty(string[]? test, int length)

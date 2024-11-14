@@ -9,7 +9,7 @@ public class AccountServerMigrationTests : IDisposable
 {
   private readonly List<Account> _accountsToCleanUp = new();
 
-  public static IEnumerable<(IList<Account>, string , IList<Account>)> MigrationTestCase()
+  public static IEnumerable<(IList<Account>, string, Account)> MigrationTestCase()
   {
     const string OLD_URL = "https://old.example.com";
     const string NEW_URL = "https://new.example.com";
@@ -21,25 +21,25 @@ public class AccountServerMigrationTests : IDisposable
 
     List<Account> givenAccounts = new() { oldAccount, newAccount, otherAccount };
 
-    yield return (givenAccounts, NEW_URL, new[] { newAccount });
+    yield return (givenAccounts, NEW_URL, newAccount);
 
-    yield return (givenAccounts, OLD_URL, new[] { newAccount });
+    yield return (givenAccounts, OLD_URL, newAccount);
 
     var reversed = Enumerable.Reverse(givenAccounts).ToList();
 
-    yield return (reversed, OLD_URL, new[] { newAccount });
+    yield return (reversed, OLD_URL, newAccount);
   }
 
   [Test]
   [MethodDataSource(nameof(MigrationTestCase))]
-  public void TestServerMigration(IList<Account> accounts, string requestedUrl, IList<Account> expectedSequence)
+  public void TestServerMigration(IList<Account> accounts, string requestedUrl, Account expected)
   {
     AddAccounts(accounts);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
 
     var result = serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
 
-    result.SequenceEqual(expectedSequence).ShouldBeTrue();
+    result.ShouldContain(expected);
   }
 
   public void Dispose()

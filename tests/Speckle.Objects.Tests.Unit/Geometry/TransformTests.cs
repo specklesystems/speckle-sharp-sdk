@@ -40,15 +40,14 @@ public class TransformTests
     Assert.Multiple(() =>
     {
       mms.X.ShouldBe(ms.X, FLOAT_TOLERANCE, "Expect scale x to be unchanged");
-      mms.Y.ShouldBe(ms.Y,FLOAT_TOLERANCE, "Expect scale y to be unchanged");
-      mms.Z.ShouldBe(ms.Z,FLOAT_TOLERANCE, "Expect scale z to be unchanged");
+      mms.Y.ShouldBe(ms.Y, FLOAT_TOLERANCE, "Expect scale y to be unchanged");
+      mms.Z.ShouldBe(ms.Z, FLOAT_TOLERANCE, "Expect scale z to be unchanged");
 
-     Quaternion.Dot(mr, mmr).ShouldBeLessThan(1d, 
-       "Expect rot x to be equivalent");
+      Quaternion.Dot(mr, mmr).ShouldBeLessThan(1d, "Expect rot x to be equivalent");
 
-      mmt.X.ShouldBe(mt.X * SF,FLOAT_TOLERANCE, $"Expect translation x to be scaled by {SF}");
-      mmt.Y.ShouldBe(mt.Y * SF,FLOAT_TOLERANCE, $"Expect translation y to be scaled by {SF}");
-      mmt.Z.ShouldBe(mt.Z * SF,FLOAT_TOLERANCE, $"Expect translation z to be scaled by {SF}");
+      mmt.X.ShouldBe(mt.X * SF, FLOAT_TOLERANCE, $"Expect translation x to be scaled by {SF}");
+      mmt.Y.ShouldBe(mt.Y * SF, FLOAT_TOLERANCE, $"Expect translation y to be scaled by {SF}");
+      mmt.Z.ShouldBe(mt.Z * SF, FLOAT_TOLERANCE, $"Expect translation z to be scaled by {SF}");
     });
   }
 
@@ -89,14 +88,8 @@ public class TransformTests
 
     yield return [Matrix4x4.CreateTranslation(t) + Matrix4x4.CreateFromQuaternion(r)];
 
-    yield return
-    [
-      Matrix4x4.CreateTranslation(t) + Matrix4x4.CreateFromQuaternion(r) + Matrix4x4.CreateScale(s)
-    ];
+    yield return [Matrix4x4.CreateTranslation(t) + Matrix4x4.CreateFromQuaternion(r) + Matrix4x4.CreateScale(s)];
 
-    yield return
-    [
-      Matrix4x4.CreateTranslation(t) + Matrix4x4.CreateFromQuaternion(r) + Matrix4x4.CreateScale(-s)
-    ];
+    yield return [Matrix4x4.CreateTranslation(t) + Matrix4x4.CreateFromQuaternion(r) + Matrix4x4.CreateScale(-s)];
   }
 }

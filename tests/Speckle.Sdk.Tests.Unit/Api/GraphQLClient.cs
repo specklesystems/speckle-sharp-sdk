@@ -35,10 +35,7 @@ public sealed class GraphQLClientTests : IDisposable
   {
     yield return (typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "FORBIDDEN" } });
     yield return (typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "UNAUTHENTICATED" } });
-    yield return (
-      typeof(SpeckleGraphQLInternalErrorException),
-      new Map { { "code", "INTERNAL_SERVER_ERROR" } }
-    );
+    yield return (typeof(SpeckleGraphQLInternalErrorException), new Map { { "code", "INTERNAL_SERVER_ERROR" } });
     yield return (typeof(SpeckleGraphQLException<FakeGqlResponseModel>), new Map { { "foo", "bar" } });
   }
 
@@ -116,7 +113,7 @@ public sealed class GraphQLClientTests : IDisposable
     timer.Stop();
     // The baseline for wait is 1 seconds between the jittered retry
     timer.ElapsedMilliseconds.ShouldBeGreaterThanOrEqualTo(5000);
-   counter.ShouldBe(maxRetryCount);
+    counter.ShouldBe(maxRetryCount);
   }
 
   public class FakeGqlResponseModel { }

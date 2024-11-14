@@ -23,20 +23,22 @@ public sealed class JsonIgnoreRespected
 
   const string EXPECTED_PAYLOAD = "this should have been included";
   const string EXPECTED_HASH = "e1d9f0685266465c9bfe4e71f2eee6e9";
+
   public static IEnumerable<(string, string, string?)> IgnoredTestCases()
   {
-    yield return ("this should have been ignored", EXPECTED_PAYLOAD,EXPECTED_HASH);
-    yield return ("again, ignored!", EXPECTED_PAYLOAD,EXPECTED_HASH);
-    yield return ("this one is not", EXPECTED_PAYLOAD,EXPECTED_HASH);
+    yield return ("this should have been ignored", EXPECTED_PAYLOAD, EXPECTED_HASH);
+    yield return ("again, ignored!", EXPECTED_PAYLOAD, EXPECTED_HASH);
+    yield return ("this one is not", EXPECTED_PAYLOAD, EXPECTED_HASH);
   }
 
   const string EXPECTED_PAYLOAD2 = "this should have been included";
   const string EXPECTED_HASH2 = "eeaeee4e61b04b313dd840cd63341eee";
+
   public static IEnumerable<(string, string, string?)> IgnoredCompoundTestCases()
   {
-    yield return ("this should have been ignored", EXPECTED_PAYLOAD2,EXPECTED_HASH2);
-    yield return ("again, ignored!", EXPECTED_PAYLOAD2,EXPECTED_HASH2);
-    yield return ("this one is not", EXPECTED_PAYLOAD2,EXPECTED_HASH2);
+    yield return ("this should have been ignored", EXPECTED_PAYLOAD2, EXPECTED_HASH2);
+    yield return ("again, ignored!", EXPECTED_PAYLOAD2, EXPECTED_HASH2);
+    yield return ("this one is not", EXPECTED_PAYLOAD2, EXPECTED_HASH2);
   }
 
   [MethodDataSource(nameof(IgnoredTestCases))]
@@ -53,7 +55,7 @@ public sealed class JsonIgnoreRespected
 
     json.ShouldContain(nameof(testData.ShouldBeIncluded));
     json.ShouldContain(expectedPayload);
-    
+
     id.ShouldBe(ret);
   }
 

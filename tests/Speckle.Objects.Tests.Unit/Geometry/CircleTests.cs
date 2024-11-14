@@ -35,7 +35,7 @@ public class CircleTests
       units = UNITS,
     };
 
-    circle.length.ShouldBe(2 * Math.PI * 5,0.0001);
-    circle.area.ShouldBe(Math.PI * 5 * 5,0.0001);
+    circle.length.ShouldBe(2 * Math.PI * 5, 0.0001);
+    circle.area.ShouldBe(Math.PI * 5 * 5, 0.0001);
   }
 }

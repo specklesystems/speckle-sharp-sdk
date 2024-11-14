@@ -8,7 +8,11 @@ namespace Speckle.Objects.Tests.Unit.Geometry;
 
 public class MeshTests
 {
-  public static readonly IEnumerable<object[]> TestCaseSource = new object[][] {[CreateBlenderStylePolygon()], [CreateRhinoStylePolygon()] };
+  public static readonly IEnumerable<object[]> TestCaseSource = new object[][]
+  {
+    [CreateBlenderStylePolygon()],
+    [CreateRhinoStylePolygon()],
+  };
 
   [Theory, MemberData(nameof(TestCaseSource))]
   public void CanAlignVertices(Mesh inPolygon)

@@ -65,16 +65,16 @@ public class Closures
     depthOf_d5_in_d1.ShouldBe(1);
 
     var depthOf_d4_in_d1 = int.Parse((string)d1_.__closure[d4.GetId(true)]);
-   depthOf_d4_in_d1.ShouldBe(3);
+    depthOf_d4_in_d1.ShouldBe(3);
 
     var depthOf_d5_in_d3 = int.Parse((string)d3_.__closure[d5.GetId(true)]);
-   depthOf_d5_in_d3.ShouldBe(2);
+    depthOf_d5_in_d3.ShouldBe(2);
 
     var depthOf_d4_in_d3 = int.Parse((string)d3_.__closure[d4.GetId(true)]);
-  depthOf_d4_in_d3.ShouldBe(1);
+    depthOf_d4_in_d3.ShouldBe(1);
 
     var depthOf_d5_in_d2 = int.Parse((string)d2_.__closure[d5.GetId(true)]);
-   depthOf_d5_in_d2.ShouldBe(1);
+    depthOf_d5_in_d2.ShouldBe(1);
   }
 
   [Test]
@@ -127,6 +127,6 @@ public class Closures
     recursiveRef["@recursive"] = recursiveRef;
 
     var supriseCount = recursiveRef.GetTotalChildrenCount();
-   supriseCount.ShouldBe(2);
+    supriseCount.ShouldBe(2);
   }
 }

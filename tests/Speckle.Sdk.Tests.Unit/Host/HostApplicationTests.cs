@@ -5,7 +5,7 @@ namespace Speckle.Sdk.Tests.Unit.Host;
 
 public class HostApplicationTests
 {
-  public static IEnumerable<HostAppVersion> HostAppVersionData() =>  Enum.GetValues<HostAppVersion>();
+  public static IEnumerable<HostAppVersion> HostAppVersionData() => Enum.GetValues<HostAppVersion>();
 
   [Test]
   [MethodDataSource(nameof(HostAppVersionData))]

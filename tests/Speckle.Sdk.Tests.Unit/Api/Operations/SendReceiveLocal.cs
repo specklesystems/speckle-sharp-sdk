@@ -13,7 +13,7 @@ public sealed class SendReceiveLocal : IDisposable
 {
   private IOperations _operations;
 
-  public  SendReceiveLocal()
+  public SendReceiveLocal()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
@@ -40,6 +40,7 @@ public sealed class SendReceiveLocal : IDisposable
     await UploadProgressReports();
     await DownloadProgressReports();
   }
+
   private async Task LocalUpload()
   {
     var myObject = new Base();
@@ -134,7 +135,7 @@ public sealed class SendReceiveLocal : IDisposable
 
     var objsPulled = await _operations.Receive(_objId01);
 
-      ((List<object>)((Dictionary<string, object>)objsPulled["@dictionary"].NotNull())["a"]).First().ShouldBe(1);
+    ((List<object>)((Dictionary<string, object>)objsPulled["@dictionary"].NotNull())["a"]).First().ShouldBe(1);
     ((List<object>)objsPulled["@list"].NotNull()).Last().ShouldBe("ciao");
   }
 
@@ -180,7 +181,7 @@ public sealed class SendReceiveLocal : IDisposable
 
     var layerC = (List<object>)((dynamic)objPulled)["@LayerC"];
     layerC.Count.ShouldBe(30);
-   layerC[0].ShouldBeAssignableTo<Point>();
+    layerC[0].ShouldBeAssignableTo<Point>();
 
     var layerD = (List<object>)((dynamic)objPulled)["@LayerD"];
     layerD.Count.ShouldBe(2);

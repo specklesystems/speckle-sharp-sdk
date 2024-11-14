@@ -59,7 +59,7 @@ public sealed partial class OperationsReceiveTests
     }
   }
 
-  [Test, MethodDataSource(typeof(OperationsReceiveTests),nameof(TestCases))]
+  [Test, MethodDataSource(typeof(OperationsReceiveTests), nameof(TestCases))]
   public async Task Receive_FromLocal_ExistingObjects(string id)
   {
     Base result = await _operations.Receive(id, null, _testCaseTransport);
@@ -67,7 +67,7 @@ public sealed partial class OperationsReceiveTests
     result.id.ShouldBe(id);
   }
 
-  [Test, MethodDataSource(typeof(OperationsReceiveTests),nameof(TestCases))]
+  [Test, MethodDataSource(typeof(OperationsReceiveTests), nameof(TestCases))]
   public async Task Receive_FromRemote_ExistingObjects(string id)
   {
     MemoryTransport localTransport = new();

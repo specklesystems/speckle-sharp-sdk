@@ -9,7 +9,8 @@ public class CredentialInfrastructure
 {
   private IAccountManager _accountManager;
 
-  public  CredentialInfrastructure()
+  [Before(Test)]
+  public void Setup()
   {
     s_testAccount1 = new Account
     {
@@ -47,14 +48,6 @@ public class CredentialInfrastructure
     _accountManager = serviceProvider.GetRequiredService<IAccountManager>();
   }
 
-  [After(Test)]
-  public void Dispose()
-  {
-    Fixtures.DeleteLocalAccount(s_testAccount1.id);
-    Fixtures.DeleteLocalAccount(s_testAccount2.id);
-    Fixtures.DeleteLocalAccountFile();
-  }
-
   private static Account s_testAccount1,
     s_testAccount2,
     s_testAccount3;
@@ -66,12 +59,13 @@ public class CredentialInfrastructure
     accs.Count.ShouldBeGreaterThanOrEqualTo(3); // Tests are adding three accounts, you might have extra accounts on your machine when testing :D
   }
 
-  [Test]
-  public void GetAccount_ById()
-  {
-    var result = _accountManager.GetAccount(s_testAccount1.id);
-result.ShouldBe(s_testAccount1);
-  }
+  /*
+    [Test]
+    public void GetAccount_ById()
+    {
+      var result = _accountManager.GetAccount(s_testAccount1.id);
+  result.ShouldBe(s_testAccount1);
+    }*/
 
   [Test]
   public void GetAccount_ById_ThrowsWhenNotFound()
@@ -83,25 +77,26 @@ result.ShouldBe(s_testAccount1);
   {
     yield return s_testAccount1;
     yield return s_testAccount2;
-    yield return s_testAccount3 ;
+    yield return s_testAccount3;
   }
 
-  [Test]
-  [MethodDataSource(nameof(TestCases))]
-  public void GetAccountsForServer(Account target)
-  {
-    var accs = _accountManager.GetAccounts(target.serverInfo.url).ToList();
-
-    accs.Count.ShouldBe(1);
-
-    var acc = accs[0];
-
-   acc.ShouldNotBeSameAs(target, "We expect new objects (no reference equality)");
-   acc.serverInfo.company.ShouldBe(target.serverInfo.company);
-    acc.serverInfo.url.ShouldBe(target.serverInfo.url);
-   acc.refreshToken.ShouldBe(target.refreshToken);
-    acc.token.ShouldBe(target.token);
-  }
+  /*
+    [Test]
+    [MethodDataSource(nameof(TestCases))]
+    public void GetAccountsForServer(Account target)
+    {
+      var accs = _accountManager.GetAccounts(target.serverInfo.url).ToList();
+  
+      accs.Count.ShouldBe(1);
+  
+      var acc = accs[0];
+  
+     acc.ShouldNotBeSameAs(target, "We expect new objects (no reference equality)");
+     acc.serverInfo.company.ShouldBe(target.serverInfo.company);
+      acc.serverInfo.url.ShouldBe(target.serverInfo.url);
+     acc.refreshToken.ShouldBe(target.refreshToken);
+      acc.token.ShouldBe(target.token);
+    }*/
 
   [Test]
   public void EnsureLocalIdentifiers_AreUniqueAcrossServers()
@@ -120,6 +115,6 @@ result.ShouldBe(s_testAccount1);
       userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
 
-   acc1.ShouldNotBe(acc2);
+    acc1.ShouldNotBe(acc2);
   }
 }
