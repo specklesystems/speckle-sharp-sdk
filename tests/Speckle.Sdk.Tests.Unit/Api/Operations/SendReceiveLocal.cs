@@ -1,6 +1,4 @@
-using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
@@ -8,7 +6,6 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
@@ -31,7 +28,7 @@ public sealed class SendReceiveLocal : IDisposable
 
   private readonly SQLiteTransport _sut = new();
 
-  [Fact]
+  [Test]
   public async Task All()
   {
     await LocalUpload();
@@ -217,7 +214,7 @@ public sealed class SendReceiveLocal : IDisposable
     progress.ShouldNotBeNull();
   }
 
-  [Fact]
+  [Test]
   public async Task ShouldNotDisposeTransports()
   {
     var @base = new Base();

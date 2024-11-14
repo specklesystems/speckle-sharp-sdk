@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;

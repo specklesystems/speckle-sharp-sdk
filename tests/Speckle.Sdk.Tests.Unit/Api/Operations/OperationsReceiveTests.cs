@@ -1,12 +1,10 @@
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
-using Xunit;
+using Assembly = System.Reflection.Assembly;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
@@ -30,12 +28,12 @@ public sealed partial class OperationsReceiveTests
     ];
   }
 
-  public static IEnumerable<object[]> TestCases()
+  public static IEnumerable<string> TestCases()
   {
-    List<object[]> ret = new();
+    List<string> ret = new();
     foreach (var s in s_testObjects)
     {
-      ret.Add([s.GetId(true)]);
+      ret.Add(s.GetId(true));
     }
 
     return ret;
@@ -61,7 +59,7 @@ public sealed partial class OperationsReceiveTests
     }
   }
 
-  [Theory, MemberData(nameof(TestCases))]
+  [Test, MethodDataSource(typeof(OperationsReceiveTests),nameof(TestCases))]
   public async Task Receive_FromLocal_ExistingObjects(string id)
   {
     Base result = await _operations.Receive(id, null, _testCaseTransport);
@@ -69,7 +67,7 @@ public sealed partial class OperationsReceiveTests
     result.id.ShouldBe(id);
   }
 
-  [Theory, MemberData(nameof(TestCases))]
+  [Test, MethodDataSource(typeof(OperationsReceiveTests),nameof(TestCases))]
   public async Task Receive_FromRemote_ExistingObjects(string id)
   {
     MemoryTransport localTransport = new();
@@ -78,7 +76,7 @@ public sealed partial class OperationsReceiveTests
     result.id.ShouldBe(id);
   }
 
-  [Theory, MemberData(nameof(TestCases))]
+  [Test, MethodDataSource(nameof(TestCases))]
   public async Task Receive_FromLocal_OnProgressActionCalled(string id)
   {
     bool wasCalled = false;

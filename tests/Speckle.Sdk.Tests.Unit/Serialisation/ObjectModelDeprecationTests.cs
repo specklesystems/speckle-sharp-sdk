@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -6,11 +5,9 @@ using Speckle.Sdk.Serialisation.Deprecated;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation
 {
-  [TestFixture]
-  [TestOf(typeof(TypeLoader))]
   public class TypeLoaderTests
   {
-    [SetUp]
+    [Before(Class)]
     public void Setup()
     {
       TypeLoader.Reset();
@@ -30,12 +27,12 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
 
       var result = TypeLoader.GetAtomicType(destinationType);
-      Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));
+      result.ShouldBe(typeof(MySpeckleBase));
 
       destinationType = $"Speckle.Core.Serialisation.Deprecated.{nameof(MySpeckleBase)}";
 
       result = TypeLoader.GetAtomicType(destinationType);
-      Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));
+      result.ShouldBe(typeof(MySpeckleBase));
     }
   }
 }

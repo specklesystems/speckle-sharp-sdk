@@ -1,14 +1,10 @@
 using System.Drawing;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Api.GraphQL.Models;
-using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
-using Xunit;
 using Point = Speckle.Sdk.Tests.Unit.Host.Point;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
@@ -25,7 +21,7 @@ public class ObjectSerialization
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
-  [Fact]
+  [Test]
   public async Task IgnoreCircularReferences()
   {
     var pt = new Point(1, 2, 3);
@@ -38,7 +34,7 @@ public class ObjectSerialization
     circle.ShouldBeNull();
   }
 
-  [Fact]
+  [Test]
   public async Task InterfacePropHandling()
   {
     Line tail = new() { Start = new Point(0, 0, 0), End = new Point(42, 42, 42) };
@@ -77,7 +73,7 @@ public class ObjectSerialization
     deserialisedFeline.GetId().ShouldBe(cat.GetId()); // If we're getting the same hash... we're probably fine!
   }
 
-  [Fact]
+  [Test]
   public async Task InheritanceTests()
   {
     var superPoint = new SuperPoint
@@ -94,7 +90,7 @@ public class ObjectSerialization
     sstr.speckle_type.ShouldBe(superPoint.speckle_type);
   }
 
-  [Fact]
+  [Test]
   public async Task ListDynamicProp()
   {
     var point = new Point();
@@ -114,7 +110,7 @@ public class ObjectSerialization
     list.ShouldNotBeNull().Count.ShouldBe(100);
   }
 
-  [Fact]
+  [Test]
   public async Task ChunkSerialisation()
   {
     var baseBasedChunk = new DataChunk() { data = new() };
@@ -148,7 +144,7 @@ public class ObjectSerialization
     doubleChunkDeserialised.data.Count.ShouldBe(doubleBasedChunk.data.Count);
   }
 
-  [Fact]
+  [Test]
   public async Task ObjectWithChunksSerialisation()
   {
     const int MAX_NUM = 2020;
@@ -176,7 +172,7 @@ public class ObjectSerialization
     mesh.GetId().ShouldBe(deserialised.GetId());
   }
 
-  [Fact]
+  [Test]
   public void EmptyListSerialisationTests()
   {
     // NOTE: expected behaviour is that empty lists should serialize as empty lists. Don't ask why, it's complicated.
@@ -208,7 +204,7 @@ public class ObjectSerialization
     public DateTime TestField { get; set; }
   }
 
-  [Fact]
+  [Test]
   public async Task DateSerialisation()
   {
     var date = new DateTime(2020, 1, 14);
@@ -226,7 +222,7 @@ public class ObjectSerialization
     public Guid TestField { get; set; }
   }
 
-  [Fact]
+  [Test]
   public async Task GuidSerialisation()
   {
     var guid = Guid.NewGuid();
@@ -244,7 +240,7 @@ public class ObjectSerialization
     public Color TestField { get; set; }
   }
 
-  [Fact]
+  [Test]
   public async Task ColorSerialisation()
   {
     var color = Color.FromArgb(255, 4, 126, 251);
@@ -262,7 +258,7 @@ public class ObjectSerialization
     public string TestField { get; set; }
   }
 
-  [Fact]
+  [Test]
   public async Task StringDateTimeRegression()
   {
     var mockBase = new StringDateTimeRegressionMock { TestField = "2021-11-12T11:32:01" };

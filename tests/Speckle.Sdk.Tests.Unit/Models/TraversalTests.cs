@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
 

@@ -1,23 +1,20 @@
 using System.Diagnostics;
-using NUnit.Framework;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
-[TestFixture]
-[TestOf(typeof(Base))]
 public class Hashing
 {
-  [SetUp]
+  [Before(Class)]
   public void Setup()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DiningTable).Assembly);
   }
 
-  [Test(Description = "Checks that hashing (as represented by object ids) actually works.")]
+  [Test]
   public void HashChangeCheck()
   {
     var table = new DiningTable();
@@ -30,9 +27,7 @@ public class Hashing
     Assert.That(secondTable.GetId(), Is.Not.EqualTo(table.GetId()));
   }
 
-  [Test(
-    Description = "Tests the convention that dynamic properties that have key names prepended with '__' are ignored."
-  )]
+  [Test]
   public void IgnoredDynamicPropertiesCheck()
   {
     var table = new DiningTable();
@@ -43,7 +38,7 @@ public class Hashing
     Assert.That(table.GetId(), Is.EqualTo(originalHash));
   }
 
-  [Test(Description = "Rather stupid test as results vary wildly even on one machine.")]
+  [Test]
   public void HashingPerformance()
   {
     var polyline = new Polyline();

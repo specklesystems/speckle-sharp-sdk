@@ -1,14 +1,10 @@
 using System.Diagnostics;
 using GraphQL;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api;
 
@@ -35,18 +31,18 @@ public sealed class GraphQLClientTests : IDisposable
     _client?.Dispose();
   }
 
-  public static IEnumerable<object[]> ErrorCases()
+  public static IEnumerable<(Type, Map)> ErrorCases()
   {
-    yield return [typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "FORBIDDEN" } }];
-    yield return [typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "UNAUTHENTICATED" } }];
-    yield return [
+    yield return (typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "FORBIDDEN" } });
+    yield return (typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "UNAUTHENTICATED" } });
+    yield return (
       typeof(SpeckleGraphQLInternalErrorException),
       new Map { { "code", "INTERNAL_SERVER_ERROR" } }
-    ];
-    yield return [typeof(SpeckleGraphQLException<FakeGqlResponseModel>), new Map { { "foo", "bar" } }];
+    );
+    yield return (typeof(SpeckleGraphQLException<FakeGqlResponseModel>), new Map { { "foo", "bar" } });
   }
 
-  [Theory, MemberData(nameof(ErrorCases))]
+  [Test, MethodDataSource(typeof(GraphQLClientTests), nameof(ErrorCases))]
   public void TestExceptionThrowingFromGraphQLErrors(Type exType, Map extensions)
   {
     Assert.Throws(
@@ -62,13 +58,13 @@ public sealed class GraphQLClientTests : IDisposable
     );
   }
 
-  [Fact]
+  [Test]
   public void TestMaybeThrowsDoesntThrowForNoErrors()
   {
     _client.MaybeThrowFromGraphQLErrors(new GraphQLRequest(), new GraphQLResponse<string>());
   }
 
-  [Fact]
+  [Test]
   public async Task TestExecuteWithResiliencePoliciesDoesntRetryTaskCancellation()
   {
     var timer = new Stopwatch();
@@ -76,7 +72,9 @@ public sealed class GraphQLClientTests : IDisposable
     await Assert.ThrowsAsync<TaskCanceledException>(async () =>
     {
       var tokenSource = new CancellationTokenSource();
+#pragma warning disable CA1849
       tokenSource.Cancel();
+#pragma warning restore CA1849
       await _client.ExecuteWithResiliencePolicies(
         async () =>
           await Task.Run(
@@ -97,7 +95,7 @@ public sealed class GraphQLClientTests : IDisposable
     elapsed.ShouldBeLessThan(1000);
   }
 
-  [Fact]
+  [Test]
   public async Task TestExecuteWithResiliencePoliciesRetry()
   {
     var counter = 0;

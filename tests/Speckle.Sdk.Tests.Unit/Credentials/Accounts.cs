@@ -1,15 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Shouldly;
-using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
-public class CredentialInfrastructure : IDisposable
+public class CredentialInfrastructure
 {
   private IAccountManager _accountManager;
 
@@ -51,6 +47,7 @@ public class CredentialInfrastructure : IDisposable
     _accountManager = serviceProvider.GetRequiredService<IAccountManager>();
   }
 
+  [After(Test)]
   public void Dispose()
   {
     Fixtures.DeleteLocalAccount(s_testAccount1.id);
@@ -62,35 +59,35 @@ public class CredentialInfrastructure : IDisposable
     s_testAccount2,
     s_testAccount3;
 
-  [Fact]
+  [Test]
   public void GetAllAccounts()
   {
     var accs = _accountManager.GetAccounts().ToList();
     accs.Count.ShouldBeGreaterThanOrEqualTo(3); // Tests are adding three accounts, you might have extra accounts on your machine when testing :D
   }
 
-  [Fact]
+  [Test]
   public void GetAccount_ById()
   {
     var result = _accountManager.GetAccount(s_testAccount1.id);
 result.ShouldBe(s_testAccount1);
   }
 
-  [Fact]
+  [Test]
   public void GetAccount_ById_ThrowsWhenNotFound()
   {
     Assert.Throws<SpeckleAccountManagerException>(() => _accountManager.GetAccount("Non_existent_id"));
   }
 
-  public static IEnumerable<object[]> TestCases()
+  public static IEnumerable<Account> TestCases()
   {
-    yield return [s_testAccount1];
-    yield return [s_testAccount2];
-    yield return [s_testAccount3 ];
+    yield return s_testAccount1;
+    yield return s_testAccount2;
+    yield return s_testAccount3 ;
   }
 
-  [Theory]
-  [MemberData(nameof(TestCases))]
+  [Test]
+  [MethodDataSource(nameof(TestCases))]
   public void GetAccountsForServer(Account target)
   {
     var accs = _accountManager.GetAccounts(target.serverInfo.url).ToList();
@@ -106,7 +103,7 @@ result.ShouldBe(s_testAccount1);
     acc.token.ShouldBe(target.token);
   }
 
-  [Fact]
+  [Test]
   public void EnsureLocalIdentifiers_AreUniqueAcrossServers()
   {
     // Accounts with the same user ID in different servers should always result in different local identifiers.
@@ -123,6 +120,6 @@ result.ShouldBe(s_testAccount1);
       userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
 
-   acc1.ShouldBe(acc2);
+   acc1.ShouldNotBe(acc2);
   }
 }

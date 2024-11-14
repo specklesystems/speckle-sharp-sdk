@@ -1,16 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
-using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
-using Speckle.Sdk.Models;
-using Speckle.Sdk.Transports;
-using Xunit;
+﻿using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public partial class OperationsReceiveTests
 {
-  [Theory, MemberData(nameof(TestCases))]
+  [Test, MethodDataSource(nameof(TestCases))]
   public async Task Receive_ObjectsDontExist_ExceptionThrown(string id)
   {
     MemoryTransport emptyTransport1 = new();
@@ -21,7 +15,7 @@ public partial class OperationsReceiveTests
     });
   }
 
-  [Theory, MemberData(nameof(TestCases))]
+  [Test, MethodDataSource(nameof(TestCases))]
   public async Task Receive_ObjectsDontExistNullRemote_ExceptionThrown(string id)
   {
     MemoryTransport emptyTransport = new();
@@ -31,7 +25,7 @@ public partial class OperationsReceiveTests
     });
   }
 
-  [Theory, MemberData(nameof(TestCases))]
+  [Test, MethodDataSource(nameof(TestCases))]
   public async Task Receive_OperationCanceled_ExceptionThrown(string id)
   {
     using CancellationTokenSource ctc = new();

@@ -1,15 +1,14 @@
-﻿using NUnit.Framework;
-using Shouldly;
+﻿using Shouldly;
 using Speckle.Sdk.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Host;
 
 public class HostApplicationTests
 {
-  private static List<HostAppVersion> s_hostAppVersion = Enum.GetValues<HostAppVersion>().ToList();
+  public static IEnumerable<HostAppVersion> HostAppVersionData() =>  Enum.GetValues<HostAppVersion>();
 
   [Test]
-  [TestCaseSource(nameof(s_hostAppVersion))]
+  [MethodDataSource(nameof(HostAppVersionData))]
   public void HostAppVersionParsingTests(HostAppVersion appVersion)
   {
     appVersion.ToString().StartsWith('v').ShouldBeTrue();

@@ -1,11 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
@@ -21,10 +19,10 @@ public class SendObjectReferences
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
-  [Theory]
-  [InlineData(0)]
-  [InlineData(1)]
-  [InlineData(10)]
+  [Test]
+  [Arguments(0)]
+  [Arguments(1)]
+  [Arguments(10)]
   public async Task SendObjectsWithApplicationIds(int testDepth)
   {
     Base testData = GenerateTestCase(testDepth, true);
@@ -37,10 +35,10 @@ public class SendObjectReferences
    result.convertedReferences.Count.ShouldBe((int)Math.Pow(2, testDepth + 1) - 2);
   }
 
-  [Theory]
-  [InlineData(0)]
-  [InlineData(1)]
-  [InlineData(10)]
+  [Test]
+  [Arguments(0)]
+  [Arguments(1)]
+  [Arguments(10)]
   public async Task SendObjectsWithoutApplicationIds(int testDepth)
   {
     Base testData = GenerateTestCase(testDepth, false);

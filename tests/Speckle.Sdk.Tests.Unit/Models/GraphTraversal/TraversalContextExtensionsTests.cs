@@ -1,5 +1,4 @@
-﻿using NUnit.Framework;
-using Speckle.Sdk.Common;
+﻿using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;

@@ -1,11 +1,10 @@
-using NUnit.Framework;
+using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Transports;
 
-[TestFixture]
 public abstract class TransportTests
 {
   protected abstract ITransport? Sut { get; }
@@ -18,7 +17,7 @@ public abstract class TransportTests
 
     {
       var preAdd = await Sut.NotNull().GetObject(PAYLOAD_ID);
-      Assert.That(preAdd, Is.Null);
+      preAdd.ShouldBeNull();
     }
 
     Sut.SaveObject(PAYLOAD_ID, PAYLOAD_DATA);
@@ -26,7 +25,7 @@ public abstract class TransportTests
 
     {
       var postAdd = await Sut.GetObject(PAYLOAD_ID);
-      Assert.That(postAdd, Is.EqualTo(PAYLOAD_DATA));
+      postAdd.ShouldBe(PAYLOAD_DATA);
     }
   }
 
@@ -38,9 +37,9 @@ public abstract class TransportTests
 
     {
       var preAdd = await Sut.NotNull().HasObjects(new[] { PAYLOAD_ID });
-      Assert.That(preAdd, Has.Exactly(1).Items);
-      Assert.That(preAdd, Has.No.ContainValue(true));
-      Assert.That(preAdd, Contains.Key(PAYLOAD_ID));
+      preAdd.Count.ShouldBe(1);
+      preAdd.Values.ShouldNotContain(true);
+      preAdd.Keys.ShouldContain(PAYLOAD_ID);
     }
 
     Sut.SaveObject(PAYLOAD_ID, PAYLOAD_DATA);
@@ -49,14 +48,13 @@ public abstract class TransportTests
     {
       var postAdd = await Sut.HasObjects(new[] { PAYLOAD_ID });
 
-      Assert.That(postAdd, Has.Exactly(1).Items);
-      Assert.That(postAdd, Has.No.ContainValue(false));
-      Assert.That(postAdd, Contains.Key(PAYLOAD_ID));
+      postAdd.Count.ShouldBe(1);
+      postAdd.Values.ShouldNotContain(false);
+      postAdd.Keys.ShouldContain(PAYLOAD_ID);
     }
   }
 
   [Test]
-  [Description("Test that transports save objects when many threads are concurrently saving data")]
   public async Task SaveObject_ConcurrentWrites()
   {
     const int TEST_DATA_COUNT = 100;
@@ -82,14 +80,14 @@ public abstract class TransportTests
     var ids = testData.Select(x => x.id).ToList();
     var hasObjectsResult = await Sut.HasObjects(ids);
 
-    Assert.That(hasObjectsResult, Does.Not.ContainValue(false));
-    Assert.That(hasObjectsResult.Keys, Is.EquivalentTo(ids));
+    hasObjectsResult.Values.ShouldNotContain(false);
+    hasObjectsResult.Keys.ShouldBe(ids);
 
     //Test 3. GetObjects
     foreach (var x in testData)
     {
       var res = await Sut.GetObject(x.id);
-      Assert.That(res, Is.EqualTo(x.data));
+      res.ShouldBe(x.data);
     }
   }
 
@@ -107,19 +105,19 @@ public abstract class TransportTests
   {
     var toString = Sut.NotNull().TransportName;
 
-    Assert.That(toString, Is.Not.Null);
-    Assert.That(toString, Is.Not.Empty);
+    toString.ShouldNotBeNull();
+    toString.ShouldNotBeEmpty();
   }
 
   [Test]
-  public void SaveObject_ExceptionThrown_TaskIsCanceled()
+  public async Task SaveObject_ExceptionThrown_TaskIsCanceled()
   {
     using CancellationTokenSource tokenSource = new();
     Sut.NotNull().CancellationToken = tokenSource.Token;
 
     tokenSource.Cancel();
 
-    Assert.CatchAsync<OperationCanceledException>(async () =>
+    await Should.ThrowAsync<OperationCanceledException>(async () =>
     {
       Sut.SaveObject("abcdef", "fake payload data");
       await Sut.WriteComplete();
@@ -156,7 +154,7 @@ public abstract class TransportTests
     foreach (var (expectedId, expectedData) in testData)
     {
       var actual = await destination.GetObject(expectedId);
-      Assert.That(actual, Is.EqualTo(expectedData));
+      actual.ShouldBe(expectedData);
     }
   }
 }

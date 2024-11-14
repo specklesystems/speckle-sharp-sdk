@@ -1,9 +1,7 @@
 using System.Collections;
-using NUnit.Framework;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.GraphTraversal;
-using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Models.GraphTraversal;
 

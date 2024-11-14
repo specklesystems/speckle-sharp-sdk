@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -9,22 +9,22 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 public class ChunkingTests
 {
-  public static IEnumerable<TestCaseData> TestCases()
+  public static IEnumerable<(Base, int)> TestCases()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
 
-    yield return new TestCaseData(CreateDynamicTestCase(10, 100)).Returns(10);
-    yield return new TestCaseData(CreateDynamicTestCase(0.5, 100)).Returns(1);
-    yield return new TestCaseData(CreateDynamicTestCase(20.5, 100)).Returns(21);
+    yield return (CreateDynamicTestCase(10, 100),10);
+    yield return (CreateDynamicTestCase(0.5, 100),1);
+    yield return (CreateDynamicTestCase(20.5, 100),21);
 
-    yield return new TestCaseData(CreateDynamicTestCase(10, 1000)).Returns(10);
-    yield return new TestCaseData(CreateDynamicTestCase(0.5, 1000)).Returns(1);
-    yield return new TestCaseData(CreateDynamicTestCase(20.5, 1000)).Returns(21);
+    yield return (CreateDynamicTestCase(10, 1000),10);
+    yield return (CreateDynamicTestCase(0.5, 1000),1);
+    yield return (CreateDynamicTestCase(20.5, 1000),21);
   }
 
-  [TestCaseSource(nameof(TestCases))]
-  public int ChunkSerializationTest(Base testCase)
+  [MethodDataSource(nameof(TestCases))]
+  public void ChunkSerializationTest(Base testCase, int ret)
   {
     MemoryTransport transport = new();
     var sut = new SpeckleObjectSerializer([transport]);
@@ -39,7 +39,7 @@ public class ChunkingTests
       x!.TryGetValue("speckle_type", out var speckleType) && ((string)speckleType!) == "Speckle.Core.Models.DataChunk"
     );
 
-    return numberOfChunks;
+     numberOfChunks.ShouldBe(ret);
   }
 
   private static Base CreateDynamicTestCase(double numberOfChunks, int chunkSize)

@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;

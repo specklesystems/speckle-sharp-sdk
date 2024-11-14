@@ -1,11 +1,9 @@
 using System.Runtime.InteropServices;
-using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Tests.Unit.Helpers;
 
-[TestFixture]
-[TestOf(nameof(SpecklePathProvider))]
 public class SpecklePathTests
 {
   [Test]
@@ -38,8 +36,7 @@ public class SpecklePathTests
     {
       throw new NotImplementedException("Your OS platform is not supported");
     }
-
-    Assert.That(userPath, Does.Match(pattern));
+    userPath.ShouldMatch(pattern);
   }
 
   [Test]
@@ -77,7 +74,6 @@ public class SpecklePathTests
     {
       throw new NotImplementedException("Your OS platform is not supported");
     }
-
-    Assert.That(installPath, Does.Match(pattern));
+    installPath.ShouldMatch(pattern);
   }
 }

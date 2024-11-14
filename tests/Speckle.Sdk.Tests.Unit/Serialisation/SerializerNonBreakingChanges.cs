@@ -1,6 +1,5 @@
 using System.Drawing;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Helpers;

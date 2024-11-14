@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using Speckle.Sdk.Models.Extensions;
 
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;

@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
@@ -12,36 +12,35 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 /// Tests that the <see cref="JsonIgnoreAttribute"/> leads to properties being ignored both from the final JSON output,
 /// But also from the id calculation
 /// </summary>
-[TestOf(typeof(SpeckleObjectSerializer))]
 public sealed class JsonIgnoreRespected
 {
-  [SetUp]
+  [Before(Class)]
   public void Setup()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
   }
 
-  public static IEnumerable<TestCaseData> IgnoredTestCases()
+  const string EXPECTED_PAYLOAD = "this should have been included";
+  const string EXPECTED_HASH = "e1d9f0685266465c9bfe4e71f2eee6e9";
+  public static IEnumerable<(string, string, string?)> IgnoredTestCases()
   {
-    const string EXPECTED_PAYLOAD = "this should have been included";
-    const string EXPECTED_HASH = "e1d9f0685266465c9bfe4e71f2eee6e9";
-    yield return new TestCaseData("this should have been ignored", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-    yield return new TestCaseData("again, ignored!", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-    yield return new TestCaseData("this one is not", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
+    yield return ("this should have been ignored", EXPECTED_PAYLOAD,EXPECTED_HASH);
+    yield return ("again, ignored!", EXPECTED_PAYLOAD,EXPECTED_HASH);
+    yield return ("this one is not", EXPECTED_PAYLOAD,EXPECTED_HASH);
   }
 
-  public static IEnumerable<TestCaseData> IgnoredCompoundTestCases()
+  const string EXPECTED_PAYLOAD2 = "this should have been included";
+  const string EXPECTED_HASH2 = "eeaeee4e61b04b313dd840cd63341eee";
+  public static IEnumerable<(string, string, string?)> IgnoredCompoundTestCases()
   {
-    const string EXPECTED_PAYLOAD = "this should have been included";
-    const string EXPECTED_HASH = "eeaeee4e61b04b313dd840cd63341eee";
-    yield return new TestCaseData("this should have been ignored", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-    yield return new TestCaseData("again, ignored!", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-    yield return new TestCaseData("this one is not", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
+    yield return ("this should have been ignored", EXPECTED_PAYLOAD2,EXPECTED_HASH2);
+    yield return ("again, ignored!", EXPECTED_PAYLOAD2,EXPECTED_HASH2);
+    yield return ("this one is not", EXPECTED_PAYLOAD2,EXPECTED_HASH2);
   }
 
-  [TestCaseSource(nameof(IgnoredTestCases))]
-  public string? IgnoredProperties_NotIncludedInJson(string ignoredPayload, string expectedPayload)
+  [MethodDataSource(nameof(IgnoredTestCases))]
+  public void IgnoredProperties_NotIncludedInJson(string ignoredPayload, string expectedPayload, string? ret)
   {
     IgnoreTest testData = new(ignoredPayload, expectedPayload);
 
@@ -49,17 +48,17 @@ public sealed class JsonIgnoreRespected
 
     var (json, id) = sut.SerializeBase(testData).NotNull();
 
-    Assert.That(json, Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
-    Assert.That(json, Does.Not.Contain(ignoredPayload));
+    json.ShouldNotContain(nameof(testData.ShouldBeIgnored));
+    json.ShouldNotContain(ignoredPayload);
 
-    Assert.That(json, Does.Contain(nameof(testData.ShouldBeIncluded)));
-    Assert.That(json, Does.Contain(expectedPayload));
-
-    return id;
+    json.ShouldContain(nameof(testData.ShouldBeIncluded));
+    json.ShouldContain(expectedPayload);
+    
+    id.ShouldBe(ret);
   }
 
-  [TestCaseSource(nameof(IgnoredCompoundTestCases))]
-  public string? IgnoredProperties_Compound_NotIncludedInJson(string ignoredPayload, string expectedPayload)
+  [MethodDataSource(nameof(IgnoredCompoundTestCases))]
+  public void IgnoredProperties_Compound_NotIncludedInJson(string ignoredPayload, string expectedPayload, string? ret)
   {
     IgnoredCompoundTest testData = new(ignoredPayload, expectedPayload);
 
@@ -72,14 +71,14 @@ public sealed class JsonIgnoreRespected
 
     foreach ((_, string childJson) in savedObjects.Objects)
     {
-      Assert.That(childJson, Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
-      Assert.That(childJson, Does.Not.Contain(ignoredPayload));
+      childJson.ShouldNotContain(nameof(testData.ShouldBeIgnored));
+      childJson.ShouldNotContain(ignoredPayload);
 
-      Assert.That(childJson, Does.Contain(nameof(testData.ShouldBeIncluded)));
-      Assert.That(childJson, Does.Contain(expectedPayload));
+      childJson.ShouldContain(nameof(testData.ShouldBeIncluded));
+      childJson.ShouldContain(expectedPayload);
     }
 
-    return id;
+    id.ShouldBe(ret);
   }
 }
 

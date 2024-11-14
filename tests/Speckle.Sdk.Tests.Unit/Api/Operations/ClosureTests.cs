@@ -1,14 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using NUnit.Framework;
 using Shouldly;
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
@@ -24,7 +22,7 @@ public class Closures
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
-  [Fact]
+  [Test]
   public async Task CorrectDecompositionTracking()
   {
     var d5 = new Base();
@@ -79,7 +77,7 @@ public class Closures
    depthOf_d5_in_d2.ShouldBe(1);
   }
 
-  [Fact]
+  [Test]
   public void DescendantsCounting()
   {
     Base myBase = new();

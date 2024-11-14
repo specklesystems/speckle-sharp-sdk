@@ -1,11 +1,8 @@
-using NUnit.Framework;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Transports;
 
-[TestFixture]
-[TestOf(nameof(DiskTransport))]
 public sealed class DiskTransportTests : TransportTests
 {
   protected override ITransport Sut => _diskTransport.NotNull();
@@ -16,13 +13,13 @@ public sealed class DiskTransportTests : TransportTests
   private const string APPLICATION_NAME = "Speckle Integration Tests";
   private static readonly string s_fullPath = Path.Combine(s_basePath, APPLICATION_NAME);
 
-  [SetUp]
+  [Before(Class)]
   public void Setup()
   {
     _diskTransport = new DiskTransport(s_fullPath);
   }
 
-  [TearDown]
+  [After(Class)]
   public void TearDown()
   {
     Directory.Delete(s_basePath, true);

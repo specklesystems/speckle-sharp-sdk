@@ -1,10 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
@@ -12,7 +9,7 @@ public class AccountServerMigrationTests : IDisposable
 {
   private readonly List<Account> _accountsToCleanUp = new();
 
-  public static IEnumerable<object[]> MigrationTestCase()
+  public static IEnumerable<(IList<Account>, string , IList<Account>)> MigrationTestCase()
   {
     const string OLD_URL = "https://old.example.com";
     const string NEW_URL = "https://new.example.com";
@@ -24,17 +21,17 @@ public class AccountServerMigrationTests : IDisposable
 
     List<Account> givenAccounts = new() { oldAccount, newAccount, otherAccount };
 
-    yield return [givenAccounts, NEW_URL, new[] { newAccount }];
+    yield return (givenAccounts, NEW_URL, new[] { newAccount });
 
-    yield return [givenAccounts, OLD_URL, new[] { newAccount }];
+    yield return (givenAccounts, OLD_URL, new[] { newAccount });
 
     var reversed = Enumerable.Reverse(givenAccounts).ToList();
 
-    yield return [reversed, OLD_URL, new[] { newAccount }];
+    yield return (reversed, OLD_URL, new[] { newAccount });
   }
 
-  [Theory]
-  [MemberData(nameof(MigrationTestCase))]
+  [Test]
+  [MethodDataSource(nameof(MigrationTestCase))]
   public void TestServerMigration(IList<Account> accounts, string requestedUrl, IList<Account> expectedSequence)
   {
     AddAccounts(accounts);
@@ -42,7 +39,7 @@ public class AccountServerMigrationTests : IDisposable
 
     var result = serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
 
-    result.ShouldBeEquivalentTo(expectedSequence);
+    result.SequenceEqual(expectedSequence).ShouldBeTrue();
   }
 
   public void Dispose()
