@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Models.GraphTraversal;
