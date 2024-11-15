@@ -27,7 +27,6 @@ public sealed class ObjectDeserializer2(
     // JObject doc1 = JObject.Parse(objectJson);
 
     // This is equivalent code that doesn't parse datetimes:
-    using var stringReader = new StringReader(objectJson);
     var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(objectJson));
 
     Base? converted;
