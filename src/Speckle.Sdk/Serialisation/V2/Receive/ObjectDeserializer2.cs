@@ -33,7 +33,7 @@ public sealed class ObjectDeserializer2(
     try
     {
       reader.Read();
-      converted = (Base)ReadObject(reader).NotNull();
+      converted = (Base)ReadObject(ref reader).NotNull();
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
     {
@@ -43,13 +43,13 @@ public sealed class ObjectDeserializer2(
     return converted;
   }
 
-  private List<object?> ReadArrayAsync(Utf8JsonReader reader)
+  private List<object?> ReadArrayAsync(ref Utf8JsonReader reader)
   {
     reader.Read();
     List<object?> retList = new();
     while (reader.TokenType != JsonTokenType.EndArray)
     {
-      object? convertedValue = ReadProperty(reader);
+      object? convertedValue = ReadProperty(ref reader);
       if (convertedValue is DataChunk chunk)
       {
         retList.AddRange(chunk.data);
@@ -63,7 +63,7 @@ public sealed class ObjectDeserializer2(
     return retList;
   }
 
-  private object? ReadObject(Utf8JsonReader reader)
+  private object? ReadObject(ref Utf8JsonReader reader)
   {
     reader.Read();
     Dictionary<string, object?> dict = Pools.ObjectDictionaries.Get();
@@ -75,13 +75,15 @@ public sealed class ObjectDeserializer2(
           {
             var propName = reader.GetString().NotNull();
             reader.Read(); //goes prop value
-            object? convertedValue = ReadProperty(reader);
+            object? convertedValue = ReadProperty(ref reader);
             dict[propName] = convertedValue;
             reader.Read(); //goes to next
           }
           break;
         default:
-          throw new InvalidOperationException($"Unknown {reader.TokenType} with {reader.GetString()}");
+          throw new InvalidOperationException(
+            $"Unknown {reader.TokenType} with {Encoding.UTF8.GetString(reader.ValueSpan)}"
+          );
       }
     }
 
@@ -111,7 +113,7 @@ public sealed class ObjectDeserializer2(
     return b;
   }
 
-  private object? ReadProperty(Utf8JsonReader reader)
+  private object? ReadProperty(ref Utf8JsonReader reader)
   {
     switch (reader.TokenType)
     {
@@ -144,9 +146,9 @@ public sealed class ObjectDeserializer2(
         }
         return reader.GetString();
       case JsonTokenType.StartArray:
-        return ReadArrayAsync(reader);
+        return ReadArrayAsync(ref reader);
       case JsonTokenType.StartObject:
-        var dict = ReadObject(reader);
+        var dict = ReadObject(ref reader);
         return dict;
 
       default:
