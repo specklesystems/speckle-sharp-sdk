@@ -9,7 +9,7 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 /// <summary>
-/// Tests that the <see cref="JsonIgnoreAttribute"/> leads to properties being ignored both from the final JSON output,
+/// Tests that the <see cref="Speckle.Newtonsoft.Json.JsonIgnoreAttribute"/> leads to properties being ignored both from the final JSON output,
 /// But also from the id calculation
 /// </summary>
 [TestOf(typeof(SpeckleObjectSerializer))]
@@ -86,20 +86,26 @@ public sealed class JsonIgnoreRespected
 [SpeckleType("Speckle.Sdk.Test.Unit.Serialisation.IgnoredCompoundTest")]
 public sealed class IgnoredCompoundTest(string ignoredPayload, string expectedPayload) : Base
 {
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public Base ShouldBeIgnored => new IgnoreTest(ignoredPayload, expectedPayload) { ["override"] = ignoredPayload };
   public Base ShouldBeIncluded => new IgnoreTest(ignoredPayload, expectedPayload);
 
-  [JsonIgnore, DetachProperty]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
+  [DetachProperty]
   public Base ShouldBeIgnoredDetached => ShouldBeIgnored;
 
   [DetachProperty]
   public Base ShouldBeIncludedDetached => ShouldBeIncluded;
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public List<Base> ShouldBeIgnoredList => [ShouldBeIgnored];
 
-  [JsonIgnore, DetachProperty]
+  [DetachProperty]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public List<Base> ShouldBeIgnoredDetachedList => ShouldBeIgnoredList;
 
   public List<Base> ShouldBeIncludedList => [ShouldBeIncluded];
@@ -111,7 +117,8 @@ public sealed class IgnoredCompoundTest(string ignoredPayload, string expectedPa
 [SpeckleType("Speckle.Sdk.Tests.Unit.Serialisation.IgnoreTest")]
 public sealed class IgnoreTest(string shouldBeIgnoredPayload, string shouldBeIncludedPayload) : Base
 {
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public string ShouldBeIgnored => shouldBeIgnoredPayload;
 
   public string ShouldBeIncluded => shouldBeIncludedPayload;

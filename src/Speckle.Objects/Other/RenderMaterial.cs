@@ -1,5 +1,4 @@
 using System.Drawing;
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Proxies;
 
@@ -25,14 +24,16 @@ public class RenderMaterial : Base
 
   public int emissive { get; set; } = Color.Black.ToArgb();
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public Color diffuseColor
   {
     get => Color.FromArgb(diffuse);
     set => diffuse = value.ToArgb();
   }
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public Color emissiveColor
   {
     get => Color.FromArgb(emissive);

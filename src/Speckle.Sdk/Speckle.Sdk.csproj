@@ -38,11 +38,13 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" OverrideVersion="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" OverrideVersion="8.0.0"/>
     <PackageReference Include="System.Text.Json" NoWarn="NU1903" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" OverrideVersion="8.0.0" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />  
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" OverrideVersion="5.0.0" />
+    <PackageReference Include="System.Text.Json"  NoWarn="NU1903" OverrideVersion="5.0.0"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />

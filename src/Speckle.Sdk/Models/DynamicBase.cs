@@ -1,6 +1,5 @@
 using System.Dynamic;
 using System.Reflection;
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 
@@ -273,7 +272,9 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
   /// Gets the dynamically added property names only.
   /// </summary>
   /// <returns></returns>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public IReadOnlyCollection<string> DynamicPropertyKeys => _properties.Keys;
 }
 

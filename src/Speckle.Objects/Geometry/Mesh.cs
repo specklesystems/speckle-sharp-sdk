@@ -1,4 +1,3 @@
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Sdk;
 using Speckle.Sdk.Common;
@@ -87,10 +86,13 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
 
   #region Convenience Methods
 
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public int VerticesCount => vertices.Count / 3;
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public int TextureCoordinatesCount => textureCoordinates.Count / 2;
 
   /// <summary>

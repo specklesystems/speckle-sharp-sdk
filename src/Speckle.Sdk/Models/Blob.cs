@@ -1,13 +1,13 @@
 ﻿#nullable disable
 using System.Runtime.Serialization;
-using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Models;
 
 [SpeckleType("Speckle.Core.Models.Blob")]
 public class Blob : Base
 {
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public static int LocalHashPrefixLength => 20;
 
   private string _filePath;

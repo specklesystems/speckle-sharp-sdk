@@ -1,4 +1,3 @@
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
@@ -11,7 +10,9 @@ namespace Speckle.Objects.Geometry;
 [SpeckleType("Objects.Geometry.Box")]
 public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
 {
-  [JsonIgnore, Obsolete("Use plane property instead", true)]
+  [Obsolete("Use plane property instead", true)]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public Plane basePlane
   {
     get => plane;
@@ -49,7 +50,9 @@ public class Box : Base, IHasVolume, IHasArea, IHasBoundingBox
   /// <inheritdoc/>
   public double area => 2 * (xSize.Length * ySize.Length + xSize.Length * zSize.Length + ySize.Length * zSize.Length);
 
-  [JsonIgnore, Obsolete("Boxs should not have a bounding box", true)]
+  [Obsolete("Boxs should not have a bounding box", true)]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public Box? bbox { get; }
 
   /// <inheritdoc/>

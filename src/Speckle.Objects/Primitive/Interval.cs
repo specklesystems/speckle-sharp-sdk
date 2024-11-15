@@ -1,4 +1,3 @@
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Primitive;
@@ -9,7 +8,8 @@ public class Interval : Base
   public required double start { get; set; }
   public required double end { get; set; }
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public double Length => Math.Abs((end) - (start));
 
   public override string ToString()

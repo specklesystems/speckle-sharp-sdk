@@ -1,4 +1,3 @@
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Models;
 
@@ -9,7 +8,8 @@ public class GisPolylineFeature : Base, IGisFeature, IDisplayValue<List<Polyline
 {
   public required Base attributes { get; set; }
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required List<Polyline> geometry
   {
     get => displayValue;

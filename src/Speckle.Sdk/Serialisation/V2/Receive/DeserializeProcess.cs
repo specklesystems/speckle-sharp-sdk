@@ -132,11 +132,11 @@ public sealed class DeserializeProcess(
       return baseObject;
     }
 
-    #if NETSTANDARD2_0
+#if NETSTANDARD2_0
     var deserializer = objectDeserializerFactory.Create(_baseCache);
 #else
     var deserializer = objectDeserializerFactory.Create2(_baseCache, _options);
-    #endif
+#endif
     return deserializer.Deserialize(json);
   }
 }

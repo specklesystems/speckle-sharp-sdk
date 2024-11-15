@@ -72,8 +72,8 @@ public sealed class ObjectDeserializer2(
       switch (reader.TokenType)
       {
         case JsonTokenType.PropertyName:
-        {
-          var propName = reader.GetString().NotNull();
+          {
+            var propName = reader.GetString().NotNull();
             reader.Read(); //goes prop value
             object? convertedValue = ReadProperty(reader);
             dict[propName] = convertedValue;

@@ -1,7 +1,6 @@
 ﻿using System.Drawing;
 using NUnit.Framework;
 using Speckle.DoubleNumerics;
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -68,7 +67,12 @@ public class ModelPropertySupportedTypes
   {
     foreach ((string _, Type type, List<string> _) in TypeLoader.Types)
     {
-      var members = DynamicBase.GetInstanceMembers(type).Where(p => !p.IsDefined(typeof(JsonIgnoreAttribute), true));
+      var members = DynamicBase
+        .GetInstanceMembers(type)
+        .Where(p =>
+          !p.IsDefined(typeof(Speckle.Newtonsoft.Json.JsonIgnoreAttribute), true)
+          && !p.IsDefined(typeof(System.Text.Json.Serialization.JsonIgnoreAttribute), true)
+        );
 
       foreach (var prop in members)
       {

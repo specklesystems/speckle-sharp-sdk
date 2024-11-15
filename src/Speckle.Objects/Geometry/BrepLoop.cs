@@ -1,4 +1,3 @@
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
@@ -9,16 +8,19 @@ namespace Speckle.Objects.Geometry;
 [SpeckleType("Objects.Geometry.BrepLoop")]
 public class BrepLoop : Base
 {
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required Brep Brep { get; set; }
 
   public required int FaceIndex { get; set; }
   public required List<int> TrimIndices { get; set; }
   public required BrepLoopType Type { get; set; }
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public BrepFace Face => Brep.Faces[FaceIndex];
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public List<BrepTrim> Trims => TrimIndices.Select(i => Brep.Trims[i]).ToList();
 }

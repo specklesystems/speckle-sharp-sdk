@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -35,7 +34,6 @@ public partial class Operations
   /// <param name="cancellationToken"></param>
   /// <returns><inheritdoc cref="SpeckleObjectDeserializer.DeserializeAsync"/></returns>
   /// <exception cref="ArgumentNullException"><paramref name="value"/> was null</exception>
-  /// <exception cref="JsonReaderException "><paramref name="value"/> was not valid JSON</exception>
   /// <exception cref="SpeckleException"><paramref name="value"/> cannot be deserialised to type <see cref="Base"/></exception>
   /// <exception cref="Speckle.Sdk.Transports.TransportException"><paramref name="value"/> contains closure references (see Remarks)</exception>
   public async Task<Base> DeserializeAsync(string value, CancellationToken cancellationToken = default)

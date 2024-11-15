@@ -1,4 +1,3 @@
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Models;
 
@@ -10,7 +9,8 @@ namespace Speckle.Objects.Geometry;
 [SpeckleType("Objects.Geometry.BrepEdge")]
 public class BrepEdge : Base
 {
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required Brep Brep { get; set; }
 
   public required int Curve3dIndex { get; set; }
@@ -22,15 +22,19 @@ public class BrepEdge : Base
 
   public required Interval Domain { get; set; }
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public Point StartVertex => Brep.Vertices[StartIndex];
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public Point EndVertex => Brep.Vertices[EndIndex];
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public IEnumerable<BrepTrim> Trims => TrimIndices.Select(i => Brep.Trims[i]);
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public ICurve Curve => Brep.Curve3D[Curve3dIndex];
 }

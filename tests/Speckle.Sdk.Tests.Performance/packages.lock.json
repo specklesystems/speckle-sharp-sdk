@@ -341,11 +341,6 @@
           "System.Runtime.CompilerServices.Unsafe": "4.5.2"
         }
       },
-      "System.Text.Encodings.Web": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "yev/k9GHAEGx2Rg3/tU6MQh4HGBXJs70y7j1LaM1i/ER9po+6nnQ6RRqTJn1E7Xu0fbIFK80Nh5EoODxrbxwBQ=="
-      },
       "System.Threading.Tasks.Extensions": {
         "type": "Transitive",
         "resolved": "4.5.4",
@@ -361,6 +356,7 @@
         "type": "Project",
         "dependencies": {
           "GraphQL.Client": "[6.0.0, )",
+          "Microsoft.Bcl.AsyncInterfaces": "[5.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
           "Microsoft.Data.Sqlite": "[7.0.5, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
@@ -368,7 +364,7 @@
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
           "Speckle.Sdk.Dependencies": "[1.0.0, )",
-          "System.Text.Json": "[8.0.0, )"
+          "System.Text.Json": "[5.0.0, )"
         }
       },
       "speckle.sdk.dependencies": {
@@ -388,8 +384,8 @@
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "CentralTransitive",
         "requested": "[5.0.0, )",
-        "resolved": "1.1.0",
-        "contentHash": "1Am6l4Vpn3/K32daEqZI+FFr96OlZkgwK2LcT3pZ2zWubR5zTPW3/FkO1Rat9kb7oQOa4rxgl9LJHc5tspCWfg=="
+        "resolved": "5.0.0",
+        "contentHash": "W8DPQjkMScOMTtJbPwmPyj9c3zYSFGawDW3jwlBOOsnY+EzZFLgNQ/UMkK35JmkNOVPdCyPr2Tw7Vv9N+KA3ZQ=="
       },
       "Microsoft.CSharp": {
         "type": "CentralTransitive",
@@ -439,12 +435,9 @@
       },
       "System.Text.Json": {
         "type": "CentralTransitive",
-        "requested": "[8.0.0, )",
-        "resolved": "8.0.0",
-        "contentHash": "OdrZO2WjkiEG6ajEFRABTRCi/wuXQPxeV6g8xvUJqdxMvvuCCEk86zPla8UiIQJz3durtUEbNyY/3lIhS0yZvQ==",
-        "dependencies": {
-          "System.Text.Encodings.Web": "8.0.0"
-        }
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "+luxMQNZ2WqeffBU7Ml6njIvxc8169NW2oU+ygNudXQGZiarjE7DOtN7bILiQjTZjkmwwRZGTtLzmdrSI/Ustw=="
       }
     }
   }

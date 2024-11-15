@@ -1,5 +1,4 @@
 using System.Runtime.Serialization;
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
@@ -25,7 +24,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets the list of surfaces in this <see cref="Brep"/> instance.
   /// </summary>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required List<Surface> Surfaces { get; set; }
 
   /// <summary>
@@ -68,7 +69,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets the list of 3-dimensional curves in this <see cref="Brep"/> instance.
   /// </summary>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required List<ICurve> Curve3D { get; set; }
 
   /// <summary>
@@ -93,7 +96,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets the list of 2-dimensional UV curves in this <see cref="Brep"/> instance.
   /// </summary>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required List<ICurve> Curve2D { get; set; }
 
   /// <summary>
@@ -118,7 +123,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets the list of vertices in this <see cref="Brep"/> instance.
   /// </summary>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required List<Point> Vertices { get; set; }
 
   /// <summary>
@@ -158,7 +165,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets the list of edges in this <see cref="Brep"/> instance.
   /// </summary>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required List<BrepEdge> Edges { get; set; }
 
   /// <summary>
@@ -232,7 +241,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets the list of closed UV loops in this <see cref="Brep"/> instance.
   /// </summary>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required List<BrepLoop> Loops { get; set; }
 
   /// <summary>
@@ -288,7 +299,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets the list of UV trim segments for each surface in this <see cref="Brep"/> instance.
   /// </summary>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required List<BrepTrim> Trims { get; set; }
 
   /// <summary>
@@ -354,7 +367,9 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets the list of faces in this <see cref="Brep"/> instance.
   /// </summary>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public required List<BrepFace> Faces { get; set; }
 
   /// <summary>

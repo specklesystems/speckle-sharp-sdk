@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
@@ -99,7 +98,9 @@ public class Base : DynamicBase, ISpeckleObject
     foreach (var prop in typedProps.Where(p => p.CanRead))
     {
       bool isIgnored =
-        prop.IsDefined(typeof(ObsoleteAttribute), true) || prop.IsDefined(typeof(JsonIgnoreAttribute), true);
+        prop.IsDefined(typeof(ObsoleteAttribute), true)
+        || prop.IsDefined(typeof(Speckle.Newtonsoft.Json.JsonIgnoreAttribute), true)
+        || prop.IsDefined(typeof(System.Text.Json.Serialization.JsonIgnoreAttribute), true);
       if (isIgnored)
       {
         continue;
