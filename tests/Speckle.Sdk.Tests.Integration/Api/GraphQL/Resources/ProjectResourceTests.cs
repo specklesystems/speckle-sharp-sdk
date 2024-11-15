@@ -67,6 +67,7 @@ public class ProjectResourceTests
     bool response = await Sut.Delete(toDelete.id);
     Assert.That(response, Is.True);
 
-    Assert.ThrowsAsync<SpeckleGraphQLStreamNotFoundException>(async () => _ = await Sut.Get(toDelete.id));
+    var getEx = Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get(toDelete.id));
+    Assert.That(getEx?.InnerExceptions, Has.Exactly(1).TypeOf<SpeckleGraphQLStreamNotFoundException>());
   }
 }

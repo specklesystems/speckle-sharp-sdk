@@ -3,10 +3,8 @@ using GraphQL;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Api;
 
@@ -33,39 +31,6 @@ public sealed class GraphQLClientTests : IDisposable
   public void Dispose()
   {
     _client?.Dispose();
-  }
-
-  private static IEnumerable<TestCaseData> ErrorCases()
-  {
-    yield return new TestCaseData(typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "FORBIDDEN" } });
-    yield return new TestCaseData(typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "UNAUTHENTICATED" } });
-    yield return new TestCaseData(
-      typeof(SpeckleGraphQLInternalErrorException),
-      new Map { { "code", "INTERNAL_SERVER_ERROR" } }
-    );
-    yield return new TestCaseData(typeof(SpeckleGraphQLException<FakeGqlResponseModel>), new Map { { "foo", "bar" } });
-  }
-
-  [Test, TestCaseSource(nameof(ErrorCases))]
-  public void TestExceptionThrowingFromGraphQLErrors(Type exType, Map extensions)
-  {
-    Assert.Throws(
-      exType,
-      () =>
-        _client.EnsureGraphQLSuccess(
-          new GraphQLRequest(),
-          new GraphQLResponse<FakeGqlResponseModel>
-          {
-            Errors = new GraphQLError[] { new() { Extensions = extensions } },
-          }
-        )
-    );
-  }
-
-  [Test]
-  public void TestMaybeThrowsDoesntThrowForNoErrors()
-  {
-    Assert.DoesNotThrow(() => _client.EnsureGraphQLSuccess(new GraphQLRequest(), new GraphQLResponse<string>()));
   }
 
   [Test]
@@ -110,7 +75,7 @@ public sealed class GraphQLClientTests : IDisposable
       counter++;
       if (counter < maxRetryCount)
       {
-        throw new SpeckleGraphQLInternalErrorException(new GraphQLRequest(), new GraphQLResponse<string>());
+        throw new SpeckleGraphQLInternalErrorException();
       }
 
       return Task.FromResult(expectedResult);

@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Net.WebSockets;
 using System.Reflection;
 using GraphQL;
@@ -118,7 +117,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
           GraphQLResponse<T> result = await GQLClient
             .SendMutationAsync<T>(request, cancellationToken)
             .ConfigureAwait(false);
-          Client.EnsureGraphQLSuccess(result.Errors);
+          result.EnsureGraphQLSuccess();
           return result.Data;
         })
         .ConfigureAwait(false);
@@ -133,131 +132,48 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     }
   }
 
-  /// <exception cref="AggregateException"></exception>
-  internal static void EnsureGraphQLSuccess(IReadOnlyList<GraphQLError>? errors)
-  {
-    // The errors reflect the Apollo server v2 API, which is deprecated. It is bound to change,
-    // once we migrate to a newer version.
-    if (errors == null || errors.Count == 0)
-    {
-      return;
-    }
-
-    List<SpeckleGraphQLException> exceptions = new(errors.Count);
-    foreach (var error in errors)
-    {
-      object? code = null;
-      _ = error.Extensions?.TryGetValue("code", out code);
-
-      var message = FormatErrorMessage(error, code);
-      var ex = code switch
-      {
-        "GRAPHQL_PARSE_FAILED" or "GRAPHQL_VALIDATION_FAILED" => new SpeckleGraphQLInvalidQueryException(message),
-        "FORBIDDEN" or "UNAUTHENTICATED" => new SpeckleGraphQLForbiddenException(message),
-        "STREAM_NOT_FOUND" => new SpeckleGraphQLStreamNotFoundException(message),
-        "BAD_USER_INPUT" => new SpeckleGraphQLBadInputException(message),
-        "INTERNAL_SERVER_ERROR" => new SpeckleGraphQLInternalErrorException(message),
-        _ => new SpeckleGraphQLException(message),
-      };
-      exceptions.Add(ex);
-    }
-
-    throw new AggregateException("Request failed with GraphQL errors, see inner exceptions", exceptions);
-  }
-
-  [Pure]
-  private static string FormatErrorMessage(GraphQLError error, object? code)
-  {
-    code ??= "ERROR";
-    string? path = null;
-    if (error.Path is not null)
-    {
-      path = error.Path is not null ? string.Join(',', error.Path) : null;
-      path = $", at {path}";
-    }
-    return $"{code}: {error.Message}{path}";
-  }
-
   IDisposable ISpeckleGraphQLClient.SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback) =>
     SubscribeTo(request, callback);
 
   /// <inheritdoc cref="ISpeckleGraphQLClient.SubscribeTo{T}"/>
   private IDisposable SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback)
   {
-    //using (LogContext.Push(CreateEnrichers<T>(request)))
+    try
     {
-      try
-      {
-        var res = GQLClient.CreateSubscriptionStream<T>(request);
-        return res.Subscribe(
-          response =>
+      var res = GQLClient.CreateSubscriptionStream<T>(request);
+      return res.Subscribe(
+        response =>
+        {
+          try
           {
-            try
-            {
-              EnsureGraphQLSuccess(request, response);
+            response.EnsureGraphQLSuccess();
 
-              if (response.Data != null)
-              {
-                callback(this, response.Data);
-              }
-              else
-              {
-                // Serilog.Log.ForContext("graphqlResponse", response)
-                _logger.LogError(
-                  "Cannot execute graphql callback for {resultType}, the response has no data.",
-                  typeof(T).Name
-                );
-              }
-            }
-            // we catch forbidden to rethrow, making sure its not logged.
-            catch (SpeckleGraphQLForbiddenException)
-            {
-              throw;
-            }
-            // anything else related to graphql gets logged
-            catch (SpeckleGraphQLException<T> gqlException)
-            {
-              /* Speckle.Sdk.Logging..ForContext("graphqlResponse", gqlException.Response)
-                 .ForContext("graphqlExtensions", gqlException.Extensions)
-                 .ForContext("graphqlErrorMessages", gqlException.ErrorMessages.ToList())*/
-              _logger.LogWarning(
-                gqlException,
-                "Execution of the graphql request to get {resultType} failed with {graphqlExceptionType} {exceptionMessage}.",
-                typeof(T).Name,
-                gqlException.GetType().Name,
-                gqlException.Message
-              );
-              throw;
-            }
-            // we're not handling the bare Exception type here,
-            // since we have a response object on the callback, we know the Exceptions
-            // can only be thrown from the MaybeThrowFromGraphQLErrors which wraps
-            // every exception into SpeckleGraphQLException
-          },
-          ex =>
-          {
-            // we're logging this as an error for now, to keep track of failures
-            // so far we've swallowed these errors
-            _logger.LogError(
-              ex,
-              "Subscription for {resultType} terminated unexpectedly with {exceptionMessage}",
-              typeof(T).Name,
-              ex.Message
-            );
-            // we could be throwing like this:
-            // throw ex;
+            callback(this, response.Data);
           }
-        );
-      }
-      catch (Exception ex) when (!ex.IsFatal())
-      {
-        throw new SpeckleGraphQLException<T>(
-          "The graphql request failed without a graphql response",
-          request,
-          null,
-          ex
-        );
-      }
+          catch (AggregateException ex)
+          {
+            _logger.LogWarning(ex, "Subscription for {type} got a response with errors", typeof(T).Name);
+            throw;
+          }
+        },
+        ex =>
+        {
+          // we're logging this as an error for now, to keep track of failures
+          // so far we've swallowed these errors
+          _logger.LogError(
+            ex,
+            "Subscription for {resultType} terminated unexpectedly with {exceptionMessage}",
+            typeof(T).Name,
+            ex.Message
+          );
+          // we could be throwing like this:
+          // throw ex;
+        }
+      );
+    }
+    catch (Exception ex) when (!ex.IsFatal() && ex is not ObjectDisposedException)
+    {
+      throw new SpeckleGraphQLException($"Subscription for {typeof(T)} failed to start", ex);
     }
   }
 
