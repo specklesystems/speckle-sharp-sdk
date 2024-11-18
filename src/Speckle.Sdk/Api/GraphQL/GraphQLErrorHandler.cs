@@ -43,18 +43,7 @@ internal static class GraphQLErrorHandler
   [Pure]
   private static string FormatErrorMessage(GraphQLError error, object? code)
   {
-#if NET6_0_OR_GREATER
-    const char JOIN_ON = ',';
-#else
-    const string JOIN_ON = ",";
-#endif
     code ??= "ERROR";
-    string? path = null;
-    if (error.Path is not null)
-    {
-      path = error.Path is not null ? string.Join(JOIN_ON, error.Path) : null;
-      path = $", at {path}";
-    }
-    return $"{code}: {error.Message}{path}";
+    return $"{code}: {error.Message}";
   }
 }
