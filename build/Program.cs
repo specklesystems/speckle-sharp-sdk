@@ -66,7 +66,7 @@ Target(
   DependsOn(RESTORE),
   async () =>
   {
-    await RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore").ConfigureAwait(false);
+    await RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore -warnaserror").ConfigureAwait(false);
   }
 );
 
@@ -81,7 +81,6 @@ Target(
         $"test {file} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage /p:AltCoverVerbosity=Warning"
       )
       .ConfigureAwait(false);
-    ;
   }
 );
 
@@ -91,7 +90,6 @@ Target(
   async () =>
   {
     await RunAsync("docker", "compose -f docker-compose.yml up --wait").ConfigureAwait(false);
-    ;
     foreach (var test in Glob.Files(".", "**/*.Tests.Integration.csproj"))
     {
       await RunAsync(
@@ -99,7 +97,6 @@ Target(
           $"test {test} -c Release --no-build --no-restore --verbosity=normal  /p:AltCover=true  /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage"
         )
         .ConfigureAwait(false);
-      ;
     }
     await RunAsync("docker", "compose down").ConfigureAwait(false);
   }
