@@ -175,8 +175,11 @@ public class ServerObjectManager : IServerObjectManager
   {
     cancellationToken.ThrowIfCancellationRequested();
 
-    using HttpRequestMessage message =
-      new() { RequestUri = new Uri($"/objects/{_streamId}", UriKind.Relative), Method = HttpMethod.Post };
+    using HttpRequestMessage message = new()
+    {
+      RequestUri = new Uri($"/objects/{_streamId}", UriKind.Relative),
+      Method = HttpMethod.Post,
+    };
 
     MultipartFormDataContent multipart = new();
 

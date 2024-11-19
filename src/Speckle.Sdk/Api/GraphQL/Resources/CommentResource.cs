@@ -80,20 +80,19 @@ public sealed class CommentResource
       }
       """;
 
-    GraphQLRequest request =
-      new()
+    GraphQLRequest request = new()
+    {
+      Query = QUERY,
+      Variables = new
       {
-        Query = QUERY,
-        Variables = new
-        {
-          projectId,
-          cursor,
-          limit,
-          filter,
-          repliesLimit,
-          repliesCursor,
-        },
-      };
+        projectId,
+        cursor,
+        limit,
+        filter,
+        repliesLimit,
+        repliesCursor,
+      },
+    };
 
     var response = await _client
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ProjectCommentCollection>>>(request, cancellationToken)

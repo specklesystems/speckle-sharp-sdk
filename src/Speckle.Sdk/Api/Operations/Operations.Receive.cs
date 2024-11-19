@@ -119,14 +119,13 @@ public partial class Operations
     }
 
     // Setup Serializer
-    SpeckleObjectDeserializer serializer =
-      new()
-      {
-        ReadTransport = localTransport,
-        OnProgressAction = internalProgressAction,
-        CancellationToken = cancellationToken,
-        BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder,
-      };
+    SpeckleObjectDeserializer serializer = new()
+    {
+      ReadTransport = localTransport,
+      OnProgressAction = internalProgressAction,
+      CancellationToken = cancellationToken,
+      BlobStorageFolder = (remoteTransport as IBlobCapableTransport)?.BlobStorageFolder,
+    };
 
     // Try Local Receive
     string? objString = await LocalReceive(objectId, localTransport).ConfigureAwait(false);

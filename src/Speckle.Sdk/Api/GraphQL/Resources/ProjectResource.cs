@@ -94,18 +94,17 @@ public sealed class ProjectResource
         }
       }
       """;
-    GraphQLRequest request =
-      new()
+    GraphQLRequest request = new()
+    {
+      Query = QUERY,
+      Variables = new
       {
-        Query = QUERY,
-        Variables = new
-        {
-          projectId,
-          modelsLimit,
-          modelsCursor,
-          modelsFilter,
-        },
-      };
+        projectId,
+        modelsLimit,
+        modelsCursor,
+        modelsFilter,
+      },
+    };
 
     var response = await _client
       .ExecuteGraphQLRequest<RequiredResponse<ProjectWithModels>>(request, cancellationToken)

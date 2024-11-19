@@ -100,13 +100,12 @@ public class ObjectSerializer : IObjectSerializer
       // Note: this change was needed as we've made the ObjectReference type inherit from Base for
       // the purpose of the "do not convert unchanged previously converted objects" POC.
       case ObjectReference r:
-        Dictionary<string, object?> ret =
-          new()
-          {
-            ["speckle_type"] = r.speckle_type,
-            ["referencedId"] = r.referencedId,
-            ["__closure"] = r.closure,
-          };
+        Dictionary<string, object?> ret = new()
+        {
+          ["speckle_type"] = r.speckle_type,
+          ["referencedId"] = r.referencedId,
+          ["__closure"] = r.closure,
+        };
         SerializeProperty(ret, writer);
         break;
       case Base b:

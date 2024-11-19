@@ -101,19 +101,18 @@ public sealed class VersionResource
       }
       """;
 
-    GraphQLRequest request =
-      new()
+    GraphQLRequest request = new()
+    {
+      Query = QUERY,
+      Variables = new
       {
-        Query = QUERY,
-        Variables = new
-        {
-          projectId,
-          modelId,
-          limit,
-          cursor,
-          filter,
-        },
-      };
+        projectId,
+        modelId,
+        limit,
+        cursor,
+        filter,
+      },
+    };
 
     var response = await _client
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ResourceCollection<Version>>>>>(
