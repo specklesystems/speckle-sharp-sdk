@@ -35,8 +35,11 @@ public class ProjectResourceExceptionalTests
   [Test]
   public void ProjectCreate_WithoutAuth()
   {
-    ProjectCreateInput input =
-      new("The best project", "The best description for the best project", ProjectVisibility.Private);
+    ProjectCreateInput input = new(
+      "The best project",
+      "The best description for the best project",
+      ProjectVisibility.Private
+    );
 
     var ex = Assert.ThrowsAsync<AggregateException>(async () => _ = await _unauthedUser.Project.Create(input));
     Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());

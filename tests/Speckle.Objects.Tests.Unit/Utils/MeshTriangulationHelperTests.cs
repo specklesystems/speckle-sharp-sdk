@@ -23,13 +23,12 @@ public class MeshTriangulationHelperTests
     List<int> faces = new(n + 1) { n };
     faces.AddRange(Enumerable.Range(0, n));
 
-    Mesh mesh =
-      new()
-      {
-        vertices = vertices,
-        faces = faces,
-        units = Units.Meters,
-      };
+    Mesh mesh = new()
+    {
+      vertices = vertices,
+      faces = faces,
+      units = Units.Meters,
+    };
 
     //Test
     mesh.TriangulateMesh();
@@ -59,13 +58,12 @@ public class MeshTriangulationHelperTests
 
     List<int> faces = new() { 3, 0, 1, 2 };
 
-    Mesh mesh =
-      new()
-      {
-        vertices = vertices,
-        faces = new List<int>(faces),
-        units = Units.Meters,
-      };
+    Mesh mesh = new()
+    {
+      vertices = vertices,
+      faces = new List<int>(faces),
+      units = Units.Meters,
+    };
 
     //Test
     mesh.TriangulateMesh();
@@ -87,13 +85,12 @@ public class MeshTriangulationHelperTests
 
     List<int> faces = new() { 4, 0, 1, 2, 3 };
 
-    Mesh mesh =
-      new()
-      {
-        vertices = vertices,
-        faces = new List<int>(faces),
-        units = Units.Meters,
-      };
+    Mesh mesh = new()
+    {
+      vertices = vertices,
+      faces = new List<int>(faces),
+      units = Units.Meters,
+    };
 
     //Tests
     mesh.TriangulateMesh(preserveQuads);

@@ -52,13 +52,12 @@ public static class Fixtures
   public static async Task<Account> SeedUser()
   {
     var seed = Guid.NewGuid().ToString().ToLower();
-    Dictionary<string, string> user =
-      new()
-      {
-        ["email"] = $"{seed.Substring(0, 7)}@example.com",
-        ["password"] = "12ABC3456789DEF0GHO",
-        ["name"] = $"{seed.Substring(0, 5)} Name",
-      };
+    Dictionary<string, string> user = new()
+    {
+      ["email"] = $"{seed.Substring(0, 7)}@example.com",
+      ["password"] = "12ABC3456789DEF0GHO",
+      ["name"] = $"{seed.Substring(0, 5)} Name",
+    };
 
     using var httpClient = new HttpClient(
       new HttpClientHandler { AllowAutoRedirect = false, CheckCertificateRevocationList = true }
@@ -85,14 +84,13 @@ public static class Fixtures
     var query = HttpUtility.ParseQueryString(uri.Query);
 
     string accessCode = query["access_code"] ?? throw new Exception("Redirect Uri has no 'access_code'.");
-    Dictionary<string, string> tokenBody =
-      new()
-      {
-        ["accessCode"] = accessCode,
-        ["appId"] = "spklwebapp",
-        ["appSecret"] = "spklwebapp",
-        ["challenge"] = "challengingchallenge",
-      };
+    Dictionary<string, string> tokenBody = new()
+    {
+      ["accessCode"] = accessCode,
+      ["appId"] = "spklwebapp",
+      ["appSecret"] = "spklwebapp",
+      ["challenge"] = "challengingchallenge",
+    };
 
     var tokenResponse = await httpClient.PostAsync(
       "/auth/token",

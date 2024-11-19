@@ -98,14 +98,13 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
   {
     //I question if this is the behaviour we want, but AccountManager.GetObjects is relying on being able to update objects while enumerating over them
     const string UPDATE_STRING = "_new";
-    Dictionary<string, string> testData =
-      new()
-      {
-        { "a", "This is object a" },
-        { "b", "This is object b" },
-        { "c", "This is object c" },
-        { "d", "This is object d" },
-      };
+    Dictionary<string, string> testData = new()
+    {
+      { "a", "This is object a" },
+      { "b", "This is object b" },
+      { "c", "This is object c" },
+      { "d", "This is object d" },
+    };
     int length = testData.Values.First().Length;
 
     foreach (var (key, data) in testData)

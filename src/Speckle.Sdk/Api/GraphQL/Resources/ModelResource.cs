@@ -185,18 +185,17 @@ public sealed class ModelResource
         }
       }
       """;
-    GraphQLRequest request =
-      new()
+    GraphQLRequest request = new()
+    {
+      Query = QUERY,
+      Variables = new
       {
-        Query = QUERY,
-        Variables = new
-        {
-          projectId,
-          modelsLimit,
-          modelsCursor,
-          modelsFilter,
-        },
-      };
+        projectId,
+        modelsLimit,
+        modelsCursor,
+        modelsFilter,
+      },
+    };
 
     var response = await _client
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ResourceCollection<Model>>>>(request, cancellationToken)
