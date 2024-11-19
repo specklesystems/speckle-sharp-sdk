@@ -9,7 +9,6 @@ using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
@@ -38,8 +37,10 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   /// <summary>
   /// Gets the basic information about a server.
   /// </summary>
-  /// <param name="server">Server URL</param>
+  /// <param name="server">Server Information</param>
   /// <returns></returns>
+  /// <exception cref="GraphQLHttpRequestException">Request failed on the HTTP layer (received a non-successful response code)</exception>
+  /// <exception cref="AggregateException"><inheritdoc cref="GraphQLErrorHandler.EnsureGraphQLSuccess(IGraphQLResponse)"/></exception>
   public async Task<ServerInfo> GetServerInfo(Uri server, CancellationToken cancellationToken = default)
   {
     using var httpClient = speckleHttp.CreateHttpClient();
@@ -78,14 +79,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
 
     var response = await gqlClient.SendQueryAsync<ServerInfoResponse>(request, cancellationToken).ConfigureAwait(false);
 
-    if (response.Errors is not null)
-    {
-      throw new SpeckleGraphQLException<ServerInfoResponse>(
-        $"GraphQL request {nameof(GetServerInfo)} failed",
-        request,
-        response
-      );
-    }
+    response.EnsureGraphQLSuccess();
 
     ServerInfo serverInfo = response.Data.serverInfo;
     serverInfo.url = server.ToString().TrimEnd('/');
@@ -100,6 +94,8 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   /// <param name="token"></param>
   /// <param name="server">Server URL</param>
   /// <returns></returns>
+  /// <exception cref="GraphQLHttpRequestException">Request failed on the HTTP layer (received a non-successful response code)</exception>
+  /// <exception cref="AggregateException"><inheritdoc cref="GraphQLErrorHandler.EnsureGraphQLSuccess(IGraphQLResponse)"/></exception>
   public async Task<UserInfo> GetUserInfo(string token, Uri server, CancellationToken cancellationToken = default)
   {
     using var httpClient = speckleHttp.CreateHttpClient(authorizationToken: token);
@@ -126,10 +122,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
       .SendQueryAsync<RequiredResponse<UserInfo>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    if (response.Errors != null)
-    {
-      throw new SpeckleGraphQLException($"GraphQL request {nameof(GetUserInfo)} failed", request, response);
-    }
+    response.EnsureGraphQLSuccess();
 
     return response.Data.data;
   }
@@ -146,59 +139,45 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
     CancellationToken ct = default
   )
   {
-    try
+    using var httpClient = speckleHttp.CreateHttpClient(authorizationToken: token);
+
+    using var client = new GraphQLHttpClient(
+      new GraphQLHttpClientOptions { EndPoint = new Uri(server, "/graphql") },
+      new NewtonsoftJsonSerializer(),
+      httpClient
+    );
+
+    System.Version version = await client.GetServerVersion(ct).ConfigureAwait(false);
+
+    // serverMigration property was added in 2.18.5, so only query for it
+    // if the server has been updated past that version
+    System.Version serverMigrationVersion = new(2, 18, 5);
+
+    string queryString;
+    if (version >= serverMigrationVersion)
     {
-      using var httpClient = speckleHttp.CreateHttpClient(authorizationToken: token);
-
-      using var client = new GraphQLHttpClient(
-        new GraphQLHttpClientOptions { EndPoint = new Uri(server, "/graphql") },
-        new NewtonsoftJsonSerializer(),
-        httpClient
-      );
-
-      System.Version version = await client.GetServerVersion(ct).ConfigureAwait(false);
-
-      // serverMigration property was added in 2.18.5, so only query for it
-      // if the server has been updated past that version
-      System.Version serverMigrationVersion = new(2, 18, 5);
-
-      string queryString;
-      if (version >= serverMigrationVersion)
-      {
-        //language=graphql
-        queryString =
-          "query { activeUser { id name email company avatar streams { totalCount } commits { totalCount } } serverInfo { name company adminContact description version migration { movedFrom movedTo } } }";
-      }
-      else
-      {
-        //language=graphql
-        queryString =
-          "query { activeUser { id name email company avatar streams { totalCount } commits { totalCount } } serverInfo { name company adminContact description version } }";
-      }
-
-      var request = new GraphQLRequest { Query = queryString };
-
-      var response = await client.SendQueryAsync<ActiveUserServerInfoResponse>(request, ct).ConfigureAwait(false);
-
-      if (response.Errors != null)
-      {
-        throw new SpeckleGraphQLException<ActiveUserServerInfoResponse>(
-          $"Query {nameof(GetUserServerInfo)} failed",
-          request,
-          response
-        );
-      }
-
-      ServerInfo serverInfo = response.Data.serverInfo;
-      serverInfo.url = server.ToString().TrimEnd('/');
-      serverInfo.frontend2 = await IsFrontend2Server(server).ConfigureAwait(false);
-
-      return response.Data;
+      //language=graphql
+      queryString =
+        "query { activeUser { id name email company avatar streams { totalCount } commits { totalCount } } serverInfo { name company adminContact description version migration { movedFrom movedTo } } }";
     }
-    catch (Exception ex) when (!ex.IsFatal())
+    else
     {
-      throw new SpeckleException($"Failed to get user + server info from {server}", ex);
+      //language=graphql
+      queryString =
+        "query { activeUser { id name email company avatar streams { totalCount } commits { totalCount } } serverInfo { name company adminContact description version } }";
     }
+
+    var request = new GraphQLRequest { Query = queryString };
+
+    var response = await client.SendQueryAsync<ActiveUserServerInfoResponse>(request, ct).ConfigureAwait(false);
+
+    response.EnsureGraphQLSuccess();
+
+    ServerInfo serverInfo = response.Data.serverInfo;
+    serverInfo.url = server.ToString().TrimEnd('/');
+    serverInfo.frontend2 = await IsFrontend2Server(server).ConfigureAwait(false);
+
+    return response.Data;
   }
 
   /// <summary>

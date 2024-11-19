@@ -23,10 +23,11 @@ public class ProjectInviteResourceExceptionalTests
   [TestCase(null, "something", "something", null)]
   public void ProjectInviteCreate_InvalidInput(string email, string role, string serverRole, string userId)
   {
-    Assert.CatchAsync<SpeckleGraphQLException>(async () =>
+    var ex = Assert.CatchAsync<AggregateException>(async () =>
     {
       var input = new ProjectInviteCreateInput(email, role, serverRole, userId);
       await Sut.Create(_project.id, input);
     });
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
   }
 }
