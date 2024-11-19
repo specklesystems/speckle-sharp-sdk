@@ -91,7 +91,7 @@ public class ModelResourceTests
 
     await Sut.Delete(input);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Get(_model.id, _project.id));
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Delete(input));
+    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Get(_model.id, _project.id));
+    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Delete(input));
   }
 }
