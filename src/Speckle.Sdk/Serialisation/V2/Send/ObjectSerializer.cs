@@ -98,7 +98,7 @@ public class ObjectSerializer : IObjectSerializer
     {
       // Start with object references so they're not captured by the Base class case below
       // Note: this change was needed as we've made the ObjectReference type inherit from Base for
-      // the purpose of the "do not convert unchanged previously converted objects" POC.
+      // the purpose of the send object (connector/conversion level) caching.
       case ObjectReference r:
         Dictionary<string, object?> ret = new()
         {
