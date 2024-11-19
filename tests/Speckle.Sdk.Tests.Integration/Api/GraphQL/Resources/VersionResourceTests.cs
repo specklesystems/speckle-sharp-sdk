@@ -52,9 +52,7 @@ public class VersionResourceTests
   public async Task VersionReceived()
   {
     MarkReceivedVersionInput input = new(_version.id, _project.id, "Integration test");
-    var result = await Sut.Received(input);
-
-    Assert.That(result, Is.True);
+    await Sut.Received(input);
   }
 
   [Test]
@@ -99,12 +97,11 @@ public class VersionResourceTests
   {
     DeleteVersionsInput input = new([_version.id], _project.id);
 
-    bool response = await Sut.Delete(input);
-    Assert.That(response, Is.True);
+    await Sut.Delete(input);
 
-    var getEx = Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get(_version.id, _project.id));
+    var getEx = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Get(_version.id, _project.id));
     Assert.That(getEx?.InnerExceptions, Has.Exactly(1).TypeOf<SpeckleGraphQLException>());
-    var delEx = Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Delete(input));
+    var delEx = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Delete(input));
     Assert.That(delEx?.InnerExceptions, Has.Exactly(1).TypeOf<SpeckleGraphQLException>());
   }
 }

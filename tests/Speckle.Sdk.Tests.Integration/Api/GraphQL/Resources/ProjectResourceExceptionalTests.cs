@@ -107,8 +107,7 @@ public class ProjectResourceExceptionalTests
   [Test]
   public async Task ProjectDelete_NonExistentProject()
   {
-    bool response = await Sut.Delete(_testProject.id);
-    Assert.That(response, Is.True);
+    await Sut.Delete(_testProject.id);
 
     var ex = Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get(_testProject.id));
     Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLStreamNotFoundException>());
