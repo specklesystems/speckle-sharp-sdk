@@ -79,17 +79,16 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   /// <returns>A <see cref="Polycurve"/> with the same shape as the provided polyline.</returns>
   public static implicit operator Polycurve(Polyline polyline)
   {
-    Polycurve polycurve =
-      new()
-      {
-        segments = new(),
-        units = polyline.units,
-        area = polyline.area,
-        domain = polyline.domain,
-        closed = polyline.closed,
-        bbox = polyline.bbox,
-        length = polyline.length,
-      };
+    Polycurve polycurve = new()
+    {
+      segments = new(),
+      units = polyline.units,
+      area = polyline.area,
+      domain = polyline.domain,
+      closed = polyline.closed,
+      bbox = polyline.bbox,
+      length = polyline.length,
+    };
 
     var points = polyline.GetPoints();
     for (var i = 0; i < points.Count - 1; i++)

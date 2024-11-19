@@ -11,20 +11,19 @@ public class TraversalTests
   public void TestFlattenWithBreaker()
   {
     //Setup
-    Base root =
-      new()
+    Base root = new()
+    {
+      id = "root",
+      ["child"] = new Base
       {
-        id = "root",
+        id = "traverse through me",
         ["child"] = new Base
         {
-          id = "traverse through me",
-          ["child"] = new Base
-          {
-            id = "break on me, go no further",
-            ["child"] = new Base { id = "should have ignored me" },
-          },
+          id = "break on me, go no further",
+          ["child"] = new Base { id = "should have ignored me" },
         },
-      };
+      },
+    };
 
     static bool BreakRule(Base b) => b.id.Contains("break on me");
 

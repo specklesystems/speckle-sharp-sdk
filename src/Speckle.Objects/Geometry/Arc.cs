@@ -94,16 +94,15 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
     midPoint.TransformTo(transform, out Point transformedMidpoint);
     endPoint.TransformTo(transform, out Point transformedEndPoint);
     plane.TransformTo(transform, out Plane pln);
-    Arc arc =
-      new()
-      {
-        startPoint = transformedStartPoint,
-        endPoint = transformedEndPoint,
-        midPoint = transformedMidpoint,
-        plane = pln,
-        domain = domain,
-        units = units,
-      };
+    Arc arc = new()
+    {
+      startPoint = transformedStartPoint,
+      endPoint = transformedEndPoint,
+      midPoint = transformedMidpoint,
+      plane = pln,
+      domain = domain,
+      units = units,
+    };
     transformed = arc;
     return true;
   }
@@ -150,16 +149,15 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
   public static Arc FromList(List<double> list)
   {
     string units = Units.GetUnitFromEncoding(list[^1]);
-    Arc arc =
-      new()
-      {
-        domain = new Interval { start = list[6], end = list[7] },
-        units = units,
-        plane = Plane.FromList(list.GetRange(8, 13)),
-        startPoint = Point.FromList(list.GetRange(21, 3), units),
-        midPoint = Point.FromList(list.GetRange(24, 3), units),
-        endPoint = Point.FromList(list.GetRange(27, 3), units),
-      };
+    Arc arc = new()
+    {
+      domain = new Interval { start = list[6], end = list[7] },
+      units = units,
+      plane = Plane.FromList(list.GetRange(8, 13)),
+      startPoint = Point.FromList(list.GetRange(21, 3), units),
+      midPoint = Point.FromList(list.GetRange(24, 3), units),
+      endPoint = Point.FromList(list.GetRange(27, 3), units),
+    };
 
     arc.plane.units = arc.units;
     return arc;

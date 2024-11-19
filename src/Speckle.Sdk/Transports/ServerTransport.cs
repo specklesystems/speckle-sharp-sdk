@@ -129,8 +129,14 @@ public sealed class ServerTransport : IServerTransport
 
     CancellationToken.ThrowIfCancellationRequested();
 
-    using ParallelServerApi api =
-      new(_http, _activityFactory, BaseUri, AuthorizationToken, BlobStorageFolder, TimeoutSeconds);
+    using ParallelServerApi api = new(
+      _http,
+      _activityFactory,
+      BaseUri,
+      AuthorizationToken,
+      BlobStorageFolder,
+      TimeoutSeconds
+    );
 
     var stopwatch = Stopwatch.StartNew();
     api.CancellationToken = CancellationToken;

@@ -19,8 +19,18 @@ public static class Units
   /// <summary>US Survey foot, now not supported by Speckle, kept privately for backwards compatibility</summary>
   private const string USFeet = "us_ft";
 
-  internal static readonly List<string> SupportedUnits =
-    new() { Millimeters, Centimeters, Meters, Kilometers, Inches, Feet, Yards, Miles, None };
+  internal static readonly List<string> SupportedUnits = new()
+  {
+    Millimeters,
+    Centimeters,
+    Meters,
+    Kilometers,
+    Inches,
+    Feet,
+    Yards,
+    Miles,
+    None,
+  };
 
   /// <param name="unit"></param>
   /// <returns><see langword="true"/> if <paramref name="unit"/> is a recognised/supported unit string, otherwise <see langword="false"/></returns>
