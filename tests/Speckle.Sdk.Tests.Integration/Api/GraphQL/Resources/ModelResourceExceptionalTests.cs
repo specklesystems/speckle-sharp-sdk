@@ -80,9 +80,8 @@ public class ModelResourceExceptionalTests
   {
     Model toDelete = await Sut.Create(new("Delete me", null, _project.id));
     DeleteModelInput input = new(toDelete.id, _project.id);
-    bool response = await Sut.Delete(input);
-    Assert.That(response, Is.True);
+    await Sut.Delete(input);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Delete(input));
+    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Delete(input));
   }
 }

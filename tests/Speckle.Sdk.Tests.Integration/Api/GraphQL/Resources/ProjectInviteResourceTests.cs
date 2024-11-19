@@ -82,8 +82,7 @@ public class ProjectInviteResourceTests
   public async Task ProjectInviteUse_MemberAdded()
   {
     ProjectInviteUseInput input = new(true, _createdInvite.projectId, _createdInvite.token.NotNull());
-    var res = await _invitee.ProjectInvite.Use(input);
-    Assert.That(res, Is.True);
+    await _invitee.ProjectInvite.Use(input);
 
     var project = await _inviter.Project.GetWithTeam(_project.id);
     var teamMembers = project.team.Select(c => c.user.id);
