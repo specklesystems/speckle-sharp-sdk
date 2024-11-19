@@ -5,6 +5,7 @@ namespace Speckle.Sdk.Common;
 
 public static class NotNullExtensions
 {
+  /// <exception cref="ArgumentNullException">Thrown when the awaited <paramref name="task"/> returns <see langword="null"/></exception>
   public static async ValueTask<T> NotNull<T>(
     this ValueTask<T?> task,
     [CallerArgumentExpression(nameof(task))] string? message = null
@@ -19,6 +20,7 @@ public static class NotNullExtensions
     return x;
   }
 
+  /// <inheritdoc cref="NotNull{T}(System.Threading.Tasks.ValueTask{T?},string?)"/>
   public static async ValueTask<T> NotNull<T>(
     this ValueTask<T?> task,
     [CallerArgumentExpression(nameof(task))] string? message = null
@@ -33,6 +35,7 @@ public static class NotNullExtensions
     return x.Value;
   }
 
+  /// <inheritdoc cref="NotNull{T}(System.Threading.Tasks.ValueTask{T?},string?)"/>
   public static async Task<T> NotNull<T>(
     this Task<T?> task,
     [CallerArgumentExpression(nameof(task))] string? message = null
@@ -47,6 +50,7 @@ public static class NotNullExtensions
     return x;
   }
 
+  /// <inheritdoc cref="NotNull{T}(System.Threading.Tasks.ValueTask{T?},string?)"/>
   public static async Task<T> NotNull<T>(
     this Task<T?> task,
     [CallerArgumentExpression(nameof(task))] string? message = null
@@ -61,6 +65,7 @@ public static class NotNullExtensions
     return x.Value;
   }
 
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="obj"/> is <see langword="null"/></exception>
   public static T NotNull<T>([NotNull] this T? obj, [CallerArgumentExpression(nameof(obj))] string? paramName = null)
     where T : class
   {
@@ -71,6 +76,7 @@ public static class NotNullExtensions
     return obj;
   }
 
+  /// <inheritdoc cref="NotNull{T}(T?,string?)"/>
   public static T NotNull<T>([NotNull] this T? obj, [CallerArgumentExpression(nameof(obj))] string? paramName = null)
     where T : struct
   {

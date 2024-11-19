@@ -99,7 +99,9 @@ public class VersionResourceTests
 
     await Sut.Delete(input);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Get(_version.id, _project.id));
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Delete(input));
+    var getEx = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Get(_version.id, _project.id));
+    Assert.That(getEx?.InnerExceptions, Has.Exactly(1).TypeOf<SpeckleGraphQLException>());
+    var delEx = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Delete(input));
+    Assert.That(delEx?.InnerExceptions, Has.Exactly(1).TypeOf<SpeckleGraphQLException>());
   }
 }
