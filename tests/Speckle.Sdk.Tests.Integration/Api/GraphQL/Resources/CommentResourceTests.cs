@@ -26,6 +26,14 @@ public class CommentResourceTests
   }
 
   [Test]
+  public async Task Get()
+  {
+    var comment = await Sut.Get(_comment.id, _project.id);
+    Assert.That(comment.id, Is.EqualTo(_comment.id));
+    Assert.That(comment.authorId, Is.EqualTo(_testUser.Account.userInfo.id));
+  }
+
+  [Test]
   public async Task GetProjectComments()
   {
     var comments = await Sut.GetProjectComments(_project.id);
@@ -46,20 +54,22 @@ public class CommentResourceTests
   [Test]
   public async Task MarkViewed()
   {
-    var viewed = await Sut.MarkViewed(_comment.id);
-    Assert.That(viewed, Is.True);
-    viewed = await Sut.MarkViewed(_comment.id);
-    Assert.That(viewed, Is.True);
+    await Sut.MarkViewed(new(_comment.id, _project.id));
+    var res = await Sut.Get(_comment.id, _project.id);
+
+    Assert.That(res.viewedAt, Is.Not.Null);
   }
 
   [Test]
   public async Task Archive()
   {
-    var archived = await Sut.Archive(_comment.id);
-    Assert.That(archived, Is.True);
+    await Sut.Archive(new(_comment.id, _project.id, true));
+    var archived = await Sut.Get(_comment.id, _project.id);
+    Assert.That(archived.archived, Is.True);
 
-    archived = await Sut.Archive(_comment.id);
-    Assert.That(archived, Is.True);
+    await Sut.Archive(new(_comment.id, _project.id, false));
+    var unarchived = await Sut.Get(_comment.id, _project.id);
+    Assert.That(unarchived.archived, Is.False);
   }
 
   [Test]
@@ -67,7 +77,7 @@ public class CommentResourceTests
   {
     var blobs = await Fixtures.SendBlobData(_testUser.Account, _project.id);
     var blobIds = blobs.Select(b => b.id).ToList();
-    EditCommentInput input = new(new(blobIds, null), _comment.id);
+    EditCommentInput input = new(new(blobIds, null), _comment.id, _project.id);
 
     var editedComment = await Sut.Edit(input);
 
@@ -83,7 +93,7 @@ public class CommentResourceTests
   {
     var blobs = await Fixtures.SendBlobData(_testUser.Account, _project.id);
     var blobIds = blobs.Select(b => b.id).ToList();
-    CreateCommentReplyInput input = new(new(blobIds, null), _comment.id);
+    CreateCommentReplyInput input = new(new(blobIds, null), _comment.id, _project.id);
 
     var editedComment = await Sut.Reply(input);
 
