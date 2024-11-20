@@ -7,19 +7,21 @@ using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
-using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
+using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
+
+public readonly record struct CacheInfo(Json Json, Closures Closures);
 
 [GenerateAutoInterface]
 public class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
-  private readonly Dictionary<string, int> _currentClosures = new();
-  private readonly ConcurrentDictionary<Base, (string, Dictionary<string, int>)> _baseCache;
+  private readonly Closures _currentClosures = new();
+  private readonly ConcurrentDictionary<Base, CacheInfo> _baseCache;
 
   private readonly bool _trackDetachedChildren;
   private readonly IBasePropertyGatherer _propertyGatherer;
@@ -29,9 +31,9 @@ public class ObjectSerializer : IObjectSerializer
   /// Keeps track of all detached children created during serialisation that have an applicationId (provided this serializer instance has been told to track detached children).
   /// This is currently used to cache previously converted objects and avoid their conversion if they haven't changed. See the DUI3 send bindings in rhino or another host app.
   /// </summary>
-  public Dictionary<string, ObjectReference> ObjectReferences { get; } = new();
+  public Dictionary<Id, ObjectReference> ObjectReferences { get; } = new();
 
-  private readonly List<(string, string)> _chunks = new();
+  private readonly List<(Id, Json)> _chunks = new();
 
   /// <summary>
   /// Creates a new Serializer instance.
@@ -40,7 +42,7 @@ public class ObjectSerializer : IObjectSerializer
   /// <param name="cancellationToken"></param>
   public ObjectSerializer(
     IBasePropertyGatherer propertyGatherer,
-    ConcurrentDictionary<Base, (string, Dictionary<string, int>)> baseCache,
+    ConcurrentDictionary<Base, CacheInfo> baseCache,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
@@ -55,15 +57,15 @@ public class ObjectSerializer : IObjectSerializer
   /// <returns>The serialized JSON</returns>
   /// <exception cref="InvalidOperationException">The serializer is busy (already serializing an object)</exception>
   /// <exception cref="SpeckleSerializeException">Failed to extract (pre-serialize) properties from the <paramref name="baseObj"/></exception>
-  public IEnumerable<(string, string)> Serialize(Base baseObj)
+  public IEnumerable<(Id, Json)> Serialize(Base baseObj)
   {
     try
     {
       try
       {
         var item = SerializeBase(baseObj, true).NotNull();
-        _baseCache.TryAdd(baseObj, (item.Json, _currentClosures));
-        return [new(item.Id, item.Json), .. _chunks];
+        _baseCache.TryAdd(baseObj, new(item.Item2, _currentClosures));
+        return [new(item.Item1, item.Item2), .. _chunks];
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
@@ -110,16 +112,16 @@ public class ObjectSerializer : IObjectSerializer
         //AddClosure can take the same value twice
         foreach (var kvp in r.closure.Empty())
         {
-          AddClosure(kvp.Key);
+          AddClosure(new(kvp.Key));
         }
-        AddClosure(r.referencedId);
+        AddClosure(new(r.referencedId));
         SerializeProperty(ret, writer);
         break;
       case Base b:
         var result = SerializeBase(b, false, inheritedDetachInfo);
         if (result is not null)
         {
-          writer.WriteRawValue(result.Value.Json);
+          writer.WriteRawValue(result.Value.Item2.Value);
         }
         else
         {
@@ -198,7 +200,7 @@ public class ObjectSerializer : IObjectSerializer
     }
   }
 
-  private BaseItem? SerializeBase(Base baseObj, bool isRoot, PropertyAttributeInfo inheritedDetachInfo = default)
+  private (Id, Json)? SerializeBase(Base baseObj, bool isRoot, PropertyAttributeInfo inheritedDetachInfo = default)
   {
     // handle circular references
     bool alreadySerialized = !_parentObjects.Add(baseObj);
@@ -207,14 +209,14 @@ public class ObjectSerializer : IObjectSerializer
       return null;
     }
 
-    Dictionary<string, int> childClosures;
-    string id;
-    string json;
+    Closures childClosures;
+    Id id;
+    Json json;
     if (_baseCache.TryGetValue(baseObj, out var info))
     {
-      id = baseObj.id;
-      childClosures = info.Item2;
-      json = info.Item1;
+      id = new Id(baseObj.id);
+      childClosures = info.Closures;
+      json = info.Json;
       MergeClosures(_currentClosures, childClosures);
     }
     else
@@ -224,7 +226,7 @@ public class ObjectSerializer : IObjectSerializer
       using var writer = new StringWriter(sb);
       using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
       id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
-      json = writer.ToString();
+      json = new Json(writer.ToString());
       Pools.StringBuilders.Return(sb);
     }
 
@@ -245,20 +247,20 @@ public class ObjectSerializer : IObjectSerializer
       // add to obj refs to return
       if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
       {
-        ObjectReferences[baseObj.applicationId] = new ObjectReference()
+        ObjectReferences[new(baseObj.applicationId)] = new ObjectReference()
         {
-          referencedId = id,
+          referencedId = id.Value,
           applicationId = baseObj.applicationId,
-          closure = childClosures,
+          closure = childClosures.ToDictionary(x => x.Key.Value, x => x.Value),
         };
       }
       _chunks.Add(new(id, json));
-      return new(id, json2, true);
+      return new(id, json2);
     }
-    return new(id, json, true);
+    return new(id, json);
   }
 
-  private string SerializeBaseObject(Base baseObj, JsonWriter writer, Dictionary<string, int> closure)
+  private Id SerializeBaseObject(Base baseObj, JsonWriter writer, Closures closure)
   {
     if (baseObj is not Blob)
     {
@@ -278,7 +280,7 @@ public class ObjectSerializer : IObjectSerializer
       SerializeOrChunkProperty(prop.Value, writer, prop.PropertyAttributeInfo);
     }
 
-    string id;
+    Id id;
     if (writer is SerializerIdWriter serializerIdWriter)
     {
       (var json, writer) = serializerIdWriter.FinishIdWriter();
@@ -286,11 +288,11 @@ public class ObjectSerializer : IObjectSerializer
     }
     else
     {
-      id = ((Blob)baseObj).id;
+      id = new Id(((Blob)baseObj).id);
     }
     writer.WritePropertyName("id");
-    writer.WriteValue(id);
-    baseObj.id = id;
+    writer.WriteValue(id.Value);
+    baseObj.id = id.Value;
 
     if (closure.Count > 0)
     {
@@ -298,7 +300,7 @@ public class ObjectSerializer : IObjectSerializer
       writer.WriteStartObject();
       foreach (var c in closure)
       {
-        writer.WritePropertyName(c.Key);
+        writer.WritePropertyName(c.Key.Value);
         writer.WriteValue(c.Value);
       }
       writer.WriteEndObject();
@@ -337,7 +339,7 @@ public class ObjectSerializer : IObjectSerializer
     SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
   }
 
-  private static void MergeClosures(Dictionary<string, int> current, Dictionary<string, int> child)
+  private static void MergeClosures(Closures current, Closures child)
   {
     foreach (var closure in child)
     {
@@ -345,5 +347,5 @@ public class ObjectSerializer : IObjectSerializer
     }
   }
 
-  private void AddClosure(string id) => _currentClosures[id] = 100;
+  private void AddClosure(Id id) => _currentClosures[id] = 100;
 }

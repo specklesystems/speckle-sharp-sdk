@@ -73,7 +73,7 @@ public class GeneralSendTest
   public async Task<string> Send_new()
   {
     var res = await _operations.Send2(new(acc.serverInfo.url), _project.id, acc.token, _testData);
-    return await TagVersion($"Send_new {Guid.NewGuid()}", res.rootObjId);
+    return await TagVersion($"Send_new {Guid.NewGuid()}", res.RootId);
   }
 
   private async Task<string> TagVersion(string name, string objectId)

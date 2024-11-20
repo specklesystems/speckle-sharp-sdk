@@ -1,4 +1,4 @@
-﻿using System.Threading.Channels;
+using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Dependencies.Serialization;
 

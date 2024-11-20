@@ -50,7 +50,6 @@ var factory = new SerializeProcessFactory(
 );
 var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress);
 var @base = await process.Deserialize(rootId, default, new(skipCacheReceive)).ConfigureAwait(false);
-
 Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");

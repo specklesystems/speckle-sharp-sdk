@@ -86,7 +86,7 @@ public class SpeckleObjectSerializer
       {
         var result = SerializeBase(baseObj, true).NotNull();
         StoreObject(result.Id.NotNull(), result.Json);
-        return result.Json;
+        return result.Json.Value;
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
@@ -151,7 +151,7 @@ public class SpeckleObjectSerializer
         var result = SerializeBase(b, computeClosures, inheritedDetachInfo);
         if (result is not null)
         {
-          writer.WriteRawValue(result.Json);
+          writer.WriteRawValue(result.Value.Json.Value);
         }
         else
         {
@@ -252,8 +252,8 @@ public class SpeckleObjectSerializer
     var stringBuilder = Pools.StringBuilders.Get();
     using var writer = new StringWriter();
     using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-    string id = SerializeBaseObject(baseObj, jsonWriter, closure);
-    var json = writer.ToString();
+    var id = SerializeBaseObject(baseObj, jsonWriter, closure);
+    var json = new Json(writer.ToString());
     Pools.StringBuilders.Return(stringBuilder);
 
     if (computeClosures || inheritedDetachInfo.IsDetachable || baseObj is Blob)
@@ -275,7 +275,7 @@ public class SpeckleObjectSerializer
       StoreObject(id, json);
 
       var json2 = ReferenceGenerator.CreateReference(id);
-      UpdateParentClosures(id);
+      UpdateParentClosures(id.Value);
 
       _onProgressAction?.Report(new(ProgressEvent.SerializeObject, ++_serializedCount, null));
 
@@ -284,7 +284,7 @@ public class SpeckleObjectSerializer
       {
         ObjectReferences[baseObj.applicationId] = new ObjectReference()
         {
-          referencedId = id,
+          referencedId = id.Value,
           applicationId = baseObj.applicationId,
           closure = closure,
         };
@@ -332,7 +332,7 @@ public class SpeckleObjectSerializer
     return allProperties;
   }
 
-  private string SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
+  private Id SerializeBaseObject(Base baseObj, JsonWriter writer, IReadOnlyDictionary<string, int> closure)
   {
     var allProperties = ExtractAllProperties(baseObj);
 
@@ -354,7 +354,7 @@ public class SpeckleObjectSerializer
       SerializeProperty(prop.Value.value, writer, prop.Value.info);
     }
 
-    string id;
+    Id id;
     if (writer is SerializerIdWriter serializerIdWriter)
     {
       (var json, writer) = serializerIdWriter.FinishIdWriter();
@@ -362,11 +362,11 @@ public class SpeckleObjectSerializer
     }
     else
     {
-      id = ((Blob)baseObj).id;
+      id = new Id(((Blob)baseObj).id);
     }
     writer.WritePropertyName("id");
-    writer.WriteValue(id);
-    baseObj.id = id;
+    writer.WriteValue(id.Value);
+    baseObj.id = id.Value;
 
     if (closure.Count > 0)
     {
@@ -433,12 +433,12 @@ public class SpeckleObjectSerializer
     }
   }
 
-  private void StoreObject(string objectId, string objectJson)
+  private void StoreObject(Id objectId, Json objectJson)
   {
     _stopwatch.Stop();
     foreach (var transport in WriteTransports)
     {
-      transport.SaveObject(objectId, objectJson);
+      transport.SaveObject(objectId.Value, objectJson.Value);
     }
 
     _stopwatch.Start();

@@ -9,6 +9,11 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public record SerializeProcessOptions(bool SkipCacheRead, bool SkipCacheWrite, bool SkipServer);
 
+public readonly record struct SerializeProcessResults(
+  string RootId,
+  IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
+);
+
 [GenerateAutoInterface]
 public class SerializeProcess(
   IProgress<ProgressArgs>? progress,
@@ -18,9 +23,9 @@ public class SerializeProcess(
   IObjectSerializerFactory objectSerializerFactory
 ) : ChannelSaver, ISerializeProcess
 {
-  private readonly ConcurrentDictionary<string, string> _jsonCache = new();
-  private readonly ConcurrentDictionary<Base, (string, Dictionary<string, int>)> _baseCache = new();
-  private readonly ConcurrentDictionary<string, ObjectReference> _objectReferences = new();
+  private readonly ConcurrentDictionary<Id, Json> _jsonCache = new();
+  private readonly ConcurrentDictionary<Base, CacheInfo> _baseCache = new();
+  private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
 
   private long _totalFound;
   private long _totalToUpload;
@@ -30,7 +35,7 @@ public class SerializeProcess(
 
   private SerializeProcessOptions _options = new(false, false, false);
 
-  public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Serialize(
+  public async Task<SerializeProcessResults> Serialize(
     Base root,
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
@@ -40,7 +45,7 @@ public class SerializeProcess(
     var channelTask = Start(cancellationToken);
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
-    return (root.id, _objectReferences);
+    return new(root.id, _objectReferences);
   }
 
   private async Task Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
@@ -89,7 +94,8 @@ public class SerializeProcess(
   //leave this sync
   private IEnumerable<BaseItem> Serialise(Base obj, CancellationToken cancellationToken)
   {
-    if (obj.id != null && _jsonCache.ContainsKey(obj.id))
+    Id? id = obj.id != null ? new Id(obj.id) : null;
+    if (id != null && _jsonCache.ContainsKey(id.Value))
     {
       yield break;
     }
@@ -103,8 +109,7 @@ public class SerializeProcess(
         yield break;
       }
     }
-    var id = obj.id;
-    if (id is null || !_jsonCache.TryGetValue(id, out var json))
+    if (id is null || !_jsonCache.TryGetValue(id.Value, out var json))
     {
       var serializer2 = objectSerializerFactory.Create(_baseCache, cancellationToken);
       var items = serializer2.Serialize(obj).ToList();
@@ -113,14 +118,15 @@ public class SerializeProcess(
         _objectReferences.TryAdd(kvp.Key, kvp.Value);
       }
 
+      var newId = new Id(obj.id.NotNull());
       var (_, j) = items.First();
       json = j;
-      _jsonCache.TryAdd(obj.id.NotNull(), j);
-      yield return CheckCache(obj.id.NotNull(), j);
-      if (id is not null && id != obj.id)
+      _jsonCache.TryAdd(newId, j);
+      yield return CheckCache(newId, j);
+      if (id is not null && id != newId)
       {
         //in case the ids changes which is due to id hash algorithm changing
-        _jsonCache.TryAdd(id, json);
+        _jsonCache.TryAdd(id.Value, json);
       }
       foreach (var (cid, cJson) in items.Skip(1))
       {
@@ -133,21 +139,21 @@ public class SerializeProcess(
     }
     else
     {
-      yield return new BaseItem(obj.id.NotNull(), json, true);
+      yield return new BaseItem(id.NotNull().Value, json.Value, true);
     }
   }
 
-  private BaseItem CheckCache(string id, string json)
+  private BaseItem CheckCache(Id id, Json json)
   {
     if (!_options.SkipCacheRead)
     {
-      var cachedJson = sqliteSendCacheManager.GetObject(id);
+      var cachedJson = sqliteSendCacheManager.GetObject(id.Value);
       if (cachedJson != null)
       {
-        return new BaseItem(id, cachedJson, false);
+        return new BaseItem(id.Value, cachedJson, false);
       }
     }
-    return new BaseItem(id, json, true);
+    return new BaseItem(id.Value, json.Value, true);
   }
 
   public override async Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken)

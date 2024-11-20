@@ -49,13 +49,13 @@ public sealed class JsonIgnoreRespected
 
     var (json, id) = sut.SerializeBase(testData).NotNull();
 
-    Assert.That(json, Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
-    Assert.That(json, Does.Not.Contain(ignoredPayload));
+    Assert.That(json.ToString(), Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
+    Assert.That(json.ToString(), Does.Not.Contain(ignoredPayload));
 
-    Assert.That(json, Does.Contain(nameof(testData.ShouldBeIncluded)));
-    Assert.That(json, Does.Contain(expectedPayload));
+    Assert.That(json.ToString(), Does.Contain(nameof(testData.ShouldBeIncluded)));
+    Assert.That(json.ToString(), Does.Contain(expectedPayload));
 
-    return id;
+    return id?.Value;
   }
 
   [TestCaseSource(nameof(IgnoredCompoundTestCases))]
@@ -68,7 +68,7 @@ public sealed class JsonIgnoreRespected
 
     var (json, id) = sut.SerializeBase(testData).NotNull();
 
-    savedObjects.SaveObject(id.NotNull(), json);
+    savedObjects.SaveObject(id.NotNull().Value, json.Value);
 
     foreach ((_, string childJson) in savedObjects.Objects)
     {
@@ -79,7 +79,7 @@ public sealed class JsonIgnoreRespected
       Assert.That(childJson, Does.Contain(expectedPayload));
     }
 
-    return id;
+    return id.Value.Value;
   }
 }
 
