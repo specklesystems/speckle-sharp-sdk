@@ -100,12 +100,20 @@ public class ObjectSerializer : IObjectSerializer
       // Note: this change was needed as we've made the ObjectReference type inherit from Base for
       // the purpose of the send object (connector/conversion level) caching.
       case ObjectReference r:
-        Dictionary<string, object?> ret = new()
+        Dictionary<string, object?> ret =
+          new()
+          {
+            ["speckle_type"] = r.speckle_type,
+            ["referencedId"] = r.referencedId,
+            ["__closure"] = r.closure,
+          };
+        //references can be externally provided and need to know the ids in the closure and reference here
+        //AddClosure can take the same value twice
+        foreach (var kvp in r.closure.Empty())
         {
-          ["speckle_type"] = r.speckle_type,
-          ["referencedId"] = r.referencedId,
-          ["__closure"] = r.closure,
-        };
+          AddClosure(kvp.Key);
+        }
+        AddClosure(r.referencedId);
         SerializeProperty(ret, writer);
         break;
       case Base b:
