@@ -112,9 +112,9 @@ public class ObjectSerializer : IObjectSerializer
         //AddClosure can take the same value twice
         foreach (var kvp in r.closure.Empty())
         {
-          AddClosure(kvp.Key);
+          AddClosure(new(kvp.Key));
         }
-        AddClosure(r.referencedId);
+        AddClosure(new(r.referencedId));
         SerializeProperty(ret, writer);
         break;
       case Base b:
