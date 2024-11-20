@@ -103,7 +103,7 @@ public interface IGisFeature : ISpeckleObject
 /// <example>
 /// <see cref="Base"/> objects that represent conceptual / abstract / mathematically derived geometry
 /// can use <see cref="displayValue"/> to be used in case the object lacks a natively displayable form.
-/// (e.g <see cref="Spiral"/>, <see cref="Wall"/>)
+/// (e.g <see cref="Spiral"/>)
 /// </example>
 /// <typeparam name="T">
 /// Type of display value.
