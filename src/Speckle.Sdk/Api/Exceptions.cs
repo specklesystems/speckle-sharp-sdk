@@ -1,53 +1,17 @@
-using GraphQL;
+using Speckle.Sdk.Api.GraphQL;
 
 namespace Speckle.Sdk.Api;
 
 /// <summary>
-/// Base class for GraphQL API exceptions
+/// The base class for all GraphQL errors (these are errors in the graphql response)
+/// Some specific codes are maped to subtypes <see cref="GraphQLErrorHandler"/>
+/// <seealso cref="SpeckleGraphQLForbiddenException"/>
+/// <seealso cref="SpeckleGraphQLInternalErrorException"/>
+/// <seealso cref="SpeckleGraphQLBadInputException"/>
+/// <seealso cref="SpeckleGraphQLInvalidQueryException"/>
 /// </summary>
-public class SpeckleGraphQLException<T> : SpeckleGraphQLException
-{
-  public new GraphQLResponse<T>? Response => (GraphQLResponse<T>?)base.Response;
-
-  public SpeckleGraphQLException(
-    string message,
-    GraphQLRequest request,
-    GraphQLResponse<T>? response,
-    Exception? innerException = null
-  )
-    : base(message, request, response, innerException) { }
-
-  public SpeckleGraphQLException() { }
-
-  public SpeckleGraphQLException(string? message)
-    : base(message) { }
-
-  public SpeckleGraphQLException(string? message, Exception? innerException)
-    : base(message, innerException) { }
-}
-
 public class SpeckleGraphQLException : SpeckleException
 {
-  private readonly GraphQLRequest _request;
-  public IGraphQLResponse? Response { get; }
-
-  public IEnumerable<string> ErrorMessages =>
-    Response?.Errors != null ? Response.Errors.Select(e => e.Message) : Enumerable.Empty<string>();
-
-  public IDictionary<string, object>? Extensions => Response?.Extensions;
-
-  public SpeckleGraphQLException(
-    string? message,
-    GraphQLRequest request,
-    IGraphQLResponse? response,
-    Exception? innerException = null
-  )
-    : base(message, innerException)
-  {
-    _request = request;
-    Response = response;
-  }
-
   public SpeckleGraphQLException() { }
 
   public SpeckleGraphQLException(string? message)
@@ -58,19 +22,12 @@ public class SpeckleGraphQLException : SpeckleException
 }
 
 /// <summary>
-/// Represents a "FORBIDDEN" on "UNAUTHORIZED" GraphQL error as an exception.
+/// Represents a "FORBIDDEN" or "UNAUTHORIZED" GraphQL error as an exception.
 /// https://www.apollographql.com/docs/apollo-server/v2/data/errors/#unauthenticated
 /// https://www.apollographql.com/docs/apollo-server/v2/data/errors/#forbidden
 /// </summary>
-public class SpeckleGraphQLForbiddenException : SpeckleGraphQLException
+public sealed class SpeckleGraphQLForbiddenException : SpeckleGraphQLException
 {
-  public SpeckleGraphQLForbiddenException(
-    GraphQLRequest request,
-    IGraphQLResponse response,
-    Exception? innerException = null
-  )
-    : base("Your request was forbidden", request, response, innerException) { }
-
   public SpeckleGraphQLForbiddenException() { }
 
   public SpeckleGraphQLForbiddenException(string? message)
@@ -80,15 +37,12 @@ public class SpeckleGraphQLForbiddenException : SpeckleGraphQLException
     : base(message, innerException) { }
 }
 
-public class SpeckleGraphQLInternalErrorException : SpeckleGraphQLException
+/// <summary>
+/// Represents a "INTERNAL_SERVER_ERROR" GraphQL error as an exception.
+/// https://www.apollographql.com/docs/apollo-server/v2/data/errors#internal_server_error
+/// </summary>
+public sealed class SpeckleGraphQLInternalErrorException : SpeckleGraphQLException
 {
-  public SpeckleGraphQLInternalErrorException(
-    GraphQLRequest request,
-    IGraphQLResponse response,
-    Exception? innerException = null
-  )
-    : base("Your request failed on the server side", request, response, innerException) { }
-
   public SpeckleGraphQLInternalErrorException() { }
 
   public SpeckleGraphQLInternalErrorException(string? message)
@@ -98,20 +52,47 @@ public class SpeckleGraphQLInternalErrorException : SpeckleGraphQLException
     : base(message, innerException) { }
 }
 
-public class SpeckleGraphQLStreamNotFoundException : SpeckleGraphQLException
+/// <summary>
+/// Represents the custom "STREAM_NOT_FOUND" GraphQL error as an exception.
+/// </summary>
+public sealed class SpeckleGraphQLStreamNotFoundException : SpeckleGraphQLException
 {
-  public SpeckleGraphQLStreamNotFoundException(
-    GraphQLRequest request,
-    IGraphQLResponse response,
-    Exception? innerException = null
-  )
-    : base("Stream not found", request, response, innerException) { }
-
   public SpeckleGraphQLStreamNotFoundException() { }
 
   public SpeckleGraphQLStreamNotFoundException(string? message)
     : base(message) { }
 
   public SpeckleGraphQLStreamNotFoundException(string? message, Exception? innerException)
+    : base(message, innerException) { }
+}
+
+/// <summary>
+/// Represents a "BAD_USER_INPUT" GraphQL error as an exception.
+/// https://www.apollographql.com/docs/apollo-server/v2/data/errors#bad_user_input
+/// </summary>
+public sealed class SpeckleGraphQLBadInputException : SpeckleGraphQLException
+{
+  public SpeckleGraphQLBadInputException() { }
+
+  public SpeckleGraphQLBadInputException(string? message)
+    : base(message) { }
+
+  public SpeckleGraphQLBadInputException(string? message, Exception? innerException)
+    : base(message, innerException) { }
+}
+
+/// <summary>
+/// Represents a "GRAPHQL_PARSE_FAILED" or "GRAPHQL_VALIDATION_FAILED" GraphQL error as an exception.
+/// https://www.apollographql.com/docs/apollo-server/v2/data/errors#graphql_parse_failed
+/// https://www.apollographql.com/docs/apollo-server/v2/data/errors#graphql_validation_failed
+/// </summary>
+public sealed class SpeckleGraphQLInvalidQueryException : SpeckleGraphQLException
+{
+  public SpeckleGraphQLInvalidQueryException() { }
+
+  public SpeckleGraphQLInvalidQueryException(string? message)
+    : base(message) { }
+
+  public SpeckleGraphQLInvalidQueryException(string? message, Exception? innerException)
     : base(message, innerException) { }
 }

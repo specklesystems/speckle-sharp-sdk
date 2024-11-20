@@ -33,35 +33,34 @@ public class ModelPropertySupportedTypes
   /// (or is an interface where all concrete types are supported)
   /// You should also consider adding a test in SerializerNonBreakingChanges
   /// </remarks>
-  private static readonly HashSet<Type> _allowedTypes =
-    new()
-    {
-      typeof(Boolean),
-      typeof(Byte),
-      typeof(UInt32),
-      typeof(UInt64),
-      typeof(Int16),
-      typeof(Int32),
-      typeof(Int64),
-      //typeof(Half),
-      typeof(Single),
-      typeof(Double),
-      typeof(Char),
-      typeof(string),
-      typeof(DateTime),
-      typeof(Guid),
-      typeof(Color),
-      typeof(List<>),
-      typeof(Nullable<>),
-      typeof(IList<>),
-      typeof(IReadOnlyList<>),
-      typeof(Dictionary<,>),
-      //typeof(IDictionary<,>),
-      //typeof(IReadOnlyDictionary<,>),
-      typeof(ICurve),
-      typeof(Object),
-      typeof(Matrix4x4),
-    };
+  private static readonly HashSet<Type> _allowedTypes = new()
+  {
+    typeof(Boolean),
+    typeof(Byte),
+    typeof(UInt32),
+    typeof(UInt64),
+    typeof(Int16),
+    typeof(Int32),
+    typeof(Int64),
+    //typeof(Half),
+    typeof(Single),
+    typeof(Double),
+    typeof(Char),
+    typeof(string),
+    typeof(DateTime),
+    typeof(Guid),
+    typeof(Color),
+    typeof(List<>),
+    typeof(Nullable<>),
+    typeof(IList<>),
+    typeof(IReadOnlyList<>),
+    typeof(Dictionary<,>),
+    //typeof(IDictionary<,>),
+    //typeof(IReadOnlyDictionary<,>),
+    typeof(ICurve),
+    typeof(Object),
+    typeof(Matrix4x4),
+  };
 
   [Test]
   public void TestObjects()

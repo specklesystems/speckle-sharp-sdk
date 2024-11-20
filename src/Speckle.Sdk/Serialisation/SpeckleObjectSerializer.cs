@@ -131,13 +131,12 @@ public class SpeckleObjectSerializer
       // Note: this change was needed as we've made the ObjectReference type inherit from Base for
       // the purpose of the "do not convert unchanged previously converted objects" POC.
       case ObjectReference r:
-        Dictionary<string, object?> ret =
-          new()
-          {
-            ["speckle_type"] = r.speckle_type,
-            ["referencedId"] = r.referencedId,
-            ["__closure"] = r.closure,
-          };
+        Dictionary<string, object?> ret = new()
+        {
+          ["speckle_type"] = r.speckle_type,
+          ["referencedId"] = r.referencedId,
+          ["__closure"] = r.closure,
+        };
         if (r.closure is not null)
         {
           foreach (var kvp in r.closure)
@@ -301,8 +300,9 @@ public class SpeckleObjectSerializer
     IReadOnlyCollection<string> dynamicProperties = baseObj.DynamicPropertyKeys;
 
     // propertyName -> (originalValue, isDetachable, isChunkable, chunkSize)
-    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties =
-      new(typedProperties.Count + dynamicProperties.Count);
+    Dictionary<string, (object?, PropertyAttributeInfo)> allProperties = new(
+      typedProperties.Count + dynamicProperties.Count
+    );
 
     // Construct `allProperties`: Add typed properties
     foreach ((PropertyInfo propertyInfo, PropertyAttributeInfo detachInfo) in typedProperties)

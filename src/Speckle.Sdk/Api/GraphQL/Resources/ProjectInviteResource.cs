@@ -102,7 +102,7 @@ public sealed class ProjectInviteResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<bool> Use(ProjectInviteUseInput input, CancellationToken cancellationToken = default)
+  public async Task Use(ProjectInviteUseInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
@@ -119,7 +119,12 @@ public sealed class ProjectInviteResource
     var response = await _client
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<bool>>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.data.data.data;
+
+    if (!response.data.data.data)
+    {
+      //This should never happen, the server should never return `false` without providing a reason
+      throw new InvalidOperationException("GraphQL data did not indicate success, but no GraphQL error was provided");
+    }
   }
 
   /// <param name="projectId"></param>

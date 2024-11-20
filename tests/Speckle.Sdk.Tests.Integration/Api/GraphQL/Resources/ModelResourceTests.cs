@@ -89,10 +89,12 @@ public class ModelResourceTests
   {
     DeleteModelInput input = new(_model.id, _project.id);
 
-    bool response = await Sut.Delete(input);
-    Assert.That(response, Is.True);
+    await Sut.Delete(input);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Get(_model.id, _project.id));
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Delete(input));
+    var getEx = Assert.CatchAsync<AggregateException>(async () => await Sut.Get(_model.id, _project.id));
+    Assert.That(getEx?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
+
+    var delEx = Assert.CatchAsync<AggregateException>(async () => await Sut.Delete(input));
+    Assert.That(delEx?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
   }
 }

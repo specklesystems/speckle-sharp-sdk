@@ -392,8 +392,11 @@ public sealed class ServerApi : IDisposable, IServerApi
   {
     CancellationToken.ThrowIfCancellationRequested();
 
-    using HttpRequestMessage message =
-      new() { RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative), Method = HttpMethod.Post };
+    using HttpRequestMessage message = new()
+    {
+      RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative),
+      Method = HttpMethod.Post,
+    };
 
     MultipartFormDataContent multipart = new();
 

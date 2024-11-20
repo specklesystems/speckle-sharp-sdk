@@ -185,18 +185,17 @@ public sealed class ModelResource
         }
       }
       """;
-    GraphQLRequest request =
-      new()
+    GraphQLRequest request = new()
+    {
+      Query = QUERY,
+      Variables = new
       {
-        Query = QUERY,
-        Variables = new
-        {
-          projectId,
-          modelsLimit,
-          modelsCursor,
-          modelsFilter,
-        },
-      };
+        projectId,
+        modelsLimit,
+        modelsCursor,
+        modelsFilter,
+      },
+    };
 
     var response = await _client
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ResourceCollection<Model>>>>(request, cancellationToken)
@@ -249,7 +248,7 @@ public sealed class ModelResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<bool> Delete(DeleteModelInput input, CancellationToken cancellationToken = default)
+  public async Task Delete(DeleteModelInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
@@ -266,7 +265,11 @@ public sealed class ModelResource
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return res.data.data;
+    if (!res.data.data)
+    {
+      //This should never happen, the server should never return `false` without providing a reason
+      throw new InvalidOperationException("GraphQL data did not indicate success, but no GraphQL error was provided");
+    }
   }
 
   /// <param name="input"></param>

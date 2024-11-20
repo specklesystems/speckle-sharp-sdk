@@ -101,19 +101,18 @@ public sealed class VersionResource
       }
       """;
 
-    GraphQLRequest request =
-      new()
+    GraphQLRequest request = new()
+    {
+      Query = QUERY,
+      Variables = new
       {
-        Query = QUERY,
-        Variables = new
-        {
-          projectId,
-          modelId,
-          limit,
-          cursor,
-          filter,
-        },
-      };
+        projectId,
+        modelId,
+        limit,
+        cursor,
+        filter,
+      },
+    };
 
     var response = await _client
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ResourceCollection<Version>>>>>(
@@ -214,7 +213,7 @@ public sealed class VersionResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<bool> Delete(DeleteVersionsInput input, CancellationToken cancellationToken = default)
+  public async Task Delete(DeleteVersionsInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
@@ -230,14 +229,18 @@ public sealed class VersionResource
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.data.data;
+    if (!response.data.data)
+    {
+      //This should never happen, the server should never return `false` without providing a reason
+      throw new InvalidOperationException("GraphQL data did not indicate success, but no GraphQL error was provided");
+    }
   }
 
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<bool> Received(MarkReceivedVersionInput input, CancellationToken cancellationToken = default)
+  public async Task Received(MarkReceivedVersionInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
@@ -253,7 +256,11 @@ public sealed class VersionResource
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.data.data;
+    if (!response.data.data)
+    {
+      //This should never happen, the server should never return `false` without providing a reason
+      throw new InvalidOperationException("GraphQL data did not indicate success, but no GraphQL error was provided");
+    }
   }
 
   [Obsolete("modelId is no longer required, use the overload that doesn't specify a model id", true)]

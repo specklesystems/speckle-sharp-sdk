@@ -22,33 +22,36 @@ public class ModelResourceExceptionalTests
     _model = await _testUser.Model.Create(new("Test Model", "", _project.id));
   }
 
-  [TestCase(null)]
   [TestCase("")]
   [TestCase(" ")]
   public void ModelCreate_Throws_InvalidInput(string name)
   {
     CreateModelInput input = new(name, null, _project.id);
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Create(input));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Create(input));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
   }
 
   [Test]
   public void ModelGet_Throws_NoAuth()
   {
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Fixtures.Unauthed.Model.Get(_model.id, _project.id));
+    var ex = Assert.ThrowsAsync<AggregateException>(
+      async () => await Fixtures.Unauthed.Model.Get(_model.id, _project.id)
+    );
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());
   }
 
   [Test]
   public void ModelGet_Throws_NonExistentModel()
   {
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Get("non existent model", _project.id));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Get("non existent model", _project.id));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
   }
 
   [Test]
   public void ModelGet_Throws_NonExistentProject()
   {
-    Assert.ThrowsAsync<SpeckleGraphQLStreamNotFoundException>(
-      async () => await Sut.Get(_model.id, "non existent project")
-    );
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Get(_model.id, "non existent project"));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLStreamNotFoundException>());
   }
 
   [Test]
@@ -56,7 +59,8 @@ public class ModelResourceExceptionalTests
   {
     UpdateModelInput input = new("non-existent model", "MY new name", "MY new desc", _project.id);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Update(input));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Update(input));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
   }
 
   [Test]
@@ -64,7 +68,8 @@ public class ModelResourceExceptionalTests
   {
     UpdateModelInput input = new(_model.id, "MY new name", "MY new desc", "non-existent project");
 
-    Assert.ThrowsAsync<SpeckleGraphQLForbiddenException>(async () => await Sut.Update(input));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Update(input));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());
   }
 
   [Test]
@@ -72,7 +77,8 @@ public class ModelResourceExceptionalTests
   {
     UpdateModelInput input = new(_model.id, "MY new name", "MY new desc", _project.id);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Fixtures.Unauthed.Model.Update(input));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => await Fixtures.Unauthed.Model.Update(input));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());
   }
 
   [Test]
@@ -80,9 +86,9 @@ public class ModelResourceExceptionalTests
   {
     Model toDelete = await Sut.Create(new("Delete me", null, _project.id));
     DeleteModelInput input = new(toDelete.id, _project.id);
-    bool response = await Sut.Delete(input);
-    Assert.That(response, Is.True);
+    await Sut.Delete(input);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Delete(input));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Delete(input));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
   }
 }

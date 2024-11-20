@@ -51,28 +51,22 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
         .ConfigureAwait(false);
       context.TryGetValue("retryCount", out var retryCount);
       activity?.SetTag("retryCount", retryCount);
-      if (policyResult.FinalException != null)
-      {
-        activity?.RecordException(policyResult.FinalException);
-        activity?.SetStatus(SdkActivityStatusCode.Error);
-      }
-      else
-      {
-        activity?.SetStatus(
-          policyResult.Result.IsSuccessStatusCode ? SdkActivityStatusCode.Ok : SdkActivityStatusCode.Error
-        );
-      }
 
       if (policyResult.Outcome == OutcomeType.Successful)
       {
         activity?.SetStatus(SdkActivityStatusCode.Ok);
         return policyResult.Result;
       }
+
       activity?.SetStatus(SdkActivityStatusCode.Error);
-      if (policyResult.FinalException != null)
+
+      if (policyResult.FinalException is null)
       {
-        activity?.RecordException(policyResult.FinalException);
+        // Outcome was not successful, but did not terminate with an exception (e.g. repeated 500 responses)
+        return policyResult.FinalHandledResult;
       }
+
+      activity?.RecordException(policyResult.FinalException);
 
       // if the policy failed due to a cancellation, AND it was our cancellation token, then don't wrap the exception, and rethrow an new cancellation
       if (policyResult.FinalException is OperationCanceledException)
@@ -80,10 +74,7 @@ public sealed class SpeckleHttpClientHandler : DelegatingHandler
         cancellationToken.ThrowIfCancellationRequested();
       }
 
-      throw new HttpRequestException(
-        "Policy Failed: " + policyResult.FinalHandledResult?.StatusCode ?? "Unknown",
-        policyResult.FinalException
-      );
+      throw new HttpRequestException("Policy Failed", policyResult.FinalException);
     }
   }
 }

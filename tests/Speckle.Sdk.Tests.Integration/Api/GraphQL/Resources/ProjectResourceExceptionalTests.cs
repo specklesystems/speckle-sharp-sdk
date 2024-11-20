@@ -35,10 +35,14 @@ public class ProjectResourceExceptionalTests
   [Test]
   public void ProjectCreate_WithoutAuth()
   {
-    ProjectCreateInput input =
-      new("The best project", "The best description for the best project", ProjectVisibility.Private);
+    ProjectCreateInput input = new(
+      "The best project",
+      "The best description for the best project",
+      ProjectVisibility.Private
+    );
 
-    Assert.ThrowsAsync<SpeckleGraphQLForbiddenException>(async () => await _unauthedUser.Project.Create(input));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => _ = await _unauthedUser.Project.Create(input));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());
   }
 
   [Test]
@@ -48,29 +52,33 @@ public class ProjectResourceExceptionalTests
 
     Project privateStream = await Sut.Create(input);
 
-    Assert.ThrowsAsync<SpeckleGraphQLForbiddenException>(async () => await _unauthedUser.Project.Get(privateStream.id));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => _ = await _unauthedUser.Project.Get(privateStream.id));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());
   }
 
   [Test]
   public void ProjectGet_NonExistentProject()
   {
-    Assert.ThrowsAsync<SpeckleGraphQLStreamNotFoundException>(async () => await Sut.Get("NonExistentProject"));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => await Sut.Get("NonExistentProject"));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLStreamNotFoundException>());
   }
 
   [Test]
   public void ProjectUpdate_NonExistentProject()
   {
-    Assert.ThrowsAsync<SpeckleGraphQLForbiddenException>(
+    var ex = Assert.ThrowsAsync<AggregateException>(
       async () => _ = await Sut.Update(new("NonExistentProject", "My new name"))
     );
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());
   }
 
   [Test]
   public void ProjectUpdate_NoAuth()
   {
-    Assert.ThrowsAsync<SpeckleGraphQLForbiddenException>(
+    var ex = Assert.ThrowsAsync<AggregateException>(
       async () => _ = await _unauthedUser.Project.Update(new(_testProject.id, "My new name"))
     );
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());
   }
 
   [Test]
@@ -82,7 +90,8 @@ public class ProjectResourceExceptionalTests
   {
     ProjectUpdateRoleInput input = new(_secondUser.Account.id, "NonExistentProject", newRole);
 
-    Assert.ThrowsAsync<SpeckleGraphQLForbiddenException>(async () => await Sut.UpdateRole(input));
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.UpdateRole(input));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());
   }
 
   [Test]
@@ -93,21 +102,23 @@ public class ProjectResourceExceptionalTests
   public void ProjectUpdateRole_NonAuth(string newRole)
   {
     ProjectUpdateRoleInput input = new(_secondUser.Account.id, "NonExistentProject", newRole);
-    Assert.ThrowsAsync<SpeckleGraphQLForbiddenException>(async () => await _unauthedUser.Project.UpdateRole(input));
+
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => _ = await _unauthedUser.Project.UpdateRole(input));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLForbiddenException>());
   }
 
   [Test]
   public async Task ProjectDelete_NonExistentProject()
   {
-    bool response = await Sut.Delete(_testProject.id);
-    Assert.That(response, Is.True);
+    await Sut.Delete(_testProject.id);
 
-    Assert.ThrowsAsync<SpeckleGraphQLStreamNotFoundException>(async () => _ = await Sut.Get(_testProject.id)); //TODO: Exception types
+    var ex = Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get(_testProject.id));
+    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLStreamNotFoundException>());
   }
 
   [Test]
   public void ProjectInvites_NoAuth()
   {
-    Assert.ThrowsAsync<SpeckleGraphQLException>(async () => await Fixtures.Unauthed.ActiveUser.ProjectInvites());
+    Assert.ThrowsAsync<SpeckleException>(async () => await Fixtures.Unauthed.ActiveUser.ProjectInvites());
   }
 }
