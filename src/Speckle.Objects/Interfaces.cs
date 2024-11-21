@@ -1,4 +1,3 @@
-using Speckle.Objects.BuiltElements;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
