@@ -41,7 +41,7 @@ public class SerializationTests
   public void Setup()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Wall).Assembly, _assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(GridLine).Assembly, _assembly);
   }
 
   private async Task<string> ReadJson(string fullName)

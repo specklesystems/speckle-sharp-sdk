@@ -93,7 +93,7 @@ public interface IGisFeature : ISpeckleObject
 
 #endregion
 
-#region Built elements
+#region Data objects
 
 /// <summary>
 /// Specifies displayable <see cref="Base"/> value(s) to be used as a fallback
@@ -116,5 +116,27 @@ public interface IDisplayValue<out T> : ISpeckleObject
   /// if a native displayable object cannot be converted.
   /// </summary>
   T displayValue { get; }
+}
+
+public interface IDataObject : ISpeckleObject
+{
+  string name { get; }
+
+  [DetachProperty]
+  IReadOnlyList<Base> displayValue { get; }
+}
+
+public interface IRevitObject : IDataObject
+{
+  string type { get; }
+
+  string family { get; }
+
+  string category { get; }
+
+  Base? location { get; }
+
+  [DetachProperty]
+  IReadOnlyList<IRevitObject> elements { get; }
 }
 #endregion
