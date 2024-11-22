@@ -124,6 +124,8 @@ public interface IDataObject : ISpeckleObject
 
   [DetachProperty]
   IReadOnlyList<Base> displayValue { get; }
+
+  // POC: we should add "properties" field here once we formalize the struct
 }
 
 public interface IRevitObject : IDataObject
