@@ -139,4 +139,22 @@ public interface IRevitObject : IDataObject
   [DetachProperty]
   IReadOnlyList<IRevitObject> elements { get; }
 }
+
+public interface ICivilObject : IDataObject
+{
+  string type { get; }
+
+  List<ICurve>? baseCurves { get; }
+
+  [DetachProperty]
+  IReadOnlyList<ICivilObject> elements { get; }
+}
+
+public interface ITeklaObject : IDataObject
+{
+  string type { get; }
+
+  [DetachProperty]
+  IReadOnlyList<ITeklaObject> elements { get; }
+}
 #endregion

@@ -3,6 +3,9 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Data;
 
+/// <summary>
+/// Represents an Autodesk.Revit.DB.Element object in Revit
+/// </summary>
 [SpeckleType("Objects.Data.RevitObject")]
 public class RevitObject : Base, IRevitObject
 {
