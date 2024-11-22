@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Models;
 
@@ -23,7 +22,10 @@ public class ControlPoint : Point, ITransformable<ControlPoint>
   /// OBSOLETE - This is just here for backwards compatibility.
   /// </summary>
   [
-    JsonProperty(NullValueHandling = NullValueHandling.Ignore),
+    Speckle.Newtonsoft.Json.JsonProperty(NullValueHandling = Speckle.Newtonsoft.Json.NullValueHandling.Ignore),
+    System.Text.Json.Serialization.JsonIgnore(
+      Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    ),
     Obsolete("Access coordinates using XYZ and weight fields", true)
   ]
   private new List<double> value

@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
@@ -57,7 +56,9 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// Gets the Euclidean length of this vector.
   /// </summary>
   /// <returns>Length of the vector.</returns>
-  [JsonIgnore]
+
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public double Length => Math.Sqrt(DotProduct(this, this));
 
   /// <inheritdoc/>
@@ -226,7 +227,10 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// Gets or sets the coordinates of the vector
   /// </summary>
   [
-    JsonProperty(NullValueHandling = NullValueHandling.Ignore),
+    Speckle.Newtonsoft.Json.JsonProperty(NullValueHandling = Speckle.Newtonsoft.Json.NullValueHandling.Ignore),
+    System.Text.Json.Serialization.JsonIgnore(
+      Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    ),
     Obsolete("Use X,Y,Z fields to access coordinates instead", true)
   ]
   public List<double> value

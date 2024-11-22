@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -34,8 +33,8 @@ public static class DictionaryConverter
         if (entry.Value == null)
         {
           // Check for JsonProperty(NullValueHandling = NullValueHandling.Ignore) attribute
-          JsonPropertyAttribute? attr = TypeLoader.GetJsonPropertyAttribute(value);
-          if (attr is { NullValueHandling: NullValueHandling.Ignore })
+          Speckle.Newtonsoft.Json.JsonPropertyAttribute? attr = TypeLoader.GetJsonPropertyAttribute(value);
+          if (attr is { NullValueHandling: Speckle.Newtonsoft.Json.NullValueHandling.Ignore })
           {
             continue;
           }

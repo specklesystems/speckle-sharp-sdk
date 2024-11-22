@@ -1,4 +1,3 @@
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Unit.Host;
@@ -105,7 +104,8 @@ public class Mesh : Base
 {
   public List<int> Faces = new();
 
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public List<Point> Points = new();
 
   public List<double> Vertices
@@ -132,7 +132,8 @@ public interface ICurve
 [SpeckleType("Speckle.Core.Tests.Unit.Kits.Polyline")]
 public class Polyline : Base, ICurve
 {
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public List<Point> Points { get; set; } = new();
 
   public List<double> Vertices

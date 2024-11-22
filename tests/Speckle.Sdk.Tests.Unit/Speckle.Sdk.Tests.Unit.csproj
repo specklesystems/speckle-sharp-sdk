@@ -14,6 +14,7 @@
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Shouldly" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Speckle.Newtonsoft.Json" />
   </ItemGroup>
   
   <ItemGroup>

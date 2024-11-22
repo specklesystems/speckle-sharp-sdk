@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
@@ -233,7 +232,13 @@ public class Point : Base, ITransformable<Point>, IEquatable<Point>
   /// <summary>
   /// Gets or sets the coordinates of the <see cref="Point"/>
   /// </summary>
-  [JsonProperty(NullValueHandling = NullValueHandling.Ignore), Obsolete("Use x,y,z properties instead", true)]
+  [
+    Speckle.Newtonsoft.Json.JsonProperty(NullValueHandling = Speckle.Newtonsoft.Json.NullValueHandling.Ignore),
+    System.Text.Json.Serialization.JsonIgnore(
+      Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    ),
+    Obsolete("Use x,y,z properties instead", true)
+  ]
   public List<double> value
   {
     get => null!;

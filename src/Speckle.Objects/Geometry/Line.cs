@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
@@ -34,7 +33,9 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
   /// OBSOLETE - This is just here for backwards compatibility.
   /// You should not use this for anything.
   /// </summary>
-  [JsonIgnore, Obsolete("Area should not be on the line class", true)]
+  [Obsolete("Area should not be on the line class", true)]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public double area => 0;
 
   public required string units { get; set; }
@@ -102,7 +103,10 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
   /// You should not use this for anything. Access coordinates using start and end point.
   /// </summary>
   [
-    JsonProperty(NullValueHandling = NullValueHandling.Ignore),
+    Speckle.Newtonsoft.Json.JsonProperty(NullValueHandling = Speckle.Newtonsoft.Json.NullValueHandling.Ignore),
+    System.Text.Json.Serialization.JsonIgnore(
+      Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    ),
     Obsolete("Access coordinates using start and end point", true)
   ]
   public List<double>? value

@@ -1,4 +1,3 @@
-using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
@@ -42,19 +41,25 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
   /// <summary>
   /// OBSOLETE - This is just here for backwards compatibility.
   /// </summary>
-  [JsonIgnore, Obsolete("start angle should be calculated from arc startpoint and plane if needed", true)]
+  [Obsolete("start angle should be calculated from arc startpoint and plane if needed", true)]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public double? startAngle { get; set; }
 
   /// <summary>
   /// OBSOLETE - This is just here for backwards compatibility.
   /// </summary>
-  [JsonIgnore, Obsolete("end angle should be calculated from arc endpoint and plane if needed", true)]
+  [Obsolete("end angle should be calculated from arc endpoint and plane if needed", true)]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public double? endAngle { get; set; }
 
   /// <summary>
   /// OBSOLETE - This is just here for backwards compatibility.
   /// </summary>
-  [JsonIgnore, Obsolete("Refer to measure instead", true)]
+  [Obsolete("Refer to measure instead", true)]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public double angleRadians { get; set; }
 
   /// <summary>
@@ -81,7 +86,9 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
   /// <summary>
   /// OBSOLETE - This is just here for backwards compatibility.
   /// </summary>
-  [JsonIgnore, Obsolete("Area property does not belong on an arc", true)]
+  [Obsolete("Area property does not belong on an arc", true)]
+  [Newtonsoft.Json.JsonIgnore]
+  [System.Text.Json.Serialization.JsonIgnore]
   public double area { get; set; }
 
   /// <inheritdoc/>
