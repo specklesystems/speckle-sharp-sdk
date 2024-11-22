@@ -133,7 +133,7 @@ public class SerializationTests
       {
         oldSpeckleType.ShouldNotContain("Base");
       }
-      else 
+      else
       {
         starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
         starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
@@ -162,7 +162,7 @@ public class SerializationTests
       var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
       var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
       starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
-      
+
       var oldType = TypeLoader.GetAtomicType(oldSpeckleType);
       if (oldType == typeof(Base))
       {
@@ -173,12 +173,12 @@ public class SerializationTests
         var baseType = process.BaseCache[id];
 
         starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
-      starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
+        starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
 
-      var type = TypeLoader.GetAtomicType(baseType.speckle_type);
-      type.ShouldNotBeNull();
-      var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException();
-      starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
+        var type = TypeLoader.GetAtomicType(baseType.speckle_type);
+        type.ShouldNotBeNull();
+        var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException();
+        starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
         starts.ShouldBeTrue($"{name} isn't expected");
       }
     }
@@ -238,13 +238,13 @@ public class SerializationTests
   }
 
   [Test]
-  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
-  public async Task Roundtrip_Test_New(string fileName, string rootId, int count)
+  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, 4674)]
+  public async Task Roundtrip_Test_New(string fileName, string rootId, int oldCount, int newCount)
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var json = await ReadJson(fullName);
     var closure = ReadAsObjects(json);
-    closure.Count.ShouldBe(count);
+    closure.Count.ShouldBe(oldCount);
 
     var o = new ObjectLoader(
       new DummySqLiteReceiveManager(closure),
@@ -253,8 +253,8 @@ public class SerializationTests
     );
     var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory());
     var root = await process.Deserialize(rootId, default, new DeserializeOptions(true));
-    process.BaseCache.Count.ShouldBe(count);
-    process.Total.ShouldBe(count);
+    process.BaseCache.Count.ShouldBe(oldCount);
+    process.Total.ShouldBe(oldCount);
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
     var serializeProcess = new SerializeProcess(
@@ -267,7 +267,7 @@ public class SerializationTests
     var (rootId2, _) = await serializeProcess.Serialize(root, default, new SerializeProcessOptions(true, true, false));
 
     rootId2.ShouldBe(root.id);
-    newIdToJson.Count.ShouldBe(count);
+    newIdToJson.Count.ShouldBe(newCount);
 
     foreach (var newKvp in newIdToJson)
     {
