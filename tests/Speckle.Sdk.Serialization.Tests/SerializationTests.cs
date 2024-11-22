@@ -128,14 +128,22 @@ public class SerializationTests
       var baseType = await deserializer.DeserializeAsync(objJson);
       baseType.id.ShouldBe(id);
 
-      starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
-      starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
+      var oldType = TypeLoader.GetAtomicType(oldSpeckleType);
+      if (oldType == typeof(Base))
+      {
+        oldSpeckleType.ShouldNotContain("Base");
+      }
+      else 
+      {
+        starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
+        starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
 
-      var type = TypeLoader.GetAtomicType(baseType.speckle_type);
-      type.ShouldNotBeNull();
-      var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException();
-      starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
-      starts.ShouldBeTrue($"{name} isn't expected");
+        var type = TypeLoader.GetAtomicType(baseType.speckle_type);
+        type.ShouldNotBeNull();
+        var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException($"Could not find: {type}");
+        starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
+        starts.ShouldBeTrue($"{name} isn't expected");
+      }
     }
   }
 
@@ -154,17 +162,25 @@ public class SerializationTests
       var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
       var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
       starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
+      
+      var oldType = TypeLoader.GetAtomicType(oldSpeckleType);
+      if (oldType == typeof(Base))
+      {
+        oldSpeckleType.ShouldNotContain("Base");
+      }
+      else
+      {
+        var baseType = process.BaseCache[id];
 
-      var baseType = process.BaseCache[id];
-
-      starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
+        starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
       starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
 
       var type = TypeLoader.GetAtomicType(baseType.speckle_type);
       type.ShouldNotBeNull();
       var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException();
       starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
-      starts.ShouldBeTrue($"{name} isn't expected");
+        starts.ShouldBeTrue($"{name} isn't expected");
+      }
     }
   }
 
@@ -186,8 +202,8 @@ public class SerializationTests
   }
 
   [Test]
-  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b")]
-  public async Task Roundtrip_Test_Old(string fileName, string rootId)
+  [TestCase("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
+  public async Task Roundtrip_Test_Old(string fileName, string rootId, int count)
   {
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var json = await ReadJson(fullName);
@@ -204,6 +220,7 @@ public class SerializationTests
     var newIds = new Dictionary<string, string>();
     var oldIds = new Dictionary<string, string>();
     var idToBase = new Dictionary<string, Base>();
+    closure.Count.ShouldBe(count);
     foreach (var (id, objJson) in closure)
     {
       var base1 = await deserializer.DeserializeAsync(objJson);
@@ -215,6 +232,9 @@ public class SerializationTests
       oldIds.Add(id, j);
       idToBase.Add(id, base1);
     }
+    newIds.Count.ShouldBe(count);
+    oldIds.Count.ShouldBe(count);
+    idToBase.Count.ShouldBe(count);
   }
 
   [Test]
@@ -224,6 +244,7 @@ public class SerializationTests
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var json = await ReadJson(fullName);
     var closure = ReadAsObjects(json);
+    closure.Count.ShouldBe(count);
 
     var o = new ObjectLoader(
       new DummySqLiteReceiveManager(closure),
@@ -232,6 +253,8 @@ public class SerializationTests
     );
     var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory());
     var root = await process.Deserialize(rootId, default, new DeserializeOptions(true));
+    process.BaseCache.Count.ShouldBe(count);
+    process.Total.ShouldBe(count);
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
     var serializeProcess = new SerializeProcess(
