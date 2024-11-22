@@ -19,7 +19,6 @@ public sealed class DeserializeProcess(
   IObjectDeserializerFactory objectDeserializerFactory
 ) : IDeserializeProcess
 {
-  private long _total;
   private DeserializeOptions _options = new(false);
 
   private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
@@ -27,6 +26,7 @@ public sealed class DeserializeProcess(
   private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
 
   public IReadOnlyDictionary<string, Base> BaseCache => _baseCache;
+  public long Total { get; private set; }
 
   public async Task<Base> Deserialize(
     string rootId,
@@ -38,7 +38,8 @@ public sealed class DeserializeProcess(
     var (rootJson, childrenIds) = await objectLoader
       .GetAndCache(rootId, _options, cancellationToken)
       .ConfigureAwait(false);
-    _total = childrenIds.Count;
+    Total = childrenIds.Count;
+    Total++;
     _closures.TryAdd(rootId, (rootJson, childrenIds));
     progress?.Report(new(ProgressEvent.DeserializeObject, _baseCache.Count, childrenIds.Count));
     await Traverse(rootId, cancellationToken).ConfigureAwait(false);
@@ -90,7 +91,7 @@ public sealed class DeserializeProcess(
     if (!_baseCache.ContainsKey(id))
     {
       DecodeOrEnqueueChildren(id);
-      progress?.Report(new(ProgressEvent.DeserializeObject, _baseCache.Count, _total));
+      progress?.Report(new(ProgressEvent.DeserializeObject, _baseCache.Count, Total));
     }
   }
 

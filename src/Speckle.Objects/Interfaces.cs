@@ -1,4 +1,3 @@
-using Speckle.Objects.BuiltElements;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
@@ -94,7 +93,7 @@ public interface IGisFeature : ISpeckleObject
 
 #endregion
 
-#region Built elements
+#region Data objects
 
 /// <summary>
 /// Specifies displayable <see cref="Base"/> value(s) to be used as a fallback
@@ -103,7 +102,7 @@ public interface IGisFeature : ISpeckleObject
 /// <example>
 /// <see cref="Base"/> objects that represent conceptual / abstract / mathematically derived geometry
 /// can use <see cref="displayValue"/> to be used in case the object lacks a natively displayable form.
-/// (e.g <see cref="Spiral"/>, <see cref="Wall"/>)
+/// (e.g <see cref="Spiral"/>)
 /// </example>
 /// <typeparam name="T">
 /// Type of display value.
@@ -117,5 +116,47 @@ public interface IDisplayValue<out T> : ISpeckleObject
   /// if a native displayable object cannot be converted.
   /// </summary>
   T displayValue { get; }
+}
+
+public interface IDataObject : ISpeckleObject
+{
+  string name { get; }
+
+  [DetachProperty]
+  IReadOnlyList<Base> displayValue { get; }
+
+  // POC: we should add "properties" field here once we formalize the struct
+}
+
+public interface IRevitObject : IDataObject
+{
+  string type { get; }
+
+  string family { get; }
+
+  string category { get; }
+
+  Base? location { get; }
+
+  [DetachProperty]
+  IReadOnlyList<IRevitObject> elements { get; }
+}
+
+public interface ICivilObject : IDataObject
+{
+  string type { get; }
+
+  List<ICurve>? baseCurves { get; }
+
+  [DetachProperty]
+  IReadOnlyList<ICivilObject> elements { get; }
+}
+
+public interface ITeklaObject : IDataObject
+{
+  string type { get; }
+
+  [DetachProperty]
+  IReadOnlyList<ITeklaObject> elements { get; }
 }
 #endregion
