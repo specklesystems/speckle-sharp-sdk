@@ -21,13 +21,17 @@ public class ExternalIdTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Polyline).Assembly);
   }
+
   [Test]
   [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached(string lineId, string valueId)
   {
     var p = new Polyline() { units = "cm", value = [1, 2] };
-    var serializer =
-      new ObjectSerializer(new BasePropertyGatherer(), new ConcurrentDictionary<Base, CacheInfo>(), true);
+    var serializer = new ObjectSerializer(
+      new BasePropertyGatherer(),
+      new ConcurrentDictionary<Base, CacheInfo>(),
+      true
+    );
     var list = serializer.Serialize(p).ToDictionary(x => x.Item1, x => x.Item2);
     list.ContainsKey(new Id(lineId)).ShouldBeTrue();
     var json = list[new Id(lineId)];
@@ -36,13 +40,15 @@ public class ExternalIdTests
     var closures = (JObject)jObject["__closure"].NotNull();
     closures.ContainsKey(valueId).ShouldBeTrue();
   }
+
   [Test]
   [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached_Nested(string lineId, string valueId)
   {
     var curve = new Curve()
     {
-      closed = false, displayValue = new Polyline() { units = "cm", value = [1, 2] },
+      closed = false,
+      displayValue = new Polyline() { units = "cm", value = [1, 2] },
       domain = new Interval() { start = 0, end = 1 },
       units = "cm",
       degree = 1,
@@ -50,10 +56,13 @@ public class ExternalIdTests
       rational = false,
       points = [],
       knots = [],
-      weights = []
+      weights = [],
     };
-    var serializer =
-      new ObjectSerializer(new BasePropertyGatherer(), new ConcurrentDictionary<Base, CacheInfo>(), true);
+    var serializer = new ObjectSerializer(
+      new BasePropertyGatherer(),
+      new ConcurrentDictionary<Base, CacheInfo>(),
+      true
+    );
     var list = serializer.Serialize(curve).ToDictionary(x => x.Item1, x => x.Item2);
     list.ContainsKey(new Id(lineId)).ShouldBeTrue();
     var json = list[new Id(lineId)];
@@ -69,7 +78,8 @@ public class ExternalIdTests
   {
     var curve = new Curve()
     {
-      closed = false, displayValue = new Polyline() { units = "cm", value = [1, 2] },
+      closed = false,
+      displayValue = new Polyline() { units = "cm", value = [1, 2] },
       domain = new Interval() { start = 0, end = 1 },
       units = "cm",
       degree = 1,
@@ -77,11 +87,14 @@ public class ExternalIdTests
       rational = false,
       points = [],
       knots = [],
-      weights = []
+      weights = [],
     };
-    var polycurve = new Polycurve() { segments = [curve], units = "cm"};
-    var serializer =
-      new ObjectSerializer(new BasePropertyGatherer(), new ConcurrentDictionary<Base, CacheInfo>(), true);
+    var polycurve = new Polycurve() { segments = [curve], units = "cm" };
+    var serializer = new ObjectSerializer(
+      new BasePropertyGatherer(),
+      new ConcurrentDictionary<Base, CacheInfo>(),
+      true
+    );
     var list = serializer.Serialize(polycurve).ToDictionary(x => x.Item1, x => x.Item2);
     list.ContainsKey(new Id(lineId)).ShouldBeTrue();
     var json = list[new Id(lineId)];
@@ -90,14 +103,15 @@ public class ExternalIdTests
     var closures = (JObject)jObject["__closure"].NotNull();
     closures.ContainsKey(valueId).ShouldBeTrue();
   }
-  
+
   [Test]
   [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached_Nested_More_Too(string lineId, string valueId)
   {
     var curve = new Curve()
     {
-      closed = false, displayValue = new Polyline() { units = "cm", value = [1, 2] },
+      closed = false,
+      displayValue = new Polyline() { units = "cm", value = [1, 2] },
       domain = new Interval() { start = 0, end = 1 },
       units = "cm",
       degree = 1,
@@ -105,12 +119,16 @@ public class ExternalIdTests
       rational = false,
       points = [],
       knots = [],
-      weights = []
+      weights = [],
     };
-    var polycurve = new Polycurve() { segments = [curve], units = "cm"};
+    var polycurve = new Polycurve() { segments = [curve], units = "cm" };
     var @base = new Base();
     @base.SetDetachedProp("profile", polycurve);
-    var serializer = new ObjectSerializer(new BasePropertyGatherer(), new ConcurrentDictionary<Base, CacheInfo>(), true);
+    var serializer = new ObjectSerializer(
+      new BasePropertyGatherer(),
+      new ConcurrentDictionary<Base, CacheInfo>(),
+      true
+    );
     var list = serializer.Serialize(@base).ToDictionary(x => x.Item1, x => x.Item2);
     list.ContainsKey(new Id(lineId)).ShouldBeTrue();
     var json = list[new Id(lineId)];
@@ -118,6 +136,5 @@ public class ExternalIdTests
     jObject.ContainsKey("__closure").ShouldBeTrue();
     var closures = (JObject)jObject["__closure"].NotNull();
     closures.ContainsKey(valueId).ShouldBeTrue();
-    
   }
 }

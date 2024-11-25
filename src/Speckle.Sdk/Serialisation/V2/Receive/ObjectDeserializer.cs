@@ -104,7 +104,7 @@ public sealed class ObjectDeserializer(
       {
         throw new InvalidOperationException($"current Id: {currentId} has missing closure: {objId}");
       }
-      
+
       if (references.TryGetValue(objId, out Base? closure))
       {
         return closure;
