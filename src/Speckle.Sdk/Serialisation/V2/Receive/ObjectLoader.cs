@@ -1,5 +1,6 @@
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
@@ -18,7 +19,7 @@ public sealed class ObjectLoader(
   private long _cached;
   private DeserializeOptions _options = new(false);
 
-  public async Task<(string, IReadOnlyList<string>)> GetAndCache(
+  public async Task<(string, IReadOnlyCollection<string>)> GetAndCache(
     string rootId,
     DeserializeOptions options,
     CancellationToken cancellationToken
@@ -40,12 +41,12 @@ public sealed class ObjectLoader(
       .DownloadSingleObject(rootId, progress, cancellationToken)
       .NotNull()
       .ConfigureAwait(false);
-    List<string> allChildrenIds = ClosureParser
+    IReadOnlyCollection<string> allChildrenIds = ClosureParser
       .GetClosures(rootJson)
       .OrderByDescending(x => x.Item2)
       .Select(x => x.Item1)
       .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
-      .ToList();
+      .Freeze();
     _allChildrenCount = allChildrenIds.Count;
     await GetAndCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
 
