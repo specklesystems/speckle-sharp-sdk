@@ -9,6 +9,8 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 [GenerateAutoInterface]
 public sealed class ObjectDeserializer(
+  string currentId,
+  IReadOnlyList<string> currentClosures,
   IReadOnlyDictionary<string, Base> references,
   SpeckleObjectSerializerPool pool,
   DeserializeOptions? options = null
@@ -98,6 +100,11 @@ public sealed class ObjectDeserializer(
     if (speckleType as string == "reference" && dict.TryGetValue("referencedId", out object? referencedId))
     {
       var objId = (string)referencedId.NotNull();
+      if (!currentClosures.Contains(objId) && (options is null || options.ThrowOnMissingReferences))
+      {
+        throw new InvalidOperationException($"current Id: {currentId} has missing closure: {objId}");
+      }
+      
       if (references.TryGetValue(objId, out Base? closure))
       {
         return closure;
@@ -105,7 +112,7 @@ public sealed class ObjectDeserializer(
 
       if (options is null || options.ThrowOnMissingReferences)
       {
-        throw new InvalidOperationException($"missing reference: {objId}");
+        throw new InvalidOperationException($"current Id: {currentId} has missing reference: {objId}");
       }
       //since we don't throw on missing references, return null
       return null;
