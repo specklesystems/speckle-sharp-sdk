@@ -22,14 +22,14 @@ public class SerializationTests
 {
   private class TestLoader(string json) : IObjectLoader
   {
-    public Task<(string, IReadOnlyList<string>)> GetAndCache(
+    public Task<(string, IReadOnlyCollection<string>)> GetAndCache(
       string rootId,
       DeserializeOptions? options,
       CancellationToken cancellationToken
     )
     {
       var childrenIds = ClosureParser.GetChildrenIds(json).ToList();
-      return Task.FromResult<(string, IReadOnlyList<string>)>((json, childrenIds));
+      return Task.FromResult<(string, IReadOnlyCollection<string>)>((json, childrenIds));
     }
 
     public string? LoadId(string id) => null;
@@ -86,7 +86,7 @@ public class SerializationTests
 
   public class TestObjectLoader(Dictionary<string, string> idToObject) : IObjectLoader
   {
-    public Task<(string, IReadOnlyList<string>)> GetAndCache(
+    public Task<(string, IReadOnlyCollection<string>)> GetAndCache(
       string rootId,
       DeserializeOptions? options,
       CancellationToken cancellationToken
@@ -99,7 +99,7 @@ public class SerializationTests
       }
 
       var allChildren = ClosureParser.GetChildrenIds(json).ToList();
-      return Task.FromResult<(string, IReadOnlyList<string>)>((json, allChildren));
+      return Task.FromResult<(string, IReadOnlyCollection<string>)>((json, allChildren));
     }
 
     public string? LoadId(string id) => idToObject.GetValueOrDefault(id);
