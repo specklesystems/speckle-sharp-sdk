@@ -159,4 +159,9 @@ public interface ITeklaObject : IDataObject
   [DetachProperty]
   IReadOnlyList<ITeklaObject> elements { get; }
 }
+
+public interface IGisObject : IDataObject
+{
+  int type { get; } // 0-Point, 1-Line, 2-Polygon
+}
 #endregion
