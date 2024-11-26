@@ -1,4 +1,4 @@
-﻿using Speckle.InterfaceGenerator;
+using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
