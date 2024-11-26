@@ -221,7 +221,7 @@ public class ObjectSerializer : IObjectSerializer
     }
     else
     {
-      childClosures = isRoot ? _currentClosures : new();
+      childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
       var sb = Pools.StringBuilders.Get();
       using var writer = new StringWriter(sb);
       using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);

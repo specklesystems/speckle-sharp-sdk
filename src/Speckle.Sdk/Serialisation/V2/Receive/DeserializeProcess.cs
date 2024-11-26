@@ -118,22 +118,22 @@ public sealed class DeserializeProcess(
     {
       return;
     }
-    (string json, _) = GetClosures(id);
-    var @base = Deserialise(id, json);
+    (string json, IReadOnlyList<string> closures) = GetClosures(id);
+    var @base = Deserialise(id, json, closures);
     _baseCache.TryAdd(id, @base);
     //remove from JSON cache because we've finally made the Base
     _closures.TryRemove(id, out _);
     _activeTasks.TryRemove(id, out _);
   }
 
-  private Base Deserialise(string id, string json)
+  private Base Deserialise(string id, string json, IReadOnlyList<string> closures)
   {
     if (_baseCache.TryGetValue(id, out var baseObject))
     {
       return baseObject;
     }
 
-    var deserializer = objectDeserializerFactory.Create(_baseCache);
+    var deserializer = objectDeserializerFactory.Create(id, closures, _baseCache);
     return deserializer.Deserialize(json);
   }
 }
