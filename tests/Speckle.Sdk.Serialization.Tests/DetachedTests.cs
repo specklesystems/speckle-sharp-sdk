@@ -11,6 +11,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -369,17 +370,18 @@ public class DummyServerObjectManager : IServerObjectManager
   }
 }
 
-public class DummySendCacheManager(Dictionary<string, string> objects) : ISQLiteSendCacheManager
+public class DummySendCacheManager(Dictionary<string, string> objects) : ISqLiteJsonCacheManager
 {
   public string? GetObject(string id) => null;
+  public void SaveObject(string id, string json) => throw new NotImplementedException();
 
   public bool HasObject(string objectId) => false;
 
-  public void SaveObjects(List<BaseItem> items)
+  public void SaveObjects(IEnumerable<(string id, string json)> items)
   {
-    foreach (var item in items)
+    foreach (var (id, json) in items)
     {
-      objects.Add(item.Id, item.Json);
+      objects.Add(id, json);
     }
   }
 }

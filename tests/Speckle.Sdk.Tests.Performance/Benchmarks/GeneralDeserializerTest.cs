@@ -7,9 +7,9 @@ using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
+using Speckle.Sdk.SQLite;
 
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 
@@ -46,7 +46,7 @@ public class GeneralDeserializer : IDisposable
   [Benchmark]
   public async Task<Base> RunTest_New()
   {
-    var sqlite = new SQLiteReceiveCacheManager(streamId);
+    var sqlite = TestDataHelper.ServiceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>().CreateFromStream(streamId);
     var serverObjects = new ServerObjectManager(
       TestDataHelper.ServiceProvider.GetRequiredService<ISpeckleHttp>(),
       TestDataHelper.ServiceProvider.GetRequiredService<ISdkActivityFactory>(),
