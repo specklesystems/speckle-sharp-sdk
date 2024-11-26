@@ -25,14 +25,20 @@ namespace Speckle.Sdk.Credentials;
 /// Manage accounts locally for desktop applications.
 /// </summary>
 [GenerateAutoInterface]
-public class AccountManager(ISpeckleApplication application, ILogger<AccountManager> logger, ISpeckleHttp speckleHttp, ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory)
-  : IAccountManager
+public class AccountManager(
+  ISpeckleApplication application,
+  ILogger<AccountManager> logger,
+  ISpeckleHttp speckleHttp,
+  ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory
+) : IAccountManager
 {
   public const string DEFAULT_SERVER_URL = "https://app.speckle.systems";
 
   private readonly ISqLiteJsonCacheManager _accountStorage = sqLiteJsonCacheManagerFactory.CreateForUser("Accounts");
   private static volatile bool s_isAddingAccount;
-  private readonly ISqLiteJsonCacheManager _accountAddLockStorage = sqLiteJsonCacheManagerFactory.CreateForUser("AccountAddFlow");
+  private readonly ISqLiteJsonCacheManager _accountAddLockStorage = sqLiteJsonCacheManagerFactory.CreateForUser(
+    "AccountAddFlow"
+  );
 
   /// <summary>
   /// Gets the basic information about a server.
@@ -664,7 +670,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
     s_isAddingAccount = true;
   }
 
-  private  void UnlockAccountAddFlow()
+  private void UnlockAccountAddFlow()
   {
     s_isAddingAccount = false;
     // make sure all old locks are removed

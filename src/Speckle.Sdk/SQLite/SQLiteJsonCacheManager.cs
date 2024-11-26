@@ -58,7 +58,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
   }
 
   private string ConnectionString { get; }
-  
+
   public IEnumerable<string> GetAllObjects()
   {
     using var c = new SqliteConnection(ConnectionString);
@@ -71,7 +71,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
       yield return reader.GetString(1);
     }
   }
-  
+
   public void DeleteObject(string id)
   {
     using var c = new SqliteConnection(ConnectionString);
@@ -80,7 +80,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     command.Parameters.AddWithValue("@hash", id);
     command.ExecuteNonQuery();
   }
-  
+
   public string? GetObject(string id)
   {
     using var c = new SqliteConnection(ConnectionString);
@@ -103,7 +103,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
 
     using var command = new SqliteCommand(COMMAND_TEXT, c);
-    command.Parameters.AddWithValue("@hash",id);
+    command.Parameters.AddWithValue("@hash", id);
     command.Parameters.AddWithValue("@content", json);
     command.ExecuteNonQuery();
   }

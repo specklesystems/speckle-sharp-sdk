@@ -46,7 +46,9 @@ public class GeneralDeserializer : IDisposable
   [Benchmark]
   public async Task<Base> RunTest_New()
   {
-    var sqlite = TestDataHelper.ServiceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>().CreateFromStream(streamId);
+    var sqlite = TestDataHelper
+      .ServiceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>()
+      .CreateFromStream(streamId);
     var serverObjects = new ServerObjectManager(
       TestDataHelper.ServiceProvider.GetRequiredService<ISpeckleHttp>(),
       TestDataHelper.ServiceProvider.GetRequiredService<ISdkActivityFactory>(),
