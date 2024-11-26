@@ -6,9 +6,11 @@ namespace Speckle.Sdk.SQLite;
 [GenerateAutoInterface]
 public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {
+  private readonly string _connectionString;
+
   public SqLiteJsonCacheManager(string rootPath)
   {
-    ConnectionString = $"Data Source={rootPath};";
+    _connectionString = $"Data Source={rootPath};";
     Initialize();
   }
 
@@ -21,7 +23,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     //  foreach (var str2 in HexChars)
     //    cart.Add(str + str2);
 
-    using var c = new SqliteConnection(ConnectionString);
+    using var c = new SqliteConnection(_connectionString);
     c.Open();
     const string COMMAND_TEXT =
       @"
@@ -57,11 +59,9 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     cmd4.ExecuteNonQuery();
   }
 
-  private string ConnectionString { get; }
-
   public IEnumerable<string> GetAllObjects()
   {
-    using var c = new SqliteConnection(ConnectionString);
+    using var c = new SqliteConnection(_connectionString);
     c.Open();
     using var command = new SqliteCommand("SELECT * FROM objects", c);
 
@@ -74,7 +74,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
   public void DeleteObject(string id)
   {
-    using var c = new SqliteConnection(ConnectionString);
+    using var c = new SqliteConnection(_connectionString);
     c.Open();
     using var command = new SqliteCommand("DELETE FROM objects WHERE hash = @hash", c);
     command.Parameters.AddWithValue("@hash", id);
@@ -83,7 +83,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
   public string? GetObject(string id)
   {
-    using var c = new SqliteConnection(ConnectionString);
+    using var c = new SqliteConnection(_connectionString);
     c.Open();
     using var command = new SqliteCommand("SELECT * FROM objects WHERE hash = @hash LIMIT 1 ", c);
     command.Parameters.AddWithValue("@hash", id);
@@ -98,7 +98,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
   public void SaveObject(string id, string json)
   {
-    using var c = new SqliteConnection(ConnectionString);
+    using var c = new SqliteConnection(_connectionString);
     c.Open();
     const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
 
@@ -110,7 +110,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
   public void SaveObjects(IEnumerable<(string id, string json)> items)
   {
-    using var c = new SqliteConnection(ConnectionString);
+    using var c = new SqliteConnection(_connectionString);
     c.Open();
     using var t = c.BeginTransaction();
     const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
@@ -130,7 +130,7 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
   public bool HasObject(string objectId)
   {
-    using var c = new SqliteConnection(ConnectionString);
+    using var c = new SqliteConnection(_connectionString);
     c.Open();
     const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
     using var command = new SqliteCommand(COMMAND_TEXT, c);

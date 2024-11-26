@@ -7,10 +7,10 @@ namespace Speckle.Sdk.SQLite;
 [GenerateAutoInterface]
 public class SqLiteJsonCacheManagerFactory : ISqLiteJsonCacheManagerFactory
 {
-  public ISqLiteJsonCacheManager Create(string path) => new SqLiteJsonCacheManager(path);
+  private ISqLiteJsonCacheManager Create(string path) => new SqLiteJsonCacheManager(path);
 
   public ISqLiteJsonCacheManager CreateForUser(string scope) =>
-    Create(Path.Combine(SpecklePathProvider.UserApplicationDataPath(), "Speckle", scope));
+    Create(Path.Combine(SpecklePathProvider.UserApplicationDataPath(), "Speckle", $"{scope}.db"));
 
   public ISqLiteJsonCacheManager CreateFromStream(string streamId) => Create(SqlitePaths.GetDBPath(streamId));
 }
