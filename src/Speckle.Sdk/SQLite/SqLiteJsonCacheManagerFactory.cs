@@ -1,4 +1,5 @@
 ﻿using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.SQLite;
@@ -7,7 +8,10 @@ namespace Speckle.Sdk.SQLite;
 public class SqLiteJsonCacheManagerFactory : ISqLiteJsonCacheManagerFactory
 {
   public ISqLiteJsonCacheManager Create(string path) => new SqLiteJsonCacheManager(path);
+  
+  public ISqLiteJsonCacheManager CreateForUser(string scope) => Create(Path.Combine(
+    SpecklePathProvider.UserApplicationDataPath(),  "Speckle", scope));
 
   public ISqLiteJsonCacheManager CreateFromStream(string streamId) =>
-    new SqLiteJsonCacheManager(SqlitePaths.GetDBPath(streamId));
+    Create(SqlitePaths.GetDBPath(streamId));
 }

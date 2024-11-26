@@ -57,8 +57,29 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     cmd4.ExecuteNonQuery();
   }
 
-  protected string ConnectionString { get; }
+  private string ConnectionString { get; }
   
+  public IEnumerable<string> GetAllObjects()
+  {
+    using var c = new SqliteConnection(ConnectionString);
+    c.Open();
+    using var command = new SqliteCommand("SELECT * FROM objects", c);
+
+    using var reader = command.ExecuteReader();
+    while (reader.Read())
+    {
+      yield return reader.GetString(1);
+    }
+  }
+  
+  public void DeleteObject(string id)
+  {
+    using var c = new SqliteConnection(ConnectionString);
+    c.Open();
+    using var command = new SqliteCommand("DELETE FROM objects WHERE hash = @hash", c);
+    command.Parameters.AddWithValue("@hash", id);
+    command.ExecuteNonQuery();
+  }
   
   public string? GetObject(string id)
   {

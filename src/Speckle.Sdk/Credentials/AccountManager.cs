@@ -16,7 +16,7 @@ using Speckle.Sdk.Api.GraphQL.Serializer;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
-using Speckle.Sdk.Transports;
+using Speckle.Sdk.SQLite;
 using Stream = System.IO.Stream;
 
 namespace Speckle.Sdk.Credentials;
@@ -25,14 +25,14 @@ namespace Speckle.Sdk.Credentials;
 /// Manage accounts locally for desktop applications.
 /// </summary>
 [GenerateAutoInterface]
-public class AccountManager(ISpeckleApplication application, ILogger<AccountManager> logger, ISpeckleHttp speckleHttp)
+public class AccountManager(ISpeckleApplication application, ILogger<AccountManager> logger, ISpeckleHttp speckleHttp, ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory)
   : IAccountManager
 {
   public const string DEFAULT_SERVER_URL = "https://app.speckle.systems";
 
-  private static readonly SQLiteTransport s_accountStorage = new(scope: "Accounts");
+  private readonly ISqLiteJsonCacheManager _accountStorage = sqLiteJsonCacheManagerFactory.CreateForUser("Accounts");
   private static volatile bool s_isAddingAccount;
-  private static readonly SQLiteTransport s_accountAddLockStorage = new(scope: "AccountAddFlow");
+  private readonly ISqLiteJsonCacheManager _accountAddLockStorage = sqLiteJsonCacheManagerFactory.CreateForUser("AccountAddFlow");
 
   /// <summary>
   /// Gets the basic information about a server.
@@ -225,7 +225,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   /// Upgrades an account from the account.serverInfo.movedFrom account to the account.serverInfo.movedTo account
   /// </summary>
   /// <param name="id">Id of the account to upgrade</param>
-  public async Task UpgradeAccount(string id)
+  public void UpgradeAccount(string id)
   {
     Account account = GetAccount(id);
 
@@ -245,8 +245,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
     account.id = null;
 
     RemoveAccount(id);
-    s_accountStorage.SaveObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
-    await s_accountStorage.WriteComplete().ConfigureAwait(false);
+    _accountStorage.SaveObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
   }
 
   public IEnumerable<Account> GetAccounts(string serverUrl)
@@ -316,7 +315,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   {
     static bool IsInvalid(Account ac) => ac.userInfo == null || ac.serverInfo == null;
 
-    var sqlAccounts = s_accountStorage.GetAllObjects().Select(x => JsonConvert.DeserializeObject<Account>(x));
+    var sqlAccounts = _accountStorage.GetAllObjects().Select(x => JsonConvert.DeserializeObject<Account>(x));
     var localAccounts = GetLocalAccounts();
 
     foreach (var acc in sqlAccounts)
@@ -427,7 +426,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
       }
 
       ct.ThrowIfCancellationRequested();
-      s_accountStorage.UpdateObject(account.id, JsonConvert.SerializeObject(account));
+      _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
     }
   }
 
@@ -438,7 +437,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
   public void RemoveAccount(string id)
   {
     //TODO: reset default account
-    s_accountStorage.DeleteObject(id);
+    _accountStorage.DeleteObject(id);
 
     var accounts = GetAccounts().ToArray();
 
@@ -464,8 +463,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
       {
         account.isDefault = true;
       }
-
-      s_accountStorage.UpdateObject(account.id, JsonConvert.SerializeObject(account));
+      _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
     }
   }
 
@@ -627,7 +625,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
     }
   }
 
-  private static void TryLockAccountAddFlow(ISpeckleApplication application, TimeSpan timespan)
+  private void TryLockAccountAddFlow(TimeSpan timespan)
   {
     // use a static variable to quickly
     // prevent launching this flow multiple times
@@ -638,7 +636,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
     }
 
     // this uses the SQLite transport to store locks
-    var lockIds = s_accountAddLockStorage.GetAllObjects().OrderByDescending(d => d).ToList();
+    var lockIds = _accountAddLockStorage.GetAllObjects().OrderByDescending(d => d).ToList();
     var now = DateTime.Now;
     foreach (var l in lockIds)
     {
@@ -662,17 +660,17 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
 
     // using the lock release time as an id and value
     // for ease of deletion and retrieval
-    s_accountAddLockStorage.SaveObjectSync(lockId, lockId);
+    _accountAddLockStorage.SaveObject(lockId, lockId);
     s_isAddingAccount = true;
   }
 
-  private static void UnlockAccountAddFlow()
+  private  void UnlockAccountAddFlow()
   {
     s_isAddingAccount = false;
     // make sure all old locks are removed
-    foreach (var id in s_accountAddLockStorage.GetAllObjects())
+    foreach (var id in _accountAddLockStorage.GetAllObjects())
     {
-      s_accountAddLockStorage.DeleteObject(id);
+      _accountAddLockStorage.DeleteObject(id);
     }
   }
 
@@ -691,7 +689,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
     var timeout = TimeSpan.FromMinutes(1);
     // this is not part of the try finally block
     // we do not want to clean up the existing locks
-    TryLockAccountAddFlow(application, timeout);
+    TryLockAccountAddFlow(timeout);
     var challenge = GenerateChallenge();
 
     try
@@ -705,7 +703,7 @@ public class AccountManager(ISpeckleApplication application, ILogger<AccountMana
       var account = await CreateAccount(accessCode, challenge, server).ConfigureAwait(false);
 
       //if the account already exists it will not be added again
-      s_accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
+      _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
       logger.LogDebug("Finished adding account {accountId} for {serverUrl}", account.id, server);
     }
     catch (SpeckleAccountManagerException ex)

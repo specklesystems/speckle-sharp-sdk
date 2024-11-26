@@ -4,6 +4,10 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class DummySqLiteReceiveManager(Dictionary<string, string> savedObjects) : ISqLiteJsonCacheManager
 {
+  public IEnumerable<string> GetAllObjects() => throw new NotImplementedException();
+
+  public void DeleteObject(string id) => throw new NotImplementedException();
+
   public string? GetObject(string id) => savedObjects.GetValueOrDefault(id);
 
   public void SaveObject(string id, string json) => throw new NotImplementedException();
