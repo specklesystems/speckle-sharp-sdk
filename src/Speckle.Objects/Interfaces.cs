@@ -162,6 +162,6 @@ public interface ITeklaObject : IDataObject
 
 public interface IGisObject : IDataObject
 {
-  int type { get; } // 0-Point, 1-Line, 2-Polygon
+  string type { get; }
 }
 #endregion

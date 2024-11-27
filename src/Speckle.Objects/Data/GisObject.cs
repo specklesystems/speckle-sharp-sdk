@@ -9,6 +9,6 @@ namespace Speckle.Objects.Data;
 public class GisObject : Base, IGisObject
 {
   public required string name { get; set; }
-  public required int type { get; set; }
+  public required string type { get; set; }
   public required IReadOnlyList<Base> displayValue { get; set; }
 }
