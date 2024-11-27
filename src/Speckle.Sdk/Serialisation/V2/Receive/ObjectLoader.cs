@@ -2,13 +2,14 @@ using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.Utilities;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 [GenerateAutoInterface]
 public sealed class ObjectLoader(
-  ISQLiteReceiveCacheManager sqliteReceiveCacheManager,
+  ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   IProgress<ProgressArgs>? progress
 ) : ChannelLoader, IObjectLoader
@@ -28,7 +29,7 @@ public sealed class ObjectLoader(
     string? rootJson;
     if (!options.SkipCache)
     {
-      rootJson = sqliteReceiveCacheManager.GetObject(rootId);
+      rootJson = sqLiteJsonCacheManager.GetObject(rootId);
       if (rootJson != null)
       {
         //assume everything exists as the root is there.
@@ -52,7 +53,7 @@ public sealed class ObjectLoader(
     //save the root last to shortcut later
     if (!options.SkipCache)
     {
-      sqliteReceiveCacheManager.SaveObject(new(rootId, rootJson, true));
+      sqLiteJsonCacheManager.SaveObject(rootId, rootJson);
     }
     return (rootJson, allChildrenIds);
   }
@@ -62,7 +63,7 @@ public sealed class ObjectLoader(
   {
     _checkCache++;
     progress?.Report(new(ProgressEvent.CacheCheck, _checkCache, _allChildrenCount));
-    if (!_options.SkipCache && !sqliteReceiveCacheManager.HasObject(id))
+    if (!_options.SkipCache && !sqLiteJsonCacheManager.HasObject(id))
     {
       return id;
     }
@@ -95,11 +96,11 @@ public sealed class ObjectLoader(
   {
     if (!_options.SkipCache)
     {
-      sqliteReceiveCacheManager.SaveObjects(batch);
+      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id, x.Json)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _allChildrenCount));
     }
   }
 
-  public string? LoadId(string id) => sqliteReceiveCacheManager.GetObject(id);
+  public string? LoadId(string id) => sqLiteJsonCacheManager.GetObject(id);
 }
