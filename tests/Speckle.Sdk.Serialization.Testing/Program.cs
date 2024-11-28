@@ -56,10 +56,14 @@ Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-var process2 = factory.CreateSerializeProcess(new Uri(url), streamId, token, progress, new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true));
-await process2
-  .Serialize(@base, default)
-  .ConfigureAwait(false);
+var process2 = factory.CreateSerializeProcess(
+  new Uri(url),
+  streamId,
+  token,
+  progress,
+  new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true)
+);
+await process2.Serialize(@base, default).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
 #pragma warning restore CA1506

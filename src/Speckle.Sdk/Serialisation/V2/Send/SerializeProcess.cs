@@ -37,10 +37,7 @@ public class SerializeProcess(
 
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false);
 
-  public async Task<SerializeProcessResults> Serialize(
-    Base root,
-    CancellationToken cancellationToken
-  )
+  public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
     var channelTask = Start(cancellationToken);
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);

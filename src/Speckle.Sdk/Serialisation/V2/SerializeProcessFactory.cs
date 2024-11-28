@@ -58,7 +58,7 @@ public class SerializeProcessFactory(
       options
     );
   }
-  
+
   public ISerializeProcess CreateSerializeProcess(
     SerializeProcessOptions? options = null,
     IProgress<ProgressArgs>? progress = null

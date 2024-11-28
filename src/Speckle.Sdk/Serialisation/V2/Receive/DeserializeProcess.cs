@@ -29,10 +29,7 @@ public sealed class DeserializeProcess(
   public IReadOnlyDictionary<string, Base> BaseCache => _baseCache;
   public long Total { get; private set; }
 
-  public async Task<Base> Deserialize(
-    string rootId,
-    CancellationToken cancellationToken
-  )
+  public async Task<Base> Deserialize(string rootId, CancellationToken cancellationToken)
   {
     var (rootJson, childrenIds) = await objectLoader
       .GetAndCache(rootId, _options, cancellationToken)
