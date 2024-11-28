@@ -3,7 +3,7 @@ using Speckle.Sdk.Models.Collections;
 
 namespace Speckle.Objects.GIS;
 
-[SpeckleType("Objects.GIS.VectorLayer")]
+[SpeckleType("Objects.GIS.GisLayer")]
 public class GisLayer : Collection
 {
   public required CRS crs { get; set; }
