@@ -61,7 +61,7 @@ var process2 = factory.CreateSerializeProcess(
   streamId,
   token,
   progress,
-  new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true)
+  new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true, true)
 );
 await process2.Serialize(@base, default).ConfigureAwait(false);
 Console.WriteLine("Detach");

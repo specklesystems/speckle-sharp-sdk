@@ -26,7 +26,9 @@ public class DetachedTests
   }
 
   [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
-  public async Task CanSerialize_New_Detached()
+  [TestCase(true)]
+  [TestCase(false)]
+  public async Task CanSerialize_New_Detached(bool cacheBases)
   {
     var expectedJson = """
       {
@@ -74,7 +76,7 @@ public class DetachedTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
-      new SerializeProcessOptions(false, false, true)
+      new SerializeProcessOptions(false, false, true, cacheBases)
     );
     await process2.Serialize(@base, default).ConfigureAwait(false);
 
@@ -191,7 +193,9 @@ public class DetachedTests
   }
 
   [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
-  public async Task CanSerialize_New_Detached2()
+  [TestCase(true)]
+  [TestCase(false)]
+  public async Task CanSerialize_New_Detached2(bool cacheBases)
   {
     var root = """
          
@@ -266,7 +270,7 @@ public class DetachedTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
-      new SerializeProcessOptions(false, false, true)
+      new SerializeProcessOptions(false, false, true, cacheBases)
     );
     var results = await process2.Serialize(@base, default).ConfigureAwait(false);
 
