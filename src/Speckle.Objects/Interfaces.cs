@@ -159,4 +159,9 @@ public interface ITeklaObject : IDataObject
   [DetachProperty]
   IReadOnlyList<ITeklaObject> elements { get; }
 }
+
+public interface ICSiObject : IDataObject
+{
+  string type { get; }
+}
 #endregion
