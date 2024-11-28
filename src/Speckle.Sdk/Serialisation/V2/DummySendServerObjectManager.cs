@@ -1,11 +1,26 @@
 ﻿using System.Text;
 using Speckle.Sdk.Dependencies.Serialization;
-using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
-namespace Speckle.Sdk.Serialization.Testing;
+namespace Speckle.Sdk.Serialisation.V2;
 
-public class DummyServerObjectManager : IServerObjectManager
+public class DummySqLiteJsonCacheManager : ISqLiteJsonCacheManager
+{
+  public IEnumerable<string> GetAllObjects() => throw new NotImplementedException();
+
+  public void DeleteObject(string id) => throw new NotImplementedException();
+
+  public string? GetObject(string id) => throw new NotImplementedException();
+
+  public void SaveObject(string id, string json) => throw new NotImplementedException();
+
+  public void SaveObjects(IEnumerable<(string id, string json)> items) => throw new NotImplementedException();
+
+  public bool HasObject(string objectId) => throw new NotImplementedException();
+}
+
+public class DummySendServerObjectManager : IServerObjectManager
 {
   public IAsyncEnumerable<(string, string)> DownloadObjects(
     IReadOnlyList<string> objectIds,

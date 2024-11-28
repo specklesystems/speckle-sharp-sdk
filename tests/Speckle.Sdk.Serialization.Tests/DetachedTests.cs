@@ -73,9 +73,9 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer())
+      new ObjectSerializerFactory(new BasePropertyGatherer()), new SerializeProcessOptions(false, false, true)
     );
-    await process2.Serialize(@base, default, new SerializeProcessOptions(false, false, true)).ConfigureAwait(false);
+    await process2.Serialize(@base, default).ConfigureAwait(false);
 
     objects.Count.ShouldBe(2);
     objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").ShouldBeTrue();
@@ -264,10 +264,10 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer())
+      new ObjectSerializerFactory(new BasePropertyGatherer()), new SerializeProcessOptions(false, false, true)
     );
     var results = await process2
-      .Serialize(@base, default, new SerializeProcessOptions(false, false, true))
+      .Serialize(@base, default)
       .ConfigureAwait(false);
 
     objects.Count.ShouldBe(9);

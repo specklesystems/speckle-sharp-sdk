@@ -21,7 +21,8 @@ public class SerializeProcess(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   IBaseChildFinder baseChildFinder,
-  IObjectSerializerFactory objectSerializerFactory
+  IObjectSerializerFactory objectSerializerFactory,
+  SerializeProcessOptions? options = null
 ) : ChannelSaver, ISerializeProcess
 {
   private readonly ConcurrentDictionary<Id, Json> _jsonCache = new();
@@ -34,15 +35,13 @@ public class SerializeProcess(
   private long _cached;
   private long _serialized;
 
-  private SerializeProcessOptions _options = new(false, false, false);
+  private readonly SerializeProcessOptions _options = options ?? new(false, false, false);
 
   public async Task<SerializeProcessResults> Serialize(
     Base root,
-    CancellationToken cancellationToken,
-    SerializeProcessOptions? options = null
+    CancellationToken cancellationToken
   )
   {
-    _options = options ?? _options;
     var channelTask = Start(cancellationToken);
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);

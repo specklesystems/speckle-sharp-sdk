@@ -24,7 +24,7 @@ public class SerializationTests
   {
     public Task<(string, IReadOnlyList<string>)> GetAndCache(
       string rootId,
-      DeserializeOptions? options,
+      DeserializeProcessOptions? options,
       CancellationToken cancellationToken
     )
     {
@@ -88,7 +88,7 @@ public class SerializationTests
   {
     public Task<(string, IReadOnlyList<string>)> GetAndCache(
       string rootId,
-      DeserializeOptions? options,
+      DeserializeProcessOptions? options,
       CancellationToken cancellationToken
     )
     {
@@ -251,8 +251,8 @@ public class SerializationTests
       new DummyReceiveServerObjectManager(closure),
       null
     );
-    var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory());
-    var root = await process.Deserialize(rootId, default, new DeserializeOptions(true));
+    var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new (true));
+    var root = await process.Deserialize(rootId, default);
     process.BaseCache.Count.ShouldBe(oldCount);
     process.Total.ShouldBe(oldCount);
 
@@ -262,9 +262,9 @@ public class SerializationTests
       new DummySqLiteSendManager(),
       new DummySendServerObjectManager(newIdToJson),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer())
+      new ObjectSerializerFactory(new BasePropertyGatherer()), new SerializeProcessOptions(true, true, false)
     );
-    var (rootId2, _) = await serializeProcess.Serialize(root, default, new SerializeProcessOptions(true, true, false));
+    var (rootId2, _) = await serializeProcess.Serialize(root, default);
 
     rootId2.ShouldBe(root.id);
     newIdToJson.Count.ShouldBe(newCount);
