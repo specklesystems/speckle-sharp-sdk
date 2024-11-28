@@ -85,14 +85,6 @@ public interface ITransformable : ISpeckleObject
 
 #endregion
 
-#region GIS
-public interface IGisFeature : ISpeckleObject
-{
-  Base attributes { get; set; }
-}
-
-#endregion
-
 #region Data objects
 
 /// <summary>
