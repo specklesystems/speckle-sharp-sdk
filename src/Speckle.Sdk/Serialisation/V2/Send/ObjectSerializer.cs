@@ -64,7 +64,7 @@ public class ObjectSerializer : IObjectSerializer
       (Id, Json) item;
       try
       {
-         item = SerializeBase(baseObj, true).NotNull();
+        item = SerializeBase(baseObj, true).NotNull();
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
