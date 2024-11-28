@@ -61,15 +61,20 @@ public class ObjectSerializer : IObjectSerializer
   {
     try
     {
+      (Id, Json) item;
       try
       {
-        var item = SerializeBase(baseObj, true).NotNull();
-        _baseCache.TryAdd(baseObj, new(item.Item2, _currentClosures));
-        return [new(item.Item1, item.Item2), .. _chunks];
+         item = SerializeBase(baseObj, true).NotNull();
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
         throw new SpeckleSerializeException($"Failed to extract (pre-serialize) properties from the {baseObj}", ex);
+      }
+      _baseCache.TryAdd(baseObj, new(item.Item2, _currentClosures));
+      yield return (item.Item1, item.Item2);
+      foreach (var chunk in _chunks)
+      {
+        yield return chunk;
       }
     }
     finally
