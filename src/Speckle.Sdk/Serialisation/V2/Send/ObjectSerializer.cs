@@ -17,9 +17,10 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 public readonly record struct CacheInfo(Json Json, Closures Closures);
 
 [GenerateAutoInterface]
-public class ObjectSerializer : IObjectSerializer
+public sealed class ObjectSerializer : IObjectSerializer, IDisposable
 {
-  private HashSet<object> _parentObjects = new();
+  private readonly List<(Id, Json)> _chunks = SerializerPools.ChunkPool.Get();
+  private readonly HashSet<object> _parentObjects = SerializerPools.ParentObjectsPool.Get();
   private readonly Closures _currentClosures = new();
   private readonly ConcurrentDictionary<Base, CacheInfo> _baseCache;
 
@@ -31,9 +32,7 @@ public class ObjectSerializer : IObjectSerializer
   /// Keeps track of all detached children created during serialisation that have an applicationId (provided this serializer instance has been told to track detached children).
   /// This is currently used to cache previously converted objects and avoid their conversion if they haven't changed. See the DUI3 send bindings in rhino or another host app.
   /// </summary>
-  public Dictionary<Id, ObjectReference> ObjectReferences { get; } = new();
-
-  private readonly List<(Id, Json)> _chunks = new();
+  public Dictionary<Id, ObjectReference> ObjectReferences { get; } = SerializerPools.ObjectReferencesPool.Get();
 
   /// <summary>
   /// Creates a new Serializer instance.
@@ -53,14 +52,19 @@ public class ObjectSerializer : IObjectSerializer
     _trackDetachedChildren = trackDetachedChildren;
   }
 
+  public void Dispose()
+  {
+    SerializerPools.ChunkPool.Return(_chunks);
+    SerializerPools.ParentObjectsPool.Return(_parentObjects);
+    SerializerPools.ObjectReferencesPool.Return(ObjectReferences);
+  }
+
   /// <param name="baseObj">The object to serialize</param>
   /// <returns>The serialized JSON</returns>
   /// <exception cref="InvalidOperationException">The serializer is busy (already serializing an object)</exception>
   /// <exception cref="SpeckleSerializeException">Failed to extract (pre-serialize) properties from the <paramref name="baseObj"/></exception>
   public IEnumerable<(Id, Json)> Serialize(Base baseObj)
   {
-    try
-    {
       try
       {
         var item = SerializeBase(baseObj, true).NotNull();
@@ -71,11 +75,6 @@ public class ObjectSerializer : IObjectSerializer
       {
         throw new SpeckleSerializeException($"Failed to extract (pre-serialize) properties from the {baseObj}", ex);
       }
-    }
-    finally
-    {
-      _parentObjects = new HashSet<object>();
-    }
   }
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
@@ -314,26 +313,33 @@ public class ObjectSerializer : IObjectSerializer
   {
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
     {
-      List<DataChunk> chunks = new();
-      DataChunk crtChunk = new() { data = new List<object?>(detachInfo.ChunkSize) };
-
-      foreach (object element in chunkableCollection)
+      List<DataChunk> chunks = SerializerPools.DataChunkPool.Get();
+      try
       {
-        crtChunk.data.Add(element);
-        if (crtChunk.data.Count >= detachInfo.ChunkSize)
+        DataChunk crtChunk = new() { data = new List<object?>(detachInfo.ChunkSize) };
+
+        foreach (object element in chunkableCollection)
+        {
+          crtChunk.data.Add(element);
+          if (crtChunk.data.Count >= detachInfo.ChunkSize)
+          {
+            chunks.Add(crtChunk);
+            crtChunk = new DataChunk { data = new List<object?>(detachInfo.ChunkSize) };
+          }
+        }
+
+        if (crtChunk.data.Count > 0)
         {
           chunks.Add(crtChunk);
-          crtChunk = new DataChunk { data = new List<object?>(detachInfo.ChunkSize) };
         }
-      }
 
-      if (crtChunk.data.Count > 0)
+        SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null));
+        return;
+      }
+      finally
       {
-        chunks.Add(crtChunk);
+        SerializerPools.DataChunkPool.Return(chunks);
       }
-
-      SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null));
-      return;
     }
 
     SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);

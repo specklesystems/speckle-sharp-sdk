@@ -6,6 +6,10 @@ public class Pool<T>
   where T : class, new()
 {
   private readonly ObjectPool<T> _objectPool;
+  
+  public Pool() : this(new DefaultPooledObjectPolicy<T>())
+  {
+  }
 
   internal Pool(IPooledObjectPolicy<T> objectPolicy)
   {

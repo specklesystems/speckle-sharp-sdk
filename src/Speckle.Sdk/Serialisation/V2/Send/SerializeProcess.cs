@@ -109,11 +109,12 @@ public class SerializeProcess(
     if (id is null || !_jsonCache.TryGetValue(id.Value, out var json))
     {
       var serializer2 = objectSerializerFactory.Create(_baseCache, cancellationToken);
-      var items = serializer2.Serialize(obj).ToList();
+       var items = serializer2.Serialize(obj).ToList();
       foreach (var kvp in serializer2.ObjectReferences)
       {
         _objectReferences.TryAdd(kvp.Key, kvp.Value);
       }
+      serializer2.Dispose();
 
       var newId = new Id(obj.id.NotNull());
       var (_, j) = items.First();
