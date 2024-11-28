@@ -95,6 +95,25 @@ public class ObjectSerializer : IObjectSerializer
       return;
     }
 
+    switch (obj)
+    {
+      case double d:
+        writer.WriteValue(d);
+        return;
+      case string d:
+        writer.WriteValue(d);
+        return;
+      case bool d:
+        writer.WriteValue(d);
+        return;
+      case int d:
+        writer.WriteValue(d);
+        return;
+      case long d:
+        writer.WriteValue(d);
+        return;
+    }
+
     if (obj.GetType().IsPrimitive || obj is string)
     {
       writer.WriteValue(obj);
