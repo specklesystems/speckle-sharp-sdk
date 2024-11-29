@@ -10,6 +10,6 @@ public class ObjectDeserializerFactory : IObjectDeserializerFactory
     string currentId,
     IReadOnlyCollection<string> currentClosures,
     IReadOnlyDictionary<string, Base> references,
-    DeserializeOptions? options = null
+    DeserializeProcessOptions? options = null
   ) => new ObjectDeserializer(currentId, currentClosures, references, SpeckleObjectSerializerPool.Instance, options);
 }

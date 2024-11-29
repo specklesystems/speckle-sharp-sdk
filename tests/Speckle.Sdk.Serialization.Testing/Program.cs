@@ -50,16 +50,20 @@ var factory = new SerializeProcessFactory(
   new ObjectDeserializerFactory(),
   serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>()
 );
-var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress);
-var @base = await process.Deserialize(rootId, default, new(skipCacheReceive)).ConfigureAwait(false);
+var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, new(skipCacheReceive));
+var @base = await process.Deserialize(rootId, default).ConfigureAwait(false);
 Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-var process2 = factory.CreateSerializeProcess(new Uri(url), streamId, token, progress);
-await process2
-  .Serialize(@base, default, new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true))
-  .ConfigureAwait(false);
+var process2 = factory.CreateSerializeProcess(
+  new Uri(url),
+  streamId,
+  token,
+  progress,
+  new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true, true)
+);
+await process2.Serialize(@base, default).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
 #pragma warning restore CA1506

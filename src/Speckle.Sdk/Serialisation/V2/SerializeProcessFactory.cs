@@ -13,13 +13,20 @@ public interface ISerializeProcessFactory
     Uri url,
     string streamId,
     string? authorizationToken,
-    IProgress<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress,
+    SerializeProcessOptions? options = null
   );
   IDeserializeProcess CreateDeserializeProcess(
     Uri url,
     string streamId,
     string? authorizationToken,
-    IProgress<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress,
+    DeserializeProcessOptions? options = null
+  );
+
+  public ISerializeProcess CreateSerializeProcess(
+    SerializeProcessOptions? options = null,
+    IProgress<ProgressArgs>? progress = null
   );
 }
 
@@ -36,7 +43,8 @@ public class SerializeProcessFactory(
     Uri url,
     string streamId,
     string? authorizationToken,
-    IProgress<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress,
+    SerializeProcessOptions? options = null
   )
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
@@ -46,7 +54,25 @@ public class SerializeProcessFactory(
       sqLiteJsonCacheManager,
       serverObjectManager,
       baseChildFinder,
-      objectSerializerFactory
+      objectSerializerFactory,
+      options
+    );
+  }
+
+  public ISerializeProcess CreateSerializeProcess(
+    SerializeProcessOptions? options = null,
+    IProgress<ProgressArgs>? progress = null
+  )
+  {
+    var sqLiteJsonCacheManager = new DummySqLiteJsonCacheManager();
+    var serverObjectManager = new DummySendServerObjectManager();
+    return new SerializeProcess(
+      progress,
+      sqLiteJsonCacheManager,
+      serverObjectManager,
+      baseChildFinder,
+      objectSerializerFactory,
+      options
     );
   }
 
@@ -54,13 +80,14 @@ public class SerializeProcessFactory(
     Uri url,
     string streamId,
     string? authorizationToken,
-    IProgress<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress,
+    DeserializeProcessOptions? options = null
   )
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
     var serverObjectManager = new ServerObjectManager(speckleHttp, activityFactory, url, streamId, authorizationToken);
 
     var objectLoader = new ObjectLoader(sqLiteJsonCacheManager, serverObjectManager, progress);
-    return new DeserializeProcess(progress, objectLoader, objectDeserializerFactory);
+    return new DeserializeProcess(progress, objectLoader, objectDeserializerFactory, options);
   }
 }

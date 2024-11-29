@@ -26,7 +26,9 @@ public class DetachedTests
   }
 
   [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
-  public async Task CanSerialize_New_Detached()
+  [TestCase(true)]
+  [TestCase(false)]
+  public async Task CanSerialize_New_Detached(bool cacheBases)
   {
     var expectedJson = """
       {
@@ -73,9 +75,10 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer())
+      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new SerializeProcessOptions(false, false, true, cacheBases)
     );
-    await process2.Serialize(@base, default, new SerializeProcessOptions(false, false, true)).ConfigureAwait(false);
+    await process2.Serialize(@base, default).ConfigureAwait(false);
 
     objects.Count.ShouldBe(2);
     objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").ShouldBeTrue();
@@ -190,7 +193,9 @@ public class DetachedTests
   }
 
   [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
-  public async Task CanSerialize_New_Detached2()
+  [TestCase(true)]
+  [TestCase(false)]
+  public async Task CanSerialize_New_Detached2(bool cacheBases)
   {
     var root = """
          
@@ -264,11 +269,10 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer())
+      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new SerializeProcessOptions(false, false, true, cacheBases)
     );
-    var results = await process2
-      .Serialize(@base, default, new SerializeProcessOptions(false, false, true))
-      .ConfigureAwait(false);
+    var results = await process2.Serialize(@base, default).ConfigureAwait(false);
 
     objects.Count.ShouldBe(9);
     var x = JObject.Parse(objects["fd4efeb8a036838c53ad1cf9e82b8992"]);

@@ -7,7 +7,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
-public record DeserializeOptions(
+public record DeserializeProcessOptions(
   bool SkipCache,
   bool ThrowOnMissingReferences = true,
   bool SkipInvalidConverts = false
@@ -17,10 +17,11 @@ public record DeserializeOptions(
 public sealed class DeserializeProcess(
   IProgress<ProgressArgs>? progress,
   IObjectLoader objectLoader,
-  IObjectDeserializerFactory objectDeserializerFactory
+  IObjectDeserializerFactory objectDeserializerFactory,
+  DeserializeProcessOptions? options = null
 ) : IDeserializeProcess
 {
-  private DeserializeOptions _options = new(false);
+  private readonly DeserializeProcessOptions _options = options ?? new(false);
 
   private readonly ConcurrentDictionary<string, (string, IReadOnlyCollection<string>)> _closures = new();
   private readonly ConcurrentDictionary<string, Base> _baseCache = new();
@@ -29,13 +30,8 @@ public sealed class DeserializeProcess(
   public IReadOnlyDictionary<string, Base> BaseCache => _baseCache;
   public long Total { get; private set; }
 
-  public async Task<Base> Deserialize(
-    string rootId,
-    CancellationToken cancellationToken,
-    DeserializeOptions? options = null
-  )
+  public async Task<Base> Deserialize(string rootId, CancellationToken cancellationToken)
   {
-    _options = options ?? _options;
     var (rootJson, childrenIds) = await objectLoader
       .GetAndCache(rootId, _options, cancellationToken)
       .ConfigureAwait(false);

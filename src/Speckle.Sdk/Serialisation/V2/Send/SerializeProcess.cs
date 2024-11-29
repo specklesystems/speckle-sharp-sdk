@@ -9,7 +9,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public record SerializeProcessOptions(bool SkipCacheRead, bool SkipCacheWrite, bool SkipServer);
+public record SerializeProcessOptions(bool SkipCacheRead, bool SkipCacheWrite, bool SkipServer, bool CacheBases);
 
 public readonly record struct SerializeProcessResults(
   string RootId,
@@ -22,11 +22,15 @@ public class SerializeProcess(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   IBaseChildFinder baseChildFinder,
-  IObjectSerializerFactory objectSerializerFactory
+  IObjectSerializerFactory objectSerializerFactory,
+  SerializeProcessOptions? options = null
 ) : ChannelSaver, ISerializeProcess
 {
+  private readonly SerializeProcessOptions _options = options ?? new(false, false, false, true);
   private readonly ConcurrentDictionary<Id, Json> _jsonCache = new();
-  private readonly ConcurrentDictionary<Base, CacheInfo> _baseCache = new();
+
+  private readonly IDictionary<Base, CacheInfo> _baseCache =
+    options?.CacheBases ?? true ? new ConcurrentDictionary<Base, CacheInfo>() : new EmptyDictionary<Base, CacheInfo>();
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
 
   private long _totalFound;
@@ -35,15 +39,8 @@ public class SerializeProcess(
   private long _cached;
   private long _serialized;
 
-  private SerializeProcessOptions _options = new(false, false, false);
-
-  public async Task<SerializeProcessResults> Serialize(
-    Base root,
-    CancellationToken cancellationToken,
-    SerializeProcessOptions? options = null
-  )
+  public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
-    _options = options ?? _options;
     var channelTask = Start(cancellationToken);
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);

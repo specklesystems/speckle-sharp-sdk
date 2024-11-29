@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
@@ -21,7 +20,7 @@ public class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
   private readonly Dictionary<Id, int> _currentClosures = new();
-  private readonly ConcurrentDictionary<Base, CacheInfo> _baseCache;
+  private readonly IDictionary<Base, CacheInfo> _baseCache;
 
   private readonly bool _trackDetachedChildren;
   private readonly IBasePropertyGatherer _propertyGatherer;
@@ -42,7 +41,7 @@ public class ObjectSerializer : IObjectSerializer
   /// <param name="cancellationToken"></param>
   public ObjectSerializer(
     IBasePropertyGatherer propertyGatherer,
-    ConcurrentDictionary<Base, CacheInfo> baseCache,
+    IDictionary<Base, CacheInfo> baseCache,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
@@ -61,15 +60,20 @@ public class ObjectSerializer : IObjectSerializer
   {
     try
     {
+      (Id, Json) item;
       try
       {
-        var item = SerializeBase(baseObj, true).NotNull();
-        _baseCache.TryAdd(baseObj, new(item.Item2, _currentClosures.Freeze()));
-        return [new(item.Item1, item.Item2), .. _chunks];
+        item = SerializeBase(baseObj, true).NotNull();
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
         throw new SpeckleSerializeException($"Failed to extract (pre-serialize) properties from the {baseObj}", ex);
+      }
+      _baseCache[baseObj] = new(item.Item2, _currentClosures);
+      yield return (item.Item1, item.Item2);
+      foreach (var chunk in _chunks)
+      {
+        yield return chunk;
       }
     }
     finally
@@ -88,6 +92,25 @@ public class ObjectSerializer : IObjectSerializer
     {
       writer.WriteNull();
       return;
+    }
+
+    switch (obj)
+    {
+      case double d:
+        writer.WriteValue(d);
+        return;
+      case string d:
+        writer.WriteValue(d);
+        return;
+      case bool d:
+        writer.WriteValue(d);
+        return;
+      case int d:
+        writer.WriteValue(d);
+        return;
+      case long d:
+        writer.WriteValue(d);
+        return;
     }
 
     if (obj.GetType().IsPrimitive || obj is string)

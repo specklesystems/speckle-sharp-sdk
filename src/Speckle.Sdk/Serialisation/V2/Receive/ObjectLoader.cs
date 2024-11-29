@@ -18,11 +18,11 @@ public sealed class ObjectLoader(
   private int? _allChildrenCount;
   private long _checkCache;
   private long _cached;
-  private DeserializeOptions _options = new(false);
+  private DeserializeProcessOptions _options = new(false);
 
   public async Task<(string, IReadOnlyCollection<string>)> GetAndCache(
     string rootId,
-    DeserializeOptions options,
+    DeserializeProcessOptions options,
     CancellationToken cancellationToken
   )
   {
