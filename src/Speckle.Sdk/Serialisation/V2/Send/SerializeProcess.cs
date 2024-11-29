@@ -4,6 +4,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
@@ -18,7 +19,7 @@ public readonly record struct SerializeProcessResults(
 [GenerateAutoInterface]
 public class SerializeProcess(
   IProgress<ProgressArgs>? progress,
-  ISQLiteSendCacheManager sqliteSendCacheManager,
+  ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   IBaseChildFinder baseChildFinder,
   IObjectSerializerFactory objectSerializerFactory
@@ -103,7 +104,7 @@ public class SerializeProcess(
 
     if (!_options.SkipCacheRead && obj.id != null)
     {
-      var cachedJson = sqliteSendCacheManager.GetObject(obj.id);
+      var cachedJson = sqLiteJsonCacheManager.GetObject(obj.id);
       if (cachedJson != null)
       {
         yield return new BaseItem(obj.id.NotNull(), cachedJson, false);
@@ -148,7 +149,7 @@ public class SerializeProcess(
   {
     if (!_options.SkipCacheRead)
     {
-      var cachedJson = sqliteSendCacheManager.GetObject(id.Value);
+      var cachedJson = sqLiteJsonCacheManager.GetObject(id.Value);
       if (cachedJson != null)
       {
         return new BaseItem(id.Value, cachedJson, false);
@@ -172,7 +173,7 @@ public class SerializeProcess(
   {
     if (!_options.SkipCacheWrite && batch.Count != 0)
     {
-      sqliteSendCacheManager.SaveObjects(batch);
+      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id, x.Json)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
     }
