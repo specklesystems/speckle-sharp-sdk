@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 [GenerateAutoInterface]
 public sealed class ObjectDeserializer(
   string currentId,
-  IReadOnlyList<string> currentClosures,
+  IReadOnlyCollection<string> currentClosures,
   IReadOnlyDictionary<string, Base> references,
   SpeckleObjectSerializerPool pool,
   DeserializeProcessOptions? options = null
