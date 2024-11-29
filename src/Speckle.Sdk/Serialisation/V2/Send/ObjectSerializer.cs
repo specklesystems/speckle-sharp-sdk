@@ -10,7 +10,7 @@ using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
-using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
+using Closures = System.Collections.Generic.IReadOnlyDictionary<Speckle.Sdk.Serialisation.Id, int>;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
@@ -20,7 +20,7 @@ public readonly record struct CacheInfo(Json Json, Closures Closures);
 public class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
-  private readonly Closures _currentClosures = new();
+  private readonly Dictionary<Id, int> _currentClosures = new();
   private readonly ConcurrentDictionary<Base, CacheInfo> _baseCache;
 
   private readonly bool _trackDetachedChildren;
@@ -64,7 +64,7 @@ public class ObjectSerializer : IObjectSerializer
       try
       {
         var item = SerializeBase(baseObj, true).NotNull();
-        _baseCache.TryAdd(baseObj, new(item.Item2, _currentClosures));
+        _baseCache.TryAdd(baseObj, new(item.Item2, _currentClosures.Freeze()));
         return [new(item.Item1, item.Item2), .. _chunks];
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
@@ -339,7 +339,7 @@ public class ObjectSerializer : IObjectSerializer
     SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
   }
 
-  private static void MergeClosures(Closures current, Closures child)
+  private static void MergeClosures(Dictionary<Id, int> current, Closures child)
   {
     foreach (var closure in child)
     {

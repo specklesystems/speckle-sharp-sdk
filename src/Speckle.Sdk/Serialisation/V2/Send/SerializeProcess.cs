@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.SQLite;
@@ -46,7 +47,7 @@ public class SerializeProcess(
     var channelTask = Start(cancellationToken);
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
-    return new(root.id, _objectReferences);
+    return new(root.id, _objectReferences.Freeze());
   }
 
   private async Task Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
