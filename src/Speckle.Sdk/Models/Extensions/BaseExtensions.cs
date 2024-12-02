@@ -26,7 +26,7 @@ public static class BaseExtensions
   {
     recursionBreaker ??= _ => false;
 
-    var cache = new HashSet<string>();
+    var cache = new HashSet<string?>();
     var traversal = Traverse(
       root,
       b =>
