@@ -237,7 +237,7 @@ public class ObjectSerializer : IObjectSerializer
     Json json;
     if (_baseCache.TryGetValue(baseObj, out var info))
     {
-      id = new Id(baseObj.id);
+      id = new Id(baseObj.id.NotNull());
       childClosures = info.Closures;
       json = info.Json;
       MergeClosures(_currentClosures, childClosures);
