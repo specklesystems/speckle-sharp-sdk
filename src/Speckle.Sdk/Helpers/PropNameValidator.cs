@@ -9,6 +9,7 @@ partial
 #endif
 class PropNameValidator
 {
+  //language=regex
   private const string CHUNK_PROPERTY_NAME_REGEX_STRING = @"^@\((\d*)\)";
 
 #if NET7_0_OR_GREATER

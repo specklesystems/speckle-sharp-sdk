@@ -53,7 +53,7 @@
       <!-- Logging -->
       CA1848;CA2254;CA1727;
       <!-- Others we don't want -->
-      CA1815;CA1725;
+      CA1815;CA1725;CA1510;
       <!-- Naming things is hard enough -->
       CA1710;CA1711;CA1724;CA1716;CA1720;CA1724;
       <!-- Aspirational -->
