@@ -31,7 +31,6 @@ public class Base : DynamicBase, ISpeckleObject
   [SchemaIgnore]
   public virtual string? id { get; set; }
 
-
   /// <summary>
   /// Secondary, ideally host application driven, object identifier.
   /// </summary>
