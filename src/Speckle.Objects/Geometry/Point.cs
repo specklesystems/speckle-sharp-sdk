@@ -13,7 +13,7 @@ namespace Speckle.Objects.Geometry;
 /// TODO: The Point class does not override the Equality operator, which means that there may be cases where `Equals` is used instead of `==`, as the comparison will be done by reference, not value.
 /// </remarks>
 [SpeckleType("Objects.Geometry.Point")]
-public class Point : Base, ITransformable<Point>
+public class Point : Base, ITransformable<Point>, IEquatable<Point>
 {
   /// <inheritdoc/>
   public Point() { }
@@ -128,6 +128,37 @@ public class Point : Base, ITransformable<Point>
     z = this.z;
   }
 
+  public static Point operator +(Point point1, Point point2) =>
+    new(point1.x + point2.x, point1.y + point2.y, point1.z + point2.z, point1.units);
+
+  public static Point operator -(Point point1, Point point2) =>
+    new(point1.x - point2.x, point1.y - point2.y, point1.z - point2.z, point1.units);
+
+  public static Point operator *(Point point1, Point point2) =>
+    new(point1.x * point2.x, point1.y * point2.y, point1.z * point2.z, point1.units);
+
+  public static Point operator *(Point point, double val) =>
+    new(point.x * val, point.y * val, point.z * val, point.units);
+
+  public static Point operator /(Point point, double val) =>
+    new(point.x / val, point.y / val, point.z / val, point.units);
+
+  public static bool operator ==(Point? point1, Point? point2)
+  {
+    if (point1 is null && point2 is null)
+    {
+      return true;
+    }
+    else if (point1 is null || point2 is null)
+    {
+      return false;
+    }
+
+    return point1.units == point2.units && point1.x == point2.x && point1.y == point2.y && point1.z == point2.z;
+  }
+
+  public static bool operator !=(Point? point1, Point? point2) => !(point1 == point2);
+
   /// <summary>
   /// Computes a point equidistant from two points.
   /// </summary>
@@ -165,6 +196,32 @@ public class Point : Base, ITransformable<Point>
   public double DistanceTo(Point point)
   {
     return Math.Sqrt(Math.Pow(x - point.x, 2) + Math.Pow(y - point.y, 2) + Math.Pow(z - point.z, 2));
+  }
+
+  public bool Equals(Point? other) => this == other;
+
+  public override bool Equals(object? obj)
+  {
+    if (ReferenceEquals(this, obj))
+    {
+      return true;
+    }
+
+    if (obj is Point p)
+    {
+      return this == p;
+    }
+
+    return false;
+  }
+
+  public override int GetHashCode()
+  {
+#if NETSTANDARD2_0
+    return HashCode.Of(units).And(x).And(y).And(y);
+#else
+    return HashCode.Combine(units, x, y, z);
+#endif
   }
 
   [Obsolete($"Use {nameof(Vector.ToPoint)}", true)]
