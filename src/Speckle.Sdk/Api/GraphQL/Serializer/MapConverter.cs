@@ -1,4 +1,3 @@
-
 using System.Diagnostics.CodeAnalysis;
 using GraphQL;
 using Speckle.Newtonsoft.Json;

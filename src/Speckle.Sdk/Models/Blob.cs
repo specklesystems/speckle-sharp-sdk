@@ -1,5 +1,4 @@
-﻿
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Models;

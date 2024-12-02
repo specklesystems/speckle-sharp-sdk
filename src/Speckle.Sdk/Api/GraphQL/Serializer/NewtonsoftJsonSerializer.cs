@@ -1,4 +1,3 @@
-
 using System.Text;
 using GraphQL;
 using GraphQL.Client.Abstractions;
@@ -52,10 +51,9 @@ internal sealed class NewtonsoftJsonSerializer : IGraphQLWebsocketJsonSerializer
 
   public GraphQLWebSocketResponse<TResponse> DeserializeToWebsocketResponse<TResponse>(byte[] bytes)
   {
-    return JsonConvert.DeserializeObject<GraphQLWebSocketResponse<TResponse>>(
-      Encoding.UTF8.GetString(bytes),
-      JsonSerializerSettings
-    ).NotNull();
+    return JsonConvert
+      .DeserializeObject<GraphQLWebSocketResponse<TResponse>>(Encoding.UTF8.GetString(bytes), JsonSerializerSettings)
+      .NotNull();
   }
 
   public Task<GraphQLResponse<TResponse>> DeserializeFromUtf8StreamAsync<TResponse>(

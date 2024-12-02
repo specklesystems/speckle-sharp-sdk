@@ -1,4 +1,3 @@
-
 namespace Speckle.Sdk.Host;
 
 [AttributeUsage(AttributeTargets.Constructor)]

@@ -1,4 +1,3 @@
-
 using System.Runtime.InteropServices;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Helpers;
