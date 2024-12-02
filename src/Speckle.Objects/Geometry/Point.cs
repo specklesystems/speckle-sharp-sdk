@@ -84,10 +84,7 @@ public class Point : Base, ITransformable<Point>
   /// Returns the coordinates of this <see cref="Point"/> as a list of numbers
   /// </summary>
   /// <returns>A list of coordinates {x, y, z} </returns>
-  public List<double> ToList()
-  {
-    return new List<double> { x, y, z };
-  }
+  public List<double> ToList() => new() { x, y, z };
 
   public Vector ToVector()
   {
