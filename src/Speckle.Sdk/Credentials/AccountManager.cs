@@ -329,7 +329,7 @@ public class AccountManager(
       acc.NotNull();
       if (IsInvalid(acc))
       {
-        RemoveAccount(acc.id.NotNull());
+        RemoveAccount(acc.id);
       }
       else
       {
@@ -432,7 +432,7 @@ public class AccountManager(
       }
 
       ct.ThrowIfCancellationRequested();
-      _accountStorage.SaveObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
+      _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
     }
   }
 
@@ -449,7 +449,7 @@ public class AccountManager(
 
     if (accounts.Length != 0 && !accounts.Any(x => x.isDefault))
     {
-      ChangeDefaultAccount(accounts.First().id.NotNull());
+      ChangeDefaultAccount(accounts.First().id);
     }
   }
 
@@ -469,7 +469,7 @@ public class AccountManager(
       {
         account.isDefault = true;
       }
-      _accountStorage.SaveObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
+      _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
     }
   }
 
@@ -709,7 +709,7 @@ public class AccountManager(
       var account = await CreateAccount(accessCode, challenge, server).ConfigureAwait(false);
 
       //if the account already exists it will not be added again
-      _accountStorage.SaveObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
+      _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
       logger.LogDebug("Finished adding account {accountId} for {serverUrl}", account.id, server);
     }
     catch (SpeckleAccountManagerException ex)

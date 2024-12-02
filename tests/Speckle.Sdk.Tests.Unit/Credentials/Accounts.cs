@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 
@@ -59,8 +58,8 @@ public class CredentialInfrastructure
   [OneTimeTearDown]
   public static void TearDown()
   {
-    Fixtures.DeleteLocalAccount(s_testAccount1.id.NotNull());
-    Fixtures.DeleteLocalAccount(s_testAccount2.id.NotNull());
+    Fixtures.DeleteLocalAccount(s_testAccount1.id);
+    Fixtures.DeleteLocalAccount(s_testAccount2.id);
     Fixtures.DeleteLocalAccountFile();
   }
 
@@ -78,7 +77,7 @@ public class CredentialInfrastructure
   [Test]
   public void GetAccount_ById()
   {
-    var result = _accountManager.GetAccount(s_testAccount1.id.NotNull());
+    var result = _accountManager.GetAccount(s_testAccount1.id);
 
     Assert.That(result, Is.EqualTo(s_testAccount1));
   }

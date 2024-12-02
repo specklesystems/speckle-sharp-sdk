@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Speckle.Sdk.Api.GraphQL.Models;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 
@@ -56,7 +55,7 @@ public class AccountServerMigrationTests
     //Clean up any of the test accounts we made
     foreach (var acc in _accountsToCleanUp)
     {
-      Fixtures.DeleteLocalAccount(acc.id.NotNull());
+      Fixtures.DeleteLocalAccount(acc.id);
     }
     _accountsToCleanUp.Clear();
   }
