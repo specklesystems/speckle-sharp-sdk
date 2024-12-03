@@ -2,6 +2,7 @@
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -76,7 +77,7 @@ public class CommentResourceTests
   public async Task Edit()
   {
     var blobs = await Fixtures.SendBlobData(_testUser.Account, _project.id);
-    var blobIds = blobs.Select(b => b.id).ToList();
+    var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
     EditCommentInput input = new(new(blobIds, null), _comment.id, _project.id);
 
     var editedComment = await Sut.Edit(input);
@@ -92,7 +93,7 @@ public class CommentResourceTests
   public async Task Reply()
   {
     var blobs = await Fixtures.SendBlobData(_testUser.Account, _project.id);
-    var blobIds = blobs.Select(b => b.id).ToList();
+    var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
     CreateCommentReplyInput input = new(new(blobIds, null), _comment.id, _project.id);
 
     var editedComment = await Sut.Reply(input);

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics.Contracts;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Models.Collections;
 
 namespace Speckle.Sdk.Models.Extensions;
@@ -31,7 +32,7 @@ public static class BaseExtensions
       root,
       b =>
       {
-        if (!cache.Add(b.id))
+        if (!cache.Add(b.id.NotNull()))
         {
           return true;
         }
@@ -42,7 +43,7 @@ public static class BaseExtensions
 
     foreach (var b in traversal)
     {
-      if (!cache.Contains(b.id))
+      if (!cache.Contains(b.id.NotNull()))
       {
         yield return b;
       }

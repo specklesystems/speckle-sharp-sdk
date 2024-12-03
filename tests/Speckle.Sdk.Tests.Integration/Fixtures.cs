@@ -159,7 +159,7 @@ public static class Fixtures
   internal static async Task<Comment> CreateComment(Client client, string projectId, string modelId, string versionId)
   {
     var blobs = await SendBlobData(client.Account, projectId);
-    var blobIds = blobs.Select(b => b.id).ToList();
+    var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
     CreateCommentInput input = new(new(blobIds, null), projectId, $"{projectId},{modelId},{versionId}", null, null);
     return await client.Comment.Create(input);
   }
