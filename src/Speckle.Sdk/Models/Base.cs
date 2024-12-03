@@ -1,4 +1,3 @@
-#nullable disable
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -24,15 +23,13 @@ namespace Speckle.Sdk.Models;
 [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Serialized property names are camelCase by design")]
 public class Base : DynamicBase, ISpeckleObject
 {
-  private string _type;
+  private string? _type;
 
   /// <summary>
   /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. Use the <see cref="GetId"/> function to get it.</b>
   /// </summary>
   [SchemaIgnore]
-  public virtual string id { get; set; }
-
-#nullable enable //Starting nullability syntax here so that `id` null oblivious,
+  public virtual string? id { get; set; }
 
   /// <summary>
   /// Secondary, ideally host application driven, object identifier.

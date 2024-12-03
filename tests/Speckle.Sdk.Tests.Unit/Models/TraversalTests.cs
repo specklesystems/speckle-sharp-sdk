@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
 
@@ -25,7 +26,7 @@ public class TraversalTests
       },
     };
 
-    static bool BreakRule(Base b) => b.id.Contains("break on me");
+    static bool BreakRule(Base b) => b.id.NotNull().Contains("break on me");
 
     //Flatten
     var ret = root.Flatten(BreakRule).ToList();

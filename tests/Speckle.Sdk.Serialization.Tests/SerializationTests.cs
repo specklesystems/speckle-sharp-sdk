@@ -228,7 +228,7 @@ public class SerializationTests
       var j = serializer.Serialize(base1);
       //j.ShouldBe(objJson);
       JToken.DeepEquals(JObject.Parse(j), JObject.Parse(objJson));
-      newIds.Add(base1.id, j);
+      newIds.Add(base1.id.NotNull(), j);
       oldIds.Add(id, j);
       idToBase.Add(id, base1);
     }
@@ -263,7 +263,7 @@ public class SerializationTests
       new DummySendServerObjectManager(newIdToJson),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
-      new SerializeProcessOptions(true, true, false, true)
+      new SerializeProcessOptions(true, true, false)
     );
     var (rootId2, _) = await serializeProcess.Serialize(root, default);
 

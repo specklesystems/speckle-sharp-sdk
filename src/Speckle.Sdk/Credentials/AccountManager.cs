@@ -248,7 +248,7 @@ public class AccountManager(
     account.serverInfo.frontend2 = true;
 
     // setting the id to null will force it to be recreated
-    account.id = null;
+    account.id = null!; //TODO this is gross so remove when id is nullable
 
     RemoveAccount(id);
     _accountStorage.SaveObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
