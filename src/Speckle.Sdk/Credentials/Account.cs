@@ -1,4 +1,3 @@
-#nullable disable
 using System.Runtime.InteropServices;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Helpers;
@@ -48,7 +47,7 @@ public class Account : IEquatable<Account>
 
   private static string CleanURL(string server)
   {
-    if (Uri.TryCreate(server, UriKind.Absolute, out Uri newUri))
+    if (Uri.TryCreate(server, UriKind.Absolute, out Uri? newUri))
     {
       server = newUri.Authority;
     }
@@ -77,12 +76,12 @@ public class Account : IEquatable<Account>
     return $"Account ({userInfo.email} | {serverInfo.url})";
   }
 
-  public bool Equals(Account other)
+  public bool Equals(Account? other)
   {
     return other is not null && other.userInfo.email == userInfo.email && other.serverInfo.url == serverInfo.url;
   }
 
-  public override bool Equals(object obj)
+  public override bool Equals(object? obj)
   {
     return obj is Account acc && Equals(acc);
   }

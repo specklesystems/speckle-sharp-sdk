@@ -1,4 +1,3 @@
-#nullable disable
 namespace Speckle.Sdk.Host;
 
 [AttributeUsage(AttributeTargets.Constructor)]
@@ -7,7 +6,7 @@ public sealed class SchemaInfoAttribute : Attribute
   public SchemaInfoAttribute(string name, string description)
     : this(name, description, null, null) { }
 
-  public SchemaInfoAttribute(string name, string description, string category, string subcategory)
+  public SchemaInfoAttribute(string name, string description, string? category, string? subcategory)
   {
     Name = name;
     Description = description;
@@ -15,9 +14,9 @@ public sealed class SchemaInfoAttribute : Attribute
     Subcategory = subcategory;
   }
 
-  public string Subcategory { get; }
+  public string? Subcategory { get; }
 
-  public string Category { get; }
+  public string? Category { get; }
 
   public string Description { get; }
 
