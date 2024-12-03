@@ -20,7 +20,7 @@ public class Civil3dObject : Base, ICivilObject
   /// Children objects, eg profiles, this civil entity may contain.
   /// </summary>
   [DetachProperty]
-  public required List<Civil3dObject> elements { get; set; }
+  public required List<Base> elements { get; set; }
 
   public required List<Base> displayValue { get; set; }
 
@@ -28,7 +28,7 @@ public class Civil3dObject : Base, ICivilObject
 
   public required string units { get; set; }
 
-  IReadOnlyList<ICivilObject> ICivilObject.elements => elements;
+  IReadOnlyList<Base> ICivilObject.elements => elements;
 
   IReadOnlyList<Base> IDataObject.displayValue => displayValue;
 }

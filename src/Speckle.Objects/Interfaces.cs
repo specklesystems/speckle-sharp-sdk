@@ -140,7 +140,6 @@ public interface IDataObject : ISpeckleObject, IProperties
   /// Should be simple geometry types: Point, Line, Polyline, and Mesh.
   /// Null indicates a non-displayable data object.
   /// </remarks>
-  [DetachProperty]
   IReadOnlyList<Base>? displayValue { get; }
 }
 
@@ -154,7 +153,6 @@ public interface IRevitObject : IDataObject
 
   Base? location { get; }
 
-  [DetachProperty]
   IReadOnlyList<IRevitObject> elements { get; }
 }
 
@@ -164,15 +162,13 @@ public interface ICivilObject : IDataObject
 
   List<ICurve>? baseCurves { get; }
 
-  [DetachProperty]
-  IReadOnlyList<ICivilObject> elements { get; }
+  IReadOnlyList<Base> elements { get; }
 }
 
 public interface ITeklaObject : IDataObject
 {
   string type { get; }
 
-  [DetachProperty]
   IReadOnlyList<ITeklaObject> elements { get; }
 }
 
@@ -180,7 +176,6 @@ public interface ICsiObject : IDataObject
 {
   string type { get; }
 
-  [DetachProperty]
   IReadOnlyList<ICsiObject> elements { get; }
 }
 
