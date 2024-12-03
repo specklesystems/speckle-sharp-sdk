@@ -83,18 +83,6 @@ public interface ITransformable : ISpeckleObject
   bool TransformTo(Transform transform, out ITransformable transformed);
 }
 
-#endregion
-
-#region GIS
-public interface IGisFeature : ISpeckleObject
-{
-  Base attributes { get; set; }
-}
-
-#endregion
-
-#region Data objects
-
 /// <summary>
 /// Specifies displayable <see cref="Base"/> value(s) to be used as a fallback
 /// if a displayable form cannot be converted.
@@ -118,14 +106,42 @@ public interface IDisplayValue<out T> : ISpeckleObject
   T displayValue { get; }
 }
 
-public interface IDataObject : ISpeckleObject
+#endregion
+
+#region GIS
+public interface IGisFeature : ISpeckleObject
 {
+  Base attributes { get; set; }
+}
+
+#endregion
+
+#region Data objects
+
+/// <summary>
+/// Specifies properties on objects to be used for data-based workflows
+/// </summary>
+public interface IProperties : ISpeckleObject
+{
+  Dictionary<string, object?> properties { get; }
+}
+
+public interface IDataObject : ISpeckleObject, IProperties
+{
+  /// <summary>
+  /// The name of the object, primarily used to decorate the object for consumption in frontend and other apps
+  /// </summary>
   string name { get; }
 
+  /// <summary>
+  /// The geometry used for visual representation.
+  /// </summary>
+  /// <remarks>
+  /// Should be simple geometry types: Point, Line, Polyline, and Mesh.
+  /// Null indicates a non-displayable data object.
+  /// </remarks>
   [DetachProperty]
-  IReadOnlyList<Base> displayValue { get; }
-
-  // POC: we should add "properties" field here once we formalize the struct
+  IReadOnlyList<Base>? displayValue { get; }
 }
 
 public interface IRevitObject : IDataObject
@@ -159,4 +175,21 @@ public interface ITeklaObject : IDataObject
   [DetachProperty]
   IReadOnlyList<ITeklaObject> elements { get; }
 }
+
+public interface ICsiObject : IDataObject
+{
+  string type { get; }
+
+  [DetachProperty]
+  IReadOnlyList<ICsiObject> elements { get; }
+}
+
+public interface IGisObject : IDataObject
+{
+  string type { get; }
+}
+
+public interface INavisworksObject : IDataObject { }
+
+
 #endregion

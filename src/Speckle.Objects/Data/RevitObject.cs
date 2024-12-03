@@ -27,6 +27,8 @@ public class RevitObject : Base, IRevitObject
 
   public required List<Mesh> displayValue { get; set; }
 
+  public required Dictionary<string, object?> properties { get; set; }
+
   public required string units { get; set; }
 
   IReadOnlyList<IRevitObject> IRevitObject.elements => elements;
