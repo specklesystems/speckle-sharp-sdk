@@ -1,6 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
-using Speckle.Objects.BuiltElements.Revit;
+using Speckle.Objects.Data;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
@@ -14,10 +14,9 @@ public class ShallowCopyTests
   public void CanShallowCopy_Wall()
   {
     const string UNITS = Units.Meters;
-    var ds = new DirectShape()
+    var ds = new DataObject()
     {
       name = "directShape",
-      units = UNITS,
       displayValue = new List<Base>
       {
         new Mesh
@@ -33,6 +32,7 @@ public class ShallowCopyTests
           units = UNITS,
         },
       },
+      properties = new Dictionary<string, object?>(),
     };
 
     var shallow = ds.ShallowCopy();
