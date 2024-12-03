@@ -294,7 +294,7 @@ public class ObjectSerializer : IObjectSerializer
     }
     else
     {
-      id = new Id(((Blob)baseObj).id);
+      id = new Id(((Blob)baseObj).id.NotNull());
     }
     writer.WritePropertyName("id");
     writer.WriteValue(id.Value);

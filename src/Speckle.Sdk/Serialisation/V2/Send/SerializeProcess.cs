@@ -41,7 +41,7 @@ public class SerializeProcess(
     var channelTask = Start(cancellationToken);
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
-    return new(root.id, _objectReferences.Freeze());
+    return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
   private async Task Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
