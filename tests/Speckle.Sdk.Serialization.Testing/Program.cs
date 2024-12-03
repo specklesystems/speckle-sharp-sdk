@@ -11,6 +11,7 @@ using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Testing;
+using Speckle.Sdk.SQLite;
 
 const bool skipCacheReceive = false;
 const bool skipCacheSendCheck = true;
@@ -46,18 +47,23 @@ var factory = new SerializeProcessFactory(
   serviceProvider.GetRequiredService<ISdkActivityFactory>(),
   new BaseChildFinder(new BasePropertyGatherer()),
   new ObjectSerializerFactory(new BasePropertyGatherer()),
-  new ObjectDeserializerFactory()
+  new ObjectDeserializerFactory(),
+  serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>()
 );
-var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress);
-var @base = await process.Deserialize(rootId, default, new(skipCacheReceive)).ConfigureAwait(false);
+var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, new(skipCacheReceive));
+var @base = await process.Deserialize(rootId, default).ConfigureAwait(false);
 Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-var process2 = factory.CreateSerializeProcess(new Uri(url), streamId, token, progress);
-await process2
-  .Serialize(@base, default, new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true))
-  .ConfigureAwait(false);
+var process2 = factory.CreateSerializeProcess(
+  new Uri(url),
+  streamId,
+  token,
+  progress,
+  new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true)
+);
+await process2.Serialize(@base, default).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
 #pragma warning restore CA1506

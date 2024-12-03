@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
@@ -17,14 +19,15 @@ public readonly record struct SerializeProcessResults(
 [GenerateAutoInterface]
 public class SerializeProcess(
   IProgress<ProgressArgs>? progress,
-  ISQLiteSendCacheManager sqliteSendCacheManager,
+  ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   IBaseChildFinder baseChildFinder,
-  IObjectSerializerFactory objectSerializerFactory
+  IObjectSerializerFactory objectSerializerFactory,
+  SerializeProcessOptions? options = null
 ) : ChannelSaver, ISerializeProcess
 {
+  private readonly SerializeProcessOptions _options = options ?? new(false, false, false);
   private readonly ConcurrentDictionary<Id, Json> _jsonCache = new();
-  private readonly ConcurrentDictionary<Base, CacheInfo> _baseCache = new();
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
 
   private long _totalFound;
@@ -33,19 +36,12 @@ public class SerializeProcess(
   private long _cached;
   private long _serialized;
 
-  private SerializeProcessOptions _options = new(false, false, false);
-
-  public async Task<SerializeProcessResults> Serialize(
-    Base root,
-    CancellationToken cancellationToken,
-    SerializeProcessOptions? options = null
-  )
+  public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
-    _options = options ?? _options;
     var channelTask = Start(cancellationToken);
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
-    return new(root.id, _objectReferences);
+    return new(root.id, _objectReferences.Freeze());
   }
 
   private async Task Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
@@ -102,7 +98,7 @@ public class SerializeProcess(
 
     if (!_options.SkipCacheRead && obj.id != null)
     {
-      var cachedJson = sqliteSendCacheManager.GetObject(obj.id);
+      var cachedJson = sqLiteJsonCacheManager.GetObject(obj.id);
       if (cachedJson != null)
       {
         yield return new BaseItem(obj.id.NotNull(), cachedJson, false);
@@ -111,7 +107,7 @@ public class SerializeProcess(
     }
     if (id is null || !_jsonCache.TryGetValue(id.Value, out var json))
     {
-      var serializer2 = objectSerializerFactory.Create(_baseCache, cancellationToken);
+      var serializer2 = objectSerializerFactory.Create(cancellationToken);
       var items = serializer2.Serialize(obj).ToList();
       foreach (var kvp in serializer2.ObjectReferences)
       {
@@ -147,7 +143,7 @@ public class SerializeProcess(
   {
     if (!_options.SkipCacheRead)
     {
-      var cachedJson = sqliteSendCacheManager.GetObject(id.Value);
+      var cachedJson = sqLiteJsonCacheManager.GetObject(id.Value);
       if (cachedJson != null)
       {
         return new BaseItem(id.Value, cachedJson, false);
@@ -171,7 +167,7 @@ public class SerializeProcess(
   {
     if (!_options.SkipCacheWrite && batch.Count != 0)
     {
-      sqliteSendCacheManager.SaveObjects(batch);
+      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id, x.Json)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
     }

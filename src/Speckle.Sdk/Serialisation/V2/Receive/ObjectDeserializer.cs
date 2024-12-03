@@ -10,10 +10,10 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 [GenerateAutoInterface]
 public sealed class ObjectDeserializer(
   string currentId,
-  IReadOnlyList<string> currentClosures,
+  IReadOnlyCollection<string> currentClosures,
   IReadOnlyDictionary<string, Base> references,
   SpeckleObjectSerializerPool pool,
-  DeserializeOptions? options = null
+  DeserializeProcessOptions? options = null
 ) : IObjectDeserializer
 {
   /// <param name="objectJson">The JSON string of the object to be deserialized <see cref="Base"/></param>

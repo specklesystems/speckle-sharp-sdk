@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
@@ -10,7 +9,7 @@ using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
-using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
+using Closures = System.Collections.Generic.IReadOnlyDictionary<Speckle.Sdk.Serialisation.Id, int>;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
@@ -20,8 +19,7 @@ public readonly record struct CacheInfo(Json Json, Closures Closures);
 public class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
-  private readonly Closures _currentClosures = new();
-  private readonly ConcurrentDictionary<Base, CacheInfo> _baseCache;
+  private readonly Dictionary<Id, int> _currentClosures = new();
 
   private readonly bool _trackDetachedChildren;
   private readonly IBasePropertyGatherer _propertyGatherer;
@@ -42,12 +40,10 @@ public class ObjectSerializer : IObjectSerializer
   /// <param name="cancellationToken"></param>
   public ObjectSerializer(
     IBasePropertyGatherer propertyGatherer,
-    ConcurrentDictionary<Base, CacheInfo> baseCache,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
-    _baseCache = baseCache;
     _propertyGatherer = propertyGatherer;
     _cancellationToken = cancellationToken;
     _trackDetachedChildren = trackDetachedChildren;
@@ -61,15 +57,19 @@ public class ObjectSerializer : IObjectSerializer
   {
     try
     {
+      (Id, Json) item;
       try
       {
-        var item = SerializeBase(baseObj, true).NotNull();
-        _baseCache.TryAdd(baseObj, new(item.Item2, _currentClosures));
-        return [new(item.Item1, item.Item2), .. _chunks];
+        item = SerializeBase(baseObj, true).NotNull();
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
         throw new SpeckleSerializeException($"Failed to extract (pre-serialize) properties from the {baseObj}", ex);
+      }
+      yield return (item.Item1, item.Item2);
+      foreach (var chunk in _chunks)
+      {
+        yield return chunk;
       }
     }
     finally
@@ -88,6 +88,25 @@ public class ObjectSerializer : IObjectSerializer
     {
       writer.WriteNull();
       return;
+    }
+
+    switch (obj)
+    {
+      case double d:
+        writer.WriteValue(d);
+        return;
+      case string d:
+        writer.WriteValue(d);
+        return;
+      case bool d:
+        writer.WriteValue(d);
+        return;
+      case int d:
+        writer.WriteValue(d);
+        return;
+      case long d:
+        writer.WriteValue(d);
+        return;
     }
 
     if (obj.GetType().IsPrimitive || obj is string)
@@ -209,26 +228,13 @@ public class ObjectSerializer : IObjectSerializer
       return null;
     }
 
-    Closures childClosures;
-    Id id;
-    Json json;
-    if (_baseCache.TryGetValue(baseObj, out var info))
-    {
-      id = new Id(baseObj.id);
-      childClosures = info.Closures;
-      json = info.Json;
-      MergeClosures(_currentClosures, childClosures);
-    }
-    else
-    {
-      childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
-      var sb = Pools.StringBuilders.Get();
-      using var writer = new StringWriter(sb);
-      using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-      id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
-      json = new Json(writer.ToString());
-      Pools.StringBuilders.Return(sb);
-    }
+    var childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
+    var sb = Pools.StringBuilders.Get();
+    using var writer = new StringWriter(sb);
+    using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
+    var id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
+    var json = new Json(writer.ToString());
+    Pools.StringBuilders.Return(sb);
 
     _parentObjects.Remove(baseObj);
 
@@ -339,7 +345,7 @@ public class ObjectSerializer : IObjectSerializer
     SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
   }
 
-  private static void MergeClosures(Closures current, Closures child)
+  private static void MergeClosures(Dictionary<Id, int> current, Closures child)
   {
     foreach (var closure in child)
     {

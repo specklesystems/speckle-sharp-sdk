@@ -1,12 +1,13 @@
 using System.Collections.Concurrent;
 using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
-public record DeserializeOptions(
+public record DeserializeProcessOptions(
   bool SkipCache,
   bool ThrowOnMissingReferences = true,
   bool SkipInvalidConverts = false
@@ -16,25 +17,21 @@ public record DeserializeOptions(
 public sealed class DeserializeProcess(
   IProgress<ProgressArgs>? progress,
   IObjectLoader objectLoader,
-  IObjectDeserializerFactory objectDeserializerFactory
+  IObjectDeserializerFactory objectDeserializerFactory,
+  DeserializeProcessOptions? options = null
 ) : IDeserializeProcess
 {
-  private DeserializeOptions _options = new(false);
+  private readonly DeserializeProcessOptions _options = options ?? new(false);
 
-  private readonly ConcurrentDictionary<string, (string, IReadOnlyList<string>)> _closures = new();
+  private readonly ConcurrentDictionary<string, (string, IReadOnlyCollection<string>)> _closures = new();
   private readonly ConcurrentDictionary<string, Base> _baseCache = new();
   private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
 
   public IReadOnlyDictionary<string, Base> BaseCache => _baseCache;
   public long Total { get; private set; }
 
-  public async Task<Base> Deserialize(
-    string rootId,
-    CancellationToken cancellationToken,
-    DeserializeOptions? options = null
-  )
+  public async Task<Base> Deserialize(string rootId, CancellationToken cancellationToken)
   {
-    _options = options ?? _options;
     var (rootJson, childrenIds) = await objectLoader
       .GetAndCache(rootId, _options, cancellationToken)
       .ConfigureAwait(false);
@@ -95,7 +92,7 @@ public sealed class DeserializeProcess(
     }
   }
 
-  private (string, IReadOnlyList<string>) GetClosures(string id)
+  private (string, IReadOnlyCollection<string>) GetClosures(string id)
   {
     if (!_closures.TryGetValue(id, out var closures))
     {
@@ -104,7 +101,7 @@ public sealed class DeserializeProcess(
       {
         throw new SpeckleException($"Missing object id in SQLite cache: {id}");
       }
-      var childrenIds = ClosureParser.GetClosures(json).OrderByDescending(x => x.Item2).Select(x => x.Item1).ToList();
+      var childrenIds = ClosureParser.GetClosures(json).OrderByDescending(x => x.Item2).Select(x => x.Item1).Freeze();
       closures = (json, childrenIds);
       _closures.TryAdd(id, closures);
     }
@@ -118,7 +115,7 @@ public sealed class DeserializeProcess(
     {
       return;
     }
-    (string json, IReadOnlyList<string> closures) = GetClosures(id);
+    (string json, IReadOnlyCollection<string> closures) = GetClosures(id);
     var @base = Deserialise(id, json, closures);
     _baseCache.TryAdd(id, @base);
     //remove from JSON cache because we've finally made the Base
@@ -126,7 +123,7 @@ public sealed class DeserializeProcess(
     _activeTasks.TryRemove(id, out _);
   }
 
-  private Base Deserialise(string id, string json, IReadOnlyList<string> closures)
+  private Base Deserialise(string id, string json, IReadOnlyCollection<string> closures)
   {
     if (_baseCache.TryGetValue(id, out var baseObject))
     {

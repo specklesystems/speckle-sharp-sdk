@@ -1,4 +1,4 @@
-﻿using Speckle.InterfaceGenerator;
+using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
@@ -8,8 +8,8 @@ public class ObjectDeserializerFactory : IObjectDeserializerFactory
 {
   public IObjectDeserializer Create(
     string currentId,
-    IReadOnlyList<string> currentClosures,
+    IReadOnlyCollection<string> currentClosures,
     IReadOnlyDictionary<string, Base> references,
-    DeserializeOptions? options = null
+    DeserializeProcessOptions? options = null
   ) => new ObjectDeserializer(currentId, currentClosures, references, SpeckleObjectSerializerPool.Instance, options);
 }

@@ -11,6 +11,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -72,9 +73,10 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer())
+      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new SerializeProcessOptions(false, false, true)
     );
-    await process2.Serialize(@base, default, new SerializeProcessOptions(false, false, true)).ConfigureAwait(false);
+    await process2.Serialize(@base, default).ConfigureAwait(false);
 
     objects.Count.ShouldBe(2);
     objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").ShouldBeTrue();
@@ -263,11 +265,10 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer())
+      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new SerializeProcessOptions(false, false, true)
     );
-    var results = await process2
-      .Serialize(@base, default, new SerializeProcessOptions(false, false, true))
-      .ConfigureAwait(false);
+    var results = await process2.Serialize(@base, default).ConfigureAwait(false);
 
     objects.Count.ShouldBe(9);
     var x = JObject.Parse(objects["fd4efeb8a036838c53ad1cf9e82b8992"]);
@@ -369,17 +370,23 @@ public class DummyServerObjectManager : IServerObjectManager
   }
 }
 
-public class DummySendCacheManager(Dictionary<string, string> objects) : ISQLiteSendCacheManager
+public class DummySendCacheManager(Dictionary<string, string> objects) : ISqLiteJsonCacheManager
 {
+  public IEnumerable<string> GetAllObjects() => throw new NotImplementedException();
+
+  public void DeleteObject(string id) => throw new NotImplementedException();
+
   public string? GetObject(string id) => null;
+
+  public void SaveObject(string id, string json) => throw new NotImplementedException();
 
   public bool HasObject(string objectId) => false;
 
-  public void SaveObjects(List<BaseItem> items)
+  public void SaveObjects(IEnumerable<(string id, string json)> items)
   {
-    foreach (var item in items)
+    foreach (var (id, json) in items)
     {
-      objects.Add(item.Id, item.Json);
+      objects.Add(id, json);
     }
   }
 }

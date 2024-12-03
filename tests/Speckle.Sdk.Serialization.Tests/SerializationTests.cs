@@ -22,14 +22,14 @@ public class SerializationTests
 {
   private class TestLoader(string json) : IObjectLoader
   {
-    public Task<(string, IReadOnlyList<string>)> GetAndCache(
+    public Task<(string, IReadOnlyCollection<string>)> GetAndCache(
       string rootId,
-      DeserializeOptions? options,
+      DeserializeProcessOptions? options,
       CancellationToken cancellationToken
     )
     {
       var childrenIds = ClosureParser.GetChildrenIds(json).ToList();
-      return Task.FromResult<(string, IReadOnlyList<string>)>((json, childrenIds));
+      return Task.FromResult<(string, IReadOnlyCollection<string>)>((json, childrenIds));
     }
 
     public string? LoadId(string id) => null;
@@ -86,9 +86,9 @@ public class SerializationTests
 
   public class TestObjectLoader(Dictionary<string, string> idToObject) : IObjectLoader
   {
-    public Task<(string, IReadOnlyList<string>)> GetAndCache(
+    public Task<(string, IReadOnlyCollection<string>)> GetAndCache(
       string rootId,
-      DeserializeOptions? options,
+      DeserializeProcessOptions? options,
       CancellationToken cancellationToken
     )
     {
@@ -99,7 +99,7 @@ public class SerializationTests
       }
 
       var allChildren = ClosureParser.GetChildrenIds(json).ToList();
-      return Task.FromResult<(string, IReadOnlyList<string>)>((json, allChildren));
+      return Task.FromResult<(string, IReadOnlyCollection<string>)>((json, allChildren));
     }
 
     public string? LoadId(string id) => idToObject.GetValueOrDefault(id);
@@ -251,8 +251,8 @@ public class SerializationTests
       new DummyReceiveServerObjectManager(closure),
       null
     );
-    var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory());
-    var root = await process.Deserialize(rootId, default, new DeserializeOptions(true));
+    var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(true));
+    var root = await process.Deserialize(rootId, default);
     process.BaseCache.Count.ShouldBe(oldCount);
     process.Total.ShouldBe(oldCount);
 
@@ -262,9 +262,10 @@ public class SerializationTests
       new DummySqLiteSendManager(),
       new DummySendServerObjectManager(newIdToJson),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer())
+      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new SerializeProcessOptions(true, true, false)
     );
-    var (rootId2, _) = await serializeProcess.Serialize(root, default, new SerializeProcessOptions(true, true, false));
+    var (rootId2, _) = await serializeProcess.Serialize(root, default);
 
     rootId2.ShouldBe(root.id);
     newIdToJson.Count.ShouldBe(newCount);
