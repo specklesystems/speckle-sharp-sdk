@@ -6,11 +6,11 @@ namespace Speckle.Objects.Geometry;
 public class Polygon : Base
 {
   public string units { get; set; }
-  public ICurve boundary { get; set; }
-  public List<ICurve> voids { get; set; }
+  public required ICurve boundary { get; set; }
+  public List<ICurve> innerLoops { get; set; }
 
   public Polygon()
   {
-    voids = new List<ICurve>();
+    innerLoops = new List<ICurve>();
   }
 }
