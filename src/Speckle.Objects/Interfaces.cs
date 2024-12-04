@@ -83,6 +83,29 @@ public interface ITransformable : ISpeckleObject
   bool TransformTo(Transform transform, out ITransformable transformed);
 }
 
+/// <summary>
+/// Specifies displayable <see cref="Base"/> simple geometries to be used as a fallback
+/// if a displayable form cannot be converted.
+/// </summary>
+/// <example>
+/// <see cref="Base"/> objects that represent conceptual / abstract / mathematically derived geometry
+/// can use <see cref="displayValue"/> to be used in case the object lacks a natively displayable form.
+/// (e.g <see cref="Spiral"/>)
+/// </example>
+/// <typeparam name="T">
+/// Type of display value.
+/// Expected to be either a <see cref="Base"/> type or a <see cref="List{T}"/> of <see cref="Base"/>s,
+/// Should be constrained to types of <see cref="Point"/>, <see cref="Line"/>, <see cref="Mesh"/> or <see cref="Polyline"/>.
+/// </typeparam>
+public interface IDisplayValue<out T> : ISpeckleObject
+{
+  /// <summary>
+  /// <see cref="displayValue"/> <see cref="Base"/>(s) will be used to display this <see cref="Base"/>
+  /// if a native displayable object cannot be converted.
+  /// </summary>
+  T displayValue { get; }
+}
+
 #endregion
 
 #region GIS
@@ -96,36 +119,19 @@ public interface IGisFeature : ISpeckleObject
 #region Data objects
 
 /// <summary>
-/// Specifies displayable <see cref="Base"/> value(s) to be used as a fallback
-/// if a displayable form cannot be converted.
+/// Specifies properties on objects to be used for data-based workflows
 /// </summary>
-/// <example>
-/// <see cref="Base"/> objects that represent conceptual / abstract / mathematically derived geometry
-/// can use <see cref="displayValue"/> to be used in case the object lacks a natively displayable form.
-/// (e.g <see cref="Spiral"/>)
-/// </example>
-/// <typeparam name="T">
-/// Type of display value.
-/// Expected to be either a <see cref="Base"/> type or a <see cref="List{T}"/> of <see cref="Base"/>s,
-/// most likely <see cref="Mesh"/> or <see cref="Polyline"/>.
-/// </typeparam>
-public interface IDisplayValue<out T> : ISpeckleObject
+public interface IProperties : ISpeckleObject
 {
-  /// <summary>
-  /// <see cref="displayValue"/> <see cref="Base"/>(s) will be used to display this <see cref="Base"/>
-  /// if a native displayable object cannot be converted.
-  /// </summary>
-  T displayValue { get; }
+  Dictionary<string, object?> properties { get; }
 }
 
-public interface IDataObject : ISpeckleObject
+public interface IDataObject : ISpeckleObject, IProperties, IDisplayValue<IReadOnlyList<Base>>
 {
+  /// <summary>
+  /// The name of the object, primarily used to decorate the object for consumption in frontend and other apps
+  /// </summary>
   string name { get; }
-
-  [DetachProperty]
-  IReadOnlyList<Base> displayValue { get; }
-
-  // POC: we should add "properties" field here once we formalize the struct
 }
 
 public interface IRevitObject : IDataObject
@@ -138,7 +144,6 @@ public interface IRevitObject : IDataObject
 
   Base? location { get; }
 
-  [DetachProperty]
   IReadOnlyList<IRevitObject> elements { get; }
 }
 
@@ -148,15 +153,29 @@ public interface ICivilObject : IDataObject
 
   List<ICurve>? baseCurves { get; }
 
-  [DetachProperty]
-  IReadOnlyList<ICivilObject> elements { get; }
+  IReadOnlyList<Base> elements { get; }
 }
 
 public interface ITeklaObject : IDataObject
 {
   string type { get; }
 
-  [DetachProperty]
   IReadOnlyList<ITeklaObject> elements { get; }
 }
+
+public interface ICsiObject : IDataObject
+{
+  string type { get; }
+
+  IReadOnlyList<ICsiObject> elements { get; }
+}
+
+public interface IGisObject : IDataObject
+{
+  string type { get; }
+}
+
+public interface INavisworksObject : IDataObject { }
+
+
 #endregion

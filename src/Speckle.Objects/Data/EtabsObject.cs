@@ -3,19 +3,19 @@ using Speckle.Sdk.Models;
 namespace Speckle.Objects.Data;
 
 /// <summary>
-/// Represents an Tekla.Structures.Model.ModelObject object in Tekla Structures
+/// Represents a wrapper object in ETABS
 /// </summary>
-[SpeckleType("Objects.Data.TeklaObject")]
-public class TeklaObject : Base, ITeklaObject
+[SpeckleType("Objects.Data.EtabsObject")]
+public class EtabsObject : Base, ICsiObject
 {
   public required string name { get; set; }
   public required string type { get; set; }
 
   /// <summary>
-  /// Children objects, eg profiles, this tekla modelobject may contain.
+  /// Children objects, eg joints, this etabs object may contain.
   /// </summary>
   [DetachProperty]
-  public required List<TeklaObject> elements { get; set; }
+  public required List<EtabsObject> elements { get; set; }
 
   [DetachProperty]
   public required List<Base> displayValue { get; set; }
@@ -24,7 +24,7 @@ public class TeklaObject : Base, ITeklaObject
 
   public required string units { get; set; }
 
-  IReadOnlyList<ITeklaObject> ITeklaObject.elements => elements;
+  IReadOnlyList<ICsiObject> ICsiObject.elements => elements;
 
   IReadOnlyList<Base> IDisplayValue<IReadOnlyList<Base>>.displayValue => displayValue;
 }
