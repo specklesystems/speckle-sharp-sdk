@@ -22,6 +22,7 @@ public class Civil3dObject : Base, ICivilObject
   [DetachProperty]
   public required List<Base> elements { get; set; }
 
+  [DetachProperty]
   public required List<Base> displayValue { get; set; }
 
   public required Dictionary<string, object?> properties { get; set; }
@@ -30,5 +31,5 @@ public class Civil3dObject : Base, ICivilObject
 
   IReadOnlyList<Base> ICivilObject.elements => elements;
 
-  IReadOnlyList<Base> IDataObject.displayValue => displayValue;
+  IReadOnlyList<Base> IDisplayValue<IReadOnlyList<Base>>.displayValue => displayValue;
 }

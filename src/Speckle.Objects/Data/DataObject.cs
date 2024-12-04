@@ -8,9 +8,9 @@ public class DataObject : Base, IDataObject
   public required string name { get; set; }
 
   [DetachProperty]
-  public required List<Base>? displayValue { get; set; }
+  public required List<Base> displayValue { get; set; }
 
   public required Dictionary<string, object?> properties { get; set; }
 
-  IReadOnlyList<Base>? IDataObject.displayValue => displayValue;
+  IReadOnlyList<Base> IDisplayValue<IReadOnlyList<Base>>.displayValue => displayValue;
 }

@@ -84,7 +84,7 @@ public interface ITransformable : ISpeckleObject
 }
 
 /// <summary>
-/// Specifies displayable <see cref="Base"/> value(s) to be used as a fallback
+/// Specifies displayable <see cref="Base"/> simple geometries to be used as a fallback
 /// if a displayable form cannot be converted.
 /// </summary>
 /// <example>
@@ -95,7 +95,7 @@ public interface ITransformable : ISpeckleObject
 /// <typeparam name="T">
 /// Type of display value.
 /// Expected to be either a <see cref="Base"/> type or a <see cref="List{T}"/> of <see cref="Base"/>s,
-/// most likely <see cref="Mesh"/> or <see cref="Polyline"/>.
+/// Should be constrained to types of <see cref="Point"/>, <see cref="Line"/>, <see cref="Mesh"/> or <see cref="Polyline"/>.
 /// </typeparam>
 public interface IDisplayValue<out T> : ISpeckleObject
 {
@@ -126,21 +126,12 @@ public interface IProperties : ISpeckleObject
   Dictionary<string, object?> properties { get; }
 }
 
-public interface IDataObject : ISpeckleObject, IProperties
+public interface IDataObject : ISpeckleObject, IProperties, IDisplayValue<IReadOnlyList<Base>>
 {
   /// <summary>
   /// The name of the object, primarily used to decorate the object for consumption in frontend and other apps
   /// </summary>
   string name { get; }
-
-  /// <summary>
-  /// The geometry used for visual representation.
-  /// </summary>
-  /// <remarks>
-  /// Should be simple geometry types: Point, Line, Polyline, and Mesh.
-  /// Null indicates a non-displayable data object.
-  /// </remarks>
-  IReadOnlyList<Base>? displayValue { get; }
 }
 
 public interface IRevitObject : IDataObject

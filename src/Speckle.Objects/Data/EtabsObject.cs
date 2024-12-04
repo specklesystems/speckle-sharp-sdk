@@ -3,7 +3,7 @@ using Speckle.Sdk.Models;
 namespace Speckle.Objects.Data;
 
 /// <summary>
-/// Represents a model object in ETABS
+/// Represents a wrapper object in ETABS
 /// </summary>
 [SpeckleType("Objects.Data.EtabsObject")]
 public class EtabsObject : Base, ICsiObject
@@ -17,6 +17,7 @@ public class EtabsObject : Base, ICsiObject
   [DetachProperty]
   public required List<EtabsObject> elements { get; set; }
 
+  [DetachProperty]
   public required List<Base> displayValue { get; set; }
 
   public required Dictionary<string, object?> properties { get; set; }
@@ -25,5 +26,5 @@ public class EtabsObject : Base, ICsiObject
 
   IReadOnlyList<ICsiObject> ICsiObject.elements => elements;
 
-  IReadOnlyList<Base> IDataObject.displayValue => displayValue;
+  IReadOnlyList<Base> IDisplayValue<IReadOnlyList<Base>>.displayValue => displayValue;
 }

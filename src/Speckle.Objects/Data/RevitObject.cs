@@ -25,6 +25,7 @@ public class RevitObject : Base, IRevitObject
   [DetachProperty]
   public required List<RevitObject> elements { get; set; }
 
+  [DetachProperty]
   public required List<Mesh> displayValue { get; set; }
 
   public required Dictionary<string, object?> properties { get; set; }
@@ -33,5 +34,5 @@ public class RevitObject : Base, IRevitObject
 
   IReadOnlyList<IRevitObject> IRevitObject.elements => elements;
 
-  IReadOnlyList<Base> IDataObject.displayValue => displayValue;
+  IReadOnlyList<Base> IDisplayValue<IReadOnlyList<Base>>.displayValue => displayValue;
 }

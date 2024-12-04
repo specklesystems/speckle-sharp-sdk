@@ -17,6 +17,7 @@ public class TeklaObject : Base, ITeklaObject
   [DetachProperty]
   public required List<TeklaObject> elements { get; set; }
 
+  [DetachProperty]
   public required List<Base> displayValue { get; set; }
 
   public required Dictionary<string, object?> properties { get; set; }
@@ -25,5 +26,5 @@ public class TeklaObject : Base, ITeklaObject
 
   IReadOnlyList<ITeklaObject> ITeklaObject.elements => elements;
 
-  IReadOnlyList<Base> IDataObject.displayValue => displayValue;
+  IReadOnlyList<Base> IDisplayValue<IReadOnlyList<Base>>.displayValue => displayValue;
 }
