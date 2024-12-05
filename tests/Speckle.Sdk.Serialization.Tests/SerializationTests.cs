@@ -5,7 +5,7 @@ using NUnit.Framework;
 using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
-using Speckle.Objects.BuiltElements;
+using Speckle.Objects.Data;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -41,7 +41,7 @@ public class SerializationTests
   public void Setup()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(GridLine).Assembly, _assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataObject).Assembly, _assembly);
   }
 
   private async Task<string> ReadJson(string fullName)
