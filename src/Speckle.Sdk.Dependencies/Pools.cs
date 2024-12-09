@@ -20,7 +20,6 @@ public static class Pools
 
   public static Pool<StringBuilder> StringBuilders { get; } =
     new(new StringBuilderPooledObjectPolicy() { MaximumRetainedCapacity = 100 * 1024 * 1024 });
-  
-  
+
   public static Pool<List<T>> CreateListPool<T>() => new(new DefaultPooledObjectPolicy<List<T>>());
 }

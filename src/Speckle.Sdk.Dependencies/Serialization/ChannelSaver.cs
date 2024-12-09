@@ -20,17 +20,17 @@ public abstract class ChannelSaver
   private const int MAX_CACHE_WRITE_PARALLELISM = 1;
   private const int MAX_CACHE_BATCH = 200;
 
-  private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateBounded<BaseItem>(new BoundedChannelOptions(SEND_CAPACITY)
-  {
-    AllowSynchronousContinuations = true,
-    Capacity = SEND_CAPACITY,
-    SingleWriter = false,
-    SingleReader = false,
-    FullMode = BoundedChannelFullMode.Wait
-  }, x =>
-  {
-    Console.WriteLine($"Channel closed: {x}");
-  });
+  private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateBounded<BaseItem>(
+    new BoundedChannelOptions(SEND_CAPACITY)
+    {
+      AllowSynchronousContinuations = true,
+      Capacity = SEND_CAPACITY,
+      SingleWriter = false,
+      SingleReader = false,
+      FullMode = BoundedChannelFullMode.Wait,
+    },
+    _ => throw new NotImplementedException("Dropping items not supported.")
+  );
 
   public Task Start(CancellationToken cancellationToken = default)
   {
