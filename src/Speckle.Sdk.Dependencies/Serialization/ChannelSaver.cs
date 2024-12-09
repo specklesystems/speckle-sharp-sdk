@@ -12,13 +12,25 @@ public readonly record struct BaseItem(string Id, string Json, bool NeedsStorage
 
 public abstract class ChannelSaver
 {
+  private const int SEND_CAPACITY = 50;
   private const int HTTP_SEND_CHUNK_SIZE = 25_000_000; //bytes
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
   private const int MAX_PARALLELISM_HTTP = 4;
+  private const int HTTP_CAPACITY = 50;
   private const int MAX_CACHE_WRITE_PARALLELISM = 1;
   private const int MAX_CACHE_BATCH = 200;
 
-  private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateUnbounded<BaseItem>();
+  private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateBounded<BaseItem>(new BoundedChannelOptions(SEND_CAPACITY)
+  {
+    AllowSynchronousContinuations = true,
+    Capacity = SEND_CAPACITY,
+    SingleWriter = false,
+    SingleReader = false,
+    FullMode = BoundedChannelFullMode.Wait
+  }, x =>
+  {
+    Console.WriteLine($"Channel closed: {x}");
+  });
 
   public Task Start(CancellationToken cancellationToken = default)
   {
@@ -28,7 +40,7 @@ public abstract class ChannelSaver
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
         async x => await SendToServer(x, cancellationToken).ConfigureAwait(false),
-        -1,
+        HTTP_CAPACITY,
         false,
         cancellationToken
       )
