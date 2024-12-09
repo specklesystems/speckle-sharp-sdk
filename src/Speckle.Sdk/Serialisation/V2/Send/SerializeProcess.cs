@@ -32,6 +32,8 @@ public class SerializeProcess(
 ) : ChannelSaver, ISerializeProcess
 {
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
+
+  //cache bases and closure info to avoid reserialization
   private readonly IDictionary<Base, CacheInfo> _baseCache = new ConcurrentDictionary<Base, CacheInfo>();
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
   private readonly Pool<List<(Id, Json)>> _pool = Pools.CreateListPool<(Id, Json)>();

@@ -20,6 +20,7 @@ public class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
   private readonly Dictionary<Id, int> _currentClosures = new();
+
   private readonly IDictionary<Base, CacheInfo> _baseCache;
 
   private readonly bool _trackDetachedChildren;
@@ -234,6 +235,7 @@ public class ObjectSerializer : IObjectSerializer
     Closures childClosures;
     Id id;
     Json json;
+    //avoid multiple serialization to get closures
     if (_baseCache.TryGetValue(baseObj, out var info))
     {
       id = new Id(baseObj.id.NotNull());
