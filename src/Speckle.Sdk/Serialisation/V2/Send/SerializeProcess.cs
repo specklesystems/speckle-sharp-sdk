@@ -28,8 +28,6 @@ public class SerializeProcess(
 {
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false);
   private readonly IDictionary<Base, CacheInfo> _baseCache = new ConcurrentDictionary<Base, CacheInfo>();
-  private readonly ConcurrentDictionary<Id, Json> _idsProcessed = new();
-
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
   private readonly Pool<List<(Id, Json)>> _pool = Pools.CreateListPool<(Id, Json)>();
 
@@ -107,11 +105,6 @@ public class SerializeProcess(
   //leave this sync
   private IEnumerable<BaseItem> Serialise(Base obj, CancellationToken cancellationToken)
   {
-    Id? id = obj.id != null ? new Id(obj.id) : null;
-    if (id != null && _idsProcessed.ContainsKey(id.Value))
-    {
-      yield break;
-    }
     if (!_options.SkipCacheRead && obj.id != null)
     {
       var cachedJson = sqLiteJsonCacheManager.GetObject(obj.id);
@@ -122,8 +115,6 @@ public class SerializeProcess(
       }
     }
 
-    if (id is null || !_idsProcessed.TryGetValue(id.Value, out var json))
-    {
       var serializer2 = objectSerializerFactory.Create(_baseCache, cancellationToken);
       var items = _pool.Get();
       try
@@ -134,33 +125,17 @@ public class SerializeProcess(
           _objectReferences.TryAdd(kvp.Key, kvp.Value);
         }
 
-        var (_, j) = items.First();
-        json = j;
-        var newId = new Id(obj.id.NotNull());    
-        _idsProcessed.TryAdd(newId, json);
-        yield return CheckCache(newId, json);
-        if (id is not null && id != newId)
-        {
-          //in case the ids changes which is due to id hash algorithm changing
-          _idsProcessed.TryAdd(id.Value, json);
-        }
+        var (id, json) = items.First(); 
+        yield return CheckCache(id, json);
         foreach (var (cid, cJson) in items.Skip(1))
         {
-          if (_idsProcessed.TryAdd(cid, json))
-          {
             yield return CheckCache(cid, cJson);
-          }
         }
       }
       finally
       {
         _pool.Return(items);
       }
-    }  
-    else
-    {
-      yield return new BaseItem(id.NotNull().Value, json.Value, true);
-    }
   }
 
   private BaseItem CheckCache(Id id, Json json)
@@ -182,7 +157,7 @@ public class SerializeProcess(
     {
       await serverObjectManager.UploadObjects(batch, true, progress, cancellationToken).ConfigureAwait(false);
       Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
-      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _idsProcessed.Count));
+      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
     }
     return batch;
   }
@@ -193,7 +168,7 @@ public class SerializeProcess(
     {
       sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id, x.Json)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
-      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _idsProcessed.Count));
+      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
     }
   }
 }
