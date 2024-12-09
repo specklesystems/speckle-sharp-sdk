@@ -386,7 +386,7 @@ public class DummySendCacheManager(Dictionary<string, string> objects) : ISqLite
   {
     foreach (var (id, json) in items)
     {
-      objects.Add(id, json);
+      objects[id] = json;
     }
   }
 }

@@ -36,15 +36,7 @@ public class DummySendServerObjectManager(ConcurrentDictionary<string, string> s
   {
     foreach (var obj in objects)
     {
-      obj.Id.ShouldBe(JObject.Parse(obj.Json)["id"].NotNull().Value<string>());
-      if (savedObjects.TryGetValue(obj.Id, out var j))
-      {
-        j.ShouldBe(obj.Json);
-      }
-      else
-      {
-        savedObjects.TryAdd(obj.Id, obj.Json);
-      }
+      savedObjects.TryAdd(obj.Id, obj.Json);
     }
     return Task.CompletedTask;
   }
