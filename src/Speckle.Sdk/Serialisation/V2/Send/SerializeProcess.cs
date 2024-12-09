@@ -115,27 +115,27 @@ public class SerializeProcess(
       }
     }
 
-      var serializer2 = objectSerializerFactory.Create(_baseCache, cancellationToken);
-      var items = _pool.Get();
-      try
+    var serializer2 = objectSerializerFactory.Create(_baseCache, cancellationToken);
+    var items = _pool.Get();
+    try
+    {
+      items.AddRange(serializer2.Serialize(obj));
+      foreach (var kvp in serializer2.ObjectReferences)
       {
-        items.AddRange(serializer2.Serialize(obj));
-        foreach (var kvp in serializer2.ObjectReferences)
-        {
-          _objectReferences.TryAdd(kvp.Key, kvp.Value);
-        }
+        _objectReferences.TryAdd(kvp.Key, kvp.Value);
+      }
 
-        var (id, json) = items.First(); 
-        yield return CheckCache(id, json);
-        foreach (var (cid, cJson) in items.Skip(1))
-        {
-            yield return CheckCache(cid, cJson);
-        }
-      }
-      finally
+      var (id, json) = items.First();
+      yield return CheckCache(id, json);
+      foreach (var (cid, cJson) in items.Skip(1))
       {
-        _pool.Return(items);
+        yield return CheckCache(cid, cJson);
       }
+    }
+    finally
+    {
+      _pool.Return(items);
+    }
   }
 
   private BaseItem CheckCache(Id id, Json json)

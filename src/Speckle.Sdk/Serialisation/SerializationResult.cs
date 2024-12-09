@@ -20,5 +20,6 @@ public readonly record struct Id(string Value)
 
     return string.Equals(Value, other.Value.Value, StringComparison.OrdinalIgnoreCase);
   }
+
   public override int GetHashCode() => Value.GetHashCode();
 }
