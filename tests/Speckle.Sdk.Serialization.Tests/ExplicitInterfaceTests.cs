@@ -27,7 +27,7 @@ public class ExplicitInterfaceTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
-      new SerializeProcessOptions(false, false, true)
+      new SerializeProcessOptions(false, false, true, true)
     );
     await process2.Serialize(testClass, default).ConfigureAwait(false);
     objects.Count.ShouldBe(1);

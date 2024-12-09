@@ -263,7 +263,7 @@ public class SerializationTests
       new DummySendServerObjectManager(newIdToJson),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
-      new SerializeProcessOptions(true, true, false)
+      new SerializeProcessOptions(true, true, false, true)
     );
     var (rootId2, _) = await serializeProcess.Serialize(root, default);
 
