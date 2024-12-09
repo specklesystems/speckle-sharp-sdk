@@ -29,6 +29,7 @@ public class SerializeProcess(
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false);
   private readonly ConcurrentDictionary<Id, Json> _jsonCache = new();
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
+  private readonly Pool<List<(Id, Json)>> _pool = Pools.CreateListPool<(Id, Json)>();
 
   private long _totalFound;
   private long _totalToUpload;
@@ -108,29 +109,38 @@ public class SerializeProcess(
     if (id is null || !_jsonCache.TryGetValue(id.Value, out var json))
     {
       var serializer2 = objectSerializerFactory.Create(cancellationToken);
-      var items = serializer2.Serialize(obj).ToList();
-      foreach (var kvp in serializer2.ObjectReferences)
+      var items = _pool.Get();
+      try
       {
-        _objectReferences.TryAdd(kvp.Key, kvp.Value);
-      }
-
-      var newId = new Id(obj.id.NotNull());
-      var (_, j) = items.First();
-      json = j;
-      _jsonCache.TryAdd(newId, j);
-      yield return CheckCache(newId, j);
-      if (id is not null && id != newId)
-      {
-        //in case the ids changes which is due to id hash algorithm changing
-        _jsonCache.TryAdd(id.Value, json);
-      }
-      foreach (var (cid, cJson) in items.Skip(1))
-      {
-        if (_jsonCache.TryAdd(cid, cJson))
+        items.AddRange(serializer2.Serialize(obj));
+        foreach (var kvp in serializer2.ObjectReferences)
         {
-          Interlocked.Increment(ref _totalFound);
-          yield return CheckCache(cid, cJson);
+          _objectReferences.TryAdd(kvp.Key, kvp.Value);
         }
+
+        var newId = new Id(obj.id.NotNull());
+        var (_, j) = items.First();
+        json = j;
+        _jsonCache.TryAdd(newId, j);
+        yield return CheckCache(newId, j);
+        if (id is not null && id != newId)
+        {
+          //in case the ids changes which is due to id hash algorithm changing
+          _jsonCache.TryAdd(id.Value, json);
+        }
+
+        foreach (var (cid, cJson) in items.Skip(1))
+        {
+          if (_jsonCache.TryAdd(cid, cJson))
+          {
+            Interlocked.Increment(ref _totalFound);
+            yield return CheckCache(cid, cJson);
+          }
+        }
+      }
+      finally
+      {
+        _pool.Return(items);
       }
     }
     else
