@@ -9,7 +9,12 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public record SerializeProcessOptions(bool SkipCacheRead, bool SkipCacheWrite, bool SkipServer);
+public record SerializeProcessOptions(
+  bool SkipCacheRead,
+  bool SkipCacheWrite,
+  bool SkipServer,
+  bool SkipFindTotalObjects
+);
 
 public readonly record struct SerializeProcessResults(
   string RootId,
@@ -26,7 +31,7 @@ public class SerializeProcess(
   SerializeProcessOptions? options = null
 ) : ChannelSaver, ISerializeProcess
 {
-  private readonly SerializeProcessOptions _options = options ?? new(false, false, false);
+  private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
   private readonly IDictionary<Base, CacheInfo> _baseCache = new ConcurrentDictionary<Base, CacheInfo>();
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
   private readonly Pool<List<(Id, Json)>> _pool = Pools.CreateListPool<(Id, Json)>();
@@ -40,15 +45,20 @@ public class SerializeProcess(
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
     var channelTask = Start(cancellationToken);
-    var t = Task.Factory.StartNew(
-      () => TraverseTotal(root),
-      default,
-      TaskCreationOptions.LongRunning,
-      TaskScheduler.Default
-    );
+    var findTotalObjectsTask = Task.CompletedTask;
+    if (!_options.SkipFindTotalObjects)
+    {
+      findTotalObjectsTask = Task.Factory.StartNew(
+        () => TraverseTotal(root),
+        default,
+        TaskCreationOptions.LongRunning,
+        TaskScheduler.Default
+      );
+    }
+
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
-    await t.ConfigureAwait(false);
+    await findTotalObjectsTask.ConfigureAwait(false);
     return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
