@@ -167,8 +167,17 @@ public class SerializeProcess(
   {
     if (!_options.SkipServer && batch.Count != 0)
     {
-      await serverObjectManager.UploadObjects(batch, true, progress, cancellationToken).ConfigureAwait(false);
-      Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
+      var objectBatch = batch.Distinct().ToList();
+      var hasObjects = await serverObjectManager
+        .HasObjects(objectBatch.Select(x => x.Id).ToList(), cancellationToken)
+        .ConfigureAwait(false);
+      objectBatch = batch.Where(x => !hasObjects[x.Id]).ToList();
+      if (objectBatch.Count != 0)
+      {
+        await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
+        Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
+      }
+
       progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
     }
     return batch;

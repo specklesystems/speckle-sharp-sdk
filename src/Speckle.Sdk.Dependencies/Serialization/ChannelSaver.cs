@@ -8,6 +8,17 @@ namespace Speckle.Sdk.Dependencies.Serialization;
 public readonly record struct BaseItem(string Id, string Json, bool NeedsStorage)
 {
   public int Size { get; } = Encoding.UTF8.GetByteCount(Json);
+
+  public bool Equals(BaseItem? other)
+  {
+    if (other is null)
+    {
+      return false;
+    }
+    return string.Equals(Id, other.Value.Id, StringComparison.OrdinalIgnoreCase);
+  }
+
+  public override int GetHashCode() => Id.GetHashCode();
 }
 
 public abstract class ChannelSaver
