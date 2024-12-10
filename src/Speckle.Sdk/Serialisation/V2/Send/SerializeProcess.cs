@@ -39,7 +39,9 @@ public class SerializeProcess(
   private readonly Pool<List<(Id, Json)>> _pool = Pools.CreateListPool<(Id, Json)>();
 
   private long _objectCount;
-  private long _totalObjectsFound;
+  private long _objectsFound;
+
+  private long _objectsSerialized;
 
   private long _uploaded;
   private long _cached;
@@ -68,8 +70,8 @@ public class SerializeProcess(
   {
     foreach (var child in baseChildFinder.GetChildren(obj))
     {
-      _totalObjectsFound++;
-      progress?.Report(new(ProgressEvent.FindingChildren, _totalObjectsFound, null));
+      _objectsFound++;
+      progress?.Report(new(ProgressEvent.FindingChildren, _objectsFound, null));
       TraverseTotal(child);
     }
   }
@@ -99,7 +101,7 @@ public class SerializeProcess(
 
     var items = Serialise(obj, cancellationToken);
     Interlocked.Increment(ref _objectCount);
-    progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, _totalObjectsFound));
+    progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, _objectsFound));
     foreach (var item in items)
     {
       if (item.NeedsStorage)
@@ -132,6 +134,7 @@ public class SerializeProcess(
     try
     {
       items.AddRange(serializer2.Serialize(obj));
+      Interlocked.Add(ref _objectsSerialized, items.Count);
       foreach (var kvp in serializer2.ObjectReferences)
       {
         _objectReferences.TryAdd(kvp.Key, kvp.Value);
@@ -189,7 +192,7 @@ public class SerializeProcess(
     {
       sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id, x.Json)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
-      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
+      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
     }
   }
 }
