@@ -74,7 +74,7 @@ public class DetachedTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
-      new SerializeProcessOptions(false, false, true)
+      new SerializeProcessOptions(false, false, true, true)
     );
     await process2.Serialize(@base, default).ConfigureAwait(false);
 
@@ -266,7 +266,7 @@ public class DetachedTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
-      new SerializeProcessOptions(false, false, true)
+      new SerializeProcessOptions(false, false, true, true)
     );
     var results = await process2.Serialize(@base, default).ConfigureAwait(false);
 
@@ -386,7 +386,7 @@ public class DummySendCacheManager(Dictionary<string, string> objects) : ISqLite
   {
     foreach (var (id, json) in items)
     {
-      objects.Add(id, json);
+      objects[id] = json;
     }
   }
 }
