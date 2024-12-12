@@ -42,7 +42,7 @@ public class ServerObjectManager : IServerObjectManager
   }
 
   public async IAsyncEnumerable<(string, string)> DownloadObjects(
-    IReadOnlyList<string> objectIds,
+    IReadOnlyCollection<string> objectIds,
     IProgress<ProgressArgs>? progress,
     [EnumeratorCancellation] CancellationToken cancellationToken
   )
@@ -139,7 +139,7 @@ public class ServerObjectManager : IServerObjectManager
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(
-    IReadOnlyList<string> objectIds,
+    IReadOnlyCollection<string> objectIds,
     CancellationToken cancellationToken
   )
   {

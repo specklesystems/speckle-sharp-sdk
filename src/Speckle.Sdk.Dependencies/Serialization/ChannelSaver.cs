@@ -30,6 +30,8 @@ public abstract class ChannelSaver
   private const int HTTP_CAPACITY = 50;
   private const int MAX_CACHE_WRITE_PARALLELISM = 1;
   private const int MAX_CACHE_BATCH = 200;
+  
+  private bool _enabled;
 
   private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateBounded<BaseItem>(
     new BoundedChannelOptions(SEND_CAPACITY)
@@ -43,27 +45,45 @@ public abstract class ChannelSaver
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start(CancellationToken cancellationToken = default)
+  public Task Start(bool enableServerSending = true, bool enableCacheSaving = true, CancellationToken cancellationToken = default)
   {
-    var t = _checkCacheChannel
-      .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
-      .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .PipeAsync(
-        MAX_PARALLELISM_HTTP,
-        async x => await SendToServer(x, cancellationToken).ConfigureAwait(false),
-        HTTP_CAPACITY,
-        false,
-        cancellationToken
-      )
-      .Join()
-      .Batch(MAX_CACHE_BATCH)
-      .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken);
+    Task<long> t = Task.FromResult(0L);
+    if (enableServerSending)
+    {
+      _enabled = true;
+      var tChannelReader = _checkCacheChannel
+        .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
+        .WithTimeout(HTTP_BATCH_TIMEOUT)
+        .PipeAsync(
+          MAX_PARALLELISM_HTTP,
+          async x => await SendToServer(x, cancellationToken).ConfigureAwait(false),
+          HTTP_CAPACITY,
+          false,
+          cancellationToken
+        );
+      if (enableCacheSaving)
+      {
+        t =tChannelReader.Join()
+          .Batch(MAX_CACHE_BATCH)
+          .WithTimeout(HTTP_BATCH_TIMEOUT)
+          .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken);
+      }
+      else
+      {
+        t = tChannelReader.ReadUntilCancelledAsync(cancellationToken, (list, l) => new ValueTask()).AsTask();
+      }
+    }
+
     return t;
   }
 
-  public async Task Save(BaseItem item, CancellationToken cancellationToken = default) =>
-    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
+  public async Task Save(BaseItem item, CancellationToken cancellationToken = default)
+  {
+    if (_enabled)
+    {
+      await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
+    }
+  }
 
   public abstract Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken);
 

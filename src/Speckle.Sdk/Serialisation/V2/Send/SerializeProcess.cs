@@ -48,7 +48,7 @@ public class SerializeProcess(
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
-    var channelTask = Start(cancellationToken);
+    var channelTask = Start(!_options.SkipServer, !_options.SkipCacheWrite, cancellationToken);
     var findTotalObjectsTask = Task.CompletedTask;
     if (!_options.SkipFindTotalObjects)
     {
@@ -63,7 +63,7 @@ public class SerializeProcess(
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
     await findTotalObjectsTask.ConfigureAwait(false);
-    return new(root.id.NotNull(), _objectReferences.Freeze());
+    return new(root.id.NotNull(), _objectReferences);
   }
 
   private void TraverseTotal(Base obj)
@@ -170,14 +170,14 @@ public class SerializeProcess(
   {
     if (!_options.SkipServer && batch.Count != 0)
     {
-      var objectBatch = batch.Distinct().ToList();
+      var objectBatchIds = batch.Select(x => x.Id).Distinct().Freeze();
       var hasObjects = await serverObjectManager
-        .HasObjects(objectBatch.Select(x => x.Id).ToList(), cancellationToken)
+        .HasObjects(objectBatchIds, cancellationToken)
         .ConfigureAwait(false);
-      objectBatch = batch.Where(x => !hasObjects[x.Id]).ToList();
-      if (objectBatch.Count != 0)
+      objectBatchIds = objectBatchIds.Where(x => !hasObjects[x]).Freeze();
+      if (objectBatchIds.Count != 0)
       {
-        await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
+        await serverObjectManager.UploadObjects(batch.Where(x => objectBatchIds.Contains(x.Id)).ToList(), true, progress, cancellationToken).ConfigureAwait(false);
         Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
       }
 
