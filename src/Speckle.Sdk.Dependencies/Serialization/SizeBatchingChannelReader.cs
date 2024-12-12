@@ -1,28 +1,32 @@
 using System.Threading.Channels;
 using Open.ChannelExtensions;
-using Speckle.Sdk.Dependencies.Serialization;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public class SizeBatchingChannelReader(
-  ChannelReader<BaseItem> source,
+public interface IHasSize
+{
+  int Size { get; }
+}
+public class SizeBatchingChannelReader<T>(
+  ChannelReader<T> source,
   int batchSize,
   bool singleReader,
   bool syncCont = false
-) : BatchingChannelReader<BaseItem, List<BaseItem>>(source, batchSize, singleReader, syncCont)
+) : BatchingChannelReader<T, List<T>>(source, batchSize, singleReader, syncCont)
+where T : IHasSize
 {
   private readonly int _batchSize = batchSize;
 
-  protected override List<BaseItem> CreateBatch(int capacity) => new();
+  protected override List<T> CreateBatch(int capacity) => new();
 
-  protected override void TrimBatch(List<BaseItem> batch) => batch.TrimExcess();
+  protected override void TrimBatch(List<T> batch) => batch.TrimExcess();
 
-  protected override void AddBatchItem(List<BaseItem> batch, BaseItem item) => batch.Add(item);
+  protected override void AddBatchItem(List<T> batch, T item) => batch.Add(item);
 
-  protected override int GetBatchSize(List<BaseItem> batch)
+  protected override int GetBatchSize(List<T> batch)
   {
     int size = 0;
-    foreach (BaseItem item in batch)
+    foreach (T item in batch)
     {
       size += item.Size;
     }

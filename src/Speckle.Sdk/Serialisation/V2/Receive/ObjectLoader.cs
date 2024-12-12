@@ -3,6 +3,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.Utilities;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
@@ -13,7 +14,7 @@ public sealed class ObjectLoader(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   IProgress<ProgressArgs>? progress
-) : ChannelLoader, IObjectLoader
+) : ChannelLoader<BaseItem>, IObjectLoader
 {
   private int? _allChildrenCount;
   private long _checkCache;
@@ -80,13 +81,13 @@ public sealed class ObjectLoader(
       var (id, json) in serverObjectManager.DownloadObjects(ids.Select(x => x.NotNull()).ToList(), progress, default)
     )
     {
-      toCache.Add(new(id, json, true));
+      toCache.Add(new(new (id), new (json), true, null));
     }
 
     if (toCache.Count != ids.Count)
     {
       throw new SpeckleException(
-        $"Objects in batch missing: {string.Join(",", ids.Except(toCache.Select(y => y.Id)).Take(10))}"
+        $"Objects in batch missing: {string.Join(",", ids.Except(toCache.Select(y => y.Id.Value)).Take(10))}"
       );
     }
     return toCache;
@@ -97,7 +98,7 @@ public sealed class ObjectLoader(
   {
     if (!_options.SkipCache)
     {
-      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id, x.Json)));
+      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _allChildrenCount));
     }

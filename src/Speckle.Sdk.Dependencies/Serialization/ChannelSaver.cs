@@ -1,27 +1,12 @@
-using System.Text;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-public readonly record struct BaseItem(string Id, string Json, bool NeedsStorage)
-{
-  public int Size { get; } = Encoding.UTF8.GetByteCount(Json);
 
-  public bool Equals(BaseItem? other)
-  {
-    if (other is null)
-    {
-      return false;
-    }
-    return string.Equals(Id, other.Value.Id, StringComparison.OrdinalIgnoreCase);
-  }
-
-  public override int GetHashCode() => Id.GetHashCode();
-}
-
-public abstract class ChannelSaver
+public abstract class ChannelSaver<T>
+where T : IHasSize
 {
   private const int SEND_CAPACITY = 50;
   private const int HTTP_SEND_CHUNK_SIZE = 25_000_000; //bytes
@@ -33,7 +18,7 @@ public abstract class ChannelSaver
   
   private bool _enabled;
 
-  private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateBounded<BaseItem>(
+  private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
     {
       AllowSynchronousContinuations = true,
@@ -77,7 +62,7 @@ public abstract class ChannelSaver
     return t;
   }
 
-  public async Task Save(BaseItem item, CancellationToken cancellationToken = default)
+  public async Task Save(T item, CancellationToken cancellationToken = default)
   {
     if (_enabled)
     {
@@ -85,7 +70,7 @@ public abstract class ChannelSaver
     }
   }
 
-  public abstract Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken);
+  public abstract Task<List<T>> SendToServer(List<T> batch, CancellationToken cancellationToken);
 
   public Task Done()
   {
@@ -93,5 +78,5 @@ public abstract class ChannelSaver
     return Task.CompletedTask;
   }
 
-  public abstract void SaveToCache(List<BaseItem> item);
+  public abstract void SaveToCache(List<T> item);
 }

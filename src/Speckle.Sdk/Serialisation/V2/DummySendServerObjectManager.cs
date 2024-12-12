@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using Speckle.Sdk.Dependencies.Serialization;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
@@ -49,7 +49,7 @@ public class DummySendServerObjectManager : IServerObjectManager
     long totalBytes = 0;
     foreach (var item in objects)
     {
-      totalBytes += Encoding.Default.GetByteCount(item.Json);
+      totalBytes += Encoding.Default.GetByteCount(item.Json.Value);
     }
 
     progress?.Report(new(ProgressEvent.UploadBytes, totalBytes, totalBytes));

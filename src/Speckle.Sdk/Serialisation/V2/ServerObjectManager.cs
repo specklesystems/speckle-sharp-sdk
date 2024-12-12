@@ -5,9 +5,9 @@ using System.Text;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
