@@ -12,10 +12,12 @@ using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public record SerializeProcessOptions(
-  bool SkipCacheRead,
-  bool SkipCacheWrite,
-  bool SkipServer,
-  bool SkipFindTotalObjects
+  bool SkipCacheRead = false,
+  bool SkipCacheWrite = false,
+  bool SkipServer = false,
+  bool SkipFindTotalObjects = false,
+  bool EnableServerSending = true,
+  bool EnableCacheSaving = true
 );
 
 public readonly record struct SerializeProcessResults(
@@ -65,7 +67,7 @@ public class SerializeProcess(
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
-    var channelTask = Start(!_options.SkipServer, !_options.SkipCacheWrite, cancellationToken);
+    var channelTask = Start(_options.EnableServerSending, _options.EnableCacheSaving, cancellationToken);
     var findTotalObjectsTask = Task.CompletedTask;
     if (!_options.SkipFindTotalObjects)
     {
@@ -80,7 +82,7 @@ public class SerializeProcess(
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
     await findTotalObjectsTask.ConfigureAwait(false);
-    return new(root.id.NotNull(), _objectReferences);
+    return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
   private void TraverseTotal(Base obj)
@@ -205,14 +207,14 @@ public class SerializeProcess(
   {
     if (!_options.SkipServer && batch.Count != 0)
     {
-      var objectBatchIds = batch.Select(x => x.Id.Value).Distinct().Freeze();
+      var objectBatch = batch.Distinct().ToList();
       var hasObjects = await serverObjectManager
-        .HasObjects(objectBatchIds, cancellationToken)
+        .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), cancellationToken)
         .ConfigureAwait(false);
-      objectBatchIds = objectBatchIds.Where(x => !hasObjects[x]).Freeze();
-      if (objectBatchIds.Count != 0)
+      objectBatch = batch.Where(x => !hasObjects[x.Id.Value]).ToList();
+      if (objectBatch.Count != 0)
       {
-        await serverObjectManager.UploadObjects(batch.Where(x => objectBatchIds.Contains(x.Id.Value)).ToList(), true, progress, cancellationToken).ConfigureAwait(false);
+        await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
         Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
       }
 
