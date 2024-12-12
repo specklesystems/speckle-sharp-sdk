@@ -336,7 +336,7 @@ public class SamplePropBase2 : Base
 public class DummyServerObjectManager : IServerObjectManager
 {
   public IAsyncEnumerable<(string, string)> DownloadObjects(
-    IReadOnlyList<string> objectIds,
+    IReadOnlyCollection<string> objectIds,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
@@ -348,7 +348,7 @@ public class DummyServerObjectManager : IServerObjectManager
   ) => throw new NotImplementedException();
 
   public Task<Dictionary<string, bool>> HasObjects(
-    IReadOnlyList<string> objectIds,
+    IReadOnlyCollection<string> objectIds,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
@@ -362,7 +362,7 @@ public class DummyServerObjectManager : IServerObjectManager
     long totalBytes = 0;
     foreach (var item in objects)
     {
-      totalBytes += Encoding.Default.GetByteCount(item.Json);
+      totalBytes += Encoding.Default.GetByteCount(item.Json.Value);
     }
 
     progress?.Report(new(ProgressEvent.UploadBytes, totalBytes, totalBytes));

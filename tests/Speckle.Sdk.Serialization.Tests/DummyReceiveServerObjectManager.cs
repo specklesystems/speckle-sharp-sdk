@@ -2,6 +2,7 @@
 using System.Text;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -9,7 +10,7 @@ namespace Speckle.Sdk.Serialization.Tests;
 public class DummyReceiveServerObjectManager(Dictionary<string, string> objects) : IServerObjectManager
 {
   public async IAsyncEnumerable<(string, string)> DownloadObjects(
-    IReadOnlyList<string> objectIds,
+    IReadOnlyCollection<string> objectIds,
     IProgress<ProgressArgs>? progress,
     [EnumeratorCancellation] CancellationToken cancellationToken
   )
@@ -32,7 +33,7 @@ public class DummyReceiveServerObjectManager(Dictionary<string, string> objects)
   }
 
   public Task<Dictionary<string, bool>> HasObjects(
-    IReadOnlyList<string> objectIds,
+    IReadOnlyCollection<string> objectIds,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
@@ -46,7 +47,7 @@ public class DummyReceiveServerObjectManager(Dictionary<string, string> objects)
     long totalBytes = 0;
     foreach (var item in objects)
     {
-      totalBytes += Encoding.Default.GetByteCount(item.Json);
+      totalBytes += Encoding.Default.GetByteCount(item.Json.Value);
     }
 
     progress?.Report(new(ProgressEvent.UploadBytes, totalBytes, totalBytes));

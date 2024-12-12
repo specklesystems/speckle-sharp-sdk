@@ -26,7 +26,7 @@ public class ExternalIdTests
   public void ExternalIdTest_Detached(string lineId, string valueId)
   {
     var p = new Polyline() { units = "cm", value = [1, 2] };
-    var serializer = new ObjectSerializer(new BasePropertyGatherer(), new Dictionary<Base, CacheInfo>(), true);
+    var serializer = new ObjectSerializer(new BasePropertyGatherer(), new Dictionary<Id, NodeInfo>(), true);
     var list = serializer.Serialize(p).ToDictionary(x => x.Item1, x => x.Item2);
     list.ContainsKey(new Id(lineId)).ShouldBeTrue();
     var json = list[new Id(lineId)];
@@ -53,7 +53,7 @@ public class ExternalIdTests
       knots = [],
       weights = [],
     };
-    var serializer = new ObjectSerializer(new BasePropertyGatherer(), new Dictionary<Base, CacheInfo>(), true);
+    var serializer = new ObjectSerializer(new BasePropertyGatherer(), new Dictionary<Id, NodeInfo>(), true);
     var list = serializer.Serialize(curve).ToDictionary(x => x.Item1, x => x.Item2);
     list.ContainsKey(new Id(lineId)).ShouldBeTrue();
     var json = list[new Id(lineId)];
@@ -81,7 +81,7 @@ public class ExternalIdTests
       weights = [],
     };
     var polycurve = new Polycurve() { segments = [curve], units = "cm" };
-    var serializer = new ObjectSerializer(new BasePropertyGatherer(), new Dictionary<Base, CacheInfo>(), true);
+    var serializer = new ObjectSerializer(new BasePropertyGatherer(), new Dictionary<Id, NodeInfo>(), true);
     var list = serializer.Serialize(polycurve).ToDictionary(x => x.Item1, x => x.Item2);
     list.ContainsKey(new Id(lineId)).ShouldBeTrue();
     var json = list[new Id(lineId)];
@@ -111,7 +111,7 @@ public class ExternalIdTests
     var polycurve = new Polycurve() { segments = [curve], units = "cm" };
     var @base = new Base();
     @base.SetDetachedProp("profile", polycurve);
-    var serializer = new ObjectSerializer(new BasePropertyGatherer(), new Dictionary<Base, CacheInfo>(), true);
+    var serializer = new ObjectSerializer(new BasePropertyGatherer(), new Dictionary<Id, NodeInfo>(), true);
     var list = serializer.Serialize(@base).ToDictionary(x => x.Item1, x => x.Item2);
     list.ContainsKey(new Id(lineId)).ShouldBeTrue();
     var json = list[new Id(lineId)];
