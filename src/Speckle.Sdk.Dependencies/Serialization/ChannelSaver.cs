@@ -4,9 +4,8 @@ using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-
 public abstract class ChannelSaver<T>
-where T : IHasSize
+  where T : IHasSize
 {
   private const int SEND_CAPACITY = 50;
   private const int HTTP_SEND_CHUNK_SIZE = 25_000_000; //bytes
@@ -15,7 +14,7 @@ where T : IHasSize
   private const int HTTP_CAPACITY = 50;
   private const int MAX_CACHE_WRITE_PARALLELISM = 1;
   private const int MAX_CACHE_BATCH = 200;
-  
+
   private bool _enabled;
 
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
@@ -30,7 +29,11 @@ where T : IHasSize
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task<long> Start(bool enableServerSending = true, bool enableCacheSaving = true, CancellationToken cancellationToken = default)
+  public Task<long> Start(
+    bool enableServerSending = true,
+    bool enableCacheSaving = true,
+    CancellationToken cancellationToken = default
+  )
   {
     ValueTask<long> t = new(Task.FromResult(0L));
     if (enableServerSending)
@@ -48,10 +51,13 @@ where T : IHasSize
         );
       if (enableCacheSaving)
       {
-        t =new (tChannelReader.Join()
-          .Batch(MAX_CACHE_BATCH)
-          .WithTimeout(HTTP_BATCH_TIMEOUT)
-          .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken));
+        t = new(
+          tChannelReader
+            .Join()
+            .Batch(MAX_CACHE_BATCH)
+            .WithTimeout(HTTP_BATCH_TIMEOUT)
+            .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
+        );
       }
       else
       {

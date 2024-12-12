@@ -25,7 +25,6 @@ public readonly record struct SerializeProcessResults(
   IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
 );
 
-
 public readonly record struct BaseItem(Id Id, Json Json, bool NeedsStorage, Closures? Closures) : IHasSize
 {
   public int Size { get; } = Encoding.UTF8.GetByteCount(Json.Value);
@@ -57,7 +56,6 @@ public class SerializeProcess(
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
   private readonly Pool<List<(Id, Json, Closures)>> _pool = Pools.CreateListPool<(Id, Json, Closures)>();
   private readonly Pool<Dictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
-
 
   private long _objectCount;
   private long _objectsFound;
@@ -130,7 +128,7 @@ public class SerializeProcess(
     }
 
     var items = Serialise(obj, childClosures, cancellationToken);
-    
+
     var currentClosures = new Dictionary<Id, NodeInfo>();
     Interlocked.Increment(ref _objectCount);
     progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, _objectsFound));
@@ -157,14 +155,18 @@ public class SerializeProcess(
   }
 
   //leave this sync
-  private IEnumerable<BaseItem> Serialise(Base obj, IReadOnlyDictionary<Id, NodeInfo> childInfo, CancellationToken cancellationToken)
+  private IEnumerable<BaseItem> Serialise(
+    Base obj,
+    IReadOnlyDictionary<Id, NodeInfo> childInfo,
+    CancellationToken cancellationToken
+  )
   {
     if (!_options.SkipCacheRead && obj.id != null)
     {
       var cachedJson = sqLiteJsonCacheManager.GetObject(obj.id);
       if (cachedJson != null)
       {
-        yield return new BaseItem(new (obj.id.NotNull()), new (cachedJson), false, null);
+        yield return new BaseItem(new(obj.id.NotNull()), new(cachedJson), false, null);
         yield break;
       }
     }
@@ -200,7 +202,7 @@ public class SerializeProcess(
       var cachedJson = sqLiteJsonCacheManager.GetObject(id.Value);
       if (cachedJson != null)
       {
-        return new BaseItem(id, new (cachedJson), false, null);
+        return new BaseItem(id, new(cachedJson), false, null);
       }
     }
     return new BaseItem(id, json, true, closures);

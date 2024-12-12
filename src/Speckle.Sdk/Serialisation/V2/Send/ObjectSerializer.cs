@@ -15,7 +15,8 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public readonly record struct NodeInfo(Json Json, Closures? C)
 {
-  public Closures GetClosures() => C ?? ClosureParser.GetClosures( Json.Value ).ToDictionary(x => new Id(x.Item1), x => x.Item2 );
+  public Closures GetClosures() =>
+    C ?? ClosureParser.GetClosures(Json.Value).ToDictionary(x => new Id(x.Item1), x => x.Item2);
 }
 
 public partial interface IObjectSerializer : IDisposable;
@@ -40,10 +41,10 @@ public sealed class ObjectSerializer : IObjectSerializer
 
   private readonly List<(Id, Json, Closures)> _chunks;
   private readonly Pool<List<(Id, Json, Closures)>> _chunksPool;
-  
+
   private readonly List<List<DataChunk>> _chunks2 = new();
   private readonly Pool<List<DataChunk>> _chunks2Pool;
-  
+
   private readonly List<List<object?>> _chunks3 = new();
   private readonly Pool<List<object?>> _chunks3Pool;
 
@@ -55,7 +56,10 @@ public sealed class ObjectSerializer : IObjectSerializer
   public ObjectSerializer(
     IBasePropertyGatherer propertyGatherer,
     IReadOnlyDictionary<Id, NodeInfo> childCache,
-    Pool<List<(Id, Json, Closures)>> chunksPool, Pool<List<DataChunk>> chunks2Pool, Pool<List<object?>> chunks3Pool, bool trackDetachedChildren = false,
+    Pool<List<(Id, Json, Closures)>> chunksPool,
+    Pool<List<DataChunk>> chunks2Pool,
+    Pool<List<object?>> chunks3Pool,
+    bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
@@ -278,7 +282,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       Id id;
       Json json;
       //avoid multiple serialization to get closures
-      if (baseObj.id != null && _childCache.TryGetValue(new (baseObj.id), out var info))
+      if (baseObj.id != null && _childCache.TryGetValue(new(baseObj.id), out var info))
       {
         id = new Id(baseObj.id);
         childClosures = info.GetClosures();
@@ -306,7 +310,7 @@ public sealed class ObjectSerializer : IObjectSerializer
           applicationId = baseObj.applicationId,
           closure = childClosures.ToDictionary(x => x.Key.Value, x => x.Value),
         };
-      }     
+      }
       _chunks.Add(new(id, json, []));
       return new(id, json2);
     }
@@ -379,14 +383,15 @@ public sealed class ObjectSerializer : IObjectSerializer
     _chunks3.Add(chunk);
     return chunk;
   }
+
   private void SerializeOrChunkProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
   {
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
     {
       List<DataChunk> chunks = _chunks2Pool.Get();
       _chunks2.Add(chunks);
-      
-      DataChunk crtChunk = new() { data =GetChunk() };
+
+      DataChunk crtChunk = new() { data = GetChunk() };
 
       foreach (object element in chunkableCollection)
       {

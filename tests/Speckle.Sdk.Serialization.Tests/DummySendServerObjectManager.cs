@@ -23,7 +23,10 @@ public class DummySendServerObjectManager(ConcurrentDictionary<string, string> s
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
-  public Task<Dictionary<string, bool>> HasObjects(IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken)
+  public Task<Dictionary<string, bool>> HasObjects(
+    IReadOnlyCollection<string> objectIds,
+    CancellationToken cancellationToken
+  )
   {
     return Task.FromResult(objectIds.Distinct().ToDictionary(x => x, savedObjects.ContainsKey));
   }

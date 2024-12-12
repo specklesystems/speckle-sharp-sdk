@@ -7,13 +7,14 @@ public interface IHasSize
 {
   int Size { get; }
 }
+
 public class SizeBatchingChannelReader<T>(
   ChannelReader<T> source,
   int batchSize,
   bool singleReader,
   bool syncCont = false
 ) : BatchingChannelReader<T, List<T>>(source, batchSize, singleReader, syncCont)
-where T : IHasSize
+  where T : IHasSize
 {
   private readonly int _batchSize = batchSize;
 

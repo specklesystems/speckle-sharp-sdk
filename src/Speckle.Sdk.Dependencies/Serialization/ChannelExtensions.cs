@@ -10,7 +10,7 @@ public static class ChannelExtensions
     int batchSize,
     bool singleReader = false,
     bool allowSynchronousContinuations = false
-  ) 
+  )
     where T : IHasSize =>
     new SizeBatchingChannelReader<T>(
       source ?? throw new ArgumentNullException(nameof(source)),

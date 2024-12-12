@@ -81,7 +81,7 @@ public sealed class ObjectLoader(
       var (id, json) in serverObjectManager.DownloadObjects(ids.Select(x => x.NotNull()).ToList(), progress, default)
     )
     {
-      toCache.Add(new(new (id), new (json), true, null));
+      toCache.Add(new(new(id), new(json), true, null));
     }
 
     if (toCache.Count != ids.Count)
