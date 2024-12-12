@@ -18,8 +18,10 @@ public readonly record struct NodeInfo(Json Json, Closures? C)
   public Closures GetClosures() => C ?? ClosureParser.GetClosures( Json.Value ).ToDictionary(x => new Id(x.Item1), x => x.Item2 );
 }
 
+public partial interface IObjectSerializer : IDisposable;
+
 [GenerateAutoInterface]
-public class ObjectSerializer : IObjectSerializer
+public sealed class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
   private readonly Dictionary<Id, int> _currentClosures = new();
@@ -36,7 +38,14 @@ public class ObjectSerializer : IObjectSerializer
   /// </summary>
   public Dictionary<Id, ObjectReference> ObjectReferences { get; } = new();
 
-  private readonly List<(Id, Json, Closures)> _chunks = new();
+  private readonly List<(Id, Json, Closures)> _chunks;
+  private readonly Pool<List<(Id, Json, Closures)>> _chunksPool;
+  
+  private readonly List<List<DataChunk>> _chunks2 = new();
+  private readonly Pool<List<DataChunk>> _chunks2Pool;
+  
+  private readonly List<List<object?>> _chunks3 = new();
+  private readonly Pool<List<object?>> _chunks3Pool;
 
   /// <summary>
   /// Creates a new Serializer instance.
@@ -46,14 +55,32 @@ public class ObjectSerializer : IObjectSerializer
   public ObjectSerializer(
     IBasePropertyGatherer propertyGatherer,
     IReadOnlyDictionary<Id, NodeInfo> childCache,
-    bool trackDetachedChildren = false,
+    Pool<List<(Id, Json, Closures)>> chunksPool, Pool<List<DataChunk>> chunks2Pool, Pool<List<object?>> chunks3Pool, bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
     _propertyGatherer = propertyGatherer;
     _childCache = childCache;
+    _chunksPool = chunksPool;
+    _chunks2Pool = chunks2Pool;
+    _chunks3Pool = chunks3Pool;
     _cancellationToken = cancellationToken;
     _trackDetachedChildren = trackDetachedChildren;
+    _chunks = chunksPool.Get();
+  }
+
+  [AutoInterfaceIgnore]
+  public void Dispose()
+  {
+    _chunksPool.Return(_chunks);
+    foreach (var c2 in _chunks2)
+    {
+      _chunks2Pool.Return(c2);
+    }
+    foreach (var c3 in _chunks3)
+    {
+      _chunks3Pool.Return(c3);
+    }
   }
 
   /// <param name="baseObj">The object to serialize</param>
@@ -346,12 +373,20 @@ public class ObjectSerializer : IObjectSerializer
     return id;
   }
 
+  private List<object?> GetChunk()
+  {
+    var chunk = _chunks3Pool.Get();
+    _chunks3.Add(chunk);
+    return chunk;
+  }
   private void SerializeOrChunkProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
   {
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
     {
-      List<DataChunk> chunks = new();
-      DataChunk crtChunk = new() { data = new List<object?>(detachInfo.ChunkSize) };
+      List<DataChunk> chunks = _chunks2Pool.Get();
+      _chunks2.Add(chunks);
+      
+      DataChunk crtChunk = new() { data =GetChunk() };
 
       foreach (object element in chunkableCollection)
       {
@@ -359,7 +394,7 @@ public class ObjectSerializer : IObjectSerializer
         if (crtChunk.data.Count >= detachInfo.ChunkSize)
         {
           chunks.Add(crtChunk);
-          crtChunk = new DataChunk { data = new List<object?>(detachInfo.ChunkSize) };
+          crtChunk = new DataChunk { data = GetChunk() };
         }
       }
 

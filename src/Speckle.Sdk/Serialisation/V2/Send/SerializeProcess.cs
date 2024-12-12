@@ -169,7 +169,7 @@ public class SerializeProcess(
       }
     }
 
-    var serializer2 = objectSerializerFactory.Create(childInfo, cancellationToken);
+    using var serializer2 = objectSerializerFactory.Create(childInfo, cancellationToken);
     var items = _pool.Get();
     try
     {
