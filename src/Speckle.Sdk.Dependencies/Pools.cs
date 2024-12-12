@@ -21,5 +21,30 @@ public static class Pools
   public static Pool<StringBuilder> StringBuilders { get; } =
     new(new StringBuilderPooledObjectPolicy() { MaximumRetainedCapacity = 100 * 1024 * 1024 });
 
-  public static Pool<List<T>> CreateListPool<T>() => new(new DefaultPooledObjectPolicy<List<T>>());
+  private sealed class ObjectDictionaryPolicy<TKey, TValue> : IPooledObjectPolicy<Dictionary<TKey, TValue>>
+  where TKey : notnull
+  {
+    public Dictionary<TKey, TValue> Create() => new(50);
+
+    public bool Return(Dictionary<TKey, TValue> obj)
+    {
+      obj.Clear();
+      return true;
+    }
+  } 
+  
+  private sealed class ObjectListPolicy<T> : IPooledObjectPolicy<List<T>>
+  {
+    public List<T> Create() => new(50);
+
+    public bool Return(List<T> obj)
+    {
+      obj.Clear();
+      return true;
+    }
+  } 
+  
+  public static Pool<List<T>> CreateListPool<T>() => new(new ObjectListPolicy<T>());
+  public static Pool<Dictionary<TKey, TValue>> CreateDictionaryPool<TKey, TValue>()  where TKey : notnull => new(new ObjectDictionaryPolicy<TKey, TValue>());
+ 
 }

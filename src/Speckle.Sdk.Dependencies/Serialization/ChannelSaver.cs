@@ -30,9 +30,9 @@ where T : IHasSize
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start(bool enableServerSending = true, bool enableCacheSaving = true, CancellationToken cancellationToken = default)
+  public Task<long> Start(bool enableServerSending = true, bool enableCacheSaving = true, CancellationToken cancellationToken = default)
   {
-    Task<long> t = Task.FromResult(0L);
+    ValueTask<long> t = new(Task.FromResult(0L));
     if (enableServerSending)
     {
       _enabled = true;
@@ -48,21 +48,21 @@ where T : IHasSize
         );
       if (enableCacheSaving)
       {
-        t =tChannelReader.Join()
+        t =new (tChannelReader.Join()
           .Batch(MAX_CACHE_BATCH)
           .WithTimeout(HTTP_BATCH_TIMEOUT)
-          .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken);
+          .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken));
       }
       else
       {
-        t = tChannelReader.ReadUntilCancelledAsync(cancellationToken, (list, l) => new ValueTask()).AsTask();
+        t = tChannelReader.ReadUntilCancelledAsync(cancellationToken, (list, l) => new ValueTask());
       }
     }
 
-    return t;
+    return t.AsTask();
   }
 
-  public async Task Save(T item, CancellationToken cancellationToken = default)
+  public async ValueTask Save(T item, CancellationToken cancellationToken = default)
   {
     if (_enabled)
     {
@@ -72,10 +72,10 @@ where T : IHasSize
 
   public abstract Task<List<T>> SendToServer(List<T> batch, CancellationToken cancellationToken);
 
-  public Task Done()
+  public ValueTask Done()
   {
     _checkCacheChannel.Writer.Complete();
-    return Task.CompletedTask;
+    return new(Task.CompletedTask);
   }
 
   public abstract void SaveToCache(List<T> item);

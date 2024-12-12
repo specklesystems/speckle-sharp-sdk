@@ -56,6 +56,8 @@ public class SerializeProcess(
 
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
   private readonly Pool<List<(Id, Json, Closures)>> _pool = Pools.CreateListPool<(Id, Json, Closures)>();
+  private readonly Pool<Dictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
+
 
   private long _objectCount;
   private long _objectsFound;
@@ -113,22 +115,22 @@ public class SerializeProcess(
       tasks.Add(t);
     }
 
-    var childClosures = new Dictionary<Id, NodeInfo>();
     if (tasks.Count > 0)
     {
       await Task.WhenAll(tasks).ConfigureAwait(false);
-
-      foreach (var t in tasks)
+    }
+    var childClosures = _childClosurePool.Get();
+    foreach (var t in tasks)
+    {
+      var childClosure = t.Result;
+      foreach (var kvp in childClosure)
       {
-        var childClosure = t.Result;
-        foreach (var kvp in childClosure)
-        {
-          childClosures[kvp.Key] = kvp.Value;
-        }
+        childClosures[kvp.Key] = kvp.Value;
       }
     }
 
     var items = Serialise(obj, childClosures, cancellationToken);
+    
     var currentClosures = new Dictionary<Id, NodeInfo>();
     Interlocked.Increment(ref _objectCount);
     progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, _objectsFound));
@@ -144,6 +146,7 @@ public class SerializeProcess(
         currentClosures.Add(item.Id, new NodeInfo(item.Json, item.Closures));
       }
     }
+    _childClosurePool.Return(childClosures);
 
     if (isEnd)
     {
