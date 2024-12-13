@@ -1,27 +1,11 @@
-using System.Text;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-public readonly record struct BaseItem(string Id, string Json, bool NeedsStorage)
-{
-  public int Size { get; } = Encoding.UTF8.GetByteCount(Json);
-
-  public bool Equals(BaseItem? other)
-  {
-    if (other is null)
-    {
-      return false;
-    }
-    return string.Equals(Id, other.Value.Id, StringComparison.OrdinalIgnoreCase);
-  }
-
-  public override int GetHashCode() => Id.GetHashCode();
-}
-
-public abstract class ChannelSaver
+public abstract class ChannelSaver<T>
+  where T : IHasSize
 {
   private const int SEND_CAPACITY = 50;
   private const int HTTP_SEND_CHUNK_SIZE = 25_000_000; //bytes
@@ -31,7 +15,9 @@ public abstract class ChannelSaver
   private const int MAX_CACHE_WRITE_PARALLELISM = 1;
   private const int MAX_CACHE_BATCH = 200;
 
-  private readonly Channel<BaseItem> _checkCacheChannel = Channel.CreateBounded<BaseItem>(
+  private bool _enabled;
+
+  private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
     {
       AllowSynchronousContinuations = true,
@@ -43,35 +29,60 @@ public abstract class ChannelSaver
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start(CancellationToken cancellationToken = default)
+  public Task<long> Start(
+    bool enableServerSending = true,
+    bool enableCacheSaving = true,
+    CancellationToken cancellationToken = default
+  )
   {
-    var t = _checkCacheChannel
-      .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
-      .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .PipeAsync(
-        MAX_PARALLELISM_HTTP,
-        async x => await SendToServer(x, cancellationToken).ConfigureAwait(false),
-        HTTP_CAPACITY,
-        false,
-        cancellationToken
-      )
-      .Join()
-      .Batch(MAX_CACHE_BATCH)
-      .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken);
-    return t;
+    ValueTask<long> t = new(Task.FromResult(0L));
+    if (enableServerSending)
+    {
+      _enabled = true;
+      var tChannelReader = _checkCacheChannel
+        .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
+        .WithTimeout(HTTP_BATCH_TIMEOUT)
+        .PipeAsync(
+          MAX_PARALLELISM_HTTP,
+          async x => await SendToServer(x, cancellationToken).ConfigureAwait(false),
+          HTTP_CAPACITY,
+          false,
+          cancellationToken
+        );
+      if (enableCacheSaving)
+      {
+        t = new(
+          tChannelReader
+            .Join()
+            .Batch(MAX_CACHE_BATCH)
+            .WithTimeout(HTTP_BATCH_TIMEOUT)
+            .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
+        );
+      }
+      else
+      {
+        t = tChannelReader.ReadUntilCancelledAsync(cancellationToken, (list, l) => new ValueTask());
+      }
+    }
+
+    return t.AsTask();
   }
 
-  public async Task Save(BaseItem item, CancellationToken cancellationToken = default) =>
-    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
+  public async ValueTask Save(T item, CancellationToken cancellationToken = default)
+  {
+    if (_enabled)
+    {
+      await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
+    }
+  }
 
-  public abstract Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken);
+  public abstract Task<List<T>> SendToServer(List<T> batch, CancellationToken cancellationToken);
 
-  public Task Done()
+  public ValueTask Done()
   {
     _checkCacheChannel.Writer.Complete();
-    return Task.CompletedTask;
+    return new(Task.CompletedTask);
   }
 
-  public abstract void SaveToCache(List<BaseItem> item);
+  public abstract void SaveToCache(List<T> item);
 }

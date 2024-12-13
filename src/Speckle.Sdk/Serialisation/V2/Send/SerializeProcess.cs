@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
@@ -6,20 +7,39 @@ using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
+using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public record SerializeProcessOptions(
-  bool SkipCacheRead,
-  bool SkipCacheWrite,
-  bool SkipServer,
-  bool SkipFindTotalObjects
+  bool SkipCacheRead = false,
+  bool SkipCacheWrite = false,
+  bool SkipServer = false,
+  bool SkipFindTotalObjects = false,
+  bool EnableServerSending = true,
+  bool EnableCacheSaving = true
 );
 
 public readonly record struct SerializeProcessResults(
   string RootId,
   IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
 );
+
+public readonly record struct BaseItem(Id Id, Json Json, bool NeedsStorage, Closures? Closures) : IHasSize
+{
+  public int Size { get; } = Encoding.UTF8.GetByteCount(Json.Value);
+
+  public bool Equals(BaseItem? other)
+  {
+    if (other is null)
+    {
+      return false;
+    }
+    return string.Equals(Id.Value, other.Value.Id.Value, StringComparison.OrdinalIgnoreCase);
+  }
+
+  public override int GetHashCode() => Id.GetHashCode();
+}
 
 [GenerateAutoInterface]
 public class SerializeProcess(
@@ -29,14 +49,13 @@ public class SerializeProcess(
   IBaseChildFinder baseChildFinder,
   IObjectSerializerFactory objectSerializerFactory,
   SerializeProcessOptions? options = null
-) : ChannelSaver, ISerializeProcess
+) : ChannelSaver<BaseItem>, ISerializeProcess
 {
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
 
-  //cache bases and closure info to avoid reserialization
-  private readonly IDictionary<Base, CacheInfo> _baseCache = new ConcurrentDictionary<Base, CacheInfo>();
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
-  private readonly Pool<List<(Id, Json)>> _pool = Pools.CreateListPool<(Id, Json)>();
+  private readonly Pool<List<(Id, Json, Closures)>> _pool = Pools.CreateListPool<(Id, Json, Closures)>();
+  private readonly Pool<Dictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
 
   private long _objectCount;
   private long _objectsFound;
@@ -48,7 +67,7 @@ public class SerializeProcess(
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
-    var channelTask = Start(cancellationToken);
+    var channelTask = Start(_options.EnableServerSending, _options.EnableCacheSaving, cancellationToken);
     var findTotalObjectsTask = Task.CompletedTask;
     if (!_options.SkipFindTotalObjects)
     {
@@ -76,9 +95,9 @@ public class SerializeProcess(
     }
   }
 
-  private async Task Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
+  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
   {
-    var tasks = new List<Task>();
+    var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
     foreach (var child in baseChildFinder.GetChildren(obj))
     {
       // tmp is necessary because of the way closures close over loop variables
@@ -98,8 +117,19 @@ public class SerializeProcess(
     {
       await Task.WhenAll(tasks).ConfigureAwait(false);
     }
+    var childClosures = _childClosurePool.Get();
+    foreach (var t in tasks)
+    {
+      var childClosure = t.Result;
+      foreach (var kvp in childClosure)
+      {
+        childClosures[kvp.Key] = kvp.Value;
+      }
+    }
 
-    var items = Serialise(obj, cancellationToken);
+    var items = Serialise(obj, childClosures, cancellationToken);
+
+    var currentClosures = new Dictionary<Id, NodeInfo>();
     Interlocked.Increment(ref _objectCount);
     progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, _objectsFound));
     foreach (var item in items)
@@ -108,28 +138,40 @@ public class SerializeProcess(
       {
         await Save(item, cancellationToken).ConfigureAwait(false);
       }
+
+      if (!currentClosures.ContainsKey(item.Id))
+      {
+        currentClosures.Add(item.Id, new NodeInfo(item.Json, item.Closures));
+      }
     }
+    _childClosurePool.Return(childClosures);
 
     if (isEnd)
     {
       await Done().ConfigureAwait(false);
     }
+
+    return currentClosures;
   }
 
   //leave this sync
-  private IEnumerable<BaseItem> Serialise(Base obj, CancellationToken cancellationToken)
+  private IEnumerable<BaseItem> Serialise(
+    Base obj,
+    IReadOnlyDictionary<Id, NodeInfo> childInfo,
+    CancellationToken cancellationToken
+  )
   {
     if (!_options.SkipCacheRead && obj.id != null)
     {
       var cachedJson = sqLiteJsonCacheManager.GetObject(obj.id);
       if (cachedJson != null)
       {
-        yield return new BaseItem(obj.id.NotNull(), cachedJson, false);
+        yield return new BaseItem(new(obj.id.NotNull()), new(cachedJson), false, null);
         yield break;
       }
     }
 
-    var serializer2 = objectSerializerFactory.Create(_baseCache, cancellationToken);
+    using var serializer2 = objectSerializerFactory.Create(childInfo, cancellationToken);
     var items = _pool.Get();
     try
     {
@@ -140,11 +182,11 @@ public class SerializeProcess(
         _objectReferences.TryAdd(kvp.Key, kvp.Value);
       }
 
-      var (id, json) = items.First();
-      yield return CheckCache(id, json);
-      foreach (var (cid, cJson) in items.Skip(1))
+      var (id, json, closures) = items.First();
+      yield return CheckCache(id, json, closures);
+      foreach (var (cid, cJson, cClosures) in items.Skip(1))
       {
-        yield return CheckCache(cid, cJson);
+        yield return CheckCache(cid, cJson, cClosures);
       }
     }
     finally
@@ -153,17 +195,17 @@ public class SerializeProcess(
     }
   }
 
-  private BaseItem CheckCache(Id id, Json json)
+  private BaseItem CheckCache(Id id, Json json, Dictionary<Id, int> closures)
   {
     if (!_options.SkipCacheRead)
     {
       var cachedJson = sqLiteJsonCacheManager.GetObject(id.Value);
       if (cachedJson != null)
       {
-        return new BaseItem(id.Value, cachedJson, false);
+        return new BaseItem(id, new(cachedJson), false, null);
       }
     }
-    return new BaseItem(id.Value, json.Value, true);
+    return new BaseItem(id, json, true, closures);
   }
 
   public override async Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken)
@@ -172,9 +214,9 @@ public class SerializeProcess(
     {
       var objectBatch = batch.Distinct().ToList();
       var hasObjects = await serverObjectManager
-        .HasObjects(objectBatch.Select(x => x.Id).ToList(), cancellationToken)
+        .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), cancellationToken)
         .ConfigureAwait(false);
-      objectBatch = batch.Where(x => !hasObjects[x.Id]).ToList();
+      objectBatch = batch.Where(x => !hasObjects[x.Id.Value]).ToList();
       if (objectBatch.Count != 0)
       {
         await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
@@ -190,7 +232,7 @@ public class SerializeProcess(
   {
     if (!_options.SkipCacheWrite && batch.Count != 0)
     {
-      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id, x.Json)));
+      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
     }

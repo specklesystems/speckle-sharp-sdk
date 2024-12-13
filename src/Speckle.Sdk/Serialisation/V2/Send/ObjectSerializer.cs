@@ -9,19 +9,25 @@ using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
-using Closures = System.Collections.Generic.IReadOnlyDictionary<Speckle.Sdk.Serialisation.Id, int>;
+using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public readonly record struct CacheInfo(Json Json, Closures Closures);
+public readonly record struct NodeInfo(Json Json, Closures? C)
+{
+  public Closures GetClosures() =>
+    C ?? ClosureParser.GetClosures(Json.Value).ToDictionary(x => new Id(x.Item1), x => x.Item2);
+}
+
+public partial interface IObjectSerializer : IDisposable;
 
 [GenerateAutoInterface]
-public class ObjectSerializer : IObjectSerializer
+public sealed class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
   private readonly Dictionary<Id, int> _currentClosures = new();
 
-  private readonly IDictionary<Base, CacheInfo> _baseCache;
+  private readonly IReadOnlyDictionary<Id, NodeInfo> _childCache;
 
   private readonly bool _trackDetachedChildren;
   private readonly IBasePropertyGatherer _propertyGatherer;
@@ -33,7 +39,14 @@ public class ObjectSerializer : IObjectSerializer
   /// </summary>
   public Dictionary<Id, ObjectReference> ObjectReferences { get; } = new();
 
-  private readonly List<(Id, Json)> _chunks = new();
+  private readonly List<(Id, Json, Closures)> _chunks;
+  private readonly Pool<List<(Id, Json, Closures)>> _chunksPool;
+
+  private readonly List<List<DataChunk>> _chunks2 = new();
+  private readonly Pool<List<DataChunk>> _chunks2Pool;
+
+  private readonly List<List<object?>> _chunks3 = new();
+  private readonly Pool<List<object?>> _chunks3Pool;
 
   /// <summary>
   /// Creates a new Serializer instance.
@@ -42,22 +55,43 @@ public class ObjectSerializer : IObjectSerializer
   /// <param name="cancellationToken"></param>
   public ObjectSerializer(
     IBasePropertyGatherer propertyGatherer,
-    IDictionary<Base, CacheInfo> baseCache,
+    IReadOnlyDictionary<Id, NodeInfo> childCache,
+    Pool<List<(Id, Json, Closures)>> chunksPool,
+    Pool<List<DataChunk>> chunks2Pool,
+    Pool<List<object?>> chunks3Pool,
     bool trackDetachedChildren = false,
     CancellationToken cancellationToken = default
   )
   {
     _propertyGatherer = propertyGatherer;
-    _baseCache = baseCache;
+    _childCache = childCache;
+    _chunksPool = chunksPool;
+    _chunks2Pool = chunks2Pool;
+    _chunks3Pool = chunks3Pool;
     _cancellationToken = cancellationToken;
     _trackDetachedChildren = trackDetachedChildren;
+    _chunks = chunksPool.Get();
+  }
+
+  [AutoInterfaceIgnore]
+  public void Dispose()
+  {
+    _chunksPool.Return(_chunks);
+    foreach (var c2 in _chunks2)
+    {
+      _chunks2Pool.Return(c2);
+    }
+    foreach (var c3 in _chunks3)
+    {
+      _chunks3Pool.Return(c3);
+    }
   }
 
   /// <param name="baseObj">The object to serialize</param>
   /// <returns>The serialized JSON</returns>
   /// <exception cref="InvalidOperationException">The serializer is busy (already serializing an object)</exception>
   /// <exception cref="SpeckleSerializeException">Failed to extract (pre-serialize) properties from the <paramref name="baseObj"/></exception>
-  public IEnumerable<(Id, Json)> Serialize(Base baseObj)
+  public IEnumerable<(Id, Json, Closures)> Serialize(Base baseObj)
   {
     try
     {
@@ -70,8 +104,7 @@ public class ObjectSerializer : IObjectSerializer
       {
         throw new SpeckleSerializeException($"Failed to extract (pre-serialize) properties from the {baseObj}", ex);
       }
-      _baseCache[baseObj] = new(item.Item2, _currentClosures);
-      yield return (item.Item1, item.Item2);
+      yield return (item.Item1, item.Item2, _currentClosures);
       foreach (var chunk in _chunks)
       {
         yield return chunk;
@@ -232,27 +265,6 @@ public class ObjectSerializer : IObjectSerializer
     {
       return null;
     }
-    Closures childClosures;
-    Id id;
-    Json json;
-    //avoid multiple serialization to get closures
-    if (_baseCache.TryGetValue(baseObj, out var info))
-    {
-      id = new Id(baseObj.id.NotNull());
-      childClosures = info.Closures;
-      json = info.Json;
-      MergeClosures(_currentClosures, childClosures);
-    }
-    else
-    {
-      childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
-      var sb = Pools.StringBuilders.Get();
-      using var writer = new StringWriter(sb);
-      using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-      id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
-      json = new Json(writer.ToString());
-      Pools.StringBuilders.Return(sb);
-    }
 
     _parentObjects.Remove(baseObj);
 
@@ -266,6 +278,27 @@ public class ObjectSerializer : IObjectSerializer
 
     if (inheritedDetachInfo.IsDetachable)
     {
+      Closures childClosures;
+      Id id;
+      Json json;
+      //avoid multiple serialization to get closures
+      if (baseObj.id != null && _childCache.TryGetValue(new(baseObj.id), out var info))
+      {
+        id = new Id(baseObj.id);
+        childClosures = info.GetClosures();
+        json = info.Json;
+        MergeClosures(_currentClosures, childClosures);
+      }
+      else
+      {
+        childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
+        var sb = Pools.StringBuilders.Get();
+        using var writer = new StringWriter(sb);
+        using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
+        id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
+        json = new Json(writer.ToString());
+        Pools.StringBuilders.Return(sb);
+      }
       var json2 = ReferenceGenerator.CreateReference(id);
       AddClosure(id);
       // add to obj refs to return
@@ -278,10 +311,20 @@ public class ObjectSerializer : IObjectSerializer
           closure = childClosures.ToDictionary(x => x.Key.Value, x => x.Value),
         };
       }
-      _chunks.Add(new(id, json));
+      _chunks.Add(new(id, json, []));
       return new(id, json2);
     }
-    return new(id, json);
+    else
+    {
+      var childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
+      var sb = Pools.StringBuilders.Get();
+      using var writer = new StringWriter(sb);
+      using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
+      var id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
+      var json = new Json(writer.ToString());
+      Pools.StringBuilders.Return(sb);
+      return new(id, json);
+    }
   }
 
   private Id SerializeBaseObject(Base baseObj, JsonWriter writer, Closures closure)
@@ -334,12 +377,21 @@ public class ObjectSerializer : IObjectSerializer
     return id;
   }
 
+  private List<object?> GetChunk()
+  {
+    var chunk = _chunks3Pool.Get();
+    _chunks3.Add(chunk);
+    return chunk;
+  }
+
   private void SerializeOrChunkProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
   {
     if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
     {
-      List<DataChunk> chunks = new();
-      DataChunk crtChunk = new() { data = new List<object?>(detachInfo.ChunkSize) };
+      List<DataChunk> chunks = _chunks2Pool.Get();
+      _chunks2.Add(chunks);
+
+      DataChunk crtChunk = new() { data = GetChunk() };
 
       foreach (object element in chunkableCollection)
       {
@@ -347,7 +399,7 @@ public class ObjectSerializer : IObjectSerializer
         if (crtChunk.data.Count >= detachInfo.ChunkSize)
         {
           chunks.Add(crtChunk);
-          crtChunk = new DataChunk { data = new List<object?>(detachInfo.ChunkSize) };
+          crtChunk = new DataChunk { data = GetChunk() };
         }
       }
 

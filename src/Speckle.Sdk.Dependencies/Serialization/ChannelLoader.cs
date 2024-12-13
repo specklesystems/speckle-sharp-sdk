@@ -2,7 +2,7 @@
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-public abstract class ChannelLoader
+public abstract class ChannelLoader<T>
 {
   private const int HTTP_GET_CHUNK_SIZE = 500;
   private const int MAX_PARALLELISM_HTTP = 4;
@@ -27,7 +27,7 @@ public abstract class ChannelLoader
 
   public abstract string? CheckCache(string id);
 
-  public abstract Task<List<BaseItem>> Download(List<string?> ids);
+  public abstract Task<List<T>> Download(List<string?> ids);
 
-  public abstract void SaveToCache(List<BaseItem> x);
+  public abstract void SaveToCache(List<T> x);
 }
