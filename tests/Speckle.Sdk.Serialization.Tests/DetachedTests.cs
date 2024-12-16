@@ -380,6 +380,8 @@ public class DummySendCacheManager(Dictionary<string, string> objects) : ISqLite
 
   public void SaveObject(string id, string json) => throw new NotImplementedException();
 
+  public void UpdateObject(string id, string json) => throw new NotImplementedException();
+
   public bool HasObject(string objectId) => false;
 
   public void SaveObjects(IEnumerable<(string id, string json)> items)
