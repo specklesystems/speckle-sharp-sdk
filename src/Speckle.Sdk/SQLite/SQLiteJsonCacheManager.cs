@@ -96,12 +96,25 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     return null; // pass on the duty of null checks to consumers
   }
 
+  //This does an insert or ignores if already exists
   public void SaveObject(string id, string json)
   {
     using var c = new SqliteConnection(_connectionString);
     c.Open();
     const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
 
+    using var command = new SqliteCommand(COMMAND_TEXT, c);
+    command.Parameters.AddWithValue("@hash", id);
+    command.Parameters.AddWithValue("@content", json);
+    command.ExecuteNonQuery();
+  }
+
+  //This does an insert or replaces if already exists
+  public void UpdateObject(string id, string json)
+  {
+    using var c = new SqliteConnection(_connectionString);
+    c.Open();
+    const string COMMAND_TEXT = "REPLACE INTO objects(hash, content) VALUES(@hash, @content)";
     using var command = new SqliteCommand(COMMAND_TEXT, c);
     command.Parameters.AddWithValue("@hash", id);
     command.Parameters.AddWithValue("@content", json);

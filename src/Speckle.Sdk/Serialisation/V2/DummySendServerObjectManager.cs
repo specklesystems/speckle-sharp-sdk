@@ -15,6 +15,8 @@ public class DummySqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
   public void SaveObject(string id, string json) => throw new NotImplementedException();
 
+  public void UpdateObject(string id, string json) => throw new NotImplementedException();
+
   public void SaveObjects(IEnumerable<(string id, string json)> items) => throw new NotImplementedException();
 
   public bool HasObject(string objectId) => throw new NotImplementedException();
