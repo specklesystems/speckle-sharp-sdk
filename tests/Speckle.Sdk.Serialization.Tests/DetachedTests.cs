@@ -271,8 +271,6 @@ public class DetachedTests
 
     objects.Count.ShouldBe(9);
     var x = JObject.Parse(objects["2ebfd4f317754fce14cadd001151441e"]);
-    var y = x.ToString(Formatting.Indented);
-    Console.WriteLine(y);
     JToken.DeepEquals(JObject.Parse(root), x).ShouldBeTrue();
 
     results.RootId.ShouldBe(@base.id);
