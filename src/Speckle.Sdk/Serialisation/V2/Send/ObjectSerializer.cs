@@ -275,7 +275,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       UpdateParentClosures($"blob:{id}");
       return new(json, id);*/
     }
-    
+
     var isDataChunk = baseObj is DataChunk;
 
     if (inheritedDetachInfo.IsDetachable)
@@ -295,7 +295,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       {
         if (isDataChunk) //datachunks never have child closures
         {
-          childClosures =  [];
+          childClosures = [];
         }
         else
         {
@@ -393,7 +393,11 @@ public sealed class ObjectSerializer : IObjectSerializer
     return chunk;
   }
 
-  private void SerializeOrChunkProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo propertyAttributeInfo)
+  private void SerializeOrChunkProperty(
+    object? baseValue,
+    JsonWriter jsonWriter,
+    PropertyAttributeInfo propertyAttributeInfo
+  )
   {
     if (baseValue is IEnumerable chunkableCollection && propertyAttributeInfo.IsChunkable)
     {
