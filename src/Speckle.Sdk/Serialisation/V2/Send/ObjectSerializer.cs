@@ -98,7 +98,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       (Id, Json) item;
       try
       {
-        item = SerializeBase(baseObj, true).NotNull();
+        item = SerializeBase(baseObj, true, default).NotNull();
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
@@ -118,7 +118,7 @@ public sealed class ObjectSerializer : IObjectSerializer
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
-  private void SerializeProperty(object? obj, JsonWriter writer, PropertyAttributeInfo inheritedDetachInfo = default)
+  private void SerializeProperty(object? obj, JsonWriter writer, PropertyAttributeInfo propertyAttributeInfo)
   {
     _cancellationToken.ThrowIfCancellationRequested();
 
@@ -172,10 +172,10 @@ public sealed class ObjectSerializer : IObjectSerializer
           AddClosure(new(kvp.Key));
         }
         AddClosure(new(r.referencedId));
-        SerializeProperty(ret, writer);
+        SerializeProperty(ret, writer, default);
         break;
       case Base b:
-        var result = SerializeBase(b, false, inheritedDetachInfo);
+        var result = SerializeBase(b, false, propertyAttributeInfo);
         if (result is not null)
         {
           writer.WriteRawValue(result.Value.Item2.Value);
@@ -200,7 +200,7 @@ public sealed class ObjectSerializer : IObjectSerializer
             }
 
             writer.WritePropertyName(key);
-            SerializeProperty(kvp.Value, writer, inheritedDetachInfo: inheritedDetachInfo);
+            SerializeProperty(kvp.Value, writer, propertyAttributeInfo);
           }
           writer.WriteEndObject();
         }
@@ -210,7 +210,7 @@ public sealed class ObjectSerializer : IObjectSerializer
           writer.WriteStartArray();
           foreach (object? element in e)
           {
-            SerializeProperty(element, writer, inheritedDetachInfo: inheritedDetachInfo);
+            SerializeProperty(element, writer, propertyAttributeInfo);
           }
           writer.WriteEndArray();
         }
@@ -257,7 +257,7 @@ public sealed class ObjectSerializer : IObjectSerializer
     }
   }
 
-  private (Id, Json)? SerializeBase(Base baseObj, bool isRoot, PropertyAttributeInfo inheritedDetachInfo = default)
+  private (Id, Json)? SerializeBase(Base baseObj, bool isRoot, PropertyAttributeInfo inheritedDetachInfo)
   {
     // handle circular references
     bool alreadySerialized = !_parentObjects.Add(baseObj);
@@ -275,6 +275,8 @@ public sealed class ObjectSerializer : IObjectSerializer
       UpdateParentClosures($"blob:{id}");
       return new(json, id);*/
     }
+    
+    var isDataChunk = baseObj is DataChunk;
 
     if (inheritedDetachInfo.IsDetachable)
     {
@@ -291,7 +293,14 @@ public sealed class ObjectSerializer : IObjectSerializer
       }
       else
       {
-        childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
+        if (isDataChunk) //datachunks never have child closures
+        {
+          childClosures =  [];
+        }
+        else
+        {
+          childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
+        }
         var sb = Pools.StringBuilders.Get();
         using var writer = new StringWriter(sb);
         using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
@@ -384,9 +393,9 @@ public sealed class ObjectSerializer : IObjectSerializer
     return chunk;
   }
 
-  private void SerializeOrChunkProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo detachInfo)
+  private void SerializeOrChunkProperty(object? baseValue, JsonWriter jsonWriter, PropertyAttributeInfo propertyAttributeInfo)
   {
-    if (baseValue is IEnumerable chunkableCollection && detachInfo.IsChunkable)
+    if (baseValue is IEnumerable chunkableCollection && propertyAttributeInfo.IsChunkable)
     {
       List<DataChunk> chunks = _chunks2Pool.Get();
       _chunks2.Add(chunks);
@@ -396,7 +405,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       foreach (object element in chunkableCollection)
       {
         crtChunk.data.Add(element);
-        if (crtChunk.data.Count >= detachInfo.ChunkSize)
+        if (crtChunk.data.Count >= propertyAttributeInfo.ChunkSize)
         {
           chunks.Add(crtChunk);
           crtChunk = new DataChunk { data = GetChunk() };
@@ -408,11 +417,11 @@ public sealed class ObjectSerializer : IObjectSerializer
         chunks.Add(crtChunk);
       }
 
-      SerializeProperty(chunks, jsonWriter, inheritedDetachInfo: new PropertyAttributeInfo(true, false, 0, null));
+      SerializeProperty(chunks, jsonWriter, new PropertyAttributeInfo(true, false, 0, null));
       return;
     }
 
-    SerializeProperty(baseValue, jsonWriter, inheritedDetachInfo: detachInfo);
+    SerializeProperty(baseValue, jsonWriter, propertyAttributeInfo);
   }
 
   private static void MergeClosures(Dictionary<Id, int> current, Closures child)
