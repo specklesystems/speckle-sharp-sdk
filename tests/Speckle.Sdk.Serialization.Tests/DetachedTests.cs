@@ -280,7 +280,7 @@ public class DetachedTests
   }
 
   [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
-  public async Task CanSerialize_New_DetachedWithChunks()
+  public async Task CanSerialize_New_Detached_With_DataChunks()
   {
     var root = """
          {
@@ -346,6 +346,87 @@ public class DetachedTests
 
     objects.Count.ShouldBe(3);
     var x = JObject.Parse(objects["efeadaca70a85ae6d3acfc93a8b380db"]);
+    JToken.DeepEquals(JObject.Parse(root), x).ShouldBeTrue();
+
+    x = JObject.Parse(objects["0e61e61edee00404ec6e0f9f594bce24"]);
+    JToken.DeepEquals(JObject.Parse(list1), x).ShouldBeTrue();
+
+    x = JObject.Parse(objects["f70738e3e3e593ac11099a6ed6b71154"]);
+    JToken.DeepEquals(JObject.Parse(list2), x).ShouldBeTrue();
+  }
+
+  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  public async Task CanSerialize_New_Detached_With_DataChunks2()
+  {
+    var root = """
+      {
+        "list" : [ {
+          "speckle_type" : "reference",
+          "referencedId" : "0e61e61edee00404ec6e0f9f594bce24",
+          "__closure" : null
+        } ],
+        "list2" : [ {
+          "speckle_type" : "reference",
+          "referencedId" : "f70738e3e3e593ac11099a6ed6b71154",
+          "__closure" : null
+        } ],
+        "arr" : [ {
+          "speckle_type" : "reference",
+          "referencedId" : "f70738e3e3e593ac11099a6ed6b71154",
+          "__closure" : null
+        } ],
+        "detachedProp" : null,
+        "detachedProp2" : null,
+        "attachedProp" : null,
+        "crazyProp" : null,
+        "applicationId" : "1",
+        "speckle_type" : "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2",
+        "dynamicProp" : 123,
+        "id" : "525b1e9eef4d07165abb4ffc518395fc",
+        "__closure" : {
+          "0e61e61edee00404ec6e0f9f594bce24" : 100,
+          "f70738e3e3e593ac11099a6ed6b71154" : 100
+        }
+      }
+      """;
+
+    var list1 = """
+      {
+        "data" : [ 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0 ],
+        "applicationId" : null,
+        "speckle_type" : "Speckle.Core.Models.DataChunk",
+        "id" : "0e61e61edee00404ec6e0f9f594bce24"
+      }
+      """;
+    var list2 = """
+      {
+        "data" : [ 1.0, 10.0 ],
+        "applicationId" : null,
+        "speckle_type" : "Speckle.Core.Models.DataChunk",
+        "id" : "f70738e3e3e593ac11099a6ed6b71154"
+      }
+      """;
+    var @base = new SampleObjectBase2();
+    @base["dynamicProp"] = 123;
+    @base.applicationId = "1";
+    @base.list = new List<double>() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    @base.list2 = new List<double>() { 1, 10 };
+    @base.arr = [1, 10];
+
+    var objects = new Dictionary<string, string>();
+
+    var process2 = new SerializeProcess(
+      null,
+      new DummySendCacheManager(objects),
+      new DummyServerObjectManager(),
+      new BaseChildFinder(new BasePropertyGatherer()),
+      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new SerializeProcessOptions(false, false, true, true)
+    );
+    var results = await process2.Serialize(@base, default).ConfigureAwait(false);
+
+    objects.Count.ShouldBe(3);
+    var x = JObject.Parse(objects["525b1e9eef4d07165abb4ffc518395fc"]);
     JToken.DeepEquals(JObject.Parse(root), x).ShouldBeTrue();
 
     x = JObject.Parse(objects["0e61e61edee00404ec6e0f9f594bce24"]);
