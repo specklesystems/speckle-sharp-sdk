@@ -6,9 +6,8 @@ namespace Speckle.Objects.Data;
 /// Represents an Tekla.Structures.Model.ModelObject object in Tekla Structures
 /// </summary>
 [SpeckleType("Objects.Data.TeklaObject")]
-public class TeklaObject : Base, ITeklaObject
+public class TeklaObject : DataObject, ITeklaObject
 {
-  public required string name { get; set; }
   public required string type { get; set; }
 
   /// <summary>
@@ -16,11 +15,6 @@ public class TeklaObject : Base, ITeklaObject
   /// </summary>
   [DetachProperty]
   public required List<TeklaObject> elements { get; set; }
-
-  [DetachProperty]
-  public required List<Base> displayValue { get; set; }
-
-  public required Dictionary<string, object?> properties { get; set; }
 
   public required string units { get; set; }
 
