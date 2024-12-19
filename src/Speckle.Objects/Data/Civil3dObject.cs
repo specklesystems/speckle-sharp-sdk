@@ -6,9 +6,8 @@ namespace Speckle.Objects.Data;
 /// Represents an Autodesk.Civil.DatabaseServices.Entity object in Civil3d
 /// </summary>
 [SpeckleType("Objects.Data.Civil3dObject")]
-public class Civil3dObject : Base, ICivilObject
+public class Civil3dObject : DataObject, ICivilObject
 {
-  public required string name { get; set; }
   public required string type { get; set; }
 
   /// <summary>
@@ -22,14 +21,7 @@ public class Civil3dObject : Base, ICivilObject
   [DetachProperty]
   public required List<Base> elements { get; set; }
 
-  [DetachProperty]
-  public required List<Base> displayValue { get; set; }
-
-  public required Dictionary<string, object?> properties { get; set; }
-
   public required string units { get; set; }
 
   IReadOnlyList<Base> ICivilObject.elements => elements;
-
-  IReadOnlyList<Base> IDisplayValue<IReadOnlyList<Base>>.displayValue => displayValue;
 }
