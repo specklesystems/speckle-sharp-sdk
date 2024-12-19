@@ -1,5 +1,3 @@
-using Speckle.Sdk.Helpers;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
@@ -31,12 +29,11 @@ public interface ISerializeProcessFactory
 }
 
 public class SerializeProcessFactory(
-  ISpeckleHttp speckleHttp,
-  ISdkActivityFactory activityFactory,
   IBaseChildFinder baseChildFinder,
   IObjectSerializerFactory objectSerializerFactory,
   IObjectDeserializerFactory objectDeserializerFactory,
-  ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory
+  ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory,
+  IServerObjectManagerFactory serverObjectManagerFactory
 ) : ISerializeProcessFactory
 {
   public ISerializeProcess CreateSerializeProcess(
@@ -48,7 +45,7 @@ public class SerializeProcessFactory(
   )
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
-    var serverObjectManager = new ServerObjectManager(speckleHttp, activityFactory, url, streamId, authorizationToken);
+    var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
     return new SerializeProcess(
       progress,
       sqLiteJsonCacheManager,
@@ -85,7 +82,7 @@ public class SerializeProcessFactory(
   )
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
-    var serverObjectManager = new ServerObjectManager(speckleHttp, activityFactory, url, streamId, authorizationToken);
+    var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
 
     var objectLoader = new ObjectLoader(sqLiteJsonCacheManager, serverObjectManager, progress);
     return new DeserializeProcess(progress, objectLoader, objectDeserializerFactory, options);
