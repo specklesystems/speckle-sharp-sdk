@@ -143,7 +143,7 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     int i = 0;
     foreach (var (id, json) in items)
     {
-      sb.Append($"(@key{i}, @value{i},");
+      sb.Append($"(@key{i}, @value{i}),");
       cmd.Parameters.AddWithValue($"@key{i}", id);
       cmd.Parameters.AddWithValue($"@value{i}", json);
       i++;
