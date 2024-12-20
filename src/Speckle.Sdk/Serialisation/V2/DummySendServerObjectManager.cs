@@ -5,9 +5,11 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
-public class DummySqLiteJsonCacheManager : ISqLiteJsonCacheManager
+public sealed class DummySqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {
-  public IEnumerable<string> GetAllObjects() => throw new NotImplementedException();
+  public void Dispose() { }
+
+  public IReadOnlyCollection<string> GetAllObjects() => throw new NotImplementedException();
 
   public void DeleteObject(string id) => throw new NotImplementedException();
 

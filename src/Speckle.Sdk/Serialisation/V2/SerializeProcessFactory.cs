@@ -21,11 +21,6 @@ public interface ISerializeProcessFactory
     IProgress<ProgressArgs>? progress,
     DeserializeProcessOptions? options = null
   );
-
-  public ISerializeProcess CreateSerializeProcess(
-    SerializeProcessOptions? options = null,
-    IProgress<ProgressArgs>? progress = null
-  );
 }
 
 public class SerializeProcessFactory(
@@ -56,23 +51,6 @@ public class SerializeProcessFactory(
     );
   }
 
-  public ISerializeProcess CreateSerializeProcess(
-    SerializeProcessOptions? options = null,
-    IProgress<ProgressArgs>? progress = null
-  )
-  {
-    var sqLiteJsonCacheManager = new DummySqLiteJsonCacheManager();
-    var serverObjectManager = new DummySendServerObjectManager();
-    return new SerializeProcess(
-      progress,
-      sqLiteJsonCacheManager,
-      serverObjectManager,
-      baseChildFinder,
-      objectSerializerFactory,
-      options
-    );
-  }
-
   public IDeserializeProcess CreateDeserializeProcess(
     Uri url,
     string streamId,
@@ -84,7 +62,10 @@ public class SerializeProcessFactory(
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
     var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
 
+#pragma warning disable CA2000
+    //owned by process, refactor later
     var objectLoader = new ObjectLoader(sqLiteJsonCacheManager, serverObjectManager, progress);
+#pragma warning restore CA2000
     return new DeserializeProcess(progress, objectLoader, objectDeserializerFactory, options);
   }
 }

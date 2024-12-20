@@ -1,11 +1,13 @@
 using System.Text;
 using Microsoft.Data.Sqlite;
 using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Dependencies;
 
 namespace Speckle.Sdk.SQLite;
 
+public partial interface ISqLiteJsonCacheManager : IDisposable;
 [GenerateAutoInterface]
-public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager, IDisposable
+public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {
   private readonly string _connectionString;
   private readonly CacheDbCommandPool _pool;
@@ -17,6 +19,7 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager, IDisposabl
     _pool = new CacheDbCommandPool(_connectionString);
   }
 
+  [AutoInterfaceIgnore]
   public void Dispose() => _pool.Dispose();
 
   private void Initialize()
@@ -135,7 +138,7 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager, IDisposabl
 
   private void CreateBulkInsert(SqliteCommand cmd, IEnumerable<(string id, string json)> items)
   {
-    StringBuilder sb = new();
+    StringBuilder sb = Pools.StringBuilders.Get();
     sb.AppendLine(CacheDbCommands.Commands[(int)CacheOperation.BulkInsertOrIgnore]);
     int i = 0;
     foreach (var (id, json) in items)
@@ -150,6 +153,7 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager, IDisposabl
 #pragma warning disable CA2100
     cmd.CommandText = sb.ToString();
 #pragma warning restore CA2100
+    Pools.StringBuilders.Return(sb);
   }
 
   public bool HasObject(string objectId) =>

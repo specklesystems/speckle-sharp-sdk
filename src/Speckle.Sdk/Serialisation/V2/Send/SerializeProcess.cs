@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Text;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
@@ -25,24 +24,9 @@ public readonly record struct SerializeProcessResults(
   IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
 );
 
-public readonly record struct BaseItem(Id Id, Json Json, bool NeedsStorage, Closures? Closures) : IHasSize
-{
-  public int Size { get; } = Encoding.UTF8.GetByteCount(Json.Value);
-
-  public bool Equals(BaseItem? other)
-  {
-    if (other is null)
-    {
-      return false;
-    }
-    return string.Equals(Id.Value, other.Value.Id.Value, StringComparison.OrdinalIgnoreCase);
-  }
-
-  public override int GetHashCode() => Id.GetHashCode();
-}
-
+public partial interface ISerializeProcess : IDisposable;
 [GenerateAutoInterface]
-public class SerializeProcess(
+public sealed class SerializeProcess(
   IProgress<ProgressArgs>? progress,
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
@@ -64,6 +48,8 @@ public class SerializeProcess(
 
   private long _uploaded;
   private long _cached;
+  [AutoInterfaceIgnore]
+  public void Dispose() => sqLiteJsonCacheManager.Dispose();
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
