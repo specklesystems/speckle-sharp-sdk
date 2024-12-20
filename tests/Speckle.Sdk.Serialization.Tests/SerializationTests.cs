@@ -33,6 +33,7 @@ public class SerializationTests
     }
 
     public string? LoadId(string id) => null;
+    public void Dispose() { }
   }
 
   private readonly Assembly _assembly = Assembly.GetExecutingAssembly();
@@ -103,6 +104,7 @@ public class SerializationTests
     }
 
     public string? LoadId(string id) => idToObject.GetValueOrDefault(id);
+    public void Dispose() { }
   }
 
   [Test]
@@ -154,7 +156,7 @@ public class SerializationTests
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var json = await ReadJson(fullName);
     var closures = ReadAsObjects(json);
-    var process = new DeserializeProcess(null, new TestObjectLoader(closures), new ObjectDeserializerFactory());
+    using  var process = new DeserializeProcess(null, new TestObjectLoader(closures), new ObjectDeserializerFactory());
     await process.Deserialize("3416d3fe01c9196115514c4a2f41617b", default);
     foreach (var (id, objJson) in closures)
     {
@@ -251,13 +253,13 @@ public class SerializationTests
       new DummyReceiveServerObjectManager(closure),
       null
     );
-    var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(true));
+    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(true));
     var root = await process.Deserialize(rootId, default);
     process.BaseCache.Count.ShouldBe(oldCount);
     process.Total.ShouldBe(oldCount);
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
-    var serializeProcess = new SerializeProcess(
+    using  var serializeProcess = new SerializeProcess(
       null,
       new DummySqLiteSendManager(),
       new DummySendServerObjectManager(newIdToJson),
