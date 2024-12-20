@@ -12,11 +12,11 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
   private readonly string _connectionString;
   private readonly CacheDbCommandPool _pool;
 
-  public SqLiteJsonCacheManager(string rootPath)
+  public SqLiteJsonCacheManager(string rootPath, int concurrency)
   {
     _connectionString = $"Data Source={rootPath};";
     Initialize();
-    _pool = new CacheDbCommandPool(_connectionString);
+    _pool = new CacheDbCommandPool(_connectionString, concurrency);
   }
 
   [AutoInterfaceIgnore]

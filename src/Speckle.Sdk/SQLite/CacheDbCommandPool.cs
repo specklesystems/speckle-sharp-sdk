@@ -6,19 +6,18 @@ namespace Speckle.Sdk.SQLite;
 //inspired by https://github.com/neosmart/SqliteCache/blob/master/SqliteCache/DbCommandPool.cs
 public sealed class CacheDbCommandPool : IDisposable
 {
-  private const int INITIAL_CONCURRENCY = 4;
   private readonly ConcurrentBag<SqliteCommand>[] _commands = new ConcurrentBag<SqliteCommand>[CacheDbCommands.Count];
   private readonly ConcurrentBag<SqliteConnection> _connections = new();
   private readonly string _connectionString;
 
-  public CacheDbCommandPool(string connectionString)
+  public CacheDbCommandPool(string connectionString, int concurrency)
   {
     _connectionString = connectionString;
     for (int i = 0; i < _commands.Length; ++i)
     {
       _commands[i] = new ConcurrentBag<SqliteCommand>();
     }
-    for (int i = 0; i < INITIAL_CONCURRENCY; ++i)
+    for (int i = 0; i < concurrency; ++i)
     {
       var connection = new SqliteConnection(_connectionString);
       connection.Open();

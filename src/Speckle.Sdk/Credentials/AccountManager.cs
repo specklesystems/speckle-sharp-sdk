@@ -21,11 +21,12 @@ using Stream = System.IO.Stream;
 
 namespace Speckle.Sdk.Credentials;
 
+public partial interface IAccountManager : IDisposable;
 /// <summary>
 /// Manage accounts locally for desktop applications.
 /// </summary>
 [GenerateAutoInterface]
-public class AccountManager(
+public sealed class AccountManager(
   ISpeckleApplication application,
   ILogger<AccountManager> logger,
   ISpeckleHttp speckleHttp,
@@ -40,6 +41,12 @@ public class AccountManager(
     "AccountAddFlow"
   );
 
+  [AutoInterfaceIgnore]
+  public void Dispose()
+  {
+    _accountStorage.Dispose();
+    _accountAddLockStorage.Dispose();
+  }
   /// <summary>
   /// Gets the basic information about a server.
   /// </summary>
