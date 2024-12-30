@@ -51,6 +51,10 @@ public class SerializeProcess(
   SerializeProcessOptions? options = null
 ) : ChannelSaver<BaseItem>, ISerializeProcess
 {
+  private readonly PriorityScheduler _countScheduler = new PriorityScheduler(ThreadPriority.Highest);
+  private readonly PriorityScheduler _writeScheduler = new PriorityScheduler(ThreadPriority.Normal);
+  
+  
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
 
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
@@ -65,6 +69,14 @@ public class SerializeProcess(
   private long _uploaded;
   private long _cached;
 
+  [AutoInterfaceIgnore]
+  public void Dispose()
+  {
+    sqLiteJsonCacheManager.Dispose();
+    _countScheduler.Dispose();
+    _writeScheduler.Dispose();
+  }
+
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
     var channelTask = Start(_options.EnableServerSending, _options.EnableCacheSaving, cancellationToken);
@@ -74,8 +86,8 @@ public class SerializeProcess(
       findTotalObjectsTask = Task.Factory.StartNew(
         () => TraverseTotal(root),
         default,
-        TaskCreationOptions.LongRunning,
-        TaskScheduler.Default
+        TaskCreationOptions.AttachedToParent,
+        _countScheduler
       );
     }
 
@@ -107,7 +119,7 @@ public class SerializeProcess(
           () => Traverse(tmp, false, cancellationToken),
           cancellationToken,
           TaskCreationOptions.AttachedToParent,
-          TaskScheduler.Default
+          _writeScheduler
         )
         .Unwrap();
       tasks.Add(t);
@@ -136,7 +148,10 @@ public class SerializeProcess(
     {
       if (item.NeedsStorage)
       {
-        await Save(item, cancellationToken).ConfigureAwait(false);
+        var saving = Task.Factory.StartNew(async () =>
+            await Save(item, cancellationToken).ConfigureAwait(false),
+          cancellationToken, TaskCreationOptions.AttachedToParent, _writeScheduler);
+        await saving.Unwrap().ConfigureAwait(false);
       }
 
       if (!currentClosures.ContainsKey(item.Id))
