@@ -257,7 +257,7 @@ public class SerializationTests
     process.Total.ShouldBe(oldCount);
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
-    var serializeProcess = new SerializeProcess(
+    using var serializeProcess = new SerializeProcess(
       null,
       new DummySqLiteSendManager(),
       new DummySendServerObjectManager(newIdToJson),
