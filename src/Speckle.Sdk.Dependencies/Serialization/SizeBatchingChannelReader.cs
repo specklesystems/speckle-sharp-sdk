@@ -21,7 +21,7 @@ public class Batch<T>(int capacity) : IHasSize
     _items.Add(item);
     _batchSize += item.Size;
   }
-  
+
   public void TrimExcess()
   {
     _items.TrimExcess();
@@ -31,7 +31,6 @@ public class Batch<T>(int capacity) : IHasSize
   public int Size => _batchSize;
   public List<T> Items => _items;
 }
-
 
 public class SizeBatchingChannelReader<T>(
   ChannelReader<T> source,

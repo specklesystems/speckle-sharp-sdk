@@ -2,9 +2,7 @@
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public sealed class PriorityScheduler(ThreadPriority priority, int maximumConcurrencyLevel)
-  : TaskScheduler,
-    IDisposable
+public sealed class PriorityScheduler(ThreadPriority priority, int maximumConcurrencyLevel) : TaskScheduler, IDisposable
 {
   private readonly BlockingCollection<Task> _tasks = new();
   private Thread[]? _threads;

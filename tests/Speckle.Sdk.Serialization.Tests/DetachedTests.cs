@@ -332,7 +332,7 @@ public class DetachedTests
 
     var objects = new Dictionary<string, string>();
 
-    using  var process2 = new SerializeProcess(
+    using var process2 = new SerializeProcess(
       null,
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
@@ -413,7 +413,7 @@ public class DetachedTests
 
     var objects = new Dictionary<string, string>();
 
-    using  var process2 = new SerializeProcess(
+    using var process2 = new SerializeProcess(
       null,
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
