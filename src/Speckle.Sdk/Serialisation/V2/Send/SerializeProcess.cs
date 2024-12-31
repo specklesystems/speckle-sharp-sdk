@@ -156,7 +156,10 @@ public sealed class SerializeProcess(
       {
         //just await enqueuing
         await Task.Factory.StartNew(async () =>
-            await Save(item, cancellationToken).ConfigureAwait(false),
+          {
+            Interlocked.Increment(ref _objectsSerialized);
+            await Save(item, cancellationToken).ConfigureAwait(false);
+          },
           cancellationToken, TaskCreationOptions.DenyChildAttach, _highest).ConfigureAwait(true);
       }
 
@@ -197,7 +200,6 @@ public sealed class SerializeProcess(
     try
     {
       items.AddRange(serializer2.Serialize(obj));
-      Interlocked.Add(ref _objectsSerialized, items.Count);
       foreach (var kvp in serializer2.ObjectReferences)
       {
         _objectReferences.TryAdd(kvp.Key, kvp.Value);
@@ -256,6 +258,7 @@ public sealed class SerializeProcess(
       sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
+      Console.WriteLine($"Saved {_cached} / {_objectsSerialized} objects to cache");
     }
   }
 }
