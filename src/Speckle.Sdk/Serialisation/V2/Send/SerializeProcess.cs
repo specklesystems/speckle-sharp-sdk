@@ -52,7 +52,7 @@ public sealed class SerializeProcess(
 ) : ChannelSaver<BaseItem>, ISerializeProcess
 {
   private readonly PriorityScheduler _highest = new(ThreadPriority.Highest, 2);
-  private readonly PriorityScheduler _belowNormal = new(ThreadPriority.BelowNormal, Environment.ProcessorCount * 3);
+  private readonly PriorityScheduler _belowNormal = new(ThreadPriority.BelowNormal, Environment.ProcessorCount * 2);
 
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
 
@@ -151,19 +151,8 @@ public sealed class SerializeProcess(
     {
       if (item.NeedsStorage)
       {
-        //just await enqueuing
-        await Task
-          .Factory.StartNew(
-            async () =>
-            {
-              Interlocked.Increment(ref _objectsSerialized);
-              await Save(item, cancellationToken).ConfigureAwait(false);
-            },
-            cancellationToken,
-            TaskCreationOptions.DenyChildAttach,
-            _highest
-          )
-          .ConfigureAwait(true);
+        Interlocked.Increment(ref _objectsSerialized);
+        await Save(item, cancellationToken).ConfigureAwait(true);
       }
 
       if (!currentClosures.ContainsKey(item.Id))
