@@ -46,7 +46,7 @@ public abstract class ChannelSaver<T>
   public ValueTask Save(T item, CancellationToken cancellationToken = default) =>
     _checkCacheChannel.Writer.WriteAsync(item, cancellationToken);
 
-  public abstract Task<List<T>> SendToServer(List<T> batch, CancellationToken cancellationToken);
+  public abstract Task<List<T>> SendToServer(Batch<T> batch, CancellationToken cancellationToken);
 
   public Task Done()
   {

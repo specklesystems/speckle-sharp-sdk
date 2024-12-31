@@ -84,7 +84,7 @@ public sealed class SerializeProcess(
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
-    var channelTask = Start(cancellationToken);
+    var channelTask = Start( cancellationToken);
     var findTotalObjectsTask = Task.CompletedTask;
     if (!_options.SkipFindTotalObjects)
     {
@@ -133,7 +133,7 @@ public sealed class SerializeProcess(
     Dictionary<Id, NodeInfo>[] taskClosures = [];
     if (tasks.Count > 0)
     {
-      taskClosures = await Task.WhenAll(tasks).ConfigureAwait(false);
+      taskClosures = await Task.WhenAll(tasks).ConfigureAwait(true);
     }
     var childClosures = _childClosurePool.Get();
     foreach (var childClosure in taskClosures)
@@ -157,7 +157,7 @@ public sealed class SerializeProcess(
         //just await enqueuing
         await Task.Factory.StartNew(async () =>
             await Save(item, cancellationToken).ConfigureAwait(false),
-          cancellationToken, TaskCreationOptions.DenyChildAttach, _highest);
+          cancellationToken, TaskCreationOptions.DenyChildAttach, _highest).ConfigureAwait(true);
       }
 
       if (!currentClosures.ContainsKey(item.Id))
@@ -169,7 +169,7 @@ public sealed class SerializeProcess(
 
     if (isEnd)
     {
-      await Done().ConfigureAwait(false);
+      await Done().ConfigureAwait(true);
     }
 
     return currentClosures;
@@ -229,24 +229,24 @@ public sealed class SerializeProcess(
     return new BaseItem(id, json, true, closures);
   }
 
-  public override async Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken)
+  public override async Task<List<BaseItem>> SendToServer(Batch<BaseItem> batch, CancellationToken cancellationToken)
   {
-    if (!_options.SkipServer && batch.Count != 0)
+    if (!_options.SkipServer && batch.Items.Count != 0)
     {
-      var objectBatch = batch.Distinct().ToList();
+      var objectBatch = batch.Items.Distinct().ToList();
       var hasObjects = await serverObjectManager
         .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), cancellationToken)
         .ConfigureAwait(false);
-      objectBatch = batch.Where(x => !hasObjects[x.Id.Value]).ToList();
+      objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
       if (objectBatch.Count != 0)
       {
         await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
-        Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
+        Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
       }
-
       progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
+      return objectBatch;
     }
-    return batch;
+    return batch.Items;
   }
 
   public override void SaveToCache(List<BaseItem> batch)
