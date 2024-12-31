@@ -63,6 +63,6 @@ public static class Pools
   public static Pool<Dictionary<TKey, TValue>> CreateDictionaryPool<TKey, TValue>()
     where TKey : notnull => new(new ObjectDictionaryPolicy<TKey, TValue>());
 
-  public static Pool<ConcurrentDictionary<TKey, TValue>> CreateConcurrentictionaryPool<TKey, TValue>()
+  public static Pool<ConcurrentDictionary<TKey, TValue>> CreateConcurrentDictionaryPool<TKey, TValue>()
     where TKey : notnull => new(new ObjectConcurrentDictionaryPolicy<TKey, TValue>());
 }

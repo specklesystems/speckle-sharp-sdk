@@ -18,7 +18,7 @@ public abstract class ChannelSaver<T>
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
     {
-      AllowSynchronousContinuations = false,
+      AllowSynchronousContinuations = true,
       Capacity = SEND_CAPACITY,
       SingleWriter = false,
       SingleReader = false,
