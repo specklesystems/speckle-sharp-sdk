@@ -2,15 +2,16 @@
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public sealed class PriorityScheduler(ThreadPriority priority) : TaskScheduler, IDisposable
+public sealed class PriorityScheduler(ThreadPriority priority, int maximumConcurrencyLevel)
+  : TaskScheduler,
+    IDisposable
 {
-  private readonly BlockingCollection<Task> _tasks = new BlockingCollection<Task>();
+  private readonly BlockingCollection<Task> _tasks = new();
   private Thread[]? _threads;
-  private readonly int _maximumConcurrencyLevel = Math.Max(1, Environment.ProcessorCount);
 
   public void Dispose() => _tasks.Dispose();
 
-  public override int MaximumConcurrencyLevel => _maximumConcurrencyLevel;
+  public override int MaximumConcurrencyLevel => maximumConcurrencyLevel;
 
   protected override IEnumerable<Task> GetScheduledTasks() => _tasks;
 
@@ -20,7 +21,7 @@ public sealed class PriorityScheduler(ThreadPriority priority) : TaskScheduler, 
 
     if (_threads == null)
     {
-      _threads = new Thread[_maximumConcurrencyLevel];
+      _threads = new Thread[maximumConcurrencyLevel];
       for (int i = 0; i < _threads.Length; i++)
       {
         _threads[i] = new Thread(() =>
@@ -29,7 +30,12 @@ public sealed class PriorityScheduler(ThreadPriority priority) : TaskScheduler, 
           {
             TryExecuteTask(t);
           }
-        }) { Name = $"PriorityScheduler: {i}", Priority = priority, IsBackground = true };
+        })
+        {
+          Name = $"{priority}: {i}",
+          Priority = priority,
+          IsBackground = true,
+        };
         _threads[i].Start();
       }
     }
