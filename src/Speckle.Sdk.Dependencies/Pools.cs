@@ -6,6 +6,8 @@ namespace Speckle.Sdk.Dependencies;
 
 public static class Pools
 {
+  public const int DefaultCapacity = 50;
+
   public static Pool<Dictionary<string, object?>> ObjectDictionaries { get; } = new(new ObjectDictionaryPolicy());
 
   private sealed class ObjectDictionaryPolicy : IPooledObjectPolicy<Dictionary<string, object?>>
@@ -25,7 +27,7 @@ public static class Pools
   private sealed class ObjectDictionaryPolicy<TKey, TValue> : IPooledObjectPolicy<Dictionary<TKey, TValue>>
     where TKey : notnull
   {
-    public Dictionary<TKey, TValue> Create() => new(50);
+    public Dictionary<TKey, TValue> Create() => new(DefaultCapacity);
 
     public bool Return(Dictionary<TKey, TValue> obj)
     {
@@ -38,7 +40,7 @@ public static class Pools
     : IPooledObjectPolicy<ConcurrentDictionary<TKey, TValue>>
     where TKey : notnull
   {
-    public ConcurrentDictionary<TKey, TValue> Create() => new(Environment.ProcessorCount, 50);
+    public ConcurrentDictionary<TKey, TValue> Create() => new(Environment.ProcessorCount, DefaultCapacity);
 
     public bool Return(ConcurrentDictionary<TKey, TValue> obj)
     {
@@ -49,7 +51,7 @@ public static class Pools
 
   private sealed class ObjectListPolicy<T> : IPooledObjectPolicy<List<T>>
   {
-    public List<T> Create() => new(50);
+    public List<T> Create() => new(DefaultCapacity);
 
     public bool Return(List<T> obj)
     {

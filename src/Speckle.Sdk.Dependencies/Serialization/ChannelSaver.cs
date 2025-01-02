@@ -52,6 +52,7 @@ public abstract class ChannelSaver<T>
     await SendToServer((Batch<T>)batch, cancellationToken).ConfigureAwait(false);
     return batch;
   }
+
   public abstract Task SendToServer(Batch<T> batch, CancellationToken cancellationToken);
 
   public Task Done()

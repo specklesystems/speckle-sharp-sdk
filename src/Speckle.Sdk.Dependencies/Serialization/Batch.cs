@@ -26,7 +26,8 @@ public sealed class Batch<T> : IHasSize, IMemoryOwner<T>
 
   public int Size => _batchSize;
   public List<T> Items => _items;
+
   public void Dispose() => _pool.Return(_items);
 
-  public Memory<T> Memory => new Memory<T>(_items.ToArray());
+  public Memory<T> Memory => new(_items.ToArray());
 }
