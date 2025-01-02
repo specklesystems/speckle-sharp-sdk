@@ -13,29 +13,20 @@ public class SizeBatchingChannelReader<T>(
   int batchSize,
   bool singleReader,
   bool syncCont = false
-) : BatchingChannelReader<T, List<T>>(source, batchSize, singleReader, syncCont)
+) : BatchingChannelReader<T, Batch<T>>(x => new(x), source, batchSize, singleReader, syncCont)
   where T : IHasSize
 {
-  private readonly int _batchSize = batchSize;
+  protected override Batch<T> CreateBatch(int capacity) => new(capacity);
 
-  protected override List<T> CreateBatch(int capacity) => new();
-
-  protected override void TrimBatch(List<T> batch) => batch.TrimExcess();
-
-  protected override void AddBatchItem(List<T> batch, T item) => batch.Add(item);
-
-  protected override int GetBatchSize(List<T> batch)
+  protected override void TrimBatch(ref Batch<T> batch, bool isVerifiedFull)
   {
-    int size = 0;
-    foreach (T item in batch)
+    if (!isVerifiedFull)
     {
-      size += item.Size;
+      batch.TrimExcess();
     }
-
-    if (size >= _batchSize)
-    {
-      return _batchSize;
-    }
-    return size;
   }
+
+  protected override void AddBatchItem(Batch<T> batch, T item) => batch.Add(item);
+
+  protected override int GetBatchSize(Batch<T> batch) => batch.Size;
 }

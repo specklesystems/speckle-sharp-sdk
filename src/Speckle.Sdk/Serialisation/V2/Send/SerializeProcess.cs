@@ -14,9 +14,7 @@ public record SerializeProcessOptions(
   bool SkipCacheRead = false,
   bool SkipCacheWrite = false,
   bool SkipServer = false,
-  bool SkipFindTotalObjects = false,
-  bool EnableServerSending = true,
-  bool EnableCacheSaving = true
+  bool SkipFindTotalObjects = false
 );
 
 public readonly record struct SerializeProcessResults(
@@ -36,11 +34,18 @@ public sealed class SerializeProcess(
   SerializeProcessOptions? options = null
 ) : ChannelSaver<BaseItem>, ISerializeProcess
 {
+  private readonly PriorityScheduler _highest = new(ThreadPriority.Highest, 2);
+  private readonly PriorityScheduler _belowNormal = new(ThreadPriority.BelowNormal, Environment.ProcessorCount * 2);
+
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
 
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
   private readonly Pool<List<(Id, Json, Closures)>> _pool = Pools.CreateListPool<(Id, Json, Closures)>();
-  private readonly Pool<Dictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
+  private readonly Pool<Dictionary<Id, NodeInfo>> _currentClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
+  private readonly Pool<ConcurrentDictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateConcurrentDictionaryPool<
+    Id,
+    NodeInfo
+  >();
 
   private long _objectCount;
   private long _objectsFound;
@@ -51,19 +56,23 @@ public sealed class SerializeProcess(
   private long _cached;
 
   [AutoInterfaceIgnore]
-  public void Dispose() => sqLiteJsonCacheManager.Dispose();
+  public void Dispose()
+  {
+    _highest.Dispose();
+    _belowNormal.Dispose();
+  }
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
-    var channelTask = Start(_options.EnableServerSending, _options.EnableCacheSaving, cancellationToken);
+    var channelTask = Start(cancellationToken);
     var findTotalObjectsTask = Task.CompletedTask;
     if (!_options.SkipFindTotalObjects)
     {
       findTotalObjectsTask = Task.Factory.StartNew(
         () => TraverseTotal(root),
         default,
-        TaskCreationOptions.LongRunning,
-        TaskScheduler.Default
+        TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
+        _highest
       );
     }
 
@@ -94,37 +103,39 @@ public sealed class SerializeProcess(
         .Factory.StartNew(
           () => Traverse(tmp, false, cancellationToken),
           cancellationToken,
-          TaskCreationOptions.AttachedToParent,
-          TaskScheduler.Default
+          TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
+          _belowNormal
         )
         .Unwrap();
       tasks.Add(t);
     }
 
+    Dictionary<Id, NodeInfo>[] taskClosures = [];
     if (tasks.Count > 0)
     {
-      await Task.WhenAll(tasks).ConfigureAwait(false);
+      taskClosures = await Task.WhenAll(tasks).ConfigureAwait(true);
     }
     var childClosures = _childClosurePool.Get();
-    foreach (var t in tasks)
+    foreach (var childClosure in taskClosures)
     {
-      var childClosure = t.Result;
       foreach (var kvp in childClosure)
       {
         childClosures[kvp.Key] = kvp.Value;
       }
+      _currentClosurePool.Return(childClosure);
     }
 
     var items = Serialise(obj, childClosures, cancellationToken);
 
-    var currentClosures = new Dictionary<Id, NodeInfo>();
+    var currentClosures = _currentClosurePool.Get();
     Interlocked.Increment(ref _objectCount);
-    progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, _objectsFound));
+    progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound)));
     foreach (var item in items)
     {
       if (item.NeedsStorage)
       {
-        await Save(item, cancellationToken).ConfigureAwait(false);
+        Interlocked.Increment(ref _objectsSerialized);
+        await Save(item, cancellationToken).ConfigureAwait(true);
       }
 
       if (!currentClosures.ContainsKey(item.Id))
@@ -136,7 +147,7 @@ public sealed class SerializeProcess(
 
     if (isEnd)
     {
-      await Done().ConfigureAwait(false);
+      await Done().ConfigureAwait(true);
     }
 
     return currentClosures;
@@ -164,7 +175,6 @@ public sealed class SerializeProcess(
     try
     {
       items.AddRange(serializer2.Serialize(obj));
-      Interlocked.Add(ref _objectsSerialized, items.Count);
       foreach (var kvp in serializer2.ObjectReferences)
       {
         _objectReferences.TryAdd(kvp.Key, kvp.Value);
@@ -196,24 +206,24 @@ public sealed class SerializeProcess(
     return new BaseItem(id, json, true, closures);
   }
 
-  public override async Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken)
+  public override async Task<List<BaseItem>> SendToServer(Batch<BaseItem> batch, CancellationToken cancellationToken)
   {
-    if (!_options.SkipServer && batch.Count != 0)
+    if (!_options.SkipServer && batch.Items.Count != 0)
     {
-      var objectBatch = batch.Distinct().ToList();
+      var objectBatch = batch.Items.Distinct().ToList();
       var hasObjects = await serverObjectManager
         .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), cancellationToken)
         .ConfigureAwait(false);
-      objectBatch = batch.Where(x => !hasObjects[x.Id.Value]).ToList();
+      objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
       if (objectBatch.Count != 0)
       {
         await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
-        Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
+        Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
       }
-
       progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
+      return objectBatch;
     }
-    return batch;
+    return batch.Items;
   }
 
   public override void SaveToCache(List<BaseItem> batch)
