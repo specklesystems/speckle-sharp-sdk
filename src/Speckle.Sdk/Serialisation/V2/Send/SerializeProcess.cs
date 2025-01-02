@@ -207,7 +207,7 @@ public sealed class SerializeProcess(
     return new BaseItem(id, json, true, closures);
   }
 
-  public override async Task<List<BaseItem>> SendToServer(Batch<BaseItem> batch, CancellationToken cancellationToken)
+  public override async Task SendToServer(Batch<BaseItem> batch, CancellationToken cancellationToken)
   {
     if (!_options.SkipServer && batch.Items.Count != 0)
     {
@@ -222,9 +222,7 @@ public sealed class SerializeProcess(
         Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
       }
       progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
-      return objectBatch;
     }
-    return batch.Items;
   }
 
   public override void SaveToCache(List<BaseItem> batch)
