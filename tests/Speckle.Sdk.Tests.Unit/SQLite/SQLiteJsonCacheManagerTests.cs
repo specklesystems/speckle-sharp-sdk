@@ -13,7 +13,7 @@ public class SQLiteJsonCacheManagerTests
   private string? _connectionString;
 
   [SetUp]
-  public void Setup() => _connectionString = $"Data Source={_basePath}.;";
+  public void Setup() => _connectionString = $"Data Source={_basePath};";
 
   [TearDown]
   public void TearDown()
@@ -30,21 +30,23 @@ public class SQLiteJsonCacheManagerTests
   [Test]
   public void TestGetAll()
   {
-    var data = new List<(string id, string json)>() { ("1", "1"), ("2", "2") };
+    var data = new List<(string id, string json)>() { ("id1", "1"), ("id2", "2") };
     using var manager = new SqLiteJsonCacheManager(_connectionString.NotNull(), 2);
     manager.SaveObjects(data);
     var items = manager.GetAllObjects();
     items.Count.ShouldBe(data.Count);
-    foreach (var (id, json) in items)
+    var i = items.ToDictionary();
+    foreach (var (id, json) in data)
     {
-      data.Contains((id, json)).ShouldBeTrue();
+      i.TryGetValue(id, out var j).ShouldBeTrue();
+      j.ShouldBe(json);
     }
   }
 
   [Test]
   public void TestGet()
   {
-    var data = new List<(string id, string json)>() { ("1", "1"), ("2", "2") };
+    var data = new List<(string id, string json)>() { ("id1", "1"), ("id2", "2") };
     using var manager = new SqLiteJsonCacheManager(_connectionString.NotNull(), 2);
     foreach (var d in data)
     {
