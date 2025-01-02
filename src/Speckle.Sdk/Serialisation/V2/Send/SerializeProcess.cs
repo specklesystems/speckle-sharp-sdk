@@ -60,6 +60,7 @@ public sealed class SerializeProcess(
   {
     _highest.Dispose();
     _belowNormal.Dispose();
+    sqLiteJsonCacheManager.Dispose();
   }
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
