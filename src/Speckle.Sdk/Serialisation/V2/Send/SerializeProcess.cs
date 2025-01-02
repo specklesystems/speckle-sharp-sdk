@@ -25,6 +25,7 @@ public readonly record struct SerializeProcessResults(
 );
 
 public partial interface ISerializeProcess : IDisposable;
+
 [GenerateAutoInterface]
 public sealed class SerializeProcess(
   IProgress<ProgressArgs>? progress,
@@ -48,6 +49,7 @@ public sealed class SerializeProcess(
 
   private long _uploaded;
   private long _cached;
+
   [AutoInterfaceIgnore]
   public void Dispose() => sqLiteJsonCacheManager.Dispose();
 

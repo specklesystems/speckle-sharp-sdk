@@ -22,6 +22,7 @@ using Stream = System.IO.Stream;
 namespace Speckle.Sdk.Credentials;
 
 public partial interface IAccountManager : IDisposable;
+
 /// <summary>
 /// Manage accounts locally for desktop applications.
 /// </summary>
@@ -47,6 +48,7 @@ public sealed class AccountManager(
     _accountStorage.Dispose();
     _accountAddLockStorage.Dispose();
   }
+
   /// <summary>
   /// Gets the basic information about a server.
   /// </summary>

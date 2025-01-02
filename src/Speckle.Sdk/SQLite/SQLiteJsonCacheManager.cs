@@ -6,6 +6,7 @@ using Speckle.Sdk.Dependencies;
 namespace Speckle.Sdk.SQLite;
 
 public partial interface ISqLiteJsonCacheManager : IDisposable;
+
 [GenerateAutoInterface]
 public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {

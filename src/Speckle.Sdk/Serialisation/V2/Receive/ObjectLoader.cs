@@ -10,6 +10,7 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 public partial interface IObjectLoader : IDisposable;
+
 [GenerateAutoInterface]
 public sealed class ObjectLoader(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
@@ -21,6 +22,7 @@ public sealed class ObjectLoader(
   private long _checkCache;
   private long _cached;
   private DeserializeProcessOptions _options = new(false);
+
   [AutoInterfaceIgnore]
   public void Dispose() => sqLiteJsonCacheManager.Dispose();
 

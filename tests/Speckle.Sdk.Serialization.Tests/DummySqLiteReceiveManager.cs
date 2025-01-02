@@ -5,6 +5,7 @@ namespace Speckle.Sdk.Serialization.Tests;
 public class DummySqLiteReceiveManager(Dictionary<string, string> savedObjects) : ISqLiteJsonCacheManager
 {
   public void Dispose() { }
+
   public IReadOnlyCollection<string> GetAllObjects() => throw new NotImplementedException();
 
   public void DeleteObject(string id) => throw new NotImplementedException();

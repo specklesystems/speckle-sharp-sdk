@@ -259,7 +259,7 @@ public class DetachedTests
 
     var objects = new Dictionary<string, string>();
 
-    using  var process2 = new SerializeProcess(
+    using var process2 = new SerializeProcess(
       null,
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
@@ -530,6 +530,7 @@ public class DummyServerObjectManager : IServerObjectManager
 public class DummySendCacheManager(Dictionary<string, string> objects) : ISqLiteJsonCacheManager
 {
   public void Dispose() { }
+
   public IReadOnlyCollection<string> GetAllObjects() => throw new NotImplementedException();
 
   public void DeleteObject(string id) => throw new NotImplementedException();
