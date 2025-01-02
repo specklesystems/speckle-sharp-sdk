@@ -13,9 +13,9 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
   private readonly string _connectionString;
   private readonly CacheDbCommandPool _pool;
 
-  public SqLiteJsonCacheManager(string rootPath, int concurrency)
+  public SqLiteJsonCacheManager(string connectionString, int concurrency)
   {
-    _connectionString = $"Data Source={rootPath};";
+    _connectionString = connectionString;
     Initialize();
     _pool = new CacheDbCommandPool(_connectionString, concurrency);
   }
@@ -66,18 +66,19 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
     using SqliteCommand cmd4 = new("PRAGMA page_size = 32768;", c);
     cmd4.ExecuteNonQuery();
+    c.Close();
   }
 
-  public IReadOnlyCollection<string> GetAllObjects() =>
+  public IReadOnlyCollection<(string, string)> GetAllObjects() =>
     _pool.Use(
       CacheOperation.GetAll,
       command =>
       {
-        var list = new HashSet<string>();
+        var list = new HashSet<(string, string)>();
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-          list.Add(reader.GetString(1));
+          list.Add((reader.GetString(0), reader.GetString(1)));
         }
         return list;
       }

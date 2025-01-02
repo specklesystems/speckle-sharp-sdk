@@ -14,7 +14,7 @@ public class DummySqLiteSendManager : ISqLiteJsonCacheManager
 
   public bool HasObject(string objectId) => throw new NotImplementedException();
 
-  public IReadOnlyCollection<string> GetAllObjects() => throw new NotImplementedException();
+  public IReadOnlyCollection<(string, string)> GetAllObjects() => throw new NotImplementedException();
 
   public void DeleteObject(string id) => throw new NotImplementedException();
 

@@ -25,19 +25,17 @@ public sealed class CacheDbCommandPool : IDisposable
     }
   }
 
-  public void Use(CacheOperation type, Action<SqliteCommand> handler)
-  {
-    Use<bool>(
+  public void Use(CacheOperation type, Action<SqliteCommand> handler) =>
+    Use(
       type,
-      (cmd) =>
+      cmd =>
       {
         handler(cmd);
         return true;
       }
     );
-  }
 
-  public T Use<T>(Func<SqliteConnection, T> handler)
+  private T Use<T>(Func<SqliteConnection, T> handler)
   {
     if (!_connections.TryTake(out var db))
     {
@@ -55,33 +53,29 @@ public sealed class CacheDbCommandPool : IDisposable
     }
   }
 
-  public T Use<T>(CacheOperation type, Func<SqliteCommand, T> handler)
-  {
-    return Use(
-      (conn) =>
+  public T Use<T>(CacheOperation type, Func<SqliteCommand, T> handler) =>
+    Use(conn =>
+    {
+      var pool = _commands[(int)type];
+      if (!pool.TryTake(out var command))
       {
-        var pool = _commands[(int)type];
-        if (!pool.TryTake(out var command))
-        {
 #pragma warning disable CA2100
-          command = new SqliteCommand(CacheDbCommands.Commands[(int)type], conn);
+        command = new SqliteCommand(CacheDbCommands.Commands[(int)type], conn);
 #pragma warning restore CA2100
-        }
-
-        try
-        {
-          command.Connection = conn;
-          return handler(command);
-        }
-        finally
-        {
-          command.Connection = null;
-          command.Parameters.Clear();
-          pool.Add(command);
-        }
       }
-    );
-  }
+
+      try
+      {
+        command.Connection = conn;
+        return handler(command);
+      }
+      finally
+      {
+        command.Connection = null;
+        command.Parameters.Clear();
+        pool.Add(command);
+      }
+    });
 
   public void Dispose()
   {

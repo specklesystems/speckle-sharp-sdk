@@ -6,7 +6,7 @@ public class DummySqLiteReceiveManager(Dictionary<string, string> savedObjects) 
 {
   public void Dispose() { }
 
-  public IReadOnlyCollection<string> GetAllObjects() => throw new NotImplementedException();
+  public IReadOnlyCollection<(string, string)> GetAllObjects() => throw new NotImplementedException();
 
   public void DeleteObject(string id) => throw new NotImplementedException();
 

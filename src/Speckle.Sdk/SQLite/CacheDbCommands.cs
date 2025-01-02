@@ -28,7 +28,7 @@ public static class CacheDbCommands
     Commands[(int)CacheOperation.Has] = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1";
     Commands[(int)CacheOperation.Get] = "SELECT content FROM objects WHERE hash = @hash LIMIT 1";
     Commands[(int)CacheOperation.Delete] = "DELETE FROM objects WHERE hash = @hash";
-    Commands[(int)CacheOperation.GetAll] = "SELECT * FROM objects";
+    Commands[(int)CacheOperation.GetAll] = "SELECT hash, content FROM objects";
 
     Commands[(int)CacheOperation.BulkInsertOrIgnore] = "INSERT OR IGNORE INTO objects (hash, content) VALUES ";
   }
