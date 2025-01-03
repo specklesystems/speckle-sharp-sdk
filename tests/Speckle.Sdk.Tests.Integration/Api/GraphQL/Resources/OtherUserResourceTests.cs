@@ -1,9 +1,9 @@
-﻿using Speckle.Sdk.Api;
+﻿using System.Threading.Tasks;
+using Shouldly;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Credentials;
 using Xunit;
-using System.Threading.Tasks;
-using Shouldly;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 

@@ -1,9 +1,9 @@
 using Shouldly;
-using Xunit;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
+using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Utils;
 
@@ -11,12 +11,13 @@ public class MeshTriangulationHelperTests
 {
   public static IEnumerable<object[]> PolygonTestSource()
   {
-    foreach (var x in EnumerableExtensions.RangeFrom(3,9))
+    foreach (var x in EnumerableExtensions.RangeFrom(3, 9))
     {
       yield return new object[] { x, true };
       yield return new object[] { x, false };
     }
   }
+
   [Theory]
   [MemberData(nameof(PolygonTestSource))]
   public void PolygonTest(int n, bool planar)
@@ -33,7 +34,12 @@ public class MeshTriangulationHelperTests
     List<int> faces = new(n + 1) { n };
     faces.AddRange(Enumerable.Range(0, n));
 
-    Mesh mesh = new() { vertices = vertices, faces = faces, units = Units.Meters, };
+    Mesh mesh = new()
+    {
+      vertices = vertices,
+      faces = faces,
+      units = Units.Meters,
+    };
 
     // Test
     mesh.TriangulateMesh();
@@ -58,22 +64,16 @@ public class MeshTriangulationHelperTests
   public void DoesntFlipNormals()
   {
     // Test Setup
-    List<double> vertices = new()
-    {
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1
-    };
+    List<double> vertices = new() { 0, 0, 0, 1, 0, 0, 1, 0, 1 };
 
     List<int> faces = new() { 3, 0, 1, 2 };
 
-    Mesh mesh = new() { vertices = vertices, faces = new List<int>(faces), units = Units.Meters, };
+    Mesh mesh = new()
+    {
+      vertices = vertices,
+      faces = new List<int>(faces),
+      units = Units.Meters,
+    };
 
     // Test
     mesh.TriangulateMesh();
@@ -83,7 +83,9 @@ public class MeshTriangulationHelperTests
     List<int> shift2 = new() { 3, 1, 2, 0 };
     List<int> shift3 = new() { 3, 2, 0, 1 };
 
-    new List<int>[] {shift1, shift2, shift3}.Any(x => mesh.faces.SequenceEqual(x)).ShouldBeTrue();
+    new List<int>[] { shift1, shift2, shift3 }
+      .Any(x => mesh.faces.SequenceEqual(x))
+      .ShouldBeTrue();
   }
 
   [Theory]
@@ -92,32 +94,16 @@ public class MeshTriangulationHelperTests
   public void PreserveQuads(bool preserveQuads)
   {
     // Test Setup
-    List<double> vertices = new()
-    {
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      1,
-      0,
-      1,
-      0,
-      0,
-      1
-    };
+    List<double> vertices = new() { 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1 };
 
-    List<int> faces = new()
-    {
-      4,
-      0,
-      1,
-      2,
-      3
-    };
+    List<int> faces = new() { 4, 0, 1, 2, 3 };
 
-    Mesh mesh = new() { vertices = vertices, faces = new List<int>(faces), units = Units.Meters, };
+    Mesh mesh = new()
+    {
+      vertices = vertices,
+      faces = new List<int>(faces),
+      units = Units.Meters,
+    };
 
     // Tests
     mesh.TriangulateMesh(preserveQuads);

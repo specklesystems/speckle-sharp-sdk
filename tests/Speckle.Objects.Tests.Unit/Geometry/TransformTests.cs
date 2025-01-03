@@ -91,18 +91,8 @@ public class TransformTests
 
     yield return [Matrix4x4.CreateTranslation(t) + Matrix4x4.CreateFromQuaternion(r)];
 
-    yield return
-    [
-      Matrix4x4.CreateTranslation(t)
-      + Matrix4x4.CreateFromQuaternion(r)
-      + Matrix4x4.CreateScale(s)
-    ];
+    yield return [Matrix4x4.CreateTranslation(t) + Matrix4x4.CreateFromQuaternion(r) + Matrix4x4.CreateScale(s)];
 
-    yield return
-    [
-      Matrix4x4.CreateTranslation(t)
-      + Matrix4x4.CreateFromQuaternion(r)
-      + Matrix4x4.CreateScale(-s)
-    ];
+    yield return [Matrix4x4.CreateTranslation(t) + Matrix4x4.CreateFromQuaternion(r) + Matrix4x4.CreateScale(-s)];
   }
 }

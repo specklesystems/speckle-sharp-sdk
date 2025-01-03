@@ -44,8 +44,17 @@ public class PointTests
   [InlineData(1, 1, 1, null, 1, 1, 1, null, true)]
   [InlineData(1, 1, 1, "m", 1, 1, 1, "meters", false)]
   [InlineData(1, 1, 1, "m", 1, 1, 1, "M", false)]
-  public void TestEqual(double x1, double y1, double z1, string? units1, double x2, double y2, double z2, string? units2,
-    bool expectedResult)
+  public void TestEqual(
+    double x1,
+    double y1,
+    double z1,
+    string? units1,
+    double x2,
+    double y2,
+    double z2,
+    string? units2,
+    bool expectedResult
+  )
   {
     if (string.IsNullOrEmpty(units1) || string.IsNullOrEmpty(units2))
     {

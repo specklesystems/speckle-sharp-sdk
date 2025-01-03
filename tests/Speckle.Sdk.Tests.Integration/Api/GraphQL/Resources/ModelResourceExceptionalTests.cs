@@ -1,10 +1,10 @@
-﻿using Speckle.Sdk.Api;
+﻿using Shouldly;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Xunit;
-using Shouldly;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -56,9 +56,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   public async Task ModelGet_Throws_NonExistentModel()
   {
     // Act & Assert
-    var ex = await Should.ThrowAsync<AggregateException>(
-      async () => await Sut.Get("non existent model", _project.id)
-    );
+    var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Get("non existent model", _project.id));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
     ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
@@ -68,9 +66,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   public async Task ModelGet_Throws_NonExistentProject()
   {
     // Act & Assert
-    var ex = await Should.ThrowAsync<AggregateException>(
-      async () => await Sut.Get(_model.id, "non existent project")
-    );
+    var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Get(_model.id, "non existent project"));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
     ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLStreamNotFoundException>();
@@ -83,9 +79,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     UpdateModelInput input = new("non-existent model", "MY new name", "MY new desc", _project.id);
 
     // Act & Assert
-    var ex = await Should.ThrowAsync<AggregateException>(
-      async () => await Sut.Update(input)
-    );
+    var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Update(input));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
     ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
@@ -98,9 +92,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     UpdateModelInput input = new(_model.id, "MY new name", "MY new desc", "non-existent project");
 
     // Act & Assert
-    var ex = await Should.ThrowAsync<AggregateException>(
-      async () => await Sut.Update(input)
-    );
+    var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Update(input));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
     ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLForbiddenException>();
@@ -113,9 +105,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     UpdateModelInput input = new(_model.id, "MY new name", "MY new desc", _project.id);
 
     // Act & Assert
-    var ex = await Should.ThrowAsync<AggregateException>(
-      async () => await Fixtures.Unauthed.Model.Update(input)
-    );
+    var ex = await Should.ThrowAsync<AggregateException>(async () => await Fixtures.Unauthed.Model.Update(input));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
     ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLForbiddenException>();
@@ -131,9 +121,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     await Sut.Delete(input);
 
     // Act & Assert
-    var ex = await Should.ThrowAsync<AggregateException>(
-      async () => await Sut.Delete(input)
-    );
+    var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Delete(input));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
     ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();

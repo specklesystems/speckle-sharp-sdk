@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Inputs;
@@ -7,13 +8,13 @@ using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Common;
 using Xunit;
-using Shouldly;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
 {
   public class ProjectInviteResourceTests : IAsyncLifetime
   {
-    private Client _inviter, _invitee;
+    private Client _inviter,
+      _invitee;
     private Project _project;
     private PendingStreamCollaborator _createdInvite;
 

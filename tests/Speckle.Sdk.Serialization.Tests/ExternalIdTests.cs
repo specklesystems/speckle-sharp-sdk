@@ -15,7 +15,7 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class ExternalIdTests
 {
-  public  ExternalIdTests()
+  public ExternalIdTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Polyline).Assembly);

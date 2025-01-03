@@ -27,7 +27,12 @@ public class CircleTests
   public void CanCreateCircle()
   {
     const string UNITS = Units.Meters;
-    var circle = new Circle { plane = TestPlane, radius = 5, units = UNITS, };
+    var circle = new Circle
+    {
+      plane = TestPlane,
+      radius = 5,
+      units = UNITS,
+    };
 
     // Use Shouldly assertions
     circle.length.ShouldBe(2 * Math.PI * 5, 0.0001);

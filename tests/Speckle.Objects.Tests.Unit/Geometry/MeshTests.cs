@@ -24,60 +24,15 @@ public class MeshTests
     inPolygon.textureCoordinates.ShouldBe(expectedPolygon.textureCoordinates);
   }
 
-  public static IEnumerable<object[]> GetTestCaseSource() =>
-    TestCaseSource.Select(mesh => new object[] { mesh });
+  public static IEnumerable<object[]> GetTestCaseSource() => TestCaseSource.Select(mesh => new object[] { mesh });
 
   private static Mesh CreateRhinoStylePolygon()
   {
     return new Mesh
     {
-      vertices = new List<double>
-      {
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        0
-      },
-      faces = new List<int>
-      {
-        3,
-        0,
-        1,
-        2,
-        3,
-        3,
-        4,
-        5
-      },
-      textureCoordinates = new List<double>
-      {
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        1,
-        1,
-        0
-      },
+      vertices = new List<double> { 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0 },
+      faces = new List<int> { 3, 0, 1, 2, 3, 3, 4, 5 },
+      textureCoordinates = new List<double> { 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0 },
       units = Units.Meters,
     };
   }
@@ -86,47 +41,9 @@ public class MeshTests
   {
     return new Mesh
     {
-      vertices = new List<double>
-      {
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        1,
-        0,
-        1,
-        1,
-        0,
-        0
-      },
-      faces = new List<int>
-      {
-        3,
-        0,
-        1,
-        2,
-        3,
-        0,
-        2,
-        3
-      },
-      textureCoordinates = new List<double>
-      {
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        1,
-        1,
-        0
-      },
+      vertices = new List<double> { 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0 },
+      faces = new List<int> { 3, 0, 1, 2, 3, 0, 2, 3 },
+      textureCoordinates = new List<double> { 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0 },
       units = Units.Meters,
     };
   }

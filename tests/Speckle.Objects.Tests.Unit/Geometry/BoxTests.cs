@@ -1,6 +1,6 @@
+using Shouldly;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
-using Shouldly;
 using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;

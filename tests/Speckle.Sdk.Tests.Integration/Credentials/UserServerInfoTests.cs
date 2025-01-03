@@ -1,9 +1,9 @@
-﻿using GraphQL.Client.Http;
+﻿using System.Net.Http;
+using GraphQL.Client.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
-using Shouldly;
-using System.Net.Http;
 using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.Credentials;

@@ -1,9 +1,9 @@
-﻿using Speckle.Sdk.Api;
+﻿using Shouldly;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Shouldly;
 using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;

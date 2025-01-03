@@ -1,8 +1,8 @@
-﻿using Speckle.Sdk.Api;
+﻿using Shouldly;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Shouldly;
 using Xunit;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
@@ -16,6 +16,7 @@ public class VersionResourceTests : IAsyncLifetime
   private Model _model1;
   private Model _model2;
   private Version _version;
+
   public Task DisposeAsync() => Task.CompletedTask;
 
   public async Task InitializeAsync()

@@ -1,9 +1,9 @@
-﻿using Speckle.Sdk.Api;
+﻿using Shouldly;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
+using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Xunit;
-using Shouldly;
-using Speckle.Sdk.Api.GraphQL.Models;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -26,8 +26,12 @@ public class ProjectInviteResourceExceptionalTests : IAsyncLifetime
   [Theory]
   [InlineData(null, null, null, null)]
   [InlineData(null, "something", "something", null)]
-  public async Task ProjectInviteCreate_InvalidInput_ShouldThrowSpeckleGraphQLException(string? email, string? role,
-    string? serverRole, string? userId)
+  public async Task ProjectInviteCreate_InvalidInput_ShouldThrowSpeckleGraphQLException(
+    string? email,
+    string? role,
+    string? serverRole,
+    string? userId
+  )
   {
     var input = new ProjectInviteCreateInput(email, role, serverRole, userId);
 

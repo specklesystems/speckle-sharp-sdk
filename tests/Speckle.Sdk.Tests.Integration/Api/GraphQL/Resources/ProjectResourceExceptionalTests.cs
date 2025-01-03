@@ -17,7 +17,6 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     _unauthedUser;
   private Project _testProject;
   private ProjectResource Sut => _testUser.Project;
-  
 
   public Task DisposeAsync() => Task.CompletedTask;
 
@@ -56,7 +55,9 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
 
     Project privateStream = await Sut.Create(input);
 
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await _unauthedUser.Project.Get(privateStream.id));
+    var ex = await Assert.ThrowsAsync<AggregateException>(
+      async () => _ = await _unauthedUser.Project.Get(privateStream.id)
+    );
     ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLForbiddenException>();
   }
 
@@ -90,7 +91,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
   [InlineData(StreamRoles.STREAM_CONTRIBUTOR)]
   [InlineData(StreamRoles.STREAM_REVIEWER)]
   [InlineData(StreamRoles.REVOKE)]
-  public async Task  ProjectUpdateRole_NonExistentProject(string? newRole)
+  public async Task ProjectUpdateRole_NonExistentProject(string? newRole)
   {
     ProjectUpdateRoleInput input = new(_secondUser.Account.id.NotNull(), "NonExistentProject", newRole);
 
@@ -103,11 +104,13 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
   [InlineData(StreamRoles.STREAM_CONTRIBUTOR)]
   [InlineData(StreamRoles.STREAM_REVIEWER)]
   [InlineData(StreamRoles.REVOKE)]
-  public async Task  ProjectUpdateRole_NonAuth(string? newRole)
+  public async Task ProjectUpdateRole_NonAuth(string? newRole)
   {
     ProjectUpdateRoleInput input = new(_secondUser.Account.id.NotNull(), "NonExistentProject", newRole);
 
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await _unauthedUser.Project.UpdateRole(input));
+    var ex = await Assert.ThrowsAsync<AggregateException>(
+      async () => _ = await _unauthedUser.Project.UpdateRole(input)
+    );
     ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLForbiddenException>();
   }
 

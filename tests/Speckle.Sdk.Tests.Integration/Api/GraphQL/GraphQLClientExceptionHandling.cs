@@ -13,7 +13,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
 {
   private Client _sut;
 
-  public  Task DisposeAsync() => Task.CompletedTask;
+  public Task DisposeAsync() => Task.CompletedTask;
 
   public async Task InitializeAsync()
   {
@@ -83,7 +83,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
     var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => await _sut.Project.UpdateRole(input).ConfigureAwait(false)
     );
-ex.InnerExceptions.OfType<SpeckleGraphQLBadInputException>().Count().ShouldBe(2);
+    ex.InnerExceptions.OfType<SpeckleGraphQLBadInputException>().Count().ShouldBe(2);
   }
 
   [Fact]
@@ -104,7 +104,7 @@ ex.InnerExceptions.OfType<SpeckleGraphQLBadInputException>().Count().ShouldBe(2)
   {
     _sut.Dispose();
 
-     Assert.Throws<ObjectDisposedException>(() => _ = _sut.Subscription.CreateUserProjectsUpdatedSubscription());
+    Assert.Throws<ObjectDisposedException>(() => _ = _sut.Subscription.CreateUserProjectsUpdatedSubscription());
   }
 
   [
@@ -122,6 +122,8 @@ ex.InnerExceptions.OfType<SpeckleGraphQLBadInputException>().Count().ShouldBe(2)
       }
       """;
     GraphQLRequest request = new(query: QUERY);
-    await Assert.ThrowsAsync<JsonException>(async () => await _sut.ExecuteGraphQLRequest<int>(request).ConfigureAwait(false));
+    await Assert.ThrowsAsync<JsonException>(
+      async () => await _sut.ExecuteGraphQLRequest<int>(request).ConfigureAwait(false)
+    );
   }
 }

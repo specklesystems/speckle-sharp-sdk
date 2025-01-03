@@ -1,11 +1,11 @@
-﻿using Speckle.Sdk.Api;
+﻿using System.Threading.Tasks;
+using Shouldly;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Tests.Integration;
-using System.Threading.Tasks;
-using Shouldly;
 using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
@@ -36,7 +36,8 @@ public class ProjectResourceTests
   public async Task ProjectCreate_Should_CreateProjectSuccessfully(
     string name,
     string? description,
-    ProjectVisibility visibility)
+    ProjectVisibility visibility
+  )
   {
     // Arrange
     var input = new ProjectCreateInput(name, description, visibility);
@@ -75,8 +76,9 @@ public class ProjectResourceTests
     const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Public;
 
     // Act
-    var newProject =
-      await Sut.Update(new ProjectUpdateInput(_testProject.id, NEW_NAME, NEW_DESCRIPTION, null, NEW_VISIBILITY));
+    var newProject = await Sut.Update(
+      new ProjectUpdateInput(_testProject.id, NEW_NAME, NEW_DESCRIPTION, null, NEW_VISIBILITY)
+    );
 
     // Assert
     newProject.id.ShouldBe(_testProject.id);
@@ -95,8 +97,9 @@ public class ProjectResourceTests
     await Sut.Delete(toDelete.id);
 
     // Assert
-    var exception =
-      await Should.ThrowAsync<SpeckleGraphQLStreamNotFoundException>(async () => await Sut.Get(toDelete.id));
+    var exception = await Should.ThrowAsync<SpeckleGraphQLStreamNotFoundException>(
+      async () => await Sut.Get(toDelete.id)
+    );
     exception.ShouldNotBeNull();
   }
 }

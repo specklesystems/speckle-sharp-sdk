@@ -16,6 +16,7 @@ public class ShallowCopyTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
   }
+
   [Fact]
   public void CanShallowCopy_Wall()
   {
