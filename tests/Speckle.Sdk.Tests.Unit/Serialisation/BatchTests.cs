@@ -1,10 +1,10 @@
 ﻿using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Serialisation.V2.Send;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
-[TestFixture]
 public class BatchTests
 {
   private class BatchItem : IHasSize
@@ -17,7 +17,7 @@ public class BatchTests
     public int Size { get; }
   }
 
-  [Test]
+  [Fact]
   public void TestBatchSize_Calc()
   {
     var batch = new Batch<BatchItem>(4);
@@ -27,7 +27,7 @@ public class BatchTests
     batch.Size.ShouldBe(3);
   }
 
-  [Test]
+  [Fact]
   public void TestBatchSize_Trim()
   {
     var batch = new Batch<BatchItem>(4);

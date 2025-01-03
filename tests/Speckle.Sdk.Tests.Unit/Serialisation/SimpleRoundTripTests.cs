@@ -10,20 +10,16 @@ using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
-[TestFixture]
 public class SimpleRoundTripTests
 {
   private IOperations _operations;
 
-  static SimpleRoundTripTests()
-  {
-    Reset();
-  }
-
-  private static void Reset()
+  public SimpleRoundTripTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
   public static IEnumerable<object[]> TestData() => TestDataInternal().Select(x => new object[] { x });
@@ -38,14 +34,6 @@ public class SimpleRoundTripTests
       polyline.Points.Add(new Point { X = i * 2, Y = i % 2 });
     }
     yield return polyline;
-  }
-
-  public SimpleRoundTripTests()
-  {
-    Reset();
-
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
-    _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
   [Theory]
