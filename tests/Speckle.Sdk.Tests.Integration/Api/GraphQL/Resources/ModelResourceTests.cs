@@ -1,100 +1,126 @@
-﻿using Speckle.Sdk.Api;
+﻿using Shouldly;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[TestOf(typeof(ModelResource))]
-public class ModelResourceTests
+public class ModelResourceTests : IAsyncLifetime
 {
   private Client _testUser;
   private ModelResource Sut => _testUser.Model;
   private Project _project;
   private Model _model;
 
-  [SetUp]
-  public async Task Setup()
+  public async Task InitializeAsync()
   {
+    // Runs instead of [SetUp] in NUnit
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new("Test project", "", null));
     _model = await _testUser.Model.Create(new("Test Model", "", _project.id));
   }
 
-  [Order(1)]
-  [TestCase("My Model", "My model description")]
-  [TestCase("my/nested/model", null)]
-  public async Task ModelCreate(string name, string description)
+  public Task DisposeAsync()
   {
+    // Perform any cleanup, if needed
+    return Task.CompletedTask;
+  }
+
+  [Theory]
+  [InlineData("My Model", "My model description")]
+  [InlineData("my/nested/model", null)]
+  public async Task ModelCreate(string name, string? description)
+  {
+    // Arrange
     CreateModelInput input = new(name, description, _project.id);
+
+    // Act
     Model result = await Sut.Create(input);
 
-    Assert.That(result, Is.Not.Null);
-    Assert.That(result, Has.Property(nameof(result.id)).Not.Null);
-    Assert.That(result, Has.Property(nameof(result.name)).EqualTo(input.name).IgnoreCase);
-    Assert.That(result, Has.Property(nameof(result.description)).EqualTo(input.description));
+    // Assert
+    result.ShouldNotBeNull();
+    result.id.ShouldNotBeNull();
+    result.name.ShouldBe(input.name, StringCompareShould.IgnoreCase);
+    result.description.ShouldBe(input.description);
   }
 
-  [Test]
+  [Fact]
   public async Task ModelGet()
   {
+    // Act
     Model result = await Sut.Get(_model.id, _project.id);
 
-    Assert.That(result.id, Is.EqualTo(_model.id));
-    Assert.That(result.name, Is.EqualTo(_model.name));
-    Assert.That(result.description, Is.EqualTo(_model.description));
-    Assert.That(result.createdAt, Is.EqualTo(_model.createdAt));
-    Assert.That(result.updatedAt, Is.EqualTo(_model.updatedAt));
+    // Assert
+    result.id.ShouldBe(_model.id);
+    result.name.ShouldBe(_model.name);
+    result.description.ShouldBe(_model.description);
+    result.createdAt.ShouldBe(_model.createdAt);
+    result.updatedAt.ShouldBe(_model.updatedAt);
   }
 
-  [Test]
-  [Order(2)]
+  [Fact]
   public async Task GetModels()
   {
+    // Act
     var result = await Sut.GetModels(_project.id);
 
-    Assert.That(result.items, Has.Count.EqualTo(1));
-    Assert.That(result.totalCount, Is.EqualTo(1));
-    Assert.That(result.items[0], Has.Property(nameof(Model.id)).EqualTo(_model.id));
+    // Assert
+    result.items.Count.ShouldBe(1);
+    result.totalCount.ShouldBe(1);
+    result.items[0].id.ShouldBe(_model.id);
   }
 
-  [Test]
+  [Fact]
   public async Task Project_GetModels()
   {
+    // Act
     var result = await _testUser.Project.GetWithModels(_project.id);
 
-    Assert.That(result, Has.Property(nameof(Project.id)).EqualTo(_project.id));
-    Assert.That(result.models.items, Has.Count.EqualTo(1));
-    Assert.That(result.models.totalCount, Is.EqualTo(1));
-    Assert.That(result.models.items[0], Has.Property(nameof(Model.id)).EqualTo(_model.id));
+    // Assert
+    result.id.ShouldBe(_project.id);
+    result.models.items.Count.ShouldBe(1);
+    result.models.totalCount.ShouldBe(1);
+    result.models.items[0].id.ShouldBe(_model.id);
   }
 
-  [Test]
+  [Fact]
   public async Task ModelUpdate()
   {
+    // Arrange
     const string NEW_NAME = "MY new name";
     const string NEW_DESCRIPTION = "MY new desc";
 
-    UpdateModelInput input = new(_model.id, NEW_NAME, NEW_DESCRIPTION, _project.id);
+    var input = new UpdateModelInput(_model.id, NEW_NAME, NEW_DESCRIPTION, _project.id);
+
+    // Act
     Model updatedModel = await Sut.Update(input);
 
-    Assert.That(updatedModel.id, Is.EqualTo(_model.id));
-    Assert.That(updatedModel.name, Is.EqualTo(NEW_NAME).IgnoreCase);
-    Assert.That(updatedModel.description, Is.EqualTo(NEW_DESCRIPTION));
-    Assert.That(updatedModel.updatedAt, Is.GreaterThanOrEqualTo(_model.updatedAt));
+    // Assert
+    updatedModel.id.ShouldBe(_model.id);
+    updatedModel.name.ShouldBe(NEW_NAME, StringCompareShould.IgnoreCase);
+    updatedModel.description.ShouldBe(NEW_DESCRIPTION);
+    updatedModel.updatedAt.ShouldBeGreaterThanOrEqualTo(_model.updatedAt);
   }
 
-  [Test]
+  [Fact]
   public async Task ModelDelete()
   {
-    DeleteModelInput input = new(_model.id, _project.id);
+    // Arrange
+    var input = new DeleteModelInput(_model.id, _project.id);
 
+    // Act
     await Sut.Delete(input);
 
-    var getEx = Assert.CatchAsync<AggregateException>(async () => await Sut.Get(_model.id, _project.id));
-    Assert.That(getEx?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
+    // Assert: Ensure fetching the deleted model throws an exception
+    var getEx = await Should.ThrowAsync<AggregateException>(() => Sut.Get(_model.id, _project.id));
+    getEx.InnerExceptions.ShouldHaveSingleItem();
+    getEx.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
 
-    var delEx = Assert.CatchAsync<AggregateException>(async () => await Sut.Delete(input));
-    Assert.That(delEx?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
+    // Assert: Ensure deleting the non-existing model again throws an exception
+    var delEx = await Should.ThrowAsync<AggregateException>(() => Sut.Delete(input));
+    delEx.InnerExceptions.ShouldHaveSingleItem();
+    delEx.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
   }
 }

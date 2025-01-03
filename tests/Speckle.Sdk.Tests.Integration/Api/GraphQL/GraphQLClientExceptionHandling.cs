@@ -1,36 +1,39 @@
-﻿using GraphQL;
+﻿using System.ComponentModel;
+using GraphQL;
 using GraphQL.Client.Http;
+using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.Api.GraphQL;
 
-[TestOf(typeof(Client))]
-public class GraphQLClientExceptionHandling
+public class GraphQLClientExceptionHandling : IAsyncLifetime
 {
   private Client _sut;
 
-  [SetUp]
-  public async Task Setup()
+  public  Task DisposeAsync() => Task.CompletedTask;
+
+  public async Task InitializeAsync()
   {
     _sut = await Fixtures.SeedUserWithClient();
   }
 
-  [Test]
+  [Fact]
   [Description($"Attempts to execute a query on a non-existent server, expect a {nameof(GraphQLHttpRequestException)}")]
-  public void TestHttpLayer()
+  public async Task TestHttpLayer()
   {
     _sut.GQLClient.Options.EndPoint = new Uri("http://127.0.0.1:1234"); //There is no server on this port...
 
-    Assert.ThrowsAsync<HttpRequestException>(async () => await _sut.ActiveUser.Get().ConfigureAwait(false));
+    await Assert.ThrowsAsync<HttpRequestException>(async () => await _sut.ActiveUser.Get().ConfigureAwait(false));
   }
 
-  [Test]
+  [Fact]
   [Description(
     $"Attempts to execute a admin only command from a regular user, expect an inner {nameof(SpeckleGraphQLForbiddenException)}"
   )]
-  public void TestGraphQLLayer_Forbidden()
+  public async Task TestGraphQLLayer_Forbidden()
   {
     //language=graphql
     const string QUERY = """
@@ -46,14 +49,14 @@ public class GraphQLClientExceptionHandling
 
       """;
     GraphQLRequest request = new(query: QUERY);
-    var ex = Assert.ThrowsAsync<AggregateException>(
+    var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
     );
-    Assert.That(ex?.InnerExceptions, Has.Exactly(1).TypeOf<SpeckleGraphQLForbiddenException>());
+    ex.InnerExceptions.OfType<SpeckleGraphQLForbiddenException>().Count().ShouldBe(1);
   }
 
-  [Test, Description($"Attempts to execute a bad query, expect an inner {nameof(SpeckleGraphQLInvalidQueryException)}")]
-  public void TestGraphQLLayer_BadQuery()
+  [Fact, Description($"Attempts to execute a bad query, expect an inner {nameof(SpeckleGraphQLInvalidQueryException)}")]
+  public async Task TestGraphQLLayer_BadQuery()
   {
     //language=graphql
     const string QUERY = """
@@ -64,53 +67,51 @@ public class GraphQLClientExceptionHandling
       }
       """;
     GraphQLRequest request = new(query: QUERY);
-    var ex = Assert.ThrowsAsync<AggregateException>(
+    var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
     );
-
-    Assert.That(ex?.InnerExceptions, Has.Exactly(1).TypeOf<SpeckleGraphQLInvalidQueryException>());
+    ex.InnerExceptions.OfType<SpeckleGraphQLInvalidQueryException>().Count().ShouldBe(1);
   }
 
-  [Test]
+  [Fact]
   [Description(
     $"Attempts to execute a query with an invalid input, expect an inner {nameof(SpeckleGraphQLBadInputException)}"
   )]
-  public void TestGraphQLLayer_BadInput()
+  public async Task TestGraphQLLayer_BadInput()
   {
     ProjectUpdateRoleInput input = new(null!, null!, null);
-    var ex = Assert.ThrowsAsync<AggregateException>(
+    var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => await _sut.Project.UpdateRole(input).ConfigureAwait(false)
     );
-
-    Assert.That(ex?.InnerExceptions, Has.Exactly(2).TypeOf<SpeckleGraphQLBadInputException>());
+ex.InnerExceptions.OfType<SpeckleGraphQLBadInputException>().Count().ShouldBe(2);
   }
 
-  [Test]
-  public void TestCancel()
+  [Fact]
+  public async Task TestCancel()
   {
     using CancellationTokenSource cts = new();
     cts.Cancel();
 
-    var ex = Assert.CatchAsync<OperationCanceledException>(
+    var ex = await Assert.ThrowsAsync<OperationCanceledException>(
       async () => await _sut.ActiveUser.Get(cts.Token).ConfigureAwait(false)
     );
 
-    Assert.That(ex?.CancellationToken, Is.EqualTo(cts.Token));
+    ex.CancellationToken.ShouldBeEquivalentTo(cts.Token);
   }
 
-  [Test]
+  [Fact]
   public void TestDisposal()
   {
     _sut.Dispose();
 
-    Assert.Throws<ObjectDisposedException>(() => _ = _sut.Subscription.CreateUserProjectsUpdatedSubscription());
+     Assert.Throws<ObjectDisposedException>(() => _ = _sut.Subscription.CreateUserProjectsUpdatedSubscription());
   }
 
   [
-    Test,
+    Fact,
     Description($"Attempts to execute a query with a mismatched type, expect an {nameof(JsonSerializationException)}")
   ]
-  public void TestDeserialization()
+  public async Task TestDeserialization()
   {
     //language=graphql
     const string QUERY = """
@@ -121,6 +122,6 @@ public class GraphQLClientExceptionHandling
       }
       """;
     GraphQLRequest request = new(query: QUERY);
-    Assert.CatchAsync<JsonException>(async () => await _sut.ExecuteGraphQLRequest<int>(request).ConfigureAwait(false));
+    await Assert.ThrowsAsync<JsonException>(async () => await _sut.ExecuteGraphQLRequest<int>(request).ConfigureAwait(false));
   }
 }

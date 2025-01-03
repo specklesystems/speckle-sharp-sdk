@@ -3,11 +3,12 @@ using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Shouldly;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[TestOf(typeof(SubscriptionResource))]
-public class SubscriptionResourceTests : IDisposable
+public class SubscriptionResourceTests : IAsyncLifetime
 {
   private const int WAIT_PERIOD = 300;
   private Client _testUser;
@@ -17,8 +18,13 @@ public class SubscriptionResourceTests : IDisposable
 
   private SubscriptionResource Sut => _testUser.Subscription;
 
-  [OneTimeSetUp]
-  public async Task Setup()
+  public Task DisposeAsync()
+  {
+    _testUser.Dispose();
+    return Task.CompletedTask;
+  }
+
+  public async Task InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     _testProject = await _testUser.Project.Create(new("test project123", "desc", null));
@@ -26,7 +32,7 @@ public class SubscriptionResourceTests : IDisposable
     _testVersion = await Fixtures.CreateVersion(_testUser, _testProject.id, _testModel.id);
   }
 
-  [Test]
+  [Fact]
   public async Task UserProjectsUpdated_SubscriptionIsCalled()
   {
     UserProjectsUpdatedMessage? subscriptionMessage = null;
@@ -40,13 +46,13 @@ public class SubscriptionResourceTests : IDisposable
 
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
-    Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
-    Assert.That(subscriptionMessage.type, Is.EqualTo(UserProjectsUpdatedMessageType.ADDED));
-    Assert.That(subscriptionMessage.project, Is.Not.Null);
+    subscriptionMessage.ShouldNotBeNull();
+    subscriptionMessage!.id.ShouldBe(created.id);
+    subscriptionMessage.type.ShouldBe(UserProjectsUpdatedMessageType.ADDED);
+    subscriptionMessage.project.ShouldNotBeNull();
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectModelsUpdated_SubscriptionIsCalled()
   {
     ProjectModelsUpdatedMessage? subscriptionMessage = null;
@@ -61,13 +67,13 @@ public class SubscriptionResourceTests : IDisposable
 
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
-    Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
-    Assert.That(subscriptionMessage.type, Is.EqualTo(ProjectModelsUpdatedMessageType.CREATED));
-    Assert.That(subscriptionMessage.model, Is.Not.Null);
+    subscriptionMessage.ShouldNotBeNull();
+    subscriptionMessage!.id.ShouldBe(created.id);
+    subscriptionMessage.type.ShouldBe(ProjectModelsUpdatedMessageType.CREATED);
+    subscriptionMessage.model.ShouldNotBeNull();
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectUpdated_SubscriptionIsCalled()
   {
     ProjectUpdatedMessage? subscriptionMessage = null;
@@ -82,13 +88,13 @@ public class SubscriptionResourceTests : IDisposable
 
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
-    Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
-    Assert.That(subscriptionMessage.type, Is.EqualTo(ProjectUpdatedMessageType.UPDATED));
-    Assert.That(subscriptionMessage.project, Is.Not.Null);
+    subscriptionMessage.ShouldNotBeNull();
+    subscriptionMessage!.id.ShouldBe(created.id);
+    subscriptionMessage.type.ShouldBe(ProjectUpdatedMessageType.UPDATED);
+    subscriptionMessage.project.ShouldNotBeNull();
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectVersionsUpdated_SubscriptionIsCalled()
   {
     ProjectVersionsUpdatedMessage? subscriptionMessage = null;
@@ -102,13 +108,13 @@ public class SubscriptionResourceTests : IDisposable
 
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
-    Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage!.id, Is.EqualTo(created));
-    Assert.That(subscriptionMessage.type, Is.EqualTo(ProjectVersionsUpdatedMessageType.CREATED));
-    Assert.That(subscriptionMessage.version, Is.Not.Null);
+    subscriptionMessage.ShouldNotBeNull();
+    subscriptionMessage!.id.ShouldBe(created);
+    subscriptionMessage.type.ShouldBe(ProjectVersionsUpdatedMessageType.CREATED);
+    subscriptionMessage.version.ShouldNotBeNull();
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectCommentsUpdated_SubscriptionIsCalled()
   {
     string resourceIdString = $"{_testProject.id},{_testModel.id},{_testVersion}";
@@ -123,12 +129,9 @@ public class SubscriptionResourceTests : IDisposable
 
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
-    Assert.That(subscriptionMessage, Is.Not.Null);
-    Assert.That(subscriptionMessage!.id, Is.EqualTo(created.id));
-    Assert.That(subscriptionMessage.type, Is.EqualTo(ProjectCommentsUpdatedMessageType.CREATED));
-    Assert.That(subscriptionMessage.comment, Is.Not.Null);
+    subscriptionMessage.ShouldNotBeNull();
+    subscriptionMessage!.id.ShouldBe(created.id);
+    subscriptionMessage.type.ShouldBe(ProjectCommentsUpdatedMessageType.CREATED);
+    subscriptionMessage.comment.ShouldNotBeNull();
   }
-
-  [OneTimeTearDown]
-  public void Dispose() => _testUser.Dispose();
 }

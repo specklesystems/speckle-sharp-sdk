@@ -3,102 +3,116 @@ using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Common;
+using Shouldly;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[TestOf(typeof(CommentResource))]
 public class CommentResourceTests
 {
-  private Client _testUser;
-  private CommentResource Sut => _testUser.Comment;
-  private Project _project;
-  private Model _model;
-  private string _versionId;
-  private Comment _comment;
+  private readonly Client _testUser;
+  private readonly CommentResource Sut;
+  private readonly Project _project;
+  private readonly Model _model;
+  private readonly string _versionId;
+  private readonly Comment _comment;
 
-  [SetUp]
-  public async Task Setup()
+  // Constructor for setup
+  public CommentResourceTests()
   {
-    _testUser = await Fixtures.SeedUserWithClient();
-    _project = await _testUser.Project.Create(new("Test project", "", null));
-    _model = await _testUser.Model.Create(new("Test Model 1", "", _project.id));
-    _versionId = await Fixtures.CreateVersion(_testUser, _project.id, _model.id);
-    _comment = await CreateComment();
+    // Synchronous operations converted to async Task.Run for constructor
+    _testUser = Task.Run(async () => await Fixtures.SeedUserWithClient()).Result!;
+    _project = Task.Run(async () =>
+      await _testUser.Project.Create(new("Test project", "", null))).Result!;
+    _model = Task.Run(async () =>
+      await _testUser.Model.Create(new("Test Model 1", "", _project.id))).Result!;
+    _versionId = Task.Run(async () =>
+      await Fixtures.CreateVersion(_testUser, _project.id, _model.id)).Result!;
+    _comment = Task.Run(CreateComment).Result!;
+    Sut = _testUser.Comment;
   }
 
-  [Test]
+  [Fact]
   public async Task Get()
   {
     var comment = await Sut.Get(_comment.id, _project.id);
-    Assert.That(comment.id, Is.EqualTo(_comment.id));
-    Assert.That(comment.authorId, Is.EqualTo(_testUser.Account.userInfo.id));
+
+    comment.ShouldNotBeNull();
+    comment.id.ShouldBe(_comment.id);
+    comment.authorId.ShouldBe(_testUser.Account.userInfo.id);
   }
 
-  [Test]
+  [Fact]
   public async Task GetProjectComments()
   {
     var comments = await Sut.GetProjectComments(_project.id);
-    Assert.That(comments.items.Count, Is.EqualTo(1));
-    Assert.That(comments.totalCount, Is.EqualTo(1));
+
+    comments.ShouldNotBeNull();
+    comments.items.Count.ShouldBe(1);
+    comments.totalCount.ShouldBe(1);
 
     Comment comment = comments.items[0];
-    Assert.That(comment, Is.Not.Null);
-    Assert.That(comment, Has.Property(nameof(Comment.authorId)).EqualTo(_testUser.Account.userInfo.id));
-
-    Assert.That(comment, Has.Property(nameof(Comment.id)).EqualTo(_comment.id));
-    Assert.That(comment, Has.Property(nameof(Comment.authorId)).EqualTo(_comment.authorId));
-    Assert.That(comment, Has.Property(nameof(Comment.archived)).EqualTo(_comment.archived));
-    Assert.That(comment, Has.Property(nameof(Comment.archived)).EqualTo(false));
-    Assert.That(comment, Has.Property(nameof(Comment.createdAt)).EqualTo(_comment.createdAt));
+    comment.ShouldNotBeNull();
+    comment.authorId.ShouldBe(_testUser.Account.userInfo.id);
+    comment.ShouldSatisfyAllConditions(
+      () => comment.id.ShouldBe(_comment.id),
+      () => comment.authorId.ShouldBe(_comment.authorId),
+      () => comment.archived.ShouldBe(false),
+      () => comment.createdAt.ShouldBe(_comment.createdAt)
+    );
   }
 
-  [Test]
+  [Fact]
   public async Task MarkViewed()
   {
     await Sut.MarkViewed(new(_comment.id, _project.id));
-    var res = await Sut.Get(_comment.id, _project.id);
 
-    Assert.That(res.viewedAt, Is.Not.Null);
+    var res = await Sut.Get(_comment.id, _project.id);
+    res.viewedAt.ShouldNotBeNull();
   }
 
-  [Test]
+  [Fact]
   public async Task Archive()
   {
     await Sut.Archive(new(_comment.id, _project.id, true));
     var archived = await Sut.Get(_comment.id, _project.id);
-    Assert.That(archived.archived, Is.True);
+
+    archived.archived.ShouldBeTrue();
 
     await Sut.Archive(new(_comment.id, _project.id, false));
     var unarchived = await Sut.Get(_comment.id, _project.id);
-    Assert.That(unarchived.archived, Is.False);
+
+    unarchived.archived.ShouldBeFalse();
   }
 
-  [Test]
+  [Fact]
   public async Task Edit()
   {
     var blobs = await Fixtures.SendBlobData(_testUser.Account, _project.id);
     var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
-    EditCommentInput input = new(new(blobIds, null), _comment.id, _project.id);
+    var input = new EditCommentInput(new(blobIds, null), _comment.id, _project.id);
 
     var editedComment = await Sut.Edit(input);
 
-    Assert.That(editedComment, Is.Not.Null);
-    Assert.That(editedComment, Has.Property(nameof(Comment.id)).EqualTo(_comment.id));
-    Assert.That(editedComment, Has.Property(nameof(Comment.authorId)).EqualTo(_comment.authorId));
-    Assert.That(editedComment, Has.Property(nameof(Comment.createdAt)).EqualTo(_comment.createdAt));
-    Assert.That(editedComment, Has.Property(nameof(Comment.updatedAt)).GreaterThanOrEqualTo(_comment.updatedAt));
+    editedComment.ShouldNotBeNull();
+    editedComment.ShouldSatisfyAllConditions(
+      () => editedComment.id.ShouldBe(_comment.id),
+      () => editedComment.authorId.ShouldBe(_comment.authorId),
+      () => editedComment.createdAt.ShouldBe(_comment.createdAt),
+      () => editedComment.updatedAt.ShouldBeGreaterThanOrEqualTo(_comment.updatedAt)
+    );
   }
 
-  [Test]
+  [Fact]
   public async Task Reply()
   {
     var blobs = await Fixtures.SendBlobData(_testUser.Account, _project.id);
     var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
-    CreateCommentReplyInput input = new(new(blobIds, null), _comment.id, _project.id);
+    var input = new CreateCommentReplyInput(new(blobIds, null), _comment.id, _project.id);
 
     var editedComment = await Sut.Reply(input);
 
-    Assert.That(editedComment, Is.Not.Null);
+    editedComment.ShouldNotBeNull();
   }
 
   private async Task<Comment> CreateComment()

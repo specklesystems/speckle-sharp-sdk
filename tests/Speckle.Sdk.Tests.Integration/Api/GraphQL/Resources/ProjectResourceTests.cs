@@ -3,70 +3,100 @@ using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Speckle.Sdk.Tests.Integration;
+using System.Threading.Tasks;
+using Shouldly;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[TestOf(typeof(ProjectResource))]
 public class ProjectResourceTests
 {
-  private Client _testUser;
-  private Project _testProject;
+  private readonly Client _testUser;
+  private readonly Project _testProject;
   private ProjectResource Sut => _testUser.Project;
 
-  [OneTimeSetUp]
-  public async Task Setup()
+  public ProjectResourceTests()
   {
-    _testUser = await Fixtures.SeedUserWithClient();
-    _testProject = await _testUser.Project.Create(new("test project123", "desc", null));
+    var setupTask = Setup();
+    setupTask.Wait(); // Ensure setup runs synchronously for the constructor
+    (_testUser, _testProject) = setupTask.Result;
   }
 
-  [TestCase("Very private project", "My secret project", ProjectVisibility.Private)]
-  [TestCase("Very public project", null, ProjectVisibility.Public)]
-  public async Task ProjectCreate(string name, string desc, ProjectVisibility visibility)
+  private async Task<(Client TestUser, Project TestProject)> Setup()
   {
-    ProjectCreateInput input = new(name, desc, visibility);
-    Project result = await Sut.Create(input);
-    Assert.That(result, Is.Not.Null);
-    Assert.That(result, Has.Property(nameof(Project.id)).Not.Null);
-    Assert.That(result, Has.Property(nameof(Project.name)).EqualTo(input.name));
-    Assert.That(result, Has.Property(nameof(Project.description)).EqualTo(input.description ?? string.Empty));
-    Assert.That(result, Has.Property(nameof(Project.visibility)).EqualTo(input.visibility));
+    var testUser = await Fixtures.SeedUserWithClient();
+    var testProject = await testUser.Project.Create(new ProjectCreateInput("test project123", "desc", null));
+    return (testUser, testProject);
   }
 
-  [Test]
-  public async Task ProjectGet()
+  [Theory]
+  [InlineData("Very private project", "My secret project", ProjectVisibility.Private)]
+  [InlineData("Very public project", null, ProjectVisibility.Public)]
+  public async Task ProjectCreate_Should_CreateProjectSuccessfully(
+    string name,
+    string? description,
+    ProjectVisibility visibility)
   {
-    Project result = await Sut.Get(_testProject.id);
+    // Arrange
+    var input = new ProjectCreateInput(name, description, visibility);
 
-    Assert.That(result.id, Is.EqualTo(_testProject.id));
-    Assert.That(result.name, Is.EqualTo(_testProject.name));
-    Assert.That(result.description, Is.EqualTo(_testProject.description));
-    Assert.That(result.visibility, Is.EqualTo(_testProject.visibility));
-    Assert.That(result.createdAt, Is.EqualTo(_testProject.createdAt));
+    // Act
+    var result = await Sut.Create(input);
+
+    // Assert
+    result.ShouldNotBeNull();
+    result.id.ShouldNotBeNullOrWhiteSpace();
+    result.name.ShouldBe(input.name);
+    result.description.ShouldBe(input.description ?? string.Empty);
+    result.visibility.ShouldBe(input.visibility.ShouldNotBeNull());
   }
 
-  [Test]
-  public async Task ProjectUpdate()
+  [Fact]
+  public async Task ProjectGet_Should_ReturnCorrectProject()
   {
+    // Act
+    var result = await Sut.Get(_testProject.id);
+
+    // Assert
+    result.id.ShouldBe(_testProject.id);
+    result.name.ShouldBe(_testProject.name);
+    result.description.ShouldBe(_testProject.description);
+    result.visibility.ShouldBe(_testProject.visibility);
+    result.createdAt.ShouldBe(_testProject.createdAt);
+  }
+
+  [Fact]
+  public async Task ProjectUpdate_Should_UpdateProjectSuccessfully()
+  {
+    // Arrange
     const string NEW_NAME = "MY new name";
     const string NEW_DESCRIPTION = "MY new desc";
     const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Public;
 
-    Project newProject = await Sut.Update(new(_testProject.id, NEW_NAME, NEW_DESCRIPTION, null, NEW_VISIBILITY));
+    // Act
+    var newProject =
+      await Sut.Update(new ProjectUpdateInput(_testProject.id, NEW_NAME, NEW_DESCRIPTION, null, NEW_VISIBILITY));
 
-    Assert.That(newProject.id, Is.EqualTo(_testProject.id));
-    Assert.That(newProject.name, Is.EqualTo(NEW_NAME));
-    Assert.That(newProject.description, Is.EqualTo(NEW_DESCRIPTION));
-    Assert.That(newProject.visibility, Is.EqualTo(NEW_VISIBILITY));
+    // Assert
+    newProject.id.ShouldBe(_testProject.id);
+    newProject.name.ShouldBe(NEW_NAME);
+    newProject.description.ShouldBe(NEW_DESCRIPTION);
+    newProject.visibility.ShouldBe(NEW_VISIBILITY);
   }
 
-  [Test]
-  public async Task ProjectDelete()
+  [Fact]
+  public async Task ProjectDelete_Should_DeleteProjectSuccessfully()
   {
-    Project toDelete = await Sut.Create(new("Delete me", null, null));
+    // Arrange
+    var toDelete = await Sut.Create(new ProjectCreateInput("Delete me", null, null));
+
+    // Act
     await Sut.Delete(toDelete.id);
 
-    var getEx = Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get(toDelete.id));
-    Assert.That(getEx?.InnerExceptions, Has.Exactly(1).TypeOf<SpeckleGraphQLStreamNotFoundException>());
+    // Assert
+    var exception =
+      await Should.ThrowAsync<SpeckleGraphQLStreamNotFoundException>(async () => await Sut.Get(toDelete.id));
+    exception.ShouldNotBeNull();
   }
 }

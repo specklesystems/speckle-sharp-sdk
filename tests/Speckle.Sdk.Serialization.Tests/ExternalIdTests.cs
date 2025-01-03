@@ -9,20 +9,20 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Send;
+using Xunit;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
 public class ExternalIdTests
 {
-  [SetUp]
-  public void Setup()
+  public  ExternalIdTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Polyline).Assembly);
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
+  [Theory]
+  [InlineData("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached(string lineId, string valueId)
   {
     var p = new Polyline() { units = "cm", value = [1, 2] };
@@ -39,8 +39,8 @@ public class ExternalIdTests
     closures.ContainsKey(valueId).ShouldBeTrue();
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
+  [Theory]
+  [InlineData("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached_Nested(string lineId, string valueId)
   {
     var curve = new Curve()
@@ -69,8 +69,8 @@ public class ExternalIdTests
     closures.ContainsKey(valueId).ShouldBeTrue();
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
+  [Theory]
+  [InlineData("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached_Nested_More(string lineId, string valueId)
   {
     var curve = new Curve()
@@ -100,8 +100,8 @@ public class ExternalIdTests
     closures.ContainsKey(valueId).ShouldBeTrue();
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
+  [Theory]
+  [InlineData("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached_Nested_More_Too(string lineId, string valueId)
   {
     var curve = new Curve()

@@ -2,52 +2,60 @@
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Xunit;
+using Shouldly;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[TestOf(typeof(ActiveUserResource))]
-public class ActiveUserResourceTests
+public class ActiveUserResourceTests : IAsyncLifetime
 {
   private Client _testUser;
   private ActiveUserResource Sut => _testUser.ActiveUser;
 
-  [OneTimeSetUp]
-  public async Task Setup()
+  // Setup method for xUnit using IAsyncLifetime
+  public async Task InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
   }
 
-  [Test]
+  public Task DisposeAsync()
+  {
+    // No resources to dispose
+    return Task.CompletedTask;
+  }
+
+  [Fact]
   public async Task ActiveUserGet()
   {
     var res = await Sut.Get();
-    Assert.That(res, Is.Not.Null);
-    Assert.That(res!.id, Is.EqualTo(_testUser.Account.userInfo.id));
+    res.ShouldNotBeNull();
+    res!.id.ShouldBe(_testUser.Account.userInfo.id);
   }
 
-  [Test]
+  [Fact]
   public async Task ActiveUserGet_NonAuthed()
   {
     var result = await Fixtures.Unauthed.ActiveUser.Get();
-    Assert.That(result, Is.EqualTo(null));
+    result.ShouldBeNull();
   }
 
-  [Test]
+  [Fact]
   public async Task ActiveUserUpdate()
   {
     const string NEW_NAME = "Ron";
     const string NEW_BIO = "Now I have a bio, isn't that nice!";
     const string NEW_COMPANY = "Limited Cooperation Organization Inc";
+
     var res = await Sut.Update(new UserUpdateInput(name: NEW_NAME, bio: NEW_BIO, company: NEW_COMPANY));
 
-    Assert.That(res, Is.Not.Null);
-    Assert.That(res.id, Is.EqualTo(_testUser.Account.userInfo.id));
-    Assert.That(res.name, Is.EqualTo(NEW_NAME));
-    Assert.That(res.company, Is.EqualTo(NEW_COMPANY));
-    Assert.That(res.bio, Is.EqualTo(NEW_BIO));
+    res.ShouldNotBeNull();
+    res.id.ShouldBe(_testUser.Account.userInfo.id);
+    res.name.ShouldBe(NEW_NAME);
+    res.company.ShouldBe(NEW_COMPANY);
+    res.bio.ShouldBe(NEW_BIO);
   }
 
-  [Test]
+  [Fact]
   public async Task ActiveUserGetProjects()
   {
     var p1 = await _testUser.Project.Create(new("Project 1", null, null));
@@ -55,14 +63,14 @@ public class ActiveUserResourceTests
 
     var res = await Sut.GetProjects();
 
-    Assert.That(res.items, Has.Exactly(1).Items.With.Property(nameof(Project.id)).EqualTo(p1.id));
-    Assert.That(res.items, Has.Exactly(1).Items.With.Property(nameof(Project.id)).EqualTo(p2.id));
-    Assert.That(res.items, Has.Count.EqualTo(2));
+    res.items.ShouldContain(x => x.id == p1.id);
+    res.items.ShouldContain(x => x.id == p2.id);
+    res.items.Count.ShouldBe(2);
   }
 
-  [Test]
-  public void ActiveUserGetProjects_NoAuth()
+  [Fact]
+  public async Task ActiveUserGetProjects_NoAuth()
   {
-    Assert.ThrowsAsync<SpeckleGraphQLException>(async () => await Fixtures.Unauthed.ActiveUser.GetProjects());
+    await Should.ThrowAsync<SpeckleGraphQLException>(async () => await Fixtures.Unauthed.ActiveUser.GetProjects());
   }
 }

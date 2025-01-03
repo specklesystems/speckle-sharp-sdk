@@ -12,19 +12,19 @@ using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
 public class DetachedTests
 {
-  [SetUp]
-  public void Setup()
+  public DetachedTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
   }
 
-  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
   public async Task CanSerialize_New_Detached()
   {
     var expectedJson = """
@@ -75,7 +75,7 @@ public class DetachedTests
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new SerializeProcessOptions(false, false, true, true)
     );
-    await process2.Serialize(@base, default).ConfigureAwait(false);
+    await process2.Serialize(@base, default);
 
     objects.Count.ShouldBe(2);
     objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").ShouldBeTrue();
@@ -88,7 +88,7 @@ public class DetachedTests
       .ShouldBeTrue();
   }
 
-  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
   public void CanSerialize_Old_Detached()
   {
     var expectedJson = """
@@ -145,7 +145,7 @@ public class DetachedTests
       .ShouldBeTrue();
   }
 
-  [Test]
+  [Fact]
   public void GetPropertiesExpected_Detached()
   {
     var @base = new SampleObjectBase();
@@ -164,7 +164,7 @@ public class DetachedTests
     children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
   }
 
-  [Test]
+  [Fact]
   public void GetPropertiesExpected_All()
   {
     var @base = new SampleObjectBase();
@@ -189,7 +189,7 @@ public class DetachedTests
     children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
   }
 
-  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
   public async Task CanSerialize_New_Detached2()
   {
     var root = """
@@ -267,7 +267,7 @@ public class DetachedTests
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new SerializeProcessOptions(false, false, true, true)
     );
-    var results = await process2.Serialize(@base, default).ConfigureAwait(false);
+    var results = await process2.Serialize(@base, default);
 
     objects.Count.ShouldBe(9);
     var x = JObject.Parse(objects["2ebfd4f317754fce14cadd001151441e"]);
@@ -277,7 +277,7 @@ public class DetachedTests
     results.ConvertedReferences.Count.ShouldBe(2);
   }
 
-  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
   public async Task CanSerialize_New_Detached_With_DataChunks()
   {
     var root = """
@@ -340,7 +340,7 @@ public class DetachedTests
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new SerializeProcessOptions(false, false, true, true)
     );
-    var results = await process2.Serialize(@base, default).ConfigureAwait(false);
+    var results = await process2.Serialize(@base, default);
 
     objects.Count.ShouldBe(3);
     var x = JObject.Parse(objects["efeadaca70a85ae6d3acfc93a8b380db"]);
@@ -353,7 +353,7 @@ public class DetachedTests
     JToken.DeepEquals(JObject.Parse(list2), x).ShouldBeTrue();
   }
 
-  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
   public async Task CanSerialize_New_Detached_With_DataChunks2()
   {
     var root = """
@@ -421,7 +421,7 @@ public class DetachedTests
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new SerializeProcessOptions(false, false, true, true)
     );
-    var results = await process2.Serialize(@base, default).ConfigureAwait(false);
+    var results = await process2.Serialize(@base, default);
 
     objects.Count.ShouldBe(3);
     var x = JObject.Parse(objects["525b1e9eef4d07165abb4ffc518395fc"]);
