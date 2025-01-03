@@ -3,11 +3,19 @@
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public sealed class PriorityScheduler(ThreadPriority priority, int maximumConcurrencyLevel) : TaskScheduler, IDisposable
-{
+{ 
+  private readonly CancellationTokenSource _cancellationTokenSource = new();
   private readonly BlockingCollection<Task> _tasks = new();
   private Thread[]? _threads;
 
-  public void Dispose() => _tasks.Dispose();
+  public void Dispose()
+  {
+    _tasks.CompleteAdding();
+    _cancellationTokenSource.Cancel();
+    _tasks.Dispose();
+    _cancellationTokenSource.Dispose();
+  }
+ 
 
   public override int MaximumConcurrencyLevel => maximumConcurrencyLevel;
 
@@ -24,9 +32,26 @@ public sealed class PriorityScheduler(ThreadPriority priority, int maximumConcur
       {
         _threads[i] = new Thread(() =>
         {
-          foreach (Task t in _tasks.GetConsumingEnumerable())
+          try
           {
-            TryExecuteTask(t);
+            foreach (Task t in _tasks.GetConsumingEnumerable(_cancellationTokenSource.Token))
+            {
+              if (_cancellationTokenSource.IsCancellationRequested)
+              {
+                break;
+              }
+              TryExecuteTask(t);
+              if (_cancellationTokenSource.IsCancellationRequested)
+              {
+                break;
+              }
+            }
+          }
+#pragma warning disable CA1031
+          catch (Exception)
+#pragma warning restore CA1031
+          {
+            // ignored
           }
         })
         {
