@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
+[TestFixture]
 public class SimpleRoundTripTests
 {
   private IOperations _operations;
