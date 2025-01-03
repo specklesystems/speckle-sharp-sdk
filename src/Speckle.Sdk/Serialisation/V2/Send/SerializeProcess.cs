@@ -222,6 +222,7 @@ public sealed class SerializeProcess(
         Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
       }
       progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
+      return objectBatch;
     }
   }
 
