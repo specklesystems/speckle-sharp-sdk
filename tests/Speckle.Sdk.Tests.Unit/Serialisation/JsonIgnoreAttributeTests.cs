@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
+using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
-using Shouldly;
 using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation
@@ -64,16 +64,19 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
 
     [Theory]
     [MemberData(nameof(IgnoredCompoundTestCases))]
-    public void IgnoredProperties_Compound_NotIncludedInJson(string ignoredPayload, string expectedPayload,
-      string expectedHash)
+    public void IgnoredProperties_Compound_NotIncludedInJson(
+      string ignoredPayload,
+      string expectedPayload,
+      string expectedHash
+    )
     {
       IgnoredCompoundTest testData = new(ignoredPayload, expectedPayload);
 
       MemoryTransport savedObjects = new();
       SpeckleObjectSerializer sut = new(writeTransports: new[] { savedObjects });
 
-     var result = sut.SerializeBase(testData);
-     var (json, id) = result.NotNull();
+      var result = sut.SerializeBase(testData);
+      var (json, id) = result.NotNull();
       json.Value.ShouldNotBeNull();
       id.ShouldNotBeNull();
 
@@ -100,23 +103,29 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
 
     public Base ShouldBeIncluded => new IgnoreTest(ignoredPayload, expectedPayload);
 
-    [JsonIgnore, DetachProperty] public Base ShouldBeIgnoredDetached => ShouldBeIgnored;
+    [JsonIgnore, DetachProperty]
+    public Base ShouldBeIgnoredDetached => ShouldBeIgnored;
 
-    [DetachProperty] public Base ShouldBeIncludedDetached => ShouldBeIncluded;
+    [DetachProperty]
+    public Base ShouldBeIncludedDetached => ShouldBeIncluded;
 
-    [JsonIgnore] public List<Base> ShouldBeIgnoredList => new List<Base> { ShouldBeIgnored };
+    [JsonIgnore]
+    public List<Base> ShouldBeIgnoredList => new List<Base> { ShouldBeIgnored };
 
-    [JsonIgnore, DetachProperty] public List<Base> ShouldBeIgnoredDetachedList => ShouldBeIgnoredList;
+    [JsonIgnore, DetachProperty]
+    public List<Base> ShouldBeIgnoredDetachedList => ShouldBeIgnoredList;
 
     public List<Base> ShouldBeIncludedList => new List<Base> { ShouldBeIncluded };
 
-    [DetachProperty] public List<Base> ShouldBeIncludedDetachedList => ShouldBeIncludedList;
+    [DetachProperty]
+    public List<Base> ShouldBeIncludedDetachedList => ShouldBeIncludedList;
   }
 
   [SpeckleType("Speckle.Sdk.Tests.Unit.Serialisation.IgnoreTest")]
   public sealed class IgnoreTest(string shouldBeIgnoredPayload, string shouldBeIncludedPayload) : Base
   {
-    [JsonIgnore] public string ShouldBeIgnored => shouldBeIgnoredPayload;
+    [JsonIgnore]
+    public string ShouldBeIgnored => shouldBeIgnoredPayload;
 
     public string ShouldBeIncluded => shouldBeIncludedPayload;
   }

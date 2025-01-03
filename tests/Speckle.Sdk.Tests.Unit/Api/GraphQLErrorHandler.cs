@@ -13,23 +13,11 @@ public class GraphQLErrorHandlerTests
   {
     yield return [typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "FORBIDDEN" } }];
     yield return [typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "UNAUTHENTICATED" } }];
-    yield return [
-      typeof(SpeckleGraphQLInternalErrorException),
-      new Map { { "code", "INTERNAL_SERVER_ERROR" } }
-    ];
-    yield return [
-      typeof(SpeckleGraphQLStreamNotFoundException),
-      new Map { { "code", "STREAM_NOT_FOUND" } }
-   ];
+    yield return [typeof(SpeckleGraphQLInternalErrorException), new Map { { "code", "INTERNAL_SERVER_ERROR" } }];
+    yield return [typeof(SpeckleGraphQLStreamNotFoundException), new Map { { "code", "STREAM_NOT_FOUND" } }];
     yield return [typeof(SpeckleGraphQLBadInputException), new Map { { "code", "BAD_USER_INPUT" } }];
-    yield return [
-      typeof(SpeckleGraphQLInvalidQueryException),
-      new Map { { "code", "GRAPHQL_PARSE_FAILED" } }
-   ];
-    yield return [
-      typeof(SpeckleGraphQLInvalidQueryException),
-      new Map { { "code", "GRAPHQL_VALIDATION_FAILED" } }
-   ];
+    yield return [typeof(SpeckleGraphQLInvalidQueryException), new Map { { "code", "GRAPHQL_PARSE_FAILED" } }];
+    yield return [typeof(SpeckleGraphQLInvalidQueryException), new Map { { "code", "GRAPHQL_VALIDATION_FAILED" } }];
     yield return [typeof(SpeckleGraphQLException), new Map { { "foo", "bar" } }];
     yield return [typeof(SpeckleGraphQLException), new Map { { "code", "CUSTOM_THING" } }];
   }
@@ -45,7 +33,8 @@ public class GraphQLErrorHandlerTests
           {
             Errors = new GraphQLError[] { new() { Extensions = extensions } },
           }
-        ));
+        )
+    );
     ex.InnerExceptions.Count.ShouldBe(1);
     ex.InnerExceptions[0].ShouldBeOfType(exType);
   }

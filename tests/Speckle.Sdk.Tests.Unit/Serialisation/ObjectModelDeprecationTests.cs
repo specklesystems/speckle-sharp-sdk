@@ -45,7 +45,5 @@ namespace Speckle.Sdk.Serialisation.Deprecated
 {
   [SpeckleType("Speckle.Core.Serialisation.MySpeckleBase")]
   [DeprecatedSpeckleType("Speckle.Core.Serialisation.Deprecated.MySpeckleBase")]
-  public class MySpeckleBase : Base
-  {
-  }
+  public class MySpeckleBase : Base { }
 }

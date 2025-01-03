@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
-using Shouldly;
 using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials
@@ -70,7 +70,12 @@ namespace Speckle.Sdk.Tests.Unit.Credentials
           name = "myServer",
           migration = new ServerMigration { movedTo = movedTo, movedFrom = movedFrom },
         },
-        userInfo = new UserInfo { id = id, email = "user@example.com", name = "user", },
+        userInfo = new UserInfo
+        {
+          id = id,
+          email = "user@example.com",
+          name = "user",
+        },
       };
     }
 

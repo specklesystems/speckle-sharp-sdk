@@ -34,8 +34,9 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
     var from = new StringValueMock { value = "testValue" };
 
     // xUnit + Shouldly version of Assert.ThrowsAsync
-    Should.ThrowAsync<SpeckleDeserializeException>(async () =>
-      await from.SerializeAsTAndDeserialize<IntValueMock>(_operations));
+    Should.ThrowAsync<SpeckleDeserializeException>(
+      async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations)
+    );
   }
 
   [Theory]
@@ -44,8 +45,9 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   {
     var from = new StringValueMock { value = testCase.ToString() };
 
-    Should.ThrowAsync<SpeckleDeserializeException>(async () =>
-      await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations));
+    Should.ThrowAsync<SpeckleDeserializeException>(
+      async () => await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations)
+    );
   }
 
   [Theory(DisplayName = "Deserialization of a JTokenType.Float to a .NET short/int/long should throw exception")]
@@ -55,7 +57,8 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   {
     var from = new DoubleValueMock { value = testCase };
 
-    Should.ThrowAsync<SpeckleDeserializeException>(async () =>
-      await from.SerializeAsTAndDeserialize<IntValueMock>(_operations));
+    Should.ThrowAsync<SpeckleDeserializeException>(
+      async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations)
+    );
   }
 }

@@ -85,14 +85,14 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var res = await from.SerializeAsTAndDeserialize<StringValueMock>(_operations);
       res.value.ShouldBe(testCase.ToString());
     }
-    
-    
-    public static IEnumerable<object[]> s_arrayTestCases => 
-    new object[] {
-      Array.Empty<double>(),
-      new double[] { 0, 1, int.MaxValue, int.MinValue },
-      new[] { default, double.Epsilon, double.MaxValue, double.MinValue },
-    }.Select(x => new [] { x });
+
+    public static IEnumerable<object[]> s_arrayTestCases =>
+      new object[]
+      {
+        Array.Empty<double>(),
+        new double[] { 0, 1, int.MaxValue, int.MinValue },
+        new[] { default, double.Epsilon, double.MaxValue, double.MinValue },
+      }.Select(x => new[] { x });
 
     [Theory, MemberData(nameof(s_arrayTestCases))]
     public async Task ArrayToList(double[] testCase)
@@ -126,31 +126,31 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
     {
       var from = new ListDoubleValueMock { value = testCase.ToList() };
 
-    var res = await from.SerializeAsTAndDeserialize<IListDoubleValueMock>(_operations);
-    res.value.ShouldBe(testCase);
-  }
+      var res = await from.SerializeAsTAndDeserialize<IListDoubleValueMock>(_operations);
+      res.value.ShouldBe(testCase);
+    }
 
-  [Theory, MemberData(nameof(s_arrayTestCases))]
-  public async Task IListToList(double[] testCase)
-  {
-    var from = new IListDoubleValueMock { value = testCase.ToList() };
+    [Theory, MemberData(nameof(s_arrayTestCases))]
+    public async Task IListToList(double[] testCase)
+    {
+      var from = new IListDoubleValueMock { value = testCase.ToList() };
 
-    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
-    res.value.ShouldBe(testCase);
-  }
+      var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
+      res.value.ShouldBe(testCase);
+    }
 
-  [Theory, MemberData(nameof(s_arrayTestCases))]
-  public async Task IReadOnlyListToList(double[] testCase)
-  {
-    var from = new IReadOnlyListDoubleValueMock { value = testCase.ToList() };
+    [Theory, MemberData(nameof(s_arrayTestCases))]
+    public async Task IReadOnlyListToList(double[] testCase)
+    {
+      var from = new IReadOnlyListDoubleValueMock { value = testCase.ToList() };
 
-    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
-    res.value.ShouldBe(testCase);
-  }
+      var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
+      res.value.ShouldBe(testCase);
+    }
 
-  [Theory, MemberData(nameof(MyEnums))]
-  public async Task EnumToInt(MyEnum testCase)
-  {
+    [Theory, MemberData(nameof(MyEnums))]
+    public async Task EnumToInt(MyEnum testCase)
+    {
       var from = new EnumValueMock { value = testCase };
 
       var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);

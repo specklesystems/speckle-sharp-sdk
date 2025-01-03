@@ -61,26 +61,22 @@ public class NotNullTests
   [Fact]
   public void NotNullClass_Exception()
   {
-    var exception = Should.Throw<ArgumentNullException>(() =>
-      NotNullExtensions.NotNull((string?)null)
-    );
+    var exception = Should.Throw<ArgumentNullException>(() => NotNullExtensions.NotNull((string?)null));
     exception.ShouldNotBeNull();
   }
 
   [Fact]
   public void NotNullStruct_Exception()
   {
-    var exception = Should.Throw<ArgumentNullException>(() =>
-      NotNullExtensions.NotNull((int?)null)
-    );
+    var exception = Should.Throw<ArgumentNullException>(() => NotNullExtensions.NotNull((int?)null));
     exception.ShouldNotBeNull();
   }
 
   [Fact]
   public void NotNullClass_Task_Exception()
   {
-    var exception = Should.ThrowAsync<ArgumentNullException>(async () =>
-      await NotNullExtensions.NotNull(Task.FromResult((string?)null))
+    var exception = Should.ThrowAsync<ArgumentNullException>(
+      async () => await NotNullExtensions.NotNull(Task.FromResult((string?)null))
     );
     exception.ShouldNotBeNull();
   }
@@ -88,8 +84,8 @@ public class NotNullTests
   [Fact]
   public void NotNullStruct_Task_Exception()
   {
-    var exception = Should.ThrowAsync<ArgumentNullException>(async () =>
-      await NotNullExtensions.NotNull(Task.FromResult((int?)null))
+    var exception = Should.ThrowAsync<ArgumentNullException>(
+      async () => await NotNullExtensions.NotNull(Task.FromResult((int?)null))
     );
     exception.ShouldNotBeNull();
   }
@@ -97,8 +93,8 @@ public class NotNullTests
   [Fact]
   public void NotNullClass_ValueTask_Exception()
   {
-    var exception = Should.ThrowAsync<ArgumentNullException>(async () =>
-      await NotNullExtensions.NotNull(ValueTask.FromResult((string?)null))
+    var exception = Should.ThrowAsync<ArgumentNullException>(
+      async () => await NotNullExtensions.NotNull(ValueTask.FromResult((string?)null))
     );
     exception.ShouldNotBeNull();
   }
@@ -106,8 +102,8 @@ public class NotNullTests
   [Fact]
   public void NotNullStruct_ValueTask_Exception()
   {
-    var exception = Should.ThrowAsync<ArgumentNullException>(async () =>
-      await NotNullExtensions.NotNull(ValueTask.FromResult((int?)null))
+    var exception = Should.ThrowAsync<ArgumentNullException>(
+      async () => await NotNullExtensions.NotNull(ValueTask.FromResult((int?)null))
     );
     exception.ShouldNotBeNull();
   }

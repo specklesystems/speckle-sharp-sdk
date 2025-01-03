@@ -14,7 +14,7 @@ public sealed class GraphQLClientTests : IDisposable
 {
   private Client _client;
 
-  public  GraphQLClientTests()
+  public GraphQLClientTests()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _client = serviceProvider

@@ -1,23 +1,22 @@
 ﻿using System;
 using System.Linq;
+using Shouldly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;
 using Xunit;
-using Shouldly;
 
 namespace Speckle.Sdk.Tests.Unit.Models.GraphTraversal;
 
 // Mark test class for xUnit
 public class TraversalContextExtensionsTests
 {
-
   private TraversalContext? CreateLinkedList(int depth, Func<int, Base> createBaseFunc)
   {
-    if (depth <= 0) return null;
-    return new TraversalContext(createBaseFunc(depth), $"{depth}",
-      CreateLinkedList(depth - 1, createBaseFunc));
+    if (depth <= 0)
+      return null;
+    return new TraversalContext(createBaseFunc(depth), $"{depth}", CreateLinkedList(depth - 1, createBaseFunc));
   }
 
   [Theory] // replaces [TestCaseSource]
@@ -69,6 +68,6 @@ public class TraversalContextExtensionsTests
   // Providing the test depths to [MemberData] for xUnit
   public static System.Collections.Generic.IEnumerable<object[]> GetTestDepths()
   {
-    return  new[] { 1, 2, 10 }.Select(depth => new object[] { depth });
+    return new[] { 1, 2, 10 }.Select(depth => new object[] { depth });
   }
 }

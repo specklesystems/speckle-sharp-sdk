@@ -24,8 +24,7 @@ public class SimpleRoundTripTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
-  
-  
+
   public static IEnumerable<object[]> TestData() => TestDataInternal().Select(x => new object[] { x });
 
   public static IEnumerable<Base> TestDataInternal()
@@ -55,6 +54,6 @@ public class SimpleRoundTripTests
     var result = _operations.Serialize(testData);
     var test = await _operations.DeserializeAsync(result);
 
-   testData.GetId().ShouldBe(test.GetId());
+    testData.GetId().ShouldBe(test.GetId());
   }
 }

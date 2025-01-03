@@ -1,15 +1,14 @@
-
-using Xunit;
 using Shouldly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
 public class TraversalTests
 {
-[Fact(DisplayName = "Tests that provided breaker rules are respected")]
+  [Fact(DisplayName = "Tests that provided breaker rules are respected")]
   public void TestFlattenWithBreaker()
   {
     //Setup
@@ -33,19 +32,19 @@ public class TraversalTests
     var ret = root.Flatten(BreakRule).ToList();
 
     //Test
-ret.Count.ShouldBe(3);
+    ret.Count.ShouldBe(3);
 
-ret.ShouldBeUnique();
+    ret.ShouldBeUnique();
 
-ret.Where(BreakRule).ShouldNotBeEmpty();
+    ret.Where(BreakRule).ShouldNotBeEmpty();
 
-ret.ShouldNotContain(x => x.id == "should have ignored me");
+    ret.ShouldNotContain(x => x.id == "should have ignored me");
   }
 
-[Theory(DisplayName = "Tests breaking after a fixed number of items")]
-[InlineData(5, 5)]
-[InlineData(5, 10)]
-[InlineData(10, 5)]
+  [Theory(DisplayName = "Tests breaking after a fixed number of items")]
+  [InlineData(5, 5)]
+  [InlineData(5, 10)]
+  [InlineData(10, 5)]
   public void TestBreakerFixed(int nestDepth, int flattenDepth)
   {
     //Setup
@@ -63,12 +62,12 @@ ret.ShouldNotContain(x => x.id == "should have ignored me");
     var ret = rootObject.Flatten(_ => ++counter >= flattenDepth).ToList();
 
     //Test
-ret.Count.ShouldBe(Math.Min(flattenDepth, nestDepth));
+    ret.Count.ShouldBe(Math.Min(flattenDepth, nestDepth));
 
-ret.ShouldBeUnique();
+    ret.ShouldBeUnique();
   }
 
-[Fact(Timeout = 2000, DisplayName = "Tests that the flatten function does not get stuck on circular references")]
+  [Fact(DisplayName = "Tests that the flatten function does not get stuck on circular references")]
   public void TestCircularReference()
   {
     //Setup
@@ -84,14 +83,14 @@ ret.ShouldBeUnique();
     var ret = objectA.Flatten().ToList();
 
     //Test
-ret.ShouldBeUnique();
+    ret.ShouldBeUnique();
 
-ret.ShouldBe(new[] { objectA, objectB, objectC });
+    ret.ShouldBe(new[] { objectA, objectB, objectC });
 
-ret.Count.ShouldBe(3);
+    ret.Count.ShouldBe(3);
   }
 
-[Fact(DisplayName = "Tests that the flatten function correctly handles (non circular) duplicates")]
+  [Fact(DisplayName = "Tests that the flatten function correctly handles (non circular) duplicates")]
   public void TestDuplicates()
   {
     //Setup
@@ -105,10 +104,10 @@ ret.Count.ShouldBe(3);
     var ret = objectA.Flatten().ToList();
 
     //Test
-ret.ShouldBeUnique();
+    ret.ShouldBeUnique();
 
-ret.ShouldBe(new[] { objectA, objectB });
+    ret.ShouldBe(new[] { objectA, objectB });
 
-ret.Count.ShouldBe(2);
+    ret.Count.ShouldBe(2);
   }
 }

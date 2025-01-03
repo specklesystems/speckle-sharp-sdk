@@ -10,91 +10,91 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public sealed partial class OperationsReceiveTests : IDisposable
 {
-    private static readonly Base[] s_testObjects;
-    private readonly IOperations _operations;
-    private readonly MemoryTransport _testCaseTransport;
+  private static readonly Base[] s_testObjects;
+  private readonly IOperations _operations;
+  private readonly MemoryTransport _testCaseTransport;
 
-    static OperationsReceiveTests()
+  static OperationsReceiveTests()
+  {
+    Reset();
+    s_testObjects =
+    [
+      new() { ["string prop"] = "simple test case", ["numerical prop"] = 123 },
+      new() { ["@detachedProp"] = new Base() { ["the best prop"] = "1234!" } },
+      new()
+      {
+        ["@detachedList"] = new List<Base> { new() { ["the worst prop"] = null } },
+        ["dictionaryProp"] = new Dictionary<string, Base> { ["dict"] = new() { ["the best prop"] = "" } },
+      },
+    ];
+  }
+
+  public OperationsReceiveTests()
+  {
+    Reset();
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
+    _testCaseTransport = new MemoryTransport();
+
+    // Simulate a one-time setup action
+    foreach (var b in s_testObjects)
     {
-        Reset();
-        s_testObjects = 
-        [
-            new() { ["string prop"] = "simple test case", ["numerical prop"] = 123 },
-            new() { ["@detachedProp"] = new Base() { ["the best prop"] = "1234!" } },
-            new()
-            {
-                ["@detachedList"] = new List<Base> { new() { ["the worst prop"] = null } },
-                ["dictionaryProp"] = new Dictionary<string, Base> { ["dict"] = new() { ["the best prop"] = "" } },
-            },
-        ];
+      _ = _operations.Send(b, _testCaseTransport, false).GetAwaiter().GetResult();
     }
+  }
 
-    public OperationsReceiveTests()
+  private static void Reset()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
+  }
+
+  public static IEnumerable<object[]> TestCases()
+  {
+    foreach (var s in s_testObjects)
     {
-        Reset();
-        var serviceProvider = TestServiceSetup.GetServiceProvider();
-        _operations = serviceProvider.GetRequiredService<IOperations>();
-        _testCaseTransport = new MemoryTransport();
-
-        // Simulate a one-time setup action
-        foreach (var b in s_testObjects)
-        {
-            _ = _operations.Send(b, _testCaseTransport, false).GetAwaiter().GetResult();
-        }
+      yield return new object[] { s.GetId(true) };
     }
+  }
 
-    private static void Reset()
-    {
-        TypeLoader.Reset();
-        TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
-    }
+  [Theory]
+  [MemberData(nameof(TestCases))]
+  public async Task Receive_FromLocal_ExistingObjects(string id)
+  {
+    Base result = await _operations.Receive(id, null, _testCaseTransport);
 
-    public static IEnumerable<object[]> TestCases()
-    {
-        foreach (var s in s_testObjects)
-        {
-            yield return new object[] { s.GetId(true) };
-        }
-    }
+    Assert.NotNull(result);
+    Assert.Equal(id, result.id);
+  }
 
-    [Theory]
-    [MemberData(nameof(TestCases))]
-    public async Task Receive_FromLocal_ExistingObjects(string id)
-    {
-        Base result = await _operations.Receive(id, null, _testCaseTransport);
+  [Theory]
+  [MemberData(nameof(TestCases))]
+  public async Task Receive_FromRemote_ExistingObjects(string id)
+  {
+    MemoryTransport localTransport = new();
+    Base result = await _operations.Receive(id, _testCaseTransport, localTransport);
 
-        Assert.NotNull(result);
-        Assert.Equal(id, result.id);
-    }
+    Assert.NotNull(result);
+    Assert.Equal(id, result.id);
+  }
 
-    [Theory]
-    [MemberData(nameof(TestCases))]
-    public async Task Receive_FromRemote_ExistingObjects(string id)
-    {
-        MemoryTransport localTransport = new();
-        Base result = await _operations.Receive(id, _testCaseTransport, localTransport);
+  [Theory]
+  [MemberData(nameof(TestCases))]
+  public async Task Receive_FromLocal_OnProgressActionCalled(string id)
+  {
+    bool wasCalled = false;
+    _ = await _operations.Receive(
+      id,
+      null,
+      _testCaseTransport,
+      onProgressAction: new UnitTestProgress<ProgressArgs>(_ => wasCalled = true)
+    );
 
-        Assert.NotNull(result);
-        Assert.Equal(id, result.id);
-    }
+    Assert.True(wasCalled);
+  }
 
-    [Theory]
-    [MemberData(nameof(TestCases))]
-    public async Task Receive_FromLocal_OnProgressActionCalled(string id)
-    {
-        bool wasCalled = false;
-        _ = await _operations.Receive(
-            id,
-            null,
-            _testCaseTransport,
-            onProgressAction: new UnitTestProgress<ProgressArgs>(_ => wasCalled = true)
-        );
-
-        Assert.True(wasCalled);
-    }
-
-    public void Dispose()
-    {
-        // Cleanup resources if necessary
-    }
+  public void Dispose()
+  {
+    // Cleanup resources if necessary
+  }
 }

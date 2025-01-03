@@ -1,12 +1,12 @@
 using System.Drawing;
 using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
-using Shouldly;
 using Xunit;
 using Point = Speckle.Sdk.Tests.Unit.Host.Point;
 
@@ -47,7 +47,8 @@ public class ObjectSerialization
     {
       cat.Claws[$"Claw number {i}"] = new Line
       {
-        Start = new Point(i, i, i), End = new Point(i + 3.14, i + 3.14, i + 3.14),
+        Start = new Point(i, i, i),
+        End = new Point(i + 3.14, i + 3.14, i + 3.14),
       };
 
       if (i % 2 == 0)
@@ -80,7 +81,10 @@ public class ObjectSerialization
   {
     var superPoint = new SuperPoint
     {
-      X = 10, Y = 10, Z = 10, W = 42,
+      X = 10,
+      Y = 10,
+      Z = 10,
+      W = 42,
     };
 
     var str = _operations.Serialize(superPoint);
@@ -109,6 +113,7 @@ public class ObjectSerialization
     list.ShouldNotBeNull(); // Ensure the list isn't null in first place
     list.Count.ShouldBe(100);
   }
+
   [Fact]
   public async Task ChunkSerialisation()
   {

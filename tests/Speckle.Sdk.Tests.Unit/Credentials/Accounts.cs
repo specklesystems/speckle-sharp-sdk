@@ -35,7 +35,12 @@ public class CredentialInfrastructure
     {
       token = "secret",
       serverInfo = new ServerInfo { url = "https://example.com", name = "qux" },
-      userInfo = new UserInfo { email = "six@five.com", id = "123345", name = "Test Account 3", },
+      userInfo = new UserInfo
+      {
+        email = "six@five.com",
+        id = "123345",
+        name = "Test Account 3",
+      },
     };
 
     Fixtures.UpdateOrSaveAccount(s_testAccount1);
@@ -53,8 +58,7 @@ public class CredentialInfrastructure
   public void GetAllAccounts()
   {
     var accs = _accountManager.GetAccounts().ToList();
-    accs.Count.ShouldBeGreaterThanOrEqualTo(
-      3); // Tests are adding three accounts, there might be extra accounts locally
+    accs.Count.ShouldBeGreaterThanOrEqualTo(3); // Tests are adding three accounts, there might be extra accounts locally
   }
 
   [Fact]
@@ -75,7 +79,9 @@ public class CredentialInfrastructure
   {
     return new List<object[]>
     {
-      new object[] { s_testAccount1 }, new object[] { s_testAccount2 }, new object[] { s_testAccount3 }
+      new object[] { s_testAccount1 },
+      new object[] { s_testAccount2 },
+      new object[] { s_testAccount3 },
     };
   }
 
@@ -103,12 +109,14 @@ public class CredentialInfrastructure
     string id = "12345";
     var acc1 = new Account
     {
-      serverInfo = new ServerInfo { url = "https://speckle.xyz" }, userInfo = new UserInfo { id = id },
+      serverInfo = new ServerInfo { url = "https://speckle.xyz" },
+      userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
 
     var acc2 = new Account
     {
-      serverInfo = new ServerInfo { url = "https://app.speckle.systems" }, userInfo = new UserInfo { id = id },
+      serverInfo = new ServerInfo { url = "https://app.speckle.systems" },
+      userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
 
     acc1.ShouldNotBe(acc2);

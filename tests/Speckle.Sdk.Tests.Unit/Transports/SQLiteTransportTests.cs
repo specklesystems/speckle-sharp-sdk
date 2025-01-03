@@ -1,8 +1,8 @@
+using System.Collections.Concurrent;
 using Microsoft.Data.Sqlite;
 using Shouldly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
-using System.Collections.Concurrent;
 using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Transports;
@@ -87,7 +87,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     }
   }
 
-  [Fact(Timeout = 1000)] // No xUnit [Timeout], so this is purely indicative
+  [Fact] // No xUnit [Timeout], so this is purely indicative
   public void UpdateObject_WhileEnumerating()
   {
     const string UPDATE_STRING = "_new";

@@ -1,9 +1,9 @@
 using System;
 using System.IO;
+using Shouldly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 using Xunit;
-using Shouldly;
 
 namespace Speckle.Sdk.Tests.Unit.Transports;
 

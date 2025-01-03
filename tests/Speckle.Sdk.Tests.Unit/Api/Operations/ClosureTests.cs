@@ -16,7 +16,7 @@ public class Closures
 {
   private IOperations _operations;
 
-  public  Closures()
+  public Closures()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);

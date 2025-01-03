@@ -1,18 +1,16 @@
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.Extensions;
 using Xunit;
-using Shouldly;
 
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
-
 
 public class BaseExtensionsTests
 {
   public BaseExtensionsTests()
-
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly);

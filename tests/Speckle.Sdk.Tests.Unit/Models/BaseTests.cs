@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Text;
-using Xunit;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
@@ -11,37 +10,37 @@ using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
-
 public class BaseTests
 {
-  public  BaseTests()
+  public BaseTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(BaseTests).Assembly);
   }
 
-[Fact]
+  [Fact]
   public void CanGetSetDynamicItemProp()
   {
     var @base = new Base();
     @base["Item"] = "Item";
 
-@base["Item"].ShouldBe("Item");
+    @base["Item"].ShouldBe("Item");
   }
 
-[Fact]
+  [Fact]
   public void CanGetSetTypedItemProp()
   {
     var @base = new ObjectWithItemProp { Item = "baz" };
 
-@base["Item"].ShouldBe("baz");
-@base.Item.ShouldBe("baz");
+    @base["Item"].ShouldBe("baz");
+    @base.Item.ShouldBe("baz");
   }
 
-[Fact(DisplayName = "Checks if validation is performed in property names")]
+  [Fact(DisplayName = "Checks if validation is performed in property names")]
   public void CanValidatePropNames()
   {
     dynamic @base = new Base();
@@ -51,17 +50,17 @@ public class BaseTests
 
     // Only single leading @ allowed
     @base["@something"] = "A";
-Should.Throw<InvalidPropNameException>(() =>
+    Should.Throw<InvalidPropNameException>(() =>
     {
       @base["@@@something"] = "Testing";
     });
 
     // Invalid chars:  ./
-Should.Throw<InvalidPropNameException>(() =>
+    Should.Throw<InvalidPropNameException>(() =>
     {
       @base["some.thing"] = "Testing";
     });
-Should.Throw<InvalidPropNameException>(() =>
+    Should.Throw<InvalidPropNameException>(() =>
     {
       @base["some/thing"] = "Testing";
     });
@@ -71,7 +70,7 @@ Should.Throw<InvalidPropNameException>(() =>
     //Assert.Throws<Exception>(() => { @base["id"] = "Testing"; });
   }
 
-[Fact]
+  [Fact]
   public void CountDynamicChunkables()
   {
     const int MAX_NUM = 3000;
@@ -89,10 +88,10 @@ Should.Throw<InvalidPropNameException>(() =>
     @base["@(1000)cc2"] = customChunkArr;
 
     var num = @base.GetTotalChildrenCount();
-num.ShouldBe(MAX_NUM / 1000 * 2 + 1);
+    num.ShouldBe(MAX_NUM / 1000 * 2 + 1);
   }
 
-[Fact]
+  [Fact]
   public void CountTypedChunkables()
   {
     const int MAX_NUM = 3000;
@@ -111,33 +110,33 @@ num.ShouldBe(MAX_NUM / 1000 * 2 + 1);
 
     var num = @base.GetTotalChildrenCount();
     var actualNum = 1 + MAX_NUM / 300 + MAX_NUM / 1000;
-num.ShouldBe(actualNum);
+    num.ShouldBe(actualNum);
   }
 
-[Fact(DisplayName = "Checks that no ignored or obsolete properties are returned")]
+  [Fact(DisplayName = "Checks that no ignored or obsolete properties are returned")]
   public void CanGetMemberNames()
   {
     var @base = new SampleObject();
     var dynamicProp = "dynamicProp";
     @base[dynamicProp] = 123;
     var names = @base.GetMembers().Keys;
-names.ShouldNotContain(nameof(@base.IgnoredSchemaProp));
-names.ShouldNotContain(nameof(@base.ObsoleteSchemaProp));
-names.ShouldContain(dynamicProp);
-names.ShouldContain(nameof(@base.attachedProp));
+    names.ShouldNotContain(nameof(@base.IgnoredSchemaProp));
+    names.ShouldNotContain(nameof(@base.ObsoleteSchemaProp));
+    names.ShouldContain(dynamicProp);
+    names.ShouldContain(nameof(@base.attachedProp));
   }
 
-[Fact(DisplayName = "Checks that only instance properties are returned, excluding obsolete and ignored.")]
+  [Fact(DisplayName = "Checks that only instance properties are returned, excluding obsolete and ignored.")]
   public void CanGetMembers_OnlyInstance()
   {
     var @base = new SampleObject();
     @base["dynamicProp"] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Instance).Keys;
-names.ShouldContain(nameof(@base.attachedProp));
+    names.ShouldContain(nameof(@base.attachedProp));
   }
 
-[Fact(DisplayName = "Checks that only dynamic properties are returned")]
+  [Fact(DisplayName = "Checks that only dynamic properties are returned")]
   public void CanGetMembers_OnlyDynamic()
   {
     var @base = new SampleObject();
@@ -145,33 +144,33 @@ names.ShouldContain(nameof(@base.attachedProp));
     @base[dynamicProp] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Dynamic).Keys;
-names.ShouldContain(dynamicProp);
-names.Count.ShouldBe(1);
+    names.ShouldContain(dynamicProp);
+    names.Count.ShouldBe(1);
   }
 
-[Fact(DisplayName = "Checks that all typed properties (including ignored ones) are returned")]
+  [Fact(DisplayName = "Checks that all typed properties (including ignored ones) are returned")]
   public void CanGetMembers_OnlyInstance_IncludeIgnored()
   {
     var @base = new SampleObject();
     @base["dynamicProp"] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.SchemaIgnored).Keys;
-names.ShouldContain(nameof(@base.IgnoredSchemaProp));
-names.ShouldContain(nameof(@base.attachedProp));
+    names.ShouldContain(nameof(@base.IgnoredSchemaProp));
+    names.ShouldContain(nameof(@base.attachedProp));
   }
 
-[Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
   public void CanGetMembers_OnlyInstance_IncludeObsolete()
   {
     var @base = new SampleObject();
     @base["dynamicProp"] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Obsolete).Keys;
-names.ShouldContain(nameof(@base.ObsoleteSchemaProp));
-names.ShouldContain(nameof(@base.attachedProp));
+    names.ShouldContain(nameof(@base.ObsoleteSchemaProp));
+    names.ShouldContain(nameof(@base.attachedProp));
   }
 
-[Fact]
+  [Fact]
   public void CanGetDynamicMembers()
   {
     var @base = new SampleObject();
@@ -179,11 +178,11 @@ names.ShouldContain(nameof(@base.attachedProp));
     @base[dynamicProp] = null;
 
     var names = @base.GetDynamicMemberNames();
-names.ShouldContain(dynamicProp);
-@base[dynamicProp].ShouldBeNull();
+    names.ShouldContain(dynamicProp);
+    @base[dynamicProp].ShouldBeNull();
   }
 
-[Fact]
+  [Fact]
   public void CanSetDynamicMembers()
   {
     var @base = new SampleObject();
@@ -191,19 +190,19 @@ names.ShouldContain(dynamicProp);
     var value = "something";
     // Can create a new dynamic member
     @base[key] = value;
-value.ShouldBe((string)@base[key].NotNull());
+    value.ShouldBe((string)@base[key].NotNull());
 
     // Can overwrite existing
     value = "some other value";
     @base[key] = value;
-value.ShouldBe((string)@base[key].NotNull());
+    value.ShouldBe((string)@base[key].NotNull());
 
     // Accepts null values
     @base[key] = null;
-@base[key].ShouldBeNull();
+    @base[key].ShouldBeNull();
   }
 
-[Fact]
+  [Fact]
   public void CanShallowCopy()
   {
     var sample = new SampleObject();
@@ -214,8 +213,8 @@ value.ShouldBe((string)@base[key].NotNull());
     var sampleMembers = sample.GetMembers(selectedMembers);
     var copyMembers = copy.GetMembers(selectedMembers);
 
-copyMembers.Keys.ShouldBeEquivalentTo(sampleMembers.Keys);
-copyMembers.Values.ShouldBeEquivalentTo(sampleMembers.Values);
+    copyMembers.Keys.ShouldBeEquivalentTo(sampleMembers.Keys);
+    copyMembers.Values.ShouldBeEquivalentTo(sampleMembers.Values);
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Models.BaseTests+SampleObject")]

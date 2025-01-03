@@ -1,11 +1,11 @@
-﻿using Speckle.Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Shouldly;
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
-using Shouldly;
-using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
@@ -39,13 +39,11 @@ public class ChunkingTests
     // Act
     _ = sut.Serialize(testCase);
     var serializedObjects = transport
-      .Objects.Values
-      .Select(json => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json))
+      .Objects.Values.Select(json => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json))
       .ToList();
 
     var numberOfChunks = serializedObjects.Count(x =>
-      x!.TryGetValue("speckle_type", out var speckleType) &&
-      ((string)speckleType!) == "Speckle.Core.Models.DataChunk"
+      x!.TryGetValue("speckle_type", out var speckleType) && ((string)speckleType!) == "Speckle.Core.Models.DataChunk"
     );
 
     // Assert using Shouldly

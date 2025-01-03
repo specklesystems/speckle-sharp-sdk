@@ -35,18 +35,12 @@ namespace Speckle.Sdk.Tests.Unit.Models
   namespace TestModels
   {
     [SpeckleType("TestModels.Foo")]
-    public class Foo : Base
-    {
-    }
+    public class Foo : Base { }
 
     [SpeckleType("TestModels.Bar")]
-    public class Bar : Foo
-    {
-    }
+    public class Bar : Foo { }
 
     [SpeckleType("TestModels.Baz")]
-    public class Baz : Bar
-    {
-    }
+    public class Baz : Bar { }
   }
 }

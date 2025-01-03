@@ -1,6 +1,6 @@
-﻿using Speckle.Sdk.Common;
+﻿using Shouldly;
+using Speckle.Sdk.Common;
 using Xunit;
-using Shouldly;
 
 namespace Speckle.Sdk.Tests.Unit.Common;
 
@@ -21,8 +21,11 @@ public class UnitsTest
     var forwards = Units.GetConversionFactor(from, to);
     var backwards = Units.GetConversionFactor(to, from);
 
-    (backwards * forwards).ShouldBe(1d, tolerance: EPS,
-      $"Behaviour says that 1{from} == {forwards}{to}, and 1{to} == {backwards}{from}");
+    (backwards * forwards).ShouldBe(
+      1d,
+      tolerance: EPS,
+      $"Behaviour says that 1{from} == {forwards}{to}, and 1{to} == {backwards}{from}"
+    );
   }
 
   [Theory]
