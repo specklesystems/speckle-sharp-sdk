@@ -18,12 +18,17 @@ public class SqLiteJsonCacheException : SpeckleException
     {
       errorMessage = $"An error occurred while executing a SQLite command: {inner.SqliteErrorCode}";
     }
-    if (!SqliteExceptions.SqliteErrorCodes.TryGetValue(inner.SqliteExtendedErrorCode, out string? detailedMessage))
+    if (
+      !SqliteExceptions.SqliteExtendedResultCodes.TryGetValue(
+        inner.SqliteExtendedErrorCode,
+        out string? detailedMessage
+      )
+    )
     {
       detailedMessage = $"Detail: {inner.SqliteExtendedErrorCode}";
     }
     return new SqLiteJsonCacheException(
-      $"An error occured with the SQLite cache:{Environment.NewLine}{errorMessage}{Environment.NewLine}{detailedMessage}",
+      $"An error occured with the SQLite cache: {inner.Message}{Environment.NewLine}{errorMessage}{Environment.NewLine}{detailedMessage}",
       inner
     );
   }
