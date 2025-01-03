@@ -1,10 +1,12 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
@@ -22,8 +24,11 @@ public class SimpleRoundTripTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
+  
+  
+  public static IEnumerable<object[]> TestData() => TestDataInternal().Select(x => new object[] { x });
 
-  public static IEnumerable<Base> TestData()
+  public static IEnumerable<Base> TestDataInternal()
   {
     yield return new DiningTable { ["@strangeVariable_NAme3"] = new TableLegFixture() };
 
@@ -35,8 +40,7 @@ public class SimpleRoundTripTests
     yield return polyline;
   }
 
-  [SetUp]
-  public void Setup()
+  public SimpleRoundTripTests()
   {
     Reset();
 
@@ -44,12 +48,13 @@ public class SimpleRoundTripTests
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
-  [TestCaseSource(nameof(TestData))]
+  [Theory]
+  [MemberData(nameof(TestData))]
   public async Task SimpleSerialization(Base testData)
   {
     var result = _operations.Serialize(testData);
     var test = await _operations.DeserializeAsync(result);
 
-    Assert.That(testData.GetId(), Is.EqualTo(test.GetId()));
+   testData.GetId().ShouldBe(test.GetId());
   }
 }

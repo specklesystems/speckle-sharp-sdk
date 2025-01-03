@@ -1,14 +1,15 @@
-using NUnit.Framework;
+
+using Xunit;
+using Shouldly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
-[TestFixture, TestOf(typeof(BaseExtensions))]
 public class TraversalTests
 {
-  [Test, Description("Tests that provided breaker rules are respected")]
+[Fact(DisplayName = "Tests that provided breaker rules are respected")]
   public void TestFlattenWithBreaker()
   {
     //Setup
@@ -32,13 +33,19 @@ public class TraversalTests
     var ret = root.Flatten(BreakRule).ToList();
 
     //Test
-    Assert.That(ret, Has.Count.EqualTo(3));
-    Assert.That(ret, Is.Unique);
-    Assert.That(ret.Where(BreakRule), Is.Not.Empty);
-    Assert.That(ret, Has.No.Member(Contains.Substring("should have ignored me")));
+ret.Count.ShouldBe(3);
+
+ret.ShouldBeUnique();
+
+ret.Where(BreakRule).ShouldNotBeEmpty();
+
+ret.ShouldNotContain(x => x.id == "should have ignored me");
   }
 
-  [Test, TestCase(5, 5), TestCase(5, 10), TestCase(10, 5), Description("Tests breaking after a fixed number of items")]
+[Theory(DisplayName = "Tests breaking after a fixed number of items")]
+[InlineData(5, 5)]
+[InlineData(5, 10)]
+[InlineData(10, 5)]
   public void TestBreakerFixed(int nestDepth, int flattenDepth)
   {
     //Setup
@@ -56,11 +63,12 @@ public class TraversalTests
     var ret = rootObject.Flatten(_ => ++counter >= flattenDepth).ToList();
 
     //Test
-    Assert.That(ret, Has.Count.EqualTo(Math.Min(flattenDepth, nestDepth)));
-    Assert.That(ret, Is.Unique);
+ret.Count.ShouldBe(Math.Min(flattenDepth, nestDepth));
+
+ret.ShouldBeUnique();
   }
 
-  [Test, Timeout(2000), Description("Tests that the flatten function does not get stuck on circular references")]
+[Fact(Timeout = 2000, DisplayName = "Tests that the flatten function does not get stuck on circular references")]
   public void TestCircularReference()
   {
     //Setup
@@ -76,12 +84,14 @@ public class TraversalTests
     var ret = objectA.Flatten().ToList();
 
     //Test
-    Assert.That(ret, Is.Unique);
-    Assert.That(ret, Is.EquivalentTo(new[] { objectA, objectB, objectC }));
-    Assert.That(ret, Has.Count.EqualTo(3));
+ret.ShouldBeUnique();
+
+ret.ShouldBe(new[] { objectA, objectB, objectC });
+
+ret.Count.ShouldBe(3);
   }
 
-  [Test, Description("Tests that the flatten function correctly handles (non circular) duplicates")]
+[Fact(DisplayName = "Tests that the flatten function correctly handles (non circular) duplicates")]
   public void TestDuplicates()
   {
     //Setup
@@ -95,8 +105,10 @@ public class TraversalTests
     var ret = objectA.Flatten().ToList();
 
     //Test
-    Assert.That(ret, Is.Unique);
-    Assert.That(ret, Is.EquivalentTo(new[] { objectA, objectB }));
-    Assert.That(ret, Has.Count.EqualTo(2));
+ret.ShouldBeUnique();
+
+ret.ShouldBe(new[] { objectA, objectB });
+
+ret.Count.ShouldBe(2);
   }
 }

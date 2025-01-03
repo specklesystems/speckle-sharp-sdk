@@ -1,50 +1,61 @@
-﻿using NUnit.Framework;
-using Speckle.Newtonsoft.Json;
+﻿using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
+using Shouldly;
+using System.Collections.Generic;
+using System.Linq;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 public class ChunkingTests
 {
-  public static IEnumerable<TestCaseData> TestCases()
+  public static IEnumerable<object[]> TestCases()
   {
+    // Initialize type loader
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
 
-    yield return new TestCaseData(CreateDynamicTestCase(10, 100)).Returns(10);
-    yield return new TestCaseData(CreateDynamicTestCase(0.5, 100)).Returns(1);
-    yield return new TestCaseData(CreateDynamicTestCase(20.5, 100)).Returns(21);
+    // Return test data as a collection of objects for xUnit
+    yield return new object[] { CreateDynamicTestCase(10, 100), 10 };
+    yield return new object[] { CreateDynamicTestCase(0.5, 100), 1 };
+    yield return new object[] { CreateDynamicTestCase(20.5, 100), 21 };
 
-    yield return new TestCaseData(CreateDynamicTestCase(10, 1000)).Returns(10);
-    yield return new TestCaseData(CreateDynamicTestCase(0.5, 1000)).Returns(1);
-    yield return new TestCaseData(CreateDynamicTestCase(20.5, 1000)).Returns(21);
+    yield return new object[] { CreateDynamicTestCase(10, 1000), 10 };
+    yield return new object[] { CreateDynamicTestCase(0.5, 1000), 1 };
+    yield return new object[] { CreateDynamicTestCase(20.5, 1000), 21 };
   }
 
-  [TestCaseSource(nameof(TestCases))]
-  public int ChunkSerializationTest(Base testCase)
+  [Theory]
+  [MemberData(nameof(TestCases))]
+  public void ChunkSerializationTest(Base testCase, int expectedChunkCount)
   {
-    MemoryTransport transport = new();
-    var sut = new SpeckleObjectSerializer([transport]);
+    // Arrange
+    var transport = new MemoryTransport();
+    var sut = new SpeckleObjectSerializer(new[] { transport });
 
+    // Act
     _ = sut.Serialize(testCase);
-
-    var serailizedObjects = transport
-      .Objects.Values.Select(json => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json))
+    var serializedObjects = transport
+      .Objects.Values
+      .Select(json => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json))
       .ToList();
 
-    int numberOfChunks = serailizedObjects.Count(x =>
-      x!.TryGetValue("speckle_type", out var speckleType) && ((string)speckleType!) == "Speckle.Core.Models.DataChunk"
+    var numberOfChunks = serializedObjects.Count(x =>
+      x!.TryGetValue("speckle_type", out var speckleType) &&
+      ((string)speckleType!) == "Speckle.Core.Models.DataChunk"
     );
 
-    return numberOfChunks;
+    // Assert using Shouldly
+    numberOfChunks.ShouldBe(expectedChunkCount);
   }
 
   private static Base CreateDynamicTestCase(double numberOfChunks, int chunkSize)
   {
-    List<int> value = Enumerable.Range(0, (int)Math.Floor(chunkSize * numberOfChunks)).ToList();
+    // Helper method to create the dynamic test case
+    var value = Enumerable.Range(0, (int)Math.Floor(chunkSize * numberOfChunks)).ToList();
     return new Base { [$"@({chunkSize})chunkedProperty"] = value };
   }
 }

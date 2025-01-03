@@ -1,92 +1,86 @@
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
+using Shouldly;
+using Xunit;
 
-namespace Speckle.Sdk.Tests.Unit.Credentials;
-
-public class AccountServerMigrationTests
+namespace Speckle.Sdk.Tests.Unit.Credentials
 {
-  private readonly List<Account> _accountsToCleanUp = new();
-
-  public static IEnumerable<TestCaseData> MigrationTestCase()
+  public class AccountServerMigrationTests : IDisposable
   {
-    const string OLD_URL = "https://old.example.com";
-    const string NEW_URL = "https://new.example.com";
-    const string OTHER_URL = "https://other.example.com";
-    Account oldAccount = CreateTestAccount(OLD_URL, null, new(NEW_URL));
-    string accountId = oldAccount.userInfo.id; // new account user must match old account user id
-    Account newAccount = CreateTestAccount(NEW_URL, new(OLD_URL), null, accountId);
-    Account otherAccount = CreateTestAccount(OTHER_URL, null, null);
+    private readonly List<Account> _accountsToCleanUp = new();
 
-    List<Account> givenAccounts = new() { oldAccount, newAccount, otherAccount };
-
-    yield return new TestCaseData(givenAccounts, NEW_URL, new[] { newAccount })
-      .SetName("Get New")
-      .SetDescription("When requesting for new account, ensure only this account is returned");
-
-    yield return new TestCaseData(givenAccounts, OLD_URL, new[] { newAccount })
-      .SetName("Get New via Old")
-      .SetDescription("When requesting for old account, ensure migrated account is returned first");
-
-    var reversed = Enumerable.Reverse(givenAccounts).ToList();
-
-    yield return new TestCaseData(reversed, OLD_URL, new[] { newAccount })
-      .SetName("Get New via Old (Reversed order)")
-      .SetDescription("Account order shouldn't matter");
-  }
-
-  [Test]
-  [TestCaseSource(nameof(MigrationTestCase))]
-  public void TestServerMigration(IList<Account> accounts, string requestedUrl, IList<Account> expectedSequence)
-  {
-    AddAccounts(accounts);
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
-
-    var result = serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
-
-    Assert.That(result, Is.EquivalentTo(expectedSequence));
-  }
-
-  [TearDown]
-  public void TearDown()
-  {
-    //Clean up any of the test accounts we made
-    foreach (var acc in _accountsToCleanUp)
+    public static IEnumerable<object[]> MigrationTestCases()
     {
-      Fixtures.DeleteLocalAccount(acc.id);
+      const string OLD_URL = "https://old.example.com";
+      const string NEW_URL = "https://new.example.com";
+      const string OTHER_URL = "https://other.example.com";
+
+      Account oldAccount = CreateTestAccount(OLD_URL, null, new(NEW_URL));
+      string accountId = oldAccount.userInfo.id; // new account user must match old account user id
+      Account newAccount = CreateTestAccount(NEW_URL, new(OLD_URL), null, accountId);
+      Account otherAccount = CreateTestAccount(OTHER_URL, null, null);
+
+      List<Account> givenAccounts = new() { oldAccount, newAccount, otherAccount };
+
+      yield return new object[] { givenAccounts, NEW_URL, new[] { newAccount } };
+
+      yield return new object[] { givenAccounts, OLD_URL, new[] { newAccount } };
+
+      var reversed = givenAccounts.AsEnumerable().Reverse().ToList();
+
+      yield return new object[] { reversed, OLD_URL, new[] { newAccount } };
     }
-    _accountsToCleanUp.Clear();
-  }
 
-  private static Account CreateTestAccount(string url, Uri? movedFrom, Uri? movedTo, string? id = null)
-  {
-    id ??= Guid.NewGuid().ToString();
-    return new Account
+    [Theory]
+    [MemberData(nameof(MigrationTestCases))]
+    public void TestServerMigration(IList<Account> accounts, string requestedUrl, IList<Account> expectedSequence)
     {
-      token = "myToken",
-      serverInfo = new ServerInfo
-      {
-        url = url,
-        name = "myServer",
-        migration = new ServerMigration { movedTo = movedTo, movedFrom = movedFrom },
-      },
-      userInfo = new UserInfo
-      {
-        id = id,
-        email = "user@example.com",
-        name = "user",
-      },
-    };
-  }
+      // Add accounts to the local setup
+      AddAccounts(accounts);
 
-  private void AddAccounts(IEnumerable<Account> accounts)
-  {
-    foreach (Account account in accounts)
+      var serviceProvider = TestServiceSetup.GetServiceProvider();
+      var result = serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
+
+      // Assert the result using Shouldly
+      result.ShouldBe(expectedSequence, ignoreOrder: true);
+    }
+
+    public void Dispose()
     {
-      _accountsToCleanUp.Add(account);
-      Fixtures.UpdateOrSaveAccount(account);
+      // Clean up accounts after each test
+      foreach (var acc in _accountsToCleanUp)
+      {
+        Fixtures.DeleteLocalAccount(acc.id);
+      }
+
+      _accountsToCleanUp.Clear();
+    }
+
+    private static Account CreateTestAccount(string url, Uri? movedFrom, Uri? movedTo, string? id = null)
+    {
+      id ??= Guid.NewGuid().ToString();
+
+      return new Account
+      {
+        token = "myToken",
+        serverInfo = new ServerInfo
+        {
+          url = url,
+          name = "myServer",
+          migration = new ServerMigration { movedTo = movedTo, movedFrom = movedFrom },
+        },
+        userInfo = new UserInfo { id = id, email = "user@example.com", name = "user", },
+      };
+    }
+
+    private void AddAccounts(IEnumerable<Account> accounts)
+    {
+      foreach (var account in accounts)
+      {
+        _accountsToCleanUp.Add(account);
+        Fixtures.UpdateOrSaveAccount(account);
+      }
     }
   }
 }

@@ -1,26 +1,29 @@
-using NUnit.Framework;
+using System;
+using Shouldly;
 using Speckle.Sdk.Models.Extensions;
+using Xunit;
 
-namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
-
-[TestFixture]
-[TestOf(typeof(BaseExtensions))]
-public class ExceptionTests
+namespace Speckle.Sdk.Tests.Unit.Models.Extensions
 {
-  [Test]
-  public void CanPrintAllInnerExceptions()
+  public class ExceptionTests
   {
-    var ex = new Exception("Some error");
-    var exMsg = ex.ToFormattedString();
-    Assert.That(exMsg, Is.Not.Null);
+    [Fact]
+    public void CanPrintAllInnerExceptions()
+    {
+      // Test with a single exception
+      var ex = new Exception("Some error");
+      var exMsg = ex.ToFormattedString();
+      exMsg.ShouldNotBeNull();
 
-    var ex2 = new Exception("One or more errors occurred", ex);
-    var ex2Msg = ex2.ToFormattedString();
-    Assert.That(ex2Msg, Is.Not.Null);
+      // Test with an inner exception
+      var ex2 = new Exception("One or more errors occurred", ex);
+      var ex2Msg = ex2.ToFormattedString();
+      ex2Msg.ShouldNotBeNull();
 
-    var ex3 = new AggregateException("One or more errors occurred", ex2);
-    var ex3Msg = ex3.ToFormattedString();
-
-    Assert.That(ex3Msg, Is.Not.Null);
+      // Test with an aggregate exception
+      var ex3 = new AggregateException("One or more errors occurred", ex2);
+      var ex3Msg = ex3.ToFormattedString();
+      ex3Msg.ShouldNotBeNull();
+    }
   }
 }

@@ -1,118 +1,123 @@
-﻿using NUnit.Framework;
+﻿using System.Collections.Generic;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
+using Shouldly;
+using Xunit;
 
-namespace Speckle.Sdk.Tests.Unit.Serialisation;
-
-/// <summary>
-/// Tests that the <see cref="JsonIgnoreAttribute"/> leads to properties being ignored both from the final JSON output,
-/// But also from the id calculation
-/// </summary>
-[TestOf(typeof(SpeckleObjectSerializer))]
-public sealed class JsonIgnoreRespected
+namespace Speckle.Sdk.Tests.Unit.Serialisation
 {
-  [SetUp]
-  public void Setup()
+  /// <summary>
+  /// Tests that the <see cref="JsonIgnoreAttribute"/> leads to properties being ignored both from the final JSON output,
+  /// But also from the id calculation
+  /// </summary>
+  public sealed class JsonIgnoreRespected
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
-  }
-
-  public static IEnumerable<TestCaseData> IgnoredTestCases()
-  {
-    const string EXPECTED_PAYLOAD = "this should have been included";
-    const string EXPECTED_HASH = "e1d9f0685266465c9bfe4e71f2eee6e9";
-    yield return new TestCaseData("this should have been ignored", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-    yield return new TestCaseData("again, ignored!", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-    yield return new TestCaseData("this one is not", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-  }
-
-  public static IEnumerable<TestCaseData> IgnoredCompoundTestCases()
-  {
-    const string EXPECTED_PAYLOAD = "this should have been included";
-    const string EXPECTED_HASH = "eeaeee4e61b04b313dd840cd63341eee";
-    yield return new TestCaseData("this should have been ignored", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-    yield return new TestCaseData("again, ignored!", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-    yield return new TestCaseData("this one is not", EXPECTED_PAYLOAD).Returns(EXPECTED_HASH);
-  }
-
-  [TestCaseSource(nameof(IgnoredTestCases))]
-  public string? IgnoredProperties_NotIncludedInJson(string ignoredPayload, string expectedPayload)
-  {
-    IgnoreTest testData = new(ignoredPayload, expectedPayload);
-
-    SpeckleObjectSerializer sut = new();
-
-    var (json, id) = sut.SerializeBase(testData).NotNull();
-
-    Assert.That(json.ToString(), Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
-    Assert.That(json.ToString(), Does.Not.Contain(ignoredPayload));
-
-    Assert.That(json.ToString(), Does.Contain(nameof(testData.ShouldBeIncluded)));
-    Assert.That(json.ToString(), Does.Contain(expectedPayload));
-
-    return id?.Value;
-  }
-
-  [TestCaseSource(nameof(IgnoredCompoundTestCases))]
-  public string? IgnoredProperties_Compound_NotIncludedInJson(string ignoredPayload, string expectedPayload)
-  {
-    IgnoredCompoundTest testData = new(ignoredPayload, expectedPayload);
-
-    MemoryTransport savedObjects = new();
-    SpeckleObjectSerializer sut = new(writeTransports: [savedObjects]);
-
-    var (json, id) = sut.SerializeBase(testData).NotNull();
-
-    savedObjects.SaveObject(id.NotNull().Value, json.Value);
-
-    foreach ((_, string childJson) in savedObjects.Objects)
+    public JsonIgnoreRespected()
     {
-      Assert.That(childJson, Does.Not.Contain(nameof(testData.ShouldBeIgnored)));
-      Assert.That(childJson, Does.Not.Contain(ignoredPayload));
-
-      Assert.That(childJson, Does.Contain(nameof(testData.ShouldBeIncluded)));
-      Assert.That(childJson, Does.Contain(expectedPayload));
+      TypeLoader.Reset();
+      TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
     }
 
-    return id.Value.Value;
+    public static IEnumerable<object[]> IgnoredTestCases()
+    {
+      const string EXPECTED_PAYLOAD = "this should have been included";
+      const string EXPECTED_HASH = "e1d9f0685266465c9bfe4e71f2eee6e9";
+      yield return new object[] { "this should have been ignored", EXPECTED_PAYLOAD, EXPECTED_HASH };
+      yield return new object[] { "again, ignored!", EXPECTED_PAYLOAD, EXPECTED_HASH };
+      yield return new object[] { "this one is not", EXPECTED_PAYLOAD, EXPECTED_HASH };
+    }
+
+    public static IEnumerable<object[]> IgnoredCompoundTestCases()
+    {
+      const string EXPECTED_PAYLOAD = "this should have been included";
+      const string EXPECTED_HASH = "eeaeee4e61b04b313dd840cd63341eee";
+      yield return new object[] { "this should have been ignored", EXPECTED_PAYLOAD, EXPECTED_HASH };
+      yield return new object[] { "again, ignored!", EXPECTED_PAYLOAD, EXPECTED_HASH };
+      yield return new object[] { "this one is not", EXPECTED_PAYLOAD, EXPECTED_HASH };
+    }
+
+    [Theory]
+    [MemberData(nameof(IgnoredTestCases))]
+    public void IgnoredProperties_NotIncludedInJson(string ignoredPayload, string expectedPayload, string expectedHash)
+    {
+      IgnoreTest testData = new(ignoredPayload, expectedPayload);
+
+      SpeckleObjectSerializer sut = new();
+
+      var result = sut.SerializeBase(testData);
+      result.ShouldNotBeNull();
+      result.Value.Id.ShouldNotBeNull();
+
+      var jsonString = result.Value.Json.ToString();
+      jsonString.ShouldNotContain(nameof(testData.ShouldBeIgnored));
+      jsonString.ShouldNotContain(ignoredPayload);
+
+      jsonString.ShouldContain(nameof(testData.ShouldBeIncluded));
+      jsonString.ShouldContain(expectedPayload);
+
+      result.Value.Id.Value.Value.ShouldBe(expectedHash);
+    }
+
+    [Theory]
+    [MemberData(nameof(IgnoredCompoundTestCases))]
+    public void IgnoredProperties_Compound_NotIncludedInJson(string ignoredPayload, string expectedPayload,
+      string expectedHash)
+    {
+      IgnoredCompoundTest testData = new(ignoredPayload, expectedPayload);
+
+      MemoryTransport savedObjects = new();
+      SpeckleObjectSerializer sut = new(writeTransports: new[] { savedObjects });
+
+     var result = sut.SerializeBase(testData);
+     var (json, id) = result.NotNull();
+      json.Value.ShouldNotBeNull();
+      id.ShouldNotBeNull();
+
+      savedObjects.SaveObject(id.Value.Value.NotNull(), json.Value);
+
+      foreach ((_, string childJson) in savedObjects.Objects)
+      {
+        childJson.ShouldNotContain(nameof(testData.ShouldBeIgnored));
+        childJson.ShouldNotContain(ignoredPayload);
+
+        childJson.ShouldContain(nameof(testData.ShouldBeIncluded));
+        childJson.ShouldContain(expectedPayload);
+      }
+
+      id.Value.Value.ShouldBe(expectedHash);
+    }
   }
-}
 
-[SpeckleType("Speckle.Sdk.Test.Unit.Serialisation.IgnoredCompoundTest")]
-public sealed class IgnoredCompoundTest(string ignoredPayload, string expectedPayload) : Base
-{
-  [JsonIgnore]
-  public Base ShouldBeIgnored => new IgnoreTest(ignoredPayload, expectedPayload) { ["override"] = ignoredPayload };
-  public Base ShouldBeIncluded => new IgnoreTest(ignoredPayload, expectedPayload);
+  [SpeckleType("Speckle.Sdk.Test.Unit.Serialisation.IgnoredCompoundTest")]
+  public sealed class IgnoredCompoundTest(string ignoredPayload, string expectedPayload) : Base
+  {
+    [JsonIgnore]
+    public Base ShouldBeIgnored => new IgnoreTest(ignoredPayload, expectedPayload) { ["override"] = ignoredPayload };
 
-  [JsonIgnore, DetachProperty]
-  public Base ShouldBeIgnoredDetached => ShouldBeIgnored;
+    public Base ShouldBeIncluded => new IgnoreTest(ignoredPayload, expectedPayload);
 
-  [DetachProperty]
-  public Base ShouldBeIncludedDetached => ShouldBeIncluded;
+    [JsonIgnore, DetachProperty] public Base ShouldBeIgnoredDetached => ShouldBeIgnored;
 
-  [JsonIgnore]
-  public List<Base> ShouldBeIgnoredList => [ShouldBeIgnored];
+    [DetachProperty] public Base ShouldBeIncludedDetached => ShouldBeIncluded;
 
-  [JsonIgnore, DetachProperty]
-  public List<Base> ShouldBeIgnoredDetachedList => ShouldBeIgnoredList;
+    [JsonIgnore] public List<Base> ShouldBeIgnoredList => new List<Base> { ShouldBeIgnored };
 
-  public List<Base> ShouldBeIncludedList => [ShouldBeIncluded];
+    [JsonIgnore, DetachProperty] public List<Base> ShouldBeIgnoredDetachedList => ShouldBeIgnoredList;
 
-  [DetachProperty]
-  public List<Base> ShouldBeIncludedDetachedList => ShouldBeIncludedList;
-}
+    public List<Base> ShouldBeIncludedList => new List<Base> { ShouldBeIncluded };
 
-[SpeckleType("Speckle.Sdk.Tests.Unit.Serialisation.IgnoreTest")]
-public sealed class IgnoreTest(string shouldBeIgnoredPayload, string shouldBeIncludedPayload) : Base
-{
-  [JsonIgnore]
-  public string ShouldBeIgnored => shouldBeIgnoredPayload;
+    [DetachProperty] public List<Base> ShouldBeIncludedDetachedList => ShouldBeIncludedList;
+  }
 
-  public string ShouldBeIncluded => shouldBeIncludedPayload;
+  [SpeckleType("Speckle.Sdk.Tests.Unit.Serialisation.IgnoreTest")]
+  public sealed class IgnoreTest(string shouldBeIgnoredPayload, string shouldBeIncludedPayload) : Base
+  {
+    [JsonIgnore] public string ShouldBeIgnored => shouldBeIgnoredPayload;
+
+    public string ShouldBeIncluded => shouldBeIncludedPayload;
+  }
 }

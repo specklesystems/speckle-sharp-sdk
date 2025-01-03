@@ -1,62 +1,74 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Linq;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;
+using Xunit;
+using Shouldly;
 
 namespace Speckle.Sdk.Tests.Unit.Models.GraphTraversal;
 
-[TestOf(typeof(TraversalContextExtensions))]
+// Mark test class for xUnit
 public class TraversalContextExtensionsTests
 {
-  public static int[] TestDepths => new[] { 1, 2, 10 };
 
   private TraversalContext? CreateLinkedList(int depth, Func<int, Base> createBaseFunc)
   {
-    if (depth <= 0)
-      return null;
-    return new TraversalContext(createBaseFunc(depth), $"{depth}", CreateLinkedList(depth - 1, createBaseFunc));
+    if (depth <= 0) return null;
+    return new TraversalContext(createBaseFunc(depth), $"{depth}",
+      CreateLinkedList(depth - 1, createBaseFunc));
   }
 
-  [TestCaseSource(nameof(TestDepths))]
+  [Theory] // replaces [TestCaseSource]
+  [MemberData(nameof(GetTestDepths))]
   public void GetPropertyPath_ReturnsSequentialPath(int depth)
   {
-    var testData = CreateLinkedList(depth, i => new()).NotNull();
+    var testData = CreateLinkedList(depth, i => new Base()).NotNull();
 
     var path = TraversalContextExtensions.GetPropertyPath(testData);
 
     var expected = Enumerable.Range(1, depth).Select(i => i.ToString());
 
-    Assert.That(path, Is.EquivalentTo(expected));
+    path.ShouldBe(expected, ignoreOrder: true);
   }
 
-  [TestCaseSource(nameof(TestDepths))]
+  [Theory]
+  [MemberData(nameof(GetTestDepths))]
   public void GetAscendant(int depth)
   {
-    var testData = CreateLinkedList(depth, i => new()).NotNull();
+    var testData = CreateLinkedList(depth, i => new Base()).NotNull();
 
     var all = TraversalContextExtensions.GetAscendants(testData).ToArray();
 
-    Assert.That(all, Has.Length.EqualTo(depth));
+    all.Length.ShouldBe(depth);
   }
 
-  [TestCaseSource(nameof(TestDepths))]
+  [Theory]
+  [MemberData(nameof(GetTestDepths))]
   public void GetAscendantOfType_AllBase(int depth)
   {
-    var testData = CreateLinkedList(depth, i => new()).NotNull();
+    var testData = CreateLinkedList(depth, i => new Base()).NotNull();
 
     var all = TraversalContextExtensions.GetAscendantOfType<Base>(testData).ToArray();
 
-    Assert.That(all, Has.Length.EqualTo(depth));
+    all.Length.ShouldBe(depth);
   }
 
-  [TestCaseSource(nameof(TestDepths))]
+  [Theory]
+  [MemberData(nameof(GetTestDepths))]
   public void GetAscendantOfType_EveryOtherIsCollection(int depth)
   {
     var testData = CreateLinkedList(depth, i => i % 2 == 0 ? new Base() : new Collection()).NotNull();
 
     var all = TraversalContextExtensions.GetAscendantOfType<Collection>(testData).ToArray();
 
-    Assert.That(all, Has.Length.EqualTo(Math.Ceiling(depth / 2.0)));
+    all.Length.ShouldBe((int)Math.Ceiling(depth / 2.0));
+  }
+
+  // Providing the test depths to [MemberData] for xUnit
+  public static System.Collections.Generic.IEnumerable<object[]> GetTestDepths()
+  {
+    return  new[] { 1, 2, 10 }.Select(depth => new object[] { depth });
   }
 }

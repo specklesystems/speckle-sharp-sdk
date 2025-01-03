@@ -1,16 +1,16 @@
-using NUnit.Framework;
+using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Transports;
 
-[TestFixture]
 public abstract class TransportTests
 {
   protected abstract ITransport? Sut { get; }
 
-  [Test]
+  [Fact]
   public async Task SaveAndRetrieveObject()
   {
     const string PAYLOAD_ID = "MyTestObjectId";
@@ -18,7 +18,7 @@ public abstract class TransportTests
 
     {
       var preAdd = await Sut.NotNull().GetObject(PAYLOAD_ID);
-      Assert.That(preAdd, Is.Null);
+      preAdd.ShouldBeNull();
     }
 
     Sut.SaveObject(PAYLOAD_ID, PAYLOAD_DATA);
@@ -26,11 +26,11 @@ public abstract class TransportTests
 
     {
       var postAdd = await Sut.GetObject(PAYLOAD_ID);
-      Assert.That(postAdd, Is.EqualTo(PAYLOAD_DATA));
+      postAdd.ShouldBe(PAYLOAD_DATA);
     }
   }
 
-  [Test]
+  [Fact]
   public async Task HasObject()
   {
     const string PAYLOAD_ID = "MyTestObjectId";
@@ -38,9 +38,9 @@ public abstract class TransportTests
 
     {
       var preAdd = await Sut.NotNull().HasObjects(new[] { PAYLOAD_ID });
-      Assert.That(preAdd, Has.Exactly(1).Items);
-      Assert.That(preAdd, Has.No.ContainValue(true));
-      Assert.That(preAdd, Contains.Key(PAYLOAD_ID));
+      preAdd.Count.ShouldBe(1);
+      preAdd.Values.ShouldNotContain(true);
+      preAdd.Keys.ShouldContain(PAYLOAD_ID);
     }
 
     Sut.SaveObject(PAYLOAD_ID, PAYLOAD_DATA);
@@ -48,15 +48,13 @@ public abstract class TransportTests
 
     {
       var postAdd = await Sut.HasObjects(new[] { PAYLOAD_ID });
-
-      Assert.That(postAdd, Has.Exactly(1).Items);
-      Assert.That(postAdd, Has.No.ContainValue(false));
-      Assert.That(postAdd, Contains.Key(PAYLOAD_ID));
+      postAdd.Count.ShouldBe(1);
+      postAdd.Values.ShouldNotContain(false);
+      postAdd.Keys.ShouldContain(PAYLOAD_ID);
     }
   }
 
-  [Test]
-  [Description("Test that transports save objects when many threads are concurrently saving data")]
+  [Fact]
   public async Task SaveObject_ConcurrentWrites()
   {
     const int TEST_DATA_COUNT = 100;
@@ -75,43 +73,36 @@ public abstract class TransportTests
 
     await Sut.NotNull().WriteComplete();
 
-    //Test 1. SavedObjectCount //WARN: FAIL!!! seems this is not implemented for SQLite Transport
-    //Assert.That(transport.SavedObjectCount, Is.EqualTo(testDataCount));
-
-    //Test 2. HasObjects
+    //Test: HasObjects
     var ids = testData.Select(x => x.id).ToList();
     var hasObjectsResult = await Sut.HasObjects(ids);
 
-    Assert.That(hasObjectsResult, Does.Not.ContainValue(false));
-    Assert.That(hasObjectsResult.Keys, Is.EquivalentTo(ids));
+    hasObjectsResult.Values.ShouldNotContain(false);
+    hasObjectsResult.Keys.ShouldBe(ids);
 
-    //Test 3. GetObjects
+    //Test: GetObjects
     foreach (var x in testData)
     {
       var res = await Sut.GetObject(x.id);
-      Assert.That(res, Is.EqualTo(x.data));
+      res.ShouldBe(x.data);
     }
   }
 
-  [Test]
+  [Fact]
   public void ToString_IsNotEmpty()
   {
     var toString = Sut.NotNull().ToString();
-
-    Assert.That(toString, Is.Not.Null);
-    Assert.That(toString, Is.Not.Empty);
+    toString.ShouldNotBeNullOrEmpty();
   }
 
-  [Test]
+  [Fact]
   public void TransportName_IsNotEmpty()
   {
     var toString = Sut.NotNull().TransportName;
-
-    Assert.That(toString, Is.Not.Null);
-    Assert.That(toString, Is.Not.Empty);
+    toString.ShouldNotBeNullOrEmpty();
   }
 
-  [Test]
+  [Fact]
   public void SaveObject_ExceptionThrown_TaskIsCanceled()
   {
     using CancellationTokenSource tokenSource = new();
@@ -119,14 +110,14 @@ public abstract class TransportTests
 
     tokenSource.Cancel();
 
-    Assert.CatchAsync<OperationCanceledException>(async () =>
+    Should.ThrowAsync<OperationCanceledException>(async () =>
     {
       Sut.SaveObject("abcdef", "fake payload data");
       await Sut.WriteComplete();
     });
   }
 
-  [Test]
+  [Fact]
   public async Task CopyObjectAndChildren()
   {
     //Assemble
@@ -156,7 +147,7 @@ public abstract class TransportTests
     foreach (var (expectedId, expectedData) in testData)
     {
       var actual = await destination.GetObject(expectedId);
-      Assert.That(actual, Is.EqualTo(expectedData));
+      actual.ShouldBe(expectedData);
     }
   }
 }

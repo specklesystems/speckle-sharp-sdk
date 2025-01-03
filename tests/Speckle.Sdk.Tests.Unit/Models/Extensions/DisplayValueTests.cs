@@ -1,11 +1,11 @@
-using NUnit.Framework;
+using Shouldly;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
 
-[TestOf(typeof(BaseExtensions))]
 public class DisplayValueTests
 {
   private const string PAYLOAD = "This is my payload";
@@ -22,28 +22,38 @@ public class DisplayValueTests
     TypeLoader.Initialize(typeof(Base).Assembly);
   }
 
-  [SetUp]
-  public void Setup() => Reset();
+  [Fact]
+  public void Setup()
+  {
+    Reset();
+  }
 
-  [TestCaseSource(nameof(TestCases))]
+  [Theory]
+  [MemberData(nameof(TestCases))]
   public void TestTryGetDisplayValue_WithValue(Base testCase)
   {
     var res = testCase.TryGetDisplayValue();
 
-    Assert.That(res, Has.Count.EqualTo(1));
-    Assert.That(res, Has.One.Items.TypeOf<Base>().With.Property(nameof(Base.applicationId)).EqualTo(PAYLOAD));
+    // Assert collection count
+    res?.Count.ShouldBe(1);
+
+    // Assert the single item matches the expected type and property
+    var displayValue = res?[0];
+    displayValue.ShouldNotBeNull();
+    displayValue.applicationId.ShouldBe(PAYLOAD);
   }
 
-  public static IEnumerable<Base> TestCases()
+  public static IEnumerable<object[]> TestCases()
   {
-    var listOfBase = new List<object> { s_displayValue }; //This is what our deserializer will output
+    var listOfBase = new List<object> { s_displayValue }; // This is what our deserializer will output
     var listOfMesh = new List<Base> { s_displayValue };
-    yield return new Base { ["@displayValue"] = s_displayValue };
-    yield return new Base { ["displayValue"] = s_displayValue };
-    yield return new Base { ["@displayValue"] = listOfBase };
-    yield return new Base { ["displayValue"] = listOfBase };
-    yield return new TypedDisplayValue { displayValue = s_displayValue };
-    yield return new TypedDisplayValueList { displayValue = listOfMesh };
+
+    yield return new object[] { new Base { ["@displayValue"] = s_displayValue } };
+    yield return new object[] { new Base { ["displayValue"] = s_displayValue } };
+    yield return new object[] { new Base { ["@displayValue"] = listOfBase } };
+    yield return new object[] { new Base { ["displayValue"] = listOfBase } };
+    yield return new object[] { new TypedDisplayValue { displayValue = s_displayValue } };
+    yield return new object[] { new TypedDisplayValueList { displayValue = listOfMesh } };
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Models.Extensions.DisplayValueTests+TypedDisplayValue")]
