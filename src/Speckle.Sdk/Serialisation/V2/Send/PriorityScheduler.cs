@@ -3,7 +3,7 @@
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public sealed class PriorityScheduler(ThreadPriority priority, int maximumConcurrencyLevel) : TaskScheduler, IDisposable
-{ 
+{
   private readonly CancellationTokenSource _cancellationTokenSource = new();
   private readonly BlockingCollection<Task> _tasks = new();
   private Thread[]? _threads;
@@ -15,7 +15,6 @@ public sealed class PriorityScheduler(ThreadPriority priority, int maximumConcur
     _tasks.Dispose();
     _cancellationTokenSource.Dispose();
   }
- 
 
   public override int MaximumConcurrencyLevel => maximumConcurrencyLevel;
 
