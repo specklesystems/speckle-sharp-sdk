@@ -19,9 +19,9 @@
       },
       "Microsoft.Extensions.ObjectPool": {
         "type": "Direct",
-        "requested": "[8.0.10, )",
-        "resolved": "8.0.10",
-        "contentHash": "u7gAG7JgxF8VSJUGPSudAcPxOt+ymJKQCSxNRxiuKV+klCQbHljQR75SilpedCTfhPWDhtUwIJpnDVtspr9nMg=="
+        "requested": "[8.0.11, )",
+        "resolved": "8.0.11",
+        "contentHash": "6ApKcHNJigXBfZa6XlDQ8feJpq7SG1ogZXg6M4FiNzgd6irs3LUAzo0Pfn4F2ZI9liGnH1XIBR/OtSbZmJAV5w=="
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -44,9 +44,9 @@
       },
       "Open.ChannelExtensions": {
         "type": "Direct",
-        "requested": "[8.5.0, )",
-        "resolved": "8.5.0",
-        "contentHash": "dKD2iNfUYw+aOvwM2vCnD+q6JCtHiabkufKM1GateedRzcgv0RrtA4MoJI+7Y8N21R5A+wUA+j6P88g6mXPavA==",
+        "requested": "[8.6.0, )",
+        "resolved": "8.6.0",
+        "contentHash": "g5axz417bA6FXifJaBlB0l62gV7dYmknXx0n8lT/LSA3+7isaGMsOjJp5J+H/yXDRe4r+KZrE+bzQcs4Ets2kA==",
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "8.0.0",
           "System.Collections.Immutable": "8.0.0",
@@ -76,9 +76,9 @@
       },
       "PolySharp": {
         "type": "Direct",
-        "requested": "[1.14.1, )",
-        "resolved": "1.14.1",
-        "contentHash": "mOOmFYwad3MIOL14VCjj02LljyF1GNw1wP0YVlxtcPvqdxjGGMNdNJJxHptlry3MOd8b40Flm8RPOM8JOlN2sQ=="
+        "requested": "[1.15.0, )",
+        "resolved": "1.15.0",
+        "contentHash": "FbU0El+EEjdpuIX4iDbeS7ki1uzpJPx8vbqOzEtqnl1GZeAGJfq+jCbxeJL2y0EPnUNk8dRnnqR2xnYXg9Tf+g=="
       },
       "Speckle.InterfaceGenerator": {
         "type": "Direct",
@@ -185,9 +185,9 @@
       },
       "Microsoft.Extensions.ObjectPool": {
         "type": "Direct",
-        "requested": "[8.0.10, )",
-        "resolved": "8.0.10",
-        "contentHash": "u7gAG7JgxF8VSJUGPSudAcPxOt+ymJKQCSxNRxiuKV+klCQbHljQR75SilpedCTfhPWDhtUwIJpnDVtspr9nMg=="
+        "requested": "[8.0.11, )",
+        "resolved": "8.0.11",
+        "contentHash": "6ApKcHNJigXBfZa6XlDQ8feJpq7SG1ogZXg6M4FiNzgd6irs3LUAzo0Pfn4F2ZI9liGnH1XIBR/OtSbZmJAV5w=="
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -201,9 +201,9 @@
       },
       "Open.ChannelExtensions": {
         "type": "Direct",
-        "requested": "[8.5.0, )",
-        "resolved": "8.5.0",
-        "contentHash": "dKD2iNfUYw+aOvwM2vCnD+q6JCtHiabkufKM1GateedRzcgv0RrtA4MoJI+7Y8N21R5A+wUA+j6P88g6mXPavA=="
+        "requested": "[8.6.0, )",
+        "resolved": "8.6.0",
+        "contentHash": "g5axz417bA6FXifJaBlB0l62gV7dYmknXx0n8lT/LSA3+7isaGMsOjJp5J+H/yXDRe4r+KZrE+bzQcs4Ets2kA=="
       },
       "Polly": {
         "type": "Direct",
@@ -228,9 +228,9 @@
       },
       "PolySharp": {
         "type": "Direct",
-        "requested": "[1.14.1, )",
-        "resolved": "1.14.1",
-        "contentHash": "mOOmFYwad3MIOL14VCjj02LljyF1GNw1wP0YVlxtcPvqdxjGGMNdNJJxHptlry3MOd8b40Flm8RPOM8JOlN2sQ=="
+        "requested": "[1.15.0, )",
+        "resolved": "1.15.0",
+        "contentHash": "FbU0El+EEjdpuIX4iDbeS7ki1uzpJPx8vbqOzEtqnl1GZeAGJfq+jCbxeJL2y0EPnUNk8dRnnqR2xnYXg9Tf+g=="
       },
       "Speckle.InterfaceGenerator": {
         "type": "Direct",
