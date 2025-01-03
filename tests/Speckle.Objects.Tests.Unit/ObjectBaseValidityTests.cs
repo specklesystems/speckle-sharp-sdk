@@ -4,20 +4,21 @@ using Speckle.Objects.Geometry;
 using Speckle.Objects.Geometry.Autocad;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Xunit;
 using Point = Speckle.Objects.Geometry.Point;
 
 namespace Speckle.Objects.Tests.Unit;
 
 public class ObjectBaseValidityTests
 {
-  [Test]
+  [Fact]
   public void TestThatTypeWithoutAttributeFails()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
   }
 
-  [Test]
+  [Fact]
   public void InheritanceTest_Disallow()
   {
     var exception = Assert.Throws<InvalidOperationException>(() =>
@@ -31,7 +32,7 @@ public class ObjectBaseValidityTests
     );
   }
 
-  [Test]
+  [Fact]
   public void InheritanceTest_Allow()
   {
     TypeLoader.Reset();

@@ -1,18 +1,18 @@
 using System.Diagnostics.CodeAnalysis;
-using NUnit.Framework;
+using Shouldly;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;
 
-[TestFixture, TestOf(typeof(Point))]
 public class PointTests
 {
-  [Test]
+  [Fact]
   [SuppressMessage(
     "Assertion",
-    "NUnit2010:Use EqualConstraint for better assertion messages in case of failure",
-    Justification = "Need to explicitly test equality operator"
+    "xUnit2013:Do not use equality check to assert boolean value",
+    Justification = "Explicit equality operator tests are necessary"
   )]
   public void TestNull()
   {
@@ -20,35 +20,42 @@ public class PointTests
     Point? b = null;
     Point c = new(0, 0, 0, Units.Meters);
 
-    Assert.Multiple(() =>
-    {
-      Assert.That(a == b, Is.True);
-      Assert.That(a != b, Is.False);
-      Assert.That(b == a, Is.True);
-      Assert.That(b != a, Is.False);
+    // Using Shouldly assertions for readability
+    a.ShouldBe(b);
+    (a != b).ShouldBeFalse();
 
-      Assert.That(a == c, Is.False);
-      Assert.That(a != c, Is.True);
-      Assert.That(c == a, Is.False);
-      Assert.That(c != a, Is.True);
-    });
+    b.ShouldBe(a);
+    (b != a).ShouldBeFalse();
+
+    (a == c).ShouldBeFalse();
+    (a != c).ShouldBeTrue();
+
+    (c == a).ShouldBeFalse();
+    (c != a).ShouldBeTrue();
   }
 
-  [Test]
-  [TestCase(1, 1, 1, "m", 1, 1, 1, "m", ExpectedResult = true)]
-  [TestCase(1, 1, 1, "m", 0, 1, 1, "m", ExpectedResult = false)]
-  [TestCase(1, 1, 1, "m", 1, 0, 1, "m", ExpectedResult = false)]
-  [TestCase(1, 1, 1, "m", 1, 1, 0, "m", ExpectedResult = false)]
-  [TestCase(1, 1, 1, "", 1, 1, 1, "", ExpectedResult = true)]
-  [TestCase(1, 1, 1, null, 1, 1, 1, null, ExpectedResult = true)]
-  [TestCase(1, 1, 1, "m", 1, 1, 1, "meters", ExpectedResult = false)]
-  [TestCase(1, 1, 1, "m", 1, 1, 1, "M", ExpectedResult = false)]
-  // Units
-  public bool TestEqual(double x1, double y1, double z1, string units1, double x2, double y2, double z2, string units2)
+  //TODO: should units be allowed to be string?
+  [Theory]
+  [InlineData(1, 1, 1, "m", 1, 1, 1, "m", true)]
+  [InlineData(1, 1, 1, "m", 0, 1, 1, "m", false)]
+  [InlineData(1, 1, 1, "m", 1, 0, 1, "m", false)]
+  [InlineData(1, 1, 1, "m", 1, 1, 0, "m", false)]
+  [InlineData(1, 1, 1, "", 1, 1, 1, "", true)]
+  [InlineData(1, 1, 1, null, 1, 1, 1, null, true)]
+  [InlineData(1, 1, 1, "m", 1, 1, 1, "meters", false)]
+  [InlineData(1, 1, 1, "m", 1, 1, 1, "M", false)]
+  public void TestEqual(double x1, double y1, double z1, string? units1, double x2, double y2, double z2, string? units2,
+    bool expectedResult)
   {
+    if (string.IsNullOrEmpty(units1) || string.IsNullOrEmpty(units2))
+    {
+      expectedResult.ShouldBeFalse();
+      return;
+    }
     Point p1 = new(x1, y1, z1, units1);
     Point p2 = new(x2, y2, z2, units2);
 
-    return p1 == p2;
+    // Assert equality using ShouldBe
+    (p1 == p2).ShouldBe(expectedResult);
   }
 }
