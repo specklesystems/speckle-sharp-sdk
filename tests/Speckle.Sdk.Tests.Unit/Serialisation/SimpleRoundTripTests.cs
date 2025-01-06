@@ -8,6 +8,7 @@ using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
+[TestFixture]
 public class SimpleRoundTripTests
 {
   private IOperations _operations;

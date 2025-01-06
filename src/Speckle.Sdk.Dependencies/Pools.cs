@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Concurrent;
+using System.Text;
 using Microsoft.Extensions.ObjectPool;
 
 namespace Speckle.Sdk.Dependencies;
@@ -33,6 +34,19 @@ public static class Pools
     }
   }
 
+  private sealed class ObjectConcurrentDictionaryPolicy<TKey, TValue>
+    : IPooledObjectPolicy<ConcurrentDictionary<TKey, TValue>>
+    where TKey : notnull
+  {
+    public ConcurrentDictionary<TKey, TValue> Create() => new(Environment.ProcessorCount, 50);
+
+    public bool Return(ConcurrentDictionary<TKey, TValue> obj)
+    {
+      obj.Clear();
+      return true;
+    }
+  }
+
   private sealed class ObjectListPolicy<T> : IPooledObjectPolicy<List<T>>
   {
     public List<T> Create() => new(50);
@@ -48,4 +62,7 @@ public static class Pools
 
   public static Pool<Dictionary<TKey, TValue>> CreateDictionaryPool<TKey, TValue>()
     where TKey : notnull => new(new ObjectDictionaryPolicy<TKey, TValue>());
+
+  public static Pool<ConcurrentDictionary<TKey, TValue>> CreateConcurrentDictionaryPool<TKey, TValue>()
+    where TKey : notnull => new(new ObjectConcurrentDictionaryPolicy<TKey, TValue>());
 }

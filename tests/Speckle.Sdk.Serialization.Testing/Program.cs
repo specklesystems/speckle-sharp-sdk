@@ -56,7 +56,7 @@ Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-var process2 = factory.CreateSerializeProcess(
+using var process2 = factory.CreateSerializeProcess(
   new Uri(url),
   streamId,
   token,
