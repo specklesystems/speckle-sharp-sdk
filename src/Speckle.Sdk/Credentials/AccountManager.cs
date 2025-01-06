@@ -330,7 +330,7 @@ public sealed class AccountManager(
   {
     static bool IsInvalid(Account ac) => ac.userInfo == null || ac.serverInfo == null;
 
-    var sqlAccounts = _accountStorage.GetAllObjects().Select(x => JsonConvert.DeserializeObject<Account>(x.Item2));
+    var sqlAccounts = _accountStorage.GetAllObjects().Select(x => JsonConvert.DeserializeObject<Account>(x.Json));
     var localAccounts = GetLocalAccounts();
 
     foreach (var acc in sqlAccounts)
@@ -651,7 +651,7 @@ public sealed class AccountManager(
     }
 
     // this uses the SQLite transport to store locks
-    var lockIds = _accountAddLockStorage.GetAllObjects().Select(x => x.Item2).OrderByDescending(d => d).ToList();
+    var lockIds = _accountAddLockStorage.GetAllObjects().Select(x => x.Id).OrderByDescending(d => d).ToList();
     var now = DateTime.Now;
     foreach (var l in lockIds)
     {

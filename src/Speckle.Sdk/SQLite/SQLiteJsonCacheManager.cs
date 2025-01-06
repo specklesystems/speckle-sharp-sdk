@@ -69,7 +69,7 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     c.Close();
   }
 
-  public IReadOnlyCollection<(string, string)> GetAllObjects() =>
+  public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() =>
     _pool.Use(
       CacheOperation.GetAll,
       command =>
