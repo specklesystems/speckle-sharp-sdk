@@ -108,14 +108,6 @@ public interface IDisplayValue<out T> : ISpeckleObject
 
 #endregion
 
-#region GIS
-public interface IGisFeature : ISpeckleObject
-{
-  Base attributes { get; set; }
-}
-
-#endregion
-
 #region Data objects
 
 /// <summary>
@@ -173,6 +165,15 @@ public interface ICsiObject : IDataObject
 public interface IGisObject : IDataObject
 {
   string type { get; }
+}
+
+public interface IArchicadObject : IDataObject
+{
+  string type { get; }
+
+  string level { get; }
+
+  List<string> classification { get; }
 }
 
 public interface INavisworksObject : IDataObject { }
