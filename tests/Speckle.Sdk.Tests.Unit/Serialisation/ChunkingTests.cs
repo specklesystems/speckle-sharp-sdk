@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using FluentAssertions;
 using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
@@ -46,8 +47,7 @@ public class ChunkingTests
       x!.TryGetValue("speckle_type", out var speckleType) && ((string)speckleType!) == "Speckle.Core.Models.DataChunk"
     );
 
-    // Assert using Shouldly
-    numberOfChunks.ShouldBe(expectedChunkCount);
+    numberOfChunks.Should().Be(expectedChunkCount);
   }
 
   private static Base CreateDynamicTestCase(double numberOfChunks, int chunkSize)

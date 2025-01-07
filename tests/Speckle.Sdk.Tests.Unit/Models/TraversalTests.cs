@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Shouldly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
@@ -32,9 +33,9 @@ public class TraversalTests
     var ret = root.Flatten(BreakRule).ToList();
 
     //Test
-    ret.Count.ShouldBe(3);
+    ret.Count.Should().Be(3);
 
-    ret.ShouldBeUnique();
+    ret.Should().OnlyHaveUniqueItems();
 
     ret.Where(BreakRule).ShouldNotBeEmpty();
 
@@ -62,9 +63,9 @@ public class TraversalTests
     var ret = rootObject.Flatten(_ => ++counter >= flattenDepth).ToList();
 
     //Test
-    ret.Count.ShouldBe(Math.Min(flattenDepth, nestDepth));
+    ret.Count.Should().Be(Math.Min(flattenDepth, nestDepth));
 
-    ret.ShouldBeUnique();
+    ret.Should().OnlyHaveUniqueItems();
   }
 
   [Fact(DisplayName = "Tests that the flatten function does not get stuck on circular references")]
@@ -83,11 +84,11 @@ public class TraversalTests
     var ret = objectA.Flatten().ToList();
 
     //Test
-    ret.ShouldBeUnique();
+    ret.Should().OnlyHaveUniqueItems();
 
-    ret.ShouldBe(new[] { objectA, objectB, objectC });
+    ret.Should().BeEquivalentTo(new[] { objectA, objectB, objectC });
 
-    ret.Count.ShouldBe(3);
+    ret.Count.Should().Be(3);
   }
 
   [Fact(DisplayName = "Tests that the flatten function correctly handles (non circular) duplicates")]
@@ -104,10 +105,10 @@ public class TraversalTests
     var ret = objectA.Flatten().ToList();
 
     //Test
-    ret.ShouldBeUnique();
+    ret.Should().OnlyHaveUniqueItems();
 
-    ret.ShouldBe(new[] { objectA, objectB });
+    ret.Should().BeEquivalentTo(new[] { objectA, objectB });
 
-    ret.Count.ShouldBe(2);
+    ret.Count.Should().Be(2);
   }
 }

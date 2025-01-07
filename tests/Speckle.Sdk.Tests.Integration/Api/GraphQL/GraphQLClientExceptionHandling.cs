@@ -52,7 +52,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
     var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
     );
-    ex.InnerExceptions.OfType<SpeckleGraphQLForbiddenException>().Count().ShouldBe(1);
+    ex.InnerExceptions.OfType<SpeckleGraphQLForbiddenException>().Count().Should().Be(1);
   }
 
   [Fact, Description($"Attempts to execute a bad query, expect an inner {nameof(SpeckleGraphQLInvalidQueryException)}")]
@@ -70,7 +70,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
     var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
     );
-    ex.InnerExceptions.OfType<SpeckleGraphQLInvalidQueryException>().Count().ShouldBe(1);
+    ex.InnerExceptions.OfType<SpeckleGraphQLInvalidQueryException>().Count().Should().Be(1);
   }
 
   [Fact]
@@ -83,7 +83,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
     var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => await _sut.Project.UpdateRole(input).ConfigureAwait(false)
     );
-    ex.InnerExceptions.OfType<SpeckleGraphQLBadInputException>().Count().ShouldBe(2);
+    ex.InnerExceptions.OfType<SpeckleGraphQLBadInputException>().Count().Should().Be(2);
   }
 
   [Fact]
@@ -96,7 +96,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
       async () => await _sut.ActiveUser.Get(cts.Token).ConfigureAwait(false)
     );
 
-    ex.CancellationToken.ShouldBeEquivalentTo(cts.Token);
+    ex.CancellationToken.Should().BeEquivalentTo(cts.Token);
   }
 
   [Fact]

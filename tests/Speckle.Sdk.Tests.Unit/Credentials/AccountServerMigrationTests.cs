@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -43,7 +44,7 @@ namespace Speckle.Sdk.Tests.Unit.Credentials
       var result = serviceProvider.GetRequiredService<IAccountManager>().GetAccounts(requestedUrl).ToList();
 
       // Assert the result using Shouldly
-      result.ShouldBe(expectedSequence, ignoreOrder: true);
+      result.Should().BeEquivalentTo(expectedSequence);
     }
 
     public void Dispose()

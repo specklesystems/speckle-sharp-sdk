@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using FluentAssertions;
 using GraphQL;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
@@ -55,7 +56,7 @@ public sealed class GraphQLClientTests : IDisposable
       );
     });
     timer.Stop();
-    timer.ElapsedMilliseconds.ShouldBeLessThan(1000);
+    timer.ElapsedMilliseconds.Should().BeLessThan(1000);
 
     // the default retry policy would retry 5 times with 1 second jitter backoff each
     // if the elapsed is less than a second, this was def not retried
@@ -81,8 +82,8 @@ public sealed class GraphQLClientTests : IDisposable
     });
     timer.Stop();
     // The baseline for wait is 1 seconds between the jittered retry
-    timer.ElapsedMilliseconds.ShouldBeGreaterThanOrEqualTo(5000);
-    counter.ShouldBe(maxRetryCount);
+    timer.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(5000);
+    counter.Should().Be(maxRetryCount);
   }
 
   public class FakeGqlResponseModel { }

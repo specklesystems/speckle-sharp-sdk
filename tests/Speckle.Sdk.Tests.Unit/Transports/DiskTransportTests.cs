@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using FluentAssertions;
 using Shouldly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
@@ -29,7 +30,7 @@ public sealed class DiskTransportTests : TransportTests, IDisposable
     var directoryExists = Directory.Exists(_fullPath);
 
     // Assert
-    directoryExists.ShouldBeTrue();
+    directoryExists.Should().BeTrue();
   }
 
   public void Dispose()

@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using FluentAssertions;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -29,14 +30,14 @@ public class ActiveUserResourceTests : IAsyncLifetime
   {
     var res = await Sut.Get();
     res.ShouldNotBeNull();
-    res!.id.ShouldBe(_testUser.Account.userInfo.id);
+    res!.id.Should().Be(_testUser.Account.userInfo.id);
   }
 
   [Fact]
   public async Task ActiveUserGet_NonAuthed()
   {
     var result = await Fixtures.Unauthed.ActiveUser.Get();
-    result.ShouldBeNull();
+    result.Should().BeNull();
   }
 
   [Fact]
@@ -49,10 +50,10 @@ public class ActiveUserResourceTests : IAsyncLifetime
     var res = await Sut.Update(new UserUpdateInput(name: NEW_NAME, bio: NEW_BIO, company: NEW_COMPANY));
 
     res.ShouldNotBeNull();
-    res.id.ShouldBe(_testUser.Account.userInfo.id);
-    res.name.ShouldBe(NEW_NAME);
-    res.company.ShouldBe(NEW_COMPANY);
-    res.bio.ShouldBe(NEW_BIO);
+    res.id.Should().Be(_testUser.Account.userInfo.id);
+    res.name.Should().Be(NEW_NAME);
+    res.company.Should().Be(NEW_COMPANY);
+    res.bio.Should().Be(NEW_BIO);
   }
 
   [Fact]
@@ -65,7 +66,7 @@ public class ActiveUserResourceTests : IAsyncLifetime
 
     res.items.ShouldContain(x => x.id == p1.id);
     res.items.ShouldContain(x => x.id == p2.id);
-    res.items.Count.ShouldBe(2);
+    res.items.Count.Should().Be(2);
   }
 
   [Fact]

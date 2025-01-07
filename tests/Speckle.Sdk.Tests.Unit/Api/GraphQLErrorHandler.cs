@@ -1,4 +1,5 @@
-﻿using GraphQL;
+﻿using FluentAssertions;
+using GraphQL;
 using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Api;
@@ -35,8 +36,8 @@ public class GraphQLErrorHandlerTests
           }
         )
     );
-    ex.InnerExceptions.Count.ShouldBe(1);
-    ex.InnerExceptions[0].ShouldBeOfType(exType);
+    ex.InnerExceptions.Count.Should().Be(1);
+    ex.InnerExceptions[0].Should().BeOfType(exType);
   }
 
   [Fact]

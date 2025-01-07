@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using FluentAssertions;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -42,8 +43,8 @@ public class ModelResourceTests : IAsyncLifetime
     // Assert
     result.ShouldNotBeNull();
     result.id.ShouldNotBeNull();
-    result.name.ShouldBe(input.name, StringCompareShould.IgnoreCase);
-    result.description.ShouldBe(input.description);
+    result.name.Should().ContainEquivalentOf(input.name);
+    result.description.Should().Be(input.description);
   }
 
   [Fact]
@@ -53,11 +54,11 @@ public class ModelResourceTests : IAsyncLifetime
     Model result = await Sut.Get(_model.id, _project.id);
 
     // Assert
-    result.id.ShouldBe(_model.id);
-    result.name.ShouldBe(_model.name);
-    result.description.ShouldBe(_model.description);
-    result.createdAt.ShouldBe(_model.createdAt);
-    result.updatedAt.ShouldBe(_model.updatedAt);
+    result.id.Should().Be(_model.id);
+    result.name.Should().Be(_model.name);
+    result.description.Should().Be(_model.description);
+    result.createdAt.Should().Be(_model.createdAt);
+    result.updatedAt.Should().Be(_model.updatedAt);
   }
 
   [Fact]
@@ -67,9 +68,9 @@ public class ModelResourceTests : IAsyncLifetime
     var result = await Sut.GetModels(_project.id);
 
     // Assert
-    result.items.Count.ShouldBe(1);
-    result.totalCount.ShouldBe(1);
-    result.items[0].id.ShouldBe(_model.id);
+    result.items.Count.Should().Be(1);
+    result.totalCount.Should().Be(1);
+    result.items[0].id.Should().Be(_model.id);
   }
 
   [Fact]
@@ -79,10 +80,10 @@ public class ModelResourceTests : IAsyncLifetime
     var result = await _testUser.Project.GetWithModels(_project.id);
 
     // Assert
-    result.id.ShouldBe(_project.id);
-    result.models.items.Count.ShouldBe(1);
-    result.models.totalCount.ShouldBe(1);
-    result.models.items[0].id.ShouldBe(_model.id);
+    result.id.Should().Be(_project.id);
+    result.models.items.Count.Should().Be(1);
+    result.models.totalCount.Should().Be(1);
+    result.models.items[0].id.Should().Be(_model.id);
   }
 
   [Fact]
@@ -98,10 +99,10 @@ public class ModelResourceTests : IAsyncLifetime
     Model updatedModel = await Sut.Update(input);
 
     // Assert
-    updatedModel.id.ShouldBe(_model.id);
-    updatedModel.name.ShouldBe(NEW_NAME, StringCompareShould.IgnoreCase);
-    updatedModel.description.ShouldBe(NEW_DESCRIPTION);
-    updatedModel.updatedAt.ShouldBeGreaterThanOrEqualTo(_model.updatedAt);
+    updatedModel.id.Should().Be(_model.id);
+    updatedModel.name.Should().ContainEquivalentOf(NEW_NAME);
+    updatedModel.description.Should().Be(NEW_DESCRIPTION);
+    updatedModel.updatedAt.Should().BeOnOrAfter(_model.updatedAt);
   }
 
   [Fact]
@@ -116,11 +117,11 @@ public class ModelResourceTests : IAsyncLifetime
     // Assert: Ensure fetching the deleted model throws an exception
     var getEx = await Should.ThrowAsync<AggregateException>(() => Sut.Get(_model.id, _project.id));
     getEx.InnerExceptions.ShouldHaveSingleItem();
-    getEx.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
+    getEx.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLException>();
 
     // Assert: Ensure deleting the non-existing model again throws an exception
     var delEx = await Should.ThrowAsync<AggregateException>(() => Sut.Delete(input));
     delEx.InnerExceptions.ShouldHaveSingleItem();
-    delEx.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
+    delEx.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLException>();
   }
 }

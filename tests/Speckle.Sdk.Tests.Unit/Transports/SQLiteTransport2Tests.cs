@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Shouldly;
 using Speckle.Sdk.Common;
@@ -35,7 +36,7 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
   public void DbCreated_AfterInitialization()
   {
     bool fileExists = File.Exists(s_basePath);
-    fileExists.ShouldBeTrue();
+    fileExists.Should().BeTrue();
   }
 
   [Fact(DisplayName = "Tests that an object can be updated")]
@@ -52,7 +53,7 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
     await _sqlite.WriteComplete();
 
     var result = await _sqlite.GetObject(PAYLOAD_ID);
-    result.ShouldBe(NEW_PAYLOAD);
+    result.Should().Be(NEW_PAYLOAD);
   }
 
   [Fact(DisplayName = "Tests that updating an object that hasn't been saved previously adds the object to the DB")]
@@ -62,13 +63,13 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     var preUpdate = await _sqlite.NotNull().GetObject(PAYLOAD_ID);
-    preUpdate.ShouldBeNull();
+    preUpdate.Should().BeNull();
 
     _sqlite.UpdateObject(PAYLOAD_ID, PAYLOAD_DATA);
     await _sqlite.WriteComplete();
 
     var postUpdate = await _sqlite.GetObject(PAYLOAD_ID);
-    postUpdate.ShouldBe(PAYLOAD_DATA);
+    postUpdate.Should().Be(PAYLOAD_DATA);
   }
 
   [Fact]
@@ -78,13 +79,13 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     var preAdd = await Sut.NotNull().GetObject(PAYLOAD_ID);
-    preAdd.ShouldBeNull();
+    preAdd.Should().BeNull();
 
     _sqlite.NotNull().SaveObjectSync(PAYLOAD_ID, PAYLOAD_DATA);
 
     {
       var postAdd = await Sut.GetObject(PAYLOAD_ID);
-      postAdd.ShouldBe(PAYLOAD_DATA);
+      postAdd.Should().Be(PAYLOAD_DATA);
     }
   }
 
@@ -141,8 +142,8 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
 
     foreach (var result in results)
     {
-      result.ShouldBeEquivalentTo(results[0]);
-      result.Count.ShouldBe(dataSize);
+      result.Should().BeEquivalentTo(results[0]);
+      result.Count.Should().Be(dataSize);
     }
   }
 }

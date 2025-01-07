@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using FluentAssertions;
 using Shouldly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
@@ -29,7 +30,7 @@ public class TraversalContextExtensionsTests
 
     var expected = Enumerable.Range(1, depth).Select(i => i.ToString());
 
-    path.ShouldBe(expected, ignoreOrder: true);
+    path.Should().BeEquivalentTo(expected);
   }
 
   [Theory]
@@ -40,7 +41,7 @@ public class TraversalContextExtensionsTests
 
     var all = TraversalContextExtensions.GetAscendants(testData).ToArray();
 
-    all.Length.ShouldBe(depth);
+    all.Length.Should().Be(depth);
   }
 
   [Theory]
@@ -51,7 +52,7 @@ public class TraversalContextExtensionsTests
 
     var all = TraversalContextExtensions.GetAscendantOfType<Base>(testData).ToArray();
 
-    all.Length.ShouldBe(depth);
+    all.Length.Should().Be(depth);
   }
 
   [Theory]
@@ -62,7 +63,7 @@ public class TraversalContextExtensionsTests
 
     var all = TraversalContextExtensions.GetAscendantOfType<Collection>(testData).ToArray();
 
-    all.Length.ShouldBe((int)Math.Ceiling(depth / 2.0));
+    all.Length.Should().Be((int)Math.Ceiling(depth / 2.0));
   }
 
   // Providing the test depths to [MemberData] for xUnit

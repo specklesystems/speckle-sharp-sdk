@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Api;
@@ -33,9 +34,9 @@ public class SendObjectReferences
 
     result.rootObjId.ShouldNotBeNull();
 
-    result.rootObjId.Length.ShouldBe(32);
+    result.rootObjId.Length.Should().Be(32);
 
-    result.convertedReferences.Count.ShouldBe((int)(Math.Pow(2, testDepth + 1) - 2));
+    result.convertedReferences.Count.Should().Be((int)(Math.Pow(2, testDepth + 1) - 2));
   }
 
   [Theory]
@@ -50,9 +51,9 @@ public class SendObjectReferences
 
     result.rootObjId.ShouldNotBeNull();
 
-    result.rootObjId.Length.ShouldBe(32);
+    result.rootObjId.Length.Should().Be(32);
 
-    result.convertedReferences.ShouldBeEmpty();
+    result.convertedReferences.Should().BeEmpty();
   }
 
   private Base GenerateTestCase(int depth, bool withAppId)

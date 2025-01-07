@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using FluentAssertions;
+using Shouldly;
 using Speckle.Sdk.Common;
 using Xunit;
 
@@ -21,9 +22,9 @@ public class UnitsTest
     var forwards = Units.GetConversionFactor(from, to);
     var backwards = Units.GetConversionFactor(to, from);
 
-    (backwards * forwards).ShouldBe(
+    (backwards * forwards).Should().BeApproximately(
       1d,
-      tolerance: EPS,
+       EPS,
       $"Behaviour says that 1{from} == {forwards}{to}, and 1{to} == {backwards}{from}"
     );
   }
@@ -33,7 +34,7 @@ public class UnitsTest
   public void IsUnitSupported_ReturnsTrue_AllSupportedUnits(string unit)
   {
     bool res = Units.IsUnitSupported(unit);
-    res.ShouldBeTrue();
+    res.Should().BeTrue();
   }
 
   [Theory]
@@ -41,7 +42,7 @@ public class UnitsTest
   public void IsUnitSupported_ReturnsFalse_NotSupportedUnits(string unit)
   {
     bool res = Units.IsUnitSupported(unit);
-    res.ShouldBeFalse();
+    res.Should().BeFalse();
   }
 
   [Theory]
@@ -51,8 +52,8 @@ public class UnitsTest
     string? lower = Units.GetUnitsFromString(unit);
     string? upper = Units.GetUnitsFromString(unit.ToUpperInvariant());
 
-    lower.ShouldBe(unit);
-    upper.ShouldBe(unit);
+    lower.Should().Be(unit);
+    upper.Should().Be(unit);
   }
 
   [Theory]
@@ -69,7 +70,7 @@ public class UnitsTest
     var encoded = Units.GetEncodingFromUnit(unit);
     var res = Units.GetUnitFromEncoding(encoded);
 
-    res.ShouldBe(unit);
+    res.Should().Be(unit);
   }
 
   // Generators for MemberData

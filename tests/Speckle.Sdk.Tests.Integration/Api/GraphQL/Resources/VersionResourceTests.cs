@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using FluentAssertions;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -36,8 +37,8 @@ public class VersionResourceTests : IAsyncLifetime
   {
     Version result = await Sut.Get(_version.id, _project.id);
 
-    result.id.ShouldBe(_version.id);
-    result.message.ShouldBe(_version.message);
+    result.id.Should().Be(_version.id);
+    result.message.Should().Be(_version.message);
   }
 
   [Fact]
@@ -45,9 +46,9 @@ public class VersionResourceTests : IAsyncLifetime
   {
     ResourceCollection<Version> result = await Sut.GetVersions(_model1.id, _project.id);
 
-    result.items.Count.ShouldBe(1);
-    result.totalCount.ShouldBe(1);
-    result.items[0].id.ShouldBe(_version.id);
+    result.items.Count.Should().Be(1);
+    result.totalCount.Should().Be(1);
+    result.items[0].id.Should().Be(_version.id);
   }
 
   [Fact]
@@ -62,10 +63,10 @@ public class VersionResourceTests : IAsyncLifetime
   {
     var result = await _testUser.Model.GetWithVersions(_model1.id, _project.id);
 
-    result.id.ShouldBe(_model1.id);
-    result.versions.items.Count.ShouldBe(1);
-    result.versions.totalCount.ShouldBe(1);
-    result.versions.items[0].id.ShouldBe(_version.id);
+    result.id.Should().Be(_model1.id);
+    result.versions.items.Count.Should().Be(1);
+    result.versions.totalCount.Should().Be(1);
+    result.versions.items[0].id.Should().Be(_version.id);
   }
 
   [Fact]
@@ -76,9 +77,9 @@ public class VersionResourceTests : IAsyncLifetime
     UpdateVersionInput input = new(_version.id, _project.id, NEW_MESSAGE);
     Version updatedVersion = await Sut.Update(input);
 
-    updatedVersion.id.ShouldBe(_version.id);
-    updatedVersion.message.ShouldBe(NEW_MESSAGE);
-    updatedVersion.previewUrl.ShouldBe(_version.previewUrl);
+    updatedVersion.id.Should().Be(_version.id);
+    updatedVersion.message.Should().Be(NEW_MESSAGE);
+    updatedVersion.previewUrl.Should().Be(_version.previewUrl);
   }
 
   [Fact]
@@ -87,13 +88,13 @@ public class VersionResourceTests : IAsyncLifetime
     MoveVersionsInput input = new(_project.id, _model2.name, [_version.id]);
     string id = await Sut.MoveToModel(input);
 
-    id.ShouldBe(_model2.id);
+    id.Should().Be(_model2.id);
 
     Version movedVersion = await Sut.Get(_version.id, _project.id);
 
-    movedVersion.id.ShouldBe(_version.id);
-    movedVersion.message.ShouldBe(_version.message);
-    movedVersion.previewUrl.ShouldBe(_version.previewUrl);
+    movedVersion.id.Should().Be(_version.id);
+    movedVersion.message.Should().Be(_version.message);
+    movedVersion.previewUrl.Should().Be(_version.previewUrl);
   }
 
   [Fact]
@@ -104,9 +105,9 @@ public class VersionResourceTests : IAsyncLifetime
     await Sut.Delete(input);
 
     var getEx = await Should.ThrowAsync<AggregateException>(async () => await Sut.Get(_version.id, _project.id));
-    getEx.InnerExceptions.ShouldHaveSingleItem().ShouldBeOfType<SpeckleGraphQLException>();
+    getEx.InnerExceptions.ShouldHaveSingleItem().Should().BeOfType<SpeckleGraphQLException>();
 
     var delEx = await Should.ThrowAsync<AggregateException>(async () => await Sut.Delete(input));
-    delEx.InnerExceptions.ShouldHaveSingleItem().ShouldBeOfType<SpeckleGraphQLException>();
+    delEx.InnerExceptions.ShouldHaveSingleItem().Should().BeOfType<SpeckleGraphQLException>();
   }
 }

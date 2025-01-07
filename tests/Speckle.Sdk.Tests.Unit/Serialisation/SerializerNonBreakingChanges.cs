@@ -1,6 +1,6 @@
 using System.Drawing;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -28,7 +28,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new IntValueMock { value = argb };
 
       var res = await from.SerializeAsTAndDeserialize<ColorValueMock>(_operations);
-      res.value.ToArgb().ShouldBe(argb);
+      res.value.ToArgb().Should().Be(argb);
     }
 
     [Theory, MemberData(nameof(Int8TestCases)), MemberData(nameof(Int32TestCases))]
@@ -37,7 +37,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new ColorValueMock { value = Color.FromArgb(argb) };
 
       var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
-      res.value.ShouldBe(argb);
+      res.value.Should().Be(argb);
     }
 
     [Theory, MemberData(nameof(Int8TestCases)), MemberData(nameof(Int32TestCases)), MemberData(nameof(Int64TestCases))]
@@ -46,7 +46,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new IntValueMock { value = testCase };
 
       var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
-      res.value.ShouldBe(testCase);
+      res.value.Should().Be(testCase);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new ObjectValueMock { value = null };
 
       var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
-      res.value.ShouldBe(default(int));
+      res.value.Should().Be(default(int));
     }
 
     [Fact]
@@ -64,7 +64,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new ObjectValueMock { value = null };
 
       var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
-      res.value.ShouldBe(default(double));
+      res.value.Should().Be(default(double));
     }
 
     [Theory]
@@ -74,7 +74,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new UIntValueMock { value = testCase };
 
       var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
-      res.value.ShouldBe(testCase, tolerance: 2048);
+      res.value.Should().BeApproximately(testCase,  2048);
     }
 
     [Theory, MemberData(nameof(Int8TestCases)), MemberData(nameof(Int32TestCases)), MemberData(nameof(Int64TestCases))]
@@ -83,7 +83,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new IntValueMock { value = testCase };
 
       var res = await from.SerializeAsTAndDeserialize<StringValueMock>(_operations);
-      res.value.ShouldBe(testCase.ToString());
+      res.value.Should().Be(testCase.ToString());
     }
 
     public static IEnumerable<object[]> s_arrayTestCases =>
@@ -100,7 +100,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new ArrayDoubleValueMock { value = testCase };
 
       var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
-      res.value.ShouldBe(testCase, ignoreOrder: true);
+      res.value.Should().BeEquivalentTo(testCase);
     }
 
     [Theory, MemberData(nameof(s_arrayTestCases))]
@@ -109,7 +109,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new ListDoubleValueMock { value = testCase.ToList() };
 
       var res = await from.SerializeAsTAndDeserialize<ArrayDoubleValueMock>(_operations);
-      res.value.ShouldBe(testCase, ignoreOrder: true);
+      res.value.Should().BeEquivalentTo(testCase);
     }
 
     [Theory, MemberData(nameof(s_arrayTestCases))]
@@ -118,7 +118,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new ListDoubleValueMock { value = testCase.ToList() };
 
       var res = await from.SerializeAsTAndDeserialize<IReadOnlyListDoubleValueMock>(_operations);
-      res.value.ShouldBe(testCase, ignoreOrder: true);
+      res.value.Should().BeEquivalentTo(testCase);
     }
 
     [Theory, MemberData(nameof(s_arrayTestCases))]
@@ -127,7 +127,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new ListDoubleValueMock { value = testCase.ToList() };
 
       var res = await from.SerializeAsTAndDeserialize<IListDoubleValueMock>(_operations);
-      res.value.ShouldBe(testCase);
+      res.value.Should().BeEquivalentTo(testCase);
     }
 
     [Theory, MemberData(nameof(s_arrayTestCases))]
@@ -136,7 +136,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new IListDoubleValueMock { value = testCase.ToList() };
 
       var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
-      res.value.ShouldBe(testCase);
+      res.value.Should().BeEquivalentTo(testCase);
     }
 
     [Theory, MemberData(nameof(s_arrayTestCases))]
@@ -145,7 +145,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new IReadOnlyListDoubleValueMock { value = testCase.ToList() };
 
       var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
-      res.value.ShouldBe(testCase);
+      res.value.Should().BeEquivalentTo(testCase);
     }
 
     [Theory, MemberData(nameof(MyEnums))]
@@ -154,7 +154,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new EnumValueMock { value = testCase };
 
       var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
-      res.value.ShouldBe((int)testCase);
+      res.value.Should().Be((int)testCase);
     }
 
     [Theory, MemberData(nameof(MyEnums))]
@@ -163,7 +163,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new IntValueMock { value = (int)testCase };
 
       var res = await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations);
-      res.value.ShouldBe(testCase);
+      res.value.Should().Be(testCase);
     }
 
     [Theory, MemberData(nameof(Float32TestCases)), MemberData(nameof(Float64TestCases))]
@@ -172,7 +172,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new DoubleValueMock { value = testCase };
 
       var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
-      res.value.ShouldBe(testCase);
+      res.value.Should().Be(testCase);
     }
 
     [Theory]
@@ -187,28 +187,27 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       ListDoubleValueMock from = new() { value = testCase };
 
       var res = await from.SerializeAsTAndDeserialize<Matrix64ValueMock>(_operations);
-      res.value.M11.ShouldBe(testCase[0]);
-      res.value.M44.ShouldBe(testCase[^1]);
+      res.value.M11.Should().Be(testCase[0]);
+      res.value.M44.Should().Be(testCase[^1]);
 
       var backAgain = await res.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
-      backAgain.value.ShouldNotBeNull();
-      backAgain.value.ShouldBe(testCase, ignoreOrder: true);
+      backAgain.value.Should().NotBeNull();
+      backAgain.value.Should().BeEquivalentTo(testCase);
     }
 
     [Theory]
     [InlineData(123, 255)]
     [InlineData(256, 1)]
-    public void Matrix32ToMatrix64(int seed, float scalar)
+    public async Task Matrix32ToMatrix64(int seed, float scalar)
     {
       Random rand = new(seed);
       List<double> testCase = Enumerable.Range(0, 16).Select(_ => rand.NextDouble() * scalar).ToList();
 
       ListDoubleValueMock from = new() { value = testCase };
 
-      var exception = Should.ThrowAsync<SpeckleDeserializeException>(
+      await FluentActions.Invoking(
         async () => await from.SerializeAsTAndDeserialize<Matrix32ValueMock>(_operations)
-      );
-      exception.ShouldNotBeNull();
+      ).Should().ThrowAsync<SpeckleDeserializeException>();
     }
   }
 
@@ -333,8 +332,8 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var json = operations.Serialize(this);
 
       Base result = await operations.DeserializeAsync(json);
-      result.ShouldNotBeNull();
-      result.ShouldBeOfType<TTo>();
+      result.Should().NotBeNull();
+      result.Should().BeOfType<TTo>();
       return (TTo)result;
     }
   }

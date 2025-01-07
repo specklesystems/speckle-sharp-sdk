@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using FluentAssertions;
 using Shouldly;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
@@ -28,7 +29,7 @@ public class BaseTests
     var @base = new Base();
     @base["Item"] = "Item";
 
-    @base["Item"].ShouldBe("Item");
+    @base["Item"].Should().Be("Item");
   }
 
   [Fact]
@@ -36,8 +37,8 @@ public class BaseTests
   {
     var @base = new ObjectWithItemProp { Item = "baz" };
 
-    @base["Item"].ShouldBe("baz");
-    @base.Item.ShouldBe("baz");
+    @base["Item"].Should().Be("baz");
+    @base.Item.Should().Be("baz");
   }
 
   [Fact(DisplayName = "Checks if validation is performed in property names")]
@@ -88,7 +89,7 @@ public class BaseTests
     @base["@(1000)cc2"] = customChunkArr;
 
     var num = @base.GetTotalChildrenCount();
-    num.ShouldBe(MAX_NUM / 1000 * 2 + 1);
+    num.Should().Be(MAX_NUM / 1000 * 2 + 1);
   }
 
   [Fact]
@@ -110,7 +111,7 @@ public class BaseTests
 
     var num = @base.GetTotalChildrenCount();
     var actualNum = 1 + MAX_NUM / 300 + MAX_NUM / 1000;
-    num.ShouldBe(actualNum);
+    num.Should().Be(actualNum);
   }
 
   [Fact(DisplayName = "Checks that no ignored or obsolete properties are returned")]
@@ -145,7 +146,7 @@ public class BaseTests
 
     var names = @base.GetMembers(DynamicBaseMemberType.Dynamic).Keys;
     names.ShouldContain(dynamicProp);
-    names.Count.ShouldBe(1);
+    names.Count.Should().Be(1);
   }
 
   [Fact(DisplayName = "Checks that all typed properties (including ignored ones) are returned")]
@@ -179,7 +180,7 @@ public class BaseTests
 
     var names = @base.GetDynamicMemberNames();
     names.ShouldContain(dynamicProp);
-    @base[dynamicProp].ShouldBeNull();
+    @base[dynamicProp].Should().BeNull();
   }
 
   [Fact]
@@ -190,16 +191,16 @@ public class BaseTests
     var value = "something";
     // Can create a new dynamic member
     @base[key] = value;
-    value.ShouldBe((string)@base[key].NotNull());
+    value.Should().Be((string)@base[key].NotNull());
 
     // Can overwrite existing
     value = "some other value";
     @base[key] = value;
-    value.ShouldBe((string)@base[key].NotNull());
+    value.Should().Be((string)@base[key].NotNull());
 
     // Accepts null values
     @base[key] = null;
-    @base[key].ShouldBeNull();
+    @base[key].Should().BeNull();
   }
 
   [Fact]
@@ -213,8 +214,8 @@ public class BaseTests
     var sampleMembers = sample.GetMembers(selectedMembers);
     var copyMembers = copy.GetMembers(selectedMembers);
 
-    copyMembers.Keys.ShouldBeEquivalentTo(sampleMembers.Keys);
-    copyMembers.Values.ShouldBeEquivalentTo(sampleMembers.Values);
+    copyMembers.Keys.Should().BeEquivalentTo(sampleMembers.Keys);
+    copyMembers.Values.Should().BeEquivalentTo(sampleMembers.Values);
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Models.BaseTests+SampleObject")]

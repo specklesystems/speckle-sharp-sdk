@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Shouldly;
 using Speckle.Sdk.Common;
@@ -34,7 +35,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
   public void DbCreated_AfterInitialization()
   {
     bool fileExists = File.Exists($"{s_basePath}/{APPLICATION_NAME}/Data.db");
-    fileExists.ShouldBeTrue();
+    fileExists.Should().BeTrue();
   }
 
   [Fact]
@@ -51,7 +52,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     await _sqlite.WriteComplete();
 
     var result = await _sqlite.GetObject(PAYLOAD_ID);
-    result.ShouldBe(NEW_PAYLOAD);
+    result.Should().Be(NEW_PAYLOAD);
   }
 
   [Fact]
@@ -61,13 +62,13 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     var preUpdate = await _sqlite!.GetObject(PAYLOAD_ID);
-    preUpdate.ShouldBeNull();
+    preUpdate.Should().BeNull();
 
     _sqlite.UpdateObject(PAYLOAD_ID, PAYLOAD_DATA);
     await _sqlite.WriteComplete();
 
     var postUpdate = await _sqlite.GetObject(PAYLOAD_ID);
-    postUpdate.ShouldBe(PAYLOAD_DATA);
+    postUpdate.Should().Be(PAYLOAD_DATA);
   }
 
   [Fact]
@@ -77,13 +78,13 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     var preAdd = await Sut!.GetObject(PAYLOAD_ID);
-    preAdd.ShouldBeNull();
+    preAdd.Should().BeNull();
 
     _sqlite!.SaveObjectSync(PAYLOAD_ID, PAYLOAD_DATA);
 
     {
       var postAdd = await Sut.GetObject(PAYLOAD_ID);
-      postAdd.ShouldBe(PAYLOAD_DATA);
+      postAdd.Should().Be(PAYLOAD_DATA);
     }
   }
 
@@ -139,8 +140,8 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
 
     foreach (var result in results)
     {
-      result.ShouldBeEquivalentTo(results[0]);
-      result.Count.ShouldBe(dataSize);
+      result.Should().BeEquivalentTo(results[0]);
+      result.Count.Should().Be(dataSize);
     }
   }
 }

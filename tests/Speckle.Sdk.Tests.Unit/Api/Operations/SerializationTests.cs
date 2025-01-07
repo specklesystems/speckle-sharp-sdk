@@ -1,4 +1,5 @@
 using System.Drawing;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Speckle.Sdk.Api;
@@ -34,7 +35,7 @@ public class ObjectSerialization
 
     var result = await _operations.DeserializeAsync(test);
     var circle = result["circle"];
-    circle.ShouldBeNull();
+    circle.Should().BeNull();
   }
 
   [Fact]
@@ -73,7 +74,7 @@ public class ObjectSerialization
 
     var deserialisedFeline = await _operations.DeserializeAsync(result);
 
-    deserialisedFeline.GetId().ShouldBe(cat.GetId());
+    deserialisedFeline.GetId().Should().Be(cat.GetId());
   }
 
   [Fact]
@@ -90,7 +91,7 @@ public class ObjectSerialization
     var str = _operations.Serialize(superPoint);
     var sstr = await _operations.DeserializeAsync(str);
 
-    sstr.speckle_type.ShouldBe(superPoint.speckle_type);
+    sstr.speckle_type.Should().Be(superPoint.speckle_type);
   }
 
   [Fact]
@@ -111,7 +112,7 @@ public class ObjectSerialization
 
     var list = dsrls["test"] as List<object>;
     list.ShouldNotBeNull(); // Ensure the list isn't null in first place
-    list.Count.ShouldBe(100);
+    list.Count.Should().Be(100);
   }
 
   [Fact]
@@ -143,9 +144,9 @@ public class ObjectSerialization
     var stringChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(stringChunkString);
     var doubleChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(doubleChunkString);
 
-    baseChunkDeserialised.data.Count.ShouldBe(baseBasedChunk.data.Count);
-    stringChunkDeserialised.data.Count.ShouldBe(stringBasedChunk.data.Count);
-    doubleChunkDeserialised.data.Count.ShouldBe(doubleBasedChunk.data.Count);
+    baseChunkDeserialised.data.Count.Should().Be(baseBasedChunk.data.Count);
+    stringChunkDeserialised.data.Count.Should().Be(stringBasedChunk.data.Count);
+    doubleChunkDeserialised.data.Count.Should().Be(doubleBasedChunk.data.Count);
   }
 
   [Fact]
@@ -173,7 +174,7 @@ public class ObjectSerialization
     var serialised = _operations.Serialize(mesh);
     var deserialised = await _operations.DeserializeAsync(serialised);
 
-    mesh.GetId().ShouldBe(deserialised.GetId());
+    mesh.GetId().Should().Be(deserialised.GetId());
   }
 
   [Fact]
@@ -199,7 +200,7 @@ public class ObjectSerialization
       && serialised.Contains("\"nestedList\":[[[]]]")
       && serialised.Contains("\"@nestedDetachableList\":[[[]]]");
 
-    isCorrect.ShouldBeTrue();
+    isCorrect.Should().BeTrue();
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+DateMock")]
@@ -217,7 +218,7 @@ public class ObjectSerialization
     var result = _operations.Serialize(mockBase);
     var test = (DateMock)await _operations.DeserializeAsync(result);
 
-    test.TestField.ShouldBe(date);
+    test.TestField.Should().Be(date);
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+GUIDMock")]
@@ -235,7 +236,7 @@ public class ObjectSerialization
     var result = _operations.Serialize(mockBase);
     var test = (GUIDMock)await _operations.DeserializeAsync(result);
 
-    test.TestField.ShouldBe(guid);
+    test.TestField.Should().Be(guid);
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+ColorMock")]
@@ -253,7 +254,7 @@ public class ObjectSerialization
     var result = _operations.Serialize(mockBase);
     var test = (ColorMock)await _operations.DeserializeAsync(result);
 
-    test.TestField.ShouldBe(color);
+    test.TestField.Should().Be(color);
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+StringDateTimeRegressionMock")]
@@ -270,6 +271,6 @@ public class ObjectSerialization
     var result = _operations.Serialize(mockBase);
     var test = (StringDateTimeRegressionMock)await _operations.DeserializeAsync(result);
 
-    test.TestField.ShouldBe(mockBase.TestField);
+    test.TestField.Should().Be(mockBase.TestField);
   }
 }

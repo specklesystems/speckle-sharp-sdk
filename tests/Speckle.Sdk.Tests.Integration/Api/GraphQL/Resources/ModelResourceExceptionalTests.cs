@@ -37,7 +37,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Create(input));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
-    ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
+    ex.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLException>();
   }
 
   [Fact]
@@ -49,7 +49,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     );
 
     ex.InnerExceptions.ShouldHaveSingleItem();
-    ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Fact]
@@ -59,7 +59,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Get("non existent model", _project.id));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
-    ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
+    ex.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLException>();
   }
 
   [Fact]
@@ -69,7 +69,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Get(_model.id, "non existent project"));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
-    ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLStreamNotFoundException>();
+    ex.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLStreamNotFoundException>();
   }
 
   [Fact]
@@ -82,7 +82,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Update(input));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
-    ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
+    ex.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLException>();
   }
 
   [Fact]
@@ -95,7 +95,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Update(input));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
-    ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Fact]
@@ -108,7 +108,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     var ex = await Should.ThrowAsync<AggregateException>(async () => await Fixtures.Unauthed.Model.Update(input));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
-    ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Fact]
@@ -124,6 +124,6 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     var ex = await Should.ThrowAsync<AggregateException>(async () => await Sut.Delete(input));
 
     ex.InnerExceptions.ShouldHaveSingleItem();
-    ex.InnerExceptions[0].ShouldBeOfType<SpeckleGraphQLException>();
+    ex.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLException>();
   }
 }

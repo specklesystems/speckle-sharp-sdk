@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Shouldly;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -22,7 +23,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var exception = Record.Exception(() => TypeLoader.ParseType(typeof(string)));
 
       exception.ShouldNotBeNull(); // Shouldly assertion
-      exception.ShouldBeOfType<InvalidOperationException>(); // Ensure it's the correct exception type
+      exception.Should().BeOfType<InvalidOperationException>(); // Ensure it's the correct exception type
     }
 
     [Fact] // Replaces [Test]
@@ -31,12 +32,12 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
 
       var result = TypeLoader.GetAtomicType(destinationType);
-      result.ShouldBe(typeof(MySpeckleBase)); // Shouldly assertion replaces Assert.That
+      result.Should().Be(typeof(MySpeckleBase)); // Shouldly assertion replaces Assert.That
 
       destinationType = $"Speckle.Core.Serialisation.Deprecated.{nameof(MySpeckleBase)}";
 
       result = TypeLoader.GetAtomicType(destinationType);
-      result.ShouldBe(typeof(MySpeckleBase)); // Shouldly assertion replaces Assert.That
+      result.Should().Be(typeof(MySpeckleBase)); // Shouldly assertion replaces Assert.That
     }
   }
 }

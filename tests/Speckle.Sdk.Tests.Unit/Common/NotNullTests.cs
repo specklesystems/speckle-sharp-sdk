@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using FluentAssertions;
+using Shouldly;
 using Speckle.Sdk.Common;
 using Xunit;
 
@@ -13,49 +14,49 @@ public class NotNullTests
   public void Empty(string[]? test, int length)
   {
     var list = NotNullExtensions.Empty(test).ToList();
-    list.Count.ShouldBe(length);
+    list.Count.Should().Be(length);
   }
 
   [Fact]
   public void NotNullClass()
   {
     var t = NotNullExtensions.NotNull("test");
-    t.ShouldNotBeNull().ShouldBe("test");
+    t.ShouldNotBeNull().Should().Be("test");
   }
 
   [Fact]
   public void NotNullStruct()
   {
     var t = NotNullExtensions.NotNull<int>(2);
-    t.ShouldBe(2);
+    t.Should().Be(2);
   }
 
   [Fact]
   public async Task NotNullClass_Task()
   {
     var t = await NotNullExtensions.NotNull(Task.FromResult<string?>("test"));
-    t.ShouldNotBeNull().ShouldBe("test");
+    t.ShouldNotBeNull().Should().Be("test");
   }
 
   [Fact]
   public async Task NotNullStruct_Task()
   {
     var t = await NotNullExtensions.NotNull(Task.FromResult<int?>(2));
-    t.ShouldBe(2);
+    t.Should().Be(2);
   }
 
   [Fact]
   public async Task NotNullClass_ValueTask()
   {
     var t = await NotNullExtensions.NotNull(ValueTask.FromResult<string?>("test"));
-    t.ShouldNotBeNull().ShouldBe("test");
+    t.ShouldNotBeNull().Should().Be("test");
   }
 
   [Fact]
   public async Task NotNullStruct_ValueTask()
   {
     var t = await NotNullExtensions.NotNull(ValueTask.FromResult<int?>(2));
-    t.ShouldBe(2);
+    t.Should().Be(2);
   }
 
   [Fact]

@@ -1,4 +1,5 @@
 using System.Collections;
+using FluentAssertions;
 using Shouldly;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -49,7 +50,7 @@ public class GraphTraversalTests
 
     // Assert unexpected members not present
     ret.ShouldNotContain(expectIgnored);
-    ret.Count.ShouldBe(2);
+    ret.Count.Should().Be(2);
   }
 
   [Fact]
@@ -80,7 +81,7 @@ public class GraphTraversalTests
 
     // Assert unexpected members not present
     ret.ShouldNotContain(expectIgnored);
-    ret.Count.ShouldBe(2);
+    ret.Count.Should().Be(2);
   }
 
   [Fact]
@@ -105,11 +106,11 @@ public class GraphTraversalTests
 
     // Assert expected members present
     ret.ShouldContain(testCase);
-    ret.Count(x => x == expectTraverse).ShouldBe(2);
+    ret.Count(x => x == expectTraverse).Should().Be(2);
 
     // Assert unexpected members not present
     ret.ShouldNotContain(expectIgnored);
-    ret.Count.ShouldBe(3);
+    ret.Count.Should().Be(3);
   }
 
   [Fact]
@@ -134,10 +135,10 @@ public class GraphTraversalTests
 
     // Assert expected members present
     ret.ShouldContain(testCase);
-    ret.Count(x => x == expectTraverse).ShouldBe(2);
+    ret.Count(x => x == expectTraverse).Should().Be(2);
 
     // Assert unexpected members not present
     ret.ShouldNotContain(expectIgnored);
-    ret.Count.ShouldBe(3);
+    ret.Count.Should().Be(3);
   }
 }

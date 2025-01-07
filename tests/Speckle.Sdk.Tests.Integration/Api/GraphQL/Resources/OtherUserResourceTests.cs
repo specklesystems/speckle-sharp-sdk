@@ -25,7 +25,7 @@ public class OtherUserResourceTests
     var res = await Sut.Get(_testData.userInfo.id);
 
     res.ShouldNotBeNull();
-    res!.name.ShouldBe(_testData.userInfo.name);
+    res!.name.Should().Be(_testData.userInfo.name);
   }
 
   [Fact]
@@ -33,7 +33,7 @@ public class OtherUserResourceTests
   {
     var result = await Sut.Get("AnIdThatDoesntExist");
 
-    result.ShouldBeNull();
+    result.Should().BeNull();
   }
 
   [Fact]
@@ -42,7 +42,7 @@ public class OtherUserResourceTests
     var res = await Sut.UserSearch(_testData.userInfo.email, 25);
 
     res.items.ShouldHaveSingleItem();
-    res.items[0].id.ShouldBe(_testData.userInfo.id);
+    res.items[0].id.Should().Be(_testData.userInfo.id);
   }
 
   [Fact]
@@ -50,6 +50,6 @@ public class OtherUserResourceTests
   {
     var res = await Sut.UserSearch("idontexist@example.com", 25);
 
-    res.items.ShouldBeEmpty();
+    res.items.Should().BeEmpty();
   }
 }

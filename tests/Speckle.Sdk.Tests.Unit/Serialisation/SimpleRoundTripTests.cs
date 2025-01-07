@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
@@ -43,6 +44,6 @@ public class SimpleRoundTripTests
     var result = _operations.Serialize(testData);
     var test = await _operations.DeserializeAsync(result);
 
-    testData.GetId().ShouldBe(test.GetId());
+    testData.GetId().Should().Be(test.GetId());
   }
 }

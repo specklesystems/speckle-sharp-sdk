@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using FluentAssertions;
 using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
@@ -59,7 +60,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       jsonString.ShouldContain(nameof(testData.ShouldBeIncluded));
       jsonString.ShouldContain(expectedPayload);
 
-      result.Value.Id.Value.Value.ShouldBe(expectedHash);
+      result.Value.Id.Value.Value.Should().Be(expectedHash);
     }
 
     [Theory]
@@ -91,7 +92,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
         childJson.ShouldContain(expectedPayload);
       }
 
-      id.Value.Value.ShouldBe(expectedHash);
+      id.Value.Value.Should().Be(expectedHash);
     }
   }
 

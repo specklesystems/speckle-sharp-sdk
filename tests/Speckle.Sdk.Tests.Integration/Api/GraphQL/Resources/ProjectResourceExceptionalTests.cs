@@ -45,7 +45,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     );
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await _unauthedUser.Project.Create(input));
-    ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Fact]
@@ -58,14 +58,14 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => _ = await _unauthedUser.Project.Get(privateStream.id)
     );
-    ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Fact]
   public async Task ProjectGet_NonExistentProject()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => await Sut.Get("NonExistentProject"));
-    ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLStreamNotFoundException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLStreamNotFoundException>();
   }
 
   [Fact]
@@ -74,7 +74,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => _ = await Sut.Update(new("NonExistentProject", "My new name"))
     );
-    ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Fact]
@@ -83,7 +83,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => _ = await _unauthedUser.Project.Update(new(_testProject.id, "My new name"))
     );
-    ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Theory]
@@ -96,7 +96,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     ProjectUpdateRoleInput input = new(_secondUser.Account.id.NotNull(), "NonExistentProject", newRole);
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.UpdateRole(input));
-    ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Theory]
@@ -111,7 +111,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => _ = await _unauthedUser.Project.UpdateRole(input)
     );
-    ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Fact]
@@ -120,7 +120,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     await Sut.Delete(_testProject.id);
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get(_testProject.id));
-    ex.InnerExceptions.Single().ShouldBeOfType<SpeckleGraphQLStreamNotFoundException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLStreamNotFoundException>();
   }
 
   [Fact]

@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
@@ -84,9 +85,9 @@ public sealed class HashUtilityTests
     var resultLower = Crypt.Md5(input, "x2", length);
     var resultUpper = Crypt.Md5(input, "X2", length);
 
-    resultLower.ShouldBe(new string(expected.ToLower()[..length]));
+    resultLower.Should().Be(new string(expected.ToLower()[..length]));
 
-    resultUpper.ShouldBe(new string(expected.ToUpper()[..length]));
+    resultUpper.Should().Be(new string(expected.ToUpper()[..length]));
   }
 
   [Theory]
@@ -96,9 +97,9 @@ public sealed class HashUtilityTests
     var resultLower = Crypt.Sha256(input, "x2", length);
     var resultUpper = Crypt.Sha256(input, "X2", length);
 
-    resultLower.ShouldBe(new string(expected.ToLower()[..length]));
+    resultLower.Should().Be(new string(expected.ToLower()[..length]));
 
-    resultUpper.ShouldBe(new string(expected.ToUpper()[..length]));
+    resultUpper.Should().Be(new string(expected.ToUpper()[..length]));
   }
 
   [Theory]
@@ -113,9 +114,9 @@ public sealed class HashUtilityTests
     var resultLowerSpan = Crypt.Sha256(input.AsSpan(), "x2", length);
     var resultUpperSpan = Crypt.Sha256(input.AsSpan(), "X2", length);
 
-    resultLowerSpan.ShouldBe(new string(expected.ToLower()[..length]));
+    resultLowerSpan.Should().Be(new string(expected.ToLower()[..length]));
 
-    resultUpperSpan.ShouldBe(new string(expected.ToUpper()[..length]));
+    resultUpperSpan.Should().Be(new string(expected.ToUpper()[..length]));
   }
 
   [Theory]
@@ -123,6 +124,6 @@ public sealed class HashUtilityTests
   public void Sha256_LargeDataTests(string input, string expected)
   {
     var computedHash = Crypt.Sha256(input.AsSpan());
-    computedHash.ShouldBe(expected);
+    computedHash.Should().Be(expected);
   }
 }

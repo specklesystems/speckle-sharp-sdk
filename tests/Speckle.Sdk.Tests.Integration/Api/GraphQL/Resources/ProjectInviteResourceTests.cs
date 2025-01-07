@@ -45,9 +45,9 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
       var invites = await _invitee.ActiveUser.GetProjectInvites();
       var invite = invites.First(i => i.projectId == res.id);
 
-      res.id.ShouldBe(_project.id);
+      res.id.Should().Be(_project.id);
       res.invitedTeam.ShouldHaveSingleItem();
-      invite.user!.id.ShouldBe(_invitee.Account.userInfo.id);
+      invite.user!.id.Should().Be(_invitee.Account.userInfo.id);
       invite.token.ShouldNotBeNull();
     }
 
@@ -57,9 +57,9 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
       ProjectInviteCreateInput input = new(null, null, null, _invitee.Account.userInfo.id);
       var res = await _inviter.ProjectInvite.Create(_project.id, input);
 
-      res.id.ShouldBe(_project.id);
+      res.id.Should().Be(_project.id);
       res.invitedTeam.ShouldHaveSingleItem();
-      res.invitedTeam[0].user!.id.ShouldBe(_invitee.Account.userInfo.id);
+      res.invitedTeam[0].user!.id.Should().Be(_invitee.Account.userInfo.id);
     }
 
     [Fact]
@@ -68,8 +68,8 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
       var collaborator = await _invitee.ProjectInvite.Get(_project.id, _createdInvite.token).NotNull();
 
       collaborator.ShouldSatisfyAllConditions(
-        () => collaborator.inviteId.ShouldBe(_createdInvite.inviteId),
-        () => collaborator.user!.id.ShouldBe(_createdInvite.user!.id)
+        () => collaborator.inviteId.Should().Be(_createdInvite.inviteId),
+        () => collaborator.user!.id.Should().Be(_createdInvite.user!.id)
       );
     }
 
@@ -77,7 +77,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
     public async Task ProjectInviteGet_NonExisting()
     {
       var collaborator = await _invitee.ProjectInvite.Get(_project.id, "this is not a real token");
-      collaborator.ShouldBeNull();
+      collaborator.Should().BeNull();
     }
 
     [Fact]
@@ -90,14 +90,14 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
       var teamMembers = project.team.Select(c => c.user.id).ToArray();
       var expectedTeamMembers = new[] { _inviter.Account.userInfo.id, _invitee.Account.userInfo.id };
 
-      teamMembers.ShouldBe(expectedTeamMembers, ignoreOrder: true);
+      teamMembers.Should().Be(expectedTeamMembers, ignoreOrder: true);
     }
 
     [Fact]
     public async Task ProjectInviteCancel_MemberNotAdded()
     {
       var res = await _inviter.ProjectInvite.Cancel(_createdInvite.projectId, _createdInvite.inviteId);
-      res.invitedTeam.ShouldBeEmpty();
+      res.invitedTeam.Should().BeEmpty();
     }
 
     [Theory]
@@ -113,7 +113,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
       await _inviter.Project.UpdateRole(input);
 
       var finalProject = await _invitee.Project.Get(_project.id);
-      finalProject.role.ShouldBe(newRole);
+      finalProject.role.Should().Be(newRole);
     }
   }
 }

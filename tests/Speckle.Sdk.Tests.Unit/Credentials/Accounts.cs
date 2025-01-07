@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -58,7 +59,7 @@ public class CredentialInfrastructure
   public void GetAllAccounts()
   {
     var accs = _accountManager.GetAccounts().ToList();
-    accs.Count.ShouldBeGreaterThanOrEqualTo(3); // Tests are adding three accounts, there might be extra accounts locally
+    accs.Count.Should().BeGreaterThanOrEqualTo(3); // Tests are adding three accounts, there might be extra accounts locally
   }
 
   [Fact]
@@ -66,7 +67,7 @@ public class CredentialInfrastructure
   {
     var result = _accountManager.GetAccount(s_testAccount1.id);
 
-    result.ShouldBe(s_testAccount1); // Uses `Shouldly` for a clean assertion
+    result.Should().Be(s_testAccount1); // Uses `Shouldly` for a clean assertion
   }
 
   [Fact]
@@ -91,15 +92,15 @@ public class CredentialInfrastructure
   {
     var accs = _accountManager.GetAccounts(target.serverInfo.url).ToList();
 
-    accs.Count.ShouldBe(1);
+    accs.Count.Should().Be(1);
 
     var acc = accs[0];
 
     acc.ShouldNotBeSameAs(target); // We expect new objects (no reference equality)
-    acc.serverInfo.company.ShouldBe(target.serverInfo.company);
-    acc.serverInfo.url.ShouldBe(target.serverInfo.url);
-    acc.refreshToken.ShouldBe(target.refreshToken);
-    acc.token.ShouldBe(target.token);
+    acc.serverInfo.company.Should().Be(target.serverInfo.company);
+    acc.serverInfo.url.Should().Be(target.serverInfo.url);
+    acc.refreshToken.Should().Be(target.refreshToken);
+    acc.token.Should().Be(target.token);
   }
 
   [Fact]

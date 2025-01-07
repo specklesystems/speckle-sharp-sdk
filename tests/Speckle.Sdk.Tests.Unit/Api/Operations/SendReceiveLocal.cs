@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Speckle.Sdk.Api;
@@ -51,12 +52,12 @@ public sealed class SendReceiveLocal : IDisposable
     (var objId01, var references) = await _operations.Send(myObject, localTransport, false);
 
     objId01.ShouldNotBeNull();
-    references.Count.ShouldBe(NUM_OBJECTS);
+    references.Count.Should().Be(NUM_OBJECTS);
 
     var commitPulled = await _operations.Receive(objId01.NotNull());
 
-    ((List<object>)commitPulled["@items"].NotNull())[0].ShouldBeOfType<Point>();
-    ((List<object>)commitPulled["@items"].NotNull()).Count.ShouldBe(NUM_OBJECTS);
+    ((List<object>)commitPulled["@items"].NotNull())[0].Should().BeOfType<Point>();
+    ((List<object>)commitPulled["@items"].NotNull()).Count.Should().Be(NUM_OBJECTS);
   }
 
   [Fact(DisplayName = "Pushing and Pulling a commit locally")]
@@ -79,7 +80,7 @@ public sealed class SendReceiveLocal : IDisposable
     var commitPulled = await _operations.Receive(objId01);
     List<object> items = (List<object>)commitPulled["@items"].NotNull();
     items.ShouldAllBe(x => x is Point);
-    items.Count.ShouldBe(NUM_OBJECTS);
+    items.Count.Should().Be(NUM_OBJECTS);
   }
 
   [Fact(DisplayName = "Pushing and pulling a commit locally")]
@@ -102,7 +103,7 @@ public sealed class SendReceiveLocal : IDisposable
     objId01.ShouldNotBeNull();
 
     var objsPulled = await _operations.Receive(objId01);
-    ((List<object>)objsPulled["@items"].NotNull()).Count.ShouldBe(30);
+    ((List<object>)objsPulled["@items"].NotNull()).Count.Should().Be(30);
   }
 
   [Fact(DisplayName = "Pushing and pulling a commit locally")]
@@ -125,8 +126,8 @@ public sealed class SendReceiveLocal : IDisposable
     _objId01.ShouldNotBeNull();
 
     var objsPulled = await _operations.Receive(_objId01);
-    ((List<object>)((Dictionary<string, object>)objsPulled["@dictionary"].NotNull())["a"]).First().ShouldBe(1);
-    ((List<object>)objsPulled["@list"].NotNull()).Last().ShouldBe("ciao");
+    ((List<object>)((Dictionary<string, object>)objsPulled["@dictionary"].NotNull())["a"]).First().Should().Be(1);
+    ((List<object>)objsPulled["@list"].NotNull()).Last().Should().Be("ciao");
   }
 
   [Fact(DisplayName = "Pushing and pulling a random object, with or without detachment")]
@@ -161,21 +162,21 @@ public sealed class SendReceiveLocal : IDisposable
 
     var objPulled = await _operations.Receive(objId01);
 
-    objPulled.ShouldBeOfType<Base>();
+    objPulled.Should().BeOfType<Base>();
 
     // Note: even if the layers were originally declared as lists of "Base" objects, on deserialisation we cannot know that,
     // as it's a dynamic property. Dynamic properties, if their content value is ambigous, will default to a common-sense standard.
     // This specifically manifests in the case of lists and dictionaries: List<AnySpecificType> will become List<object>, and
     // Dictionary<string, MyType> will deserialize to Dictionary<string,object>.
     var layerA = ((dynamic)objPulled)["LayerA"] as List<object>;
-    layerA?.Count.ShouldBe(30);
+    layerA?.Count.Should().Be(30);
 
     var layerC = (List<object>)((dynamic)objPulled)["@LayerC"];
-    layerC.Count.ShouldBe(30);
-    layerC[0].ShouldBeOfType<Point>();
+    layerC.Count.Should().Be(30);
+    layerC[0].Should().BeOfType<Point>();
 
     var layerD = ((dynamic)objPulled)["@LayerD"] as List<object>;
-    layerD?.Count.ShouldBe(2);
+    layerD?.Count.Should().Be(2);
   }
 
   [Fact(DisplayName = "Should show progress!")]

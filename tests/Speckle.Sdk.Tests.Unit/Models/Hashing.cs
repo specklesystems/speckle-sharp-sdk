@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using FluentAssertions;
 using Shouldly;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -22,7 +23,7 @@ public class Hashing
     var table = new DiningTable();
     var secondTable = new DiningTable();
 
-    secondTable.GetId().ShouldBe(table.GetId(), "Object IDs of identical objects should match.");
+    secondTable.GetId().Should().Be(table.GetId(), "Object IDs of identical objects should match.");
 
     ((dynamic)secondTable).testProp = "wonderful";
 
@@ -37,7 +38,7 @@ public class Hashing
 
     ((dynamic)table).__testProp = "wonderful";
 
-    table.GetId().ShouldBe(originalHash, "Hashing of table should not change when '__' prefixed properties are added.");
+    table.GetId().Should().Be(originalHash, "Hashing of table should not change when '__' prefixed properties are added.");
   }
 
   [Fact(DisplayName = "Performance test: Hash computation time for large and small objects.")]
@@ -59,7 +60,7 @@ public class Hashing
     _ = polyline.GetId();
 
     var diff1 = stopWatch.ElapsedMilliseconds - stopWatchStep;
-    diff1.ShouldBeLessThan(300, $"Hashing shouldn't take that long ({diff1} ms) for the test object used.");
+    diff1.Should().BeLessThan(300, $"Hashing shouldn't take that long ({diff1} ms) for the test object used.");
     Console.WriteLine($"Big obj hash duration: {diff1} ms");
 
     var pt = new Point
@@ -72,7 +73,7 @@ public class Hashing
     _ = pt.GetId();
 
     var diff2 = stopWatch.ElapsedMilliseconds - stopWatchStep;
-    diff2.ShouldBeLessThan(10, $"Hashing shouldn't take that long ({diff2} ms) for the point object used.");
+    diff2.Should().BeLessThan(10, $"Hashing shouldn't take that long ({diff2} ms) for the point object used.");
     Console.WriteLine($"Small obj hash duration: {diff2} ms");
   }
 

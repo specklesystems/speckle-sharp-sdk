@@ -1,5 +1,6 @@
 // MemoryTransportTests.cs
 
+using FluentAssertions;
 using Shouldly;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
@@ -19,9 +20,8 @@ public sealed class MemoryTransportTests : TransportTests
   }
 
   [Fact]
-  public void TransportName_ShouldBeSetProperly()
+  public void TransportName_ShouldSetProperly()
   {
-    // Example test showing usage of Shouldly
-    _memoryTransport.TransportName.ShouldBe("Memory");
+    _memoryTransport.TransportName.Should().Be("Memory");
   }
 }

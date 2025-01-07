@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using FluentAssertions;
+using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Xunit;
@@ -22,9 +23,9 @@ public class BatchTests
   {
     var batch = new Batch<BatchItem>(4);
     batch.Add(new BatchItem(1));
-    batch.Size.ShouldBe(1);
+    batch.Size.Should().Be(1);
     batch.Add(new BatchItem(2));
-    batch.Size.ShouldBe(3);
+    batch.Size.Should().Be(3);
   }
 
   [Fact]
@@ -33,12 +34,12 @@ public class BatchTests
     var batch = new Batch<BatchItem>(4);
     batch.Add(new BatchItem(1));
     batch.Add(new BatchItem(2));
-    batch.Size.ShouldBe(3);
+    batch.Size.Should().Be(3);
 
-    batch.Items.Capacity.ShouldBe(4);
+    batch.Items.Capacity.Should().Be(4);
     batch.TrimExcess();
 
-    batch.Items.Capacity.ShouldBe(2);
-    batch.Size.ShouldBe(3);
+    batch.Items.Capacity.Should().Be(2);
+    batch.Size.Should().Be(3);
   }
 }

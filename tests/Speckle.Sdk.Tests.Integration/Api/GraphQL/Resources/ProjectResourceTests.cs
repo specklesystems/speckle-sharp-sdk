@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using FluentAssertions;
 using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
@@ -48,9 +49,9 @@ public class ProjectResourceTests
     // Assert
     result.ShouldNotBeNull();
     result.id.ShouldNotBeNullOrWhiteSpace();
-    result.name.ShouldBe(input.name);
-    result.description.ShouldBe(input.description ?? string.Empty);
-    result.visibility.ShouldBe(input.visibility.ShouldNotBeNull());
+    result.name.Should().Be(input.name);
+    result.description.Should().Be(input.description ?? string.Empty);
+    result.visibility.Should().Be(input.visibility.ShouldNotBeNull());
   }
 
   [Fact]
@@ -60,11 +61,11 @@ public class ProjectResourceTests
     var result = await Sut.Get(_testProject.id);
 
     // Assert
-    result.id.ShouldBe(_testProject.id);
-    result.name.ShouldBe(_testProject.name);
-    result.description.ShouldBe(_testProject.description);
-    result.visibility.ShouldBe(_testProject.visibility);
-    result.createdAt.ShouldBe(_testProject.createdAt);
+    result.id.Should().Be(_testProject.id);
+    result.name.Should().Be(_testProject.name);
+    result.description.Should().Be(_testProject.description);
+    result.visibility.Should().Be(_testProject.visibility);
+    result.createdAt.Should().Be(_testProject.createdAt);
   }
 
   [Fact]
@@ -81,10 +82,10 @@ public class ProjectResourceTests
     );
 
     // Assert
-    newProject.id.ShouldBe(_testProject.id);
-    newProject.name.ShouldBe(NEW_NAME);
-    newProject.description.ShouldBe(NEW_DESCRIPTION);
-    newProject.visibility.ShouldBe(NEW_VISIBILITY);
+    newProject.id.Should().Be(_testProject.id);
+    newProject.name.Should().Be(NEW_NAME);
+    newProject.description.Should().Be(NEW_DESCRIPTION);
+    newProject.visibility.Should().Be(NEW_VISIBILITY);
   }
 
   [Fact]

@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Shouldly;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
@@ -18,7 +19,7 @@ public abstract class TransportTests
 
     {
       var preAdd = await Sut.NotNull().GetObject(PAYLOAD_ID);
-      preAdd.ShouldBeNull();
+      preAdd.Should().BeNull();
     }
 
     Sut.SaveObject(PAYLOAD_ID, PAYLOAD_DATA);
@@ -26,7 +27,7 @@ public abstract class TransportTests
 
     {
       var postAdd = await Sut.GetObject(PAYLOAD_ID);
-      postAdd.ShouldBe(PAYLOAD_DATA);
+      postAdd.Should().Be(PAYLOAD_DATA);
     }
   }
 
@@ -38,7 +39,7 @@ public abstract class TransportTests
 
     {
       var preAdd = await Sut.NotNull().HasObjects(new[] { PAYLOAD_ID });
-      preAdd.Count.ShouldBe(1);
+      preAdd.Count.Should().Be(1);
       preAdd.Values.ShouldNotContain(true);
       preAdd.Keys.ShouldContain(PAYLOAD_ID);
     }
@@ -48,7 +49,7 @@ public abstract class TransportTests
 
     {
       var postAdd = await Sut.HasObjects(new[] { PAYLOAD_ID });
-      postAdd.Count.ShouldBe(1);
+      postAdd.Count.Should().Be(1);
       postAdd.Values.ShouldNotContain(false);
       postAdd.Keys.ShouldContain(PAYLOAD_ID);
     }
@@ -78,13 +79,13 @@ public abstract class TransportTests
     var hasObjectsResult = await Sut.HasObjects(ids);
 
     hasObjectsResult.Values.ShouldNotContain(false);
-    hasObjectsResult.Keys.ShouldBe(ids);
+    hasObjectsResult.Keys.Should().BeEquivalentTo(ids);
 
     //Test: GetObjects
     foreach (var x in testData)
     {
       var res = await Sut.GetObject(x.id);
-      res.ShouldBe(x.data);
+      res.Should().Be(x.data);
     }
   }
 
@@ -147,7 +148,7 @@ public abstract class TransportTests
     foreach (var (expectedId, expectedData) in testData)
     {
       var actual = await destination.GetObject(expectedId);
-      actual.ShouldBe(expectedData);
+      actual.Should().Be(expectedData);
     }
   }
 }

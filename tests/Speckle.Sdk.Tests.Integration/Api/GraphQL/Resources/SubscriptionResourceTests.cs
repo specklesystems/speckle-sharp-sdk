@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using FluentAssertions;
+using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
@@ -47,8 +48,8 @@ public class SubscriptionResourceTests : IAsyncLifetime
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     subscriptionMessage.ShouldNotBeNull();
-    subscriptionMessage!.id.ShouldBe(created.id);
-    subscriptionMessage.type.ShouldBe(UserProjectsUpdatedMessageType.ADDED);
+    subscriptionMessage!.id.Should().Be(created.id);
+    subscriptionMessage.type.Should().Be(UserProjectsUpdatedMessageType.ADDED);
     subscriptionMessage.project.ShouldNotBeNull();
   }
 
@@ -68,8 +69,8 @@ public class SubscriptionResourceTests : IAsyncLifetime
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     subscriptionMessage.ShouldNotBeNull();
-    subscriptionMessage!.id.ShouldBe(created.id);
-    subscriptionMessage.type.ShouldBe(ProjectModelsUpdatedMessageType.CREATED);
+    subscriptionMessage!.id.Should().Be(created.id);
+    subscriptionMessage.type.Should().Be(ProjectModelsUpdatedMessageType.CREATED);
     subscriptionMessage.model.ShouldNotBeNull();
   }
 
@@ -89,8 +90,8 @@ public class SubscriptionResourceTests : IAsyncLifetime
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     subscriptionMessage.ShouldNotBeNull();
-    subscriptionMessage!.id.ShouldBe(created.id);
-    subscriptionMessage.type.ShouldBe(ProjectUpdatedMessageType.UPDATED);
+    subscriptionMessage!.id.Should().Be(created.id);
+    subscriptionMessage.type.Should().Be(ProjectUpdatedMessageType.UPDATED);
     subscriptionMessage.project.ShouldNotBeNull();
   }
 
@@ -109,8 +110,8 @@ public class SubscriptionResourceTests : IAsyncLifetime
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     subscriptionMessage.ShouldNotBeNull();
-    subscriptionMessage!.id.ShouldBe(created);
-    subscriptionMessage.type.ShouldBe(ProjectVersionsUpdatedMessageType.CREATED);
+    subscriptionMessage!.id.Should().Be(created);
+    subscriptionMessage.type.Should().Be(ProjectVersionsUpdatedMessageType.CREATED);
     subscriptionMessage.version.ShouldNotBeNull();
   }
 
@@ -130,8 +131,8 @@ public class SubscriptionResourceTests : IAsyncLifetime
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     subscriptionMessage.ShouldNotBeNull();
-    subscriptionMessage!.id.ShouldBe(created.id);
-    subscriptionMessage.type.ShouldBe(ProjectCommentsUpdatedMessageType.CREATED);
+    subscriptionMessage!.id.Should().Be(created.id);
+    subscriptionMessage.type.Should().Be(ProjectCommentsUpdatedMessageType.CREATED);
     subscriptionMessage.comment.ShouldNotBeNull();
   }
 }

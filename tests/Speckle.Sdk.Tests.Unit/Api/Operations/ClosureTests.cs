@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NUnit.Framework;
@@ -55,7 +56,7 @@ public class Closures
     var test = await _operations.Receive(sendResult.rootObjId, localTransport: transport);
 
     test.id.NotNull();
-    d1.GetId(true).ShouldBeEquivalentTo((test.id));
+    d1.GetId(true).Should().BeEquivalentTo((test.id));
 
     var d1_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d1.GetId(true)]));
     var d2_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d2.GetId(true)]));
@@ -64,19 +65,19 @@ public class Closures
     var d5_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d5.GetId(true)]);
 
     var depthOf_d5_in_d1 = int.Parse((string)d1_.__closure[d5.GetId(true)]);
-    depthOf_d5_in_d1.ShouldBe(1);
+    depthOf_d5_in_d1.Should().Be(1);
 
     var depthOf_d4_in_d1 = int.Parse((string)d1_.__closure[d4.GetId(true)]);
-    depthOf_d4_in_d1.ShouldBe(3);
+    depthOf_d4_in_d1.Should().Be(3);
 
     var depthOf_d5_in_d3 = int.Parse((string)d3_.__closure[d5.GetId(true)]);
-    depthOf_d5_in_d3.ShouldBe(2);
+    depthOf_d5_in_d3.Should().Be(2);
 
     var depthOf_d4_in_d3 = int.Parse((string)d3_.__closure[d4.GetId(true)]);
-    depthOf_d4_in_d3.ShouldBe(1);
+    depthOf_d4_in_d3.Should().Be(1);
 
     var depthOf_d5_in_d2 = int.Parse((string)d2_.__closure[d5.GetId(true)]);
-    depthOf_d5_in_d2.ShouldBe(1);
+    depthOf_d5_in_d2.Should().Be(1);
   }
 
   [Fact]
@@ -117,15 +118,15 @@ public class Closures
 
     myBase["@detachTheDictionary"] = dictionary;
 
-    myBase.GetTotalChildrenCount().ShouldBe(112);
+    myBase.GetTotalChildrenCount().Should().Be(112);
 
     var tableTest = new DiningTable();
-    tableTest.GetTotalChildrenCount().ShouldBe(10);
+    tableTest.GetTotalChildrenCount().Should().Be(10);
 
     // Explicitely test for recurisve references!
     var recursiveRef = new Base { applicationId = "random" };
     recursiveRef["@recursive"] = recursiveRef;
 
-    recursiveRef.GetTotalChildrenCount().ShouldBe(2);
+    recursiveRef.GetTotalChildrenCount().Should().Be(2);
   }
 }

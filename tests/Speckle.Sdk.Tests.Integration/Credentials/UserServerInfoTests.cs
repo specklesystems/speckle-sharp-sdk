@@ -1,4 +1,5 @@
 ﻿using System.Net.Http;
+using FluentAssertions;
 using GraphQL.Client.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -27,7 +28,7 @@ public class UserServerInfoTests : IAsyncLifetime
       .GetServerInfo(new("https://app.speckle.systems/"));
 
     result.ShouldNotBeNull();
-    result.frontend2.ShouldBeTrue();
+    result.frontend2.Should().BeTrue();
   }
 
   [Fact]
@@ -38,7 +39,7 @@ public class UserServerInfoTests : IAsyncLifetime
       .GetServerInfo(new("https://speckle.xyz/"));
 
     result.ShouldNotBeNull();
-    result.frontend2.ShouldBeFalse();
+    result.frontend2.Should().BeFalse();
   }
 
   /// <remarks>
@@ -75,11 +76,11 @@ public class UserServerInfoTests : IAsyncLifetime
       .ServiceProvider.GetRequiredService<IAccountManager>()
       .GetUserInfo(_acc.token, serverUrl);
 
-    result.id.ShouldBe(_acc.userInfo.id);
-    result.name.ShouldBe(_acc.userInfo.name);
-    result.email.ShouldBe(_acc.userInfo.email);
-    result.company.ShouldBe(_acc.userInfo.company);
-    result.avatar.ShouldBe(_acc.userInfo.avatar);
+    result.id.Should().Be(_acc.userInfo.id);
+    result.name.Should().Be(_acc.userInfo.name);
+    result.email.Should().Be(_acc.userInfo.email);
+    result.company.Should().Be(_acc.userInfo.company);
+    result.avatar.Should().Be(_acc.userInfo.avatar);
   }
 
   [Fact]

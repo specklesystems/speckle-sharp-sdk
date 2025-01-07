@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Speckle.Sdk.Api;
@@ -59,14 +60,14 @@ public class MemoryTransportTests : IDisposable
       .ToList();
 
     // Check that there are three downloaded blobs!
-    blobPaths.Count.ShouldBe(3);
+    blobPaths.Count.Should().Be(3);
 
     var objectBlobs = receivedObject["blobs"] as IList<object>;
     objectBlobs.ShouldNotBeNull();
 
     var blobs = objectBlobs.Cast<Blob>().ToList();
     // Check that we have three blobs
-    blobs.Count.ShouldBe(3);
+    blobs.Count.Should().Be(3);
 
     // Check that received blobs point to local path (where they were received)
     blobs[0].filePath.ShouldContain(_memoryTransport.BlobStorageFolder);

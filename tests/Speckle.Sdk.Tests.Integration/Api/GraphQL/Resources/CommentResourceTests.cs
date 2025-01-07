@@ -35,8 +35,8 @@ public class CommentResourceTests
     var comment = await Sut.Get(_comment.id, _project.id);
 
     comment.ShouldNotBeNull();
-    comment.id.ShouldBe(_comment.id);
-    comment.authorId.ShouldBe(_testUser.Account.userInfo.id);
+    comment.id.Should().Be(_comment.id);
+    comment.authorId.Should().Be(_testUser.Account.userInfo.id);
   }
 
   [Fact]
@@ -45,17 +45,17 @@ public class CommentResourceTests
     var comments = await Sut.GetProjectComments(_project.id);
 
     comments.ShouldNotBeNull();
-    comments.items.Count.ShouldBe(1);
-    comments.totalCount.ShouldBe(1);
+    comments.items.Count.Should().Be(1);
+    comments.totalCount.Should().Be(1);
 
     Comment comment = comments.items[0];
     comment.ShouldNotBeNull();
-    comment.authorId.ShouldBe(_testUser.Account.userInfo.id);
+    comment.authorId.Should().Be(_testUser.Account.userInfo.id);
     comment.ShouldSatisfyAllConditions(
-      () => comment.id.ShouldBe(_comment.id),
-      () => comment.authorId.ShouldBe(_comment.authorId),
-      () => comment.archived.ShouldBe(false),
-      () => comment.createdAt.ShouldBe(_comment.createdAt)
+      () => comment.id.Should().Be(_comment.id),
+      () => comment.authorId.Should().Be(_comment.authorId),
+      () => comment.archived.Should().Be(false),
+      () => comment.createdAt.Should().Be(_comment.createdAt)
     );
   }
 
@@ -74,12 +74,12 @@ public class CommentResourceTests
     await Sut.Archive(new(_comment.id, _project.id, true));
     var archived = await Sut.Get(_comment.id, _project.id);
 
-    archived.archived.ShouldBeTrue();
+    archived.archived.Should().BeTrue();
 
     await Sut.Archive(new(_comment.id, _project.id, false));
     var unarchived = await Sut.Get(_comment.id, _project.id);
 
-    unarchived.archived.ShouldBeFalse();
+    unarchived.archived.Should().BeFalse();
   }
 
   [Fact]
@@ -93,10 +93,10 @@ public class CommentResourceTests
 
     editedComment.ShouldNotBeNull();
     editedComment.ShouldSatisfyAllConditions(
-      () => editedComment.id.ShouldBe(_comment.id),
-      () => editedComment.authorId.ShouldBe(_comment.authorId),
-      () => editedComment.createdAt.ShouldBe(_comment.createdAt),
-      () => editedComment.updatedAt.ShouldBeGreaterThanOrEqualTo(_comment.updatedAt)
+      () => editedComment.id.Should().Be(_comment.id),
+      () => editedComment.authorId.Should().Be(_comment.authorId),
+      () => editedComment.createdAt.Should().Be(_comment.createdAt),
+      () => editedComment.updatedAt.Should().BeGreaterThanOrEqualTo(_comment.updatedAt)
     );
   }
 

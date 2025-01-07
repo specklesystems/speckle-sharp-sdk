@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Shouldly;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -19,7 +20,7 @@ namespace Speckle.Sdk.Tests.Unit.Models
     [MemberData(nameof(Cases))]
     public void SpeckleTypeIsProperlyBuilt(Base foo, string expectedType)
     {
-      foo.speckle_type.ShouldBe(expectedType);
+      foo.speckle_type.Should().Be(expectedType);
     }
 
     public static IEnumerable<object[]> Cases =>

@@ -1,3 +1,4 @@
+using FluentAssertions;
 using NUnit.Framework;
 using Shouldly;
 using Speckle.Sdk.Host;
@@ -25,7 +26,7 @@ public class BaseExtensionsTests
 
     var result = data.GetDetachedPropName(propertyName);
     var expected = $"@{propertyName}";
-    result.ShouldBe(expected);
+    result.Should().Be(expected);
   }
 
   [Theory]
@@ -36,7 +37,7 @@ public class BaseExtensionsTests
     var data = new TestBase();
     var result = data.GetDetachedPropName(propertyName);
 
-    result.ShouldBe(propertyName);
+    result.Should().Be(propertyName);
   }
 
   [Fact]
@@ -50,18 +51,18 @@ public class BaseExtensionsTests
 
     var basePaths = collection.TraverseWithPath((obj => obj is not Collection)).ToList();
 
-    basePaths.Count.ShouldBe(3);
+    basePaths.Count.Should().Be(3);
 
-    basePaths[0].Item2.speckle_type.ShouldBe("Speckle.Core.Models.Collections.Collection");
-    basePaths[0].Item2["name"].ShouldBe("collection");
-    basePaths[0].Item1.ShouldBe(new List<string>());
+    basePaths[0].Item2.speckle_type.Should().Be("Speckle.Core.Models.Collections.Collection");
+    basePaths[0].Item2["name"].Should().Be("collection");
+    basePaths[0].Item1.Should().BeEquivalentTo(new List<string>());
 
-    basePaths[1].Item2.speckle_type.ShouldBe("Speckle.Core.Models.Collections.Collection");
-    basePaths[1].Item2["name"].ShouldBe("subCollection");
-    basePaths[1].Item1.ShouldBe(new List<string>() { "collection" });
+    basePaths[1].Item2.speckle_type.Should().Be("Speckle.Core.Models.Collections.Collection");
+    basePaths[1].Item2["name"].Should().Be("subCollection");
+    basePaths[1].Item1.Should().BeEquivalentTo(new List<string>() { "collection" });
 
-    basePaths[2].Item2.speckle_type.ShouldBe("Base");
-    basePaths[2].Item1.ShouldBe(new List<string>() { "collection", "subCollection" });
+    basePaths[2].Item2.speckle_type.Should().Be("Base");
+    basePaths[2].Item1.Should().BeEquivalentTo(new List<string>() { "collection", "subCollection" });
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Models.Extensions.BaseExtensionsTests+TestBase")]
