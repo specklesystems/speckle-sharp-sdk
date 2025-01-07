@@ -1,5 +1,4 @@
-﻿using NUnit.Framework;
-using Shouldly;
+﻿using FluentAssertions;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Primitive;
@@ -31,12 +30,12 @@ public class ExternalIdTests
       default
     );
     var list = serializer.Serialize(p).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
+    list.ContainsKey(new Id(lineId)).Should().BeTrue();
     var json = list[new Id(lineId)];
     var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
+    jObject.ContainsKey("__closure").Should().BeTrue();
     var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    closures.ContainsKey(valueId).Should().BeTrue();
   }
 
   [Theory]
@@ -61,12 +60,12 @@ public class ExternalIdTests
       default
     );
     var list = serializer.Serialize(curve).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
+    list.ContainsKey(new Id(lineId)).Should().BeTrue();
     var json = list[new Id(lineId)];
     var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
+    jObject.ContainsKey("__closure").Should().BeTrue();
     var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    closures.ContainsKey(valueId).Should().BeTrue();
   }
 
   [Theory]
@@ -92,12 +91,12 @@ public class ExternalIdTests
       default
     );
     var list = serializer.Serialize(polycurve).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
+    list.ContainsKey(new Id(lineId)).Should().BeTrue();
     var json = list[new Id(lineId)];
     var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
+    jObject.ContainsKey("__closure").Should().BeTrue();
     var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    closures.ContainsKey(valueId).Should().BeTrue();
   }
 
   [Theory]
@@ -125,11 +124,11 @@ public class ExternalIdTests
       default
     );
     var list = serializer.Serialize(@base).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
+    list.ContainsKey(new Id(lineId)).Should().BeTrue();
     var json = list[new Id(lineId)];
     var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
+    jObject.ContainsKey("__closure").Should().BeTrue();
     var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    closures.ContainsKey(valueId).Should().BeTrue();
   }
 }

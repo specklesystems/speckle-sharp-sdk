@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Shouldly;
+﻿using FluentAssertions;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2.Send;
@@ -35,9 +32,9 @@ public class ExplicitInterfaceTests
 
     await process2.Serialize(testClass, default);
 
-    objects.Count.ShouldBe(1);
+    objects.Count.Should().Be(1);
     objects["daaa67cfd73a957247cf2d631b7ca4f3"]
-      .ShouldBe(
+      .Should().Be(
         "{\"RegularProperty\":\"Hello\",\"applicationId\":null,\"speckle_type\":\"Speckle.Core.Serialisation.TestClass\",\"id\":\"daaa67cfd73a957247cf2d631b7ca4f3\"}"
       );
   }
@@ -50,9 +47,9 @@ public class ExplicitInterfaceTests
     var gatherer = new BasePropertyGatherer();
     var properties = gatherer.ExtractAllProperties(testClass).ToList();
 
-    properties.Count.ShouldBe(3);
-    properties.Select(x => x.Name).ShouldContain("RegularProperty");
-    properties.Select(x => x.Name).ShouldNotContain("TestProperty");
+    properties.Count.Should().Be(3);
+    properties.Select(x => x.Name).Should().Contain("RegularProperty");
+    properties.Select(x => x.Name).Should().NotContain("TestProperty");
   }
 }
 

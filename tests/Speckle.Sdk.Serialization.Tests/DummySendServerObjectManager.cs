@@ -1,8 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Shouldly;
-using Speckle.Newtonsoft.Json.Linq;
-using Speckle.Sdk.Common;
-using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;

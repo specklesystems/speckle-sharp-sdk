@@ -1,8 +1,7 @@
 using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Reflection;
-using NUnit.Framework;
-using Shouldly;
+using FluentAssertions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.Data;
@@ -79,7 +78,7 @@ public class SerializationTests
       var closure = await ReadAsObjects(json);
       using DeserializeProcess sut = new(null, new TestLoader(json), new TestTransport(closure));
       var @base = await sut.Deserialize("551513ff4f3596024547fc818f1f3f70");
-      @base.ShouldNotBeNull();
+      @base.Should().NotBeNull();
     }*/
 
   public class TestObjectLoader(Dictionary<string, string> idToObject) : IObjectLoader
@@ -121,26 +120,26 @@ public class SerializationTests
       var jObject = JObject.Parse(objJson);
       var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
       var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
-      starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
+      starts.Should().BeTrue($"{oldSpeckleType} isn't expected");
 
       var baseType = await deserializer.DeserializeAsync(objJson);
-      baseType.id.ShouldBe(id);
+      baseType.id.Should().Be(id);
 
       var oldType = TypeLoader.GetAtomicType(oldSpeckleType);
       if (oldType == typeof(Base))
       {
-        oldSpeckleType.ShouldNotContain("Base");
+        oldSpeckleType.Should().NotContain("Base");
       }
       else
       {
         starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
-        starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
+        starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
 
         var type = TypeLoader.GetAtomicType(baseType.speckle_type);
-        type.ShouldNotBeNull();
+        type.Should().NotBeNull();
         var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException($"Could not find: {type}");
         starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
-        starts.ShouldBeTrue($"{name} isn't expected");
+        starts.Should().BeTrue($"{name} isn't expected");
       }
     }
   }
@@ -159,25 +158,25 @@ public class SerializationTests
       var jObject = JObject.Parse(objJson);
       var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
       var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
-      starts.ShouldBeTrue($"{oldSpeckleType} isn't expected");
+      starts.Should().BeTrue($"{oldSpeckleType} isn't expected");
 
       var oldType = TypeLoader.GetAtomicType(oldSpeckleType);
       if (oldType == typeof(Base))
       {
-        oldSpeckleType.ShouldNotContain("Base");
+        oldSpeckleType.Should().NotContain("Base");
       }
       else
       {
         var baseType = process.BaseCache[id];
 
         starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
-        starts.ShouldBeTrue($"{baseType.speckle_type} isn't expected");
+        starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
 
         var type = TypeLoader.GetAtomicType(baseType.speckle_type);
-        type.ShouldNotBeNull();
+        type.Should().NotBeNull();
         var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException();
         starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
-        starts.ShouldBeTrue($"{name} isn't expected");
+        starts.Should().BeTrue($"{name} isn't expected");
       }
     }
   }
@@ -197,7 +196,7 @@ public class SerializationTests
     jObject.Remove("__closure");
     var jsonWithoutId = jObject.ToString(Formatting.None);
     var newId = IdGenerator.ComputeId(new Json(jsonWithoutId));
-    id.ShouldBe(newId.Value);
+    id.Should().Be(newId.Value);
   }
 
   [Theory]
@@ -219,21 +218,21 @@ public class SerializationTests
     var newIds = new Dictionary<string, string>();
     var oldIds = new Dictionary<string, string>();
     var idToBase = new Dictionary<string, Base>();
-    closure.Count.ShouldBe(count);
+    closure.Count.Should().Be(count);
     foreach (var (id, objJson) in closure)
     {
       var base1 = await deserializer.DeserializeAsync(objJson);
-      base1.id.ShouldBe(id);
+      base1.id.Should().Be(id);
       var j = serializer.Serialize(base1);
-      //j.ShouldBe(objJson);
+      //j.Should().Be(objJson);
       JToken.DeepEquals(JObject.Parse(j), JObject.Parse(objJson));
       newIds.Add(base1.id.NotNull(), j);
       oldIds.Add(id, j);
       idToBase.Add(id, base1);
     }
-    newIds.Count.ShouldBe(count);
-    oldIds.Count.ShouldBe(count);
-    idToBase.Count.ShouldBe(count);
+    newIds.Count.Should().Be(count);
+    oldIds.Count.Should().Be(count);
+    idToBase.Count.Should().Be(count);
   }
 
   [Theory]
@@ -243,7 +242,7 @@ public class SerializationTests
     var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
     var json = await ReadJson(fullName);
     var closure = ReadAsObjects(json);
-    closure.Count.ShouldBe(oldCount);
+    closure.Count.Should().Be(oldCount);
 
     var o = new ObjectLoader(
       new DummySqLiteReceiveManager(closure),
@@ -252,8 +251,8 @@ public class SerializationTests
     );
     var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(true));
     var root = await process.Deserialize(rootId, default);
-    process.BaseCache.Count.ShouldBe(oldCount);
-    process.Total.ShouldBe(oldCount);
+    process.BaseCache.Count.Should().Be(oldCount);
+    process.Total.Should().Be(oldCount);
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
     using var serializeProcess = new SerializeProcess(
@@ -266,8 +265,8 @@ public class SerializationTests
     );
     var (rootId2, _) = await serializeProcess.Serialize(root, default);
 
-    rootId2.ShouldBe(root.id);
-    newIdToJson.Count.ShouldBe(newCount);
+    rootId2.Should().Be(root.id);
+    newIdToJson.Count.Should().Be(newCount);
 
     foreach (var newKvp in newIdToJson)
     {

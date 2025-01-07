@@ -1,8 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
-using NUnit.Framework;
-using Shouldly;
-using Speckle.Newtonsoft.Json;
+using FluentAssertions;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
@@ -77,15 +75,15 @@ public class DetachedTests
     );
     await process2.Serialize(@base, default);
 
-    objects.Count.ShouldBe(2);
-    objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").ShouldBeTrue();
-    objects.ContainsKey("d3dd4621b2f68c3058c2b9c023a9de19").ShouldBeTrue();
+    objects.Count.Should().Be(2);
+    objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").Should().BeTrue();
+    objects.ContainsKey("d3dd4621b2f68c3058c2b9c023a9de19").Should().BeTrue();
     JToken
       .DeepEquals(JObject.Parse(expectedJson), JObject.Parse(objects["9ff8efb13c62fa80f3d1c4519376ba13"]))
-      .ShouldBeTrue();
+      .Should().BeTrue();
     JToken
       .DeepEquals(JObject.Parse(detachedJson), JObject.Parse(objects["d3dd4621b2f68c3058c2b9c023a9de19"]))
-      .ShouldBeTrue();
+      .Should().BeTrue();
   }
 
   [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
@@ -133,16 +131,16 @@ public class DetachedTests
     var serializer = new SpeckleObjectSerializer(new[] { new MemoryTransport(objects) });
     var json = serializer.Serialize(@base);
 
-    objects.Count.ShouldBe(2);
-    objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").ShouldBeTrue();
-    objects.ContainsKey("d3dd4621b2f68c3058c2b9c023a9de19").ShouldBeTrue();
-    JToken.DeepEquals(JObject.Parse(json), JObject.Parse(objects["9ff8efb13c62fa80f3d1c4519376ba13"])).ShouldBeTrue();
+    objects.Count.Should().Be(2);
+    objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").Should().BeTrue();
+    objects.ContainsKey("d3dd4621b2f68c3058c2b9c023a9de19").Should().BeTrue();
+    JToken.DeepEquals(JObject.Parse(json), JObject.Parse(objects["9ff8efb13c62fa80f3d1c4519376ba13"])).Should().BeTrue();
     JToken
       .DeepEquals(JObject.Parse(expectedJson), JObject.Parse(objects["9ff8efb13c62fa80f3d1c4519376ba13"]))
-      .ShouldBeTrue();
+      .Should().BeTrue();
     JToken
       .DeepEquals(JObject.Parse(detachedJson), JObject.Parse(objects["d3dd4621b2f68c3058c2b9c023a9de19"]))
-      .ShouldBeTrue();
+      .Should().BeTrue();
   }
 
   [Fact]
@@ -157,11 +155,11 @@ public class DetachedTests
 
     var children = new BaseChildFinder(new BasePropertyGatherer()).GetChildProperties(@base).ToList();
 
-    children.Count.ShouldBe(4);
-    children.First(x => x.Name == "detachedProp").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
-    children.First(x => x.Name == "list").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
-    children.First(x => x.Name == "arr").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
-    children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+    children.Count.Should().Be(4);
+    children.First(x => x.Name == "detachedProp").PropertyAttributeInfo.IsDetachable.Should().BeTrue();
+    children.First(x => x.Name == "list").PropertyAttributeInfo.IsDetachable.Should().BeTrue();
+    children.First(x => x.Name == "arr").PropertyAttributeInfo.IsDetachable.Should().BeTrue();
+    children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.Should().BeTrue();
   }
 
   [Fact]
@@ -176,17 +174,17 @@ public class DetachedTests
 
     var children = new BasePropertyGatherer().ExtractAllProperties(@base).ToList();
 
-    children.Count.ShouldBe(9);
-    children.First(x => x.Name == "dynamicProp").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
-    children.First(x => x.Name == "attachedProp").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
-    children.First(x => x.Name == "crazyProp").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
-    children.First(x => x.Name == "speckle_type").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
-    children.First(x => x.Name == "applicationId").PropertyAttributeInfo.IsDetachable.ShouldBeFalse();
+    children.Count.Should().Be(9);
+    children.First(x => x.Name == "dynamicProp").PropertyAttributeInfo.IsDetachable.Should().BeFalse();
+    children.First(x => x.Name == "attachedProp").PropertyAttributeInfo.IsDetachable.Should().BeFalse();
+    children.First(x => x.Name == "crazyProp").PropertyAttributeInfo.IsDetachable.Should().BeFalse();
+    children.First(x => x.Name == "speckle_type").PropertyAttributeInfo.IsDetachable.Should().BeFalse();
+    children.First(x => x.Name == "applicationId").PropertyAttributeInfo.IsDetachable.Should().BeFalse();
 
-    children.First(x => x.Name == "detachedProp").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
-    children.First(x => x.Name == "list").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
-    children.First(x => x.Name == "arr").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
-    children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.ShouldBeTrue();
+    children.First(x => x.Name == "detachedProp").PropertyAttributeInfo.IsDetachable.Should().BeTrue();
+    children.First(x => x.Name == "list").PropertyAttributeInfo.IsDetachable.Should().BeTrue();
+    children.First(x => x.Name == "arr").PropertyAttributeInfo.IsDetachable.Should().BeTrue();
+    children.First(x => x.Name == "@prop2").PropertyAttributeInfo.IsDetachable.Should().BeTrue();
   }
 
   [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
@@ -269,12 +267,12 @@ public class DetachedTests
     );
     var results = await process2.Serialize(@base, default);
 
-    objects.Count.ShouldBe(9);
+    objects.Count.Should().Be(9);
     var x = JObject.Parse(objects["2ebfd4f317754fce14cadd001151441e"]);
-    JToken.DeepEquals(JObject.Parse(root), x).ShouldBeTrue();
+    JToken.DeepEquals(JObject.Parse(root), x).Should().BeTrue();
 
-    results.RootId.ShouldBe(@base.id);
-    results.ConvertedReferences.Count.ShouldBe(2);
+    results.RootId.Should().Be(@base.id);
+    results.ConvertedReferences.Count.Should().Be(2);
   }
 
   [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
@@ -342,15 +340,15 @@ public class DetachedTests
     );
     var results = await process2.Serialize(@base, default);
 
-    objects.Count.ShouldBe(3);
+    objects.Count.Should().Be(3);
     var x = JObject.Parse(objects["efeadaca70a85ae6d3acfc93a8b380db"]);
-    JToken.DeepEquals(JObject.Parse(root), x).ShouldBeTrue();
+    JToken.DeepEquals(JObject.Parse(root), x).Should().BeTrue();
 
     x = JObject.Parse(objects["0e61e61edee00404ec6e0f9f594bce24"]);
-    JToken.DeepEquals(JObject.Parse(list1), x).ShouldBeTrue();
+    JToken.DeepEquals(JObject.Parse(list1), x).Should().BeTrue();
 
     x = JObject.Parse(objects["f70738e3e3e593ac11099a6ed6b71154"]);
-    JToken.DeepEquals(JObject.Parse(list2), x).ShouldBeTrue();
+    JToken.DeepEquals(JObject.Parse(list2), x).Should().BeTrue();
   }
 
   [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
@@ -423,15 +421,15 @@ public class DetachedTests
     );
     var results = await process2.Serialize(@base, default);
 
-    objects.Count.ShouldBe(3);
+    objects.Count.Should().Be(3);
     var x = JObject.Parse(objects["525b1e9eef4d07165abb4ffc518395fc"]);
-    JToken.DeepEquals(JObject.Parse(root), x).ShouldBeTrue();
+    JToken.DeepEquals(JObject.Parse(root), x).Should().BeTrue();
 
     x = JObject.Parse(objects["0e61e61edee00404ec6e0f9f594bce24"]);
-    JToken.DeepEquals(JObject.Parse(list1), x).ShouldBeTrue();
+    JToken.DeepEquals(JObject.Parse(list1), x).Should().BeTrue();
 
     x = JObject.Parse(objects["f70738e3e3e593ac11099a6ed6b71154"]);
-    JToken.DeepEquals(JObject.Parse(list2), x).ShouldBeTrue();
+    JToken.DeepEquals(JObject.Parse(list2), x).Should().BeTrue();
   }
 }
 
