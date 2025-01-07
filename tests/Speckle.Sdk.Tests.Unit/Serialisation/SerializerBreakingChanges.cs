@@ -1,5 +1,6 @@
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -29,36 +30,35 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   }
 
   [Fact]
-  public void StringToInt_ShouldThrow()
+  public async Task StringToInt_ShouldThrow()
   {
     var from = new StringValueMock { value = "testValue" };
 
-    // xUnit + Shouldly version of Assert.ThrowsAsync
-    Should.ThrowAsync<SpeckleDeserializeException>(
+    await FluentActions.Invoking(
       async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations)
-    );
+    ).Should().ThrowAsync<SpeckleDeserializeException>();
   }
 
   [Theory]
   [MemberData(nameof(MyEnums))] // Replaces [TestCaseSource(nameof(MyEnums))]
-  public void StringToEnum_ShouldThrow(MyEnum testCase)
+  public async Task StringToEnum_ShouldThrow(MyEnum testCase)
   {
     var from = new StringValueMock { value = testCase.ToString() };
 
-    Should.ThrowAsync<SpeckleDeserializeException>(
+    await FluentActions.Invoking(
       async () => await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations)
-    );
+    ).Should().ThrowAsync<SpeckleDeserializeException>();
   }
 
   [Theory(DisplayName = "Deserialization of a JTokenType.Float to a .NET short/int/long should throw exception")]
   [MemberData(nameof(Float64TestCases))]
   [InlineData(1e+30)] // Inline test case replaces [TestCase(1e+30)]
-  public void DoubleToInt_ShouldThrow(double testCase)
+  public async Task DoubleToInt_ShouldThrow(double testCase)
   {
     var from = new DoubleValueMock { value = testCase };
 
-    Should.ThrowAsync<SpeckleDeserializeException>(
+    await FluentActions.Invoking(
       async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations)
-    );
+    ).Should().ThrowAsync<SpeckleDeserializeException>();
   }
 }

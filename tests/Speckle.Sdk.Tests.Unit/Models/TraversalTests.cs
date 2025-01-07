@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
@@ -37,9 +37,9 @@ public class TraversalTests
 
     ret.Should().OnlyHaveUniqueItems();
 
-    ret.Where(BreakRule).ShouldNotBeEmpty();
+    ret.Where(BreakRule).Should().NotBeEmpty();
 
-    ret.ShouldNotContain(x => x.id == "should have ignored me");
+    ret.Should().NotContain(x => x.id == "should have ignored me");
   }
 
   [Theory(DisplayName = "Tests breaking after a fixed number of items")]

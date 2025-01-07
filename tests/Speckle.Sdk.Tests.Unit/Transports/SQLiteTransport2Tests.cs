@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
-using Shouldly;
+
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
@@ -115,11 +115,10 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
       _sqlite.UpdateObject(key, newData);
     }
 
-    // Assert objects were updated
-    _sqlite.GetAllObjects().ToList().ShouldAllBe(x => x!.Contains(UPDATE_STRING));
-
-    // Assert objects were updated only once
-    _sqlite.GetAllObjects().ToList().ShouldAllBe(x => x!.Length == length + UPDATE_STRING.Length);
+    // Assert that objects were updated
+    _sqlite.GetAllObjects().ToList().Should().AllSatisfy(o => o.Should().Contain(UPDATE_STRING));
+    // Assert that objects were only updated once
+    _sqlite.GetAllObjects().ToList().Should().AllSatisfy(o => o.Should().HaveLength(length + UPDATE_STRING.Length));
   }
 
   [Theory(DisplayName = "Tests that GetAllObjects can be called concurrently from multiple threads")]

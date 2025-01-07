@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Deprecated;
@@ -22,7 +22,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       // Record.Exception is the xUnit alternative of Assert.Throws
       var exception = Record.Exception(() => TypeLoader.ParseType(typeof(string)));
 
-      exception.ShouldNotBeNull(); // Shouldly assertion
+      exception.Should().NotBeNull(); // Shouldly assertion
       exception.Should().BeOfType<InvalidOperationException>(); // Ensure it's the correct exception type
     }
 

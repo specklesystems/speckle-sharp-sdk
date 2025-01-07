@@ -1,7 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
-using Shouldly;
+
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -32,7 +32,7 @@ public class SendObjectReferences
     MemoryTransport transport = new();
     var result = await _operations.Send(testData, [transport]);
 
-    result.rootObjId.ShouldNotBeNull();
+    result.rootObjId.Should().NotBeNull();
 
     result.rootObjId.Length.Should().Be(32);
 
@@ -49,7 +49,7 @@ public class SendObjectReferences
     MemoryTransport transport = new();
     var result = await _operations.Send(testData, [transport]);
 
-    result.rootObjId.ShouldNotBeNull();
+    result.rootObjId.Should().NotBeNull();
 
     result.rootObjId.Length.Should().Be(32);
 

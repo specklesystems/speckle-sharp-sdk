@@ -1,7 +1,7 @@
 // MemoryTransportTests.cs
 
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 using Xunit;

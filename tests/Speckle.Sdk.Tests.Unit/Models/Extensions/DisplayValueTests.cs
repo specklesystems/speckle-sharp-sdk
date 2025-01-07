@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
@@ -40,8 +40,8 @@ public class DisplayValueTests
 
     // Assert the single item matches the expected type and property
     var displayValue = res?[0];
-    displayValue.ShouldNotBeNull();
-    displayValue.applicationId.Should().Be(PAYLOAD);
+    displayValue.Should().NotBeNull();
+    displayValue!.applicationId.Should().Be(PAYLOAD);
   }
 
   public static IEnumerable<object[]> TestCases()

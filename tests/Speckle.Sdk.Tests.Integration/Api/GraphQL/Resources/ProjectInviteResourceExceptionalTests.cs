@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -36,12 +36,11 @@ public class ProjectInviteResourceExceptionalTests : IAsyncLifetime
   {
     var input = new ProjectInviteCreateInput(email, role, serverRole, userId);
 
-    var exception = await Should.ThrowAsync<AggregateException>(async () =>
+    var exception = await  FluentActions.Invoking(async () =>
     {
       await Sut.Create(_project.id, input);
-    });
+    }).Should().ThrowAsync<AggregateException>();
 
-    exception.InnerExceptions.Should().ContainSingle();
-    exception.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLException>();
+    exception.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
 }

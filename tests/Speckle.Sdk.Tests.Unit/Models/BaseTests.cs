@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies.Serialization;
@@ -51,21 +51,20 @@ public class BaseTests
 
     // Only single leading @ allowed
     @base["@something"] = "A";
-    Should.Throw<InvalidPropNameException>(() =>
+    FluentActions.Invoking(() =>
     {
       @base["@@@something"] = "Testing";
-    });
+    }).Should().Throw<InvalidPropNameException>();
 
     // Invalid chars:  ./
-    Should.Throw<InvalidPropNameException>(() =>
+    FluentActions.Invoking(() =>
     {
       @base["some.thing"] = "Testing";
-    });
-    Should.Throw<InvalidPropNameException>(() =>
+    }).Should().Throw<InvalidPropNameException>();
+    FluentActions.Invoking(() =>
     {
       @base["some/thing"] = "Testing";
-    });
-
+    }).Should().Throw<InvalidPropNameException>();
     // Trying to change a class member value will throw exceptions.
     //Assert.Throws<Exception>(() => { @base["speckle_type"] = "Testing"; });
     //Assert.Throws<Exception>(() => { @base["id"] = "Testing"; });
@@ -121,10 +120,10 @@ public class BaseTests
     var dynamicProp = "dynamicProp";
     @base[dynamicProp] = 123;
     var names = @base.GetMembers().Keys;
-    names.ShouldNotContain(nameof(@base.IgnoredSchemaProp));
-    names.ShouldNotContain(nameof(@base.ObsoleteSchemaProp));
-    names.ShouldContain(dynamicProp);
-    names.ShouldContain(nameof(@base.attachedProp));
+    names.Should().NotContain(nameof(@base.IgnoredSchemaProp));
+    names.Should().NotContain(nameof(@base.ObsoleteSchemaProp));
+    names.Should().Contain(dynamicProp);
+    names.Should().Contain(nameof(@base.attachedProp));
   }
 
   [Fact(DisplayName = "Checks that only instance properties are returned, excluding obsolete and ignored.")]
@@ -134,7 +133,7 @@ public class BaseTests
     @base["dynamicProp"] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Instance).Keys;
-    names.ShouldContain(nameof(@base.attachedProp));
+    names.Should().Contain(nameof(@base.attachedProp));
   }
 
   [Fact(DisplayName = "Checks that only dynamic properties are returned")]
@@ -145,7 +144,7 @@ public class BaseTests
     @base[dynamicProp] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Dynamic).Keys;
-    names.ShouldContain(dynamicProp);
+    names.Should().Contain(dynamicProp);
     names.Count.Should().Be(1);
   }
 
@@ -156,8 +155,8 @@ public class BaseTests
     @base["dynamicProp"] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.SchemaIgnored).Keys;
-    names.ShouldContain(nameof(@base.IgnoredSchemaProp));
-    names.ShouldContain(nameof(@base.attachedProp));
+    names.Should().Contain(nameof(@base.IgnoredSchemaProp));
+    names.Should().Contain(nameof(@base.attachedProp));
   }
 
   [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
@@ -167,8 +166,8 @@ public class BaseTests
     @base["dynamicProp"] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Obsolete).Keys;
-    names.ShouldContain(nameof(@base.ObsoleteSchemaProp));
-    names.ShouldContain(nameof(@base.attachedProp));
+    names.Should().Contain(nameof(@base.ObsoleteSchemaProp));
+    names.Should().Contain(nameof(@base.attachedProp));
   }
 
   [Fact]
@@ -179,7 +178,7 @@ public class BaseTests
     @base[dynamicProp] = null;
 
     var names = @base.GetDynamicMemberNames();
-    names.ShouldContain(dynamicProp);
+    names.Should().Contain(dynamicProp);
     @base[dynamicProp].Should().BeNull();
   }
 

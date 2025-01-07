@@ -1,7 +1,7 @@
 using System.Drawing;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
@@ -111,8 +111,8 @@ public class ObjectSerialization
     var dsrls = await _operations.DeserializeAsync(str);
 
     var list = dsrls["test"] as List<object>;
-    list.ShouldNotBeNull(); // Ensure the list isn't null in first place
-    list.Count.Should().Be(100);
+    list.Should().NotBeNull(); // Ensure the list isn't null in first place
+    list!.Count.Should().Be(100);
   }
 
   [Fact]

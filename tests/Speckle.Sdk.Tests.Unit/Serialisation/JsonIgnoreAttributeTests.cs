@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
@@ -50,17 +50,17 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       SpeckleObjectSerializer sut = new();
 
       var result = sut.SerializeBase(testData);
-      result.ShouldNotBeNull();
-      result.Value.Id.ShouldNotBeNull();
+      result.Should().NotBeNull();
+      result!.Value.Id.Should().NotBeNull();
 
       var jsonString = result.Value.Json.ToString();
-      jsonString.ShouldNotContain(nameof(testData.ShouldBeIgnored));
-      jsonString.ShouldNotContain(ignoredPayload);
+      jsonString.Should().NotContain(nameof(testData.ShouldBeIgnored));
+      jsonString.Should().NotContain(ignoredPayload);
 
-      jsonString.ShouldContain(nameof(testData.ShouldBeIncluded));
-      jsonString.ShouldContain(expectedPayload);
+      jsonString.Should().Contain(nameof(testData.ShouldBeIncluded));
+      jsonString.Should().Contain(expectedPayload);
 
-      result.Value.Id.Value.Value.Should().Be(expectedHash);
+      result.Value.Id!.Value.Value.Should().Be(expectedHash);
     }
 
     [Theory]
@@ -78,18 +78,18 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
 
       var result = sut.SerializeBase(testData);
       var (json, id) = result.NotNull();
-      json.Value.ShouldNotBeNull();
-      id.ShouldNotBeNull();
+      json.Value.Should().NotBeNull();
+      id.Should().NotBeNull();
 
-      savedObjects.SaveObject(id.Value.Value.NotNull(), json.Value);
+      savedObjects.SaveObject(id!.Value.Value.NotNull(), json.Value);
 
       foreach ((_, string childJson) in savedObjects.Objects)
       {
-        childJson.ShouldNotContain(nameof(testData.ShouldBeIgnored));
-        childJson.ShouldNotContain(ignoredPayload);
+        childJson.Should().NotContain(nameof(testData.ShouldBeIgnored));
+        childJson.Should().NotContain(ignoredPayload);
 
-        childJson.ShouldContain(nameof(testData.ShouldBeIncluded));
-        childJson.ShouldContain(expectedPayload);
+        childJson.Should().Contain(nameof(testData.ShouldBeIncluded));
+        childJson.Should().Contain(expectedPayload);
       }
 
       id.Value.Value.Should().Be(expectedHash);

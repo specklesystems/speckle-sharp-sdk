@@ -1,6 +1,6 @@
 using System.Collections;
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.GraphTraversal;
@@ -45,11 +45,11 @@ public class GraphTraversalTests
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
 
     // Assert expected members present
-    ret.ShouldContain(testCase);
-    ret.ShouldContain(expectTraverse);
+    ret.Should().Contain(testCase);
+    ret.Should().Contain(expectTraverse);
 
     // Assert unexpected members not present
-    ret.ShouldNotContain(expectIgnored);
+    ret.Should().NotContain(expectIgnored);
     ret.Count.Should().Be(2);
   }
 
@@ -76,11 +76,11 @@ public class GraphTraversalTests
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
 
     // Assert expected members present
-    ret.ShouldContain(testCase);
-    ret.ShouldContain(expectTraverse);
+    ret.Should().Contain(testCase);
+    ret.Should().Contain(expectTraverse);
 
     // Assert unexpected members not present
-    ret.ShouldNotContain(expectIgnored);
+    ret.Should().NotContain(expectIgnored);
     ret.Count.Should().Be(2);
   }
 
@@ -105,11 +105,11 @@ public class GraphTraversalTests
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
 
     // Assert expected members present
-    ret.ShouldContain(testCase);
+    ret.Should().Contain(testCase);
     ret.Count(x => x == expectTraverse).Should().Be(2);
 
     // Assert unexpected members not present
-    ret.ShouldNotContain(expectIgnored);
+    ret.Should().NotContain(expectIgnored);
     ret.Count.Should().Be(3);
   }
 
@@ -134,11 +134,11 @@ public class GraphTraversalTests
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
 
     // Assert expected members present
-    ret.ShouldContain(testCase);
+    ret.Should().Contain(testCase);
     ret.Count(x => x == expectTraverse).Should().Be(2);
 
     // Assert unexpected members not present
-    ret.ShouldNotContain(expectIgnored);
+    ret.Should().NotContain(expectIgnored);
     ret.Count.Should().Be(3);
   }
 }

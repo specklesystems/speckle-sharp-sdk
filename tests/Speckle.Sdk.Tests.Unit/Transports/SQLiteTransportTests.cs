@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
-using Shouldly;
+
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 using Xunit;
@@ -115,9 +115,9 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
     }
 
     // Assert that objects were updated
-    _sqlite.GetAllObjects().ToList().ShouldAllBe(o => o.Contains(UPDATE_STRING));
+    _sqlite.GetAllObjects().ToList().Should().AllSatisfy(o => o.Should().Contain(UPDATE_STRING));
     // Assert that objects were only updated once
-    _sqlite.GetAllObjects().ToList().ShouldAllBe(o => o.Length == length + UPDATE_STRING.Length);
+    _sqlite.GetAllObjects().ToList().Should().AllSatisfy(o => o.Should().HaveLength(length + UPDATE_STRING.Length));
   }
 
   [Theory]

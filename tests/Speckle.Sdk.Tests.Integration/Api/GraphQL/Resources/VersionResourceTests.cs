@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -104,10 +104,10 @@ public class VersionResourceTests : IAsyncLifetime
 
     await Sut.Delete(input);
 
-    var getEx = await Should.ThrowAsync<AggregateException>(async () => await Sut.Get(_version.id, _project.id));
-    getEx.InnerExceptions.ShouldHaveSingleItem().Should().BeOfType<SpeckleGraphQLException>();
+    var getEx = await FluentActions.Invoking(async () => await Sut.Get(_version.id, _project.id)).Should().ThrowAsync<AggregateException>();
+    getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
 
-    var delEx = await Should.ThrowAsync<AggregateException>(async () => await Sut.Delete(input));
-    delEx.InnerExceptions.ShouldHaveSingleItem().Should().BeOfType<SpeckleGraphQLException>();
+    var delEx = await FluentActions.Invoking(async () => await Sut.Delete(input)).Should().ThrowAsync<AggregateException>();
+    delEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
 }

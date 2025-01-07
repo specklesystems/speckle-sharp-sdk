@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using FluentAssertions;
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -34,7 +35,7 @@ public class CommentResourceTests
   {
     var comment = await Sut.Get(_comment.id, _project.id);
 
-    comment.ShouldNotBeNull();
+    comment.Should().NotBeNull();
     comment.id.Should().Be(_comment.id);
     comment.authorId.Should().Be(_testUser.Account.userInfo.id);
   }
@@ -44,19 +45,17 @@ public class CommentResourceTests
   {
     var comments = await Sut.GetProjectComments(_project.id);
 
-    comments.ShouldNotBeNull();
+    comments.Should().NotBeNull();
     comments.items.Count.Should().Be(1);
     comments.totalCount.Should().Be(1);
 
     Comment comment = comments.items[0];
-    comment.ShouldNotBeNull();
+    comment.Should().NotBeNull();
     comment.authorId.Should().Be(_testUser.Account.userInfo.id);
-    comment.ShouldSatisfyAllConditions(
-      () => comment.id.Should().Be(_comment.id),
-      () => comment.authorId.Should().Be(_comment.authorId),
-      () => comment.archived.Should().Be(false),
-      () => comment.createdAt.Should().Be(_comment.createdAt)
-    );
+    comment.id.Should().Be(_comment.id);
+comment.authorId.Should().Be(_comment.authorId);
+    comment.archived.Should().Be(false);
+   comment.createdAt.Should().Be(_comment.createdAt);
   }
 
   [Fact]
@@ -65,7 +64,7 @@ public class CommentResourceTests
     await Sut.MarkViewed(new(_comment.id, _project.id));
 
     var res = await Sut.Get(_comment.id, _project.id);
-    res.viewedAt.ShouldNotBeNull();
+    res.viewedAt.Should().NotBeNull();
   }
 
   [Fact]
@@ -91,13 +90,11 @@ public class CommentResourceTests
 
     var editedComment = await Sut.Edit(input);
 
-    editedComment.ShouldNotBeNull();
-    editedComment.ShouldSatisfyAllConditions(
-      () => editedComment.id.Should().Be(_comment.id),
-      () => editedComment.authorId.Should().Be(_comment.authorId),
-      () => editedComment.createdAt.Should().Be(_comment.createdAt),
-      () => editedComment.updatedAt.Should().BeGreaterThanOrEqualTo(_comment.updatedAt)
-    );
+    editedComment.Should().NotBeNull();
+    editedComment.id.Should().Be(_comment.id);
+    editedComment.authorId.Should().Be(_comment.authorId);
+    editedComment.createdAt.Should().Be(_comment.createdAt);
+    editedComment.updatedAt.Should().BeOnOrAfter(_comment.updatedAt);
   }
 
   [Fact]
@@ -109,7 +106,7 @@ public class CommentResourceTests
 
     var editedComment = await Sut.Reply(input);
 
-    editedComment.ShouldNotBeNull();
+    editedComment.Should().NotBeNull();
   }
 
   private async Task<Comment> CreateComment()

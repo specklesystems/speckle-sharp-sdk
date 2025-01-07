@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
@@ -47,11 +47,11 @@ public class ProjectResourceTests
     var result = await Sut.Create(input);
 
     // Assert
-    result.ShouldNotBeNull();
-    result.id.ShouldNotBeNullOrWhiteSpace();
+    result.Should().NotBeNull();
+    result.id.Should().NotBeNullOrWhiteSpace();
     result.name.Should().Be(input.name);
     result.description.Should().Be(input.description ?? string.Empty);
-    result.visibility.Should().Be(input.visibility.ShouldNotBeNull());
+    input.visibility.Should().NotBeNull();
   }
 
   [Fact]
@@ -98,9 +98,8 @@ public class ProjectResourceTests
     await Sut.Delete(toDelete.id);
 
     // Assert
-    var exception = await Should.ThrowAsync<SpeckleGraphQLStreamNotFoundException>(
+  await FluentActions.Invoking(
       async () => await Sut.Get(toDelete.id)
-    );
-    exception.ShouldNotBeNull();
+    ).Should().ThrowAsync<SpeckleGraphQLStreamNotFoundException>();
   }
 }

@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -29,7 +29,7 @@ public class ActiveUserResourceTests : IAsyncLifetime
   public async Task ActiveUserGet()
   {
     var res = await Sut.Get();
-    res.ShouldNotBeNull();
+    res.Should().NotBeNull();
     res!.id.Should().Be(_testUser.Account.userInfo.id);
   }
 
@@ -49,7 +49,7 @@ public class ActiveUserResourceTests : IAsyncLifetime
 
     var res = await Sut.Update(new UserUpdateInput(name: NEW_NAME, bio: NEW_BIO, company: NEW_COMPANY));
 
-    res.ShouldNotBeNull();
+    res.Should().NotBeNull();
     res.id.Should().Be(_testUser.Account.userInfo.id);
     res.name.Should().Be(NEW_NAME);
     res.company.Should().Be(NEW_COMPANY);
@@ -64,14 +64,14 @@ public class ActiveUserResourceTests : IAsyncLifetime
 
     var res = await Sut.GetProjects();
 
-    res.items.ShouldContain(x => x.id == p1.id);
-    res.items.ShouldContain(x => x.id == p2.id);
+    res.items.Should().Contain(x => x.id == p1.id);
+    res.items.Should().Contain(x => x.id == p2.id);
     res.items.Count.Should().Be(2);
   }
 
   [Fact]
   public async Task ActiveUserGetProjects_NoAuth()
   {
-    await Should.ThrowAsync<SpeckleGraphQLException>(async () => await Fixtures.Unauthed.ActiveUser.GetProjects());
+    await FluentActions.Invoking(async () => await Fixtures.Unauthed.ActiveUser.GetProjects()).Should().ThrowAsync<SpeckleGraphQLException>();
   }
 }

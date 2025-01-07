@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -41,8 +41,8 @@ public class ModelResourceTests : IAsyncLifetime
     Model result = await Sut.Create(input);
 
     // Assert
-    result.ShouldNotBeNull();
-    result.id.ShouldNotBeNull();
+    result.Should().NotBeNull();
+    result.id.Should().NotBeNull();
     result.name.Should().ContainEquivalentOf(input.name);
     result.description.Should().Be(input.description);
   }
@@ -115,13 +115,11 @@ public class ModelResourceTests : IAsyncLifetime
     await Sut.Delete(input);
 
     // Assert: Ensure fetching the deleted model throws an exception
-    var getEx = await Should.ThrowAsync<AggregateException>(() => Sut.Get(_model.id, _project.id));
-    getEx.InnerExceptions.ShouldHaveSingleItem();
-    getEx.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLException>();
+    var getEx = await FluentActions.Invoking(() => Sut.Get(_model.id, _project.id)).Should().ThrowAsync<AggregateException>();
+    getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
 
     // Assert: Ensure deleting the non-existing model again throws an exception
-    var delEx = await Should.ThrowAsync<AggregateException>(() => Sut.Delete(input));
-    delEx.InnerExceptions.ShouldHaveSingleItem();
-    delEx.InnerExceptions[0].Should().BeOfType<SpeckleGraphQLException>();
+    var delEx = await FluentActions.Invoking(() => Sut.Delete(input)).Should().ThrowAsync<AggregateException>();
+    getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
 }

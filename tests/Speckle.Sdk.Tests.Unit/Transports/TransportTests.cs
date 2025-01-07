@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
@@ -40,8 +40,8 @@ public abstract class TransportTests
     {
       var preAdd = await Sut.NotNull().HasObjects(new[] { PAYLOAD_ID });
       preAdd.Count.Should().Be(1);
-      preAdd.Values.ShouldNotContain(true);
-      preAdd.Keys.ShouldContain(PAYLOAD_ID);
+      preAdd.Values.Should().NotContain(true);
+      preAdd.Keys.Should().Contain(PAYLOAD_ID);
     }
 
     Sut.SaveObject(PAYLOAD_ID, PAYLOAD_DATA);
@@ -50,8 +50,8 @@ public abstract class TransportTests
     {
       var postAdd = await Sut.HasObjects(new[] { PAYLOAD_ID });
       postAdd.Count.Should().Be(1);
-      postAdd.Values.ShouldNotContain(false);
-      postAdd.Keys.ShouldContain(PAYLOAD_ID);
+      postAdd.Values.Should().NotContain(false);
+      postAdd.Keys.Should().Contain(PAYLOAD_ID);
     }
   }
 
@@ -78,7 +78,7 @@ public abstract class TransportTests
     var ids = testData.Select(x => x.id).ToList();
     var hasObjectsResult = await Sut.HasObjects(ids);
 
-    hasObjectsResult.Values.ShouldNotContain(false);
+    hasObjectsResult.Values.Should().NotContain(false);
     hasObjectsResult.Keys.Should().BeEquivalentTo(ids);
 
     //Test: GetObjects
@@ -93,29 +93,29 @@ public abstract class TransportTests
   public void ToString_IsNotEmpty()
   {
     var toString = Sut.NotNull().ToString();
-    toString.ShouldNotBeNullOrEmpty();
+    toString.Should().NotBeNullOrEmpty();
   }
 
   [Fact]
   public void TransportName_IsNotEmpty()
   {
     var toString = Sut.NotNull().TransportName;
-    toString.ShouldNotBeNullOrEmpty();
+    toString.Should().NotBeNullOrEmpty();
   }
 
   [Fact]
-  public void SaveObject_ExceptionThrown_TaskIsCanceled()
+  public async Task SaveObject_ExceptionThrown_TaskIsCanceled()
   {
     using CancellationTokenSource tokenSource = new();
     Sut.NotNull().CancellationToken = tokenSource.Token;
 
-    tokenSource.Cancel();
+    await tokenSource.CancelAsync();
 
-    Should.ThrowAsync<OperationCanceledException>(async () =>
+    await FluentActions.Invoking(async () =>
     {
       Sut.SaveObject("abcdef", "fake payload data");
       await Sut.WriteComplete();
-    });
+    }).Should().ThrowAsync<OperationCanceledException>();
   }
 
   [Fact]

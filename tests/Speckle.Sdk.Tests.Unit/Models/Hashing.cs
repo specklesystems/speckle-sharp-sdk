@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
@@ -27,7 +27,7 @@ public class Hashing
 
     ((dynamic)secondTable).testProp = "wonderful";
 
-    secondTable.GetId().ShouldNotBe(table.GetId(), "Changing a property should alter the object ID.");
+    secondTable.GetId().Should().NotBe(table.GetId(), "Changing a property should alter the object ID.");
   }
 
   [Fact(DisplayName = "Verifies that dynamic properties with '__' prefix are ignored during hashing.")]
@@ -86,6 +86,6 @@ public class Hashing
     var hash1 = table.GetId();
     var hash2 = table.GetId(true);
 
-    hash2.ShouldNotBe(hash1, "Hash values should differ for decomposed and non-decomposed objects.");
+    hash2.Should().NotBe(hash1, "Hash values should differ for decomposed and non-decomposed objects.");
   }
 }

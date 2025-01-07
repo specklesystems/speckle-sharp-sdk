@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
+
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 using Xunit;
@@ -73,7 +73,7 @@ public class CredentialInfrastructure
   [Fact]
   public void GetAccount_ById_ThrowsWhenNotFound()
   {
-    Should.Throw<SpeckleAccountManagerException>(() => _accountManager.GetAccount("Non_existent_id"));
+    FluentActions.Invoking(() => _accountManager.GetAccount("Non_existent_id")).Should().Throw<SpeckleAccountManagerException>();
   }
 
   public static IEnumerable<object[]> TestCases() // Replaces NUnit's TestCaseSource
@@ -96,7 +96,7 @@ public class CredentialInfrastructure
 
     var acc = accs[0];
 
-    acc.ShouldNotBeSameAs(target); // We expect new objects (no reference equality)
+    acc.Should().NotBeSameAs(target); // We expect new objects (no reference equality)
     acc.serverInfo.company.Should().Be(target.serverInfo.company);
     acc.serverInfo.url.Should().Be(target.serverInfo.url);
     acc.refreshToken.Should().Be(target.refreshToken);
@@ -120,7 +120,7 @@ public class CredentialInfrastructure
       userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
 
-    acc1.ShouldNotBe(acc2);
+    acc1.Should().NotBe(acc2);
   }
 
   ~CredentialInfrastructure() // Equivalent of `OneTimeTearDown`

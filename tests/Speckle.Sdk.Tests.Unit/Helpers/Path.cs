@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using Shouldly;
+using FluentAssertions;
 using Speckle.Sdk.Logging;
 using Xunit;
 
@@ -38,7 +38,7 @@ public class SpecklePathTests
       throw new NotImplementedException("Your OS platform is not supported");
     }
 
-    userPath.ShouldMatch(pattern);
+    userPath.Should().Match(pattern);
   }
 
   [Fact]
@@ -77,6 +77,6 @@ public class SpecklePathTests
       throw new NotImplementedException("Your OS platform is not supported");
     }
 
-    installPath.ShouldMatch(pattern);
+    installPath.Should().Match(pattern);
   }
 }

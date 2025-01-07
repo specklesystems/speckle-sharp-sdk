@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
+
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
@@ -51,7 +51,7 @@ public sealed class SendReceiveLocal : IDisposable
     using SQLiteTransport localTransport = new();
     (var objId01, var references) = await _operations.Send(myObject, localTransport, false);
 
-    objId01.ShouldNotBeNull();
+    objId01.Should().NotBeNull();
     references.Count.Should().Be(NUM_OBJECTS);
 
     var commitPulled = await _operations.Receive(objId01.NotNull());
@@ -79,7 +79,7 @@ public sealed class SendReceiveLocal : IDisposable
 
     var commitPulled = await _operations.Receive(objId01);
     List<object> items = (List<object>)commitPulled["@items"].NotNull();
-    items.ShouldAllBe(x => x is Point);
+    items.Should().AllSatisfy(x => x.Should().BeOfType<Point>());
     items.Count.Should().Be(NUM_OBJECTS);
   }
 
@@ -100,7 +100,7 @@ public sealed class SendReceiveLocal : IDisposable
 
     (var objId01, _) = await _operations.Send(myObject, _sut, false);
 
-    objId01.ShouldNotBeNull();
+    objId01.Should().NotBeNull();
 
     var objsPulled = await _operations.Receive(objId01);
     ((List<object>)objsPulled["@items"].NotNull()).Count.Should().Be(30);
@@ -123,7 +123,7 @@ public sealed class SendReceiveLocal : IDisposable
 
     (var _objId01, _) = await _operations.Send(myObject, _sut, false);
 
-    _objId01.ShouldNotBeNull();
+    _objId01.Should().NotBeNull();
 
     var objsPulled = await _operations.Receive(_objId01);
     ((List<object>)((Dictionary<string, object>)objsPulled["@dictionary"].NotNull())["a"]).First().Should().Be(1);
@@ -158,7 +158,7 @@ public sealed class SendReceiveLocal : IDisposable
 
     (var objId01, _) = await _operations.Send(obj, _sut, false);
 
-    objId01.ShouldNotBeNull();
+    objId01.Should().NotBeNull();
 
     var objPulled = await _operations.Receive(objId01);
 
@@ -202,7 +202,7 @@ public sealed class SendReceiveLocal : IDisposable
         progress = x;
       })
     );
-    progress.ShouldNotBeNull();
+    progress.Should().NotBeNull();
   }
 
   [Fact(DisplayName = "Should not dispose of transports if so specified.")]

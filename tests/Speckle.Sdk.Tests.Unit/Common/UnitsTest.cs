@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using Shouldly;
+
 using Speckle.Sdk.Common;
 using Xunit;
 
@@ -60,7 +60,7 @@ public class UnitsTest
   [MemberData(nameof(NotSupportedUnitsGenerator))]
   public void GetUnitsFromString_ThrowsUnSupported(string unit)
   {
-    Should.Throw<ArgumentOutOfRangeException>(() => Units.GetUnitsFromString(unit));
+    FluentActions.Invoking(() => Units.GetUnitsFromString(unit)).Should().Throw<ArgumentOutOfRangeException>();
   }
 
   [Theory]

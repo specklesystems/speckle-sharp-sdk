@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Shouldly;
+using FluentAssertions;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Credentials;
@@ -24,7 +24,7 @@ public class OtherUserResourceTests
   {
     var res = await Sut.Get(_testData.userInfo.id);
 
-    res.ShouldNotBeNull();
+    res.Should().NotBeNull();
     res!.name.Should().Be(_testData.userInfo.name);
   }
 
@@ -41,7 +41,7 @@ public class OtherUserResourceTests
   {
     var res = await Sut.UserSearch(_testData.userInfo.email, 25);
 
-    res.items.ShouldHaveSingleItem();
+    res.items.Should().ContainSingle();
     res.items[0].id.Should().Be(_testData.userInfo.id);
   }
 

@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Shouldly;
+using FluentAssertions;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Inputs;
@@ -46,9 +46,9 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
       var invite = invites.First(i => i.projectId == res.id);
 
       res.id.Should().Be(_project.id);
-      res.invitedTeam.ShouldHaveSingleItem();
+      res.invitedTeam.Should().ContainSingle();
       invite.user!.id.Should().Be(_invitee.Account.userInfo.id);
-      invite.token.ShouldNotBeNull();
+      invite.token.Should().NotBeNull();
     }
 
     [Fact]
@@ -58,7 +58,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
       var res = await _inviter.ProjectInvite.Create(_project.id, input);
 
       res.id.Should().Be(_project.id);
-      res.invitedTeam.ShouldHaveSingleItem();
+      res.invitedTeam.Should().ContainSingle();
       res.invitedTeam[0].user!.id.Should().Be(_invitee.Account.userInfo.id);
     }
 
@@ -67,10 +67,8 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
     {
       var collaborator = await _invitee.ProjectInvite.Get(_project.id, _createdInvite.token).NotNull();
 
-      collaborator.ShouldSatisfyAllConditions(
-        () => collaborator.inviteId.Should().Be(_createdInvite.inviteId),
-        () => collaborator.user!.id.Should().Be(_createdInvite.user!.id)
-      );
+    collaborator.inviteId.Should().Be(_createdInvite.inviteId);
+   collaborator.user!.id.Should().Be(_createdInvite.user!.id);
     }
 
     [Fact]
@@ -90,7 +88,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
       var teamMembers = project.team.Select(c => c.user.id).ToArray();
       var expectedTeamMembers = new[] { _inviter.Account.userInfo.id, _invitee.Account.userInfo.id };
 
-      teamMembers.Should().Be(expectedTeamMembers, ignoreOrder: true);
+      teamMembers.Should().BeEquivalentTo(expectedTeamMembers);
     }
 
     [Fact]
