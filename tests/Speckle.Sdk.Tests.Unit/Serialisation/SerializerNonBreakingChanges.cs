@@ -74,7 +74,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       var from = new UIntValueMock { value = testCase };
 
       var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
-      res.value.Should().BeApproximately(testCase,  2048);
+      res.value.Should().BeApproximately(testCase, 2048);
     }
 
     [Theory, MemberData(nameof(Int8TestCases)), MemberData(nameof(Int32TestCases)), MemberData(nameof(Int64TestCases))]
@@ -205,9 +205,10 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
 
       ListDoubleValueMock from = new() { value = testCase };
 
-      await FluentActions.Invoking(
-        async () => await from.SerializeAsTAndDeserialize<Matrix32ValueMock>(_operations)
-      ).Should().ThrowAsync<SpeckleDeserializeException>();
+      await FluentActions
+        .Invoking(async () => await from.SerializeAsTAndDeserialize<Matrix32ValueMock>(_operations))
+        .Should()
+        .ThrowAsync<SpeckleDeserializeException>();
     }
   }
 

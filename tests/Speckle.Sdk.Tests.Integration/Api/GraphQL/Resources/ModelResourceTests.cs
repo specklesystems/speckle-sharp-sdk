@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -115,7 +114,10 @@ public class ModelResourceTests : IAsyncLifetime
     await Sut.Delete(input);
 
     // Assert: Ensure fetching the deleted model throws an exception
-    var getEx = await FluentActions.Invoking(() => Sut.Get(_model.id, _project.id)).Should().ThrowAsync<AggregateException>();
+    var getEx = await FluentActions
+      .Invoking(() => Sut.Get(_model.id, _project.id))
+      .Should()
+      .ThrowAsync<AggregateException>();
     getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
 
     // Assert: Ensure deleting the non-existing model again throws an exception

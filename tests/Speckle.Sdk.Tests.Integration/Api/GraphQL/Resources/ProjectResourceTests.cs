@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using FluentAssertions;
-
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
@@ -98,8 +97,9 @@ public class ProjectResourceTests
     await Sut.Delete(toDelete.id);
 
     // Assert
-  await FluentActions.Invoking(
-      async () => await Sut.Get(toDelete.id)
-    ).Should().ThrowAsync<SpeckleGraphQLStreamNotFoundException>();
+    await FluentActions
+      .Invoking(async () => await Sut.Get(toDelete.id))
+      .Should()
+      .ThrowAsync<SpeckleGraphQLStreamNotFoundException>();
   }
 }

@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
-
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 using Xunit;

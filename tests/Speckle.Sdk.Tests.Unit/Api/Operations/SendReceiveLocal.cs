@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;

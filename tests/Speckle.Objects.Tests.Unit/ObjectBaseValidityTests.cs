@@ -1,4 +1,3 @@
-
 using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Geometry.Autocad;
@@ -27,9 +26,9 @@ public class ObjectBaseValidityTests
       TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly, typeof(Test).Assembly);
     });
     exception.Should().NotBeNull();
-    exception.Message.Should().Be(
-      "Speckle.Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute"
-    );
+    exception
+      .Message.Should()
+      .Be("Speckle.Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute");
   }
 
   [Fact]

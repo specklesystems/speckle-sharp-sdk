@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-
 using Speckle.Sdk.Common;
 using Xunit;
 
@@ -22,11 +21,9 @@ public class UnitsTest
     var forwards = Units.GetConversionFactor(from, to);
     var backwards = Units.GetConversionFactor(to, from);
 
-    (backwards * forwards).Should().BeApproximately(
-      1d,
-       EPS,
-      $"Behaviour says that 1{from} == {forwards}{to}, and 1{to} == {backwards}{from}"
-    );
+    (backwards * forwards)
+      .Should()
+      .BeApproximately(1d, EPS, $"Behaviour says that 1{from} == {forwards}{to}, and 1{to} == {backwards}{from}");
   }
 
   [Theory]

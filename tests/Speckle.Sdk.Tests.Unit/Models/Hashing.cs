@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using FluentAssertions;
-
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
@@ -38,7 +37,10 @@ public class Hashing
 
     ((dynamic)table).__testProp = "wonderful";
 
-    table.GetId().Should().Be(originalHash, "Hashing of table should not change when '__' prefixed properties are added.");
+    table
+      .GetId()
+      .Should()
+      .Be(originalHash, "Hashing of table should not change when '__' prefixed properties are added.");
   }
 
   [Fact(DisplayName = "Performance test: Hash computation time for large and small objects.")]

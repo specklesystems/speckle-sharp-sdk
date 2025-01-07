@@ -1,5 +1,4 @@
 using FluentAssertions;
-
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
@@ -111,11 +110,14 @@ public abstract class TransportTests
 
     await tokenSource.CancelAsync();
 
-    await FluentActions.Invoking(async () =>
-    {
-      Sut.SaveObject("abcdef", "fake payload data");
-      await Sut.WriteComplete();
-    }).Should().ThrowAsync<OperationCanceledException>();
+    await FluentActions
+      .Invoking(async () =>
+      {
+        Sut.SaveObject("abcdef", "fake payload data");
+        await Sut.WriteComplete();
+      })
+      .Should()
+      .ThrowAsync<OperationCanceledException>();
   }
 
   [Fact]

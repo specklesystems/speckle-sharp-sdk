@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using FluentAssertions;
-
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 using Xunit;

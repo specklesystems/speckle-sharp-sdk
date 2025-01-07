@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
 using FluentAssertions;
-
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies.Serialization;
@@ -51,20 +50,29 @@ public class BaseTests
 
     // Only single leading @ allowed
     @base["@something"] = "A";
-    FluentActions.Invoking(() =>
-    {
-      @base["@@@something"] = "Testing";
-    }).Should().Throw<InvalidPropNameException>();
+    FluentActions
+      .Invoking(() =>
+      {
+        @base["@@@something"] = "Testing";
+      })
+      .Should()
+      .Throw<InvalidPropNameException>();
 
     // Invalid chars:  ./
-    FluentActions.Invoking(() =>
-    {
-      @base["some.thing"] = "Testing";
-    }).Should().Throw<InvalidPropNameException>();
-    FluentActions.Invoking(() =>
-    {
-      @base["some/thing"] = "Testing";
-    }).Should().Throw<InvalidPropNameException>();
+    FluentActions
+      .Invoking(() =>
+      {
+        @base["some.thing"] = "Testing";
+      })
+      .Should()
+      .Throw<InvalidPropNameException>();
+    FluentActions
+      .Invoking(() =>
+      {
+        @base["some/thing"] = "Testing";
+      })
+      .Should()
+      .Throw<InvalidPropNameException>();
     // Trying to change a class member value will throw exceptions.
     //Assert.Throws<Exception>(() => { @base["speckle_type"] = "Testing"; });
     //Assert.Throws<Exception>(() => { @base["id"] = "Testing"; });

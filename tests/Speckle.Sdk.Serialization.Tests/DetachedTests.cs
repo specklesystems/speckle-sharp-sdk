@@ -80,10 +80,12 @@ public class DetachedTests
     objects.ContainsKey("d3dd4621b2f68c3058c2b9c023a9de19").Should().BeTrue();
     JToken
       .DeepEquals(JObject.Parse(expectedJson), JObject.Parse(objects["9ff8efb13c62fa80f3d1c4519376ba13"]))
-      .Should().BeTrue();
+      .Should()
+      .BeTrue();
     JToken
       .DeepEquals(JObject.Parse(detachedJson), JObject.Parse(objects["d3dd4621b2f68c3058c2b9c023a9de19"]))
-      .Should().BeTrue();
+      .Should()
+      .BeTrue();
   }
 
   [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
@@ -134,13 +136,18 @@ public class DetachedTests
     objects.Count.Should().Be(2);
     objects.ContainsKey("9ff8efb13c62fa80f3d1c4519376ba13").Should().BeTrue();
     objects.ContainsKey("d3dd4621b2f68c3058c2b9c023a9de19").Should().BeTrue();
-    JToken.DeepEquals(JObject.Parse(json), JObject.Parse(objects["9ff8efb13c62fa80f3d1c4519376ba13"])).Should().BeTrue();
+    JToken
+      .DeepEquals(JObject.Parse(json), JObject.Parse(objects["9ff8efb13c62fa80f3d1c4519376ba13"]))
+      .Should()
+      .BeTrue();
     JToken
       .DeepEquals(JObject.Parse(expectedJson), JObject.Parse(objects["9ff8efb13c62fa80f3d1c4519376ba13"]))
-      .Should().BeTrue();
+      .Should()
+      .BeTrue();
     JToken
       .DeepEquals(JObject.Parse(detachedJson), JObject.Parse(objects["d3dd4621b2f68c3058c2b9c023a9de19"]))
-      .Should().BeTrue();
+      .Should()
+      .BeTrue();
   }
 
   [Fact]

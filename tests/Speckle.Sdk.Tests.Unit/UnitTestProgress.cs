@@ -1,4 +1,3 @@
-
 namespace Speckle.Sdk.Tests.Unit;
 
 public class UnitTestProgress<T>(Action<T> handler) : IProgress<T>

@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 using Xunit;
@@ -73,7 +72,10 @@ public class CredentialInfrastructure
   [Fact]
   public void GetAccount_ById_ThrowsWhenNotFound()
   {
-    FluentActions.Invoking(() => _accountManager.GetAccount("Non_existent_id")).Should().Throw<SpeckleAccountManagerException>();
+    FluentActions
+      .Invoking(() => _accountManager.GetAccount("Non_existent_id"))
+      .Should()
+      .Throw<SpeckleAccountManagerException>();
   }
 
   public static IEnumerable<object[]> TestCases() // Replaces NUnit's TestCaseSource

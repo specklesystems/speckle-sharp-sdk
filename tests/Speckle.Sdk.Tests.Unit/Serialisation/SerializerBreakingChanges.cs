@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -34,9 +33,10 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   {
     var from = new StringValueMock { value = "testValue" };
 
-    await FluentActions.Invoking(
-      async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations)
-    ).Should().ThrowAsync<SpeckleDeserializeException>();
+    await FluentActions
+      .Invoking(async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations))
+      .Should()
+      .ThrowAsync<SpeckleDeserializeException>();
   }
 
   [Theory]
@@ -45,9 +45,10 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   {
     var from = new StringValueMock { value = testCase.ToString() };
 
-    await FluentActions.Invoking(
-      async () => await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations)
-    ).Should().ThrowAsync<SpeckleDeserializeException>();
+    await FluentActions
+      .Invoking(async () => await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations))
+      .Should()
+      .ThrowAsync<SpeckleDeserializeException>();
   }
 
   [Theory(DisplayName = "Deserialization of a JTokenType.Float to a .NET short/int/long should throw exception")]
@@ -57,8 +58,9 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   {
     var from = new DoubleValueMock { value = testCase };
 
-    await FluentActions.Invoking(
-      async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations)
-    ).Should().ThrowAsync<SpeckleDeserializeException>();
+    await FluentActions
+      .Invoking(async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations))
+      .Should()
+      .ThrowAsync<SpeckleDeserializeException>();
   }
 }

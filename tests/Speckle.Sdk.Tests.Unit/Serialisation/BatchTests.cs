@@ -1,6 +1,4 @@
 ﻿using FluentAssertions;
-
-
 using Speckle.Sdk.Serialisation.V2.Send;
 using Xunit;
 

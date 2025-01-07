@@ -67,8 +67,8 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources
     {
       var collaborator = await _invitee.ProjectInvite.Get(_project.id, _createdInvite.token).NotNull();
 
-    collaborator.inviteId.Should().Be(_createdInvite.inviteId);
-   collaborator.user!.id.Should().Be(_createdInvite.user!.id);
+      collaborator.inviteId.Should().Be(_createdInvite.inviteId);
+      collaborator.user!.id.Should().Be(_createdInvite.user!.id);
     }
 
     [Fact]

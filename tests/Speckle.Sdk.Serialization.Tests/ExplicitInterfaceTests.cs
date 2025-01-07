@@ -34,7 +34,8 @@ public class ExplicitInterfaceTests
 
     objects.Count.Should().Be(1);
     objects["daaa67cfd73a957247cf2d631b7ca4f3"]
-      .Should().Be(
+      .Should()
+      .Be(
         "{\"RegularProperty\":\"Hello\",\"applicationId\":null,\"speckle_type\":\"Speckle.Core.Serialisation.TestClass\",\"id\":\"daaa67cfd73a957247cf2d631b7ca4f3\"}"
       );
   }

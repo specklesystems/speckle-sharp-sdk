@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -53,9 +52,9 @@ public class CommentResourceTests
     comment.Should().NotBeNull();
     comment.authorId.Should().Be(_testUser.Account.userInfo.id);
     comment.id.Should().Be(_comment.id);
-comment.authorId.Should().Be(_comment.authorId);
+    comment.authorId.Should().Be(_comment.authorId);
     comment.archived.Should().Be(false);
-   comment.createdAt.Should().Be(_comment.createdAt);
+    comment.createdAt.Should().Be(_comment.createdAt);
   }
 
   [Fact]

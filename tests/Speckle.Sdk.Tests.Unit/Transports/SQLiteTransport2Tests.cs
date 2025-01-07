@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
-
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;

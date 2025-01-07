@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -72,6 +71,9 @@ public class ActiveUserResourceTests : IAsyncLifetime
   [Fact]
   public async Task ActiveUserGetProjects_NoAuth()
   {
-    await FluentActions.Invoking(async () => await Fixtures.Unauthed.ActiveUser.GetProjects()).Should().ThrowAsync<SpeckleGraphQLException>();
+    await FluentActions
+      .Invoking(async () => await Fixtures.Unauthed.ActiveUser.GetProjects())
+      .Should()
+      .ThrowAsync<SpeckleGraphQLException>();
   }
 }

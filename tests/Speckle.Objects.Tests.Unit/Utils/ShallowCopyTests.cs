@@ -1,4 +1,3 @@
-
 using System.Collections;
 using FluentAssertions;
 using Speckle.Objects.Data;

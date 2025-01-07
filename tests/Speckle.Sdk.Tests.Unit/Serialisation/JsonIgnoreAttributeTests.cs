@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using FluentAssertions;
-
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;

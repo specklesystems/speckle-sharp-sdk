@@ -2,7 +2,6 @@
 using FluentAssertions;
 using GraphQL.Client.Http;
 using Microsoft.Extensions.DependencyInjection;
-
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 using Xunit;
@@ -53,9 +52,12 @@ public class UserServerInfoTests : IAsyncLifetime
   {
     Uri serverUrl = new(_acc.serverInfo.url);
 
-    await FluentActions.Invoking(
-      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
-    ).Should().ThrowAsync<HttpRequestException>();
+    await FluentActions
+      .Invoking(
+        async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
+      )
+      .Should()
+      .ThrowAsync<HttpRequestException>();
   }
 
   [Fact]
@@ -63,9 +65,12 @@ public class UserServerInfoTests : IAsyncLifetime
   {
     Uri serverUrl = new("http://invalidserver.local");
 
-    await FluentActions.Invoking(
-      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
-    ).Should().ThrowAsync<HttpRequestException>();
+    await FluentActions
+      .Invoking(
+        async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
+      )
+      .Should()
+      .ThrowAsync<HttpRequestException>();
   }
 
   [Fact]
@@ -88,21 +93,26 @@ public class UserServerInfoTests : IAsyncLifetime
   {
     Uri serverUrl = new("http://invalidserver.local");
 
-    await FluentActions.Invoking(
-      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo("", serverUrl)
-    ).Should().ThrowAsync<HttpRequestException>();
+    await FluentActions
+      .Invoking(
+        async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo("", serverUrl)
+      )
+      .Should()
+      .ThrowAsync<HttpRequestException>();
   }
 
   [Fact]
   public async Task GetUserInfo_ExpectFail_NoUser()
   {
     Uri serverUrl = new(_acc.serverInfo.url);
-    await FluentActions.Invoking(
-
-      async () =>
-        await Fixtures
-          .ServiceProvider.GetRequiredService<IAccountManager>()
-          .GetUserInfo("Bearer 08913c3c1e7ac65d779d1e1f11b942a44ad9672ca9", serverUrl)
-    ).Should().ThrowAsync<GraphQLHttpRequestException>();
+    await FluentActions
+      .Invoking(
+        async () =>
+          await Fixtures
+            .ServiceProvider.GetRequiredService<IAccountManager>()
+            .GetUserInfo("Bearer 08913c3c1e7ac65d779d1e1f11b942a44ad9672ca9", serverUrl)
+      )
+      .Should()
+      .ThrowAsync<GraphQLHttpRequestException>();
   }
 }

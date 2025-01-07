@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-
 using Speckle.Sdk.Common;
 using Xunit;
 
@@ -62,44 +61,48 @@ public class NotNullTests
   [Fact]
   public void NotNullClass_Exception()
   {
-       FluentActions.Invoking(() => NotNullExtensions.NotNull((string?)null));
+    FluentActions.Invoking(() => NotNullExtensions.NotNull((string?)null));
   }
 
   [Fact]
   public void NotNullStruct_Exception()
   {
-       FluentActions.Invoking(() => NotNullExtensions.NotNull((int?)null));
+    FluentActions.Invoking(() => NotNullExtensions.NotNull((int?)null));
   }
 
   [Fact]
   public async Task NotNullClass_Task_Exception()
   {
-    await FluentActions.Invoking(
-      async () => await NotNullExtensions.NotNull(Task.FromResult((string?)null))
-    ).Should().ThrowAsync<ArgumentNullException>();
+    await FluentActions
+      .Invoking(async () => await NotNullExtensions.NotNull(Task.FromResult((string?)null)))
+      .Should()
+      .ThrowAsync<ArgumentNullException>();
   }
 
   [Fact]
   public async Task NotNullStruct_Task_Exception()
   {
-  await FluentActions.Invoking(
-      async () => await NotNullExtensions.NotNull(Task.FromResult((int?)null))
-    ).Should().ThrowAsync<ArgumentNullException>();
+    await FluentActions
+      .Invoking(async () => await NotNullExtensions.NotNull(Task.FromResult((int?)null)))
+      .Should()
+      .ThrowAsync<ArgumentNullException>();
   }
 
   [Fact]
   public async Task NotNullClass_ValueTask_Exception()
   {
-    await FluentActions.Invoking(
-      async () => await NotNullExtensions.NotNull(ValueTask.FromResult((string?)null))
-    ).Should().ThrowAsync<ArgumentNullException>();
+    await FluentActions
+      .Invoking(async () => await NotNullExtensions.NotNull(ValueTask.FromResult((string?)null)))
+      .Should()
+      .ThrowAsync<ArgumentNullException>();
   }
 
   [Fact]
   public async Task NotNullStruct_ValueTask_Exception()
   {
-    await FluentActions.Invoking(
-      async () => await NotNullExtensions.NotNull(ValueTask.FromResult((int?)null))
-    ).Should().ThrowAsync<ArgumentNullException>();
+    await FluentActions
+      .Invoking(async () => await NotNullExtensions.NotNull(ValueTask.FromResult((int?)null)))
+      .Should()
+      .ThrowAsync<ArgumentNullException>();
   }
 }

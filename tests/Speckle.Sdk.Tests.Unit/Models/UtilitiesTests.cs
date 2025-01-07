@@ -1,6 +1,4 @@
 ﻿using FluentAssertions;
-
-
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
 using Xunit;

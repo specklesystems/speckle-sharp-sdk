@@ -1,4 +1,3 @@
-
 using FluentAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Objects.Other;

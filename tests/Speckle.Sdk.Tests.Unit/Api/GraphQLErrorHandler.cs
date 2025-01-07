@@ -1,7 +1,5 @@
 ﻿using FluentAssertions;
 using GraphQL;
-
-
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Xunit;

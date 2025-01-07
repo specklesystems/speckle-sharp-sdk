@@ -1,4 +1,3 @@
-
 using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
@@ -87,7 +86,8 @@ public class MeshTriangulationHelperTests
 
     new List<int>[] { shift1, shift2, shift3 }
       .Any(x => mesh.faces.SequenceEqual(x))
-      .Should().BeTrue();
+      .Should()
+      .BeTrue();
   }
 
   [Theory]

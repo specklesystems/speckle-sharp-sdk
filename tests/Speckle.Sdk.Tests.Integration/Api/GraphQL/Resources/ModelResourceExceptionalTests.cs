@@ -1,5 +1,4 @@
-﻿
-using FluentAssertions;
+﻿using FluentAssertions;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
@@ -35,7 +34,10 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     CreateModelInput input = new(name, null, _project.id);
 
     // Act & Assert
-    var ex = await FluentActions.Invoking(async () => await Sut.Create(input)).Should().ThrowAsync<AggregateException>();
+    var ex = await FluentActions
+      .Invoking(async () => await Sut.Create(input))
+      .Should()
+      .ThrowAsync<AggregateException>();
 
     ex.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
@@ -44,9 +46,10 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   public async Task ModelGet_Throws_NoAuth()
   {
     // Act & Assert
-    var ex = await FluentActions.Invoking(
-      async () => await Fixtures.Unauthed.Model.Get(_model.id, _project.id)
-    ).Should().ThrowAsync<AggregateException>();
+    var ex = await FluentActions
+      .Invoking(async () => await Fixtures.Unauthed.Model.Get(_model.id, _project.id))
+      .Should()
+      .ThrowAsync<AggregateException>();
 
     ex.WithInnerExceptionExactly<SpeckleGraphQLForbiddenException>();
   }
@@ -55,7 +58,10 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   public async Task ModelGet_Throws_NonExistentModel()
   {
     // Act & Assert
-    var ex = await FluentActions.Invoking(async () => await Sut.Get("non existent model", _project.id)).Should().ThrowAsync<AggregateException>();
+    var ex = await FluentActions
+      .Invoking(async () => await Sut.Get("non existent model", _project.id))
+      .Should()
+      .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
 
@@ -63,7 +69,10 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   public async Task ModelGet_Throws_NonExistentProject()
   {
     // Act & Assert
-    var ex = await FluentActions.Invoking(async () => await Sut.Get(_model.id, "non existent project")).Should().ThrowAsync<AggregateException>();
+    var ex = await FluentActions
+      .Invoking(async () => await Sut.Get(_model.id, "non existent project"))
+      .Should()
+      .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLStreamNotFoundException>();
   }
 
@@ -74,7 +83,10 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     UpdateModelInput input = new("non-existent model", "MY new name", "MY new desc", _project.id);
 
     // Act & Assert
-    var ex = await FluentActions.Invoking(async () => await Sut.Update(input)).Should().ThrowAsync<AggregateException>();
+    var ex = await FluentActions
+      .Invoking(async () => await Sut.Update(input))
+      .Should()
+      .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
 
@@ -85,7 +97,10 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     UpdateModelInput input = new(_model.id, "MY new name", "MY new desc", "non-existent project");
 
     // Act & Assert
-    var ex = await FluentActions.Invoking(async () => await Sut.Update(input)).Should().ThrowAsync<AggregateException>();
+    var ex = await FluentActions
+      .Invoking(async () => await Sut.Update(input))
+      .Should()
+      .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLForbiddenException>();
   }
 
@@ -96,7 +111,10 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     UpdateModelInput input = new(_model.id, "MY new name", "MY new desc", _project.id);
 
     // Act & Assert
-    var ex = await FluentActions.Invoking(async () => await Fixtures.Unauthed.Model.Update(input)).Should().ThrowAsync<AggregateException>();
+    var ex = await FluentActions
+      .Invoking(async () => await Fixtures.Unauthed.Model.Update(input))
+      .Should()
+      .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLForbiddenException>();
   }
 
@@ -110,7 +128,10 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
     await Sut.Delete(input);
 
     // Act & Assert
-    var ex = await FluentActions.Invoking(async () => await Sut.Delete(input)).Should().ThrowAsync<AggregateException>();
+    var ex = await FluentActions
+      .Invoking(async () => await Sut.Delete(input))
+      .Should()
+      .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
 }
