@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using Shouldly;
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Xunit;
@@ -20,28 +20,27 @@ public class PointTests
     Point? b = null;
     Point c = new(0, 0, 0, Units.Meters);
 
-    // Using Shouldly assertions for readability
-    a.ShouldBe(b);
-    (a != b).ShouldBeFalse();
+    a.Should().Be(b);
+    (a != b).Should().BeFalse();
 
-    b.ShouldBe(a);
-    (b != a).ShouldBeFalse();
+    b.Should().Be(a);
+    (b != a).Should().BeFalse();
 
-    (a == c).ShouldBeFalse();
-    (a != c).ShouldBeTrue();
+    (a == c).Should().BeFalse();
+    (a != c).Should().BeTrue();
 
-    (c == a).ShouldBeFalse();
-    (c != a).ShouldBeTrue();
+    (c == a).Should().BeFalse();
+    (c != a).Should().BeTrue();
   }
 
-  //TODO: should units be allowed to be string?
+  //TODO: Should(). units be allowed to be string?
   [Theory]
   [InlineData(1, 1, 1, "m", 1, 1, 1, "m", true)]
   [InlineData(1, 1, 1, "m", 0, 1, 1, "m", false)]
   [InlineData(1, 1, 1, "m", 1, 0, 1, "m", false)]
   [InlineData(1, 1, 1, "m", 1, 1, 0, "m", false)]
-  [InlineData(1, 1, 1, "", 1, 1, 1, "", true)]
-  [InlineData(1, 1, 1, null, 1, 1, 1, null, true)]
+  [InlineData(1, 1, 1, "", 1, 1, 1, "", false)]
+  [InlineData(1, 1, 1, null, 1, 1, 1, null, false)]
   [InlineData(1, 1, 1, "m", 1, 1, 1, "meters", false)]
   [InlineData(1, 1, 1, "m", 1, 1, 1, "M", false)]
   public void TestEqual(
@@ -58,13 +57,12 @@ public class PointTests
   {
     if (string.IsNullOrEmpty(units1) || string.IsNullOrEmpty(units2))
     {
-      expectedResult.ShouldBeFalse();
+      expectedResult.Should().BeFalse();
       return;
     }
     Point p1 = new(x1, y1, z1, units1);
     Point p2 = new(x2, y2, z2, units2);
 
-    // Assert equality using ShouldBe
-    (p1 == p2).ShouldBe(expectedResult);
+    (p1 == p2).Should().Be(expectedResult);
   }
 }

@@ -1,4 +1,5 @@
-using Shouldly;
+
+using FluentAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Common;
@@ -22,7 +23,7 @@ public class TransformTests
     var end = new Transform() { matrix = asArr, units = Units.None };
 
     // Assert
-    end.matrix.ShouldBe(data);
+    end.matrix.Should().Be(data);
   }
 
   [Theory]
@@ -44,15 +45,15 @@ public class TransformTests
     Matrix4x4.Decompose(mm, out var mms, out var mmr, out var mmt);
 
     // Assert
-    mms.X.ShouldBe(ms.X, FLOAT_TOLERANCE, "Expect scale x to be unchanged");
-    mms.Y.ShouldBe(ms.Y, FLOAT_TOLERANCE, "Expect scale y to be unchanged");
-    mms.Z.ShouldBe(ms.Z, FLOAT_TOLERANCE, "Expect scale z to be unchanged");
+    mms.X.Should().BeApproximately(ms.X, FLOAT_TOLERANCE, "Expect scale x to be unchanged");
+    mms.Y.Should().BeApproximately(ms.Y, FLOAT_TOLERANCE, "Expect scale y to be unchanged");
+    mms.Z.Should().BeApproximately(ms.Z, FLOAT_TOLERANCE, "Expect scale z to be unchanged");
 
-    Quaternion.Dot(mr, mmr).ShouldBeLessThan(1 + FLOAT_TOLERANCE, "Expect rotation to be equivalent");
+    Quaternion.Dot(mr, mmr).Should().BeLessThan(1 + FLOAT_TOLERANCE, "Expect rotation to be equivalent");
 
-    mmt.X.ShouldBe(mt.X * SF, FLOAT_TOLERANCE, $"Expect translation x to be scaled by {SF}");
-    mmt.Y.ShouldBe(mt.Y * SF, FLOAT_TOLERANCE, $"Expect translation y to be scaled by {SF}");
-    mmt.Z.ShouldBe(mt.Z * SF, FLOAT_TOLERANCE, $"Expect translation z to be scaled by {SF}");
+    mmt.X.Should().BeApproximately(mt.X * SF, FLOAT_TOLERANCE, $"Expect translation x to be scaled by {SF}");
+    mmt.Y.Should().BeApproximately(mt.Y * SF, FLOAT_TOLERANCE, $"Expect translation y to be scaled by {SF}");
+    mmt.Z.Should().BeApproximately(mt.Z * SF, FLOAT_TOLERANCE, $"Expect translation z to be scaled by {SF}");
   }
 
   /// <summary>

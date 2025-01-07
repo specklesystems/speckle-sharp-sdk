@@ -1,4 +1,4 @@
-using Shouldly;
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Xunit;
@@ -31,9 +31,9 @@ public class BoxTests
     };
 
     // Assert area
-    box.area.ShouldBe(2 * (2 * 4 + 2 * 6 + 4 * 6), 0.0001);
+    box.area.Should().BeApproximately(2 * (2 * 4 + 2 * 6 + 4 * 6), 0.0001);
 
     // Assert volume
-    box.volume.ShouldBe(2 * 4 * 6, 0.0001);
+    box.volume.Should().BeApproximately(2 * 4 * 6, 0.0001);
   }
 }

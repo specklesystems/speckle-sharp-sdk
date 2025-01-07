@@ -1,6 +1,6 @@
-﻿using System.Drawing;
-using NUnit.Framework;
-using Shouldly;
+
+using System.Drawing;
+using FluentAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
@@ -82,7 +82,7 @@ public class ModelPropertySupportedTypes
         Type propType = prop.PropertyType;
         Type typeDef = propType.IsGenericType ? propType.GetGenericTypeDefinition() : propType;
 
-        _allowedTypes.ShouldContain(typeDef, $"{typeDef} was not in allowedTypes. (Origin: {type}.{prop.Name})");
+        _allowedTypes.Should().Contain(typeDef, $"{typeDef} was not in allowedTypes. (Origin: {type}.{prop.Name})");
       }
     }
   }

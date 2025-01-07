@@ -1,5 +1,6 @@
+
 using System.Collections;
-using Shouldly;
+using FluentAssertions;
 using Speckle.Objects.Data;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
@@ -44,6 +45,6 @@ public class ShallowCopyTests
 
     var shallow = ds.ShallowCopy();
     var displayValue = (IList)shallow["displayValue"].NotNull();
-    ds.displayValue.Count.ShouldBe(displayValue.Count);
+    ds.displayValue.Count.Should().Be(displayValue.Count);
   }
 }

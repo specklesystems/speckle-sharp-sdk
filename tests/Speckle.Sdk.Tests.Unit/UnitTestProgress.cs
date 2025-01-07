@@ -1,6 +1,3 @@
-using Xunit;
-
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace Speckle.Sdk.Tests.Unit;
 

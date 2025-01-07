@@ -1,4 +1,4 @@
-using Shouldly;
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Xunit;
@@ -15,13 +15,13 @@ public class MeshTests
   {
     inPolygon.AlignVerticesWithTexCoordsByIndex();
 
-    inPolygon.VerticesCount.ShouldBe(inPolygon.TextureCoordinatesCount);
+    inPolygon.VerticesCount.Should().Be(inPolygon.TextureCoordinatesCount);
 
     var expectedPolygon = CreateRhinoStylePolygon();
 
-    inPolygon.vertices.ShouldBe(expectedPolygon.vertices);
-    inPolygon.faces.ShouldBe(expectedPolygon.faces);
-    inPolygon.textureCoordinates.ShouldBe(expectedPolygon.textureCoordinates);
+    inPolygon.vertices.Should().BeEquivalentTo(expectedPolygon.vertices);
+    inPolygon.faces.Should().BeEquivalentTo(expectedPolygon.faces);
+    inPolygon.textureCoordinates.Should().BeEquivalentTo(expectedPolygon.textureCoordinates);
   }
 
   public static IEnumerable<object[]> GetTestCaseSource() => TestCaseSource.Select(mesh => new object[] { mesh });

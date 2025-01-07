@@ -1,4 +1,5 @@
-using Shouldly;
+
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Common;
@@ -48,16 +49,17 @@ public class MeshTriangulationHelperTests
     int numExpectedTriangles = n - 2;
     int expectedFaceCount = numExpectedTriangles * 4;
 
-    mesh.faces.Count.ShouldBe(expectedFaceCount);
+    mesh.faces.Count.Should().Be(expectedFaceCount);
 
     for (int i = 0; i < expectedFaceCount; i += 4)
     {
-      mesh.faces[i].ShouldBe(3);
-      mesh.faces.GetRange(i + 1, 3).ShouldBeUnique();
+      mesh.faces[i].Should().Be(3);
+      mesh.faces.GetRange(i + 1, 3).Should().OnlyHaveUniqueItems();
     }
 
-    mesh.faces.ShouldAllBe(x => EnumerableExtensions.RangeFrom(0, n).Contains(x));
-    mesh.faces.ShouldAllBe(f => f >= 0 && f < Math.Max(n, 4));
+    var range = EnumerableExtensions.RangeFrom(0, n).ToList();
+    mesh.faces.Should().BeSubsetOf(range);
+    mesh.faces.Should().AllSatisfy(x => x.Should().BeGreaterThanOrEqualTo(0).And.BeLessThan(Math.Max(n, 4)));
   }
 
   [Fact]
@@ -85,7 +87,7 @@ public class MeshTriangulationHelperTests
 
     new List<int>[] { shift1, shift2, shift3 }
       .Any(x => mesh.faces.SequenceEqual(x))
-      .ShouldBeTrue();
+      .Should().BeTrue();
   }
 
   [Theory]
@@ -112,7 +114,7 @@ public class MeshTriangulationHelperTests
     int expectedN = preserveQuads ? 4 : 3;
     int expectedFaceCount = preserveQuads ? 5 : 8;
 
-    mesh.faces.Count.ShouldBe(expectedFaceCount);
-    mesh.faces[0].ShouldBe(expectedN);
+    mesh.faces.Count.Should().Be(expectedFaceCount);
+    mesh.faces[0].Should().Be(expectedN);
   }
 }

@@ -1,4 +1,4 @@
-using Shouldly;
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Xunit;
@@ -35,7 +35,7 @@ public class CircleTests
     };
 
     // Use Shouldly assertions
-    circle.length.ShouldBe(2 * Math.PI * 5, 0.0001);
-    circle.area.ShouldBe(Math.PI * 5 * 5, 0.0001);
+    circle.length.Should().BeApproximately(2 * Math.PI * 5, 0.0001);
+    circle.area.Should().BeApproximately(Math.PI * 5 * 5, 0.0001);
   }
 }

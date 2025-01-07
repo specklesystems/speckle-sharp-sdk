@@ -1,5 +1,5 @@
-using System;
-using Shouldly;
+
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Xunit;
@@ -40,15 +40,15 @@ public class ArcTests
       units = Units.Meters,
     };
 
-    Point.Distance(counterClockwiseArc.midPoint, new Point(0, 1, 0, Units.Meters)).ShouldBe(0, tolerance: 0.0001);
+    Point.Distance(counterClockwiseArc.midPoint, new Point(0, 1, 0, Units.Meters)).Should().BeApproximately(0, 0.0001);
 
-    Point.Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, Units.Meters)).ShouldBe(0, tolerance: 0.0001);
+    Point.Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, Units.Meters)).Should().BeApproximately(0,  0.0001);
 
-    (counterClockwiseArc.measure - Math.PI).ShouldBe(0, tolerance: 0.0001);
+    (counterClockwiseArc.measure - Math.PI).Should().BeApproximately(0, 0.0001);
 
-    counterClockwiseArc.radius.ShouldBe(1, tolerance: 0.0001);
+    counterClockwiseArc.radius.Should().BeApproximately(1, 0.0001);
 
-    counterClockwiseArc.length.ShouldBe(Math.PI, tolerance: 0.0001);
+    counterClockwiseArc.length.Should().BeApproximately(Math.PI, 0.0001);
   }
 
   [Fact]
@@ -63,14 +63,14 @@ public class ArcTests
       units = Units.Meters,
     };
 
-    Point.Distance(clockwiseArc.midPoint, new Point(0, 1, 0, Units.Meters)).ShouldBe(0, tolerance: 0.0001);
+    Point.Distance(clockwiseArc.midPoint, new Point(0, 1, 0, Units.Meters)).Should().BeApproximately(0,  0.0001);
 
-    Point.Distance(clockwiseArc.plane.origin, new Point(0, 0, 0, Units.Meters)).ShouldBe(0, tolerance: 0.0001);
+    Point.Distance(clockwiseArc.plane.origin, new Point(0, 0, 0, Units.Meters)).Should().BeApproximately(0,  0.0001);
 
-    (clockwiseArc.measure - Math.PI).ShouldBe(0, tolerance: 0.0001);
+    (clockwiseArc.measure - Math.PI).Should().BeApproximately(0,  0.0001);
 
-    clockwiseArc.radius.ShouldBe(1, tolerance: 0.0001);
+    clockwiseArc.radius.Should().BeApproximately(1,  0.0001);
 
-    clockwiseArc.length.ShouldBe(Math.PI, tolerance: 0.0001);
+    clockwiseArc.length.Should().BeApproximately(Math.PI,  0.0001);
   }
 }
