@@ -17,7 +17,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 /// </summary>
 public class SerializerBreakingChanges : PrimitiveTestFixture
 {
-  private IOperations _operations;
+  private readonly IOperations _operations;
 
   // xUnit does not support a Setup method; instead, you can use the constructor for initialization.
   public SerializerBreakingChanges()

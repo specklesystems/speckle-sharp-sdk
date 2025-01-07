@@ -46,20 +46,14 @@ public sealed class HashUtilityTests
     }
   }
 
-  public static IEnumerable<object[]> SmallTestCasesMd5()
-  {
-    return SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(0, 32));
-  }
+  public static IEnumerable<object[]> SmallTestCasesMd5() =>
+    SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(0, 32));
 
-  public static IEnumerable<object[]> SmallTestCasesSha256()
-  {
-    return SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(2, 64));
-  }
+  public static IEnumerable<object[]> SmallTestCasesSha256() =>
+    SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(2, 64));
 
-  public static IEnumerable<object[]> SmallTestCasesSha256Span()
-  {
-    return SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(2, 64).Where(x => x % 2 == 0));
-  }
+  public static IEnumerable<object[]> SmallTestCasesSha256Span() =>
+    SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(2, 64).Where(x => x % 2 == 0));
 
   public static IEnumerable<object[]> LargeTestCases()
   {

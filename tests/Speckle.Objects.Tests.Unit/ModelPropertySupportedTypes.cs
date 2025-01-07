@@ -72,11 +72,19 @@ public class ModelPropertySupportedTypes
       foreach (var prop in members)
       {
         if (prop.PropertyType.IsAssignableTo(typeof(Base)))
+        {
           continue;
+        }
+
         if (prop.PropertyType.IsEnum)
+        {
           continue;
+        }
+
         if (prop.PropertyType.IsSZArray)
+        {
           continue;
+        }
 
         Type propType = prop.PropertyType;
         Type typeDef = propType.IsGenericType ? propType.GetGenericTypeDefinition() : propType;

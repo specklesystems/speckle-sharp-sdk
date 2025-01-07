@@ -12,14 +12,14 @@ public class NotNullTests
   [InlineData(new[] { "yay" }, 1)]
   public void Empty(string[]? test, int length)
   {
-    var list = NotNullExtensions.Empty(test).ToList();
+    var list = test.Empty().ToList();
     list.Count.Should().Be(length);
   }
 
   [Fact]
   public void NotNullClass()
   {
-    var t = NotNullExtensions.NotNull("test");
+    var t = "test".NotNull();
     t.Should().Be("test");
   }
 
@@ -33,76 +33,62 @@ public class NotNullTests
   [Fact]
   public async Task NotNullClass_Task()
   {
-    var t = await NotNullExtensions.NotNull(Task.FromResult<string?>("test"));
+    var t = await Task.FromResult<string?>("test").NotNull();
     t.Should().Be("test");
   }
 
   [Fact]
   public async Task NotNullStruct_Task()
   {
-    var t = await NotNullExtensions.NotNull(Task.FromResult<int?>(2));
+    var t = await Task.FromResult<int?>(2).NotNull();
     t.Should().Be(2);
   }
 
   [Fact]
   public async Task NotNullClass_ValueTask()
   {
-    var t = await NotNullExtensions.NotNull(ValueTask.FromResult<string?>("test"));
+    var t = await ValueTask.FromResult<string?>("test").NotNull();
     t.Should().Be("test");
   }
 
   [Fact]
   public async Task NotNullStruct_ValueTask()
   {
-    var t = await NotNullExtensions.NotNull(ValueTask.FromResult<int?>(2));
+    var t = await ValueTask.FromResult<int?>(2).NotNull();
     t.Should().Be(2);
   }
 
   [Fact]
-  public void NotNullClass_Exception()
-  {
-    FluentActions.Invoking(() => NotNullExtensions.NotNull((string?)null));
-  }
+  public void NotNullClass_Exception() => FluentActions.Invoking(() => ((string?)null).NotNull());
 
   [Fact]
-  public void NotNullStruct_Exception()
-  {
-    FluentActions.Invoking(() => NotNullExtensions.NotNull((int?)null));
-  }
+  public void NotNullStruct_Exception() => FluentActions.Invoking(() => ((int?)null).NotNull());
 
   [Fact]
-  public async Task NotNullClass_Task_Exception()
-  {
+  public async Task NotNullClass_Task_Exception() =>
     await FluentActions
-      .Invoking(async () => await NotNullExtensions.NotNull(Task.FromResult((string?)null)))
+      .Invoking(async () => await Task.FromResult((string?)null).NotNull())
       .Should()
       .ThrowAsync<ArgumentNullException>();
-  }
 
   [Fact]
-  public async Task NotNullStruct_Task_Exception()
-  {
+  public async Task NotNullStruct_Task_Exception() =>
     await FluentActions
-      .Invoking(async () => await NotNullExtensions.NotNull(Task.FromResult((int?)null)))
+      .Invoking(async () => await Task.FromResult((int?)null).NotNull())
       .Should()
       .ThrowAsync<ArgumentNullException>();
-  }
 
   [Fact]
-  public async Task NotNullClass_ValueTask_Exception()
-  {
+  public async Task NotNullClass_ValueTask_Exception() =>
     await FluentActions
-      .Invoking(async () => await NotNullExtensions.NotNull(ValueTask.FromResult((string?)null)))
+      .Invoking(async () => await ValueTask.FromResult((string?)null).NotNull())
       .Should()
       .ThrowAsync<ArgumentNullException>();
-  }
 
   [Fact]
-  public async Task NotNullStruct_ValueTask_Exception()
-  {
+  public async Task NotNullStruct_ValueTask_Exception() =>
     await FluentActions
-      .Invoking(async () => await NotNullExtensions.NotNull(ValueTask.FromResult((int?)null)))
+      .Invoking(async () => await ValueTask.FromResult((int?)null).NotNull())
       .Should()
       .ThrowAsync<ArgumentNullException>();
-  }
 }

@@ -70,23 +70,20 @@ public class CredentialInfrastructure
   }
 
   [Fact]
-  public void GetAccount_ById_ThrowsWhenNotFound()
-  {
+  public void GetAccount_ById_ThrowsWhenNotFound() =>
     FluentActions
       .Invoking(() => _accountManager.GetAccount("Non_existent_id"))
       .Should()
       .Throw<SpeckleAccountManagerException>();
-  }
 
   public static IEnumerable<object[]> TestCases() // Replaces NUnit's TestCaseSource
-  {
-    return new List<object[]>
+    =>
+    new List<object[]>
     {
       new object[] { s_testAccount1 },
       new object[] { s_testAccount2 },
       new object[] { s_testAccount3 },
     };
-  }
 
   [Theory]
   [MemberData(nameof(TestCases))] // Replaces `TestCaseSource`

@@ -53,7 +53,7 @@ public sealed partial class OperationsReceiveTests : IDisposable
   {
     foreach (var s in s_testObjects)
     {
-      yield return new object[] { s.GetId(true) };
+      yield return [s.GetId(true)];
     }
   }
 

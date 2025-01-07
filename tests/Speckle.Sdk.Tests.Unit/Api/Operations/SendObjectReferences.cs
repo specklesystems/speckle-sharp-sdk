@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public class SendObjectReferences
 {
-  private IOperations _operations;
+  private readonly IOperations _operations;
 
   public SendObjectReferences()
   {

@@ -17,10 +17,7 @@ namespace Speckle.Sdk.Tests.Unit.Models
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void SpeckleTypeIsProperlyBuilt(Base foo, string expectedType)
-    {
-      foo.speckle_type.Should().Be(expectedType);
-    }
+    public void SpeckleTypeIsProperlyBuilt(Base foo, string expectedType) => foo.speckle_type.Should().Be(expectedType);
 
     public static IEnumerable<object[]> Cases =>
       new List<object[]>

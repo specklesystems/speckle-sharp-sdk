@@ -27,20 +27,15 @@ public class GraphQLErrorHandlerTests
   {
     var ex = Assert.Throws<AggregateException>(
       () =>
-        GraphQLErrorHandler.EnsureGraphQLSuccess(
-          new GraphQLResponse<GraphQLClientTests.FakeGqlResponseModel>
-          {
-            Errors = new GraphQLError[] { new() { Extensions = extensions } },
-          }
-        )
+        new GraphQLResponse<GraphQLClientTests.FakeGqlResponseModel>
+        {
+          Errors = [new() { Extensions = extensions }],
+        }.EnsureGraphQLSuccess()
     );
     ex.InnerExceptions.Count.Should().Be(1);
     ex.InnerExceptions[0].Should().BeOfType(exType);
   }
 
   [Fact]
-  public void TestMaybeThrowsDoesntThrowForNoErrors()
-  {
-    GraphQLErrorHandler.EnsureGraphQLSuccess(new GraphQLResponse<string>());
-  }
+  public void TestMaybeThrowsDoesntThrowForNoErrors() => new GraphQLResponse<string>().EnsureGraphQLSuccess();
 }

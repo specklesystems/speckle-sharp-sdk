@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
@@ -15,7 +13,10 @@ public class TraversalContextExtensionsTests
   private TraversalContext? CreateLinkedList(int depth, Func<int, Base> createBaseFunc)
   {
     if (depth <= 0)
+    {
       return null;
+    }
+
     return new TraversalContext(createBaseFunc(depth), $"{depth}", CreateLinkedList(depth - 1, createBaseFunc));
   }
 
@@ -25,7 +26,7 @@ public class TraversalContextExtensionsTests
   {
     var testData = CreateLinkedList(depth, i => new Base()).NotNull();
 
-    var path = TraversalContextExtensions.GetPropertyPath(testData);
+    var path = testData.GetPropertyPath();
 
     var expected = Enumerable.Range(1, depth).Select(i => i.ToString());
 
@@ -38,7 +39,7 @@ public class TraversalContextExtensionsTests
   {
     var testData = CreateLinkedList(depth, i => new Base()).NotNull();
 
-    var all = TraversalContextExtensions.GetAscendants(testData).ToArray();
+    var all = testData.GetAscendants().ToArray();
 
     all.Length.Should().Be(depth);
   }
@@ -49,7 +50,7 @@ public class TraversalContextExtensionsTests
   {
     var testData = CreateLinkedList(depth, i => new Base()).NotNull();
 
-    var all = TraversalContextExtensions.GetAscendantOfType<Base>(testData).ToArray();
+    var all = testData.GetAscendantOfType<Base>().ToArray();
 
     all.Length.Should().Be(depth);
   }
@@ -60,14 +61,11 @@ public class TraversalContextExtensionsTests
   {
     var testData = CreateLinkedList(depth, i => i % 2 == 0 ? new Base() : new Collection()).NotNull();
 
-    var all = TraversalContextExtensions.GetAscendantOfType<Collection>(testData).ToArray();
+    var all = testData.GetAscendantOfType<Collection>().ToArray();
 
     all.Length.Should().Be((int)Math.Ceiling(depth / 2.0));
   }
 
   // Providing the test depths to [MemberData] for xUnit
-  public static System.Collections.Generic.IEnumerable<object[]> GetTestDepths()
-  {
-    return new[] { 1, 2, 10 }.Select(depth => new object[] { depth });
-  }
+  public static IEnumerable<object[]> GetTestDepths() => new[] { 1, 2, 10 }.Select(depth => new object[] { depth });
 }

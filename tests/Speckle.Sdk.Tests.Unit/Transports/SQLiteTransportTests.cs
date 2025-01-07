@@ -1,7 +1,5 @@
-using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 using Xunit;
 
@@ -11,7 +9,7 @@ public sealed class SQLiteTransportTests : TransportTests, IDisposable
 {
   protected override ITransport? Sut => _sqlite;
 
-  private SQLiteTransport _sqlite;
+  private readonly SQLiteTransport _sqlite;
 
   private static readonly string s_basePath = $"./temp {Guid.NewGuid()}";
   private const string APPLICATION_NAME = "Speckle Integration Tests";

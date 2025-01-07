@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
@@ -13,7 +12,7 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public sealed class SendReceiveLocal : IDisposable
 {
-  private IOperations _operations;
+  private readonly IOperations _operations;
 
   public SendReceiveLocal()
   {
@@ -27,10 +26,7 @@ public sealed class SendReceiveLocal : IDisposable
 
   private readonly SQLiteTransport _sut = new();
 
-  public void Dispose()
-  {
-    _sut.Dispose();
-  }
+  public void Dispose() => _sut.Dispose();
 
   [Fact(DisplayName = "Pushing a commit locally")]
   public async Task LocalUploadAndDownload()

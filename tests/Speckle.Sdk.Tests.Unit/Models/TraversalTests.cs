@@ -85,7 +85,7 @@ public class TraversalTests
     //Test
     ret.Should().OnlyHaveUniqueItems();
 
-    ret.Should().BeEquivalentTo(new[] { objectA, objectB, objectC });
+    ret.Should().BeEquivalentTo([objectA, objectB, objectC]);
 
     ret.Count.Should().Be(3);
   }
@@ -106,7 +106,7 @@ public class TraversalTests
     //Test
     ret.Should().OnlyHaveUniqueItems();
 
-    ret.Should().BeEquivalentTo(new[] { objectA, objectB });
+    ret.Should().BeEquivalentTo([objectA, objectB]);
 
     ret.Count.Should().Be(2);
   }

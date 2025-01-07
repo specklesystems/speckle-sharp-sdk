@@ -1,15 +1,7 @@
-using System.Collections.Concurrent;
-using System.Text;
 using FluentAssertions;
-using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Serialisation.V2;
-using Speckle.Sdk.Serialisation.V2.Send;
-using Speckle.Sdk.Transports;
 using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Models;

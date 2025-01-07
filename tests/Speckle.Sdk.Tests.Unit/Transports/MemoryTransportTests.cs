@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Tests.Unit.Transports;
 public sealed class MemoryTransportTests : TransportTests
 {
   protected override ITransport Sut => _memoryTransport.NotNull();
-  private MemoryTransport _memoryTransport;
+  private readonly MemoryTransport _memoryTransport;
 
   // Constructor used for setup in xUnit
   public MemoryTransportTests()
@@ -19,8 +19,5 @@ public sealed class MemoryTransportTests : TransportTests
   }
 
   [Fact]
-  public void TransportName_ShouldSetProperly()
-  {
-    _memoryTransport.TransportName.Should().Be("Memory");
-  }
+  public void TransportName_ShouldSetProperly() => _memoryTransport.TransportName.Should().Be("Memory");
 }

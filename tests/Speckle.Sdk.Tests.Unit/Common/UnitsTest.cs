@@ -55,10 +55,8 @@ public class UnitsTest
 
   [Theory]
   [MemberData(nameof(NotSupportedUnitsGenerator))]
-  public void GetUnitsFromString_ThrowsUnSupported(string unit)
-  {
+  public void GetUnitsFromString_ThrowsUnSupported(string unit) =>
     FluentActions.Invoking(() => Units.GetUnitsFromString(unit)).Should().Throw<ArgumentOutOfRangeException>();
-  }
 
   [Theory]
   [MemberData(nameof(OfficiallySupportedUnitsGenerator))]

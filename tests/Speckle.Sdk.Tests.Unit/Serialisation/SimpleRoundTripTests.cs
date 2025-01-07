@@ -11,7 +11,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 public class SimpleRoundTripTests
 {
-  private IOperations _operations;
+  private readonly IOperations _operations;
 
   public SimpleRoundTripTests()
   {

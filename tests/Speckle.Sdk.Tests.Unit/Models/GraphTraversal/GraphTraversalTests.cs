@@ -36,7 +36,7 @@ public class GraphTraversalTests
 
     TraversalMock testCase = new()
     {
-      ListChildren = new List<Base> { expectTraverse },
+      ListChildren = [expectTraverse],
       DictChildren = new Dictionary<string, Base> { ["myprop"] = expectIgnored },
       Child = expectIgnored,
     };
@@ -67,7 +67,7 @@ public class GraphTraversalTests
 
     TraversalMock testCase = new()
     {
-      ListChildren = new List<Base> { expectIgnored },
+      ListChildren = [expectIgnored],
       DictChildren = new Dictionary<string, Base> { ["myprop"] = expectTraverse },
       Child = expectIgnored,
     };

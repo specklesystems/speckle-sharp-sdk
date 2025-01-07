@@ -13,7 +13,7 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public class Closures
 {
-  private IOperations _operations;
+  private readonly IOperations _operations;
 
   public Closures()
   {
@@ -59,8 +59,8 @@ public class Closures
     var d1_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d1.GetId(true)]));
     var d2_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d2.GetId(true)]));
     var d3_ = NotNullExtensions.NotNull(JsonConvert.DeserializeObject<dynamic>(transport.Objects[d3.GetId(true)]));
-    var d4_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d4.GetId(true)]);
-    var d5_ = JsonConvert.DeserializeObject<dynamic>(transport.Objects[d5.GetId(true)]);
+    JsonConvert.DeserializeObject<dynamic>(transport.Objects[d4.GetId(true)]);
+    JsonConvert.DeserializeObject<dynamic>(transport.Objects[d5.GetId(true)]);
 
     var depthOf_d5_in_d1 = int.Parse((string)d1_.__closure[d5.GetId(true)]);
     depthOf_d5_in_d1.Should().Be(1);

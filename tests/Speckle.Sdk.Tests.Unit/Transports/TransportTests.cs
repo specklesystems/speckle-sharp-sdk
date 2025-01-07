@@ -37,7 +37,7 @@ public abstract class TransportTests
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     {
-      var preAdd = await Sut.NotNull().HasObjects(new[] { PAYLOAD_ID });
+      var preAdd = await Sut.NotNull().HasObjects([PAYLOAD_ID]);
       preAdd.Count.Should().Be(1);
       preAdd.Values.Should().NotContain(true);
       preAdd.Keys.Should().Contain(PAYLOAD_ID);
@@ -47,7 +47,7 @@ public abstract class TransportTests
     await Sut.WriteComplete();
 
     {
-      var postAdd = await Sut.HasObjects(new[] { PAYLOAD_ID });
+      var postAdd = await Sut.HasObjects([PAYLOAD_ID]);
       postAdd.Count.Should().Be(1);
       postAdd.Values.Should().NotContain(false);
       postAdd.Keys.Should().Contain(PAYLOAD_ID);

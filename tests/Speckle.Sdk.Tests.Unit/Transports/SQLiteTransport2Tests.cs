@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Speckle.Sdk.Common;
@@ -27,7 +26,10 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
     _sqlite?.Dispose();
     SqliteConnection.ClearAllPools();
     if (File.Exists(s_basePath))
+    {
       File.Delete(s_basePath);
+    }
+
     _sqlite = null;
   }
 

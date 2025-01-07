@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -19,13 +17,13 @@ public class ChunkingTests
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
 
     // Return test data as a collection of objects for xUnit
-    yield return new object[] { CreateDynamicTestCase(10, 100), 10 };
-    yield return new object[] { CreateDynamicTestCase(0.5, 100), 1 };
-    yield return new object[] { CreateDynamicTestCase(20.5, 100), 21 };
+    yield return [CreateDynamicTestCase(10, 100), 10];
+    yield return [CreateDynamicTestCase(0.5, 100), 1];
+    yield return [CreateDynamicTestCase(20.5, 100), 21];
 
-    yield return new object[] { CreateDynamicTestCase(10, 1000), 10 };
-    yield return new object[] { CreateDynamicTestCase(0.5, 1000), 1 };
-    yield return new object[] { CreateDynamicTestCase(20.5, 1000), 21 };
+    yield return [CreateDynamicTestCase(10, 1000), 10];
+    yield return [CreateDynamicTestCase(0.5, 1000), 1];
+    yield return [CreateDynamicTestCase(20.5, 1000), 21];
   }
 
   [Theory]
@@ -34,7 +32,7 @@ public class ChunkingTests
   {
     // Arrange
     var transport = new MemoryTransport();
-    var sut = new SpeckleObjectSerializer(new[] { transport });
+    var sut = new SpeckleObjectSerializer([transport]);
 
     // Act
     _ = sut.Serialize(testCase);

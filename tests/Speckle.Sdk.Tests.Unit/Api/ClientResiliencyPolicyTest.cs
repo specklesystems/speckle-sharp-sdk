@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using FluentAssertions;
-using GraphQL;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -11,7 +10,7 @@ namespace Speckle.Sdk.Tests.Unit.Api;
 
 public sealed class GraphQLClientTests : IDisposable
 {
-  private Client _client;
+  private readonly Client _client;
 
   public GraphQLClientTests()
   {
@@ -27,10 +26,7 @@ public sealed class GraphQLClientTests : IDisposable
       );
   }
 
-  public void Dispose()
-  {
-    _client?.Dispose();
-  }
+  public void Dispose() => _client?.Dispose();
 
   [Fact]
   public async Task TestExecuteWithResiliencePoliciesDoesntRetryTaskCancellation()

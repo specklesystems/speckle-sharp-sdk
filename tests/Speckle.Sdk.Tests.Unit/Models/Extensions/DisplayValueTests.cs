@@ -23,10 +23,7 @@ public class DisplayValueTests
   }
 
   [Fact]
-  public void Setup()
-  {
-    Reset();
-  }
+  public void Setup() => Reset();
 
   [Theory]
   [MemberData(nameof(TestCases))]
@@ -48,12 +45,12 @@ public class DisplayValueTests
     var listOfBase = new List<object> { s_displayValue }; // This is what our deserializer will output
     var listOfMesh = new List<Base> { s_displayValue };
 
-    yield return new object[] { new Base { ["@displayValue"] = s_displayValue } };
-    yield return new object[] { new Base { ["displayValue"] = s_displayValue } };
-    yield return new object[] { new Base { ["@displayValue"] = listOfBase } };
-    yield return new object[] { new Base { ["displayValue"] = listOfBase } };
-    yield return new object[] { new TypedDisplayValue { displayValue = s_displayValue } };
-    yield return new object[] { new TypedDisplayValueList { displayValue = listOfMesh } };
+    yield return [new Base { ["@displayValue"] = s_displayValue }];
+    yield return [new Base { ["displayValue"] = s_displayValue }];
+    yield return [new Base { ["@displayValue"] = listOfBase }];
+    yield return [new Base { ["displayValue"] = listOfBase }];
+    yield return [new TypedDisplayValue { displayValue = s_displayValue }];
+    yield return [new TypedDisplayValueList { displayValue = listOfMesh }];
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Models.Extensions.DisplayValueTests+TypedDisplayValue")]

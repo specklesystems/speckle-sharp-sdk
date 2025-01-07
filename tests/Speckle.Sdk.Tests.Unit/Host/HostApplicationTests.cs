@@ -6,10 +6,7 @@ namespace Speckle.Sdk.Tests.Unit.Host;
 
 public class HostApplicationTests
 {
-  private static List<HostAppVersion> s_hostAppVersions = Enum.GetValues<HostAppVersion>().ToList();
-
-  public static IEnumerable<object[]> HostAppVersionData =>
-    s_hostAppVersions.Select(version => new object[] { version });
+  public static TheoryData<HostAppVersion> HostAppVersionData => new(Enum.GetValues<HostAppVersion>().ToList());
 
   [Theory]
   [MemberData(nameof(HostAppVersionData))]
