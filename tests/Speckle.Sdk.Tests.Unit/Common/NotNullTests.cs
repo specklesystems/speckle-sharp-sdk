@@ -20,7 +20,7 @@ public class NotNullTests
   public void NotNullClass()
   {
     var t = NotNullExtensions.NotNull("test");
-    t.Should().NotBeNull().Should().Be("test");
+    t.Should().Be("test");
   }
 
   [Fact]
@@ -34,7 +34,7 @@ public class NotNullTests
   public async Task NotNullClass_Task()
   {
     var t = await NotNullExtensions.NotNull(Task.FromResult<string?>("test"));
-    t.Should().NotBeNull().Should().Be("test");
+    t.Should().Be("test");
   }
 
   [Fact]
@@ -48,7 +48,7 @@ public class NotNullTests
   public async Task NotNullClass_ValueTask()
   {
     var t = await NotNullExtensions.NotNull(ValueTask.FromResult<string?>("test"));
-    t.Should().NotBeNull().Should().Be("test");
+    t.Should().Be("test");
   }
 
   [Fact]

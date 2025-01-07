@@ -38,7 +38,7 @@ public class SpecklePathTests
       throw new NotImplementedException("Your OS platform is not supported");
     }
 
-    userPath.Should().Match(pattern);
+    userPath.Should().MatchRegex(pattern);
   }
 
   [Fact]
@@ -77,6 +77,6 @@ public class SpecklePathTests
       throw new NotImplementedException("Your OS platform is not supported");
     }
 
-    installPath.Should().Match(pattern);
+    installPath.Should().MatchRegex(pattern);
   }
 }
