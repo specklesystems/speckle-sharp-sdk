@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
 
@@ -13,20 +14,20 @@ public class SizeBatchingChannelReader<T>(
   int batchSize,
   bool singleReader,
   bool syncCont = false
-) : BatchingChannelReader<T, Batch<T>>(x => new(x), source, batchSize, singleReader, syncCont)
+) : BatchingChannelReader<T, IMemoryOwner<T>>(x => new Batch<T>(), source, batchSize, singleReader, syncCont)
   where T : IHasSize
 {
-  protected override Batch<T> CreateBatch(int capacity) => new(capacity);
+  protected override IMemoryOwner<T> CreateBatch(int capacity) => new Batch<T>();
 
-  protected override void TrimBatch(ref Batch<T> batch, bool isVerifiedFull)
+  protected override void TrimBatch(ref IMemoryOwner<T> batch, bool isVerifiedFull)
   {
     if (!isVerifiedFull)
     {
-      batch.TrimExcess();
+      ((Batch<T>)batch).TrimExcess();
     }
   }
 
-  protected override void AddBatchItem(Batch<T> batch, T item) => batch.Add(item);
+  protected override void AddBatchItem(IMemoryOwner<T> batch, T item) => ((Batch<T>)batch).Add(item);
 
-  protected override int GetBatchSize(Batch<T> batch) => batch.Size;
+  protected override int GetBatchSize(IMemoryOwner<T> batch) => ((Batch<T>)batch).Size;
 }
