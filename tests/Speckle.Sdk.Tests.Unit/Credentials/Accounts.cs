@@ -56,6 +56,7 @@ public class CredentialInfrastructure : IDisposable
 
   public void Dispose()
   {
+    _accountManager.Dispose();
     Fixtures.DeleteLocalAccount(s_testAccount1.id);
     Fixtures.DeleteLocalAccount(s_testAccount2.id);
     Fixtures.DeleteLocalAccount(s_testAccount3.id);

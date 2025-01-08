@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Xunit;
 
@@ -34,7 +35,7 @@ public class BatchTests
     batch.Add(new BatchItem(2));
     batch.Size.Should().Be(3);
 
-    batch.Items.Capacity.ShouldBe(Pools.DefaultCapacity);
+    batch.Items.Capacity.Should().Be(Pools.DefaultCapacity);
     batch.TrimExcess();
 
     batch.Items.Capacity.Should().Be(2);
