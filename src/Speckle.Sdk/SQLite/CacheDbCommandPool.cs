@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Microsoft.Data.Sqlite;
 
 namespace Speckle.Sdk.SQLite;
