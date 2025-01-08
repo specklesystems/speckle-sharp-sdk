@@ -6,14 +6,14 @@ using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
-public class CredentialInfrastructure
+public class CredentialInfrastructure : IDisposable
 {
   private readonly IAccountManager _accountManager;
   private static readonly Account s_testAccount1;
   private static readonly Account s_testAccount2;
   private static readonly Account s_testAccount3;
 
-  static CredentialInfrastructure() // Equivalent of `OneTimeSetUp`
+  static CredentialInfrastructure()
   {
     s_testAccount1 = new Account
     {
@@ -42,16 +42,24 @@ public class CredentialInfrastructure
         name = "Test Account 3",
       },
     };
+  }
 
+  public CredentialInfrastructure()
+  {
     Fixtures.UpdateOrSaveAccount(s_testAccount1);
     Fixtures.UpdateOrSaveAccount(s_testAccount2);
     Fixtures.SaveLocalAccount(s_testAccount3);
-  }
 
-  public CredentialInfrastructure() // Equivalent of `SetUp`
-  {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _accountManager = serviceProvider.GetRequiredService<IAccountManager>();
+  }
+
+  public void Dispose()
+  {
+    Fixtures.DeleteLocalAccount(s_testAccount1.id);
+    Fixtures.DeleteLocalAccount(s_testAccount2.id);
+    Fixtures.DeleteLocalAccount(s_testAccount3.id);
+    Fixtures.DeleteLocalAccountFile();
   }
 
   [Fact]
@@ -76,17 +84,10 @@ public class CredentialInfrastructure
       .Should()
       .Throw<SpeckleAccountManagerException>();
 
-  public static IEnumerable<object[]> TestCases() // Replaces NUnit's TestCaseSource
-    =>
-    new List<object[]>
-    {
-      new object[] { s_testAccount1 },
-      new object[] { s_testAccount2 },
-      new object[] { s_testAccount3 },
-    };
+  public static TheoryData<Account> TestCases() => new() { s_testAccount1, s_testAccount2, s_testAccount3 };
 
   [Theory]
-  [MemberData(nameof(TestCases))] // Replaces `TestCaseSource`
+  [MemberData(nameof(TestCases))]
   public void GetAccountsForServer(Account target)
   {
     var accs = _accountManager.GetAccounts(target.serverInfo.url).ToList();
@@ -120,12 +121,5 @@ public class CredentialInfrastructure
     }.GetLocalIdentifier();
 
     acc1.Should().NotBe(acc2);
-  }
-
-  ~CredentialInfrastructure() // Equivalent of `OneTimeTearDown`
-  {
-    Fixtures.DeleteLocalAccount(s_testAccount1.id);
-    Fixtures.DeleteLocalAccount(s_testAccount2.id);
-    Fixtures.DeleteLocalAccountFile();
   }
 }
