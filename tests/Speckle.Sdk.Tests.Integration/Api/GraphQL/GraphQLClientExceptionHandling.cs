@@ -122,7 +122,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
       }
       """;
     GraphQLRequest request = new(query: QUERY);
-    await Assert.ThrowsAsync<JsonException>(
+    await Assert.ThrowsAsync<JsonReaderException>(
       async () => await _sut.ExecuteGraphQLRequest<int>(request).ConfigureAwait(false)
     );
   }
