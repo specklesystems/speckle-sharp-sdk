@@ -90,9 +90,9 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
   public async Task TestCancel()
   {
     using CancellationTokenSource cts = new();
-    cts.Cancel();
+    await cts.CancelAsync();
 
-    var ex = await Assert.ThrowsAsync<OperationCanceledException>(
+    var ex = await Assert.ThrowsAsync<TaskCanceledException>(
       async () => await _sut.ActiveUser.Get(cts.Token).ConfigureAwait(false)
     );
 
