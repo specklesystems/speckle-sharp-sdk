@@ -1,29 +1,23 @@
-using NUnit.Framework;
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;
 
-[TestFixture, TestOf(typeof(Box))]
 public class BoxTests
 {
-  private Plane TestPlane
-  {
-    get
+  private Plane TestPlane =>
+    new()
     {
-      const string UNITS = Units.Meters;
-      return new()
-      {
-        origin = new Point(0, 0, 0, UNITS),
-        normal = new Vector(0, 0, 1, UNITS),
-        xdir = new Vector(1, 0, 0, UNITS),
-        ydir = new Vector(0, 1, 0, UNITS),
-        units = UNITS,
-      };
-    }
-  }
+      origin = new Point(0, 0, 0, Units.Meters),
+      normal = new Vector(0, 0, 1, Units.Meters),
+      xdir = new Vector(1, 0, 0, Units.Meters),
+      ydir = new Vector(0, 1, 0, Units.Meters),
+      units = Units.Meters,
+    };
 
-  [Test]
+  [Fact]
   public void CanCreateBox()
   {
     const string UNITS = Units.Meters;
@@ -36,7 +30,10 @@ public class BoxTests
       units = UNITS,
     };
 
-    Assert.That(box.area, Is.EqualTo(2 * (2 * 4 + 2 * 6 + 4 * 6)).Within(0.0001));
-    Assert.That(box.volume, Is.EqualTo(2 * 4 * 6).Within(0.0001));
+    // Assert area
+    box.area.Should().BeApproximately(2 * (2 * 4 + 2 * 6 + 4 * 6), 0.0001);
+
+    // Assert volume
+    box.volume.Should().BeApproximately(2 * 4 * 6, 0.0001);
   }
 }

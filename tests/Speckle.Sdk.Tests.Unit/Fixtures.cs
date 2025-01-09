@@ -28,13 +28,7 @@ public abstract class Fixtures
     File.WriteAllText(s_accountPath, json);
   }
 
-  public static void DeleteLocalAccount(string id)
-  {
-    s_accountStorage.DeleteObject(id);
-  }
+  public static void DeleteLocalAccount(string id) => s_accountStorage.DeleteObject(id);
 
-  public static void DeleteLocalAccountFile()
-  {
-    File.Delete(s_accountPath);
-  }
+  public static void DeleteLocalAccountFile() => File.Delete(s_accountPath);
 }

@@ -1,50 +1,54 @@
-﻿using Speckle.Sdk.Api;
+﻿using FluentAssertions;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Credentials;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[TestOf(typeof(OtherUserResource))]
 public class OtherUserResourceTests
 {
-  private Client _testUser;
-  private Account _testData;
+  private readonly Client _testUser;
+  private readonly Account _testData;
   private OtherUserResource Sut => _testUser.OtherUser;
 
-  [OneTimeSetUp]
-  public async Task Setup()
+  public OtherUserResourceTests()
   {
-    _testUser = await Fixtures.SeedUserWithClient();
-    _testData = await Fixtures.SeedUser();
+    _testUser = Fixtures.SeedUserWithClient().GetAwaiter().GetResult();
+    _testData = Fixtures.SeedUser().GetAwaiter().GetResult();
   }
 
-  [Test]
-  public async Task OtherUserGet()
+  [Fact]
+  public async Task OtherUserGet_Should_ReturnCorrectUser()
   {
     var res = await Sut.Get(_testData.userInfo.id);
-    Assert.That(res, Is.Not.Null);
-    Assert.That(res!.name, Is.EqualTo(_testData.userInfo.name));
+
+    res.Should().NotBeNull();
+    res!.name.Should().Be(_testData.userInfo.name);
   }
 
-  [Test]
-  public async Task OtherUserGet_NonExistentUser()
+  [Fact]
+  public async Task OtherUserGet_NonExistentUser_Should_ReturnNull()
   {
     var result = await Sut.Get("AnIdThatDoesntExist");
-    Assert.That(result, Is.Null);
+
+    result.Should().BeNull();
   }
 
-  [Test]
-  public async Task UserSearch()
+  [Fact]
+  public async Task UserSearch_Should_ReturnMatchingUser()
   {
     var res = await Sut.UserSearch(_testData.userInfo.email, 25);
-    Assert.That(res.items, Has.Count.EqualTo(1));
-    Assert.That(res.items[0].id, Is.EqualTo(_testData.userInfo.id));
+
+    res.items.Should().ContainSingle();
+    res.items[0].id.Should().Be(_testData.userInfo.id);
   }
 
-  [Test]
-  public async Task UserSearch_NonExistentUser()
+  [Fact]
+  public async Task UserSearch_NonExistentUser_Should_ReturnEmptyList()
   {
     var res = await Sut.UserSearch("idontexist@example.com", 25);
-    Assert.That(res.items, Has.Count.EqualTo(0));
+
+    res.items.Should().BeEmpty();
   }
 }

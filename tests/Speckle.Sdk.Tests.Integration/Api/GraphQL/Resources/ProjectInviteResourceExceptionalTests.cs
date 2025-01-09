@@ -1,33 +1,48 @@
-﻿using Speckle.Sdk.Api;
+﻿using FluentAssertions;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[TestOf(typeof(ProjectInviteResource))]
-public class ProjectInviteResourceExceptionalTests
+public class ProjectInviteResourceExceptionalTests : IAsyncLifetime
 {
   private Client _testUser;
   private Project _project;
   private ProjectInviteResource Sut => _testUser.ProjectInvite;
 
-  [OneTimeSetUp]
-  public async Task Setup()
+  // Replacing OneTimeSetUp with IAsyncLifetime's InitializeAsync
+  public async Task InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
-    _project = await _testUser.Project.Create(new("test", null, null));
+    _project = await _testUser.Project.Create(new ProjectCreateInput("test", null, null));
   }
 
-  [TestCase(null, null, null, null)]
-  [TestCase(null, "something", "something", null)]
-  public void ProjectInviteCreate_InvalidInput(string email, string role, string serverRole, string userId)
+  // Implementing IAsyncLifetime's DisposeAsync (optional if no cleanup is needed)
+  public Task DisposeAsync() => Task.CompletedTask;
+
+  [Theory]
+  [InlineData(null, null, null, null)]
+  [InlineData(null, "something", "something", null)]
+  public async Task ProjectInviteCreate_InvalidInput_ShouldThrowSpeckleGraphQLException(
+    string? email,
+    string? role,
+    string? serverRole,
+    string? userId
+  )
   {
-    var ex = Assert.CatchAsync<AggregateException>(async () =>
-    {
-      var input = new ProjectInviteCreateInput(email, role, serverRole, userId);
-      await Sut.Create(_project.id, input);
-    });
-    Assert.That(ex?.InnerExceptions, Has.One.Items.And.All.TypeOf<SpeckleGraphQLException>());
+    var input = new ProjectInviteCreateInput(email, role, serverRole, userId);
+
+    var exception = await FluentActions
+      .Invoking(async () =>
+      {
+        await Sut.Create(_project.id, input);
+      })
+      .Should()
+      .ThrowAsync<AggregateException>();
+
+    exception.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
 }

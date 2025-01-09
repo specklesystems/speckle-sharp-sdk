@@ -1,50 +1,50 @@
 using System.Diagnostics;
-using NUnit.Framework;
+using FluentAssertions;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
-[TestFixture]
-[TestOf(typeof(Base))]
+// Removed [TestFixture] and [TestOf] annotations as they are NUnit specific
 public class Hashing
 {
-  [SetUp]
-  public void Setup()
+  public Hashing()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DiningTable).Assembly);
   }
 
-  [Test(Description = "Checks that hashing (as represented by object ids) actually works.")]
-  public void HashChangeCheck()
+  [Fact(DisplayName = "Checks that hashing (as represented by object IDs) actually works.")]
+  public void HashChangeCheck_Test()
   {
     var table = new DiningTable();
     var secondTable = new DiningTable();
 
-    Assert.That(secondTable.GetId(), Is.EqualTo(table.GetId()));
+    secondTable.GetId().Should().Be(table.GetId(), "Object IDs of identical objects should match.");
 
     ((dynamic)secondTable).testProp = "wonderful";
 
-    Assert.That(secondTable.GetId(), Is.Not.EqualTo(table.GetId()));
+    secondTable.GetId().Should().NotBe(table.GetId(), "Changing a property should alter the object ID.");
   }
 
-  [Test(
-    Description = "Tests the convention that dynamic properties that have key names prepended with '__' are ignored."
-  )]
-  public void IgnoredDynamicPropertiesCheck()
+  [Fact(DisplayName = "Verifies that dynamic properties with '__' prefix are ignored during hashing.")]
+  public void IgnoredDynamicPropertiesCheck_Test()
   {
     var table = new DiningTable();
     var originalHash = table.GetId();
 
     ((dynamic)table).__testProp = "wonderful";
 
-    Assert.That(table.GetId(), Is.EqualTo(originalHash));
+    table
+      .GetId()
+      .Should()
+      .Be(originalHash, "Hashing of table should not change when '__' prefixed properties are added.");
   }
 
-  [Test(Description = "Rather stupid test as results vary wildly even on one machine.")]
-  public void HashingPerformance()
+  [Fact(DisplayName = "Performance test: Hash computation time for large and small objects.")]
+  public void HashingPerformance_Test()
   {
     var polyline = new Polyline();
 
@@ -62,7 +62,7 @@ public class Hashing
     _ = polyline.GetId();
 
     var diff1 = stopWatch.ElapsedMilliseconds - stopWatchStep;
-    Assert.That(diff1, Is.LessThan(300), $"Hashing shouldn't take that long ({diff1} ms) for the test object used.");
+    diff1.Should().BeLessThan(300, $"Hashing shouldn't take that long ({diff1} ms) for the test object used.");
     Console.WriteLine($"Big obj hash duration: {diff1} ms");
 
     var pt = new Point
@@ -75,12 +75,12 @@ public class Hashing
     _ = pt.GetId();
 
     var diff2 = stopWatch.ElapsedMilliseconds - stopWatchStep;
-    Assert.That(diff2, Is.LessThan(10), $"Hashing shouldn't take that long  ({diff2} ms)for the point object used.");
+    diff2.Should().BeLessThan(10, $"Hashing shouldn't take that long ({diff2} ms) for the point object used.");
     Console.WriteLine($"Small obj hash duration: {diff2} ms");
   }
 
-  [Test(Description = "The hash of a decomposed object is different that that of a non-decomposed object.")]
-  public void DecompositionHashes()
+  [Fact(DisplayName = "Verifies that decomposed and non-decomposed objects have different hashes.")]
+  public void DecompositionHashes_Test()
   {
     var table = new DiningTable();
     ((dynamic)table)["@decomposeMePlease"] = new Point();
@@ -88,6 +88,6 @@ public class Hashing
     var hash1 = table.GetId();
     var hash2 = table.GetId(true);
 
-    Assert.That(hash2, Is.Not.EqualTo(hash1));
+    hash2.Should().NotBe(hash1, "Hash values should differ for decomposed and non-decomposed objects.");
   }
 }

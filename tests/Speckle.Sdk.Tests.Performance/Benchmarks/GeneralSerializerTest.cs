@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
-using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;

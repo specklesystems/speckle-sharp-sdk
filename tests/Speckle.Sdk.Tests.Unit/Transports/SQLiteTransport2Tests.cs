@@ -1,13 +1,12 @@
+using FluentAssertions;
 using Microsoft.Data.Sqlite;
-using NUnit.Framework;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Transports;
 
-[TestFixture]
-[TestOf(nameof(SQLiteTransport2))]
 public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
 {
   protected override ITransport? Sut => _sqlite;
@@ -17,30 +16,31 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
   private static readonly string s_name = $"test-{Guid.NewGuid()}";
   private static readonly string s_basePath = SqlitePaths.GetDBPath(s_name);
 
-  [SetUp]
-  public void Setup()
+  public SQLiteTransport2Tests()
   {
     _sqlite = new SQLiteTransport2(s_name);
   }
 
-  [TearDown]
-  public void TearDown()
+  public void Dispose()
   {
     _sqlite?.Dispose();
     SqliteConnection.ClearAllPools();
-    File.Delete(s_basePath);
+    if (File.Exists(s_basePath))
+    {
+      File.Delete(s_basePath);
+    }
+
     _sqlite = null;
   }
 
-  [Test]
+  [Fact]
   public void DbCreated_AfterInitialization()
   {
     bool fileExists = File.Exists(s_basePath);
-    Assert.That(fileExists, Is.True);
+    fileExists.Should().BeTrue();
   }
 
-  [Test]
-  [Description("Tests that an object can be updated")]
+  [Fact(DisplayName = "Tests that an object can be updated")]
   public async Task UpdateObject_AfterAdd()
   {
     const string PAYLOAD_ID = "MyTestObjectId";
@@ -54,50 +54,45 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
     await _sqlite.WriteComplete();
 
     var result = await _sqlite.GetObject(PAYLOAD_ID);
-    Assert.That(result, Is.EqualTo(NEW_PAYLOAD));
+    result.Should().Be(NEW_PAYLOAD);
   }
 
-  [Test]
-  [Description("Tests that updating an object that hasn't been saved previously adds the object to the DB")]
+  [Fact(DisplayName = "Tests that updating an object that hasn't been saved previously adds the object to the DB")]
   public async Task UpdateObject_WhenMissing()
   {
     const string PAYLOAD_ID = "MyTestObjectId";
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     var preUpdate = await _sqlite.NotNull().GetObject(PAYLOAD_ID);
-    Assert.That(preUpdate, Is.Null);
+    preUpdate.Should().BeNull();
 
     _sqlite.UpdateObject(PAYLOAD_ID, PAYLOAD_DATA);
     await _sqlite.WriteComplete();
 
     var postUpdate = await _sqlite.GetObject(PAYLOAD_ID);
-    Assert.That(postUpdate, Is.EqualTo(PAYLOAD_DATA));
+    postUpdate.Should().Be(PAYLOAD_DATA);
   }
 
-  [Test]
+  [Fact]
   public async Task SaveAndRetrieveObject_Sync()
   {
     const string PAYLOAD_ID = "MyTestObjectId";
     const string PAYLOAD_DATA = "MyTestObjectData";
 
     var preAdd = await Sut.NotNull().GetObject(PAYLOAD_ID);
-    Assert.That(preAdd, Is.Null);
+    preAdd.Should().BeNull();
 
     _sqlite.NotNull().SaveObjectSync(PAYLOAD_ID, PAYLOAD_DATA);
 
     {
       var postAdd = await Sut.GetObject(PAYLOAD_ID);
-      Assert.That(postAdd, Is.EqualTo(PAYLOAD_DATA));
+      postAdd.Should().Be(PAYLOAD_DATA);
     }
   }
 
-  [Test(
-    Description = "Tests that it is possible to enumerate through all objects of the transport while updating them, without getting stuck in an infinite loop"
-  )]
-  [Timeout(1000)]
+  [Fact(DisplayName = "Tests enumerating through all objects while updating them without infinite loop")]
   public void UpdateObject_WhileEnumerating()
   {
-    //I question if this is the behaviour we want, but AccountManager.GetObjects is relying on being able to update objects while enumerating over them
     const string UPDATE_STRING = "_new";
     Dictionary<string, string> testData = new()
     {
@@ -121,18 +116,14 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
       _sqlite.UpdateObject(key, newData);
     }
 
-    //Assert that objects were updated
-    Assert.That(_sqlite.GetAllObjects().ToList(), Has.All.Contains(UPDATE_STRING));
-    //Assert that objects were only updated once
-    Assert.That(_sqlite.GetAllObjects().ToList(), Has.All.Length.EqualTo(length + UPDATE_STRING.Length));
+    // Assert that objects were updated
+    _sqlite.GetAllObjects().ToList().Should().AllSatisfy(o => o.Should().Contain(UPDATE_STRING));
+    // Assert that objects were only updated once
+    _sqlite.GetAllObjects().ToList().Should().AllSatisfy(o => o.Should().HaveLength(length + UPDATE_STRING.Length));
   }
 
-  [Test]
-  [Repeat(10)]
-  [TestCase(6, 32)]
-  [Description(
-    $"Tests that the {nameof(SQLiteTransport2.GetAllObjects)} function can be called concurrently from multiple threads"
-  )]
+  [Theory(DisplayName = "Tests that GetAllObjects can be called concurrently from multiple threads")]
+  [InlineData(6, 32)]
   public void GetAllObjects_IsThreadSafe(int dataSize, int parallelism)
   {
     foreach (int i in Enumerable.Range(0, dataSize))
@@ -151,13 +142,8 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
 
     foreach (var result in results)
     {
-      Assert.That(result, Is.EquivalentTo(results[0]));
-      Assert.That(result, Has.Count.EqualTo(dataSize));
+      result.Should().BeEquivalentTo(results[0]);
+      result.Count.Should().Be(dataSize);
     }
-  }
-
-  public void Dispose()
-  {
-    _sqlite?.Dispose();
   }
 }

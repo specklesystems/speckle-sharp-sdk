@@ -1,6 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
-using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;

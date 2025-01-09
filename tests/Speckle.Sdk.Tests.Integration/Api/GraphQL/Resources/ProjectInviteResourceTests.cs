@@ -1,28 +1,29 @@
-﻿using Speckle.Sdk.Api;
+﻿using FluentAssertions;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
-using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Common;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[TestOf(typeof(ProjectInviteResource))]
-public class ProjectInviteResourceTests
+public class ProjectInviteResourceTests : IAsyncLifetime
 {
   private Client _inviter,
     _invitee;
   private Project _project;
   private PendingStreamCollaborator _createdInvite;
 
-  [SetUp]
-  public async Task Setup()
+  public async Task InitializeAsync()
   {
     _inviter = await Fixtures.SeedUserWithClient();
     _invitee = await Fixtures.SeedUserWithClient();
     _project = await _inviter.Project.Create(new("test", null, null));
     _createdInvite = await SeedInvite();
   }
+
+  public Task DisposeAsync() => Task.CompletedTask;
 
   private async Task<PendingStreamCollaborator> SeedInvite()
   {
@@ -32,7 +33,7 @@ public class ProjectInviteResourceTests
     return invites.First(i => i.projectId == res.id);
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectInviteCreate_ByEmail()
   {
     ProjectInviteCreateInput input = new(_invitee.Account.userInfo.email, null, null, null);
@@ -41,75 +42,72 @@ public class ProjectInviteResourceTests
     var invites = await _invitee.ActiveUser.GetProjectInvites();
     var invite = invites.First(i => i.projectId == res.id);
 
-    Assert.That(res, Has.Property(nameof(_project.id)).EqualTo(_project.id));
-    Assert.That(res.invitedTeam, Has.Count.EqualTo(1));
-    Assert.That(invite.user!.id, Is.EqualTo(_invitee.Account.userInfo.id));
-    Assert.That(invite.token, Is.Not.Null);
+    res.id.Should().Be(_project.id);
+    res.invitedTeam.Should().ContainSingle();
+    invite.user!.id.Should().Be(_invitee.Account.userInfo.id);
+    invite.token.Should().NotBeNull();
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectInviteCreate_ByUserId()
   {
     ProjectInviteCreateInput input = new(null, null, null, _invitee.Account.userInfo.id);
     var res = await _inviter.ProjectInvite.Create(_project.id, input);
 
-    Assert.That(res, Has.Property(nameof(_project.id)).EqualTo(_project.id));
-    Assert.That(res.invitedTeam, Has.Count.EqualTo(1));
-    Assert.That(res.invitedTeam[0].user!.id, Is.EqualTo(_invitee.Account.userInfo.id));
+    res.id.Should().Be(_project.id);
+    res.invitedTeam.Should().ContainSingle();
+    res.invitedTeam[0].user!.id.Should().Be(_invitee.Account.userInfo.id);
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectInviteGet()
   {
-    var collaborator = await _invitee.ProjectInvite.Get(_project.id, _createdInvite.token);
+    var collaborator = await _invitee.ProjectInvite.Get(_project.id, _createdInvite.token).NotNull();
 
-    Assert.That(
-      collaborator,
-      Has.Property(nameof(PendingStreamCollaborator.inviteId)).EqualTo(_createdInvite.inviteId)
-    );
-    Assert.That(collaborator!.user!.id, Is.EqualTo(_createdInvite.user!.id));
+    collaborator.inviteId.Should().Be(_createdInvite.inviteId);
+    collaborator.user!.id.Should().Be(_createdInvite.user!.id);
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectInviteGet_NonExisting()
   {
     var collaborator = await _invitee.ProjectInvite.Get(_project.id, "this is not a real token");
-
-    Assert.That(collaborator, Is.Null);
+    collaborator.Should().BeNull();
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectInviteUse_MemberAdded()
   {
     ProjectInviteUseInput input = new(true, _createdInvite.projectId, _createdInvite.token.NotNull());
     await _invitee.ProjectInvite.Use(input);
 
     var project = await _inviter.Project.GetWithTeam(_project.id);
-    var teamMembers = project.team.Select(c => c.user.id);
+    var teamMembers = project.team.Select(c => c.user.id).ToArray();
     var expectedTeamMembers = new[] { _inviter.Account.userInfo.id, _invitee.Account.userInfo.id };
-    Assert.That(teamMembers, Is.EquivalentTo(expectedTeamMembers));
+
+    teamMembers.Should().BeEquivalentTo(expectedTeamMembers);
   }
 
-  [Test]
+  [Fact]
   public async Task ProjectInviteCancel_MemberNotAdded()
   {
     var res = await _inviter.ProjectInvite.Cancel(_createdInvite.projectId, _createdInvite.inviteId);
-
-    Assert.That(res.invitedTeam, Is.Empty);
+    res.invitedTeam.Should().BeEmpty();
   }
 
-  [Test]
-  [TestCase(StreamRoles.STREAM_OWNER)]
-  [TestCase(StreamRoles.STREAM_CONTRIBUTOR)]
-  [TestCase(StreamRoles.STREAM_REVIEWER)]
-  [TestCase(StreamRoles.REVOKE)]
+  [Theory]
+  [InlineData(StreamRoles.STREAM_OWNER)]
+  [InlineData(StreamRoles.STREAM_CONTRIBUTOR)]
+  [InlineData(StreamRoles.STREAM_REVIEWER)]
+  [InlineData(StreamRoles.REVOKE)]
   public async Task ProjectUpdateRole(string? newRole)
   {
     await ProjectInviteUse_MemberAdded();
-    ProjectUpdateRoleInput input = new(_invitee.Account.userInfo.id, _project.id, newRole);
-    _ = await _inviter.Project.UpdateRole(input);
 
-    Project finalProject = await _invitee.Project.Get(_project.id);
-    Assert.That(finalProject.role, Is.EqualTo(newRole));
+    ProjectUpdateRoleInput input = new(_invitee.Account.userInfo.id, _project.id, newRole);
+    await _inviter.Project.UpdateRole(input);
+
+    var finalProject = await _invitee.Project.Get(_project.id);
+    finalProject.role.Should().Be(newRole);
   }
 }

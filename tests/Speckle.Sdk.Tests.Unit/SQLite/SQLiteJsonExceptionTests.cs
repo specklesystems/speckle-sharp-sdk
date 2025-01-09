@@ -1,13 +1,12 @@
 ﻿using Microsoft.Data.Sqlite;
-using NUnit.Framework;
 using Speckle.Sdk.SQLite;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.SQLite;
 
-[TestFixture]
 public class SqLiteJsonCacheExceptionTests
 {
-  [Test]
+  [Fact]
   public void ExpectedExceptionFires_Void()
   {
     using var pool = new CacheDbCommandPool("DataSource=:memory:", 1);
@@ -16,7 +15,7 @@ public class SqLiteJsonCacheExceptionTests
     );
   }
 
-  [Test]
+  [Fact]
   public void ExpectedExceptionFires_Return()
   {
     using var pool = new CacheDbCommandPool("DataSource=:memory:", 1);
