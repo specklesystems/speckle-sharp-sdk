@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Microsoft.Data.Sqlite;
 
 namespace Speckle.Sdk.SQLite;
@@ -47,6 +47,10 @@ public sealed class CacheDbCommandPool : IDisposable
     {
       return handler(db);
     }
+    catch (SqliteException se)
+    {
+      throw SqLiteJsonCacheException.Create(se);
+    }
     finally
     {
       _connections.Add(db);
@@ -68,6 +72,10 @@ public sealed class CacheDbCommandPool : IDisposable
       {
         command.Connection = conn;
         return handler(command);
+      }
+      catch (SqliteException se)
+      {
+        throw SqLiteJsonCacheException.Create(se);
       }
       finally
       {
