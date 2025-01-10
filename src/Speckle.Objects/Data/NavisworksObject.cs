@@ -6,15 +6,8 @@ namespace Speckle.Objects.Data;
 /// Represents a "first selectable ancestor" Navisworks.ModelItem object in Navisworks
 /// </summary>
 [SpeckleType("Objects.Data.NavisworksObject")]
-public class NavisworksObject : Base, INavisworksObject
+public class NavisworksObject : DataObject, INavisworksObject
 {
-  public required string name { get; set; }
-
-  [DetachProperty]
-  public required List<Base> displayValue { get; set; }
-
-  public required Dictionary<string, object?> properties { get; set; }
-
   public required string units { get; set; }
 
   IReadOnlyList<Base> IDisplayValue<IReadOnlyList<Base>>.displayValue => displayValue;

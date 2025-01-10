@@ -5,9 +5,9 @@ using System.Text;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
@@ -42,7 +42,7 @@ public class ServerObjectManager : IServerObjectManager
   }
 
   public async IAsyncEnumerable<(string, string)> DownloadObjects(
-    IReadOnlyList<string> objectIds,
+    IReadOnlyCollection<string> objectIds,
     IProgress<ProgressArgs>? progress,
     [EnumeratorCancellation] CancellationToken cancellationToken
   )
@@ -139,7 +139,7 @@ public class ServerObjectManager : IServerObjectManager
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(
-    IReadOnlyList<string> objectIds,
+    IReadOnlyCollection<string> objectIds,
     CancellationToken cancellationToken
   )
   {

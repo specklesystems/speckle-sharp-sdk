@@ -1,19 +1,19 @@
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
-using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
-[TestFixture]
-public class CredentialInfrastructure
+public class CredentialInfrastructure : IDisposable
 {
-  private IAccountManager _accountManager;
+  private readonly IAccountManager _accountManager;
+  private static readonly Account s_testAccount1;
+  private static readonly Account s_testAccount2;
+  private static readonly Account s_testAccount3;
 
-  [OneTimeSetUp]
-  public static void SetUp()
+  static CredentialInfrastructure()
   {
     s_testAccount1 = new Account
     {
@@ -42,76 +42,69 @@ public class CredentialInfrastructure
         name = "Test Account 3",
       },
     };
+  }
 
+  public CredentialInfrastructure()
+  {
     Fixtures.UpdateOrSaveAccount(s_testAccount1);
     Fixtures.UpdateOrSaveAccount(s_testAccount2);
     Fixtures.SaveLocalAccount(s_testAccount3);
-  }
 
-  [SetUp]
-  public void Setup2()
-  {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _accountManager = serviceProvider.GetRequiredService<IAccountManager>();
   }
 
-  [OneTimeTearDown]
-  public static void TearDown()
+  public void Dispose()
   {
+    _accountManager.Dispose();
     Fixtures.DeleteLocalAccount(s_testAccount1.id);
     Fixtures.DeleteLocalAccount(s_testAccount2.id);
+    Fixtures.DeleteLocalAccount(s_testAccount3.id);
     Fixtures.DeleteLocalAccountFile();
   }
 
-  private static Account s_testAccount1,
-    s_testAccount2,
-    s_testAccount3;
-
-  [Test]
+  [Fact]
   public void GetAllAccounts()
   {
     var accs = _accountManager.GetAccounts().ToList();
-    Assert.That(accs, Has.Count.GreaterThanOrEqualTo(3)); // Tests are adding three accounts, you might have extra accounts on your machine when testing :D
+    accs.Count.Should().BeGreaterThanOrEqualTo(3); // Tests are adding three accounts, there might be extra accounts locally
   }
 
-  [Test]
+  [Fact]
   public void GetAccount_ById()
   {
     var result = _accountManager.GetAccount(s_testAccount1.id);
 
-    Assert.That(result, Is.EqualTo(s_testAccount1));
+    result.Should().Be(s_testAccount1); // Uses `Shouldly` for a clean assertion
   }
 
-  [Test]
-  public void GetAccount_ById_ThrowsWhenNotFound()
-  {
-    Assert.Throws<SpeckleAccountManagerException>(() => _accountManager.GetAccount("Non_existent_id"));
-  }
+  [Fact]
+  public void GetAccount_ById_ThrowsWhenNotFound() =>
+    FluentActions
+      .Invoking(() => _accountManager.GetAccount("Non_existent_id"))
+      .Should()
+      .Throw<SpeckleAccountManagerException>();
 
-  public static IEnumerable<Account> TestCases()
-  {
-    SetUp();
-    return new[] { s_testAccount1, s_testAccount2, s_testAccount3 };
-  }
+  public static TheoryData<Account> TestCases() => new() { s_testAccount1, s_testAccount2, s_testAccount3 };
 
-  [Test]
-  [TestCaseSource(nameof(TestCases))]
+  [Theory]
+  [MemberData(nameof(TestCases))]
   public void GetAccountsForServer(Account target)
   {
     var accs = _accountManager.GetAccounts(target.serverInfo.url).ToList();
 
-    Assert.That(accs, Has.Count.EqualTo(1));
+    accs.Count.Should().Be(1);
 
     var acc = accs[0];
 
-    Assert.That(acc, Is.Not.SameAs(target), "We expect new objects (no reference equality)");
-    Assert.That(acc.serverInfo.company, Is.EqualTo(target.serverInfo.company));
-    Assert.That(acc.serverInfo.url, Is.EqualTo(target.serverInfo.url));
-    Assert.That(acc.refreshToken, Is.EqualTo(target.refreshToken));
-    Assert.That(acc.token, Is.EqualTo(target.token));
+    acc.Should().NotBeSameAs(target); // We expect new objects (no reference equality)
+    acc.serverInfo.company.Should().Be(target.serverInfo.company);
+    acc.serverInfo.url.Should().Be(target.serverInfo.url);
+    acc.refreshToken.Should().Be(target.refreshToken);
+    acc.token.Should().Be(target.token);
   }
 
-  [Test]
+  [Fact]
   public void EnsureLocalIdentifiers_AreUniqueAcrossServers()
   {
     // Accounts with the same user ID in different servers should always result in different local identifiers.
@@ -128,6 +121,6 @@ public class CredentialInfrastructure
       userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
 
-    Assert.That(acc1, Is.Not.EqualTo(acc2));
+    acc1.Should().NotBe(acc2);
   }
 }

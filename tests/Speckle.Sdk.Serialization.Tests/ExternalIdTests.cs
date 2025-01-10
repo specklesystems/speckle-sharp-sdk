@@ -1,5 +1,4 @@
-﻿using NUnit.Framework;
-using Shouldly;
+﻿using FluentAssertions;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Primitive;
@@ -9,35 +8,38 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Send;
+using Xunit;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
 public class ExternalIdTests
 {
-  [SetUp]
-  public void Setup()
+  public ExternalIdTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Polyline).Assembly);
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
+  [Theory]
+  [InlineData("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached(string lineId, string valueId)
   {
     var p = new Polyline() { units = "cm", value = [1, 2] };
-    var serializer = new ObjectSerializer(new BasePropertyGatherer(), true);
+    using var serializer = new ObjectSerializerFactory(new BasePropertyGatherer()).Create(
+      new Dictionary<Id, NodeInfo>(),
+      default
+    );
     var list = serializer.Serialize(p).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
+    list.ContainsKey(new Id(lineId)).Should().BeTrue();
     var json = list[new Id(lineId)];
     var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
+    jObject.ContainsKey("__closure").Should().BeTrue();
     var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    closures.ContainsKey(valueId).Should().BeTrue();
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
+  [Theory]
+  [InlineData("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached_Nested(string lineId, string valueId)
   {
     var curve = new Curve()
@@ -53,18 +55,21 @@ public class ExternalIdTests
       knots = [],
       weights = [],
     };
-    var serializer = new ObjectSerializer(new BasePropertyGatherer(), true);
+    using var serializer = new ObjectSerializerFactory(new BasePropertyGatherer()).Create(
+      new Dictionary<Id, NodeInfo>(),
+      default
+    );
     var list = serializer.Serialize(curve).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
+    list.ContainsKey(new Id(lineId)).Should().BeTrue();
     var json = list[new Id(lineId)];
     var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
+    jObject.ContainsKey("__closure").Should().BeTrue();
     var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    closures.ContainsKey(valueId).Should().BeTrue();
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
+  [Theory]
+  [InlineData("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached_Nested_More(string lineId, string valueId)
   {
     var curve = new Curve()
@@ -81,18 +86,21 @@ public class ExternalIdTests
       weights = [],
     };
     var polycurve = new Polycurve() { segments = [curve], units = "cm" };
-    var serializer = new ObjectSerializer(new BasePropertyGatherer(), true);
+    using var serializer = new ObjectSerializerFactory(new BasePropertyGatherer()).Create(
+      new Dictionary<Id, NodeInfo>(),
+      default
+    );
     var list = serializer.Serialize(polycurve).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
+    list.ContainsKey(new Id(lineId)).Should().BeTrue();
     var json = list[new Id(lineId)];
     var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
+    jObject.ContainsKey("__closure").Should().BeTrue();
     var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    closures.ContainsKey(valueId).Should().BeTrue();
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
+  [Theory]
+  [InlineData("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
   public void ExternalIdTest_Detached_Nested_More_Too(string lineId, string valueId)
   {
     var curve = new Curve()
@@ -111,13 +119,16 @@ public class ExternalIdTests
     var polycurve = new Polycurve() { segments = [curve], units = "cm" };
     var @base = new Base();
     @base.SetDetachedProp("profile", polycurve);
-    var serializer = new ObjectSerializer(new BasePropertyGatherer(), true);
+    using var serializer = new ObjectSerializerFactory(new BasePropertyGatherer()).Create(
+      new Dictionary<Id, NodeInfo>(),
+      default
+    );
     var list = serializer.Serialize(@base).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
+    list.ContainsKey(new Id(lineId)).Should().BeTrue();
     var json = list[new Id(lineId)];
     var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
+    jObject.ContainsKey("__closure").Should().BeTrue();
     var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    closures.ContainsKey(valueId).Should().BeTrue();
   }
 }

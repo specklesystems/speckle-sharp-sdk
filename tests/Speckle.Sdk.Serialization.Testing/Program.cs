@@ -3,9 +3,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
@@ -43,12 +41,11 @@ var token = serviceProvider.GetRequiredService<IAccountManager>().GetDefaultAcco
 var progress = new Progress(true);
 
 var factory = new SerializeProcessFactory(
-  serviceProvider.GetRequiredService<ISpeckleHttp>(),
-  serviceProvider.GetRequiredService<ISdkActivityFactory>(),
   new BaseChildFinder(new BasePropertyGatherer()),
   new ObjectSerializerFactory(new BasePropertyGatherer()),
   new ObjectDeserializerFactory(),
-  serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>()
+  serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>(),
+  serviceProvider.GetRequiredService<IServerObjectManagerFactory>()
 );
 var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, new(skipCacheReceive));
 var @base = await process.Deserialize(rootId, default).ConfigureAwait(false);
@@ -56,12 +53,12 @@ Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-var process2 = factory.CreateSerializeProcess(
+using var process2 = factory.CreateSerializeProcess(
   new Uri(url),
   streamId,
   token,
   progress,
-  new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true)
+  new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true, true)
 );
 await process2.Serialize(@base, default).ConfigureAwait(false);
 Console.WriteLine("Detach");

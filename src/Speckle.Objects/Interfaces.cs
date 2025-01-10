@@ -118,7 +118,7 @@ public interface IProperties : ISpeckleObject
   Dictionary<string, object?> properties { get; }
 }
 
-public interface IDataObject : ISpeckleObject, IProperties, IDisplayValue<IReadOnlyList<Base>>
+public interface IDataObject : IProperties, IDisplayValue<IReadOnlyList<Base>>
 {
   /// <summary>
   /// The name of the object, primarily used to decorate the object for consumption in frontend and other apps

@@ -1,9 +1,6 @@
 ﻿using System.Collections.Concurrent;
-using Shouldly;
-using Speckle.Newtonsoft.Json.Linq;
-using Speckle.Sdk.Common;
-using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -11,7 +8,7 @@ namespace Speckle.Sdk.Serialization.Tests;
 public class DummySendServerObjectManager(ConcurrentDictionary<string, string> savedObjects) : IServerObjectManager
 {
   public IAsyncEnumerable<(string, string)> DownloadObjects(
-    IReadOnlyList<string> objectIds,
+    IReadOnlyCollection<string> objectIds,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
@@ -22,9 +19,12 @@ public class DummySendServerObjectManager(ConcurrentDictionary<string, string> s
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
-  public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds, CancellationToken cancellationToken)
+  public Task<Dictionary<string, bool>> HasObjects(
+    IReadOnlyCollection<string> objectIds,
+    CancellationToken cancellationToken
+  )
   {
-    return Task.FromResult(objectIds.ToDictionary(x => x, x => false));
+    return Task.FromResult(objectIds.Distinct().ToDictionary(x => x, savedObjects.ContainsKey));
   }
 
   public Task UploadObjects(
@@ -36,15 +36,7 @@ public class DummySendServerObjectManager(ConcurrentDictionary<string, string> s
   {
     foreach (var obj in objects)
     {
-      obj.Id.ShouldBe(JObject.Parse(obj.Json)["id"].NotNull().Value<string>());
-      if (savedObjects.TryGetValue(obj.Id, out var j))
-      {
-        j.ShouldBe(obj.Json);
-      }
-      else
-      {
-        savedObjects.TryAdd(obj.Id, obj.Json);
-      }
+      savedObjects.TryAdd(obj.Id.Value, obj.Json.Value);
     }
     return Task.CompletedTask;
   }

@@ -6,170 +6,232 @@ using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
+using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public record SerializeProcessOptions(bool SkipCacheRead, bool SkipCacheWrite, bool SkipServer);
+public record SerializeProcessOptions(
+  bool SkipCacheRead = false,
+  bool SkipCacheWrite = false,
+  bool SkipServer = false,
+  bool SkipFindTotalObjects = false
+);
 
 public readonly record struct SerializeProcessResults(
   string RootId,
   IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
 );
 
+public partial interface ISerializeProcess : IDisposable;
+
 [GenerateAutoInterface]
-public class SerializeProcess(
+public sealed class SerializeProcess(
   IProgress<ProgressArgs>? progress,
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   IBaseChildFinder baseChildFinder,
   IObjectSerializerFactory objectSerializerFactory,
   SerializeProcessOptions? options = null
-) : ChannelSaver, ISerializeProcess
+) : ChannelSaver<BaseItem>, ISerializeProcess
 {
-  private readonly SerializeProcessOptions _options = options ?? new(false, false, false);
-  private readonly ConcurrentDictionary<Id, Json> _jsonCache = new();
-  private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
+  private readonly PriorityScheduler _highest = new(ThreadPriority.Highest, 2);
+  private readonly PriorityScheduler _belowNormal = new(ThreadPriority.BelowNormal, Environment.ProcessorCount * 2);
 
-  private long _totalFound;
-  private long _totalToUpload;
+  private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
+
+  private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
+  private readonly Pool<List<(Id, Json, Closures)>> _pool = Pools.CreateListPool<(Id, Json, Closures)>();
+  private readonly Pool<Dictionary<Id, NodeInfo>> _currentClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
+  private readonly Pool<ConcurrentDictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateConcurrentDictionaryPool<
+    Id,
+    NodeInfo
+  >();
+
+  private long _objectCount;
+  private long _objectsFound;
+
+  private long _objectsSerialized;
+
   private long _uploaded;
   private long _cached;
-  private long _serialized;
+
+  [AutoInterfaceIgnore]
+  public void Dispose()
+  {
+    _highest.Dispose();
+    _belowNormal.Dispose();
+    sqLiteJsonCacheManager.Dispose();
+  }
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
     var channelTask = Start(cancellationToken);
+    var findTotalObjectsTask = Task.CompletedTask;
+    if (!_options.SkipFindTotalObjects)
+    {
+      findTotalObjectsTask = Task.Factory.StartNew(
+        () => TraverseTotal(root),
+        default,
+        TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
+        _highest
+      );
+    }
+
     await Traverse(root, true, cancellationToken).ConfigureAwait(false);
     await channelTask.ConfigureAwait(false);
+    await findTotalObjectsTask.ConfigureAwait(false);
     return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
-  private async Task Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
+  private void TraverseTotal(Base obj)
   {
-    var tasks = new List<Task>();
     foreach (var child in baseChildFinder.GetChildren(obj))
     {
-      Interlocked.Increment(ref _totalFound);
-      progress?.Report(new(ProgressEvent.FindingChildren, _totalFound, null));
+      _objectsFound++;
+      progress?.Report(new(ProgressEvent.FindingChildren, _objectsFound, null));
+      TraverseTotal(child);
+    }
+  }
+
+  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
+  {
+    var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
+    foreach (var child in baseChildFinder.GetChildren(obj))
+    {
       // tmp is necessary because of the way closures close over loop variables
       var tmp = child;
       var t = Task
         .Factory.StartNew(
           () => Traverse(tmp, false, cancellationToken),
           cancellationToken,
-          TaskCreationOptions.AttachedToParent,
-          TaskScheduler.Default
+          TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
+          _belowNormal
         )
         .Unwrap();
       tasks.Add(t);
     }
 
+    Dictionary<Id, NodeInfo>[] taskClosures = [];
     if (tasks.Count > 0)
     {
-      await Task.WhenAll(tasks).ConfigureAwait(false);
+      taskClosures = await Task.WhenAll(tasks).ConfigureAwait(true);
+    }
+    var childClosures = _childClosurePool.Get();
+    foreach (var childClosure in taskClosures)
+    {
+      foreach (var kvp in childClosure)
+      {
+        childClosures[kvp.Key] = kvp.Value;
+      }
+      _currentClosurePool.Return(childClosure);
     }
 
-    var items = Serialise(obj, cancellationToken);
+    var items = Serialise(obj, childClosures, cancellationToken);
+
+    var currentClosures = _currentClosurePool.Get();
+    Interlocked.Increment(ref _objectCount);
+    progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound)));
     foreach (var item in items)
     {
-      Interlocked.Increment(ref _serialized);
-      progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _serialized, _totalFound));
       if (item.NeedsStorage)
       {
-        Interlocked.Increment(ref _totalToUpload);
-        await Save(item, cancellationToken).ConfigureAwait(false);
+        Interlocked.Increment(ref _objectsSerialized);
+        await Save(item, cancellationToken).ConfigureAwait(true);
+      }
+
+      if (!currentClosures.ContainsKey(item.Id))
+      {
+        currentClosures.Add(item.Id, new NodeInfo(item.Json, item.Closures));
       }
     }
+    _childClosurePool.Return(childClosures);
 
     if (isEnd)
     {
-      await Done().ConfigureAwait(false);
+      await Done().ConfigureAwait(true);
     }
+
+    return currentClosures;
   }
 
   //leave this sync
-  private IEnumerable<BaseItem> Serialise(Base obj, CancellationToken cancellationToken)
+  private IEnumerable<BaseItem> Serialise(
+    Base obj,
+    IReadOnlyDictionary<Id, NodeInfo> childInfo,
+    CancellationToken cancellationToken
+  )
   {
-    Id? id = obj.id != null ? new Id(obj.id) : null;
-    if (id != null && _jsonCache.ContainsKey(id.Value))
-    {
-      yield break;
-    }
-
     if (!_options.SkipCacheRead && obj.id != null)
     {
       var cachedJson = sqLiteJsonCacheManager.GetObject(obj.id);
       if (cachedJson != null)
       {
-        yield return new BaseItem(obj.id.NotNull(), cachedJson, false);
+        yield return new BaseItem(new(obj.id.NotNull()), new(cachedJson), false, null);
         yield break;
       }
     }
-    if (id is null || !_jsonCache.TryGetValue(id.Value, out var json))
+
+    using var serializer2 = objectSerializerFactory.Create(childInfo, cancellationToken);
+    var items = _pool.Get();
+    try
     {
-      var serializer2 = objectSerializerFactory.Create(cancellationToken);
-      var items = serializer2.Serialize(obj).ToList();
+      items.AddRange(serializer2.Serialize(obj));
       foreach (var kvp in serializer2.ObjectReferences)
       {
         _objectReferences.TryAdd(kvp.Key, kvp.Value);
       }
 
-      var newId = new Id(obj.id.NotNull());
-      var (_, j) = items.First();
-      json = j;
-      _jsonCache.TryAdd(newId, j);
-      yield return CheckCache(newId, j);
-      if (id is not null && id != newId)
+      var (id, json, closures) = items.First();
+      yield return CheckCache(id, json, closures);
+      foreach (var (cid, cJson, cClosures) in items.Skip(1))
       {
-        //in case the ids changes which is due to id hash algorithm changing
-        _jsonCache.TryAdd(id.Value, json);
-      }
-      foreach (var (cid, cJson) in items.Skip(1))
-      {
-        if (_jsonCache.TryAdd(cid, cJson))
-        {
-          Interlocked.Increment(ref _totalFound);
-          yield return CheckCache(cid, cJson);
-        }
+        yield return CheckCache(cid, cJson, cClosures);
       }
     }
-    else
+    finally
     {
-      yield return new BaseItem(id.NotNull().Value, json.Value, true);
+      _pool.Return(items);
     }
   }
 
-  private BaseItem CheckCache(Id id, Json json)
+  private BaseItem CheckCache(Id id, Json json, Dictionary<Id, int> closures)
   {
     if (!_options.SkipCacheRead)
     {
       var cachedJson = sqLiteJsonCacheManager.GetObject(id.Value);
       if (cachedJson != null)
       {
-        return new BaseItem(id.Value, cachedJson, false);
+        return new BaseItem(id, new(cachedJson), false, null);
       }
     }
-    return new BaseItem(id.Value, json.Value, true);
+    return new BaseItem(id, json, true, closures);
   }
 
-  public override async Task<List<BaseItem>> SendToServer(List<BaseItem> batch, CancellationToken cancellationToken)
+  public override async Task SendToServer(Batch<BaseItem> batch, CancellationToken cancellationToken)
   {
-    if (!_options.SkipServer && batch.Count != 0)
+    if (!_options.SkipServer && batch.Items.Count != 0)
     {
-      await serverObjectManager.UploadObjects(batch, true, progress, cancellationToken).ConfigureAwait(false);
-      Interlocked.Exchange(ref _uploaded, _uploaded + batch.Count);
-      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, _totalToUpload));
+      var objectBatch = batch.Items.Distinct().ToList();
+      var hasObjects = await serverObjectManager
+        .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), cancellationToken)
+        .ConfigureAwait(false);
+      objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
+      if (objectBatch.Count != 0)
+      {
+        await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
+        Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
+      }
+      progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
     }
-    return batch;
   }
 
   public override void SaveToCache(List<BaseItem> batch)
   {
     if (!_options.SkipCacheWrite && batch.Count != 0)
     {
-      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id, x.Json)));
+      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
-      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, null));
+      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
     }
   }
 }

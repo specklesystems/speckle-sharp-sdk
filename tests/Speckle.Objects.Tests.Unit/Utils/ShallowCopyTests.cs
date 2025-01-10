@@ -1,16 +1,23 @@
 using System.Collections;
-using NUnit.Framework;
+using FluentAssertions;
 using Speckle.Objects.Data;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Utils;
 
-[TestFixture]
 public class ShallowCopyTests
 {
-  [Test]
+  public ShallowCopyTests()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+  }
+
+  [Fact]
   public void CanShallowCopy_Wall()
   {
     const string UNITS = Units.Meters;
@@ -37,6 +44,6 @@ public class ShallowCopyTests
 
     var shallow = ds.ShallowCopy();
     var displayValue = (IList)shallow["displayValue"].NotNull();
-    Assert.That(ds.displayValue, Has.Count.EqualTo(displayValue.Count));
+    ds.displayValue.Count.Should().Be(displayValue.Count);
   }
 }

@@ -1,18 +1,27 @@
+using System.Text;
 using Microsoft.Data.Sqlite;
 using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Dependencies;
 
 namespace Speckle.Sdk.SQLite;
 
+public partial interface ISqLiteJsonCacheManager : IDisposable;
+
 [GenerateAutoInterface]
-public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
+public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {
   private readonly string _connectionString;
+  private readonly CacheDbCommandPool _pool;
 
-  public SqLiteJsonCacheManager(string rootPath)
+  public SqLiteJsonCacheManager(string connectionString, int concurrency)
   {
-    _connectionString = $"Data Source={rootPath};";
+    _connectionString = connectionString;
     Initialize();
+    _pool = new CacheDbCommandPool(_connectionString, concurrency);
   }
+
+  [AutoInterfaceIgnore]
+  public void Dispose() => _pool.Dispose();
 
   private void Initialize()
   {
@@ -57,87 +66,107 @@ public class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
     using SqliteCommand cmd4 = new("PRAGMA page_size = 32768;", c);
     cmd4.ExecuteNonQuery();
+    c.Close();
   }
 
-  public IEnumerable<string> GetAllObjects()
+  public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() =>
+    _pool.Use(
+      CacheOperation.GetAll,
+      command =>
+      {
+        var list = new HashSet<(string, string)>();
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+          list.Add((reader.GetString(0), reader.GetString(1)));
+        }
+        return list;
+      }
+    );
+
+  public void DeleteObject(string id) =>
+    _pool.Use(
+      CacheOperation.Delete,
+      command =>
+      {
+        command.Parameters.AddWithValue("@hash", id);
+        command.ExecuteNonQuery();
+      }
+    );
+
+  public string? GetObject(string id) =>
+    _pool.Use(
+      CacheOperation.Get,
+      command =>
+      {
+        command.Parameters.AddWithValue("@hash", id);
+        return (string?)command.ExecuteScalar();
+      }
+    );
+
+  //This does an insert or ignores if already exists
+  public void SaveObject(string id, string json) =>
+    _pool.Use(
+      CacheOperation.InsertOrIgnore,
+      command =>
+      {
+        command.Parameters.AddWithValue("@hash", id);
+        command.Parameters.AddWithValue("@content", json);
+        command.ExecuteNonQuery();
+      }
+    );
+
+  //This does an insert or replaces if already exists
+  public void UpdateObject(string id, string json) =>
+    _pool.Use(
+      CacheOperation.InsertOrReplace,
+      command =>
+      {
+        command.Parameters.AddWithValue("@hash", id);
+        command.Parameters.AddWithValue("@content", json);
+        command.ExecuteNonQuery();
+      }
+    );
+
+  public void SaveObjects(IEnumerable<(string id, string json)> items) =>
+    _pool.Use(
+      CacheOperation.BulkInsertOrIgnore,
+      cmd =>
+      {
+        CreateBulkInsert(cmd, items);
+        return cmd.ExecuteNonQuery();
+      }
+    );
+
+  private void CreateBulkInsert(SqliteCommand cmd, IEnumerable<(string id, string json)> items)
   {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    using var command = new SqliteCommand("SELECT * FROM objects", c);
-
-    using var reader = command.ExecuteReader();
-    while (reader.Read())
-    {
-      yield return reader.GetString(1);
-    }
-  }
-
-  public void DeleteObject(string id)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    using var command = new SqliteCommand("DELETE FROM objects WHERE hash = @hash", c);
-    command.Parameters.AddWithValue("@hash", id);
-    command.ExecuteNonQuery();
-  }
-
-  public string? GetObject(string id)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    using var command = new SqliteCommand("SELECT * FROM objects WHERE hash = @hash LIMIT 1 ", c);
-    command.Parameters.AddWithValue("@hash", id);
-    using var reader = command.ExecuteReader();
-    if (reader.Read())
-    {
-      return reader.GetString(1);
-    }
-
-    return null; // pass on the duty of null checks to consumers
-  }
-
-  public void SaveObject(string id, string json)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
-
-    using var command = new SqliteCommand(COMMAND_TEXT, c);
-    command.Parameters.AddWithValue("@hash", id);
-    command.Parameters.AddWithValue("@content", json);
-    command.ExecuteNonQuery();
-  }
-
-  public void SaveObjects(IEnumerable<(string id, string json)> items)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    using var t = c.BeginTransaction();
-    const string COMMAND_TEXT = "INSERT OR IGNORE INTO objects(hash, content) VALUES(@hash, @content)";
-
-    using var command = new SqliteCommand(COMMAND_TEXT, c);
-    command.Transaction = t;
-    var idParam = command.Parameters.Add("@hash", SqliteType.Text);
-    var jsonParam = command.Parameters.Add("@content", SqliteType.Text);
+    StringBuilder sb = Pools.StringBuilders.Get();
+    sb.AppendLine(CacheDbCommands.Commands[(int)CacheOperation.BulkInsertOrIgnore]);
+    int i = 0;
     foreach (var (id, json) in items)
     {
-      idParam.Value = id;
-      jsonParam.Value = json;
-      command.ExecuteNonQuery();
+      sb.Append($"(@key{i}, @value{i}),");
+      cmd.Parameters.AddWithValue($"@key{i}", id);
+      cmd.Parameters.AddWithValue($"@value{i}", json);
+      i++;
     }
-    t.Commit();
+    sb.Remove(sb.Length - 1, 1);
+    sb.Append(';');
+#pragma warning disable CA2100
+    cmd.CommandText = sb.ToString();
+#pragma warning restore CA2100
+    Pools.StringBuilders.Return(sb);
   }
 
-  public bool HasObject(string objectId)
-  {
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    const string COMMAND_TEXT = "SELECT 1 FROM objects WHERE hash = @hash LIMIT 1 ";
-    using var command = new SqliteCommand(COMMAND_TEXT, c);
-    command.Parameters.AddWithValue("@hash", objectId);
-
-    using var reader = command.ExecuteReader();
-    bool rowFound = reader.Read();
-    return rowFound;
-  }
+  public bool HasObject(string objectId) =>
+    _pool.Use(
+      CacheOperation.Has,
+      command =>
+      {
+        command.Parameters.AddWithValue("@hash", objectId);
+        using var reader = command.ExecuteReader();
+        bool rowFound = reader.Read();
+        return rowFound;
+      }
+    );
 }
