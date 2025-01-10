@@ -10,12 +10,12 @@ public class GisPolylineFeature : Base, IGisFeature, IDisplayValue<List<Polyline
   public required Base attributes { get; set; }
 
   [JsonIgnore]
-  public required List<Polyline> geometry
-  {
-    get => displayValue;
-    set => displayValue = value;
-  }
+  public required List<Polyline> geometry { get; set; }
 
   [DetachProperty]
-  public List<Polyline> displayValue { get; set; }
+  public List<Polyline> displayValue
+  {
+    get => geometry;
+    set => geometry = value;
+  }
 }

@@ -12,15 +12,10 @@ namespace Speckle.Objects.Geometry;
 public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
 {
   /// <summary>
-  /// Constructs an empty <see cref="Pointcloud"/>
-  /// </summary>
-  public Pointcloud() { }
-
-  /// <summary>
   /// Gets or sets the list of points of this <see cref="Pointcloud"/>, stored as a flat list of coordinates [x1,y1,z1,x2,y2,...]
   /// </summary>
   [DetachProperty, Chunkable(31250)]
-  public required List<double> points { get; set; } = new();
+  public required List<double> points { get; set; }
 
   /// <summary>
   /// Gets or sets the list of colors of this <see cref="Pointcloud"/>'s points., stored as ARGB <see cref="int"/>s.
@@ -38,7 +33,7 @@ public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
   /// The unit's this <see cref="Pointcloud"/> is in.
   /// This should be one of <see cref="Units"/>
   /// </summary>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <inheritdoc/>
   public Box? bbox { get; set; }
