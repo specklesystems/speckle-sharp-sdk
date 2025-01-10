@@ -108,14 +108,6 @@ public interface IDisplayValue<out T> : ISpeckleObject
 
 #endregion
 
-#region GIS
-public interface IGisFeature : ISpeckleObject
-{
-  Base attributes { get; set; }
-}
-
-#endregion
-
 #region Data objects
 
 /// <summary>
