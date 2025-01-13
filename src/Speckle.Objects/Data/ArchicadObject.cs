@@ -12,11 +12,8 @@ public class ArchicadObject : DataObject, IArchicadObject
 
   public required string level { get; set; }
 
-  /// <summary>
-  /// The full classification tree path of an Archicad object
-  /// </summary>
-  /// <remarks>
-  /// The list order is from root to leaf of the classification tree
-  /// </remarks>
-  public required List<string> classification { get; set; }
+  [DetachProperty]
+  public List<ArchicadObject> elements { get; set; }
+
+  IReadOnlyList<IArchicadObject> IArchicadObject.elements => elements;
 }

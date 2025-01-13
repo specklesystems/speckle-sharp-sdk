@@ -173,7 +173,7 @@ public interface IArchicadObject : IDataObject
 
   string level { get; }
 
-  List<string> classification { get; }
+  IReadOnlyList<IArchicadObject> elements { get; }
 }
 
 public interface INavisworksObject : IDataObject { }
