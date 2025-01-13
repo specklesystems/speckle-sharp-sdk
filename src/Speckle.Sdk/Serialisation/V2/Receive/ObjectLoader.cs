@@ -21,6 +21,8 @@ public sealed class ObjectLoader(
   private int? _allChildrenCount;
   private long _checkCache;
   private long _cached;
+  private long _downloaded;
+  private long _totalToDownload;
   private DeserializeProcessOptions _options = new(false);
 
   [AutoInterfaceIgnore]
@@ -72,6 +74,7 @@ public sealed class ObjectLoader(
     progress?.Report(new(ProgressEvent.CacheCheck, _checkCache, _allChildrenCount));
     if (!_options.SkipCache && !sqLiteJsonCacheManager.HasObject(id))
     {
+      Interlocked.Increment(ref _totalToDownload);
       return id;
     }
 
@@ -86,6 +89,8 @@ public sealed class ObjectLoader(
       var (id, json) in serverObjectManager.DownloadObjects(ids.Select(x => x.NotNull()).ToList(), progress, default)
     )
     {
+      Interlocked.Increment(ref _downloaded);
+      progress?.Report(new(ProgressEvent.DownloadObjects, _downloaded, _totalToDownload));
       toCache.Add(new(new(id), new(json), true, null));
     }
 
