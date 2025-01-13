@@ -77,7 +77,8 @@ public sealed class SerializeProcess(
       );
     }
 
-    await Traverse(root, true, cancellationToken).ConfigureAwait(false);
+    await Traverse(root, cancellationToken).ConfigureAwait(false);
+    await Done().ConfigureAwait(true);
     await channelTask.ConfigureAwait(false);
     await findTotalObjectsTask.ConfigureAwait(false);
     return new(root.id.NotNull(), _objectReferences.Freeze());
@@ -93,7 +94,7 @@ public sealed class SerializeProcess(
     }
   }
 
-  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
+  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, CancellationToken cancellationToken)
   {
     var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
     foreach (var child in baseChildFinder.GetChildren(obj))
@@ -102,7 +103,7 @@ public sealed class SerializeProcess(
       var tmp = child;
       var t = Task
         .Factory.StartNew(
-          () => Traverse(tmp, false, cancellationToken),
+          () => Traverse(tmp, cancellationToken),
           cancellationToken,
           TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
           _belowNormal
@@ -145,12 +146,6 @@ public sealed class SerializeProcess(
       }
     }
     _childClosurePool.Return(childClosures);
-
-    if (isEnd)
-    {
-      await Done().ConfigureAwait(true);
-    }
-
     return currentClosures;
   }
 
