@@ -88,13 +88,13 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
   public Box? bbox { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Arc transformed)
+  public Arc TransformTo(Transform transform)
   {
-    startPoint.TransformTo(transform, out Point transformedStartPoint);
-    midPoint.TransformTo(transform, out Point transformedMidpoint);
-    endPoint.TransformTo(transform, out Point transformedEndPoint);
-    plane.TransformTo(transform, out Plane pln);
-    Arc arc = new()
+    var transformedStartPoint = startPoint.TransformTo(transform);
+    var transformedMidpoint = midPoint.TransformTo(transform);
+    var transformedEndPoint = endPoint.TransformTo(transform);
+    var pln = plane.TransformTo(transform);
+    Arc transformed = new()
     {
       startPoint = transformedStartPoint,
       endPoint = transformedEndPoint,
@@ -103,16 +103,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
       domain = domain,
       units = units,
     };
-    transformed = arc;
-    return true;
-  }
-
-  /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    var res = TransformTo(transform, out Arc arc);
-    transformed = arc;
-    return res;
+    return transformed;
   }
 
   /// <summary>

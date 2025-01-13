@@ -40,18 +40,15 @@ public class ControlPoint : Point, ITransformable<ControlPoint>
     }
   }
 
-  public bool TransformTo(Transform transform, out ControlPoint transformed)
+  public override Point TransformTo(Transform transform)
   {
-    TransformTo(transform, out Point transformedPoint);
-    transformed = new ControlPoint(
-      transformedPoint.x,
-      transformedPoint.y,
-      transformedPoint.z,
-      weight,
-      units,
-      applicationId
-    );
-    return true;
+    return ((ITransformable<ControlPoint>)this).TransformTo(transform);
+  }
+
+  ControlPoint ITransformable<ControlPoint>.TransformTo(Transform transform)
+  {
+    Point transformedPoint = base.TransformTo(transform);
+    return new ControlPoint(transformedPoint.x, transformedPoint.y, transformedPoint.z, weight, units, applicationId);
   }
 
   public override string ToString()

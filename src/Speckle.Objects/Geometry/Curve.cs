@@ -57,41 +57,34 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   public Box? bbox { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Curve transformed)
+  public Curve TransformTo(Transform transform)
   {
     // transform points
-    var transformedPoints = new List<Point>();
-    foreach (var point in GetPoints())
+    var originalPoints = GetPoints();
+    var transformedPoints = new List<double>(originalPoints.Count * 3);
+    foreach (var point in originalPoints)
     {
-      point.TransformTo(transform, out Point transformedPoint);
-      transformedPoints.Add(transformedPoint);
+      Point transformedPoint = point.TransformTo(transform);
+      transformedPoints.Add(transformedPoint.x);
+      transformedPoints.Add(transformedPoint.y);
+      transformedPoints.Add(transformedPoint.z);
     }
 
-    var result = displayValue.TransformTo(transform, out ITransformable polyline);
-    transformed = new Curve
+    var transformedPolyline = displayValue.TransformTo(transform);
+    return new Curve
     {
       degree = degree,
       periodic = periodic,
       rational = rational,
-      points = transformedPoints.SelectMany(o => o.ToList()).ToList(),
+      points = transformedPoints,
       weights = weights,
       knots = knots,
-      displayValue = (Polyline)polyline,
+      displayValue = transformedPolyline,
       closed = closed,
       units = units,
       applicationId = applicationId,
       domain = domain != null ? new Interval { start = domain.start, end = domain.end } : Interval.UnitInterval,
     };
-
-    return result;
-  }
-
-  /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    var res = TransformTo(transform, out Curve curve);
-    transformed = curve;
-    return res;
   }
 
   /// <returns><see cref="points"/> as list of <see cref="Point"/>s</returns>

@@ -44,7 +44,7 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
     vertices = GetPoints()
       .SelectMany(vertex =>
       {
-        vertex.TransformTo(transform, out Point transformedVertex);
+        var transformedVertex = vertex.TransformTo(transform);
         return transformedVertex.ToList();
       })
       .ToList();
@@ -53,36 +53,29 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
   }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Mesh transformed)
+  public Mesh TransformTo(Transform transform)
   {
     // transform vertices
-    var transformedVertices = new List<Point>();
-    foreach (var vertex in GetPoints())
+    var originalVertices = GetPoints();
+    var transformedVertices = new List<double>(originalVertices.Count * 3);
+    foreach (var vertex in originalVertices)
     {
-      vertex.TransformTo(transform, out Point transformedVertex);
-      transformedVertices.Add(transformedVertex);
+      Point transformedVertex = vertex.TransformTo(transform);
+      transformedVertices.Add(transformedVertex.x);
+      transformedVertices.Add(transformedVertex.y);
+      transformedVertices.Add(transformedVertex.z);
     }
 
-    transformed = new Mesh
+    return new Mesh
     {
-      vertices = transformedVertices.SelectMany(o => o.ToList()).ToList(),
+      vertices = transformedVertices,
       textureCoordinates = textureCoordinates,
       applicationId = applicationId ?? id,
       faces = faces,
       colors = colors,
       units = units,
+      ["renderMaterial"] = this["renderMaterial"],
     };
-    transformed["renderMaterial"] = this["renderMaterial"];
-
-    return true;
-  }
-
-  /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    var res = TransformTo(transform, out Mesh brep);
-    transformed = brep;
-    return res;
   }
 
   #region Convenience Methods

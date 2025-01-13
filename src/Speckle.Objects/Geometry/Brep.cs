@@ -1,5 +1,6 @@
 using System.Runtime.Serialization;
 using Speckle.Newtonsoft.Json;
+using Speckle.Objects.Exceptions;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
@@ -434,37 +435,38 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   public double volume { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Brep transformed)
+  public Brep TransformTo(Transform transform)
   {
     // transform display values
     var displayValues = new List<Mesh>(displayValue.Count);
     foreach (Mesh v in displayValue)
     {
-      v.TransformTo(transform, out Mesh mesh);
-      displayValues.Add(mesh);
+      var transformedMesh = v.TransformTo(transform);
+      displayValues.Add(transformedMesh);
     }
 
     // transform surfaces
     var surfaces = new List<Surface>(Surfaces.Count);
     foreach (var srf in Surfaces)
     {
-      srf.TransformTo(transform, out Surface surface);
-      surfaces.Add(surface);
+      var transformedSurface = srf.TransformTo(transform);
+      surfaces.Add(transformedSurface);
     }
 
     // transform curve3d
-    var success3D = true;
     var transformedCurve3D = new List<ICurve>();
     foreach (var curve in Curve3D)
     {
-      if (curve is ITransformable c)
+      if (curve is ITransformable<ICurve> c)
       {
-        c.TransformTo(transform, out ITransformable tc);
-        transformedCurve3D.Add((ICurve)tc);
+        var tc = c.TransformTo(transform);
+        transformedCurve3D.Add(tc);
       }
       else
       {
-        success3D = false;
+        throw new TransformationException(
+          $"BREP could not be transformed because it contains {curve.GetType()} curves that are not transformable"
+        );
       }
     }
 
@@ -472,11 +474,11 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
     var transformedVertices = new List<Point>(Vertices.Count);
     foreach (var vertex in Vertices)
     {
-      vertex.TransformTo(transform, out Point transformedVertex);
+      Point transformedVertex = vertex.TransformTo(transform);
       transformedVertices.Add(transformedVertex);
     }
 
-    transformed = new Brep
+    var transformed = new Brep
     {
       units = units,
       displayValue = displayValues,
@@ -556,15 +558,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       );
     }
 
-    return success3D;
-  }
-
-  /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    var res = TransformTo(transform, out Brep brep);
-    transformed = brep;
-    return res;
+    return transformed;
   }
 
   [OnDeserialized]

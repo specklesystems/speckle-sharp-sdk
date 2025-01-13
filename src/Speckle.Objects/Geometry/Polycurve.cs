@@ -1,3 +1,4 @@
+using Speckle.Objects.Exceptions;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
@@ -9,7 +10,7 @@ namespace Speckle.Objects.Geometry;
 /// A curve that is comprised of multiple curves connected.
 /// </summary>
 [SpeckleType("Objects.Geometry.Polycurve")]
-public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
+public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable<Polycurve>
 {
   /// <summary>
   /// Gets or sets the list of segments that comprise this <see cref="Polycurve"/>
@@ -43,33 +44,29 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   public Box? bbox { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable polycurve)
+  public Polycurve TransformTo(Transform transform)
   {
-    // transform segments
-    var success = true;
     var transformed = new List<ICurve>();
-    foreach (var curve in segments)
+    foreach (var segment in segments)
     {
-      if (curve is ITransformable c)
+      if (segment is not ITransformable<ICurve> c)
       {
-        c.TransformTo(transform, out ITransformable tc);
-        transformed.Add((ICurve)tc);
+        throw new TransformationException(
+          $"Polycurve could not be transformed because it contains {segment.GetType()} segments that are not transformable"
+        );
       }
-      else
-      {
-        success = false;
-      }
+
+      var tc = c.TransformTo(transform);
+      transformed.Add(tc);
     }
 
-    polycurve = new Polycurve
+    return new Polycurve
     {
       segments = transformed,
       applicationId = applicationId,
       closed = closed,
       units = units,
     };
-
-    return success;
   }
 
   /// <summary>

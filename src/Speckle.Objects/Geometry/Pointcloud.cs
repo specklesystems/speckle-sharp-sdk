@@ -39,34 +39,27 @@ public class Pointcloud : Base, IHasBoundingBox, ITransformable<Pointcloud>
   public Box? bbox { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Pointcloud transformed)
+  public Pointcloud TransformTo(Transform transform)
   {
     // transform points
-    var transformedPoints = new List<Point>();
-    foreach (var point in GetPoints())
+    var originalPoints = GetPoints();
+    var transformedPoints = new List<double>(originalPoints.Count * 3);
+    foreach (var point in originalPoints)
     {
-      point.TransformTo(transform, out Point transformedPoint);
-      transformedPoints.Add(transformedPoint);
+      var transformedPoint = point.TransformTo(transform);
+      transformedPoints.Add(transformedPoint.x);
+      transformedPoints.Add(transformedPoint.y);
+      transformedPoints.Add(transformedPoint.z);
     }
 
-    transformed = new Pointcloud
+    return new Pointcloud
     {
       units = units,
-      points = transformedPoints.SelectMany(o => o.ToList()).ToList(),
+      points = transformedPoints,
       colors = colors,
       sizes = sizes,
       applicationId = applicationId,
     };
-
-    return true;
-  }
-
-  /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    var res = TransformTo(transform, out Pointcloud pc);
-    transformed = pc;
-    return res;
   }
 
   /// <returns><see cref="points"/> as list of <see cref="Point"/>s</returns>

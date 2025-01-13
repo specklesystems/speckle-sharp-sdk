@@ -103,19 +103,20 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
   public Box? bbox { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Surface transformed)
+  public Surface TransformTo(Transform transform)
   {
     var ptMatrix = GetControlPoints();
     foreach (var ctrlPts in ptMatrix)
     {
       for (int i = 0; i < ctrlPts.Count; i++)
       {
-        ctrlPts[i].TransformTo(transform, out var tPt);
+        ITransformable<ControlPoint> pt = ctrlPts[i];
+        var tPt = pt.TransformTo(transform);
         ctrlPts[i] = tPt;
       }
     }
 
-    transformed = new Surface(ptMatrix)
+    return new Surface(ptMatrix)
     {
       degreeU = degreeU,
       degreeV = degreeV,
@@ -130,16 +131,6 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
       knotsV = knotsV,
       units = units,
     };
-
-    return true;
-  }
-
-  /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    var res = TransformTo(transform, out Surface surface);
-    transformed = surface;
-    return res;
   }
 
   /// <summary>

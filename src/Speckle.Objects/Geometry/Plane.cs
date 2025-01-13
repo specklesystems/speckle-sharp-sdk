@@ -37,13 +37,13 @@ public class Plane : Base, ITransformable<Plane>
   public required string units { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Plane transformed)
+  public Plane TransformTo(Transform transform)
   {
-    origin.TransformTo(transform, out Point transformedOrigin);
-    normal.TransformTo(transform, out Vector transformedNormal);
-    xdir.TransformTo(transform, out Vector transformedXdir);
-    ydir.TransformTo(transform, out Vector transformedYdir);
-    transformed = new Plane
+    var transformedOrigin = origin.TransformTo(transform);
+    var transformedNormal = normal.TransformTo(transform);
+    var transformedXdir = xdir.TransformTo(transform);
+    var transformedYdir = ydir.TransformTo(transform);
+    return new Plane
     {
       origin = transformedOrigin,
       normal = transformedNormal,
@@ -52,16 +52,6 @@ public class Plane : Base, ITransformable<Plane>
       applicationId = applicationId,
       units = units,
     };
-
-    return true;
-  }
-
-  /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    var res = TransformTo(transform, out Plane plane);
-    transformed = plane;
-    return res;
   }
 
   /// <summary>

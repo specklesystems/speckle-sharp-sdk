@@ -47,11 +47,11 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
 
   public Box? bbox { get; set; }
 
-  public bool TransformTo(Transform transform, out Line transformed)
+  public Line TransformTo(Transform transform)
   {
-    start.TransformTo(transform, out Point transformedStart);
-    end.TransformTo(transform, out Point transformedEnd);
-    transformed = new Line
+    Point transformedStart = start.TransformTo(transform);
+    Point transformedEnd = end.TransformTo(transform);
+    return new Line
     {
       start = transformedStart,
       end = transformedEnd,
@@ -59,14 +59,6 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
       units = units,
       domain = new() { start = domain.start, end = domain.end },
     };
-    return true;
-  }
-
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    var res = TransformTo(transform, out Line line);
-    transformed = line;
-    return res;
   }
 
   public List<double> ToList()
