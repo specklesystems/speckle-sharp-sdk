@@ -1,21 +1,20 @@
-﻿using System.Collections.Concurrent;
-using System.Reflection;
+﻿using System.Reflection;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration;
 
-public class MemoryTransportTests
+public class MemoryTransportTests : IDisposable
 {
   private readonly MemoryTransport _memoryTransport = new(blobStorageEnabled: true);
   private IOperations _operations;
 
-  [SetUp]
-  public void Setup()
+  public MemoryTransportTests()
   {
     CleanData();
     TypeLoader.Reset();
@@ -24,8 +23,7 @@ public class MemoryTransportTests
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
-  [TearDown]
-  public void TearDown() => CleanData();
+  public void Dispose() => CleanData();
 
   private void CleanData()
   {
@@ -33,10 +31,11 @@ public class MemoryTransportTests
     {
       Directory.Delete(_memoryTransport.BlobStorageFolder, true);
     }
+
     Directory.CreateDirectory(_memoryTransport.BlobStorageFolder);
   }
 
-  [Test]
+  [Fact]
   public async Task SendAndReceiveObjectWithBlobs()
   {
     var myObject = Fixtures.GenerateSimpleObject();
@@ -53,20 +52,24 @@ public class MemoryTransportTests
       .GetFiles(_memoryTransport.BlobStorageFolder)
       .Select(fp => fp.Split(Path.DirectorySeparatorChar).Last())
       .ToList();
+
     var blobPaths = allFiles
       .Where(fp => fp.Length > Blob.LocalHashPrefixLength) // excludes things like .DS_store
       .ToList();
 
     // Check that there are three downloaded blobs!
-    Assert.That(blobPaths, Has.Count.EqualTo(3));
+    blobPaths.Count.Should().Be(3);
+
     var objectBlobs = receivedObject["blobs"] as IList<object>;
-    objectBlobs.ShouldNotBeNull();
-    var blobs = objectBlobs.Cast<Blob>().ToList();
+    objectBlobs.Should().NotBeNull();
+
+    var blobs = objectBlobs!.Cast<Blob>().ToList();
     // Check that we have three blobs
-    Assert.That(blobs, Has.Count.EqualTo(3));
+    blobs.Count.Should().Be(3);
+
     // Check that received blobs point to local path (where they were received)
-    Assert.That(blobs[0].filePath, Contains.Substring(_memoryTransport.BlobStorageFolder));
-    Assert.That(blobs[1].filePath, Contains.Substring(_memoryTransport.BlobStorageFolder));
-    Assert.That(blobs[2].filePath, Contains.Substring(_memoryTransport.BlobStorageFolder));
+    blobs[0].filePath.Should().Contain(_memoryTransport.BlobStorageFolder);
+    blobs[1].filePath.Should().Contain(_memoryTransport.BlobStorageFolder);
+    blobs[2].filePath.Should().Contain(_memoryTransport.BlobStorageFolder);
   }
 }

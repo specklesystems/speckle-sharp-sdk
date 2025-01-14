@@ -1,20 +1,18 @@
 using System.Diagnostics;
-using GraphQL;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api;
 
-[TestOf(typeof(Client))]
 public sealed class GraphQLClientTests : IDisposable
 {
-  private Client _client;
+  private readonly Client _client;
 
-  [OneTimeSetUp]
-  public void Setup()
+  public GraphQLClientTests()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _client = serviceProvider
@@ -28,17 +26,14 @@ public sealed class GraphQLClientTests : IDisposable
       );
   }
 
-  public void Dispose()
-  {
-    _client?.Dispose();
-  }
+  public void Dispose() => _client?.Dispose();
 
-  [Test]
-  public void TestExecuteWithResiliencePoliciesDoesntRetryTaskCancellation()
+  [Fact]
+  public async Task TestExecuteWithResiliencePoliciesDoesntRetryTaskCancellation()
   {
     var timer = new Stopwatch();
     timer.Start();
-    Assert.ThrowsAsync<TaskCanceledException>(async () =>
+    await Assert.ThrowsAsync<TaskCanceledException>(async () =>
     {
       var tokenSource = new CancellationTokenSource();
       tokenSource.Cancel();
@@ -55,14 +50,13 @@ public sealed class GraphQLClientTests : IDisposable
       );
     });
     timer.Stop();
-    var elapsed = timer.ElapsedMilliseconds;
+    timer.ElapsedMilliseconds.Should().BeLessThan(1000);
 
     // the default retry policy would retry 5 times with 1 second jitter backoff each
     // if the elapsed is less than a second, this was def not retried
-    Assert.That(elapsed, Is.LessThan(1000));
   }
 
-  [Test]
+  [Fact]
   public async Task TestExecuteWithResiliencePoliciesRetry()
   {
     var counter = 0;
@@ -82,8 +76,8 @@ public sealed class GraphQLClientTests : IDisposable
     });
     timer.Stop();
     // The baseline for wait is 1 seconds between the jittered retry
-    Assert.That(timer.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(5000));
-    Assert.That(counter, Is.EqualTo(maxRetryCount));
+    timer.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(5000);
+    counter.Should().Be(maxRetryCount);
   }
 
   public class FakeGqlResponseModel { }

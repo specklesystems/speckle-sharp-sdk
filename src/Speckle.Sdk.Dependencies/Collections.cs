@@ -9,3 +9,8 @@ public static class Collections
   public static IReadOnlyDictionary<TKey, TValue> Freeze<TKey, TValue>(this IDictionary<TKey, TValue> source)
     where TKey : notnull => source.ToFrozenDictionary();
 }
+
+public static class EnumerableExtensions
+{
+  public static IEnumerable<int> RangeFrom(int from, int to) => Enumerable.Range(from, to - from + 1);
+}

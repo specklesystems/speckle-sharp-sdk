@@ -13,6 +13,8 @@ public record DeserializeProcessOptions(
   bool SkipInvalidConverts = false
 );
 
+public partial interface IDeserializeProcess : IDisposable;
+
 [GenerateAutoInterface]
 public sealed class DeserializeProcess(
   IProgress<ProgressArgs>? progress,
@@ -29,6 +31,9 @@ public sealed class DeserializeProcess(
 
   public IReadOnlyDictionary<string, Base> BaseCache => _baseCache;
   public long Total { get; private set; }
+
+  [AutoInterfaceIgnore]
+  public void Dispose() => objectLoader.Dispose();
 
   public async Task<Base> Deserialize(string rootId, CancellationToken cancellationToken)
   {

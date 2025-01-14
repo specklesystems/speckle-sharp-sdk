@@ -54,9 +54,9 @@ public static class Fixtures
     var seed = Guid.NewGuid().ToString().ToLower();
     Dictionary<string, string> user = new()
     {
-      ["email"] = $"{seed.Substring(0, 7)}@example.com",
+      ["email"] = $"{seed[..7]}@example.com",
       ["password"] = "12ABC3456789DEF0GHO",
-      ["name"] = $"{seed.Substring(0, 5)} Name",
+      ["name"] = $"{seed[..5]} Name",
     };
 
     using var httpClient = new HttpClient(

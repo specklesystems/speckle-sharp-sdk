@@ -8,8 +8,8 @@ public abstract class ChannelLoader<T>
   private const int MAX_PARALLELISM_HTTP = 4;
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
   private static readonly int MAX_READ_CACHE_PARALLELISM = Environment.ProcessorCount;
-  private const int MAX_SAVE_CACHE_BATCH = 200;
-  private const int MAX_SAVE_CACHE_PARALLELISM = 1;
+  private const int MAX_SAVE_CACHE_BATCH = 500;
+  private const int MAX_SAVE_CACHE_PARALLELISM = 4;
 
   protected async Task GetAndCache(IEnumerable<string> allChildrenIds, CancellationToken cancellationToken = default) =>
     await allChildrenIds

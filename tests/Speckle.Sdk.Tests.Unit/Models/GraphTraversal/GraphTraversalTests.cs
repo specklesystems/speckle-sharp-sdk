@@ -1,17 +1,15 @@
 using System.Collections;
-using NUnit.Framework;
+using FluentAssertions;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.GraphTraversal;
-using Speckle.Sdk.Tests.Unit.Host;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Models.GraphTraversal;
 
-[TestFixture, TestOf(typeof(Sdk.Models.GraphTraversal.GraphTraversal))]
 public class GraphTraversalTests
 {
-  [SetUp]
-  public void Setup()
+  public GraphTraversalTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(TraversalMock).Assembly);
@@ -23,7 +21,7 @@ public class GraphTraversalTests
     return sut.Traverse(testCase);
   }
 
-  [Test]
+  [Fact]
   public void Traverse_TraversesListMembers()
   {
     var traverseListsRule = TraversalRule
@@ -38,23 +36,23 @@ public class GraphTraversalTests
 
     TraversalMock testCase = new()
     {
-      ListChildren = new List<Base> { expectTraverse },
+      ListChildren = [expectTraverse],
       DictChildren = new Dictionary<string, Base> { ["myprop"] = expectIgnored },
       Child = expectIgnored,
     };
 
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
 
-    //Assert expected members present
-    Assert.That(ret, Has.Exactly(1).Items.EqualTo(testCase));
-    Assert.That(ret, Has.Exactly(1).Items.EqualTo(expectTraverse));
+    // Assert expected members present
+    ret.Should().Contain(testCase);
+    ret.Should().Contain(expectTraverse);
 
-    //Assert unexpected members not present
-    Assert.That(ret, Has.No.Member(expectIgnored));
-    Assert.That(ret, Has.Count.EqualTo(2));
+    // Assert unexpected members not present
+    ret.Should().NotContain(expectIgnored);
+    ret.Count.Should().Be(2);
   }
 
-  [Test]
+  [Fact]
   public void Traverse_TraversesDictMembers()
   {
     var traverseListsRule = TraversalRule
@@ -69,23 +67,23 @@ public class GraphTraversalTests
 
     TraversalMock testCase = new()
     {
-      ListChildren = new List<Base> { expectIgnored },
+      ListChildren = [expectIgnored],
       DictChildren = new Dictionary<string, Base> { ["myprop"] = expectTraverse },
       Child = expectIgnored,
     };
 
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
 
-    //Assert expected members present
-    Assert.That(ret, Has.Exactly(1).Items.EqualTo(testCase));
-    Assert.That(ret, Has.Exactly(1).Items.EqualTo(expectTraverse));
+    // Assert expected members present
+    ret.Should().Contain(testCase);
+    ret.Should().Contain(expectTraverse);
 
-    //Assert unexpected members not present
-    Assert.That(ret, Has.No.Member(expectIgnored));
-    Assert.That(ret, Has.Count.EqualTo(2));
+    // Assert unexpected members not present
+    ret.Should().NotContain(expectIgnored);
+    ret.Count.Should().Be(2);
   }
 
-  [Test]
+  [Fact]
   public void Traverse_TraversesDynamic()
   {
     var traverseListsRule = TraversalRule
@@ -105,16 +103,16 @@ public class GraphTraversalTests
 
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
 
-    //Assert expected members present
-    Assert.That(ret, Has.Exactly(1).Items.EqualTo(testCase));
-    Assert.That(ret, Has.Exactly(2).Items.EqualTo(expectTraverse));
+    // Assert expected members present
+    ret.Should().Contain(testCase);
+    ret.Count(x => x == expectTraverse).Should().Be(2);
 
-    //Assert unexpected members not present
-    Assert.That(ret, Has.No.Member(expectIgnored));
-    Assert.That(ret, Has.Count.EqualTo(3));
+    // Assert unexpected members not present
+    ret.Should().NotContain(expectIgnored);
+    ret.Count.Should().Be(3);
   }
 
-  [Test]
+  [Fact]
   public void Traverse_ExclusiveRule()
   {
     var expectTraverse = new Base { id = "List Member" };
@@ -134,12 +132,12 @@ public class GraphTraversalTests
 
     var ret = Traverse(testCase, traverseListsRule).Select(b => b.Current).ToList();
 
-    //Assert expected members present
-    Assert.That(ret, Has.Exactly(1).Items.EqualTo(testCase));
-    Assert.That(ret, Has.Exactly(2).Items.EqualTo(expectTraverse));
+    // Assert expected members present
+    ret.Should().Contain(testCase);
+    ret.Count(x => x == expectTraverse).Should().Be(2);
 
-    //Assert unexpected members not present
-    Assert.That(ret, Has.No.Member(expectIgnored));
-    Assert.That(ret, Has.Count.EqualTo(3));
+    // Assert unexpected members not present
+    ret.Should().NotContain(expectIgnored);
+    ret.Count.Should().Be(3);
   }
 }

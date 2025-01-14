@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Text;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
@@ -22,22 +21,6 @@ public readonly record struct SerializeProcessResults(
   string RootId,
   IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
 );
-
-public readonly record struct BaseItem(Id Id, Json Json, bool NeedsStorage, Closures? Closures) : IHasSize
-{
-  public int Size { get; } = Encoding.UTF8.GetByteCount(Json.Value);
-
-  public bool Equals(BaseItem? other)
-  {
-    if (other is null)
-    {
-      return false;
-    }
-    return string.Equals(Id.Value, other.Value.Id.Value, StringComparison.OrdinalIgnoreCase);
-  }
-
-  public override int GetHashCode() => Id.GetHashCode();
-}
 
 public partial interface ISerializeProcess : IDisposable;
 
@@ -77,6 +60,7 @@ public sealed class SerializeProcess(
   {
     _highest.Dispose();
     _belowNormal.Dispose();
+    sqLiteJsonCacheManager.Dispose();
   }
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
@@ -93,7 +77,8 @@ public sealed class SerializeProcess(
       );
     }
 
-    await Traverse(root, true, cancellationToken).ConfigureAwait(false);
+    await Traverse(root, cancellationToken).ConfigureAwait(false);
+    await Done().ConfigureAwait(true);
     await channelTask.ConfigureAwait(false);
     await findTotalObjectsTask.ConfigureAwait(false);
     return new(root.id.NotNull(), _objectReferences.Freeze());
@@ -109,7 +94,7 @@ public sealed class SerializeProcess(
     }
   }
 
-  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, bool isEnd, CancellationToken cancellationToken)
+  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, CancellationToken cancellationToken)
   {
     var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
     foreach (var child in baseChildFinder.GetChildren(obj))
@@ -118,7 +103,7 @@ public sealed class SerializeProcess(
       var tmp = child;
       var t = Task
         .Factory.StartNew(
-          () => Traverse(tmp, false, cancellationToken),
+          () => Traverse(tmp, cancellationToken),
           cancellationToken,
           TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
           _belowNormal
@@ -161,12 +146,6 @@ public sealed class SerializeProcess(
       }
     }
     _childClosurePool.Return(childClosures);
-
-    if (isEnd)
-    {
-      await Done().ConfigureAwait(true);
-    }
-
     return currentClosures;
   }
 
@@ -223,7 +202,7 @@ public sealed class SerializeProcess(
     return new BaseItem(id, json, true, closures);
   }
 
-  public override async Task<List<BaseItem>> SendToServer(Batch<BaseItem> batch, CancellationToken cancellationToken)
+  public override async Task SendToServer(Batch<BaseItem> batch, CancellationToken cancellationToken)
   {
     if (!_options.SkipServer && batch.Items.Count != 0)
     {
@@ -238,9 +217,7 @@ public sealed class SerializeProcess(
         Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
       }
       progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
-      return objectBatch;
     }
-    return batch.Items;
   }
 
   public override void SaveToCache(List<BaseItem> batch)

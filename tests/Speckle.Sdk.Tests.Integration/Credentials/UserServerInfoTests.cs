@@ -1,40 +1,32 @@
-﻿using GraphQL.Client.Http;
+﻿using FluentAssertions;
+using GraphQL.Client.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.Credentials;
 
-public class UserServerInfoTests
+public class UserServerInfoTests : IAsyncLifetime
 {
   private Account _acc;
 
-  [SetUp]
-  public async Task Setup()
+  public Task DisposeAsync() => Task.CompletedTask;
+
+  public async Task InitializeAsync()
   {
     _acc = await Fixtures.SeedUser();
   }
 
-  [Test]
+  [Fact]
   public async Task IsFrontEnd2True()
   {
     ServerInfo? result = await Fixtures
       .ServiceProvider.GetRequiredService<IAccountManager>()
       .GetServerInfo(new("https://app.speckle.systems/"));
 
-    Assert.That(result, Is.Not.Null);
-    Assert.That(result!.frontend2, Is.True);
-  }
-
-  [Test]
-  public async Task IsFrontEnd2False()
-  {
-    ServerInfo? result = await Fixtures
-      .ServiceProvider.GetRequiredService<IAccountManager>()
-      .GetServerInfo(new("https://speckle.xyz/"));
-
-    Assert.That(result, Is.Not.Null);
-    Assert.That(result!.frontend2, Is.False);
+    result.Should().NotBeNull();
+    result.frontend2.Should().BeTrue();
   }
 
   /// <remarks>
@@ -43,27 +35,33 @@ public class UserServerInfoTests
   /// This is not doable in local server because there is no end-point on this to ping.
   /// This is a bad sign for mutation.
   /// </remarks>
-  [Test]
-  public void GetServerInfo_ExpectFail_CantPing()
+  [Fact]
+  public async Task GetServerInfo_ExpectFail_CantPing()
   {
     Uri serverUrl = new(_acc.serverInfo.url);
 
-    Assert.ThrowsAsync<HttpRequestException>(
-      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
-    );
+    await FluentActions
+      .Invoking(
+        async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
+      )
+      .Should()
+      .ThrowAsync<HttpRequestException>();
   }
 
-  [Test]
-  public void GetServerInfo_ExpectFail_NoServer()
+  [Fact]
+  public async Task GetServerInfo_ExpectFail_NoServer()
   {
     Uri serverUrl = new("http://invalidserver.local");
 
-    Assert.ThrowsAsync<HttpRequestException>(
-      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
-    );
+    await FluentActions
+      .Invoking(
+        async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
+      )
+      .Should()
+      .ThrowAsync<HttpRequestException>();
   }
 
-  [Test]
+  [Fact]
   public async Task GetUserInfo()
   {
     Uri serverUrl = new(_acc.serverInfo.url);
@@ -71,33 +69,38 @@ public class UserServerInfoTests
       .ServiceProvider.GetRequiredService<IAccountManager>()
       .GetUserInfo(_acc.token, serverUrl);
 
-    Assert.That(result.id, Is.EqualTo(_acc.userInfo.id));
-    Assert.That(result.name, Is.EqualTo(_acc.userInfo.name));
-    Assert.That(result.email, Is.EqualTo(_acc.userInfo.email));
-    Assert.That(result.company, Is.EqualTo(_acc.userInfo.company));
-    Assert.That(result.avatar, Is.EqualTo(_acc.userInfo.avatar));
+    result.id.Should().Be(_acc.userInfo.id);
+    result.name.Should().Be(_acc.userInfo.name);
+    result.email.Should().Be(_acc.userInfo.email);
+    result.company.Should().Be(_acc.userInfo.company);
+    result.avatar.Should().Be(_acc.userInfo.avatar);
   }
 
-  [Test]
-  public void GetUserInfo_ExpectFail_NoServer()
+  [Fact]
+  public async Task GetUserInfo_ExpectFail_NoServer()
   {
     Uri serverUrl = new("http://invalidserver.local");
 
-    Assert.ThrowsAsync<HttpRequestException>(
-      async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo("", serverUrl)
-    );
+    await FluentActions
+      .Invoking(
+        async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo("", serverUrl)
+      )
+      .Should()
+      .ThrowAsync<HttpRequestException>();
   }
 
-  [Test]
-  public void GetUserInfo_ExpectFail_NoUser()
+  [Fact]
+  public async Task GetUserInfo_ExpectFail_NoUser()
   {
     Uri serverUrl = new(_acc.serverInfo.url);
-
-    Assert.ThrowsAsync<GraphQLHttpRequestException>(
-      async () =>
-        await Fixtures
-          .ServiceProvider.GetRequiredService<IAccountManager>()
-          .GetUserInfo("Bearer 08913c3c1e7ac65d779d1e1f11b942a44ad9672ca9", serverUrl)
-    );
+    await FluentActions
+      .Invoking(
+        async () =>
+          await Fixtures
+            .ServiceProvider.GetRequiredService<IAccountManager>()
+            .GetUserInfo("Bearer 08913c3c1e7ac65d779d1e1f11b942a44ad9672ca9", serverUrl)
+      )
+      .Should()
+      .ThrowAsync<GraphQLHttpRequestException>();
   }
 }

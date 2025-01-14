@@ -13,6 +13,7 @@ public enum ProgressEvent
 
   CacheCheck,
   DownloadBytes,
+  DownloadObjects,
   DeserializeObject,
 
   SerializeObject, // old
