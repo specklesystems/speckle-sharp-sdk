@@ -22,6 +22,7 @@ public sealed class DummySqLiteJsonCacheManager : ISqLiteJsonCacheManager
   public void SaveObjects(IEnumerable<(string id, string json)> items) => throw new NotImplementedException();
 
   public bool HasObject(string objectId) => throw new NotImplementedException();
+  public IReadOnlyCollection<(string Id, string Json)> GetObjects(string[] ids) => throw new NotImplementedException();
 }
 
 public class DummySendServerObjectManager : IServerObjectManager

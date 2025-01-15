@@ -11,6 +11,7 @@ public class DummySqLiteReceiveManager(Dictionary<string, string> savedObjects) 
   public void DeleteObject(string id) => throw new NotImplementedException();
 
   public string? GetObject(string id) => savedObjects.GetValueOrDefault(id);
+  public IReadOnlyCollection<(string Id, string Json)> GetObjects(string[] ids) => throw new NotImplementedException();
 
   public void SaveObject(string id, string json) => throw new NotImplementedException();
 

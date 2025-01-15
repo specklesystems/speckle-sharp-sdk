@@ -5,6 +5,7 @@ namespace Speckle.Sdk.Serialization.Tests;
 public class DummySqLiteSendManager : ISqLiteJsonCacheManager
 {
   public string? GetObject(string id) => throw new NotImplementedException();
+  public IReadOnlyCollection<(string Id, string Json)> GetObjects(string[] ids) => throw new NotImplementedException();
 
   public void SaveObject(string id, string json) => throw new NotImplementedException();
 

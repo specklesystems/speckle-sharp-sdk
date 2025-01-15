@@ -10,6 +10,7 @@ public enum ProgressEvent
   FindingChildren,
   UploadBytes,
   UploadedObjects,
+  ValidatingObjects,
 
   CacheCheck,
   DownloadBytes,
