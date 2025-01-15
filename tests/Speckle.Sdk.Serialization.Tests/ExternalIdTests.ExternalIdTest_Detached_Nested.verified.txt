@@ -1,0 +1,79 @@
+﻿[
+  {
+    Key: 93737bb0800970f29d68748ee206399d,
+    Value: {
+  "degree": 1,
+  "periodic": false,
+  "rational": false,
+  "points": [],
+  "weights": [],
+  "knots": [],
+  "closed": false,
+  "units": "cm",
+  "domain": {
+    "start": 0.0,
+    "end": 1.0,
+    "applicationId": null,
+    "speckle_type": "Objects.Primitive.Interval",
+    "id": "4d47df83148d8bad7bd2657bd9158b4c"
+  },
+  "length": 0.0,
+  "displayValue": {
+    "speckle_type": "reference",
+    "referencedId": "cfaf7ae0dfc5a7cf3343bb6db46ed238",
+    "__closure": null
+  },
+  "area": 0.0,
+  "bbox": null,
+  "applicationId": null,
+  "speckle_type": "Objects.Geometry.Curve",
+  "id": "93737bb0800970f29d68748ee206399d",
+  "__closure": {
+    "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
+    "cfaf7ae0dfc5a7cf3343bb6db46ed238": 100
+  }
+}
+  },
+  {
+    Key: 8d27f5c7fac36d985d89bb6d6d8acddc,
+    Value: {
+  "data": [
+    1.0,
+    2.0
+  ],
+  "applicationId": null,
+  "speckle_type": "Speckle.Core.Models.DataChunk",
+  "id": "8d27f5c7fac36d985d89bb6d6d8acddc"
+}
+  },
+  {
+    Key: cfaf7ae0dfc5a7cf3343bb6db46ed238,
+    Value: {
+  "value": [
+    {
+      "speckle_type": "reference",
+      "referencedId": "8d27f5c7fac36d985d89bb6d6d8acddc",
+      "__closure": null
+    }
+  ],
+  "closed": false,
+  "units": "cm",
+  "domain": {
+    "start": 0.0,
+    "end": 1.0,
+    "applicationId": null,
+    "speckle_type": "Objects.Primitive.Interval",
+    "id": "4d47df83148d8bad7bd2657bd9158b4c"
+  },
+  "length": 0.0,
+  "area": 0.0,
+  "bbox": null,
+  "applicationId": null,
+  "speckle_type": "Objects.Geometry.Polyline",
+  "id": "cfaf7ae0dfc5a7cf3343bb6db46ed238",
+  "__closure": {
+    "8d27f5c7fac36d985d89bb6d6d8acddc": 100
+  }
+}
+  }
+]

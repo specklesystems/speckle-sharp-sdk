@@ -1,6 +1,6 @@
 ﻿using Speckle.Sdk.SQLite;
 
-namespace Speckle.Sdk.Serialization.Tests;
+namespace Speckle.Sdk.Serialization.Tests.Framework;
 
 public class DummySqLiteSendManager : ISqLiteJsonCacheManager
 {

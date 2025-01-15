@@ -1,0 +1,214 @@
+﻿[
+  {
+    Id: 4ba53b5e84e956fb076bc8b0a03ca879,
+    Json: {
+  "value": [
+    {
+      "speckle_type": "reference",
+      "referencedId": "8d27f5c7fac36d985d89bb6d6d8acddc",
+      "__closure": null
+    }
+  ],
+  "closed": false,
+  "units": "test",
+  "domain": {
+    "start": 0.0,
+    "end": 1.0,
+    "applicationId": null,
+    "speckle_type": "Objects.Primitive.Interval",
+    "id": "4d47df83148d8bad7bd2657bd9158b4c"
+  },
+  "length": 0.0,
+  "area": 0.0,
+  "bbox": null,
+  "applicationId": null,
+  "speckle_type": "Objects.Geometry.Polyline",
+  "id": "4ba53b5e84e956fb076bc8b0a03ca879",
+  "__closure": {
+    "8d27f5c7fac36d985d89bb6d6d8acddc": 100
+  }
+}
+  },
+  {
+    Id: 8d27f5c7fac36d985d89bb6d6d8acddc,
+    Json: {
+  "data": [
+    1.0,
+    2.0
+  ],
+  "applicationId": null,
+  "speckle_type": "Speckle.Core.Models.DataChunk",
+  "id": "8d27f5c7fac36d985d89bb6d6d8acddc"
+}
+  },
+  {
+    Id: 32a385e7ddeda810e037b21ab26381b7,
+    Json: {
+  "name": "detachedProp",
+  "line": {
+    "speckle_type": "reference",
+    "referencedId": "4ba53b5e84e956fb076bc8b0a03ca879",
+    "__closure": null
+  },
+  "applicationId": "2",
+  "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase2",
+  "id": "32a385e7ddeda810e037b21ab26381b7",
+  "__closure": {
+    "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
+    "4ba53b5e84e956fb076bc8b0a03ca879": 100
+  }
+}
+  },
+  {
+    Id: 045cbee36837d589b17f9d8483c90763,
+    Json: {
+  "value": [
+    {
+      "speckle_type": "reference",
+      "referencedId": "1afc694774efa5913d0077302cd37888",
+      "__closure": null
+    }
+  ],
+  "closed": false,
+  "units": "test",
+  "domain": {
+    "start": 0.0,
+    "end": 1.0,
+    "applicationId": null,
+    "speckle_type": "Objects.Primitive.Interval",
+    "id": "4d47df83148d8bad7bd2657bd9158b4c"
+  },
+  "length": 0.0,
+  "area": 0.0,
+  "bbox": null,
+  "applicationId": null,
+  "speckle_type": "Objects.Geometry.Polyline",
+  "id": "045cbee36837d589b17f9d8483c90763",
+  "__closure": {
+    "1afc694774efa5913d0077302cd37888": 100
+  }
+}
+  },
+  {
+    Id: 1afc694774efa5913d0077302cd37888,
+    Json: {
+  "data": [
+    3.0,
+    2.0
+  ],
+  "applicationId": null,
+  "speckle_type": "Speckle.Core.Models.DataChunk",
+  "id": "1afc694774efa5913d0077302cd37888"
+}
+  },
+  {
+    Id: c3858f47dd3e7a308a1b465375f1645f,
+    Json: {
+  "name": "detachedProp2",
+  "line": {
+    "speckle_type": "reference",
+    "referencedId": "045cbee36837d589b17f9d8483c90763",
+    "__closure": null
+  },
+  "applicationId": "3",
+  "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase2",
+  "id": "c3858f47dd3e7a308a1b465375f1645f",
+  "__closure": {
+    "1afc694774efa5913d0077302cd37888": 100,
+    "045cbee36837d589b17f9d8483c90763": 100
+  }
+}
+  },
+  {
+    Id: 2ebfd4f317754fce14cadd001151441e,
+    Json: {
+  "list": [],
+  "list2": null,
+  "arr": null,
+  "detachedProp": {
+    "speckle_type": "reference",
+    "referencedId": "32a385e7ddeda810e037b21ab26381b7",
+    "__closure": null
+  },
+  "detachedProp2": {
+    "speckle_type": "reference",
+    "referencedId": "c3858f47dd3e7a308a1b465375f1645f",
+    "__closure": null
+  },
+  "attachedProp": {
+    "name": "attachedProp",
+    "line": {
+      "speckle_type": "reference",
+      "referencedId": "027a7c5ffcf8d8efe432899c729a954c",
+      "__closure": null
+    },
+    "applicationId": "4",
+    "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase2",
+    "id": "c5dd540ee1299c0349829d045c04ef2d"
+  },
+  "crazyProp": null,
+  "applicationId": "1",
+  "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2",
+  "dynamicProp": 123,
+  "id": "2ebfd4f317754fce14cadd001151441e",
+  "__closure": {
+    "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
+    "4ba53b5e84e956fb076bc8b0a03ca879": 100,
+    "32a385e7ddeda810e037b21ab26381b7": 100,
+    "1afc694774efa5913d0077302cd37888": 100,
+    "045cbee36837d589b17f9d8483c90763": 100,
+    "c3858f47dd3e7a308a1b465375f1645f": 100,
+    "5b86b66b61c556ead500915b05852875": 100,
+    "027a7c5ffcf8d8efe432899c729a954c": 100
+  }
+}
+  },
+  {
+    Id: 5b86b66b61c556ead500915b05852875,
+    Json: {
+  "data": [
+    3.0,
+    4.0
+  ],
+  "applicationId": null,
+  "speckle_type": "Speckle.Core.Models.DataChunk",
+  "id": "5b86b66b61c556ead500915b05852875"
+}
+  },
+  {
+    Id: 027a7c5ffcf8d8efe432899c729a954c,
+    Json: {
+  "value": [
+    {
+      "speckle_type": "reference",
+      "referencedId": "5b86b66b61c556ead500915b05852875",
+      "__closure": null
+    }
+  ],
+  "closed": false,
+  "units": "test",
+  "domain": {
+    "start": 0.0,
+    "end": 1.0,
+    "applicationId": null,
+    "speckle_type": "Objects.Primitive.Interval",
+    "id": "4d47df83148d8bad7bd2657bd9158b4c"
+  },
+  "length": 0.0,
+  "area": 0.0,
+  "bbox": null,
+  "applicationId": null,
+  "speckle_type": "Objects.Geometry.Polyline",
+  "id": "027a7c5ffcf8d8efe432899c729a954c",
+  "__closure": {
+    "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
+    "4ba53b5e84e956fb076bc8b0a03ca879": 100,
+    "32a385e7ddeda810e037b21ab26381b7": 100,
+    "1afc694774efa5913d0077302cd37888": 100,
+    "045cbee36837d589b17f9d8483c90763": 100,
+    "c3858f47dd3e7a308a1b465375f1645f": 100,
+    "5b86b66b61c556ead500915b05852875": 100
+  }
+}
+  }
+]

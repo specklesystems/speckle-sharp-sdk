@@ -1,0 +1,11 @@
+﻿[
+  {
+    Id: daaa67cfd73a957247cf2d631b7ca4f3,
+    Json: {
+  "RegularProperty": "Hello",
+  "applicationId": null,
+  "speckle_type": "Speckle.Core.Serialisation.TestClass",
+  "id": "daaa67cfd73a957247cf2d631b7ca4f3"
+}
+  }
+]
