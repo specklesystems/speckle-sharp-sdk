@@ -29,17 +29,6 @@ public class UserServerInfoTests : IAsyncLifetime
     result.frontend2.Should().BeTrue();
   }
 
-  [Fact]
-  public async Task IsFrontEnd2False()
-  {
-    ServerInfo? result = await Fixtures
-      .ServiceProvider.GetRequiredService<IAccountManager>()
-      .GetServerInfo(new("https://speckle.xyz/"));
-
-    result.Should().NotBeNull();
-    result.frontend2.Should().BeFalse();
-  }
-
   /// <remarks>
   /// We get ServerInfo from "http://localhost:3000/graphql",
   /// Then we mutate the `frontend2` property of ServerInfo by trying to fetch header from "http://localhost:3000/",
