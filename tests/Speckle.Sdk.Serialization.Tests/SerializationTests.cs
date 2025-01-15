@@ -130,6 +130,21 @@ public class SerializationTests
       baseType.id.Should().Be(id);
 
       var oldType = TypeLoader.GetAtomicType(oldSpeckleType);
+      if (oldType == typeof(Base))
+      {
+        oldSpeckleType.Should().NotContain("Base");
+      }
+      else
+      {
+        starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
+        starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
+
+        var type = TypeLoader.GetAtomicType(baseType.speckle_type);
+        type.Should().NotBeNull();
+        var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException($"Could not find: {type}");
+        starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
+        starts.Should().BeTrue($"{name} isn't expected");
+      }
     }
   }
 
@@ -142,7 +157,32 @@ public class SerializationTests
     var closures = ReadAsObjects(json);
     using var process = new DeserializeProcess(null, new TestObjectLoader(closures), new ObjectDeserializerFactory());
     await process.Deserialize("3416d3fe01c9196115514c4a2f41617b", default);
-    await Verify(closures);
+    foreach (var (id, objJson) in closures)
+    {
+      var jObject = JObject.Parse(objJson);
+      var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
+      var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
+      starts.Should().BeTrue($"{oldSpeckleType} isn't expected");
+
+      var oldType = TypeLoader.GetAtomicType(oldSpeckleType);
+      if (oldType == typeof(Base))
+      {
+        oldSpeckleType.Should().NotContain("Base");
+      }
+      else
+      {
+        var baseType = process.BaseCache[id];
+
+        starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
+        starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
+
+        var type = TypeLoader.GetAtomicType(baseType.speckle_type);
+        type.Should().NotBeNull();
+        var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException();
+        starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
+        starts.Should().BeTrue($"{name} isn't expected");
+      }
+    }
   }
 
   [Theory]
