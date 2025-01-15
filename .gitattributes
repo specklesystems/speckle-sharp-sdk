@@ -3,3 +3,6 @@
 
 # need original files to be windows
 *.txt text eol=crlf
+
+# Verify
+*.verified.txt text eol=lf working-tree-encoding=UTF-8

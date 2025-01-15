@@ -1,4 +1,4 @@
-﻿namespace Speckle.Sdk.Serialization.Tests.Framework;
+﻿namespace Speckle.Sdk.Serialization.Tests;
 
 public class VerifyTests
 {
