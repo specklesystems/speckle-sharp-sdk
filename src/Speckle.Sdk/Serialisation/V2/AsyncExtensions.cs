@@ -11,4 +11,25 @@ public static class AsyncExtensions
     }
     throw new InvalidOperationException("Sequence contains no elements");
   }
+  
+  #if NETSTANDARD2_0
+  public static IEnumerable<T[]> Chunk<T>(this IEnumerable<T> source, int chunkSize)
+  {
+    List<T> list = new(chunkSize);
+    foreach(T item in source)
+    {
+      list.Add(item);
+      if(list.Count == chunkSize)
+      {
+        yield return list.ToArray();
+        list = new List<T>(chunkSize);
+      }
+    }
+    //don't forget the last one!
+    if(list.Count != 0)
+    {
+      yield return list.ToArray();
+    }
+  }
+#endif
 }

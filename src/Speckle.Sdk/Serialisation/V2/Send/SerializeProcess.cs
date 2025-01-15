@@ -4,6 +4,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
@@ -55,6 +56,8 @@ public sealed class SerializeProcess(
   private long _uploaded;
   private long _cached;
 
+  private long _validating;
+
   [AutoInterfaceIgnore]
   public void Dispose()
   {
@@ -81,9 +84,32 @@ public sealed class SerializeProcess(
     await Done().ConfigureAwait(true);
     await channelTask.ConfigureAwait(false);
     await findTotalObjectsTask.ConfigureAwait(false);
+    if (!_options.SkipFindTotalObjects)
+    {
+      var task = Task.Factory.StartNew(() =>  Validate(root.id.NotNull()),  cancellationToken, TaskCreationOptions.AttachedToParent | TaskCreationOptions.LongRunning, TaskScheduler.Default );
+      await task.ConfigureAwait(true);
+    }
     return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
+  private void Validate(string rootId)
+  {
+    var root = sqLiteJsonCacheManager.GetObject(rootId).NotNull();
+    var childIds = ClosureParser.GetChildrenIds(root);
+
+    Parallel.ForEach(childIds.Chunk(200), new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+      batch =>
+      {
+        var objects = sqLiteJsonCacheManager.GetObjects(batch);
+        var missing = batch.Except(objects.Select(x => x.Id)).FirstOrDefault();
+        if (missing != null)
+        {
+          throw new SpeckleException($"Object(s) {string.Join(",", batch.Except(objects.Select(x => x.Id)))} not found in cache.");
+        }
+        Interlocked.Exchange(ref _validating, _validating + objects.Count);
+        progress?.Report(new(ProgressEvent.ValidatingObjects, _validating, _objectsFound));
+      });
+  }
   private void TraverseTotal(Base obj)
   {
     foreach (var child in baseChildFinder.GetChildren(obj))

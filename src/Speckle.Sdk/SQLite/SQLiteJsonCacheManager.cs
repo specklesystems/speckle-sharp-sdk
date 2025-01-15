@@ -103,6 +103,42 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
         return (string?)command.ExecuteScalar();
       }
     );
+  
+  public IReadOnlyCollection<(string Id, string Json)> GetObjects(string[] ids) =>
+    _pool.Use(
+      CacheOperation.GetBatch,
+      command =>
+      {
+        CreateBulkGet(command, ids);
+        var list = new HashSet<(string, string)>();
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+          list.Add((reader.GetString(0), reader.GetString(1)));
+        }
+        return list;
+      }
+    );
+  
+  private void CreateBulkGet(SqliteCommand cmd, string[] ids)
+  {
+    StringBuilder sb = Pools.StringBuilders.Get();
+    sb.AppendLine(CacheDbCommands.Commands[(int)CacheOperation.GetBatch]);
+    int i = 0;
+    sb.Append('(');
+    foreach (var id in ids)
+    {
+      sb.Append($"@key{i},");
+      cmd.Parameters.AddWithValue($"@key{i}", id);
+      i++;
+    }
+    sb.Remove(sb.Length - 1, 1);
+    sb.Append(')');
+#pragma warning disable CA2100
+    cmd.CommandText = sb.ToString();
+#pragma warning restore CA2100
+    Pools.StringBuilders.Return(sb);
+  }
 
   //This does an insert or ignores if already exists
   public void SaveObject(string id, string json) =>
