@@ -12,7 +12,7 @@ public class ExplicitInterfaceTests
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestClass).Assembly);
   }
 
-  [Fact] 
+  [Fact]
   public async Task Test_Json()
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
@@ -28,11 +28,11 @@ public class ExplicitInterfaceTests
     );
 
     await process2.Serialize(testClass, default);
-    
+
     await VerifyJsonDictionary(objects);
   }
 
-  [Fact] 
+  [Fact]
   public async Task Test_ExtractAllProperties()
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };

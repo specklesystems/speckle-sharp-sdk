@@ -17,7 +17,7 @@ public class IdStringSerializer : JsonConverter
   public override object? ReadJson(JsonReader reader, Type type, object? existingValue, JsonSerializer serializer)
   {
     var json = reader.ReadAsString();
-    return new Id (json.NotNull());
+    return new Id(json.NotNull());
   }
 
   public override bool CanConvert(Type type) => typeof(Id) == type;

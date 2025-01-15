@@ -17,7 +17,7 @@ public class JsonStringSerializer : JsonConverter
   public override object? ReadJson(JsonReader reader, Type type, object? existingValue, JsonSerializer serializer)
   {
     var json = reader.ReadAsString();
-    return new Json (json.NotNull());
+    return new Json(json.NotNull());
   }
 
   public override bool CanConvert(Type type) => typeof(Json) == type;

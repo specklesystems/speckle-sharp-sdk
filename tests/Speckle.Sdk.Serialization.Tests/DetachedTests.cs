@@ -55,7 +55,7 @@ public class DetachedTests
     var objects = new ConcurrentDictionary<string, string>();
     var serializer = new SpeckleObjectSerializer(new[] { new MemoryTransport(objects) });
     serializer.Serialize(@base);
-    
+
     await VerifyJsonDictionary(objects);
   }
 
@@ -209,19 +209,7 @@ public class DetachedTests
     var @base = new SampleObjectBase2();
     @base["dynamicProp"] = 123;
     @base.applicationId = "1";
-    @base.list = new List<double>()
-    {
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10
-    };
+    @base.list = new List<double>() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     @base.list2 = new List<double>() { 1, 10 };
     @base.arr = [1, 10];
 

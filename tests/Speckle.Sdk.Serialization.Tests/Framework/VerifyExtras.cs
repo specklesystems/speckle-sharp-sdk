@@ -12,11 +12,16 @@ public static class VerifyExtras
     VerifierSettings.AddExtraSettings(x => x.Converters.Insert(0, new JsonStringSerializer()));
     VerifierSettings.AddExtraSettings(x => x.Converters.Insert(0, new IdStringSerializer()));
   }
-  public static async Task VerifyJsonDictionary(IDictionary<string, string> objects, 
-    [CallerFilePath] string sourceFile = "") => await Verify(
-    objects.Select(x => new JsonItem(x)), sourceFile: sourceFile
-    );
-  public static async Task VerifyJsonDictionary(IDictionary<Id, Json> objects,  [CallerFilePath] string sourceFile = "") => await Verify(objects.Select(x => x), sourceFile: sourceFile);
+
+  public static async Task VerifyJsonDictionary(
+    IDictionary<string, string> objects,
+    [CallerFilePath] string sourceFile = ""
+  ) => await Verify(objects.Select(x => new JsonItem(x)), sourceFile: sourceFile);
+
+  public static async Task VerifyJsonDictionary(
+    IDictionary<Id, Json> objects,
+    [CallerFilePath] string sourceFile = ""
+  ) => await Verify(objects.Select(x => x), sourceFile: sourceFile);
 
   private readonly record struct JsonItem
   {
@@ -27,7 +32,7 @@ public static class VerifyExtras
       _item = item;
     }
 
-    public string Id  => _item.Key;
-    public Json Json => new (_item.Value);
+    public string Id => _item.Key;
+    public Json Json => new(_item.Value);
   }
 }

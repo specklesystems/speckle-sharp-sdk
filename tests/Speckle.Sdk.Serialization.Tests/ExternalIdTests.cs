@@ -55,7 +55,7 @@ public class ExternalIdTests
   }
 
   [Fact]
-  public  async Task ExternalIdTest_Detached_Nested_More()
+  public async Task ExternalIdTest_Detached_Nested_More()
   {
     var curve = new Curve()
     {
@@ -81,7 +81,7 @@ public class ExternalIdTests
   }
 
   [Fact]
-  public  async Task ExternalIdTest_Detached_Nested_More_Too()
+  public async Task ExternalIdTest_Detached_Nested_More_Too()
   {
     var curve = new Curve()
     {
