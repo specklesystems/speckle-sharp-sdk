@@ -1,7 +1,7 @@
 ﻿[
   {
-    Id: 525b1e9eef4d07165abb4ffc518395fc,
-    Json: {
+    "Id": "525b1e9eef4d07165abb4ffc518395fc",
+    "Json": {
   "list": [
     {
       "speckle_type": "reference",
@@ -38,8 +38,8 @@
 }
   },
   {
-    Id: 0e61e61edee00404ec6e0f9f594bce24,
-    Json: {
+    "Id": "0e61e61edee00404ec6e0f9f594bce24",
+    "Json": {
   "data": [
     1.0,
     2.0,
@@ -58,8 +58,8 @@
 }
   },
   {
-    Id: f70738e3e3e593ac11099a6ed6b71154,
-    Json: {
+    "Id": "f70738e3e3e593ac11099a6ed6b71154",
+    "Json": {
   "data": [
     1.0,
     10.0

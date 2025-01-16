@@ -11,7 +11,7 @@ public class IdStringSerializer : JsonConverter
   public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
   {
     var id = (Id)value;
-    writer.WriteRawValue(id.Value);
+    writer.WriteValue(id.Value);
   }
 
   public override object? ReadJson(JsonReader reader, Type type, object? existingValue, JsonSerializer serializer)

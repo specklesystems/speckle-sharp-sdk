@@ -1,7 +1,7 @@
 ﻿[
   {
-    Id: 4ba53b5e84e956fb076bc8b0a03ca879,
-    Json: {
+    "Id": "4ba53b5e84e956fb076bc8b0a03ca879",
+    "Json": {
   "value": [
     {
       "speckle_type": "reference",
@@ -30,8 +30,8 @@
 }
   },
   {
-    Id: 8d27f5c7fac36d985d89bb6d6d8acddc,
-    Json: {
+    "Id": "8d27f5c7fac36d985d89bb6d6d8acddc",
+    "Json": {
   "data": [
     1.0,
     2.0
@@ -42,8 +42,8 @@
 }
   },
   {
-    Id: 32a385e7ddeda810e037b21ab26381b7,
-    Json: {
+    "Id": "32a385e7ddeda810e037b21ab26381b7",
+    "Json": {
   "name": "detachedProp",
   "line": {
     "speckle_type": "reference",
@@ -60,8 +60,8 @@
 }
   },
   {
-    Id: 045cbee36837d589b17f9d8483c90763,
-    Json: {
+    "Id": "045cbee36837d589b17f9d8483c90763",
+    "Json": {
   "value": [
     {
       "speckle_type": "reference",
@@ -90,8 +90,8 @@
 }
   },
   {
-    Id: 1afc694774efa5913d0077302cd37888,
-    Json: {
+    "Id": "1afc694774efa5913d0077302cd37888",
+    "Json": {
   "data": [
     3.0,
     2.0
@@ -102,8 +102,8 @@
 }
   },
   {
-    Id: c3858f47dd3e7a308a1b465375f1645f,
-    Json: {
+    "Id": "c3858f47dd3e7a308a1b465375f1645f",
+    "Json": {
   "name": "detachedProp2",
   "line": {
     "speckle_type": "reference",
@@ -120,8 +120,8 @@
 }
   },
   {
-    Id: 2ebfd4f317754fce14cadd001151441e,
-    Json: {
+    "Id": "2ebfd4f317754fce14cadd001151441e",
+    "Json": {
   "list": [],
   "list2": null,
   "arr": null,
@@ -164,8 +164,8 @@
 }
   },
   {
-    Id: 5b86b66b61c556ead500915b05852875,
-    Json: {
+    "Id": "5b86b66b61c556ead500915b05852875",
+    "Json": {
   "data": [
     3.0,
     4.0
@@ -176,8 +176,8 @@
 }
   },
   {
-    Id: 027a7c5ffcf8d8efe432899c729a954c,
-    Json: {
+    "Id": "027a7c5ffcf8d8efe432899c729a954c",
+    "Json": {
   "value": [
     {
       "speckle_type": "reference",

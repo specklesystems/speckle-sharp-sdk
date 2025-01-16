@@ -319,8 +319,8 @@ indent_size = 2
 tab_width = 2
 
 # Verify
-[*.{received,verified}.{txt}]
-charset = "utf-8-bom"
+[*.{received,verified}.{json}]
+charset = utf-8-bom
 end_of_line = lf
 indent_size = unset
 indent_style = unset

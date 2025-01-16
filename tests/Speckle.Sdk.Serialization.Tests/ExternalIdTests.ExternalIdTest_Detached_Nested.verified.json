@@ -1,7 +1,7 @@
 ﻿[
   {
-    Key: 93737bb0800970f29d68748ee206399d,
-    Value: {
+    "Key": "93737bb0800970f29d68748ee206399d",
+    "Value": {
   "degree": 1,
   "periodic": false,
   "rational": false,
@@ -35,8 +35,8 @@
 }
   },
   {
-    Key: 8d27f5c7fac36d985d89bb6d6d8acddc,
-    Value: {
+    "Key": "8d27f5c7fac36d985d89bb6d6d8acddc",
+    "Value": {
   "data": [
     1.0,
     2.0
@@ -47,8 +47,8 @@
 }
   },
   {
-    Key: cfaf7ae0dfc5a7cf3343bb6db46ed238,
-    Value: {
+    "Key": "cfaf7ae0dfc5a7cf3343bb6db46ed238",
+    "Value": {
   "value": [
     {
       "speckle_type": "reference",

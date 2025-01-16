@@ -1,7 +1,7 @@
 ﻿[
   {
-    Key: 050585d98934e7a4d199e07bd92598a5,
-    Value: {
+    "Key": "050585d98934e7a4d199e07bd92598a5",
+    "Value": {
   "segments": [
     {
       "degree": 1,
@@ -54,8 +54,8 @@
 }
   },
   {
-    Key: 8d27f5c7fac36d985d89bb6d6d8acddc,
-    Value: {
+    "Key": "8d27f5c7fac36d985d89bb6d6d8acddc",
+    "Value": {
   "data": [
     1.0,
     2.0
@@ -66,8 +66,8 @@
 }
   },
   {
-    Key: cfaf7ae0dfc5a7cf3343bb6db46ed238,
-    Value: {
+    "Key": "cfaf7ae0dfc5a7cf3343bb6db46ed238",
+    "Value": {
   "value": [
     {
       "speckle_type": "reference",
