@@ -1,3 +1,4 @@
-﻿global using static Speckle.Sdk.Serialization.Tests.Framework.VerifyExtras;
+﻿global using static Speckle.Sdk.Testing.SpeckleVerify;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
+

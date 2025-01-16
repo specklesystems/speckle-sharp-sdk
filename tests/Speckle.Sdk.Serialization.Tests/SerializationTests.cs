@@ -12,7 +12,7 @@ using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
-using Speckle.Sdk.Serialization.Tests.Framework;
+using Speckle.Sdk.Testing.Framework;
 
 namespace Speckle.Sdk.Serialization.Tests;
 

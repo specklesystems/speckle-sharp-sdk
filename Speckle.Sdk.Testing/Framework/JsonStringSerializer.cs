@@ -3,7 +3,7 @@ using Argon;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Serialisation;
 
-namespace Speckle.Sdk.Serialization.Tests.Framework;
+namespace Speckle.Sdk.Testing.Framework;
 
 [SuppressMessage("Design", "CA1062:Validate arguments of public methods")]
 public class JsonStringSerializer : JsonConverter
