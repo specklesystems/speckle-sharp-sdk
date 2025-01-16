@@ -28,14 +28,14 @@
       "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase",
       "DynamicPropertyKeys": []
     }
-    },
+  },
   {
     "Name": "attachedProp",
     "PropertyAttributeInfo": {
       "ChunkSize": 1000,
       "IsChunkable": false,
       "IsDetachable": false
-  },
+    },
     "Value": {
       "name": "attachedProp",
       "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase",
