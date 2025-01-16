@@ -4,7 +4,7 @@ using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
-namespace Speckle.Sdk.Serialization.Tests;
+namespace Speckle.Sdk.Testing.Framework;
 
 public class DummyReceiveServerObjectManager(Dictionary<string, string> objects) : IServerObjectManager
 {

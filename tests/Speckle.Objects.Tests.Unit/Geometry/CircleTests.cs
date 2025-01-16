@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
-using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;
 

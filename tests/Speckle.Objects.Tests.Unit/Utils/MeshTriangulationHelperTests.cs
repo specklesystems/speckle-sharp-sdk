@@ -3,7 +3,6 @@ using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
-using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Utils;
 

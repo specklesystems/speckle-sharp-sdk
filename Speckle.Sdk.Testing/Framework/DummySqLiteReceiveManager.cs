@@ -1,8 +1,8 @@
 ﻿using Speckle.Sdk.SQLite;
 
-namespace Speckle.Sdk.Serialization.Tests;
+namespace Speckle.Sdk.Testing.Framework;
 
-public class DummySqLiteReceiveManager(Dictionary<string, string> savedObjects) : ISqLiteJsonCacheManager
+public sealed class DummySqLiteReceiveManager(Dictionary<string, string> savedObjects) : ISqLiteJsonCacheManager
 {
   public void Dispose() { }
 
