@@ -2,39 +2,40 @@
   {
     "Name": "list",
     "PropertyAttributeInfo": {
-      "IsDetachable": true,
+      "ChunkSize": 1000,
       "IsChunkable": true,
-      "ChunkSize": 1000
-    }
+      "IsDetachable": true
+    },
+    "Value": []
   },
   {
     "Name": "arr",
     "PropertyAttributeInfo": {
-      "IsDetachable": true,
+      "ChunkSize": 300,
       "IsChunkable": true,
-      "ChunkSize": 300
+      "IsDetachable": true
     }
   },
   {
     "Name": "detachedProp",
+    "PropertyAttributeInfo": {
+      "ChunkSize": 1000,
+      "IsChunkable": false,
+      "IsDetachable": true
+    },
     "Value": {
       "name": "detachedProp",
       "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase",
       "DynamicPropertyKeys": []
-    },
-    "PropertyAttributeInfo": {
-      "IsDetachable": true,
-      "IsChunkable": false,
-      "ChunkSize": 1000
     }
   },
   {
     "Name": "@prop2",
-    "Value": 2,
     "PropertyAttributeInfo": {
-      "IsDetachable": true,
+      "ChunkSize": -1,
       "IsChunkable": false,
-      "ChunkSize": -1
-    }
+      "IsDetachable": true
+    },
+    "Value": 2
   }
 ]

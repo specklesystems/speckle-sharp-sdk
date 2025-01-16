@@ -55,17 +55,6 @@
         "resolved": "0.9.6",
         "contentHash": "HKH7tYrYYlCK1ct483hgxERAdVdMtl7gUKW9ijWXxA1UsYR4Z+TrRHYmzZ9qmpu1NnTycSrp005NYM78GDKV1w=="
       },
-      "Verify.Quibble": {
-        "type": "Direct",
-        "requested": "[2.1.1, )",
-        "resolved": "2.1.1",
-        "contentHash": "Z8bVwFICa3Dog6Mcnx0wlrn4Y+CFpQXx1f+ijfLn6/v4q00q+jLm9Gu/nVyUFuc75cjn6ieI08UrqXKcR9fTYw==",
-        "dependencies": {
-          "Quibble": "0.3.1",
-          "System.Text.Json": "8.0.4",
-          "Verify": "26.1.1"
-        }
-      },
       "Verify.Xunit": {
         "type": "Direct",
         "requested": "[28.9.0, )",
@@ -116,11 +105,6 @@
         "type": "Transitive",
         "resolved": "8.7.1",
         "contentHash": "C8pvg0TvG2Mkn5LGNFGkFgFu8SUgYFwiu8U3y34qGQnnwKmGnlQTfTIUrtzfSjPxA4q7L/kRu09U5p32otZ2Aw=="
-      },
-      "FSharp.Core": {
-        "type": "Transitive",
-        "resolved": "7.0.300",
-        "contentHash": "8vvItREJ1l5lcp3vBCSJ1mFevVAhR48I34DuF/EoUa7o1KlFpQpagyuZkVYMAsHPIjdp47ZxM9sI4eqeXaeWkA=="
       },
       "GraphQL.Client.Abstractions": {
         "type": "Transitive",
@@ -241,15 +225,6 @@
         "resolved": "13.0.1",
         "contentHash": "ppPFpBcvxdsfUonNcvITKqLl3bqxWbDCZIzDWHzjpdAHRFfZe0Dw9HmA0+za13IdyrgJwpkDTDA9fHaxOrt20A=="
       },
-      "Quibble": {
-        "type": "Transitive",
-        "resolved": "0.3.1",
-        "contentHash": "LD6bz2p+4O/BQnmD4mqFZrmdN/IjsPo1wUvfmcH46Q05ng+dyMLl3d2ylj0x412F4fpJEtm0Z3EaCAx4FqgNuQ==",
-        "dependencies": {
-          "FSharp.Core": "7.0.300",
-          "System.Text.Json": "7.0.3"
-        }
-      },
       "SimpleInfoName": {
         "type": "Transitive",
         "resolved": "3.1.0",
@@ -362,19 +337,6 @@
         "dependencies": {
           "System.Security.AccessControl": "6.0.0",
           "System.Windows.Extensions": "6.0.0"
-        }
-      },
-      "System.Text.Encodings.Web": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "yev/k9GHAEGx2Rg3/tU6MQh4HGBXJs70y7j1LaM1i/ER9po+6nnQ6RRqTJn1E7Xu0fbIFK80Nh5EoODxrbxwBQ=="
-      },
-      "System.Text.Json": {
-        "type": "Transitive",
-        "resolved": "8.0.4",
-        "contentHash": "bAkhgDJ88XTsqczoxEMliSrpijKZHhbJQldhAmObj/RbrN3sU5dcokuXmWJWsdQAhiMJ9bTayWsL1C9fbbCRhw==",
-        "dependencies": {
-          "System.Text.Encodings.Web": "8.0.0"
         }
       },
       "System.Windows.Extensions": {

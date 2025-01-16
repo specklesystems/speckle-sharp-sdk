@@ -1,28 +1,28 @@
 ﻿[
   {
     "Name": "RegularProperty",
-    "Value": "Hello",
     "PropertyAttributeInfo": {
-      "IsDetachable": false,
+      "ChunkSize": 1000,
       "IsChunkable": false,
-      "ChunkSize": 1000
-    }
+      "IsDetachable": false
+    },
+    "Value": "Hello"
   },
   {
     "Name": "applicationId",
     "PropertyAttributeInfo": {
-      "IsDetachable": false,
+      "ChunkSize": 1000,
       "IsChunkable": false,
-      "ChunkSize": 1000
+      "IsDetachable": false
     }
   },
   {
     "Name": "speckle_type",
-    "Value": "Speckle.Core.Serialisation.TestClass",
     "PropertyAttributeInfo": {
-      "IsDetachable": false,
+      "ChunkSize": 1000,
       "IsChunkable": false,
-      "ChunkSize": 1000
-    }
+      "IsDetachable": false
+    },
+    "Value": "Speckle.Core.Serialisation.TestClass"
   }
 ]

@@ -13,7 +13,9 @@ public static class VerifyExtras
     VerifierSettings.AddExtraSettings(x => x.Converters.Insert(0, new IdStringSerializer()));
 
     VerifierSettings.UseStrictJson();
-    VerifyQuibble.Initialize();
+    VerifierSettings.DontIgnoreEmptyCollections();
+    VerifierSettings.SortPropertiesAlphabetically();
+    VerifierSettings.SortJsonObjects();
   }
 
   public static async Task VerifyJsonDictionary(
