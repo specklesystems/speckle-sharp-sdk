@@ -1,116 +1,104 @@
-﻿[
-  {
-    "Key": "4314c177603b00228261d6f0f4686395",
-    "Value": {
-  "applicationId": null,
-  "speckle_type": "Base",
-  "@profile": {
-    "speckle_type": "reference",
-    "referencedId": "050585d98934e7a4d199e07bd92598a5",
-    "__closure": null
-  },
-  "id": "4314c177603b00228261d6f0f4686395",
-  "__closure": {
-    "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
-    "cfaf7ae0dfc5a7cf3343bb6db46ed238": 100,
-    "050585d98934e7a4d199e07bd92598a5": 100
-  }
-}
-  },
-  {
-    "Key": "8d27f5c7fac36d985d89bb6d6d8acddc",
-    "Value": {
-  "data": [
-    1.0,
-    2.0
-  ],
-  "applicationId": null,
-  "speckle_type": "Speckle.Core.Models.DataChunk",
-  "id": "8d27f5c7fac36d985d89bb6d6d8acddc"
-}
-  },
-  {
-    "Key": "cfaf7ae0dfc5a7cf3343bb6db46ed238",
-    "Value": {
-  "value": [
-    {
-      "speckle_type": "reference",
-      "referencedId": "8d27f5c7fac36d985d89bb6d6d8acddc",
-      "__closure": null
-    }
-  ],
-  "closed": false,
-  "units": "cm",
-  "domain": {
-    "start": 0.0,
-    "end": 1.0,
+﻿{
+  "050585d98934e7a4d199e07bd92598a5": {
+    "__closure": {
+      "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
+      "cfaf7ae0dfc5a7cf3343bb6db46ed238": 100
+    },
     "applicationId": null,
-    "speckle_type": "Objects.Primitive.Interval",
-    "id": "4d47df83148d8bad7bd2657bd9158b4c"
-  },
-  "length": 0.0,
-  "area": 0.0,
-  "bbox": null,
-  "applicationId": null,
-  "speckle_type": "Objects.Geometry.Polyline",
-  "id": "cfaf7ae0dfc5a7cf3343bb6db46ed238",
-  "__closure": {
-    "8d27f5c7fac36d985d89bb6d6d8acddc": 100
-  }
-}
-  },
-  {
-    "Key": "050585d98934e7a4d199e07bd92598a5",
-    "Value": {
-  "segments": [
-    {
-      "degree": 1,
-      "periodic": false,
-      "rational": false,
-      "points": [],
-      "weights": [],
-      "knots": [],
-      "closed": false,
-      "units": "cm",
-      "domain": {
-        "start": 0.0,
-        "end": 1.0,
-        "applicationId": null,
-        "speckle_type": "Objects.Primitive.Interval",
-        "id": "4d47df83148d8bad7bd2657bd9158b4c"
-      },
-      "length": 0.0,
-      "displayValue": {
-        "speckle_type": "reference",
-        "referencedId": "cfaf7ae0dfc5a7cf3343bb6db46ed238",
-        "__closure": null
-      },
-      "area": 0.0,
-      "bbox": null,
+    "area": 0.0,
+    "bbox": null,
+    "closed": false,
+    "domain": {
       "applicationId": null,
-      "speckle_type": "Objects.Geometry.Curve",
-      "id": "93737bb0800970f29d68748ee206399d"
-    }
-  ],
-  "closed": false,
-  "units": "cm",
-  "domain": {
-    "start": 0.0,
-    "end": 1.0,
-    "applicationId": null,
-    "speckle_type": "Objects.Primitive.Interval",
-    "id": "4d47df83148d8bad7bd2657bd9158b4c"
+      "end": 1.0,
+      "id": "4d47df83148d8bad7bd2657bd9158b4c",
+      "speckle_type": "Objects.Primitive.Interval",
+      "start": 0.0
+    },
+    "id": "050585d98934e7a4d199e07bd92598a5",
+    "length": 0.0,
+    "segments": [
+      {
+        "applicationId": null,
+        "area": 0.0,
+        "bbox": null,
+        "closed": false,
+        "degree": 1,
+        "displayValue": {
+          "__closure": null,
+          "referencedId": "cfaf7ae0dfc5a7cf3343bb6db46ed238",
+          "speckle_type": "reference"
+        },
+        "domain": {
+          "applicationId": null,
+          "end": 1.0,
+          "id": "4d47df83148d8bad7bd2657bd9158b4c",
+          "speckle_type": "Objects.Primitive.Interval",
+          "start": 0.0
+        },
+        "id": "93737bb0800970f29d68748ee206399d",
+        "knots": [],
+        "length": 0.0,
+        "periodic": false,
+        "points": [],
+        "rational": false,
+        "speckle_type": "Objects.Geometry.Curve",
+        "units": "cm",
+        "weights": []
+      }
+    ],
+    "speckle_type": "Objects.Geometry.Polycurve",
+    "units": "cm"
   },
-  "length": 0.0,
-  "area": 0.0,
-  "bbox": null,
-  "applicationId": null,
-  "speckle_type": "Objects.Geometry.Polycurve",
-  "id": "050585d98934e7a4d199e07bd92598a5",
-  "__closure": {
-    "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
-    "cfaf7ae0dfc5a7cf3343bb6db46ed238": 100
+  "4314c177603b00228261d6f0f4686395": {
+    "__closure": {
+      "050585d98934e7a4d199e07bd92598a5": 100,
+      "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
+      "cfaf7ae0dfc5a7cf3343bb6db46ed238": 100
+    },
+    "@profile": {
+      "__closure": null,
+      "referencedId": "050585d98934e7a4d199e07bd92598a5",
+      "speckle_type": "reference"
+    },
+    "applicationId": null,
+    "id": "4314c177603b00228261d6f0f4686395",
+    "speckle_type": "Base"
+  },
+  "8d27f5c7fac36d985d89bb6d6d8acddc": {
+    "applicationId": null,
+    "data": [
+      1.0,
+      2.0
+    ],
+    "id": "8d27f5c7fac36d985d89bb6d6d8acddc",
+    "speckle_type": "Speckle.Core.Models.DataChunk"
+  },
+  "cfaf7ae0dfc5a7cf3343bb6db46ed238": {
+    "__closure": {
+      "8d27f5c7fac36d985d89bb6d6d8acddc": 100
+    },
+    "applicationId": null,
+    "area": 0.0,
+    "bbox": null,
+    "closed": false,
+    "domain": {
+      "applicationId": null,
+      "end": 1.0,
+      "id": "4d47df83148d8bad7bd2657bd9158b4c",
+      "speckle_type": "Objects.Primitive.Interval",
+      "start": 0.0
+    },
+    "id": "cfaf7ae0dfc5a7cf3343bb6db46ed238",
+    "length": 0.0,
+    "speckle_type": "Objects.Geometry.Polyline",
+    "units": "cm",
+    "value": [
+      {
+        "__closure": null,
+        "referencedId": "8d27f5c7fac36d985d89bb6d6d8acddc",
+        "speckle_type": "reference"
+      }
+    ]
   }
 }
-  }
-]
