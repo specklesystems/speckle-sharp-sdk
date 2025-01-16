@@ -2,7 +2,6 @@ using FluentAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Common;
-using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;
 

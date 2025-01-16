@@ -5,7 +5,6 @@ using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Utils;
 
