@@ -58,7 +58,7 @@ public class Point : Base, ITransformable<Point>, IEquatable<Point>
   public required string units { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Point transformed)
+  public virtual Point TransformTo(Transform transform)
   {
     var matrix = transform.matrix;
 
@@ -68,16 +68,7 @@ public class Point : Base, ITransformable<Point>, IEquatable<Point>
     var y = (this.x * matrix.M21 + this.y * matrix.M22 + this.z * matrix.M23 + unitFactor * matrix.M24) / divisor;
     var z = (this.x * matrix.M31 + this.y * matrix.M32 + this.z * matrix.M33 + unitFactor * matrix.M34) / divisor;
 
-    transformed = new Point(x, y, z, units, applicationId);
-    return true;
-  }
-
-  /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    var res = TransformTo(transform, out Point pt);
-    transformed = pt;
-    return res;
+    return new Point(x, y, z, units, applicationId);
   }
 
   /// <summary>

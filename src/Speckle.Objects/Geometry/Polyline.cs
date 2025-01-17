@@ -10,7 +10,7 @@ namespace Speckle.Objects.Geometry;
 /// A polyline curve, defined by a set of vertices.
 /// </summary>
 [SpeckleType("Objects.Geometry.Polyline")]
-public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
+public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable<Polyline>
 {
   /// <summary>
   /// Gets or sets the raw coordinates that define this polyline. Use GetPoints instead to access this data as <see cref="Point"/> instances instead.
@@ -44,25 +44,26 @@ public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   public Box? bbox { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
+  public Polyline TransformTo(Transform transform)
   {
     // transform points
-    var transformedPoints = new List<Point>();
-    foreach (var point in GetPoints())
+    var originalPoints = GetPoints();
+    var transformedPoints = new List<double>(originalPoints.Count * 3);
+    foreach (var point in originalPoints)
     {
-      point.TransformTo(transform, out Point transformedPoint);
-      transformedPoints.Add(transformedPoint);
+      Point transformedPoint = point.TransformTo(transform);
+      transformedPoints.Add(transformedPoint.x);
+      transformedPoints.Add(transformedPoint.y);
+      transformedPoints.Add(transformedPoint.z);
     }
 
-    transformed = new Polyline
+    return new Polyline
     {
-      value = transformedPoints.SelectMany(o => o.ToList()).ToList(),
+      value = transformedPoints,
       closed = closed,
       applicationId = applicationId,
       units = units,
     };
-
-    return true;
   }
 
   ///<remarks>This function may be suboptimal for performance for polylines with many points</remarks>

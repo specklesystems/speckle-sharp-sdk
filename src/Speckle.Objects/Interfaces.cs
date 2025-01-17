@@ -1,3 +1,5 @@
+using System.Diagnostics.Contracts;
+using Speckle.Objects.Exceptions;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
@@ -62,26 +64,23 @@ public interface ICurve : ISpeckleObject
 /// Generic Interface for transformable objects.
 /// </summary>
 /// <typeparam name="T">The type of object to support transformations.</typeparam>
-public interface ITransformable<T> : ITransformable
-  where T : ITransformable<T>
-{
-  /// <inheritdoc cref="ITransformable.TransformTo"/>
-  bool TransformTo(Transform transform, out T transformed);
-}
-
-/// <summary>
-/// Interface for transformable objects where the type may not be known on convert (eg ICurve implementations)
-/// </summary>
-public interface ITransformable : ISpeckleObject
+public interface ITransformable<out T> : ITransformable
+  where T : ISpeckleObject
 {
   /// <summary>
-  /// Returns a copy of the object with it's coordinates transformed by the provided <paramref name="transform"/>
+  /// Returns a copy of the object with its coordinates transformed by the provided <paramref name="transform"/>
   /// </summary>
   /// <param name="transform">The <see cref="Transform"/> to be applied.</param>
-  /// <param name="transformed">The transformed copy of the object.</param>
-  /// <returns>True if the transform operation was successful, false otherwise.</returns>
-  bool TransformTo(Transform transform, out ITransformable transformed);
+  /// <exception cref="TransformationException"> thrown if the object could not be transformed by the provided <paramref name="transform"/></exception>
+  /// <returns>The transformed copy of the object.</returns>
+  [Pure]
+  T TransformTo(Transform transform);
 }
+
+/// <remarks>
+/// Do not inherit directly, inherit from <see cref="ITransformable{T}"/> instead
+/// </remarks>
+public interface ITransformable : ISpeckleObject { }
 
 /// <summary>
 /// Specifies displayable <see cref="Base"/> simple geometries to be used as a fallback

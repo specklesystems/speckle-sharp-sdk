@@ -64,22 +64,13 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   public Box? bbox { get; set; }
 
   /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out Vector transformed)
+  public Vector TransformTo(Transform transform)
   {
     var m = transform.matrix;
     var tX = x * m.M11 + y * m.M12 + z * m.M13;
     var tY = x * m.M21 + y * m.M22 + z * m.M23;
     var tZ = x * m.M31 + y * m.M32 + z * m.M33;
-    transformed = new Vector(tX, tY, tZ, units, applicationId);
-    return true;
-  }
-
-  /// <inheritdoc/>
-  public bool TransformTo(Transform transform, out ITransformable transformed)
-  {
-    _ = TransformTo(transform, out Vector vec);
-    transformed = vec;
-    return true;
+    return new Vector(tX, tY, tZ, units, applicationId);
   }
 
   /// <summary>
