@@ -8,15 +8,16 @@ public class VectorTests
 {
   private const float FLOAT_TOLERANCE = 1e-6f;
 
-  public static IReadOnlyList<object[]> TestCases() =>
-    [
-      [0d, 0d, 0d, "m"],
-      [1d, 2d, 3d, "ft"],
-      [0d, 0d, -1d, "km"],
-      [100d, 0d, -200d, "in"],
-      [123.123d, 456.456d, 5789.789d, "cm"],
-      [-123.123d, -456.456d, -5789.789d, "mm"],
-    ];
+  public static TheoryData<double, double, double, string> TestCases() =>
+    new()
+    {
+      { 0d, 0d, 0d, "m" },
+      { 1d, 2d, 3d, "ft" },
+      { 0d, 0d, -1d, "km" },
+      { 100d, 0d, -200d, "in" },
+      { 123.123d, 456.456d, 5789.789d, "cm" },
+      { -123.123d, -456.456d, -5789.789d, "mm" },
+    };
 
   [Theory]
   [MemberData(nameof(TestCases))]

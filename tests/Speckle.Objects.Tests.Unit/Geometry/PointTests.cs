@@ -97,8 +97,17 @@ public class PointTests
       new(0, 0, 0, Units.Feet),
     ];
 
-  public static IEnumerable<object> TransformTestCases =>
-    Enumerable.Range(0, PointTestData.Count).Select(i => new object[] { MatrixTestData[i], PointTestData[i] });
+  public static TheoryData<Point> PointTestCases() => new(PointTestData);
+
+  public static TheoryData<Matrix4x4, Point> TransformTestCases()
+  {
+    TheoryData<Matrix4x4, Point> testCases = new();
+    for (int i = 0; i < PointTestData.Count; i++)
+    {
+      testCases.Add(MatrixTestData[i], PointTestData[i]);
+    }
+    return testCases;
+  }
 
   [Theory]
   [MemberData(nameof(TransformTestCases))]
@@ -144,5 +153,44 @@ public class PointTests
     transformedPoint.applicationId.Should().Be(point.applicationId);
 
     new Vector3(x, y, z).Should().Be(expected);
+  }
+
+  [Theory]
+  [MemberData(nameof(PointTestCases))]
+  public void ToVector(Point testCase)
+  {
+    var expectedXYZ = (testCase.x, testCase.y, testCase.z);
+    var expectedUnits = testCase.units;
+    var expectedApplicationId = testCase.applicationId;
+
+    var asVector = testCase.ToVector();
+    var resultXYZ = (asVector.x, asVector.y, asVector.z);
+
+    resultXYZ.Should().Be(expectedXYZ);
+    asVector.units.Should().Be(expectedUnits);
+    asVector.applicationId.Should().Be(expectedApplicationId);
+  }
+
+  [Theory]
+  [MemberData(nameof(PointTestCases))]
+  public void Deconstruct_Double_Double_Double_String(Point testCase)
+  {
+    (double x, double y, double z, string? units) = testCase;
+
+    x.Should().Be(testCase.x);
+    y.Should().Be(testCase.y);
+    z.Should().Be(testCase.z);
+    units.Should().Be(testCase.units);
+  }
+
+  [Theory]
+  [MemberData(nameof(PointTestCases))]
+  public void Deconstruct_Double_Double_Double(Point testCase)
+  {
+    (double x, double y, double z) = testCase;
+
+    x.Should().Be(testCase.x);
+    y.Should().Be(testCase.y);
+    z.Should().Be(testCase.z);
   }
 }
