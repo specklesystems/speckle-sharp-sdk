@@ -13,7 +13,7 @@ public class ArchicadObject : DataObject, IArchicadObject
   public required string level { get; set; }
 
   [DetachProperty]
-  public List<ArchicadObject> elements { get; set; }
+  public required List<ArchicadObject> elements { get; set; }
 
   IReadOnlyList<IArchicadObject> IArchicadObject.elements => elements;
 }
