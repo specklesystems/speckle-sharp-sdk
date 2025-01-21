@@ -1,24 +1,46 @@
+using System.Diagnostics.Contracts;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
+using Speckle.Objects.Utils;
 using Speckle.Sdk;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
 
+/// <remarks><a href="https://speckle.notion.site/Objects-Geometry-Mesh-9b0bf5ab92bf42f58bf2fe3922d2efca">More docs on notion</a></remarks>
 [SpeckleType("Objects.Geometry.Mesh")]
 public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<Mesh>
 {
+  /// <summary>
+  /// Flat list of vertex data (flat <c>x,y,z,x,y,z...</c> list)
+  /// </summary>
   [DetachProperty, Chunkable(31250)]
   public required List<double> vertices { get; set; }
 
+  /// <summary>
+  /// Flat list of face data<br/>
+  /// Each face starts with the length of the face (e.g. 3 in the case of triangles), followed by that many indices
+  /// </summary>
+  /// <remarks>
+  /// N-gons are supported, but large values of n (> ~50) tend to cause significant performance problems for consumers (e.g. HostApps and <see cref="MeshTriangulationHelper"/>.
+  /// </remarks>
+  /// <example>
+  /// <code>[
+  ///   3, 0, 1, 2, //first face, a triangle (3-gon)
+  ///   4, 1, 2, 3, 4, //second face, a quad (4-gon)
+  ///   6, 4, 5, 6, 7, 8, 9, //third face, an n-gon (6-gon)
+  /// ];</code></example>
   [DetachProperty, Chunkable(62500)]
   public required List<int> faces { get; set; }
 
-  /// <summary> Vertex colors as ARGB <see cref="int"/>s</summary>
+  /// <summary>Vertex colors as ARGB <see cref="int"/>s</summary>
+  /// <remarks>Expected that there are either 1 color per vertex, or an empty <see cref="List{T}"/></remarks>
   [DetachProperty, Chunkable(62500)]
   public List<int> colors { get; set; } = new();
 
+  /// <summary>Flat list of texture coordinates (flat <c>u,v,u,v,u,v...</c> list)</summary>
+  /// <remarks>Expected that there are either 1 texture coordinate per vertex, or an empty <see cref="List{T}"/></remarks>
   [DetachProperty, Chunkable(31250)]
   public List<double> textureCoordinates { get; set; } = new();
 
@@ -85,8 +107,6 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
     return res;
   }
 
-  #region Convenience Methods
-
   [JsonIgnore]
   public int VerticesCount => vertices.Count / 3;
 
@@ -98,6 +118,8 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
   /// </summary>
   /// <param name="index">The index of the vertex</param>
   /// <returns>Vertex as a <see cref="Point"/></returns>
+  /// <remarks>It is usually recommended to instead consume the <see cref="vertices"/> list manually for better performance</remarks>
+  [Pure]
   public Point GetPoint(int index)
   {
     index *= 3;
@@ -106,6 +128,8 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
 
   /// <returns><see cref="vertices"/> as list of <see cref="Point"/>s</returns>
   /// <exception cref="SpeckleException">when list is malformed</exception>
+  /// <remarks>It is usually recommended to instead consume the <see cref="vertices"/> list manually for better performance</remarks>
+  [Pure]
   public List<Point> GetPoints()
   {
     if (vertices.Count % 3 != 0)
@@ -129,78 +153,10 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
   /// </summary>
   /// <param name="index">The index of the texture coordinate</param>
   /// <returns>Texture coordinate as a <see cref="ValueTuple{T1, T2}"/></returns>
+  [Pure]
   public (double, double) GetTextureCoordinate(int index)
   {
     index *= 2;
     return (textureCoordinates[index], textureCoordinates[index + 1]);
   }
-
-  /// <summary>
-  /// If not already so, this method will align <see cref="Mesh.vertices"/>
-  /// such that a vertex and its corresponding texture coordinates have the same index.
-  /// This alignment is what is expected by most applications.<br/>
-  /// </summary>
-  /// <remarks>
-  /// If the calling application expects
-  /// <code>vertices.count == textureCoordinates.count</code>
-  /// Then this method should be called by the <c>MeshToNative</c> method before parsing <see cref="Mesh.vertices"/> and <see cref="Mesh.faces"/>
-  /// to ensure compatibility with geometry originating from applications that map <see cref="Mesh.vertices"/> to <see cref="Mesh.textureCoordinates"/> using vertex instance index (rather than vertex index)
-  /// <br/>
-  /// <see cref="Mesh.vertices"/>, <see cref="Mesh.colors"/>, and <see cref="faces"/> lists will be modified to contain no shared vertices (vertices shared between polygons)
-  /// </remarks>
-  public void AlignVerticesWithTexCoordsByIndex()
-  {
-    if (textureCoordinates.Count == 0)
-    {
-      return;
-    }
-
-    if (TextureCoordinatesCount == VerticesCount)
-    {
-      return; //Tex-coords already aligned as expected
-    }
-
-    var facesUnique = new List<int>(faces.Count);
-    var verticesUnique = new List<double>(TextureCoordinatesCount * 3);
-    bool hasColors = colors.Count > 0;
-    var colorsUnique = hasColors ? new List<int>(TextureCoordinatesCount) : null;
-
-    int nIndex = 0;
-    while (nIndex < faces.Count)
-    {
-      int n = faces[nIndex];
-      if (n < 3)
-      {
-        n += 3; // 0 -> 3, 1 -> 4
-      }
-
-      if (nIndex + n >= faces.Count)
-      {
-        break; //Malformed face list
-      }
-
-      facesUnique.Add(n);
-      for (int i = 1; i <= n; i++)
-      {
-        int vertIndex = faces[nIndex + i];
-        int newVertIndex = verticesUnique.Count / 3;
-
-        var (x, y, z) = GetPoint(vertIndex);
-        verticesUnique.Add(x);
-        verticesUnique.Add(y);
-        verticesUnique.Add(z);
-
-        colorsUnique?.Add(colors[vertIndex]);
-        facesUnique.Add(newVertIndex);
-      }
-
-      nIndex += n + 1;
-    }
-
-    vertices = verticesUnique;
-    colors = colorsUnique ?? colors;
-    faces = facesUnique;
-  }
-
-  #endregion
 }

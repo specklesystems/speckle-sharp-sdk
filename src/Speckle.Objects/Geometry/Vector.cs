@@ -86,15 +86,9 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// Returns the coordinates of this <see cref="Vector"/> as a list of numbers
   /// </summary>
   /// <returns>A list of coordinates {x, y, z} </returns>
-  public List<double> ToList()
-  {
-    return new List<double> { x, y, z };
-  }
+  public List<double> ToList() => [x, y, z];
 
-  public Point ToPoint()
-  {
-    return new Point(x, y, z, units, applicationId);
-  }
+  public Point ToPoint() => new(x, y, z, units, applicationId);
 
   /// <summary>
   /// Creates a new vector based on a list of coordinates and the unit they're drawn in.
@@ -176,11 +170,6 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
     return new Vector(x, y, z, units: u.units);
   }
 
-  public static double Angle(Vector u, Vector v)
-  {
-    return Math.Acos(DotProduct(u, v) / (u.Length * v.Length));
-  }
-
   /// <summary>
   /// Compute and return a unit vector from this vector
   /// </summary>
@@ -204,23 +193,6 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
     z *= -1;
     return this;
   }
-
-  /// <summary>
-  /// Returns a normalized copy of this vector.
-  /// </summary>
-  /// <returns>A copy of this vector unitized.</returns>
-  public Vector Unit()
-  {
-    return this / Length;
-  }
-
-  /// <summary>
-  /// Constructs a new <see cref="Vector"/> from a <see cref="Point"/>
-  /// </summary>
-  /// <param name="point">The point whose coordinates will be used</param>
-  /// <param name="applicationId">The unique application ID of the object.</param>
-  [Obsolete($"Use {nameof(Point.ToVector)}", true)]
-  public Vector(Point point, string? applicationId = null) { }
 
   /// <summary>
   /// Gets or sets the coordinates of the vector
