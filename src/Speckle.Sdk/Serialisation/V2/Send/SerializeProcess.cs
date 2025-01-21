@@ -253,7 +253,9 @@ public sealed class SerializeProcess(
         progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
       }
     }
+#pragma warning disable CA1031
     catch (Exception e)
+#pragma warning restore CA1031
     {
       _logger.LogError(e, "Error sending objects to server");
       throw;
@@ -271,7 +273,9 @@ public sealed class SerializeProcess(
         progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
       }
     }
+#pragma warning disable CA1031
     catch (Exception e)
+#pragma warning restore CA1031
     {
       _logger.LogError(e, "Error sending objects to server");
       throw;

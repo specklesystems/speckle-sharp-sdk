@@ -59,13 +59,14 @@ public abstract class ChannelSaver<T>
     try
     {
       await SendToServer((Batch<T>)batch, cancellationTokenSource.Token).ConfigureAwait(false);
-      return batch;
     }
+#pragma warning disable CA1031
     catch (Exception)
+#pragma warning restore CA1031
     {
       cancellationTokenSource.Cancel(true);
-      throw;
     }
+    return batch;
   }
 
   public abstract Task SendToServer(Batch<T> batch, CancellationToken cancellationToken);
@@ -82,10 +83,11 @@ public abstract class ChannelSaver<T>
     {
       SaveToCache(item);
     }
+#pragma warning disable CA1031
     catch (Exception)
+#pragma warning restore CA1031
     {
       cancellationTokenSource.Cancel(true);
-      throw;
     }
   }
 
