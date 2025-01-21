@@ -44,7 +44,7 @@ public sealed class SerializeProcess(
   private readonly PriorityScheduler _belowNormal = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.BelowNormal,
-    Environment.ProcessorCount *2
+    Environment.ProcessorCount * 2
   );
 
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
