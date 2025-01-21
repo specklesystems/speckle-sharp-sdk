@@ -28,29 +28,44 @@ public abstract class ChannelSaver<T>
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start(CancellationToken cancellationToken = default) =>
+  public Task Start(CancellationTokenSource cancellationTokenSource) =>
     _checkCacheChannel
       .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
-        async x => await SendToServer(x, cancellationToken).ConfigureAwait(false),
+        async x => await SendToServerPrivate(x, cancellationTokenSource).ConfigureAwait(false),
         HTTP_CAPACITY,
         false,
-        cancellationToken
+        cancellationTokenSource.Token
       )
       .Join()
       .Batch(MAX_CACHE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken);
+      .ReadAllConcurrently(
+        MAX_CACHE_WRITE_PARALLELISM,
+        x => SaveToCachePrivate(x, cancellationTokenSource),
+        cancellationTokenSource.Token
+      );
 
-  public ValueTask Save(T item, CancellationToken cancellationToken = default) =>
-    _checkCacheChannel.Writer.WriteAsync(item, cancellationToken);
+  public async ValueTask Save(T item, CancellationToken cancellationToken) =>
+    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(true);
 
-  public async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch, CancellationToken cancellationToken)
+  private async Task<IMemoryOwner<T>> SendToServerPrivate(
+    IMemoryOwner<T> batch,
+    CancellationTokenSource cancellationTokenSource
+  )
   {
-    await SendToServer((Batch<T>)batch, cancellationToken).ConfigureAwait(false);
-    return batch;
+    try
+    {
+      await SendToServer((Batch<T>)batch, cancellationTokenSource.Token).ConfigureAwait(false);
+      return batch;
+    }
+    catch (Exception)
+    {
+      cancellationTokenSource.Cancel(true);
+      throw;
+    }
   }
 
   public abstract Task SendToServer(Batch<T> batch, CancellationToken cancellationToken);
@@ -59,6 +74,19 @@ public abstract class ChannelSaver<T>
   {
     _checkCacheChannel.Writer.Complete();
     return Task.CompletedTask;
+  }
+
+  private void SaveToCachePrivate(List<T> item, CancellationTokenSource cancellationTokenSource)
+  {
+    try
+    {
+      SaveToCache(item);
+    }
+    catch (Exception)
+    {
+      cancellationTokenSource.Cancel(true);
+      throw;
+    }
   }
 
   public abstract void SaveToCache(List<T> item);
