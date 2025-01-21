@@ -5,7 +5,6 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
-using Xunit;
 
 namespace Speckle.Objects.Tests.Unit;
 

@@ -8,11 +8,9 @@ public class UnitsTest
 {
   private const double EPS = 0.00022;
 
-  public static List<string> OfficiallySupportedUnits => Units.SupportedUnits;
-
-  public static List<string> NotSupportedUnits => ["feeters", "liters", "us_ft"];
-
-  public static List<string?> ConversionSupport => Units.SupportedUnits.Concat([null]).ToList();
+  public static IReadOnlyCollection<string> OfficiallySupportedUnits => Units.SupportedUnits;
+  public static IReadOnlyCollection<string> NotSupportedUnits => ["feeters", "liters", "us_ft"];
+  public static IReadOnlyCollection<string?> ConversionSupport => [.. Units.SupportedUnits, null];
 
   [Theory]
   [MemberData(nameof(ConversionSupportGenerator))]

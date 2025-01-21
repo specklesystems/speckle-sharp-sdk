@@ -3,7 +3,6 @@ using Speckle.Objects.Geometry;
 using Speckle.Objects.Geometry.Autocad;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Xunit;
 using Point = Speckle.Objects.Geometry.Point;
 
 namespace Speckle.Objects.Tests.Unit;

@@ -59,9 +59,9 @@
       },
       "xunit.runner.visualstudio": {
         "type": "Direct",
-        "requested": "[3.0.0, )",
-        "resolved": "3.0.0",
-        "contentHash": "HggUqjQJe8PtDxcP25Q+CnR6Lz4oX3GElhD9V4oU2+75x9HI6A6sxbfKGS4UwU4t4yJaS9fBmAuriz8bQApNjw=="
+        "requested": "[3.0.1, )",
+        "resolved": "3.0.1",
+        "contentHash": "lbyYtsBxA8Pz8kaf5Xn/Mj1mL9z2nlBWdZhqFaj66nxXBa4JwiTDm4eGcpSMet6du9TOWI6bfha+gQR6+IHawg=="
       },
       "GraphQL.Client.Abstractions": {
         "type": "Transitive",
@@ -291,11 +291,6 @@
         "resolved": "1.18.0",
         "contentHash": "OtFMHN8yqIcYP9wcVIgJrq01AfTxijjAqVDy/WeQVSyrDC1RzBWeQPztL49DN2syXRah8TYnfvk035s7L95EZQ=="
       },
-      "xunit.assert": {
-        "type": "Transitive",
-        "resolved": "2.9.3",
-        "contentHash": "/Kq28fCE7MjOV42YLVRAJzRF0WmEqsmflm0cfpMjGtzQ2lR5mYVj1/i0Y8uDAOLczkL3/jArrwehfMD0YogMAA=="
-      },
       "xunit.core": {
         "type": "Transitive",
         "resolved": "2.9.3",
@@ -326,9 +321,9 @@
         "dependencies": {
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
-          "Microsoft.Data.Sqlite": "[7.0.5, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
-          "Microsoft.Extensions.Logging": "[2.2.0, )",
+          "Microsoft.Data.Sqlite": "[7.0.5, 7.0.5]",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, 2.2.0]",
+          "Microsoft.Extensions.Logging": "[2.2.0, 2.2.0]",
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
           "Speckle.Sdk.Dependencies": "[1.0.0, )"
@@ -340,19 +335,19 @@
       "speckle.sdk.tests.unit": {
         "type": "Project",
         "dependencies": {
-          "FluentAssertions": "[7.0.0, )",
-          "Microsoft.Extensions.DependencyInjection": "[2.2.0, )",
+          "FluentAssertions": "[7.0.0, 7.0.0]",
+          "Microsoft.Extensions.DependencyInjection": "[2.2.0, 2.2.0]",
           "Microsoft.NET.Test.Sdk": "[17.12.0, )",
           "Speckle.DoubleNumerics": "[4.0.1, )",
           "Speckle.Sdk": "[1.0.0, )",
           "altcover": "[9.0.1, )",
           "xunit": "[2.9.3, )",
-          "xunit.runner.visualstudio": "[3.0.0, )"
+          "xunit.runner.visualstudio": "[3.0.1, )"
         }
       },
       "FluentAssertions": {
         "type": "CentralTransitive",
-        "requested": "[7.0.0, )",
+        "requested": "[7.0.0, 7.0.0]",
         "resolved": "7.0.0",
         "contentHash": "mTLbcU991EQ1SEmNbVBaGGGJy0YFzvGd1sYJGNZ07nlPKuyHSn1I22aeKzqQXgEiaKyRO6MSCto9eN9VxMwBdA==",
         "dependencies": {
@@ -378,7 +373,7 @@
       },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",
-        "requested": "[7.0.5, )",
+        "requested": "[7.0.5, 7.0.5]",
         "resolved": "7.0.5",
         "contentHash": "KGxbPeWsQMnmQy43DSBxAFtHz3l2JX8EWBSGUCvT3CuZ8KsuzbkqMIJMDOxWtG8eZSoCDI04aiVQjWuuV8HmSw==",
         "dependencies": {
@@ -388,7 +383,7 @@
       },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "CentralTransitive",
-        "requested": "[2.2.0, )",
+        "requested": "[2.2.0, 2.2.0]",
         "resolved": "2.2.0",
         "contentHash": "MZtBIwfDFork5vfjpJdG5g8wuJFt7d/y3LOSVVtDK/76wlbtz6cjltfKHqLx2TKVqTj5/c41t77m1+h20zqtPA==",
         "dependencies": {
@@ -397,13 +392,13 @@
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
         "type": "CentralTransitive",
-        "requested": "[2.2.0, )",
+        "requested": "[2.2.0, 2.2.0]",
         "resolved": "2.2.0",
         "contentHash": "f9hstgjVmr6rmrfGSpfsVOl2irKAgr1QjrSi3FgnS7kulxband50f2brRLwySAQTADPZeTdow0mpSMcoAdadCw=="
       },
       "Microsoft.Extensions.Logging": {
         "type": "CentralTransitive",
-        "requested": "[2.2.0, )",
+        "requested": "[2.2.0, 2.2.0]",
         "resolved": "2.2.0",
         "contentHash": "Nxqhadc9FCmFHzU+fz3oc8sFlE6IadViYg8dfUdGzJZ2JUxnCsRghBhhOWdM4B2zSZqEc+0BjliBh/oNdRZuig==",
         "dependencies": {
@@ -424,6 +419,12 @@
         "requested": "[13.0.2, )",
         "resolved": "13.0.2",
         "contentHash": "g1BejUZwax5PRfL6xHgLEK23sqHWOgOj9hE7RvfRRlN00AGt8GnPYt8HedSK7UB3HiRW8zCA9Pn0iiYxCK24BA=="
+      },
+      "xunit.assert": {
+        "type": "CentralTransitive",
+        "requested": "[2.9.3, )",
+        "resolved": "2.9.3",
+        "contentHash": "/Kq28fCE7MjOV42YLVRAJzRF0WmEqsmflm0cfpMjGtzQ2lR5mYVj1/i0Y8uDAOLczkL3/jArrwehfMD0YogMAA=="
       }
     }
   }

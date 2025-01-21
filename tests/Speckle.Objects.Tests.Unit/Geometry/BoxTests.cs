@@ -1,7 +1,5 @@
-using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
-using Xunit;
 
 namespace Speckle.Objects.Tests.Unit.Geometry;
 
@@ -18,7 +16,7 @@ public class BoxTests
     };
 
   [Fact]
-  public void CanCreateBox()
+  public async Task CanCreateBox()
   {
     const string UNITS = Units.Meters;
     var box = new Box()
@@ -29,11 +27,6 @@ public class BoxTests
       zSize = new() { start = -3, end = 3 },
       units = UNITS,
     };
-
-    // Assert area
-    box.area.Should().BeApproximately(2 * (2 * 4 + 2 * 6 + 4 * 6), 0.0001);
-
-    // Assert volume
-    box.volume.Should().BeApproximately(2 * 4 * 6, 0.0001);
+    await Verify(box);
   }
 }
