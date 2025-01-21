@@ -5,6 +5,7 @@ using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Xunit;
+using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -14,7 +15,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
   private Client _testUser;
   private Project _testProject;
   private Model _testModel;
-  private string _testVersion;
+  private Version _testVersion;
 
   private SubscriptionResource Sut => _testUser.Subscription;
 
@@ -109,7 +110,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 
     subscriptionMessage.Should().NotBeNull();
-    subscriptionMessage!.id.Should().Be(created);
+    subscriptionMessage!.id.Should().Be(created.id);
     subscriptionMessage.type.Should().Be(ProjectVersionsUpdatedMessageType.CREATED);
     subscriptionMessage.version.Should().NotBeNull();
   }
@@ -125,7 +126,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
-    var created = await Fixtures.CreateComment(_testUser, _testProject.id, _testModel.id, _testVersion);
+    var created = await Fixtures.CreateComment(_testUser, _testProject.id, _testModel.id, _testVersion.id);
 
     await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
 

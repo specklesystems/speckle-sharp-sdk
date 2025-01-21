@@ -5,6 +5,7 @@ using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Common;
 using Xunit;
+using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -14,17 +15,17 @@ public class CommentResourceTests
   private readonly CommentResource Sut;
   private readonly Project _project;
   private readonly Model _model;
-  private readonly string _versionId;
+  private readonly Version _version;
   private readonly Comment _comment;
 
   // Constructor for setup
   public CommentResourceTests()
   {
     // Synchronous operations converted to async Task.Run for constructor
-    _testUser = Task.Run(async () => await Fixtures.SeedUserWithClient()).Result!;
-    _project = Task.Run(async () => await _testUser.Project.Create(new("Test project", "", null))).Result!;
-    _model = Task.Run(async () => await _testUser.Model.Create(new("Test Model 1", "", _project.id))).Result!;
-    _versionId = Task.Run(async () => await Fixtures.CreateVersion(_testUser, _project.id, _model.id)).Result!;
+    _testUser = Task.Run(async () => await Fixtures.SeedUserWithClient()).Result;
+    _project = Task.Run(async () => await _testUser.Project.Create(new("Test project", "", null))).Result;
+    _model = Task.Run(async () => await _testUser.Model.Create(new("Test Model 1", "", _project.id))).Result;
+    _version = Task.Run(async () => await Fixtures.CreateVersion(_testUser, _project.id, _model.id)).Result;
     _comment = Task.Run(CreateComment).Result!;
     Sut = _testUser.Comment;
   }
@@ -110,6 +111,6 @@ public class CommentResourceTests
 
   private async Task<Comment> CreateComment()
   {
-    return await Fixtures.CreateComment(_testUser, _project.id, _model.id, _versionId);
+    return await Fixtures.CreateComment(_testUser, _project.id, _model.id, _version.id);
   }
 }

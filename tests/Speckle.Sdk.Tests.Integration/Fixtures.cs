@@ -13,6 +13,7 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Serialisation;
 using Speckle.Sdk.Transports;
+using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Integration;
 
@@ -39,7 +40,7 @@ public static class Fixtures
     return ServiceProvider.GetRequiredService<IClientFactory>().Create(await SeedUser());
   }
 
-  public static async Task<string> CreateVersion(Client client, string projectId, string modelId)
+  public static async Task<Version> CreateVersion(Client client, string projectId, string modelId)
   {
     using var remote = ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(client.Account, projectId);
     var (objectId, _) = await ServiceProvider

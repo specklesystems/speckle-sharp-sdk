@@ -26,9 +26,7 @@ public class VersionResourceTests : IAsyncLifetime
     _model1 = await _testUser.Model.Create(new("Test Model 1", "", _project.id));
     _model2 = await _testUser.Model.Create(new("Test Model 2", "", _project.id));
 
-    string versionId = await Fixtures.CreateVersion(_testUser, _project.id, _model1.id);
-
-    _version = await Sut.Get(versionId, _project.id);
+    _version = await Fixtures.CreateVersion(_testUser, _project.id, _model1.id);
   }
 
   [Fact]

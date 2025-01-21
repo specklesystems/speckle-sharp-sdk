@@ -11,6 +11,7 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
+using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 
@@ -62,7 +63,7 @@ public class GeneralSendTest
   }
 
   [Benchmark(Baseline = true)]
-  public async Task<string> Send_old()
+  public async Task<Version> Send_old()
   {
     using SQLiteTransport local = new();
     var res = await _operations.Send(_testData, [_remote, local]);
@@ -70,13 +71,13 @@ public class GeneralSendTest
   }
 
   [Benchmark]
-  public async Task<string> Send_new()
+  public async Task<Version> Send_new()
   {
     var res = await _operations.Send2(new(acc.serverInfo.url), _project.id, acc.token, _testData);
     return await TagVersion($"Send_new {Guid.NewGuid()}", res.RootId);
   }
 
-  private async Task<string> TagVersion(string name, string objectId)
+  private async Task<Version> TagVersion(string name, string objectId)
   {
     var model = await client.Model.Create(new(name, null, _project.id));
     return await client.Version.Create(new(objectId, model.id, _project.id));
