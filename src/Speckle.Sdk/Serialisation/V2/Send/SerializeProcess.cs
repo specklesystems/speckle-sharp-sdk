@@ -95,6 +95,7 @@ public sealed class SerializeProcess(
     await findTotalObjectsTask.ConfigureAwait(false);
     if (source.IsCancellationRequested)
     {
+      //this means we really want to stop but exceptions haven't bubbled up yet so don't let us continue if cancelled
       throw new OperationCanceledException();
     }
     return new(root.id.NotNull(), _objectReferences.Freeze());

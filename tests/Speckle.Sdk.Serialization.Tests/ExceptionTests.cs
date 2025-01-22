@@ -4,6 +4,7 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -17,7 +18,7 @@ public class ExceptionTests
   }
 
   [Fact]
-  public async Task Test_Exceptions()
+  public async Task Test_Exceptions_Upload()
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
@@ -26,6 +27,24 @@ public class ExceptionTests
       null,
       new DummySendCacheManager(objects),
       new ExceptionServerObjectManager(),
+      new BaseChildFinder(new BasePropertyGatherer()),
+      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new NullLoggerFactory(),
+      new SerializeProcessOptions(false, false, false, true)
+    );
+
+    await Assert.ThrowsAsync<OperationCanceledException>(async () => await process2.Serialize(testClass, default));
+  }
+
+  [Fact]
+  public async Task Test_Exceptions_Cache()
+  {
+    var testClass = new TestClass() { RegularProperty = "Hello" };
+
+    using var process2 = new SerializeProcess(
+      null,
+      new ExceptionSendCacheManager(),
+      new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new NullLoggerFactory(),
@@ -61,4 +80,23 @@ public class ExceptionServerObjectManager : IServerObjectManager
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
+}
+
+public class ExceptionSendCacheManager : ISqLiteJsonCacheManager
+{
+  public void Dispose() { }
+
+  public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() => throw new NotImplementedException();
+
+  public void DeleteObject(string id) => throw new NotImplementedException();
+
+  public string? GetObject(string id) => null;
+
+  public void SaveObject(string id, string json) => throw new NotImplementedException();
+
+  public void UpdateObject(string id, string json) => throw new NotImplementedException();
+
+  public void SaveObjects(IEnumerable<(string id, string json)> items) => throw new NotImplementedException();
+
+  public bool HasObject(string objectId) => throw new NotImplementedException();
 }
