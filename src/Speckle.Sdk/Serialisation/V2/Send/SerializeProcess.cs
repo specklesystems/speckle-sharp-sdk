@@ -98,6 +98,8 @@ public sealed class SerializeProcess(
       //this means we really want to stop but exceptions haven't bubbled up yet so don't let us continue if cancelled
       throw new OperationCanceledException();
     }
+    //last chance to see if user cancelled
+    cancellationToken.ThrowIfCancellationRequested(); 
     return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
