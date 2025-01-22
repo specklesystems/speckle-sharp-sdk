@@ -88,18 +88,11 @@ public sealed class SerializeProcess(
         _highest
       );
     }
+    var traverseTask = Traverse(root, source);
 
-    await Traverse(root, source).ConfigureAwait(false);
+    await Task.WhenAll(findTotalObjectsTask, channelTask, traverseTask).ConfigureAwait(true);
     await Done().ConfigureAwait(true);
-    await channelTask.ConfigureAwait(false);
-    await findTotalObjectsTask.ConfigureAwait(false);
-    if (source.IsCancellationRequested)
-    {
-      //this means we really want to stop but exceptions haven't bubbled up yet so don't let us continue if cancelled
-      throw new OperationCanceledException();
-    }
-    //last chance to see if user cancelled
-    cancellationToken.ThrowIfCancellationRequested();
+    source.Token.ThrowIfCancellationRequested();
     return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
