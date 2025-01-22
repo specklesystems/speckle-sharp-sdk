@@ -99,7 +99,7 @@ public sealed class SerializeProcess(
       throw new OperationCanceledException();
     }
     //last chance to see if user cancelled
-    cancellationToken.ThrowIfCancellationRequested(); 
+    cancellationToken.ThrowIfCancellationRequested();
     return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
