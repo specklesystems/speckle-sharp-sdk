@@ -93,6 +93,10 @@ public sealed class SerializeProcess(
     await Done().ConfigureAwait(true);
     await channelTask.ConfigureAwait(false);
     await findTotalObjectsTask.ConfigureAwait(false);
+    if (source.IsCancellationRequested)
+    {
+      throw new OperationCanceledException();
+    }
     return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
