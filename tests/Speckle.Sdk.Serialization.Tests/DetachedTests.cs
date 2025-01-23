@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
@@ -37,6 +38,7 @@ public class DetachedTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new NullLoggerFactory(),
       new SerializeProcessOptions(false, false, true, true)
     );
     await process2.Serialize(@base, default);
@@ -120,6 +122,7 @@ public class DetachedTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new NullLoggerFactory(),
       new SerializeProcessOptions(false, false, true, true)
     );
     var results = await process2.Serialize(@base, default);
@@ -188,6 +191,7 @@ public class DetachedTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new NullLoggerFactory(),
       new SerializeProcessOptions(false, false, true, true)
     );
     var results = await process2.Serialize(@base, default);
@@ -221,6 +225,7 @@ public class DetachedTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new NullLoggerFactory(),
       new SerializeProcessOptions(false, false, true, true)
     );
     var results = await process2.Serialize(@base, default);
@@ -300,7 +305,7 @@ public class DummyServerObjectManager : IServerObjectManager
   public Task<Dictionary<string, bool>> HasObjects(
     IReadOnlyCollection<string> objectIds,
     CancellationToken cancellationToken
-  ) => throw new NotImplementedException();
+  ) => Task.FromResult(objectIds.ToDictionary(x => x, _ => false));
 
   public Task UploadObjects(
     IReadOnlyList<BaseItem> objects,

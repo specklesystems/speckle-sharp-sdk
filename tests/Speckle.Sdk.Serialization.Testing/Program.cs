@@ -1,6 +1,7 @@
 #pragma warning disable CA1506
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Sdk;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
@@ -45,7 +46,8 @@ var factory = new SerializeProcessFactory(
   new ObjectSerializerFactory(new BasePropertyGatherer()),
   new ObjectDeserializerFactory(),
   serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>(),
-  serviceProvider.GetRequiredService<IServerObjectManagerFactory>()
+  serviceProvider.GetRequiredService<IServerObjectManagerFactory>(),
+  new NullLoggerFactory()
 );
 var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, new(skipCacheReceive));
 var @base = await process.Deserialize(rootId, default).ConfigureAwait(false);

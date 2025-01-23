@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
@@ -28,7 +29,8 @@ public class SerializeProcessFactory(
   IObjectSerializerFactory objectSerializerFactory,
   IObjectDeserializerFactory objectDeserializerFactory,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory,
-  IServerObjectManagerFactory serverObjectManagerFactory
+  IServerObjectManagerFactory serverObjectManagerFactory,
+  ILoggerFactory loggerFactory
 ) : ISerializeProcessFactory
 {
   public ISerializeProcess CreateSerializeProcess(
@@ -47,6 +49,7 @@ public class SerializeProcessFactory(
       serverObjectManager,
       baseChildFinder,
       objectSerializerFactory,
+      loggerFactory,
       options
     );
   }

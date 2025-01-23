@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Reflection;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.Data;
@@ -265,6 +266,7 @@ public class SerializationTests
       new DummySendServerObjectManager(newIdToJson),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new NullLoggerFactory(),
       new SerializeProcessOptions(true, true, false, true)
     );
     var (rootId2, _) = await serializeProcess.Serialize(root, default);

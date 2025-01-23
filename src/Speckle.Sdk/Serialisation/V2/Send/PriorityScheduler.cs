@@ -1,8 +1,13 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public sealed class PriorityScheduler(ThreadPriority priority, int maximumConcurrencyLevel) : TaskScheduler, IDisposable
+public sealed class PriorityScheduler(
+  ILogger<PriorityScheduler> logger,
+  ThreadPriority priority,
+  int maximumConcurrencyLevel
+) : TaskScheduler, IDisposable
 {
   private readonly CancellationTokenSource _cancellationTokenSource = new();
   private readonly BlockingCollection<Task> _tasks = new();
@@ -47,10 +52,10 @@ public sealed class PriorityScheduler(ThreadPriority priority, int maximumConcur
             }
           }
 #pragma warning disable CA1031
-          catch (Exception)
+          catch (Exception e)
 #pragma warning restore CA1031
           {
-            // ignored
+            logger.LogError(e, "{name} had an exception", Thread.CurrentThread.Name);
           }
         })
         {
