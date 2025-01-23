@@ -305,7 +305,7 @@ public class DummyServerObjectManager : IServerObjectManager
   public Task<Dictionary<string, bool>> HasObjects(
     IReadOnlyCollection<string> objectIds,
     CancellationToken cancellationToken
-  ) => throw new NotImplementedException();
+  ) => Task.FromResult(objectIds.ToDictionary(x => x, _ => false));
 
   public Task UploadObjects(
     IReadOnlyList<BaseItem> objects,

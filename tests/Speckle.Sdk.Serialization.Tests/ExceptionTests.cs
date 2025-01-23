@@ -33,7 +33,7 @@ public class ExceptionTests
       new SerializeProcessOptions(false, false, false, true)
     );
 
-    await Assert.ThrowsAsync<OperationCanceledException>(async () => await process2.Serialize(testClass, default));
+    await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass, default));
   }
 
   [Fact]
@@ -51,7 +51,7 @@ public class ExceptionTests
       new SerializeProcessOptions(false, false, false, true)
     );
 
-    await Assert.ThrowsAsync<OperationCanceledException>(async () => await process2.Serialize(testClass, default));
+    await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass, default));
   }
 }
 

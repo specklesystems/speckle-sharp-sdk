@@ -76,23 +76,21 @@ public sealed class SerializeProcess(
 
   public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
   {
-    using var source = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-    var channelTask = Start(source);
+    var channelTask = Start(cancellationToken);
     var findTotalObjectsTask = Task.CompletedTask;
     if (!_options.SkipFindTotalObjects)
     {
       findTotalObjectsTask = Task.Factory.StartNew(
         () => TraverseTotal(root),
-        source.Token,
+        cancellationToken,
         TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
         _highest
       );
     }
-    var traverseTask = Traverse(root, source);
-
-    await Task.WhenAll(findTotalObjectsTask, channelTask, traverseTask).ConfigureAwait(true);
-    await Done().ConfigureAwait(true);
-    source.Token.ThrowIfCancellationRequested();
+    await Traverse(root, cancellationToken).ConfigureAwait(true);
+    DoneTraversing();
+    await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(true);
+    await DoneSaving().ConfigureAwait(true);
     return new(root.id.NotNull(), _objectReferences.Freeze());
   }
 
@@ -106,32 +104,20 @@ public sealed class SerializeProcess(
     }
   }
 
-  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, CancellationTokenSource cancellationTokenSource)
+  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, CancellationToken cancellationToken)
   {
     var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
     foreach (var child in baseChildFinder.GetChildren(obj))
     {
-      if (cancellationTokenSource.IsCancellationRequested)
-      {
-        return [];
-      }
       // tmp is necessary because of the way closures close over loop variables
       var tmp = child;
       var t = Task
         .Factory.StartNew(
           async () =>
           {
-            try
-            {
-              return await Traverse(tmp, cancellationTokenSource).ConfigureAwait(true);
-            }
-            catch (Exception)
-            {
-              cancellationTokenSource.Cancel(true);
-              throw;
-            }
+            return await Traverse(tmp, cancellationToken).ConfigureAwait(true);
           },
-          cancellationTokenSource.Token,
+          cancellationToken,
           TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
           _belowNormal
         )
@@ -154,7 +140,7 @@ public sealed class SerializeProcess(
       _currentClosurePool.Return(childClosure);
     }
 
-    var items = Serialise(obj, childClosures, cancellationTokenSource.Token);
+    var items = Serialise(obj, childClosures, cancellationToken);
 
     var currentClosures = _currentClosurePool.Get();
     Interlocked.Increment(ref _objectCount);
@@ -164,11 +150,7 @@ public sealed class SerializeProcess(
       if (item.NeedsStorage)
       {
         Interlocked.Increment(ref _objectsSerialized);
-        await Save(item, cancellationTokenSource.Token).ConfigureAwait(true);
-        if (cancellationTokenSource.IsCancellationRequested)
-        {
-          return [];
-        }
+        await Save(item, cancellationToken).ConfigureAwait(true);
       }
 
       if (!currentClosures.ContainsKey(item.Id))
