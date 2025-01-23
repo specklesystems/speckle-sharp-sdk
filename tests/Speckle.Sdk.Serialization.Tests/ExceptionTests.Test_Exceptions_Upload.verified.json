@@ -1,0 +1,30 @@
+﻿{
+  "Type": "AggregateException",
+  "InnerExceptions": [
+    {
+      "Data": {},
+      "Message": "The method or operation is not implemented.",
+      "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\nat Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\n--- End of stack trace from previous location ---\nat Open.ChannelExtensions.<28d3e838-dde6-44a1-8f5e-d1c739a178d0>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\n--- End of stack trace from previous location ---",
+      "Type": "NotImplementedException"
+    },
+    {
+      "Data": {},
+      "Message": "The method or operation is not implemented.",
+      "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\nat Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\n--- End of stack trace from previous location ---\nat Open.ChannelExtensions.<28d3e838-dde6-44a1-8f5e-d1c739a178d0>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\n--- End of stack trace from previous location ---",
+      "Type": "NotImplementedException"
+    },
+    {
+      "Data": {},
+      "Message": "The method or operation is not implemented.",
+      "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\nat Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\n--- End of stack trace from previous location ---\nat Open.ChannelExtensions.<28d3e838-dde6-44a1-8f5e-d1c739a178d0>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\n--- End of stack trace from previous location ---",
+      "Type": "NotImplementedException"
+    },
+    {
+      "Data": {},
+      "Message": "The method or operation is not implemented.",
+      "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\nat Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\n--- End of stack trace from previous location ---\nat Open.ChannelExtensions.<28d3e838-dde6-44a1-8f5e-d1c739a178d0>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\n--- End of stack trace from previous location ---",
+      "Type": "NotImplementedException"
+    }
+  ],
+  "StackTrace": "at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.DoneSaving()\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.Serialize(Base root, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\nat Xunit.Assert.RecordExceptionAsync(Func`1 testCode)"
+}

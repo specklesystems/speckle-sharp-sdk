@@ -1,4 +1,5 @@
-﻿using Speckle.Sdk.Host;
+﻿using Microsoft.Extensions.Logging.Abstractions;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2.Send;
 
@@ -24,6 +25,7 @@ public class ExplicitInterfaceTests
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new NullLoggerFactory(),
       new SerializeProcessOptions(false, false, true, true)
     );
 
