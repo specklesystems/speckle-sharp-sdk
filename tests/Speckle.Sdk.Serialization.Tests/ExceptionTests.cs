@@ -33,7 +33,9 @@ public class ExceptionTests
       new SerializeProcessOptions(false, false, false, true)
     );
 
-    await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass, default));
+    //4 exceptions are fine because we use 4 threads for saving cache
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass, default));
+    await Verify(ex);
   }
 
   [Fact]
@@ -51,7 +53,8 @@ public class ExceptionTests
       new SerializeProcessOptions(false, false, false, true)
     );
 
-    await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass, default));
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass, default));
+    await Verify(ex);
   }
 }
 
