@@ -267,9 +267,10 @@ public class SerializationTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new NullLoggerFactory(),
+      default,
       new SerializeProcessOptions(true, true, false, true)
     );
-    var (rootId2, _) = await serializeProcess.Serialize(root, default);
+    var (rootId2, _) = await serializeProcess.Serialize(root);
 
     rootId2.Should().Be(root.id);
     newIdToJson.Count.Should().Be(newCount);

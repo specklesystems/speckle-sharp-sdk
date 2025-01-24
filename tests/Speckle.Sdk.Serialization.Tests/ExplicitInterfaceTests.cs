@@ -26,10 +26,11 @@ public class ExplicitInterfaceTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new NullLoggerFactory(),
+      default,
       new SerializeProcessOptions(false, false, true, true)
     );
 
-    await process2.Serialize(testClass, default);
+    await process2.Serialize(testClass);
 
     await VerifyJsonDictionary(objects);
   }

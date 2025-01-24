@@ -32,19 +32,21 @@ public sealed class SerializeProcess(
   IServerObjectManager serverObjectManager,
   IBaseChildFinder baseChildFinder,
   IObjectSerializerFactory objectSerializerFactory,
-  ILoggerFactory loggerFactory,
+  ILoggerFactory loggerFactory
+  , CancellationToken cancellationToken,
   SerializeProcessOptions? options = null
 ) : ChannelSaver<BaseItem>, ISerializeProcess
 {
   private readonly PriorityScheduler _highest = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.Highest,
-    2
+    2,cancellationToken
   );
   private readonly PriorityScheduler _belowNormal = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.BelowNormal,
-    Environment.ProcessorCount * 2
+    Environment.ProcessorCount * 2,
+    cancellationToken
   );
 
   private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
@@ -74,7 +76,7 @@ public sealed class SerializeProcess(
     sqLiteJsonCacheManager.Dispose();
   }
 
-  public async Task<SerializeProcessResults> Serialize(Base root, CancellationToken cancellationToken)
+  public async Task<SerializeProcessResults> Serialize(Base root)
   {
     var channelTask = Start(cancellationToken);
     var findTotalObjectsTask = Task.CompletedTask;
