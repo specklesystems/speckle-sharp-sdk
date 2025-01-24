@@ -60,9 +60,10 @@ using var process2 = factory.CreateSerializeProcess(
   streamId,
   token,
   progress,
+  default,
   new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true, true)
 );
-await process2.Serialize(@base, default).ConfigureAwait(false);
+await process2.Serialize(@base).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
 #pragma warning restore CA1506

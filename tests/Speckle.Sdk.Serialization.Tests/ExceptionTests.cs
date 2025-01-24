@@ -30,11 +30,12 @@ public class ExceptionTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new NullLoggerFactory(),
+      default,
       new SerializeProcessOptions(false, false, false, true)
     );
 
     //4 exceptions are fine because we use 4 threads for saving cache
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass, default));
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
 
@@ -50,10 +51,11 @@ public class ExceptionTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new NullLoggerFactory(),
+      default,
       new SerializeProcessOptions(false, false, false, true)
     );
 
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass, default));
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
 }
