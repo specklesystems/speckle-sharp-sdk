@@ -29,7 +29,7 @@ public static class TransportHelpers
 
     targetTransport.SaveObject(id, parent);
 
-    var closures = ClosureParser.GetChildrenIds(parent).ToList();
+    var closures = ClosureParser.GetChildrenIds(parent, cancellationToken).ToList();
 
     foreach (var closure in closures)
     {

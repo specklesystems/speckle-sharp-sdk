@@ -21,6 +21,7 @@ public interface ISerializeProcessFactory
     string streamId,
     string? authorizationToken,
     IProgress<ProgressArgs>? progress,
+    CancellationToken cancellationToken,
     DeserializeProcessOptions? options = null
   );
 }
@@ -62,6 +63,7 @@ public class SerializeProcessFactory(
     string streamId,
     string? authorizationToken,
     IProgress<ProgressArgs>? progress,
+    CancellationToken cancellationToken,
     DeserializeProcessOptions? options = null
   )
   {
@@ -72,6 +74,6 @@ public class SerializeProcessFactory(
     //owned by process, refactor later
     var objectLoader = new ObjectLoader(sqLiteJsonCacheManager, serverObjectManager, progress);
 #pragma warning restore CA2000
-    return new DeserializeProcess(progress, objectLoader, objectDeserializerFactory, options);
+    return new DeserializeProcess(progress, objectLoader, objectDeserializerFactory, cancellationToken, options);
   }
 }

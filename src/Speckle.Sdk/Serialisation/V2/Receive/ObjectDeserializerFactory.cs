@@ -7,9 +7,9 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 public class ObjectDeserializerFactory : IObjectDeserializerFactory
 {
   public IObjectDeserializer Create(
-    string currentId,
-    IReadOnlyCollection<string> currentClosures,
-    IReadOnlyDictionary<string, Base> references,
+    Id currentId,
+    IReadOnlyCollection<Id> currentClosures,
+    IReadOnlyDictionary<Id, Base> references,
     DeserializeProcessOptions? options = null
   ) => new ObjectDeserializer(currentId, currentClosures, references, SpeckleObjectSerializerPool.Instance, options);
 }

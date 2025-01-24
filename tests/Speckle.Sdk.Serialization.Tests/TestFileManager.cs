@@ -9,25 +9,28 @@ using Speckle.Sdk.Models;
 namespace Speckle.Sdk.Serialization.Tests;
 
 public static class TestFileManager
-{ 
+{
   static TestFileManager()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataObject).Assembly, _assembly);
   }
+
   private static readonly Assembly _assembly = Assembly.GetExecutingAssembly();
   private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> _objects = new();
+
   public static async Task<IReadOnlyDictionary<string, string>> GetFileAsClosures(string fileName)
   {
     if (!_objects.TryGetValue(fileName, out var closure))
     {
       var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
       var json = await ReadJson(fullName);
-       closure = ReadAsObjects(json);
-       _objects.Add(fileName, closure);
+      closure = ReadAsObjects(json);
+      _objects.Add(fileName, closure);
     }
     return closure;
   }
+
   private static async Task<string> ReadJson(string fullName)
   {
     await using var stream = _assembly.GetManifestResourceStream(fullName).NotNull();

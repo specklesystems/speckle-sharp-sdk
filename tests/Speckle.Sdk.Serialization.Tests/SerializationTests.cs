@@ -18,22 +18,20 @@ public class SerializationTests
 {
   private class TestLoader(string json) : IObjectLoader
   {
-    public Task<(string, IReadOnlyCollection<string>)> GetAndCache(
+    public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(
       string rootId,
       DeserializeProcessOptions? options,
       CancellationToken cancellationToken
     )
     {
-      var childrenIds = ClosureParser.GetChildrenIds(json).ToList();
-      return Task.FromResult<(string, IReadOnlyCollection<string>)>((json, childrenIds));
+      var childrenIds = ClosureParser.GetChildrenIds(new(json), cancellationToken).Select(x => new Id(x)).ToList();
+      return Task.FromResult<(Json, IReadOnlyCollection<Id>)>((new(json), childrenIds));
     }
 
     public string? LoadId(string id) => null;
 
     public void Dispose() { }
   }
-
-  
 
   /*
     [Test]
@@ -50,7 +48,7 @@ public class SerializationTests
 
   public class TestObjectLoader(IReadOnlyDictionary<string, string> idToObject) : IObjectLoader
   {
-    public Task<(string, IReadOnlyCollection<string>)> GetAndCache(
+    public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(
       string rootId,
       DeserializeProcessOptions? options,
       CancellationToken cancellationToken
@@ -62,8 +60,8 @@ public class SerializationTests
         throw new KeyNotFoundException("Root not found");
       }
 
-      var allChildren = ClosureParser.GetChildrenIds(json).ToList();
-      return Task.FromResult<(string, IReadOnlyCollection<string>)>((json, allChildren));
+      var allChildren = ClosureParser.GetChildrenIds(json, cancellationToken).Select(x => new Id(x)).ToList();
+      return Task.FromResult<(Json, IReadOnlyCollection<Id>)>((new(json), allChildren));
     }
 
     public string? LoadId(string id) => idToObject.GetValueOrDefault(id);
@@ -116,8 +114,13 @@ public class SerializationTests
   public async Task Basic_Namespace_Validation_New(string fileName)
   {
     var closures = await TestFileManager.GetFileAsClosures(fileName);
-    using var process = new DeserializeProcess(null, new TestObjectLoader(closures), new ObjectDeserializerFactory());
-    await process.Deserialize("3416d3fe01c9196115514c4a2f41617b", default);
+    using var process = new DeserializeProcess(
+      null,
+      new TestObjectLoader(closures),
+      new ObjectDeserializerFactory(),
+      default
+    );
+    await process.Deserialize("3416d3fe01c9196115514c4a2f41617b");
     foreach (var (id, objJson) in closures)
     {
       var jObject = JObject.Parse(objJson);
@@ -132,7 +135,7 @@ public class SerializationTests
       }
       else
       {
-        var baseType = process.BaseCache[id];
+        var baseType = process.BaseCache[new Id(id)];
 
         starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
         starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
@@ -210,8 +213,8 @@ public class SerializationTests
       new DummyReceiveServerObjectManager(closures),
       null
     );
-    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(true));
-    var root = await process.Deserialize(rootId, default);
+    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), default, new(true));
+    var root = await process.Deserialize(rootId);
     process.BaseCache.Count.Should().Be(oldCount);
     process.Total.Should().Be(oldCount);
 
@@ -239,5 +242,4 @@ public class SerializationTests
       }
     }
   }
-  
 }

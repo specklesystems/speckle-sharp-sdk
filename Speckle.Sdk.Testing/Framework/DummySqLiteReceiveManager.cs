@@ -2,7 +2,8 @@
 
 namespace Speckle.Sdk.Testing.Framework;
 
-public sealed class DummySqLiteReceiveManager(IReadOnlyDictionary<string, string> savedObjects) : ISqLiteJsonCacheManager
+public sealed class DummySqLiteReceiveManager(IReadOnlyDictionary<string, string> savedObjects)
+  : ISqLiteJsonCacheManager
 {
   public void Dispose() { }
 

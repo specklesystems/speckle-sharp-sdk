@@ -28,7 +28,7 @@ public class TestTransport : ITransport
 
   public void EndWrite() => throw new NotImplementedException();
 
-  public void SaveObject(string id, string serializedObject)=> throw new NotImplementedException();
+  public void SaveObject(string id, string serializedObject) => throw new NotImplementedException();
 
   public Task WriteComplete() => throw new NotImplementedException();
 

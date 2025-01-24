@@ -61,10 +61,7 @@ public class ExceptionTests
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
-  
-  
-  
-  
+
   [Theory]
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Test_Exceptions_Receive_Server(string fileName, string rootId, int oldCount)
@@ -72,21 +69,16 @@ public class ExceptionTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    var o = new ObjectLoader(
-      new DummySqLiteReceiveManager(closures),
-      new ExceptionServerObjectManager(),
-      null
-    );
-    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(true));
-
+    var o = new ObjectLoader(new DummySqLiteReceiveManager(closures), new ExceptionServerObjectManager(), null);
+    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), default, new(true));
 
     var ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
     {
-      var root = await process.Deserialize(rootId, default);
+      var root = await process.Deserialize(rootId);
     });
     await Verify(ex);
   }
-  
+
   [Theory]
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, false)]
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, true)]
@@ -100,21 +92,27 @@ public class ExceptionTests
       new DummyReceiveServerObjectManager(closures),
       null
     );
-    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(MaxParallelism: 2));
+    using var process = new DeserializeProcess(
+      null,
+      o,
+      new ObjectDeserializerFactory(),
+      default,
+      new(MaxParallelism: 2)
+    );
 
     Exception ex;
-    if (hasObject == true) 
+    if (hasObject == true)
     {
       ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
       {
-        var root = await process.Deserialize(rootId, default);
+        var root = await process.Deserialize(rootId);
       });
     }
     else
     {
       ex = await Assert.ThrowsAsync<AggregateException>(async () =>
       {
-        var root = await process.Deserialize(rootId, default);
+        var root = await process.Deserialize(rootId);
       });
     }
 
