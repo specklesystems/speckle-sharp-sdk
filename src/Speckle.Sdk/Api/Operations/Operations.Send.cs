@@ -16,8 +16,8 @@ public partial class Operations
     string streamId,
     string? authorizationToken,
     Base value,
-    IProgress<ProgressArgs>? onProgressAction = null,
-    CancellationToken cancellationToken = default
+    IProgress<ProgressArgs>? onProgressAction,
+    CancellationToken cancellationToken
   )
   {
     using var receiveActivity = activityFactory.Start("Operations.Send");
@@ -29,9 +29,10 @@ public partial class Operations
         url,
         streamId,
         authorizationToken,
-        onProgressAction
+        onProgressAction,
+        cancellationToken
       );
-      var results = await process.Serialize(value, cancellationToken).ConfigureAwait(false);
+      var results = await process.Serialize(value).ConfigureAwait(false);
 
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return results;

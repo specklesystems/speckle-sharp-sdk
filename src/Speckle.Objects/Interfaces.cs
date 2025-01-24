@@ -167,6 +167,15 @@ public interface IGisObject : IDataObject
   string type { get; }
 }
 
+public interface IArchicadObject : IDataObject
+{
+  string type { get; }
+
+  string level { get; }
+
+  IReadOnlyList<IArchicadObject> elements { get; }
+}
+
 public interface INavisworksObject : IDataObject { }
 
 

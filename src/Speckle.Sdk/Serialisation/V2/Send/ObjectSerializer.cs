@@ -29,7 +29,6 @@ public sealed class ObjectSerializer : IObjectSerializer
 
   private readonly IReadOnlyDictionary<Id, NodeInfo> _childCache;
 
-  private readonly bool _trackDetachedChildren;
   private readonly IBasePropertyGatherer _propertyGatherer;
   private readonly CancellationToken _cancellationToken;
 
@@ -51,7 +50,6 @@ public sealed class ObjectSerializer : IObjectSerializer
   /// <summary>
   /// Creates a new Serializer instance.
   /// </summary>
-  /// <param name="trackDetachedChildren">Whether to store all detachable objects while serializing. They can be retrieved via <see cref="ObjectReferences"/> post serialization.</param>
   /// <param name="cancellationToken"></param>
   public ObjectSerializer(
     IBasePropertyGatherer propertyGatherer,
@@ -59,8 +57,7 @@ public sealed class ObjectSerializer : IObjectSerializer
     Pool<List<(Id, Json, Closures)>> chunksPool,
     Pool<List<DataChunk>> chunks2Pool,
     Pool<List<object?>> chunks3Pool,
-    bool trackDetachedChildren = false,
-    CancellationToken cancellationToken = default
+    CancellationToken cancellationToken
   )
   {
     _propertyGatherer = propertyGatherer;
@@ -69,7 +66,6 @@ public sealed class ObjectSerializer : IObjectSerializer
     _chunks2Pool = chunks2Pool;
     _chunks3Pool = chunks3Pool;
     _cancellationToken = cancellationToken;
-    _trackDetachedChildren = trackDetachedChildren;
     _chunks = chunksPool.Get();
   }
 
@@ -311,7 +307,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       var json2 = ReferenceGenerator.CreateReference(id);
       AddClosure(id);
       // add to obj refs to return
-      if (baseObj.applicationId != null && _trackDetachedChildren) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
+      if (baseObj.applicationId != null) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
       {
         ObjectReferences[new(baseObj.applicationId)] = new ObjectReference()
         {

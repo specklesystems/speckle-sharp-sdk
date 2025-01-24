@@ -16,6 +16,7 @@ public abstract class ChannelSaver<T>
   private const int MAX_CACHE_WRITE_PARALLELISM = 4;
   private const int MAX_CACHE_BATCH = 500;
 
+  private readonly List<Exception> _lists = new();
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
     {
@@ -28,7 +29,7 @@ public abstract class ChannelSaver<T>
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start(CancellationToken cancellationToken = default) =>
+  public Task Start(CancellationToken cancellationToken) =>
     _checkCacheChannel
       .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
@@ -42,10 +43,32 @@ public abstract class ChannelSaver<T>
       .Join()
       .Batch(MAX_CACHE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken);
+      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
+      .ContinueWith(
+        t =>
+        {
+          Exception? ex = t.Exception;
+          if (ex is null && t.Status is TaskStatus.Canceled && !cancellationToken.IsCancellationRequested)
+          {
+            ex = new OperationCanceledException();
+          }
 
-  public ValueTask Save(T item, CancellationToken cancellationToken = default) =>
-    _checkCacheChannel.Writer.WriteAsync(item, cancellationToken);
+          if (ex is not null)
+          {
+            lock (_lists)
+            {
+              _lists.Add(ex);
+            }
+          }
+          _checkCacheChannel.Writer.TryComplete(ex);
+        },
+        CancellationToken.None,
+        TaskContinuationOptions.ExecuteSynchronously,
+        TaskScheduler.Current
+      );
+
+  public async ValueTask Save(T item, CancellationToken cancellationToken) =>
+    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(true);
 
   public async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch, CancellationToken cancellationToken)
   {
@@ -55,10 +78,30 @@ public abstract class ChannelSaver<T>
 
   public abstract Task SendToServer(Batch<T> batch, CancellationToken cancellationToken);
 
-  public Task Done()
+  public void DoneTraversing() => _checkCacheChannel.Writer.TryComplete();
+
+  public async Task DoneSaving()
   {
-    _checkCacheChannel.Writer.Complete();
-    return Task.CompletedTask;
+    await _checkCacheChannel.Reader.Completion.ConfigureAwait(true);
+    lock (_lists)
+    {
+      if (_lists.Count > 0)
+      {
+        var exceptions = new List<Exception>();
+        foreach (var ex in _lists)
+        {
+          if (ex is AggregateException ae)
+          {
+            exceptions.AddRange(ae.Flatten().InnerExceptions);
+          }
+          else
+          {
+            exceptions.Add(ex);
+          }
+        }
+        throw new AggregateException(exceptions);
+      }
+    }
   }
 
   public abstract void SaveToCache(List<T> item);

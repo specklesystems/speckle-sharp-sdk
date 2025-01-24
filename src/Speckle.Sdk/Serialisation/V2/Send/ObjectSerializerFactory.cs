@@ -13,5 +13,5 @@ public class ObjectSerializerFactory(IBasePropertyGatherer propertyGatherer) : I
   private readonly Pool<List<object?>> _chunk3Pool = Pools.CreateListPool<object?>();
 
   public IObjectSerializer Create(IReadOnlyDictionary<Id, NodeInfo> baseCache, CancellationToken cancellationToken) =>
-    new ObjectSerializer(propertyGatherer, baseCache, _chunkPool, _chunk2Pool, _chunk3Pool, true, cancellationToken);
+    new ObjectSerializer(propertyGatherer, baseCache, _chunkPool, _chunk2Pool, _chunk3Pool, cancellationToken);
 }

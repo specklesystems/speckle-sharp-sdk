@@ -73,7 +73,7 @@ public class GeneralSendTest
   [Benchmark]
   public async Task<Version> Send_new()
   {
-    var res = await _operations.Send2(new(acc.serverInfo.url), _project.id, acc.token, _testData);
+    var res = await _operations.Send2(new(acc.serverInfo.url), _project.id, acc.token, _testData, null, default);
     return await TagVersion($"Send_new {Guid.NewGuid()}", res.RootId);
   }
 
