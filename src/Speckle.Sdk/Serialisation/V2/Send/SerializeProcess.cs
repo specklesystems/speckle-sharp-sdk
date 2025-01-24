@@ -32,15 +32,16 @@ public sealed class SerializeProcess(
   IServerObjectManager serverObjectManager,
   IBaseChildFinder baseChildFinder,
   IObjectSerializerFactory objectSerializerFactory,
-  ILoggerFactory loggerFactory
-  , CancellationToken cancellationToken,
+  ILoggerFactory loggerFactory,
+  CancellationToken cancellationToken,
   SerializeProcessOptions? options = null
 ) : ChannelSaver<BaseItem>, ISerializeProcess
 {
   private readonly PriorityScheduler _highest = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.Highest,
-    2,cancellationToken
+    2,
+    cancellationToken
   );
   private readonly PriorityScheduler _belowNormal = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),

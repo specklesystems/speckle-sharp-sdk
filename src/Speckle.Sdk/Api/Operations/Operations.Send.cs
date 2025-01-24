@@ -29,7 +29,8 @@ public partial class Operations
         url,
         streamId,
         authorizationToken,
-        onProgressAction,cancellationToken
+        onProgressAction,
+        cancellationToken
       );
       var results = await process.Serialize(value).ConfigureAwait(false);
 
