@@ -2,7 +2,7 @@
 
 public class Model
 {
-  public LimitedUser author { get; init; }
+  public LimitedUser? author { get; init; }
   public DateTime createdAt { get; init; }
   public string? description { get; init; }
   public string displayName { get; init; }
