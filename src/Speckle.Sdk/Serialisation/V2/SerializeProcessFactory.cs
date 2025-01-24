@@ -13,6 +13,7 @@ public interface ISerializeProcessFactory
     string streamId,
     string? authorizationToken,
     IProgress<ProgressArgs>? progress,
+    CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
   );
   IDeserializeProcess CreateDeserializeProcess(
@@ -38,6 +39,7 @@ public class SerializeProcessFactory(
     string streamId,
     string? authorizationToken,
     IProgress<ProgressArgs>? progress,
+    CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
   )
   {
@@ -50,6 +52,7 @@ public class SerializeProcessFactory(
       baseChildFinder,
       objectSerializerFactory,
       loggerFactory,
+      cancellationToken,
       options
     );
   }

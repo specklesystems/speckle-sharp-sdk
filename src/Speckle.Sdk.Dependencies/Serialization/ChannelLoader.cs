@@ -11,7 +11,7 @@ public abstract class ChannelLoader<T>
   private const int MAX_SAVE_CACHE_BATCH = 500;
   private const int MAX_SAVE_CACHE_PARALLELISM = 4;
 
-  protected async Task GetAndCache(IEnumerable<string> allChildrenIds, CancellationToken cancellationToken = default) =>
+  protected async Task GetAndCache(IEnumerable<string> allChildrenIds, CancellationToken cancellationToken) =>
     await allChildrenIds
       .ToChannel(cancellationToken: cancellationToken)
       .Pipe(MAX_READ_CACHE_PARALLELISM, CheckCache, cancellationToken: cancellationToken)

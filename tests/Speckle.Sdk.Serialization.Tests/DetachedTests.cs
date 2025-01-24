@@ -39,9 +39,10 @@ public class DetachedTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new NullLoggerFactory(),
+      default,
       new SerializeProcessOptions(false, false, true, true)
     );
-    await process2.Serialize(@base, default);
+    await process2.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
   }
@@ -123,9 +124,10 @@ public class DetachedTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new NullLoggerFactory(),
+      default,
       new SerializeProcessOptions(false, false, true, true)
     );
-    var results = await process2.Serialize(@base, default);
+    var results = await process2.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
   }
@@ -192,9 +194,10 @@ public class DetachedTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new NullLoggerFactory(),
+      default,
       new SerializeProcessOptions(false, false, true, true)
     );
-    var results = await process2.Serialize(@base, default);
+    var results = await process2.Serialize(@base);
 
     objects.Count.Should().Be(3);
     var x = JObject.Parse(objects["efeadaca70a85ae6d3acfc93a8b380db"]);
@@ -226,9 +229,10 @@ public class DetachedTests
       new BaseChildFinder(new BasePropertyGatherer()),
       new ObjectSerializerFactory(new BasePropertyGatherer()),
       new NullLoggerFactory(),
+      default,
       new SerializeProcessOptions(false, false, true, true)
     );
-    var results = await process2.Serialize(@base, default);
+    var results = await process2.Serialize(@base);
     await VerifyJsonDictionary(objects);
   }
 }
