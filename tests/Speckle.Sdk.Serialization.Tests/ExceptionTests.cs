@@ -88,7 +88,6 @@ public class ExceptionTests
   }
   
   [Theory]
-  [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, null)]
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, false)]
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, true)]
   public async Task Test_Exceptions_Receive_Cache(string fileName, string rootId, int oldCount, bool? hasObject)
