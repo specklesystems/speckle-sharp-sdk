@@ -8,9 +8,10 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 public record DeserializeProcessOptions(
-  bool SkipCache,
+  bool SkipCache = false,
   bool ThrowOnMissingReferences = true,
-  bool SkipInvalidConverts = false
+  bool SkipInvalidConverts = false,
+  int? MaxParallelism = null
 );
 
 public partial interface IDeserializeProcess : IDisposable;
@@ -23,7 +24,7 @@ public sealed class DeserializeProcess(
   DeserializeProcessOptions? options = null
 ) : IDeserializeProcess
 {
-  private readonly DeserializeProcessOptions _options = options ?? new(false);
+  private readonly DeserializeProcessOptions _options = options ?? new();
 
   private readonly ConcurrentDictionary<string, (string, IReadOnlyCollection<string>)> _closures = new();
   private readonly ConcurrentDictionary<string, Base> _baseCache = new();

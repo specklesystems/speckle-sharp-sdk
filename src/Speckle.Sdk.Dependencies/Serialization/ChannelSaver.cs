@@ -16,7 +16,7 @@ public abstract class ChannelSaver<T>
   private const int MAX_CACHE_WRITE_PARALLELISM = 4;
   private const int MAX_CACHE_BATCH = 500;
 
-  private readonly List<Exception> _lists = new();
+  private readonly List<Exception> _exceptions = new();
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
     {
@@ -55,9 +55,9 @@ public abstract class ChannelSaver<T>
 
           if (ex is not null)
           {
-            lock (_lists)
+            lock (_exceptions)
             {
-              _lists.Add(ex);
+              _exceptions.Add(ex);
             }
           }
           _checkCacheChannel.Writer.TryComplete(ex);
@@ -83,12 +83,12 @@ public abstract class ChannelSaver<T>
   public async Task DoneSaving()
   {
     await _checkCacheChannel.Reader.Completion.ConfigureAwait(true);
-    lock (_lists)
+    lock (_exceptions)
     {
-      if (_lists.Count > 0)
+      if (_exceptions.Count > 0)
       {
         var exceptions = new List<Exception>();
-        foreach (var ex in _lists)
+        foreach (var ex in _exceptions)
         {
           if (ex is AggregateException ae)
           {

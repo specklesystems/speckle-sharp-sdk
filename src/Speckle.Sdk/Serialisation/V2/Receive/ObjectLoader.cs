@@ -60,8 +60,9 @@ public sealed class ObjectLoader(
       .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
       .Freeze();
     _allChildrenCount = allChildrenIds.Count;
-    await GetAndCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
+    await GetAndCache(allChildrenIds, cancellationToken, _options.MaxParallelism).ConfigureAwait(false);
 
+    CheckForExceptions();
     //save the root last to shortcut later
     if (!options.SkipCache)
     {

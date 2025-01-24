@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
+﻿using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
+using Speckle.Sdk.Testing.Framework;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -58,6 +61,66 @@ public class ExceptionTests
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
+  
+  
+  
+  
+  [Theory]
+  [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
+  public async Task Test_Exceptions_Receive_Server(string fileName, string rootId, int oldCount)
+  {
+    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    closures.Count.Should().Be(oldCount);
+
+    var o = new ObjectLoader(
+      new DummySqLiteReceiveManager(closures),
+      new ExceptionServerObjectManager(),
+      null
+    );
+    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(true));
+
+
+    var ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
+    {
+      var root = await process.Deserialize(rootId, default);
+    });
+    await Verify(ex);
+  }
+  
+  [Theory]
+  [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, null)]
+  [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, false)]
+  [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, true)]
+  public async Task Test_Exceptions_Receive_Cache(string fileName, string rootId, int oldCount, bool? hasObject)
+  {
+    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    closures.Count.Should().Be(oldCount);
+
+    var o = new ObjectLoader(
+      new ExceptionSendCacheManager(hasObject),
+      new DummyReceiveServerObjectManager(closures),
+      null
+    );
+    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(MaxParallelism: 2));
+
+    Exception ex;
+    if (hasObject == true) 
+    {
+      ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
+      {
+        var root = await process.Deserialize(rootId, default);
+      });
+    }
+    else
+    {
+      ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      {
+        var root = await process.Deserialize(rootId, default);
+      });
+    }
+
+    await Verify(ex).UseParameters(hasObject);
+  }
 }
 
 public class ExceptionServerObjectManager : IServerObjectManager
@@ -87,7 +150,7 @@ public class ExceptionServerObjectManager : IServerObjectManager
   ) => throw new NotImplementedException();
 }
 
-public class ExceptionSendCacheManager : ISqLiteJsonCacheManager
+public class ExceptionSendCacheManager(bool? hasObject = null) : ISqLiteJsonCacheManager
 {
   public void Dispose() { }
 
@@ -103,5 +166,5 @@ public class ExceptionSendCacheManager : ISqLiteJsonCacheManager
 
   public void SaveObjects(IEnumerable<(string id, string json)> items) => throw new NotImplementedException();
 
-  public bool HasObject(string objectId) => throw new NotImplementedException();
+  public bool HasObject(string objectId) => hasObject ?? throw new NotImplementedException();
 }
