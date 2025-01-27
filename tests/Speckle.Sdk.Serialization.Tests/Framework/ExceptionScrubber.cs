@@ -13,15 +13,20 @@ public partial class ExceptionScrubber : WriteOnlyJsonConverter<Exception>
   )]
   private static partial Regex InternalizeStacktrace();
 
+  [GeneratedRegex(" in(.*?)\\r\\n")]
+  private static partial Regex RemoveSourceFiles();
+
   public override void Write(VerifyJsonWriter writer, Exception value)
   {
     if (value.StackTrace != null)
     {
+      var x = InternalizeStacktrace().Replace(value.StackTrace, "<INTERNALIZED STACKTRACE>");
+     x = RemoveSourceFiles().Replace(x, "\r\n");
       var ex = new JObject
       {
         ["Message"] = value.Message,
         ["Source"] = value.Source?.Trim(),
-        ["StackTrace"] = InternalizeStacktrace().Replace(value.StackTrace, "<INTERNALIZED STACKTRACE>").Trim(),
+        ["StackTrace"] = x.Trim(),
       };
       writer.WriteRawValue(ex.ToString(Formatting.Indented));
       return;
