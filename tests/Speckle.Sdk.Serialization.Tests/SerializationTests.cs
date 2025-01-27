@@ -224,8 +224,10 @@ public class SerializationTests
       null,
       new DummySqLiteSendManager(),
       new DummySendServerObjectManager(newIdToJson),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseChildFinder(new BasePropertyGatherer()),   new BaseSerializer(
+        
+        new DummySqLiteSendManager(),new ObjectSerializerFactory(new BasePropertyGatherer())),
+
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(true, true, false, true)

@@ -28,10 +28,10 @@ public interface ISerializeProcessFactory
 
 public class SerializeProcessFactory(
   IBaseChildFinder baseChildFinder,
-  IObjectSerializerFactory objectSerializerFactory,
   IObjectDeserializerFactory objectDeserializerFactory,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory,
   IServerObjectManagerFactory serverObjectManagerFactory,
+  IBaseSerializer baseSerializer,
   ILoggerFactory loggerFactory
 ) : ISerializeProcessFactory
 {
@@ -51,7 +51,7 @@ public class SerializeProcessFactory(
       sqLiteJsonCacheManager,
       serverObjectManager,
       baseChildFinder,
-      objectSerializerFactory,
+      baseSerializer,
       loggerFactory,
       cancellationToken,
       options

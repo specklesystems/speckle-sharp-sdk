@@ -36,8 +36,9 @@ public class DetachedTests
       null,
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseChildFinder(new BasePropertyGatherer()),    new BaseSerializer(
+        new DummySendCacheManager(objects),new ObjectSerializerFactory(new BasePropertyGatherer())),
+
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
@@ -121,8 +122,9 @@ public class DetachedTests
       null,
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseChildFinder(new BasePropertyGatherer()),    new BaseSerializer(
+        new DummySendCacheManager(objects),new ObjectSerializerFactory(new BasePropertyGatherer())),
+
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
@@ -191,8 +193,9 @@ public class DetachedTests
       null,
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseChildFinder(new BasePropertyGatherer()),    new BaseSerializer(
+        new DummySendCacheManager(objects),new ObjectSerializerFactory(new BasePropertyGatherer())),
+
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
@@ -226,8 +229,9 @@ public class DetachedTests
       null,
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseChildFinder(new BasePropertyGatherer()),    new BaseSerializer(
+        new DummySendCacheManager(objects),new ObjectSerializerFactory(new BasePropertyGatherer())),
+
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)

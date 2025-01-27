@@ -29,7 +29,8 @@ public class ExceptionTests
       new DummySendCacheManager(objects),
       new ExceptionServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseSerializer(
+        new DummySendCacheManager(objects),new ObjectSerializerFactory(new BasePropertyGatherer())),
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, false, true)
@@ -49,8 +50,9 @@ public class ExceptionTests
       null,
       new ExceptionSendCacheManager(),
       new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseChildFinder(new BasePropertyGatherer()),   new BaseSerializer(
+        new ExceptionSendCacheManager(),new ObjectSerializerFactory(new BasePropertyGatherer())),
+
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, false, true)
