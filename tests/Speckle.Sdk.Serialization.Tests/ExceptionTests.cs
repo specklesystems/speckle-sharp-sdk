@@ -3,12 +3,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
-using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Testing.Framework;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
@@ -39,7 +36,7 @@ public class ExceptionTests
 
     //4 exceptions are fine because we use 4 threads for saving cache
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
-    await Verify(ex);
+    await Verify(ex).ScrubInteralizedStacktrace();
   }
 
   [Fact]
@@ -59,7 +56,7 @@ public class ExceptionTests
     );
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
-    await Verify(ex);
+    await Verify(ex).ScrubInteralizedStacktrace();
   }
 
   [Theory]
@@ -76,7 +73,7 @@ public class ExceptionTests
     {
       var root = await process.Deserialize(rootId);
     });
-    await Verify(ex);
+    await Verify(ex).ScrubInteralizedStacktrace();
   }
 
   [Theory]
@@ -116,52 +113,6 @@ public class ExceptionTests
       });
     }
 
-    await Verify(ex).UseParameters(hasObject);
+    await Verify(ex).ScrubInteralizedStacktrace().UseParameters(hasObject);
   }
-}
-
-public class ExceptionServerObjectManager : IServerObjectManager
-{
-  public IAsyncEnumerable<(string, string)> DownloadObjects(
-    IReadOnlyCollection<string> objectIds,
-    IProgress<ProgressArgs>? progress,
-    CancellationToken cancellationToken
-  ) => throw new NotImplementedException();
-
-  public Task<string?> DownloadSingleObject(
-    string objectId,
-    IProgress<ProgressArgs>? progress,
-    CancellationToken cancellationToken
-  ) => throw new NotImplementedException();
-
-  public Task<Dictionary<string, bool>> HasObjects(
-    IReadOnlyCollection<string> objectIds,
-    CancellationToken cancellationToken
-  ) => throw new NotImplementedException();
-
-  public Task UploadObjects(
-    IReadOnlyList<BaseItem> objects,
-    bool compressPayloads,
-    IProgress<ProgressArgs>? progress,
-    CancellationToken cancellationToken
-  ) => throw new NotImplementedException();
-}
-
-public class ExceptionSendCacheManager(bool? hasObject = null) : ISqLiteJsonCacheManager
-{
-  public void Dispose() { }
-
-  public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() => throw new NotImplementedException();
-
-  public void DeleteObject(string id) => throw new NotImplementedException();
-
-  public string? GetObject(string id) => null;
-
-  public void SaveObject(string id, string json) => throw new NotImplementedException();
-
-  public void UpdateObject(string id, string json) => throw new NotImplementedException();
-
-  public void SaveObjects(IEnumerable<(string id, string json)> items) => throw new NotImplementedException();
-
-  public bool HasObject(string objectId) => hasObject ?? throw new NotImplementedException();
 }

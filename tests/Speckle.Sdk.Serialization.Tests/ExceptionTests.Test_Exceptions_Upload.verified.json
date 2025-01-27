@@ -2,29 +2,41 @@
   "Type": "AggregateException",
   "InnerExceptions": [
     {
-      "Data": {},
-      "Message": "The method or operation is not implemented.",
-      "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\nat Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\n--- End of stack trace from previous location ---\nat Open.ChannelExtensions.<28d3e838-dde6-44a1-8f5e-d1c739a178d0>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\n--- End of stack trace from previous location ---",
-      "Type": "NotImplementedException"
-    },
+  "Message": "The method or operation is not implemented.",
+  "Data": {},
+  "InnerException": null,
+  "HelpLink": null,
+  "Source": "Speckle.Sdk.Serialization.Tests",
+  "HResult": -2147467263,
+  "StackTrace": "   at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\tests\\Speckle.Sdk.Serialization.Tests\\Framework\\ExceptionServerObjectManager.cs:line 24\r\n   at Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk\\Serialisation\\V2\\Send\\SerializeProcess.cs:line 228\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk.Dependencies\\Serialization\\ChannelSaver.cs:line 75\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.<>c__DisplayClass9_0.<<Start>b__0>d.MoveNext() in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk.Dependencies\\Serialization\\ChannelSaver.cs:line 38\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass20_0`2.<<PipeAsync>g__ValueNotReady|2>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()"
+},
     {
-      "Data": {},
-      "Message": "The method or operation is not implemented.",
-      "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\nat Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\n--- End of stack trace from previous location ---\nat Open.ChannelExtensions.<28d3e838-dde6-44a1-8f5e-d1c739a178d0>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\n--- End of stack trace from previous location ---",
-      "Type": "NotImplementedException"
-    },
+  "Message": "The method or operation is not implemented.",
+  "Data": {},
+  "InnerException": null,
+  "HelpLink": null,
+  "Source": "Speckle.Sdk.Serialization.Tests",
+  "HResult": -2147467263,
+  "StackTrace": "   at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\tests\\Speckle.Sdk.Serialization.Tests\\Framework\\ExceptionServerObjectManager.cs:line 24\r\n   at Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk\\Serialisation\\V2\\Send\\SerializeProcess.cs:line 228\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk.Dependencies\\Serialization\\ChannelSaver.cs:line 75\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.<>c__DisplayClass9_0.<<Start>b__0>d.MoveNext() in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk.Dependencies\\Serialization\\ChannelSaver.cs:line 38\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass20_0`2.<<PipeAsync>g__ValueNotReady|2>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()"
+},
     {
-      "Data": {},
-      "Message": "The method or operation is not implemented.",
-      "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\nat Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\n--- End of stack trace from previous location ---\nat Open.ChannelExtensions.<28d3e838-dde6-44a1-8f5e-d1c739a178d0>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\n--- End of stack trace from previous location ---",
-      "Type": "NotImplementedException"
-    },
+  "Message": "The method or operation is not implemented.",
+  "Data": {},
+  "InnerException": null,
+  "HelpLink": null,
+  "Source": "Speckle.Sdk.Serialization.Tests",
+  "HResult": -2147467263,
+  "StackTrace": "   at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\tests\\Speckle.Sdk.Serialization.Tests\\Framework\\ExceptionServerObjectManager.cs:line 24\r\n   at Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk\\Serialisation\\V2\\Send\\SerializeProcess.cs:line 228\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk.Dependencies\\Serialization\\ChannelSaver.cs:line 75\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.<>c__DisplayClass9_0.<<Start>b__0>d.MoveNext() in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk.Dependencies\\Serialization\\ChannelSaver.cs:line 38\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass20_0`2.<<PipeAsync>g__ValueNotReady|2>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()"
+},
     {
-      "Data": {},
-      "Message": "The method or operation is not implemented.",
-      "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\nat Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\n--- End of stack trace from previous location ---\nat Open.ChannelExtensions.<28d3e838-dde6-44a1-8f5e-d1c739a178d0>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\n--- End of stack trace from previous location ---",
-      "Type": "NotImplementedException"
-    }
+  "Message": "The method or operation is not implemented.",
+  "Data": {},
+  "InnerException": null,
+  "HelpLink": null,
+  "Source": "Speckle.Sdk.Serialization.Tests",
+  "HResult": -2147467263,
+  "StackTrace": "   at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\tests\\Speckle.Sdk.Serialization.Tests\\Framework\\ExceptionServerObjectManager.cs:line 24\r\n   at Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk\\Serialisation\\V2\\Send\\SerializeProcess.cs:line 228\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk.Dependencies\\Serialization\\ChannelSaver.cs:line 75\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.<>c__DisplayClass9_0.<<Start>b__0>d.MoveNext() in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk.Dependencies\\Serialization\\ChannelSaver.cs:line 38\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass20_0`2.<<PipeAsync>g__ValueNotReady|2>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.ReadUntilCancelledAsync[T](<5e816acc-9cf8-4b52-a8da-ceb5bd7eecc7>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()"
+}
   ],
   "StackTrace": "at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.DoneSaving()\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.Serialize(Base root)\n--- End of stack trace from previous location ---\nat Xunit.Assert.RecordExceptionAsync(Func`1 testCode)"
 }
