@@ -68,7 +68,13 @@ public class ExceptionTests
     closures.Count.Should().Be(oldCount);
 
     var o = new ObjectLoader(new DummySqLiteReceiveManager(closures), new ExceptionServerObjectManager(), null);
-    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), default, new(true));
+    using var process = new DeserializeProcess(
+      null,
+      o,
+      new ObjectDeserializerFactory(),
+      default,
+      new(true, MaxParallelism: 1)
+    );
 
     var ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
     {
@@ -95,7 +101,7 @@ public class ExceptionTests
       o,
       new ObjectDeserializerFactory(),
       default,
-      new(MaxParallelism: 2)
+      new(MaxParallelism: 1)
     );
 
     Exception ex;

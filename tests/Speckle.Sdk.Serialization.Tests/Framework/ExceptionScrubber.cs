@@ -18,7 +18,7 @@ public partial class ExceptionScrubber : WriteOnlyJsonConverter<Exception>
     if (value.StackTrace != null)
     {
       var ex = JsonConvert.SerializeObject(value, Formatting.Indented);
-      var newString = InteralizeStacktrace().Replace(ex, "<INTERNALIZED STACKTRACE>");
+      var newString = InteralizeStacktrace().Replace(ex, "<INTERNALIZED STACKTRACE>").Trim();
       writer.WriteRawValue(newString);
       return;
     }
