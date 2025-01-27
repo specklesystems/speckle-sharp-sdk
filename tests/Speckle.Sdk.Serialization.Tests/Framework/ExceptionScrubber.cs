@@ -5,9 +5,9 @@ namespace Speckle.Sdk.Serialization.Tests.Framework;
 
 public partial class ExceptionScrubber : WriteOnlyJsonConverter<Exception>
 {
-  //regex for matching .< then GUID then >
+  //regex for matching < then GUID then >
   [GeneratedRegex(
-    @"\.\<[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\>",
+    @"\<[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\>",
     RegexOptions.IgnoreCase,
     "en-US"
   )]
@@ -18,7 +18,7 @@ public partial class ExceptionScrubber : WriteOnlyJsonConverter<Exception>
     if (value.StackTrace != null)
     {
       var ex = JsonConvert.SerializeObject(value, Formatting.Indented);
-      var newString = InteralizeStacktrace().Replace(ex, ".<INTERNALIZED STACKTRACE>");
+      var newString = InteralizeStacktrace().Replace(ex, "<INTERNALIZED STACKTRACE>");
       writer.WriteRawValue(newString);
       return;
     }
