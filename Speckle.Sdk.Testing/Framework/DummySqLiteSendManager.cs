@@ -2,7 +2,7 @@
 
 namespace Speckle.Sdk.Testing.Framework;
 
-public sealed class DummySqLiteSendManager : ISqLiteJsonCacheManager
+public class DummySqLiteSendManager : ISqLiteJsonCacheManager
 {
   public string? GetObject(string id) => throw new NotImplementedException();
 
