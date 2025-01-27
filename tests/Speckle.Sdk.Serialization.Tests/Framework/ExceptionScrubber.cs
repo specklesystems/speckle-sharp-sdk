@@ -21,7 +21,7 @@ public partial class ExceptionScrubber : WriteOnlyJsonConverter<Exception>
     if (value.StackTrace != null)
     {
       var x = InternalizeStacktrace().Replace(value.StackTrace, "<INTERNALIZED STACKTRACE>");
-     x = RemoveSourceFiles().Replace(x, "\r\n");
+      x = RemoveSourceFiles().Replace(x, "\r\n");
       var ex = new JObject
       {
         ["Message"] = value.Message,
