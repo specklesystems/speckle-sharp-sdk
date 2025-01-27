@@ -311,7 +311,7 @@ public class DummyServerObjectManager : IServerObjectManager
     CancellationToken cancellationToken
   ) => Task.FromResult(objectIds.ToDictionary(x => x, _ => false));
 
-  public Task UploadObjects(
+  public virtual Task UploadObjects(
     IReadOnlyList<BaseItem> objects,
     bool compressPayloads,
     IProgress<ProgressArgs>? progress,
