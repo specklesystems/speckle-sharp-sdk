@@ -5,6 +5,7 @@ namespace Speckle.Sdk.Testing.Framework;
 public class AggregationExceptionScrubber : WriteOnlyJsonConverter<AggregateException>
 {
   private static readonly ExceptionScrubber _innerScrubber = new();
+
   public override void Write(VerifyJsonWriter writer, AggregateException exception)
   {
     writer.WriteStartObject();
@@ -22,7 +23,6 @@ public class AggregationExceptionScrubber : WriteOnlyJsonConverter<AggregateExce
       foreach (var innerException in exception.InnerExceptions)
       {
         _innerScrubber.Write(writer, innerException);
-        
       }
       writer.WriteEndArray();
     }

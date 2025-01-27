@@ -7,9 +7,17 @@ namespace Speckle.Sdk.Testing;
 
 public static class SpeckleVerify
 {
+  private static bool _initialized;
+
   [ModuleInitializer]
   public static void Initialize()
   {
+    if (_initialized)
+    {
+      return;
+    }
+
+    _initialized = true;
     VerifierSettings.DontScrubGuids();
     VerifierSettings.DontScrubDateTimes();
 
@@ -24,10 +32,7 @@ public static class SpeckleVerify
       x.Converters.Add(new AggregationExceptionScrubber());
       x.Converters.Add(new ExceptionScrubber());
     });
-    if (!VerifyQuibble.Initialized)
-    {
-      VerifyQuibble.Initialize();
-    }
+    VerifyQuibble.Initialize();
   }
 
   private static readonly JsonSerializer _jsonSerializer = new()

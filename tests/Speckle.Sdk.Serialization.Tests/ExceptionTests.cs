@@ -37,7 +37,7 @@ public class ExceptionTests
 
     //4 exceptions are fine because we use 4 threads for saving cache
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
-    await Verify(ex).ScrubInternalizedStacktrace();
+    await Verify(ex);
   }
 
   [Fact]
@@ -57,7 +57,7 @@ public class ExceptionTests
     );
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
-    await Verify(ex).ScrubInternalizedStacktrace();
+    await Verify(ex);
   }
 
   [Theory]
@@ -80,7 +80,7 @@ public class ExceptionTests
     {
       var root = await process.Deserialize(rootId);
     });
-    await Verify(ex).ScrubInternalizedStacktrace();
+    await Verify(ex);
   }
 
   [Theory]
@@ -120,6 +120,6 @@ public class ExceptionTests
       });
     }
 
-    await Verify(ex).ScrubInternalizedStacktrace().UseParameters(hasObject);
+    await Verify(ex).UseParameters(hasObject);
   }
 }
