@@ -16,18 +16,22 @@ public class CancellationSqLiteSendManager(CancellationTokenSource cancellationT
     cancellationTokenSource.Token.ThrowIfCancellationRequested();
   }
 }
+
 public class CancellationServerObjectManager(CancellationTokenSource cancellationTokenSource) : DummyServerObjectManager
 {
-  public override Task UploadObjects(IReadOnlyList<BaseItem> objects, bool compressPayloads,
+  public override Task UploadObjects(
+    IReadOnlyList<BaseItem> objects,
+    bool compressPayloads,
     IProgress<ProgressArgs>? progress,
-    CancellationToken cancellationToken)
+    CancellationToken cancellationToken
+  )
   {
-    
     cancellationTokenSource.Cancel();
     cancellationTokenSource.Token.ThrowIfCancellationRequested();
     return base.UploadObjects(objects, compressPayloads, progress, cancellationToken);
   }
 }
+
 public class CancellationTests
 {
   public CancellationTests()
@@ -80,8 +84,7 @@ public class CancellationTests
     );
     await Verify(ex);
   }
-  
-  
+
   [Fact]
   public async Task Cancellation_Save_Sqlite()
   {
