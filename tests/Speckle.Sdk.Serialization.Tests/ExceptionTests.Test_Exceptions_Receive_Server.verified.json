@@ -1,6 +1,6 @@
 ﻿{
   "Data": {},
   "Message": "The method or operation is not implemented.",
-  "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.DownloadSingleObject(String objectId, IProgress`1 progress, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Receive.ObjectLoader.GetAndCache(String rootId, DeserializeProcessOptions options, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Receive.DeserializeProcess.Deserialize(String rootId, CancellationToken cancellationToken)\n--- End of stack trace from previous location ---\nat Xunit.Assert.RecordExceptionAsync(Func`1 testCode)",
+  "StackTrace": "at Speckle.Sdk.Serialization.Tests.ExceptionServerObjectManager.DownloadSingleObject(String objectId, IProgress`1 progress, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Receive.ObjectLoader.GetAndCache(String rootId, DeserializeProcessOptions options, CancellationToken cancellationToken)\nat Speckle.Sdk.Serialisation.V2.Receive.DeserializeProcess.Deserialize(String rootId)\n--- End of stack trace from previous location ---\nat Xunit.Assert.RecordExceptionAsync(Func`1 testCode)",
   "Type": "NotImplementedException"
 }
