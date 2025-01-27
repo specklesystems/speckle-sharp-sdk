@@ -11,15 +11,19 @@ public partial class ExceptionScrubber : WriteOnlyJsonConverter<Exception>
     RegexOptions.IgnoreCase,
     "en-US"
   )]
-  private static partial Regex InteralizeStacktrace();
+  private static partial Regex InternalizeStacktrace();
 
   public override void Write(VerifyJsonWriter writer, Exception value)
   {
     if (value.StackTrace != null)
     {
-      var ex = JsonConvert.SerializeObject(value, Formatting.Indented);
-      var newString = InteralizeStacktrace().Replace(ex, "<INTERNALIZED STACKTRACE>").Trim();
-      writer.WriteRawValue(newString);
+      var ex = new JObject
+      {
+        ["Message"] = value.Message,
+        ["Source"] = value.Source?.Trim(),
+        ["StackTrace"] = InternalizeStacktrace().Replace(value.StackTrace, "<INTERNALIZED STACKTRACE>").Trim(),
+      };
+      writer.WriteRawValue(ex.ToString(Formatting.Indented));
       return;
     }
     base.Write(writer, value.ToString());
