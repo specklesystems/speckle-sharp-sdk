@@ -91,6 +91,7 @@ public sealed class SerializeProcess(
     DoneTraversing();
     await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(true);
     await DoneSaving().ConfigureAwait(true);
+    cancellationToken.ThrowIfCancellationRequested();
     return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
   }
 
@@ -161,8 +162,6 @@ public sealed class SerializeProcess(
     _childClosurePool.Return(childClosures);
     return currentClosures;
   }
-
-
 
   public override async Task SendToServer(Batch<BaseItem> batch, CancellationToken cancellationToken)
   {

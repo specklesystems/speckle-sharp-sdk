@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -7,9 +7,13 @@ using Speckle.Sdk.Testing.Framework;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
-public class CancellationSqLiteSendManager : DummySqLiteSendManager
+public class CancellationSqLiteSendManager(CancellationTokenSource cancellationTokenSource) : DummySqLiteSendManager
 {
-  
+  public override void SaveObjects(IEnumerable<(string id, string json)> items)
+  {
+    cancellationTokenSource.Cancel();
+    cancellationTokenSource.Token.ThrowIfCancellationRequested();
+  }
 }
 
 public class CancellationTests
@@ -19,51 +23,49 @@ public class CancellationTests
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
   }
+
   [Fact]
-   public async Task Cancellation_Serialize()
+  public async Task Cancellation_Serialize()
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
-  
+
     using var cancellationSource = new CancellationTokenSource();
     using var serializeProcess = new SerializeProcess(
       null,
       new DummySqLiteSendManager(),
       new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),   new BaseSerializer(
-        
-        new DummySqLiteSendManager(),new ObjectSerializerFactory(new BasePropertyGatherer())),
-
+      new BaseChildFinder(new BasePropertyGatherer()),
+      new BaseSerializer(new DummySqLiteSendManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
       new NullLoggerFactory(),
       cancellationSource.Token,
       new SerializeProcessOptions(true, true, false, true)
     );
     await cancellationSource.CancelAsync();
-    var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () => await serializeProcess.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<OperationCanceledException>(
+      async () => await serializeProcess.Serialize(testClass)
+    );
     await Verify(ex);
-
   }
-   
+
   [Fact]
   public async Task Cancellation_Save_Sqlite()
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
-  
+
     using var cancellationSource = new CancellationTokenSource();
     using var serializeProcess = new SerializeProcess(
       null,
-      new CancellationSqLiteSendManager(),
+      new CancellationSqLiteSendManager(cancellationSource),
       new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),   new BaseSerializer(
-        
-        new DummySqLiteSendManager(),new ObjectSerializerFactory(new BasePropertyGatherer())),
-
+      new BaseChildFinder(new BasePropertyGatherer()),
+      new BaseSerializer(new DummySqLiteSendManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
       new NullLoggerFactory(),
       cancellationSource.Token,
-      new SerializeProcessOptions(true, true, false, true)
+      new SerializeProcessOptions(true, false, false, true)
     );
-    await cancellationSource.CancelAsync();
-    var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () => await serializeProcess.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<OperationCanceledException>(
+      async () => await serializeProcess.Serialize(testClass)
+    );
     await Verify(ex);
-
   }
 }

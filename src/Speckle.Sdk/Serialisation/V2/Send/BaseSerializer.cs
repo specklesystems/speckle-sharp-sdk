@@ -6,20 +6,20 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.SQLite;
 using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
 
-
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 [GenerateAutoInterface]
 public class BaseSerializer(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
-  IObjectSerializerFactory objectSerializerFactory) : IBaseSerializer
+  IObjectSerializerFactory objectSerializerFactory
+) : IBaseSerializer
 {
   private readonly Pool<List<(Id, Json, Closures)>> _pool = Pools.CreateListPool<(Id, Json, Closures)>();
 
   private readonly ConcurrentDictionary<Id, ObjectReference> _objectReferences = new();
- 
+
   public IReadOnlyDictionary<Id, ObjectReference> ObjectReferences => _objectReferences;
-  
+
   //leave this sync
   public IEnumerable<BaseItem> Serialise(
     Base obj,
@@ -49,10 +49,10 @@ public class BaseSerializer(
       }
 
       var (id, json, closures) = items.First();
-      yield return CheckCache(id, json, closures,skipCacheRead);
+      yield return CheckCache(id, json, closures, skipCacheRead);
       foreach (var (cid, cJson, cClosures) in items.Skip(1))
       {
-        yield return CheckCache(cid, cJson, cClosures,skipCacheRead);
+        yield return CheckCache(cid, cJson, cClosures, skipCacheRead);
       }
     }
     finally
@@ -60,11 +60,8 @@ public class BaseSerializer(
       _pool.Return(items);
     }
   }
-  
-  
-  private BaseItem CheckCache(Id id, Json json, Dictionary<Id, int> closures,
-    
-    bool skipCacheRead)
+
+  private BaseItem CheckCache(Id id, Json json, Dictionary<Id, int> closures, bool skipCacheRead)
   {
     if (!skipCacheRead)
     {
