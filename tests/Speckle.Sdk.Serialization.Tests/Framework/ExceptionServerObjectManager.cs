@@ -2,7 +2,7 @@
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
-namespace Speckle.Sdk.Serialization.Tests;
+namespace Speckle.Sdk.Serialization.Tests.Framework;
 
 public class ExceptionServerObjectManager : IServerObjectManager
 {

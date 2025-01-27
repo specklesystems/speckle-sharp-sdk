@@ -6,7 +6,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk.Serialization.Tests;
+namespace Speckle.Sdk.Serialization.Tests.Framework;
 
 public static class TestFileManager
 {

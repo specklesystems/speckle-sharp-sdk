@@ -1,6 +1,6 @@
 ﻿using Speckle.Sdk.Transports;
 
-namespace Speckle.Sdk.Serialization.Tests;
+namespace Speckle.Sdk.Serialization.Tests.Framework;
 
 public class TestTransport2(IDictionary<string, string> objects) : ITransport
 {
