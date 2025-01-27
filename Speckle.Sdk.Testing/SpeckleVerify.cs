@@ -17,6 +17,13 @@ public static class SpeckleVerify
     VerifierSettings.DontIgnoreEmptyCollections();
     VerifierSettings.SortPropertiesAlphabetically();
     VerifierSettings.SortJsonObjects();
+    VerifierSettings.AddExtraSettings(x =>
+    {
+      var existing = x.Converters.OfType<WriteOnlyJsonConverter<AggregateException>>().First();
+      x.Converters.Remove(existing);
+      x.Converters.Add(new AggregationExceptionScrubber());
+      x.Converters.Add(new ExceptionScrubber());
+    });
     if (!VerifyQuibble.Initialized)
     {
       VerifyQuibble.Initialize();

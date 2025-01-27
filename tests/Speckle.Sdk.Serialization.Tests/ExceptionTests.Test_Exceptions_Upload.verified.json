@@ -1,26 +1,25 @@
 ﻿{
-  "Type": "AggregateException",
+  "Type": "System.AggregateException",
   "InnerExceptions": [
     {
+  "Type": "System.NotImplementedException",
   "Message": "The method or operation is not implemented.",
-  "Source": "Speckle.Sdk.Serialization.Tests",
-  "StackTrace": "at Speckle.Sdk.Serialization.Tests.Framework.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.<>c__DisplayClass9_0.<<Start>b__0>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass20_0`2.<<PipeAsync>g__ValueNotReady|2>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.ReadUntilCancelledAsync[T](<INTERNALIZED STACKTRACE>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()"
+  "Source": "Speckle.Sdk.Serialization.Tests"
 },
     {
+  "Type": "System.NotImplementedException",
   "Message": "The method or operation is not implemented.",
-  "Source": "Speckle.Sdk.Serialization.Tests",
-  "StackTrace": "at Speckle.Sdk.Serialization.Tests.Framework.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.<>c__DisplayClass9_0.<<Start>b__0>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass20_0`2.<<PipeAsync>g__ValueNotReady|2>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.ReadUntilCancelledAsync[T](<INTERNALIZED STACKTRACE>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()"
+  "Source": "Speckle.Sdk.Serialization.Tests"
 },
     {
+  "Type": "System.NotImplementedException",
   "Message": "The method or operation is not implemented.",
-  "Source": "Speckle.Sdk.Serialization.Tests",
-  "StackTrace": "at Speckle.Sdk.Serialization.Tests.Framework.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.<>c__DisplayClass9_0.<<Start>b__0>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass20_0`2.<<PipeAsync>g__ValueNotReady|2>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.ReadUntilCancelledAsync[T](<INTERNALIZED STACKTRACE>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()"
+  "Source": "Speckle.Sdk.Serialization.Tests"
 },
     {
+  "Type": "System.NotImplementedException",
   "Message": "The method or operation is not implemented.",
-  "Source": "Speckle.Sdk.Serialization.Tests",
-  "StackTrace": "at Speckle.Sdk.Serialization.Tests.Framework.ExceptionServerObjectManager.HasObjects(IReadOnlyCollection`1 objectIds, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.SendToServer(Batch`1 batch, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.SendToServer(IMemoryOwner`1 batch, CancellationToken cancellationToken)\r\n   at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.<>c__DisplayClass9_0.<<Start>b__0>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass20_0`2.<<PipeAsync>g__ValueNotReady|2>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.ReadUntilCancelledAsync[T](<INTERNALIZED STACKTRACE>ChannelReader`1 reader, CancellationToken cancellationToken, Func`3 receiver, Boolean deferredExecution)\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()\r\n--- End of stack trace from previous location ---\r\n   at Open.ChannelExtensions.<INTERNALIZED STACKTRACE>Extensions.<>c__DisplayClass92_0`1.<<ReadAllConcurrentlyAsync>g__Read|1>d.MoveNext()"
+  "Source": "Speckle.Sdk.Serialization.Tests"
 }
-  ],
-  "StackTrace": "at Speckle.Sdk.Dependencies.Serialization.ChannelSaver`1.DoneSaving()\nat Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.Serialize(Base root)\n--- End of stack trace from previous location ---\nat Xunit.Assert.RecordExceptionAsync(Func`1 testCode)"
+  ]
 }

@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
@@ -37,7 +37,7 @@ public class ExceptionTests
 
     //4 exceptions are fine because we use 4 threads for saving cache
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
-    await Verify(ex).ScrubInteralizedStacktrace();
+    await Verify(ex).ScrubInternalizedStacktrace();
   }
 
   [Fact]
@@ -57,7 +57,7 @@ public class ExceptionTests
     );
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
-    await Verify(ex).ScrubInteralizedStacktrace();
+    await Verify(ex).ScrubInternalizedStacktrace();
   }
 
   [Theory]
@@ -80,7 +80,7 @@ public class ExceptionTests
     {
       var root = await process.Deserialize(rootId);
     });
-    await Verify(ex).ScrubInteralizedStacktrace();
+    await Verify(ex).ScrubInternalizedStacktrace();
   }
 
   [Theory]
@@ -120,6 +120,6 @@ public class ExceptionTests
       });
     }
 
-    await Verify(ex).ScrubInteralizedStacktrace().UseParameters(hasObject);
+    await Verify(ex).ScrubInternalizedStacktrace().UseParameters(hasObject);
   }
 }
