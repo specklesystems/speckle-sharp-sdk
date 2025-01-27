@@ -43,13 +43,10 @@ var progress = new Progress(true);
 
 var factory = new SerializeProcessFactory(
   new BaseChildFinder(new BasePropertyGatherer()),
+  new ObjectSerializerFactory(new BasePropertyGatherer()),
   new ObjectDeserializerFactory(),
   serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>(),
   serviceProvider.GetRequiredService<IServerObjectManagerFactory>(),
-  new BaseSerializer(
-    serviceProvider.GetRequiredService<ISqLiteJsonCacheManager>(),
-    new ObjectSerializerFactory(new BasePropertyGatherer())
-  ),
   new NullLoggerFactory()
 );
 var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, default, new(skipCacheReceive));
