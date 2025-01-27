@@ -179,7 +179,7 @@ public class SerializationTests
     };
 
     var writtenObjects = new Dictionary<string, string>();
-    var writeTransport = new TestTransport(writtenObjects);
+    var writeTransport = new TestTransport2(writtenObjects);
     var serializer = new SpeckleObjectSerializer([writeTransport]);
     var newIds = new Dictionary<string, string>();
     var oldIds = new Dictionary<string, string>();
