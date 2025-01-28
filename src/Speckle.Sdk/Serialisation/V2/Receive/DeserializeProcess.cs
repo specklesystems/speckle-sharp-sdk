@@ -74,6 +74,7 @@ public sealed class DeserializeProcess(
       {
         // tmp is necessary because of the way closures close over loop variables
         var tmpId = childId;
+        cancellationToken.ThrowIfCancellationRequested();
         Task t = Task
           .Factory.StartNew(
             () => Traverse(tmpId),
@@ -145,6 +146,6 @@ public sealed class DeserializeProcess(
     }
 
     var deserializer = objectDeserializerFactory.Create(id, closures, _baseCache);
-    return deserializer.Deserialize(json);
+    return deserializer.Deserialize(json, cancellationToken);
   }
 }

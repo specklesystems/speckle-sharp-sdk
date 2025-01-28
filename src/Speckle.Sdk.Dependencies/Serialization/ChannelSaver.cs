@@ -35,7 +35,7 @@ public abstract class ChannelSaver<T>
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
-        async x => await SendToServer(x, cancellationToken).ConfigureAwait(false),
+        async x => await SendToServer(x).ConfigureAwait(false),
         HTTP_CAPACITY,
         false,
         cancellationToken
@@ -70,13 +70,13 @@ public abstract class ChannelSaver<T>
   public async ValueTask Save(T item, CancellationToken cancellationToken) =>
     await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(true);
 
-  public async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch, CancellationToken cancellationToken)
+  public async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
   {
-    await SendToServer((Batch<T>)batch, cancellationToken).ConfigureAwait(false);
+    await SendToServer((Batch<T>)batch).ConfigureAwait(false);
     return batch;
   }
 
-  public abstract Task SendToServer(Batch<T> batch, CancellationToken cancellationToken);
+  public abstract Task SendToServer(Batch<T> batch);
 
   public void DoneTraversing() => _checkCacheChannel.Writer.TryComplete();
 

@@ -49,7 +49,7 @@ public sealed class SerializeProcess(
     cancellationToken
   );
 
-  private readonly SerializeProcessOptions _options = options ?? new(false, false, false, false);
+  private readonly SerializeProcessOptions _options = options ?? new();
   private readonly ILogger<SerializeProcess> _logger = loggerFactory.CreateLogger<SerializeProcess>();
 
   private readonly Pool<Dictionary<Id, NodeInfo>> _currentClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
@@ -80,6 +80,7 @@ public sealed class SerializeProcess(
     var findTotalObjectsTask = Task.CompletedTask;
     if (!_options.SkipFindTotalObjects)
     {
+      cancellationToken.ThrowIfCancellationRequested();
       findTotalObjectsTask = Task.Factory.StartNew(
         () => TraverseTotal(root),
         cancellationToken,
@@ -87,7 +88,7 @@ public sealed class SerializeProcess(
         _highest
       );
     }
-    await Traverse(root, cancellationToken).ConfigureAwait(true);
+    await Traverse(root).ConfigureAwait(true);
     DoneTraversing();
     await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(true);
     await DoneSaving().ConfigureAwait(true);
@@ -105,19 +106,17 @@ public sealed class SerializeProcess(
     }
   }
 
-  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, CancellationToken cancellationToken)
+  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj)
   {
     var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
     foreach (var child in baseChildFinder.GetChildren(obj))
     {
       // tmp is necessary because of the way closures close over loop variables
       var tmp = child;
+      cancellationToken.ThrowIfCancellationRequested();
       var t = Task
         .Factory.StartNew(
-          async () =>
-          {
-            return await Traverse(tmp, cancellationToken).ConfigureAwait(true);
-          },
+          async () => await Traverse(tmp).ConfigureAwait(true),
           cancellationToken,
           TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
           _belowNormal
@@ -163,7 +162,7 @@ public sealed class SerializeProcess(
     return currentClosures;
   }
 
-  public override async Task SendToServer(Batch<BaseItem> batch, CancellationToken cancellationToken)
+  public override async Task SendToServer(Batch<BaseItem> batch)
   {
     try
     {
