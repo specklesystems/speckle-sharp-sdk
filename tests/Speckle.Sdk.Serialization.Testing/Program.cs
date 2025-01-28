@@ -44,7 +44,7 @@ var progress = new Progress(true);
 var factory = new SerializeProcessFactory(
   new BaseChildFinder(new BasePropertyGatherer()),
   new ObjectSerializerFactory(new BasePropertyGatherer()),
-  new ObjectDeserializerFactory(),
+  new BaseDeserializer(new ObjectDeserializerFactory()),
   serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>(),
   serviceProvider.GetRequiredService<IServerObjectManagerFactory>(),
   new NullLoggerFactory()

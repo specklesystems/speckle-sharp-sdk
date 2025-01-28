@@ -118,7 +118,7 @@ public class SerializationTests
     using var process = new DeserializeProcess(
       null,
       new TestObjectLoader(closures),
-      new ObjectDeserializerFactory(),
+      new BaseDeserializer(new ObjectDeserializerFactory()),
       default
     );
     await process.Deserialize("3416d3fe01c9196115514c4a2f41617b");
@@ -214,7 +214,13 @@ public class SerializationTests
       new DummyReceiveServerObjectManager(closures),
       null
     );
-    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), default, new(true));
+    using var process = new DeserializeProcess(
+      null,
+      o,
+      new BaseDeserializer(new ObjectDeserializerFactory()),
+      default,
+      new(true)
+    );
     var root = await process.Deserialize(rootId);
     process.BaseCache.Count.Should().Be(oldCount);
     process.Total.Should().Be(oldCount);

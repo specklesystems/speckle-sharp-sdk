@@ -20,7 +20,7 @@ public partial interface IDeserializeProcess : IDisposable;
 public sealed class DeserializeProcess(
   IProgress<ProgressArgs>? progress,
   IObjectLoader objectLoader,
-  IObjectDeserializerFactory objectDeserializerFactory,
+  IBaseDeserializer baseDeserializer,
   CancellationToken cancellationToken,
   DeserializeProcessOptions? options = null
 ) : IDeserializeProcess
@@ -131,21 +131,10 @@ public sealed class DeserializeProcess(
       return;
     }
     (Json json, IReadOnlyCollection<Id> closures) = GetClosures(id);
-    var @base = Deserialise(id, json, closures);
+    var @base = baseDeserializer.Deserialise(_baseCache, id, json, closures, cancellationToken);
     _baseCache.TryAdd(id, @base);
     //remove from JSON cache because we've finally made the Base
     _closures.TryRemove(id, out _);
     _activeTasks.TryRemove(id, out _);
-  }
-
-  private Base Deserialise(Id id, Json json, IReadOnlyCollection<Id> closures)
-  {
-    if (_baseCache.TryGetValue(id, out var baseObject))
-    {
-      return baseObject;
-    }
-
-    var deserializer = objectDeserializerFactory.Create(id, closures, _baseCache);
-    return deserializer.Deserialize(json, cancellationToken);
   }
 }

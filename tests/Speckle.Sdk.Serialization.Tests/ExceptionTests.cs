@@ -71,7 +71,7 @@ public class ExceptionTests
     using var process = new DeserializeProcess(
       null,
       o,
-      new ObjectDeserializerFactory(),
+      new BaseDeserializer(new ObjectDeserializerFactory()),
       default,
       new(true, MaxParallelism: 1)
     );
@@ -99,7 +99,7 @@ public class ExceptionTests
     using var process = new DeserializeProcess(
       null,
       o,
-      new ObjectDeserializerFactory(),
+      new BaseDeserializer(new ObjectDeserializerFactory()),
       default,
       new(MaxParallelism: 1)
     );
