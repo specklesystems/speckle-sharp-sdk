@@ -300,7 +300,7 @@ public class DummyServerObjectManager : IServerObjectManager
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
-  public Task<string?> DownloadSingleObject(
+  public virtual Task<string?> DownloadSingleObject(
     string objectId,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken

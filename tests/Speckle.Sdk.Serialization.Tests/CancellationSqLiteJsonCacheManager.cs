@@ -37,4 +37,15 @@ public class CancellationServerObjectManager(CancellationTokenSource cancellatio
     cancellationTokenSource.Token.ThrowIfCancellationRequested();
     return base.UploadObjects(objects, compressPayloads, progress, cancellationToken);
   }
+
+  public override Task<string?> DownloadSingleObject(
+    string objectId,
+    IProgress<ProgressArgs>? progress,
+    CancellationToken cancellationToken
+  )
+  {
+    cancellationTokenSource.Cancel();
+    cancellationTokenSource.Token.ThrowIfCancellationRequested();
+    return base.DownloadSingleObject(objectId, progress, cancellationToken);
+  }
 }

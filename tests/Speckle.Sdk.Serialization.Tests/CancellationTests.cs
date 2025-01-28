@@ -6,6 +6,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Testing.Framework;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -117,4 +118,53 @@ public class CancellationTests
     await Verify(ex);
     cancellationSource.IsCancellationRequested.Should().BeTrue();
   }
+
+  [Theory]
+  [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
+  public async Task Cancellation_Receive_Server(string fileName, string rootId, int oldCount)
+  {
+    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    closures.Count.Should().Be(oldCount);
+
+    using var cancellationSource = new CancellationTokenSource();
+    var o = new ObjectLoader(
+      new DummyCancellationSqLiteSendManager(),
+      new CancellationServerObjectManager(cancellationSource),
+      null
+    );
+    using var process = new DeserializeProcess(
+      null,
+      o,
+      new ObjectDeserializerFactory(),
+      cancellationSource.Token,
+      new(MaxParallelism: 1)
+    );
+
+    var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+    {
+      var root = await process.Deserialize(rootId);
+    });
+
+    await Verify(ex);
+    cancellationSource.IsCancellationRequested.Should().BeTrue();
+  }
+}
+
+public class DummyCancellationSqLiteSendManager : ISqLiteJsonCacheManager
+{
+  public string? GetObject(string id) => null;
+
+  public void SaveObject(string id, string json) => throw new NotImplementedException();
+
+  public void UpdateObject(string id, string json) => throw new NotImplementedException();
+
+  public virtual void SaveObjects(IEnumerable<(string id, string json)> items) => throw new NotImplementedException();
+
+  public bool HasObject(string objectId) => throw new NotImplementedException();
+
+  public IReadOnlyCollection<(string, string)> GetAllObjects() => throw new NotImplementedException();
+
+  public void DeleteObject(string id) => throw new NotImplementedException();
+
+  public void Dispose() { }
 }
