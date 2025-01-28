@@ -1,36 +1,14 @@
+using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
+using Speckle.Sdk.Serialization.Tests.Framework;
 using Speckle.Sdk.Testing.Framework;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialization.Tests;
-
-public class CancellationSqLiteSendManager(CancellationTokenSource cancellationTokenSource) : DummySqLiteSendManager
-{
-  public override void SaveObjects(IEnumerable<(string id, string json)> items)
-  {
-    cancellationTokenSource.Cancel();
-    cancellationTokenSource.Token.ThrowIfCancellationRequested();
-  }
-}
-
-public class CancellationServerObjectManager(CancellationTokenSource cancellationTokenSource) : DummyServerObjectManager
-{
-  public override Task UploadObjects(
-    IReadOnlyList<BaseItem> objects,
-    bool compressPayloads,
-    IProgress<ProgressArgs>? progress,
-    CancellationToken cancellationToken
-  )
-  {
-    cancellationTokenSource.Cancel();
-    cancellationTokenSource.Token.ThrowIfCancellationRequested();
-    return base.UploadObjects(objects, compressPayloads, progress, cancellationToken);
-  }
-}
 
 public class CancellationTests
 {
@@ -61,6 +39,7 @@ public class CancellationTests
       async () => await serializeProcess.Serialize(testClass)
     );
     await Verify(ex);
+    cancellationSource.IsCancellationRequested.Should().BeTrue();
   }
 
   [Fact]
@@ -83,6 +62,7 @@ public class CancellationTests
       async () => await serializeProcess.Serialize(testClass)
     );
     await Verify(ex);
+    cancellationSource.IsCancellationRequested.Should().BeTrue();
   }
 
   [Fact]
@@ -105,5 +85,36 @@ public class CancellationTests
       async () => await serializeProcess.Serialize(testClass)
     );
     await Verify(ex);
+    cancellationSource.IsCancellationRequested.Should().BeTrue();
+  }
+
+  [Theory]
+  [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
+  public async Task Cancellation_Receive_Cache(string fileName, string rootId, int oldCount)
+  {
+    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    closures.Count.Should().Be(oldCount);
+
+    using var cancellationSource = new CancellationTokenSource();
+    var o = new ObjectLoader(
+      new CancellationSqLiteJsonCacheManager(cancellationSource),
+      new DummyReceiveServerObjectManager(closures),
+      null
+    );
+    using var process = new DeserializeProcess(
+      null,
+      o,
+      new ObjectDeserializerFactory(),
+      cancellationSource.Token,
+      new(MaxParallelism: 1)
+    );
+
+    var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+    {
+      var root = await process.Deserialize(rootId);
+    });
+
+    await Verify(ex);
+    cancellationSource.IsCancellationRequested.Should().BeTrue();
   }
 }

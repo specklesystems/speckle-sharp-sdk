@@ -64,6 +64,7 @@ public sealed class ObjectLoader(
       .ConfigureAwait(false);
 
     CheckForExceptions();
+    cancellationToken.ThrowIfCancellationRequested();
     //save the root last to shortcut later
     if (!options.SkipCache)
     {
