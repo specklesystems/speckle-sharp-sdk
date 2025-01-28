@@ -182,6 +182,10 @@ public sealed class SerializeProcess(
         progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
       }
     }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
 #pragma warning disable CA1031
     catch (Exception e)
 #pragma warning restore CA1031
@@ -201,6 +205,10 @@ public sealed class SerializeProcess(
         Interlocked.Exchange(ref _cached, _cached + batch.Count);
         progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
       }
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
     }
 #pragma warning disable CA1031
     catch (Exception e)
