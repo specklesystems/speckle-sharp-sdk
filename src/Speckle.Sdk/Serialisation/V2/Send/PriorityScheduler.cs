@@ -10,14 +10,12 @@ public sealed class PriorityScheduler(
   CancellationToken cancellationToken
 ) : TaskScheduler, IDisposable
 {
+#pragma warning disable CA2213
   private readonly BlockingCollection<Task> _tasks = new();
+#pragma warning restore CA2213
   private Thread[]? _threads;
 
-  public void Dispose()
-  {
-    _tasks.CompleteAdding();
-    _tasks.Dispose();
-  }
+  public void Dispose() => _tasks.CompleteAdding();
 
   public override int MaximumConcurrencyLevel => maximumConcurrencyLevel;
 
@@ -27,9 +25,12 @@ public sealed class PriorityScheduler(
   {
     _tasks.Add(task);
 
-    if (_threads == null)
+    if (_threads != null)
     {
-      _threads = new Thread[maximumConcurrencyLevel];
+      return;
+    }
+
+    _threads = new Thread[maximumConcurrencyLevel];
       for (int i = 0; i < _threads.Length; i++)
       {
         _threads[i] = new Thread(() =>
@@ -49,6 +50,11 @@ public sealed class PriorityScheduler(
                 break;
               }
             }
+
+            if (_tasks.IsCompleted)
+            {
+              _tasks.Dispose();
+            }
           }
           catch (OperationCanceledException)
           {
@@ -67,7 +73,7 @@ public sealed class PriorityScheduler(
           IsBackground = true,
         };
         _threads[i].Start();
-      }
+      
     }
   }
 
