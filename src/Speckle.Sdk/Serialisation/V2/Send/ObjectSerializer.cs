@@ -15,8 +15,8 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public readonly record struct NodeInfo(Json Json, Closures? C)
 {
-  public Closures GetClosures() =>
-    C ?? ClosureParser.GetClosures(Json.Value).ToDictionary(x => new Id(x.Item1), x => x.Item2);
+  public Closures GetClosures(CancellationToken cancellationToken) =>
+    C ?? ClosureParser.GetClosures(Json.Value, cancellationToken).ToDictionary(x => new Id(x.Item1), x => x.Item2);
 }
 
 public partial interface IObjectSerializer : IDisposable;
@@ -283,7 +283,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       if (baseObj.id != null && _childCache.TryGetValue(new(baseObj.id), out var info))
       {
         id = new Id(baseObj.id);
-        childClosures = info.GetClosures();
+        childClosures = info.GetClosures(_cancellationToken);
         json = info.Json;
         MergeClosures(_currentClosures, childClosures);
       }

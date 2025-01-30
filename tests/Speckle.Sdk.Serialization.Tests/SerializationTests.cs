@@ -1,11 +1,8 @@
 using System.Collections.Concurrent;
-using System.IO.Compression;
-using System.Reflection;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
-using Speckle.Objects.Data;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -13,6 +10,7 @@ using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
+using Speckle.Sdk.Serialization.Tests.Framework;
 using Speckle.Sdk.Testing.Framework;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -21,54 +19,19 @@ public class SerializationTests
 {
   private class TestLoader(string json) : IObjectLoader
   {
-    public Task<(string, IReadOnlyCollection<string>)> GetAndCache(
+    public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(
       string rootId,
       DeserializeProcessOptions? options,
       CancellationToken cancellationToken
     )
     {
-      var childrenIds = ClosureParser.GetChildrenIds(json).ToList();
-      return Task.FromResult<(string, IReadOnlyCollection<string>)>((json, childrenIds));
+      var childrenIds = ClosureParser.GetChildrenIds(new(json), cancellationToken).Select(x => new Id(x)).ToList();
+      return Task.FromResult<(Json, IReadOnlyCollection<Id>)>((new(json), childrenIds));
     }
 
     public string? LoadId(string id) => null;
 
     public void Dispose() { }
-  }
-
-  private readonly Assembly _assembly = Assembly.GetExecutingAssembly();
-
-  public SerializationTests()
-  {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataObject).Assembly, _assembly);
-  }
-
-  private async Task<string> ReadJson(string fullName)
-  {
-    await using var stream = _assembly.GetManifestResourceStream(fullName).NotNull();
-    if (fullName.EndsWith(".gz"))
-    {
-      await using var z = new GZipStream(stream, CompressionMode.Decompress);
-      using var reader2 = new StreamReader(z);
-      return await reader2.ReadToEndAsync();
-    }
-    using var reader = new StreamReader(stream);
-    return await reader.ReadToEndAsync();
-  }
-
-  private Dictionary<string, string> ReadAsObjects(string json)
-  {
-    var jsonObjects = new Dictionary<string, string>();
-    var array = JArray.Parse(json);
-    foreach (var obj in array)
-    {
-      if (obj is JObject jobj)
-      {
-        jsonObjects.Add(jobj["id"].NotNull().Value<string>().NotNull(), jobj.ToString());
-      }
-    }
-    return jsonObjects;
   }
 
   /*
@@ -84,9 +47,9 @@ public class SerializationTests
       @base.Should().NotBeNull();
     }*/
 
-  public class TestObjectLoader(Dictionary<string, string> idToObject) : IObjectLoader
+  public class TestObjectLoader(IReadOnlyDictionary<string, string> idToObject) : IObjectLoader
   {
-    public Task<(string, IReadOnlyCollection<string>)> GetAndCache(
+    public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(
       string rootId,
       DeserializeProcessOptions? options,
       CancellationToken cancellationToken
@@ -98,8 +61,8 @@ public class SerializationTests
         throw new KeyNotFoundException("Root not found");
       }
 
-      var allChildren = ClosureParser.GetChildrenIds(json).ToList();
-      return Task.FromResult<(string, IReadOnlyCollection<string>)>((json, allChildren));
+      var allChildren = ClosureParser.GetChildrenIds(json, cancellationToken).Select(x => new Id(x)).ToList();
+      return Task.FromResult<(Json, IReadOnlyCollection<Id>)>((new(json), allChildren));
     }
 
     public string? LoadId(string id) => idToObject.GetValueOrDefault(id);
@@ -111,16 +74,14 @@ public class SerializationTests
   [InlineData("RevitObject.json.gz")]
   public async Task Basic_Namespace_Validation(string fileName)
   {
-    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
-    var json = await ReadJson(fullName);
-    var closure = ReadAsObjects(json);
+    var closures = await TestFileManager.GetFileAsClosures(fileName);
     var deserializer = new SpeckleObjectDeserializer
     {
-      ReadTransport = new TestTransport(closure),
+      ReadTransport = new TestTransport(closures),
       CancellationToken = default,
     };
 
-    foreach (var (id, objJson) in closure)
+    foreach (var (id, objJson) in closures)
     {
       var jObject = JObject.Parse(objJson);
       var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
@@ -153,11 +114,14 @@ public class SerializationTests
   [InlineData("RevitObject.json.gz")]
   public async Task Basic_Namespace_Validation_New(string fileName)
   {
-    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
-    var json = await ReadJson(fullName);
-    var closures = ReadAsObjects(json);
-    using var process = new DeserializeProcess(null, new TestObjectLoader(closures), new ObjectDeserializerFactory());
-    await process.Deserialize("3416d3fe01c9196115514c4a2f41617b", default);
+    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    using var process = new DeserializeProcess(
+      null,
+      new TestObjectLoader(closures),
+      new BaseDeserializer(new ObjectDeserializerFactory()),
+      default
+    );
+    await process.Deserialize("3416d3fe01c9196115514c4a2f41617b");
     foreach (var (id, objJson) in closures)
     {
       var jObject = JObject.Parse(objJson);
@@ -172,7 +136,7 @@ public class SerializationTests
       }
       else
       {
-        var baseType = process.BaseCache[id];
+        var baseType = process.BaseCache[new Id(id)];
 
         starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
         starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
@@ -208,23 +172,21 @@ public class SerializationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Roundtrip_Test_Old(string fileName, string _, int count)
   {
-    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
-    var json = await ReadJson(fullName);
-    var closure = ReadAsObjects(json);
+    var closures = await TestFileManager.GetFileAsClosures(fileName);
     var deserializer = new SpeckleObjectDeserializer
     {
-      ReadTransport = new TestTransport(closure),
+      ReadTransport = new TestTransport(closures),
       CancellationToken = default,
     };
 
     var writtenObjects = new Dictionary<string, string>();
-    var writeTransport = new TestTransport(writtenObjects);
+    var writeTransport = new TestTransport2(writtenObjects);
     var serializer = new SpeckleObjectSerializer([writeTransport]);
     var newIds = new Dictionary<string, string>();
     var oldIds = new Dictionary<string, string>();
     var idToBase = new Dictionary<string, Base>();
-    closure.Count.Should().Be(count);
-    foreach (var (id, objJson) in closure)
+    closures.Count.Should().Be(count);
+    foreach (var (id, objJson) in closures)
     {
       var base1 = await deserializer.DeserializeAsync(objJson);
       base1.id.Should().Be(id);
@@ -244,18 +206,22 @@ public class SerializationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, 4674)]
   public async Task Roundtrip_Test_New(string fileName, string rootId, int oldCount, int newCount)
   {
-    var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
-    var json = await ReadJson(fullName);
-    var closure = ReadAsObjects(json);
-    closure.Count.Should().Be(oldCount);
+    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    closures.Count.Should().Be(oldCount);
 
     var o = new ObjectLoader(
-      new DummySqLiteReceiveManager(closure),
-      new DummyReceiveServerObjectManager(closure),
+      new DummySqLiteReceiveManager(closures),
+      new DummyReceiveServerObjectManager(closures),
       null
     );
-    using var process = new DeserializeProcess(null, o, new ObjectDeserializerFactory(), new(true));
-    var root = await process.Deserialize(rootId, default);
+    using var process = new DeserializeProcess(
+      null,
+      o,
+      new BaseDeserializer(new ObjectDeserializerFactory()),
+      default,
+      new(true)
+    );
+    var root = await process.Deserialize(rootId);
     process.BaseCache.Count.Should().Be(oldCount);
     process.Total.Should().Be(oldCount);
 
@@ -265,7 +231,7 @@ public class SerializationTests
       new DummySqLiteSendManager(),
       new DummySendServerObjectManager(newIdToJson),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseSerializer(new DummySqLiteSendManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(true, true, false, true)
@@ -277,7 +243,7 @@ public class SerializationTests
 
     foreach (var newKvp in newIdToJson)
     {
-      if (closure.TryGetValue(newKvp.Key, out var newValue))
+      if (closures.TryGetValue(newKvp.Key, out var newValue))
       {
         JToken.DeepEquals(JObject.Parse(newValue), JObject.Parse(newKvp.Value));
       }

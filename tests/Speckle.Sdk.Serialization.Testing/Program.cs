@@ -44,13 +44,13 @@ var progress = new Progress(true);
 var factory = new SerializeProcessFactory(
   new BaseChildFinder(new BasePropertyGatherer()),
   new ObjectSerializerFactory(new BasePropertyGatherer()),
-  new ObjectDeserializerFactory(),
+  new BaseDeserializer(new ObjectDeserializerFactory()),
   serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>(),
   serviceProvider.GetRequiredService<IServerObjectManagerFactory>(),
   new NullLoggerFactory()
 );
-var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, new(skipCacheReceive));
-var @base = await process.Deserialize(rootId, default).ConfigureAwait(false);
+var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, default, new(skipCacheReceive));
+var @base = await process.Deserialize(rootId).ConfigureAwait(false);
 Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");

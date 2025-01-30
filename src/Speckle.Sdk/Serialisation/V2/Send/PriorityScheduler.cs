@@ -42,12 +42,17 @@ public sealed class PriorityScheduler(
               {
                 break;
               }
+
               TryExecuteTask(t);
               if (cancellationToken.IsCancellationRequested)
               {
                 break;
               }
             }
+          }
+          catch (OperationCanceledException)
+          {
+            //cancelling so end thread
           }
 #pragma warning disable CA1031
           catch (Exception e)

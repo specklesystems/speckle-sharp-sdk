@@ -1,10 +1,10 @@
 ﻿using Speckle.Sdk.SQLite;
 
-namespace Speckle.Sdk.Testing.Framework;
+namespace Speckle.Sdk.Serialization.Tests;
 
-public class DummySqLiteSendManager : ISqLiteJsonCacheManager
+public class DummyCancellationSqLiteSendManager : ISqLiteJsonCacheManager
 {
-  public string? GetObject(string id) => throw new NotImplementedException();
+  public string? GetObject(string id) => null;
 
   public void SaveObject(string id, string json) => throw new NotImplementedException();
 
