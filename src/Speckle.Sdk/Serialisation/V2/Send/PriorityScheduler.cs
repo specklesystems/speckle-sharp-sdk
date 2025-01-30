@@ -31,49 +31,48 @@ public sealed class PriorityScheduler(
     }
 
     _threads = new Thread[maximumConcurrencyLevel];
-      for (int i = 0; i < _threads.Length; i++)
+    for (int i = 0; i < _threads.Length; i++)
+    {
+      _threads[i] = new Thread(() =>
       {
-        _threads[i] = new Thread(() =>
+        try
         {
-          try
+          foreach (Task t in _tasks.GetConsumingEnumerable(cancellationToken))
           {
-            foreach (Task t in _tasks.GetConsumingEnumerable(cancellationToken))
+            if (cancellationToken.IsCancellationRequested)
             {
-              if (cancellationToken.IsCancellationRequested)
-              {
-                break;
-              }
-
-              TryExecuteTask(t);
-              if (cancellationToken.IsCancellationRequested)
-              {
-                break;
-              }
+              break;
             }
 
-            if (_tasks.IsCompleted)
+            TryExecuteTask(t);
+            if (cancellationToken.IsCancellationRequested)
             {
-              _tasks.Dispose();
+              break;
             }
           }
-          catch (OperationCanceledException)
+
+          if (_tasks.IsCompleted)
           {
-            //cancelling so end thread
+            _tasks.Dispose();
           }
+        }
+        catch (OperationCanceledException)
+        {
+          //cancelling so end thread
+        }
 #pragma warning disable CA1031
-          catch (Exception e)
+        catch (Exception e)
 #pragma warning restore CA1031
-          {
-            logger.LogError(e, "{name} had an exception", Thread.CurrentThread.Name);
-          }
-        })
         {
-          Name = $"{priority}: {i}",
-          Priority = priority,
-          IsBackground = true,
-        };
-        _threads[i].Start();
-      
+          logger.LogError(e, "{name} had an exception", Thread.CurrentThread.Name);
+        }
+      })
+      {
+        Name = $"{priority}: {i}",
+        Priority = priority,
+        IsBackground = true,
+      };
+      _threads[i].Start();
     }
   }
 
