@@ -37,11 +37,18 @@ public sealed class DeserializeProcess(
   [AutoInterfaceIgnore]
   public void Dispose() => objectLoader.Dispose();
 
+  /// <summary>
+  /// All meaningful ids in the upcoming version
+  /// </summary>
+  private List<Id> AllChildrenIds { get; set; }
+
   public async Task<Base> Deserialize(string rootId)
   {
     var (rootJson, childrenIds) = await objectLoader
       .GetAndCache(rootId, _options, cancellationToken)
       .ConfigureAwait(false);
+    AllChildrenIds = childrenIds.ToList();
+    AllChildrenIds.Add(new Id(rootId));
     Total = childrenIds.Count;
     Total++;
     var root = new Id(rootId);
@@ -53,6 +60,13 @@ public sealed class DeserializeProcess(
 
   private async Task Traverse(Id id)
   {
+    // It doesn't make sense to try traverse id if it is not in the root, if this is the case object is serialized wrong in the first place.
+    // This happened with datachunks that having weird __closures
+    if (!AllChildrenIds.Contains(id))
+    {
+      return;
+    }
+    
     if (_baseCache.ContainsKey(id))
     {
       return;
@@ -106,6 +120,7 @@ public sealed class DeserializeProcess(
     if (!_closures.TryGetValue(id, out var closures))
     {
       var j = objectLoader.LoadId(id.Value);
+      
       if (j == null)
       {
         throw new SpeckleException($"Missing object id in SQLite cache: {id}");
