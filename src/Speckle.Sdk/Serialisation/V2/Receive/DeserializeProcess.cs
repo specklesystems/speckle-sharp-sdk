@@ -48,6 +48,7 @@ public sealed class DeserializeProcess(
       .GetAndCache(rootId, _options, cancellationToken)
       .ConfigureAwait(false);
     var root = new Id(rootId);
+    //childrenIds is already frozen but need to just add root?
     _allIds = childrenIds.Concat([root]).Freeze();
     Total = childrenIds.Count;
     Total++;
