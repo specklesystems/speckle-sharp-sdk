@@ -36,8 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Tests.Integrati
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{B623BD21-5CAA-43F9-A539-1835276C220E}"
 	ProjectSection(SolutionItems) = preProject
-		.github\workflows\main.yml = .github\workflows\main.yml
-		.github\workflows\ci.yml = .github\workflows\ci.yml
+		.github\workflows\pr.yml = .github\workflows\pr.yml
+		.github\workflows\release.yml = .github\workflows\release.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Tests.Performance", "tests\Speckle.Sdk.Tests.Performance\Speckle.Sdk.Tests.Performance.csproj", "{870E3396-E6F7-43AE-B120-E651FA4F46BD}"
