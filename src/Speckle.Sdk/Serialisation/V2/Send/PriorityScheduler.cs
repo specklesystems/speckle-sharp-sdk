@@ -11,6 +11,7 @@ public sealed class PriorityScheduler(
 ) : TaskScheduler, IDisposable
 {
 #pragma warning disable CA2213
+  //intentionally not disposing this because syncing to when all the threads are done AFTER the BC is done/disposed is hard.  BC will still be cleaned up by the finalizer
   private readonly BlockingCollection<Task> _tasks = new();
 #pragma warning restore CA2213
   private Thread[]? _threads;
@@ -49,11 +50,6 @@ public sealed class PriorityScheduler(
             {
               break;
             }
-          }
-
-          if (_tasks.IsCompleted)
-          {
-            _tasks.Dispose();
           }
         }
         catch (OperationCanceledException)
