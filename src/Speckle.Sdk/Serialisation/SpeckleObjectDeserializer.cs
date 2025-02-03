@@ -132,7 +132,7 @@ public sealed class SpeckleObjectDeserializer
             if (propName == "__closure")
             {
               reader.Read(); //goes to prop value
-              var closures = ClosureParser.GetClosures(reader);
+              var closures = ClosureParser.GetClosures(reader, CancellationToken);
               if (closures.Any())
               {
                 _total = 0;

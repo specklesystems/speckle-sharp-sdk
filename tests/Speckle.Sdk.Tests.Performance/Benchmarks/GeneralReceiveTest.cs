@@ -55,7 +55,7 @@ public class GeneralReceiveTest : IDisposable
   [Benchmark]
   public async Task<Base> RunTest_Receive2()
   {
-    return await _operations.Receive2(_baseUrl, streamId, rootId, null);
+    return await _operations.Receive2(_baseUrl, streamId, rootId, null, null, default);
   }
 
   [GlobalCleanup]

@@ -10,14 +10,12 @@ public sealed class PriorityScheduler(
   CancellationToken cancellationToken
 ) : TaskScheduler, IDisposable
 {
+#pragma warning disable CA2213
   private readonly BlockingCollection<Task> _tasks = new();
+#pragma warning restore CA2213
   private Thread[]? _threads;
 
-  public void Dispose()
-  {
-    _tasks.CompleteAdding();
-    _tasks.Dispose();
-  }
+  public void Dispose() => _tasks.CompleteAdding();
 
   public override int MaximumConcurrencyLevel => maximumConcurrencyLevel;
 
@@ -27,42 +25,54 @@ public sealed class PriorityScheduler(
   {
     _tasks.Add(task);
 
-    if (_threads == null)
+    if (_threads != null)
     {
-      _threads = new Thread[maximumConcurrencyLevel];
-      for (int i = 0; i < _threads.Length; i++)
+      return;
+    }
+
+    _threads = new Thread[maximumConcurrencyLevel];
+    for (int i = 0; i < _threads.Length; i++)
+    {
+      _threads[i] = new Thread(() =>
       {
-        _threads[i] = new Thread(() =>
+        try
         {
-          try
+          foreach (Task t in _tasks.GetConsumingEnumerable(cancellationToken))
           {
-            foreach (Task t in _tasks.GetConsumingEnumerable(cancellationToken))
+            if (cancellationToken.IsCancellationRequested)
             {
-              if (cancellationToken.IsCancellationRequested)
-              {
-                break;
-              }
-              TryExecuteTask(t);
-              if (cancellationToken.IsCancellationRequested)
-              {
-                break;
-              }
+              break;
+            }
+
+            TryExecuteTask(t);
+            if (cancellationToken.IsCancellationRequested)
+            {
+              break;
             }
           }
-#pragma warning disable CA1031
-          catch (Exception e)
-#pragma warning restore CA1031
+
+          if (_tasks.IsCompleted)
           {
-            logger.LogError(e, "{name} had an exception", Thread.CurrentThread.Name);
+            _tasks.Dispose();
           }
-        })
+        }
+        catch (OperationCanceledException)
         {
-          Name = $"{priority}: {i}",
-          Priority = priority,
-          IsBackground = true,
-        };
-        _threads[i].Start();
-      }
+          //cancelling so end thread
+        }
+#pragma warning disable CA1031
+        catch (Exception e)
+#pragma warning restore CA1031
+        {
+          logger.LogError(e, "{name} had an exception", Thread.CurrentThread.Name);
+        }
+      })
+      {
+        Name = $"{priority}: {i}",
+        Priority = priority,
+        IsBackground = true,
+      };
+      _threads[i].Start();
     }
   }
 

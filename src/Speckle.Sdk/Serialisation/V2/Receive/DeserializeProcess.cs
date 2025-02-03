@@ -8,9 +8,10 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 public record DeserializeProcessOptions(
-  bool SkipCache,
+  bool SkipCache = false,
   bool ThrowOnMissingReferences = true,
-  bool SkipInvalidConverts = false
+  bool SkipInvalidConverts = false,
+  int? MaxParallelism = null
 );
 
 public partial interface IDeserializeProcess : IDisposable;
@@ -19,36 +20,38 @@ public partial interface IDeserializeProcess : IDisposable;
 public sealed class DeserializeProcess(
   IProgress<ProgressArgs>? progress,
   IObjectLoader objectLoader,
-  IObjectDeserializerFactory objectDeserializerFactory,
+  IBaseDeserializer baseDeserializer,
+  CancellationToken cancellationToken,
   DeserializeProcessOptions? options = null
 ) : IDeserializeProcess
 {
-  private readonly DeserializeProcessOptions _options = options ?? new(false);
+  private readonly DeserializeProcessOptions _options = options ?? new();
 
-  private readonly ConcurrentDictionary<string, (string, IReadOnlyCollection<string>)> _closures = new();
-  private readonly ConcurrentDictionary<string, Base> _baseCache = new();
-  private readonly ConcurrentDictionary<string, Task> _activeTasks = new();
+  private readonly ConcurrentDictionary<Id, (Json, IReadOnlyCollection<Id>)> _closures = new();
+  private readonly ConcurrentDictionary<Id, Base> _baseCache = new();
+  private readonly ConcurrentDictionary<Id, Task> _activeTasks = new();
 
-  public IReadOnlyDictionary<string, Base> BaseCache => _baseCache;
+  public IReadOnlyDictionary<Id, Base> BaseCache => _baseCache;
   public long Total { get; private set; }
 
   [AutoInterfaceIgnore]
   public void Dispose() => objectLoader.Dispose();
 
-  public async Task<Base> Deserialize(string rootId, CancellationToken cancellationToken)
+  public async Task<Base> Deserialize(string rootId)
   {
     var (rootJson, childrenIds) = await objectLoader
       .GetAndCache(rootId, _options, cancellationToken)
       .ConfigureAwait(false);
     Total = childrenIds.Count;
     Total++;
-    _closures.TryAdd(rootId, (rootJson, childrenIds));
+    var root = new Id(rootId);
+    _closures.TryAdd(root, (rootJson, childrenIds));
     progress?.Report(new(ProgressEvent.DeserializeObject, _baseCache.Count, childrenIds.Count));
-    await Traverse(rootId, cancellationToken).ConfigureAwait(false);
-    return _baseCache[rootId];
+    await Traverse(root).ConfigureAwait(false);
+    return _baseCache[root];
   }
 
-  private async Task Traverse(string id, CancellationToken cancellationToken)
+  private async Task Traverse(Id id)
   {
     if (_baseCache.ContainsKey(id))
     {
@@ -71,11 +74,12 @@ public sealed class DeserializeProcess(
       {
         // tmp is necessary because of the way closures close over loop variables
         var tmpId = childId;
+        cancellationToken.ThrowIfCancellationRequested();
         Task t = Task
           .Factory.StartNew(
-            () => Traverse(tmpId, cancellationToken),
+            () => Traverse(tmpId),
             cancellationToken,
-            TaskCreationOptions.AttachedToParent,
+            TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
             TaskScheduler.Default
           )
           .Unwrap();
@@ -97,16 +101,22 @@ public sealed class DeserializeProcess(
     }
   }
 
-  private (string, IReadOnlyCollection<string>) GetClosures(string id)
+  private (Json, IReadOnlyCollection<Id>) GetClosures(Id id)
   {
     if (!_closures.TryGetValue(id, out var closures))
     {
-      var json = objectLoader.LoadId(id);
-      if (json == null)
+      var j = objectLoader.LoadId(id.Value);
+      if (j == null)
       {
         throw new SpeckleException($"Missing object id in SQLite cache: {id}");
       }
-      var childrenIds = ClosureParser.GetClosures(json).OrderByDescending(x => x.Item2).Select(x => x.Item1).Freeze();
+
+      var json = new Json(j);
+      var childrenIds = ClosureParser
+        .GetClosures(json.Value, cancellationToken)
+        .OrderByDescending(x => x.Item2)
+        .Select(x => new Id(x.Item1))
+        .Freeze();
       closures = (json, childrenIds);
       _closures.TryAdd(id, closures);
     }
@@ -114,28 +124,17 @@ public sealed class DeserializeProcess(
     return closures;
   }
 
-  public void DecodeOrEnqueueChildren(string id)
+  public void DecodeOrEnqueueChildren(Id id)
   {
     if (_baseCache.ContainsKey(id))
     {
       return;
     }
-    (string json, IReadOnlyCollection<string> closures) = GetClosures(id);
-    var @base = Deserialise(id, json, closures);
+    (Json json, IReadOnlyCollection<Id> closures) = GetClosures(id);
+    var @base = baseDeserializer.Deserialise(_baseCache, id, json, closures, cancellationToken);
     _baseCache.TryAdd(id, @base);
     //remove from JSON cache because we've finally made the Base
     _closures.TryRemove(id, out _);
     _activeTasks.TryRemove(id, out _);
-  }
-
-  private Base Deserialise(string id, string json, IReadOnlyCollection<string> closures)
-  {
-    if (_baseCache.TryGetValue(id, out var baseObject))
-    {
-      return baseObject;
-    }
-
-    var deserializer = objectDeserializerFactory.Create(id, closures, _baseCache);
-    return deserializer.Deserialize(json);
   }
 }

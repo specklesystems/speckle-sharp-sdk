@@ -37,7 +37,7 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
@@ -122,7 +122,7 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
@@ -192,7 +192,7 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
@@ -227,7 +227,7 @@ public class DetachedTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
       new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
@@ -300,7 +300,7 @@ public class DummyServerObjectManager : IServerObjectManager
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();
 
-  public Task<string?> DownloadSingleObject(
+  public virtual Task<string?> DownloadSingleObject(
     string objectId,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
@@ -311,7 +311,7 @@ public class DummyServerObjectManager : IServerObjectManager
     CancellationToken cancellationToken
   ) => Task.FromResult(objectIds.ToDictionary(x => x, _ => false));
 
-  public Task UploadObjects(
+  public virtual Task UploadObjects(
     IReadOnlyList<BaseItem> objects,
     bool compressPayloads,
     IProgress<ProgressArgs>? progress,
