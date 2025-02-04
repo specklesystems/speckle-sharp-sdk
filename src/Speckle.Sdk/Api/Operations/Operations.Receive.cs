@@ -24,7 +24,7 @@ public partial class Operations
 
     try
     {
-      var process = serializeProcessFactory.CreateDeserializeProcess(
+      using var process = serializeProcessFactory.CreateDeserializeProcess(
         url,
         streamId,
         authorizationToken,

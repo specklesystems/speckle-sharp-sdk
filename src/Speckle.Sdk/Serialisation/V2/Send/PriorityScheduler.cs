@@ -11,6 +11,7 @@ public sealed class PriorityScheduler(
 ) : TaskScheduler, IDisposable
 {
 #pragma warning disable CA2213
+  //intentionally not disposing this because syncing to when all the threads are done AFTER the BC is done/disposed is hard.  BC will still be cleaned up by the finalizer
   private readonly BlockingCollection<Task> _tasks = new();
 #pragma warning restore CA2213
   private Thread[]? _threads;
@@ -37,23 +38,30 @@ public sealed class PriorityScheduler(
       {
         try
         {
-          foreach (Task t in _tasks.GetConsumingEnumerable(cancellationToken))
+          while (true)
           {
+            //we're done so leave
+            if (_tasks.IsCompleted || cancellationToken.IsCancellationRequested)
+            {
+              break;
+            }
+            var success = _tasks.TryTake(out var t, TimeSpan.FromSeconds(1));
+            //no task and we're done so leave
+            if (success && _tasks.IsCompleted)
+            {
+              break;
+            }
+            //cancelled just leave
             if (cancellationToken.IsCancellationRequested)
             {
               break;
             }
-
-            TryExecuteTask(t);
-            if (cancellationToken.IsCancellationRequested)
+            //didn't get a task but just timed out so continue
+            if (!success)
             {
-              break;
+              continue;
             }
-          }
-
-          if (_tasks.IsCompleted)
-          {
-            _tasks.Dispose();
+            TryExecuteTask(t ?? throw new InvalidOperationException("Task was null"));
           }
         }
         catch (OperationCanceledException)
