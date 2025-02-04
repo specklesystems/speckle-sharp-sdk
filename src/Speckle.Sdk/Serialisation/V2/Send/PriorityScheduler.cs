@@ -38,18 +38,30 @@ public sealed class PriorityScheduler(
       {
         try
         {
-          foreach (Task t in _tasks.GetConsumingEnumerable(cancellationToken))
+          while(true)
           {
+            //we're done so leave
+            if (_tasks.IsCompleted || cancellationToken.IsCancellationRequested)
+            {
+              break;
+            }
+            var success = _tasks.TryTake(out var t, TimeSpan.FromSeconds(1));
+            //no task and we're done so leave
+            if (success && _tasks.IsCompleted)
+            {
+              break;
+            }
+            //cancelled just leave
             if (cancellationToken.IsCancellationRequested)
             {
               break;
             }
-
-            TryExecuteTask(t);
-            if (cancellationToken.IsCancellationRequested)
+            //didn't get a task but just timed out so continue
+            if (!success)
             {
-              break;
+              continue;
             }
+            TryExecuteTask(t ?? throw new InvalidOperationException("Task was null"));
           }
         }
         catch (OperationCanceledException)
