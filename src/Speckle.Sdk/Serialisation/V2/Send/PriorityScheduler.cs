@@ -38,7 +38,7 @@ public sealed class PriorityScheduler(
       {
         try
         {
-          while(true)
+          while (true)
           {
             //we're done so leave
             if (_tasks.IsCompleted || cancellationToken.IsCancellationRequested)
