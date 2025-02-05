@@ -46,7 +46,7 @@ public sealed class DeserializeProcess(
   public void Dispose()
   {
     objectLoader.Dispose();
-    _belowNormal.Dispose(); 
+    _belowNormal.Dispose();
   }
 
   /// <summary>
