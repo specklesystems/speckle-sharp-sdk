@@ -74,6 +74,7 @@ public class SerializeProcessFactory(
     //owned by process, refactor later
     var objectLoader = new ObjectLoader(sqLiteJsonCacheManager, serverObjectManager, progress);
 #pragma warning restore CA2000
-    return new DeserializeProcess(progress, objectLoader, baseDeserializer, cancellationToken, options);
+    return new DeserializeProcess(progress, objectLoader, baseDeserializer, 
+      loggerFactory,cancellationToken, options);
   }
 }

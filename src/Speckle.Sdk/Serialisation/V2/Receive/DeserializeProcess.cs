@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
+using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
@@ -21,10 +23,17 @@ public sealed class DeserializeProcess(
   IProgress<ProgressArgs>? progress,
   IObjectLoader objectLoader,
   IBaseDeserializer baseDeserializer,
+  ILoggerFactory loggerFactory,
   CancellationToken cancellationToken,
   DeserializeProcessOptions? options = null
 ) : IDeserializeProcess
 {
+  private readonly PriorityScheduler _belowNormal = new(
+    loggerFactory.CreateLogger<PriorityScheduler>(),
+    ThreadPriority.BelowNormal,
+    Environment.ProcessorCount * 2,
+    cancellationToken
+  );
   private readonly DeserializeProcessOptions _options = options ?? new();
 
   private readonly ConcurrentDictionary<Id, (Json, IReadOnlyCollection<Id>)> _closures = new();
@@ -35,7 +44,11 @@ public sealed class DeserializeProcess(
   public long Total { get; private set; }
 
   [AutoInterfaceIgnore]
-  public void Dispose() => objectLoader.Dispose();
+  public void Dispose()
+  {
+    objectLoader.Dispose();
+    _belowNormal.Dispose(); 
+  }
 
   /// <summary>
   /// All meaningful ids in the upcoming version
@@ -94,7 +107,7 @@ public sealed class DeserializeProcess(
             () => Traverse(tmpId),
             cancellationToken,
             TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
-            TaskScheduler.Default
+            _belowNormal
           )
           .Unwrap();
         tasks.Add(t);
