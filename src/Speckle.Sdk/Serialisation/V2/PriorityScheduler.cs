@@ -89,12 +89,19 @@ public sealed class PriorityScheduler(
   public Task WaitForCompletion()
   {
     _tasks.CompleteAdding();
-    return Task.Factory.StartNew(async () =>
-    {
-      while (_threads != null && _threads.Any(x => x.IsAlive))
-      {
-        await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
-      }
-    }, CancellationToken.None, TaskCreationOptions.AttachedToParent, TaskScheduler.Default).Unwrap();
+    return Task
+      .Factory.StartNew(
+        async () =>
+        {
+          while (_threads != null && _threads.Any(x => x.IsAlive))
+          {
+            await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+          }
+        },
+        CancellationToken.None,
+        TaskCreationOptions.AttachedToParent,
+        TaskScheduler.Default
+      )
+      .Unwrap();
   }
 }
