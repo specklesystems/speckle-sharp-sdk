@@ -228,19 +228,24 @@ public class SerializationTests
     process.Total.Should().Be(oldCount);
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
-    using var serializeProcess = new SerializeProcess(
-      null,
-      new DummySqLiteSendManager(),
-      new DummySendServerObjectManager(newIdToJson),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySqLiteSendManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
-      default,
-      new SerializeProcessOptions(true, true, false, true)
-    );
-    var (rootId2, _) = await serializeProcess.Serialize(root);
-
-    rootId2.Should().Be(root.id);
+    using (
+      var serializeProcess = new SerializeProcess(
+        null,
+        new DummySqLiteSendManager(),
+        new DummySendServerObjectManager(newIdToJson),
+        new BaseChildFinder(new BasePropertyGatherer()),
+        new BaseSerializer(new DummySqLiteSendManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
+        new NullLoggerFactory(),
+        default,
+        new SerializeProcessOptions(true, true, false, true)
+      )
+    )
+    {
+      var (rootId2, _) = await serializeProcess.Serialize(root);
+      rootId2.Should().Be(root.id);
+    }
+    //ensures threads are done?
+    await Task.Delay(TimeSpan.FromSeconds(2));
     newIdToJson.Count.Should().Be(newCount);
 
     foreach (var newKvp in newIdToJson)
