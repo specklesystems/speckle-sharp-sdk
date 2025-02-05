@@ -67,6 +67,7 @@ public sealed class DeserializeProcess(
     _closures.TryAdd(root, (rootJson, childrenIds));
     progress?.Report(new(ProgressEvent.DeserializeObject, _baseCache.Count, childrenIds.Count));
     await Traverse(root).ConfigureAwait(false);
+    await _belowNormal.WaitForCompletion().ConfigureAwait(false);
     return _baseCache[root];
   }
 
