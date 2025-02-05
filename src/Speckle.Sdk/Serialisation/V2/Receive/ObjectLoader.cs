@@ -23,12 +23,12 @@ public sealed class ObjectLoader(
   private long _cached;
   private long _downloaded;
   private long _totalToDownload;
-  private DeserializeProcessOptions _options = new(false);
+  private DeserializeProcessOptions _options = new();
 
   [AutoInterfaceIgnore]
   public void Dispose() => sqLiteJsonCacheManager.Dispose();
 
-  public async Task<(string, IReadOnlyCollection<string>)> GetAndCache(
+  public async Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(
     string rootId,
     DeserializeProcessOptions options,
     CancellationToken cancellationToken
@@ -42,32 +42,35 @@ public sealed class ObjectLoader(
       if (rootJson != null)
       {
         //assume everything exists as the root is there.
-        var allChildren = ClosureParser.GetChildrenIds(rootJson).ToList();
+        var allChildren = ClosureParser.GetChildrenIds(rootJson, cancellationToken).Select(x => new Id(x)).ToList();
         //this probably yields away from the Main thread to let host apps update progress
         //in any case, this fixes a Revit only issue for this situation
         await Task.Yield();
-        return (rootJson, allChildren);
+        return (new(rootJson), allChildren);
       }
     }
     rootJson = await serverObjectManager
       .DownloadSingleObject(rootId, progress, cancellationToken)
       .NotNull()
       .ConfigureAwait(false);
-    IReadOnlyCollection<string> allChildrenIds = ClosureParser
-      .GetClosures(rootJson)
+    IReadOnlyCollection<Id> allChildrenIds = ClosureParser
+      .GetClosures(rootJson, cancellationToken)
       .OrderByDescending(x => x.Item2)
-      .Select(x => x.Item1)
-      .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
+      .Select(x => new Id(x.Item1))
+      .Where(x => !x.Value.StartsWith("blob", StringComparison.Ordinal))
       .Freeze();
     _allChildrenCount = allChildrenIds.Count;
-    await GetAndCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
+    await GetAndCache(allChildrenIds.Select(x => x.Value), cancellationToken, _options.MaxParallelism)
+      .ConfigureAwait(false);
 
+    CheckForExceptions();
+    cancellationToken.ThrowIfCancellationRequested();
     //save the root last to shortcut later
     if (!options.SkipCache)
     {
       sqLiteJsonCacheManager.SaveObject(rootId, rootJson);
     }
-    return (rootJson, allChildrenIds);
+    return (new(rootJson), allChildrenIds);
   }
 
   [AutoInterfaceIgnore]

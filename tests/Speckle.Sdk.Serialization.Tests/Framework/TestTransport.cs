@@ -1,16 +1,9 @@
 using Speckle.Sdk.Transports;
 
-namespace Speckle.Sdk.Serialization.Tests;
+namespace Speckle.Sdk.Serialization.Tests.Framework;
 
-public class TestTransport : ITransport
+public class TestTransport(IReadOnlyDictionary<string, string> objects) : ITransport
 {
-  public IDictionary<string, string> Objects { get; }
-
-  public TestTransport(IDictionary<string, string> objects)
-  {
-    Objects = objects;
-  }
-
   public string TransportName
   {
     get => "Test";
@@ -28,11 +21,11 @@ public class TestTransport : ITransport
 
   public void EndWrite() => throw new NotImplementedException();
 
-  public void SaveObject(string id, string serializedObject) => Objects[id] = serializedObject;
+  public void SaveObject(string id, string serializedObject) => throw new NotImplementedException();
 
   public Task WriteComplete() => throw new NotImplementedException();
 
-  public Task<string?> GetObject(string id) => Task.FromResult(Objects.TryGetValue(id, out string? o) ? o : null);
+  public Task<string?> GetObject(string id) => Task.FromResult(objects.GetValueOrDefault(id));
 
   public Task<string> CopyObjectAndChildren(string id, ITransport targetTransport) =>
     throw new NotImplementedException();

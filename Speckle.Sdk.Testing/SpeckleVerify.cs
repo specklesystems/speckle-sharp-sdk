@@ -7,9 +7,17 @@ namespace Speckle.Sdk.Testing;
 
 public static class SpeckleVerify
 {
+  private static bool _initialized;
+
   [ModuleInitializer]
   public static void Initialize()
   {
+    if (_initialized)
+    {
+      return;
+    }
+
+    _initialized = true;
     VerifierSettings.DontScrubGuids();
     VerifierSettings.DontScrubDateTimes();
 
@@ -17,10 +25,14 @@ public static class SpeckleVerify
     VerifierSettings.DontIgnoreEmptyCollections();
     VerifierSettings.SortPropertiesAlphabetically();
     VerifierSettings.SortJsonObjects();
-    if (!VerifyQuibble.Initialized)
+    VerifierSettings.AddExtraSettings(x =>
     {
-      VerifyQuibble.Initialize();
-    }
+      var existing = x.Converters.OfType<WriteOnlyJsonConverter<AggregateException>>().First();
+      x.Converters.Remove(existing);
+      x.Converters.Add(new AggregationExceptionScrubber());
+      x.Converters.Add(new ExceptionScrubber());
+    });
+    VerifyQuibble.Initialize();
   }
 
   private static readonly JsonSerializer _jsonSerializer = new()

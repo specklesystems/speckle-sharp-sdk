@@ -12,9 +12,9 @@ public partial class Operations
     Uri url,
     string streamId,
     string objectId,
-    string? authorizationToken = null,
-    IProgress<ProgressArgs>? onProgressAction = null,
-    CancellationToken cancellationToken = default
+    string? authorizationToken,
+    IProgress<ProgressArgs>? onProgressAction,
+    CancellationToken cancellationToken
   )
   {
     using var receiveActivity = activityFactory.Start("Operations.Receive");
@@ -24,13 +24,14 @@ public partial class Operations
 
     try
     {
-      var process = serializeProcessFactory.CreateDeserializeProcess(
+      using var process = serializeProcessFactory.CreateDeserializeProcess(
         url,
         streamId,
         authorizationToken,
-        onProgressAction
+        onProgressAction,
+        cancellationToken
       );
-      var result = await process.Deserialize(objectId, cancellationToken).ConfigureAwait(false);
+      var result = await process.Deserialize(objectId).ConfigureAwait(false);
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return result;
     }

@@ -6,7 +6,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Testing.Framework;
 
-public class DummyReceiveServerObjectManager(Dictionary<string, string> objects) : IServerObjectManager
+public class DummyReceiveServerObjectManager(IReadOnlyDictionary<string, string> objects) : IServerObjectManager
 {
   public async IAsyncEnumerable<(string, string)> DownloadObjects(
     IReadOnlyCollection<string> objectIds,

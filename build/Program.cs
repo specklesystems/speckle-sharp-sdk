@@ -14,6 +14,7 @@ const string PACK = "pack";
 const string PACK_LOCAL = "pack-local";
 const string CLEAN_LOCKS = "clean-locks";
 const string PERF = "perf";
+const string DEEP_CLEAN = "deep-clean";
 
 Target(
   CLEAN_LOCKS,
@@ -121,6 +122,33 @@ Target(
     CheckBuildDirectory(dir, "Release");
     CheckBuildDirectory(dir, "Debug");
     await RunAsync("dotnet", $"run --project {file} -c Release").ConfigureAwait(false);
+  }
+);
+
+Target(
+  DEEP_CLEAN,
+  () =>
+  {
+    foreach (var f in Glob.Directories(".", "**/bin"))
+    {
+      if (f.StartsWith("build"))
+      {
+        continue;
+      }
+      Console.WriteLine("Found and will delete: " + f);
+      Directory.Delete(f, true);
+    }
+    foreach (var f in Glob.Directories(".", "**/obj"))
+    {
+      if (f.StartsWith("Build"))
+      {
+        continue;
+      }
+      Console.WriteLine("Found and will delete: " + f);
+      Directory.Delete(f, true);
+    }
+    Console.WriteLine("Running restore now.");
+    Run("dotnet", "restore .\\Speckle.Sdk.sln --no-cache");
   }
 );
 
