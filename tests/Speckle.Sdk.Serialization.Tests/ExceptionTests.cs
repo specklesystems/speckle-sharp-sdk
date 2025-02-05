@@ -72,6 +72,7 @@ public class ExceptionTests
       null,
       o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
+      new NullLoggerFactory(),
       default,
       new(true, MaxParallelism: 1)
     );
@@ -100,6 +101,7 @@ public class ExceptionTests
       null,
       o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
+      new NullLoggerFactory(),
       default,
       new(MaxParallelism: 1)
     );

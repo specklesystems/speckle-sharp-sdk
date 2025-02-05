@@ -107,6 +107,7 @@ public class CancellationTests
       null,
       o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
+      new NullLoggerFactory(),
       cancellationSource.Token,
       new(MaxParallelism: 1)
     );
@@ -137,6 +138,7 @@ public class CancellationTests
       null,
       o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
+      new NullLoggerFactory(),
       cancellationSource.Token,
       new(MaxParallelism: 1)
     );
@@ -167,6 +169,7 @@ public class CancellationTests
       null,
       o,
       new CancellationBaseDeserializer(cancellationSource),
+      new NullLoggerFactory(),
       cancellationSource.Token,
       new(MaxParallelism: 1)
     );

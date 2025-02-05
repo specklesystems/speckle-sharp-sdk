@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
-namespace Speckle.Sdk.Serialisation.V2.Send;
+namespace Speckle.Sdk.Serialisation.V2;
 
 public sealed class PriorityScheduler(
   ILogger<PriorityScheduler> logger,

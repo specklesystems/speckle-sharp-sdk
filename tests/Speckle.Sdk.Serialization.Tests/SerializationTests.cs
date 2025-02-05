@@ -119,6 +119,7 @@ public class SerializationTests
       null,
       new TestObjectLoader(closures),
       new BaseDeserializer(new ObjectDeserializerFactory()),
+      new NullLoggerFactory(),
       default
     );
     await process.Deserialize("3416d3fe01c9196115514c4a2f41617b");
@@ -218,6 +219,7 @@ public class SerializationTests
       null,
       o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
+      new NullLoggerFactory(),
       default,
       new(true)
     );
