@@ -74,6 +74,12 @@ public sealed class SerializeProcess(
     sqLiteJsonCacheManager.Dispose();
   }
 
+  private async Task WaitForSchedulerCompletion()
+  {
+    await _highest.WaitForCompletion().ConfigureAwait(false);
+    await _belowNormal.WaitForCompletion().ConfigureAwait(false);
+  }
+
   public async Task<SerializeProcessResults> Serialize(Base root)
   {
     var channelTask = Start(cancellationToken);
@@ -92,6 +98,8 @@ public sealed class SerializeProcess(
     DoneTraversing();
     await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(true);
     await DoneSaving().ConfigureAwait(true);
+    cancellationToken.ThrowIfCancellationRequested();
+    await WaitForSchedulerCompletion().ConfigureAwait(true);
     cancellationToken.ThrowIfCancellationRequested();
     return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
   }

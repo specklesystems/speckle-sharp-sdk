@@ -85,4 +85,16 @@ public sealed class PriorityScheduler(
   }
 
   protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued) => false; // we might not want to execute task that should schedule as high or low priority inline
+
+  public Task WaitForCompletion()
+  {
+    _tasks.CompleteAdding();
+    return Task.Factory.StartNew(async () =>
+    {
+      while (_threads != null && _threads.Any(x => x.IsAlive))
+      {
+        await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+      }
+    }, CancellationToken.None, TaskCreationOptions.AttachedToParent, TaskScheduler.Default).Unwrap();
+  }
 }
