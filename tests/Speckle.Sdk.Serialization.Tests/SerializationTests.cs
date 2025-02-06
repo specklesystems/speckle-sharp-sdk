@@ -19,13 +19,9 @@ public class SerializationTests
 {
   private class TestLoader(string json) : IObjectLoader
   {
-    public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(
-      string rootId,
-      DeserializeProcessOptions? options,
-      CancellationToken cancellationToken
-    )
+    public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(string rootId, DeserializeProcessOptions? options)
     {
-      var childrenIds = ClosureParser.GetChildrenIds(new(json), cancellationToken).Select(x => new Id(x)).ToList();
+      var childrenIds = ClosureParser.GetChildrenIds(new(json), default).Select(x => new Id(x)).ToList();
       return Task.FromResult<(Json, IReadOnlyCollection<Id>)>((new(json), childrenIds));
     }
 
@@ -49,11 +45,7 @@ public class SerializationTests
 
   public class TestObjectLoader(IReadOnlyDictionary<string, string> idToObject) : IObjectLoader
   {
-    public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(
-      string rootId,
-      DeserializeProcessOptions? options,
-      CancellationToken cancellationToken
-    )
+    public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(string rootId, DeserializeProcessOptions? options)
     {
       var json = idToObject.GetValueOrDefault(rootId);
       if (json == null)
@@ -61,7 +53,7 @@ public class SerializationTests
         throw new KeyNotFoundException("Root not found");
       }
 
-      var allChildren = ClosureParser.GetChildrenIds(json, cancellationToken).Select(x => new Id(x)).ToList();
+      var allChildren = ClosureParser.GetChildrenIds(json, default).Select(x => new Id(x)).ToList();
       return Task.FromResult<(Json, IReadOnlyCollection<Id>)>((new(json), allChildren));
     }
 
@@ -116,8 +108,8 @@ public class SerializationTests
   {
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     using var process = new DeserializeProcess(
-      null,
       new TestObjectLoader(closures),
+      null,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default
@@ -210,22 +202,28 @@ public class SerializationTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    var o = new ObjectLoader(
-      new DummySqLiteReceiveManager(closures),
-      new DummyReceiveServerObjectManager(closures),
-      null
-    );
-    using var process = new DeserializeProcess(
-      null,
-      o,
-      new BaseDeserializer(new ObjectDeserializerFactory()),
-      new NullLoggerFactory(),
-      default,
-      new(true)
-    );
-    var root = await process.Deserialize(rootId);
-    process.BaseCache.Count.Should().Be(oldCount);
-    process.Total.Should().Be(oldCount);
+    Base root;
+    using (
+      var o = new ObjectLoader(
+        new DummySqLiteReceiveManager(closures),
+        new DummyReceiveServerObjectManager(closures),
+        null,
+        default
+      )
+    )
+    {
+      using var process = new DeserializeProcess(
+        o,
+        null,
+        new BaseDeserializer(new ObjectDeserializerFactory()),
+        new NullLoggerFactory(),
+        default,
+        new(true)
+      );
+      root = await process.Deserialize(rootId);
+      process.BaseCache.Count.Should().Be(oldCount);
+      process.Total.Should().Be(oldCount);
+    }
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
     using (

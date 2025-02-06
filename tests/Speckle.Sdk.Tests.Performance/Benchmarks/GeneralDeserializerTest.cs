@@ -56,10 +56,10 @@ public class GeneralDeserializer : IDisposable
       streamId,
       null
     );
-    var o = new ObjectLoader(sqlite, serverObjects, null);
     using var process = new DeserializeProcess(
+      sqlite,
+      serverObjects,
       null,
-      o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       default,
       new(skipCache)

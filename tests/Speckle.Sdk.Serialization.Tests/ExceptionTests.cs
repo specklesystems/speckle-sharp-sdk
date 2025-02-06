@@ -67,10 +67,10 @@ public class ExceptionTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    var o = new ObjectLoader(new DummySqLiteReceiveManager(closures), new ExceptionServerObjectManager(), null);
     using var process = new DeserializeProcess(
+      new DummySqLiteReceiveManager(closures),
+      new ExceptionServerObjectManager(),
       null,
-      o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,
@@ -92,14 +92,10 @@ public class ExceptionTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    var o = new ObjectLoader(
+    using var process = new DeserializeProcess(
       new ExceptionSendCacheManager(hasObject),
       new DummyReceiveServerObjectManager(closures),
-      null
-    );
-    using var process = new DeserializeProcess(
       null,
-      o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,

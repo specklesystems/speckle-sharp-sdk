@@ -15,7 +15,8 @@ public partial interface IObjectLoader : IDisposable;
 public sealed class ObjectLoader(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
-  IProgress<ProgressArgs>? progress
+  IProgress<ProgressArgs>? progress,
+  CancellationToken cancellationToken
 ) : ChannelLoader<BaseItem>, IObjectLoader
 {
   private int? _allChildrenCount;
@@ -28,11 +29,7 @@ public sealed class ObjectLoader(
   [AutoInterfaceIgnore]
   public void Dispose() => sqLiteJsonCacheManager.Dispose();
 
-  public async Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(
-    string rootId,
-    DeserializeProcessOptions options,
-    CancellationToken cancellationToken
-  )
+  public async Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(string rootId, DeserializeProcessOptions options)
   {
     _options = options;
     string? rootJson;
@@ -92,7 +89,11 @@ public sealed class ObjectLoader(
   {
     var toCache = new List<BaseItem>();
     await foreach (
-      var (id, json) in serverObjectManager.DownloadObjects(ids.Select(x => x.NotNull()).ToList(), progress, default)
+      var (id, json) in serverObjectManager.DownloadObjects(
+        ids.Select(x => x.NotNull()).ToList(),
+        progress,
+        cancellationToken
+      )
     )
     {
       Interlocked.Increment(ref _downloaded);
