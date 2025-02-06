@@ -96,6 +96,7 @@ public sealed class ObjectLoader(
       )
     )
     {
+      cancellationToken.ThrowIfCancellationRequested();
       Interlocked.Increment(ref _downloaded);
       progress?.Report(new(ProgressEvent.DownloadObjects, _downloaded, _totalToDownload));
       toCache.Add(new(new(id), new(json), true, null));
@@ -115,6 +116,7 @@ public sealed class ObjectLoader(
   {
     if (!_options.SkipCache)
     {
+      cancellationToken.ThrowIfCancellationRequested();
       sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
       Interlocked.Exchange(ref _cached, _cached + batch.Count);
       progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _allChildrenCount));
