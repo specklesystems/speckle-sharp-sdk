@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GlobExpressions;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
@@ -66,7 +67,7 @@ Target(
   DependsOn(RESTORE_TOOLS),
   () =>
   {
-    Run("dotnet", "tool run dotnet-gitversion /output json /output buildserver");
+    Run("dotnet", "tool run dotnet-gitversion /output json /output buildserver /output file /outputfile version.json");
   }
 );
 
@@ -77,8 +78,11 @@ Target(
   DependsOn(RESTORE),
   async () =>
   {
-    var version = Environment.GetEnvironmentVariable("GitVersion_FullSemVer") ?? "3.0.0-localBuild";
-    var fileVersion = Environment.GetEnvironmentVariable("GitVersion_AssemblySemFileVer") ?? "3.0.0.0";
+    var json = File.ReadAllText("version.json");
+    var jsonNode = JsonDocument.Parse(json);
+
+    var version = jsonNode.RootElement.GetProperty("FullSemVer").GetString() ?? "3.0.0-localBuild";
+    var fileVersion = jsonNode.RootElement.GetProperty("AssemblySemFileVer").GetString() ?? "3.0.0.0";
     Console.WriteLine($"Version: {version} & {fileVersion}");
     await RunAsync(
         "dotnet",
