@@ -1,9 +1,5 @@
-﻿using NUnit.Framework;
-using Shouldly;
-using Speckle.Newtonsoft.Json.Linq;
-using Speckle.Objects.Geometry;
+﻿using Speckle.Objects.Geometry;
 using Speckle.Objects.Primitive;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
@@ -14,34 +10,27 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class ExternalIdTests
 {
-  [SetUp]
-  public void Setup()
+  public ExternalIdTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Polyline).Assembly);
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
-  public void ExternalIdTest_Detached(string lineId, string valueId)
+  [Fact]
+  public async Task ExternalIdTest_Detached()
   {
     var p = new Polyline() { units = "cm", value = [1, 2] };
     using var serializer = new ObjectSerializerFactory(new BasePropertyGatherer()).Create(
       new Dictionary<Id, NodeInfo>(),
       default
     );
-    var list = serializer.Serialize(p).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
-    var json = list[new Id(lineId)];
-    var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
-    var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    var objects = serializer.Serialize(p).ToDictionary(x => x.Item1, x => x.Item2);
+
+    await VerifyJsonDictionary(objects);
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
-  public void ExternalIdTest_Detached_Nested(string lineId, string valueId)
+  [Fact]
+  public async Task ExternalIdTest_Detached_Nested()
   {
     var curve = new Curve()
     {
@@ -60,18 +49,13 @@ public class ExternalIdTests
       new Dictionary<Id, NodeInfo>(),
       default
     );
-    var list = serializer.Serialize(curve).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
-    var json = list[new Id(lineId)];
-    var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
-    var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    var objects = serializer.Serialize(curve).ToDictionary(x => x.Item1, x => x.Item2);
+
+    await VerifyJsonDictionary(objects);
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
-  public void ExternalIdTest_Detached_Nested_More(string lineId, string valueId)
+  [Fact]
+  public async Task ExternalIdTest_Detached_Nested_More()
   {
     var curve = new Curve()
     {
@@ -91,18 +75,13 @@ public class ExternalIdTests
       new Dictionary<Id, NodeInfo>(),
       default
     );
-    var list = serializer.Serialize(polycurve).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
-    var json = list[new Id(lineId)];
-    var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
-    var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    var objects = serializer.Serialize(polycurve).ToDictionary(x => x.Item1, x => x.Item2);
+
+    await VerifyJsonDictionary(objects);
   }
 
-  [Test]
-  [TestCase("cfaf7ae0dfc5a7cf3343bb6db46ed238", "8d27f5c7fac36d985d89bb6d6d8acddc")]
-  public void ExternalIdTest_Detached_Nested_More_Too(string lineId, string valueId)
+  [Fact]
+  public async Task ExternalIdTest_Detached_Nested_More_Too()
   {
     var curve = new Curve()
     {
@@ -124,12 +103,7 @@ public class ExternalIdTests
       new Dictionary<Id, NodeInfo>(),
       default
     );
-    var list = serializer.Serialize(@base).ToDictionary(x => x.Item1, x => x.Item2);
-    list.ContainsKey(new Id(lineId)).ShouldBeTrue();
-    var json = list[new Id(lineId)];
-    var jObject = JObject.Parse(json.Value);
-    jObject.ContainsKey("__closure").ShouldBeTrue();
-    var closures = (JObject)jObject["__closure"].NotNull();
-    closures.ContainsKey(valueId).ShouldBeTrue();
+    var objects = serializer.Serialize(@base).ToDictionary(x => x.Item1, x => x.Item2);
+    await VerifyJsonDictionary(objects);
   }
 }

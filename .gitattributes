@@ -3,3 +3,6 @@
 
 # need original files to be windows
 *.txt text eol=crlf
+
+# Verify
+*.verified.json text eol=lf working-tree-encoding=UTF-8

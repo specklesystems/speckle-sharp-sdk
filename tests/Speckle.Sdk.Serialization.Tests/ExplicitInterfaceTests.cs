@@ -1,5 +1,4 @@
-﻿using NUnit.Framework;
-using Shouldly;
+﻿using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2.Send;
@@ -8,14 +7,13 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class ExplicitInterfaceTests
 {
-  [SetUp]
-  public void Setup()
+  public ExplicitInterfaceTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestClass).Assembly);
   }
 
-  [Test]
+  [Fact]
   public async Task Test_Json()
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
@@ -26,27 +24,25 @@ public class ExplicitInterfaceTests
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
-      new ObjectSerializerFactory(new BasePropertyGatherer()),
+      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
+      new NullLoggerFactory(),
+      default,
       new SerializeProcessOptions(false, false, true, true)
     );
-    await process2.Serialize(testClass, default).ConfigureAwait(false);
-    objects.Count.ShouldBe(1);
-    objects["daaa67cfd73a957247cf2d631b7ca4f3"]
-      .ShouldBe(
-        "{\"RegularProperty\":\"Hello\",\"applicationId\":null,\"speckle_type\":\"Speckle.Core.Serialisation.TestClass\",\"id\":\"daaa67cfd73a957247cf2d631b7ca4f3\"}"
-      );
+
+    await process2.Serialize(testClass);
+
+    await VerifyJsonDictionary(objects);
   }
 
-  [Test]
-  public void Test_ExtractAllProperties()
+  [Fact]
+  public async Task Test_ExtractAllProperties()
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     var gatherer = new BasePropertyGatherer();
     var properties = gatherer.ExtractAllProperties(testClass).ToList();
-    properties.Count.ShouldBe(3);
-    properties.Select(x => x.Name).ShouldContain("RegularProperty");
-    properties.Select(x => x.Name).ShouldNotContain("TestProperty");
+    await Verify(properties);
   }
 }
 

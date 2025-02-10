@@ -4,13 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Serialisation.V2;
-using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
@@ -60,7 +55,7 @@ public class GeneralReceiveTest : IDisposable
   [Benchmark]
   public async Task<Base> RunTest_Receive2()
   {
-    return await _operations.Receive2(_baseUrl, streamId, rootId, null);
+    return await _operations.Receive2(_baseUrl, streamId, rootId, null, null, default);
   }
 
   [GlobalCleanup]

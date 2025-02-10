@@ -1,0 +1,63 @@
+﻿{
+  "0e61e61edee00404ec6e0f9f594bce24": {
+    "applicationId": null,
+    "data": [
+      1.0,
+      2.0,
+      3.0,
+      4.0,
+      5.0,
+      6.0,
+      7.0,
+      8.0,
+      9.0,
+      10.0
+    ],
+    "id": "0e61e61edee00404ec6e0f9f594bce24",
+    "speckle_type": "Speckle.Core.Models.DataChunk"
+  },
+  "525b1e9eef4d07165abb4ffc518395fc": {
+    "__closure": {
+      "0e61e61edee00404ec6e0f9f594bce24": 100,
+      "f70738e3e3e593ac11099a6ed6b71154": 100
+    },
+    "applicationId": "1",
+    "arr": [
+      {
+        "__closure": null,
+        "referencedId": "f70738e3e3e593ac11099a6ed6b71154",
+        "speckle_type": "reference"
+      }
+    ],
+    "attachedProp": null,
+    "crazyProp": null,
+    "detachedProp": null,
+    "detachedProp2": null,
+    "dynamicProp": 123,
+    "id": "525b1e9eef4d07165abb4ffc518395fc",
+    "list": [
+      {
+        "__closure": null,
+        "referencedId": "0e61e61edee00404ec6e0f9f594bce24",
+        "speckle_type": "reference"
+      }
+    ],
+    "list2": [
+      {
+        "__closure": null,
+        "referencedId": "f70738e3e3e593ac11099a6ed6b71154",
+        "speckle_type": "reference"
+      }
+    ],
+    "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2"
+  },
+  "f70738e3e3e593ac11099a6ed6b71154": {
+    "applicationId": null,
+    "data": [
+      1.0,
+      10.0
+    ],
+    "id": "f70738e3e3e593ac11099a6ed6b71154",
+    "speckle_type": "Speckle.Core.Models.DataChunk"
+  }
+}

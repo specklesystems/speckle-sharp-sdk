@@ -127,14 +127,28 @@ public sealed class VersionResource
   /// <param name="cancellationToken"></param>
   /// <returns>id of the created <see cref="Version"/></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<string> Create(CreateVersionInput input, CancellationToken cancellationToken = default)
+  public async Task<Version> Create(CreateVersionInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
       mutation Create($input: CreateVersionInput!) {
         data:versionMutations {
           data:create(input: $input) {
-            data:id
+            id
+            referencedObject
+            message
+            sourceApplication
+            createdAt
+            previewUrl
+            authorUser {
+              id
+              name
+              bio
+              company
+              verified
+              role
+              avatar
+            }
           }
         }
       }
@@ -143,9 +157,9 @@ public sealed class VersionResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<string>>>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Version>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.data.data.data;
+    return response.data.data;
   }
 
   /// <param name="input"></param>

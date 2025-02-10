@@ -21,11 +21,13 @@ using Stream = System.IO.Stream;
 
 namespace Speckle.Sdk.Credentials;
 
+public partial interface IAccountManager : IDisposable;
+
 /// <summary>
 /// Manage accounts locally for desktop applications.
 /// </summary>
 [GenerateAutoInterface]
-public class AccountManager(
+public sealed class AccountManager(
   ISpeckleApplication application,
   ILogger<AccountManager> logger,
   ISpeckleHttp speckleHttp,
@@ -39,6 +41,13 @@ public class AccountManager(
   private readonly ISqLiteJsonCacheManager _accountAddLockStorage = sqLiteJsonCacheManagerFactory.CreateForUser(
     "AccountAddFlow"
   );
+
+  [AutoInterfaceIgnore]
+  public void Dispose()
+  {
+    _accountStorage.Dispose();
+    _accountAddLockStorage.Dispose();
+  }
 
   /// <summary>
   /// Gets the basic information about a server.
@@ -321,7 +330,7 @@ public class AccountManager(
   {
     static bool IsInvalid(Account ac) => ac.userInfo == null || ac.serverInfo == null;
 
-    var sqlAccounts = _accountStorage.GetAllObjects().Select(x => JsonConvert.DeserializeObject<Account>(x));
+    var sqlAccounts = _accountStorage.GetAllObjects().Select(x => JsonConvert.DeserializeObject<Account>(x.Json));
     var localAccounts = GetLocalAccounts();
 
     foreach (var acc in sqlAccounts)
@@ -642,7 +651,7 @@ public class AccountManager(
     }
 
     // this uses the SQLite transport to store locks
-    var lockIds = _accountAddLockStorage.GetAllObjects().OrderByDescending(d => d).ToList();
+    var lockIds = _accountAddLockStorage.GetAllObjects().Select(x => x.Id).OrderByDescending(d => d).ToList();
     var now = DateTime.Now;
     foreach (var l in lockIds)
     {
@@ -674,7 +683,7 @@ public class AccountManager(
   {
     s_isAddingAccount = false;
     // make sure all old locks are removed
-    foreach (var id in _accountAddLockStorage.GetAllObjects())
+    foreach (var (id, _) in _accountAddLockStorage.GetAllObjects())
     {
       _accountAddLockStorage.DeleteObject(id);
     }

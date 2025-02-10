@@ -1,0 +1,107 @@
+namespace Speckle.Sdk.SQLite;
+
+internal static class SqliteExceptions
+{
+  public static readonly IReadOnlyDictionary<int, string> SqliteErrorCodes = new Dictionary<int, string>
+  {
+    { 0, "Successful result" },
+    { 1, "Generic error" },
+    { 2, "Internal logic error in SQLite" },
+    { 3, "Access permission denied" },
+    { 4, "Callback routine requested an abort" },
+    { 5, "The database file is locked" },
+    { 6, "A table in the database is locked" },
+    { 7, "A malloc() failed" },
+    { 8, "Attempt to write a readonly database" },
+    { 9, "Operation terminated by sqlite3_interrupt()" },
+    { 10, "Some kind of disk I/O error occurred" },
+    { 11, "The database disk image is malformed" },
+    { 12, "Unknown opcode in sqlite3_file_control()" },
+    { 13, "Insertion failed because database is full" },
+    { 14, "Unable to open the database file" },
+    { 15, "Database lock protocol error" },
+    { 16, "Internal use only" },
+    { 17, "The database schema changed" },
+    { 18, "String or BLOB exceeds size limit" },
+    { 19, "Abort due to constraint violation" },
+    { 20, "Data type mismatch" },
+    { 21, "Library used incorrectly" },
+    { 22, "Uses OS features not supported on host" },
+    { 23, "Authorization denied" },
+    { 24, "Not used" },
+    { 25, "2nd parameter to sqlite3_bind out of range" },
+    { 26, "File opened that is not a database file" },
+    { 27, "Notifications from sqlite3_log()" },
+    { 28, "Warnings from sqlite3_log()" },
+    { 100, "sqlite3_step() has another row ready" },
+    { 101, "sqlite3_step() has finished executing" },
+  };
+
+  public static readonly IReadOnlyDictionary<int, string> SqliteExtendedResultCodes = new Dictionary<int, string>()
+  {
+    { 516, "SQLITE_ABORT_ROLLBACK: A rollback occurred due to a constraint violation." },
+    { 279, "SQLITE_AUTH_USER: Authorization denied by a user authentication callback." },
+    { 261, "SQLITE_BUSY_RECOVERY: The database file is locked because another connection is recovering the WAL." },
+    { 517, "SQLITE_BUSY_SNAPSHOT: The database file is locked because another connection has a conflicting snapshot." },
+    { 773, "SQLITE_BUSY_TIMEOUT: A blocking operation was interrupted by a call to sqlite3_interrupt()." },
+    { 1038, "SQLITE_CANTOPEN_CONVPATH: Unable to open the database file due to a conversion error." },
+    {
+      1294,
+      "SQLITE_CANTOPEN_DIRTYWAL: The database file cannot be opened because the Write-Ahead Log contains uncommitted changes."
+    },
+    { 782, "SQLITE_CANTOPEN_FULLPATH: Unable to open the database file with the full pathname." },
+    { 526, "SQLITE_CANTOPEN_ISDIR: The database file cannot be opened because it is a directory." },
+    {
+      270,
+      "SQLITE_CANTOPEN_NOTEMPDIR: Unable to open a temporary database file because a temporary directory is not available."
+    },
+    { 1550, "SQLITE_CANTOPEN_SYMLINK: The database file cannot be opened because it is a symbolic link." },
+    { 275, "SQLITE_CONSTRAINT_CHECK: A CHECK constraint failed." },
+    { 531, "SQLITE_CONSTRAINT_COMMITHOOK: A commit hook caused the transaction to roll back." },
+    { 3091, "SQLITE_CONSTRAINT_DATATYPE: A datatype mismatch occurred." },
+    { 787, "SQLITE_CONSTRAINT_FOREIGNKEY: A foreign key constraint failed." },
+    { 1043, "SQLITE_CONSTRAINT_FUNCTION: A function constraint failed." },
+    { 1299, "SQLITE_CONSTRAINT_NOTNULL: A NOT NULL constraint failed." },
+    { 1555, "SQLITE_CONSTRAINT_PRIMARYKEY: A PRIMARY KEY constraint failed." },
+    { 1803, "SQLITE_CONSTRAINT_TRIGGER: A trigger constraint failed." },
+    { 2059, "SQLITE_CONSTRAINT_UNIQUE: A UNIQUE constraint failed." },
+    { 2315, "SQLITE_CONSTRAINT_VTAB: A virtual table constraint failed." },
+    { 2571, "SQLITE_CONSTRAINT_ROWID: A rowid constraint failed." },
+    { 1034, "SQLITE_IOERR_FSYNC: An I/O error occurred during the fsync() system call." },
+    { 6410, "SQLITE_IOERR_GETTEMPPATH: An I/O error occurred while trying to get the temporary file path." },
+    { 3850, "SQLITE_IOERR_LOCK: An I/O error occurred while trying to lock the database file." },
+    { 6154, "SQLITE_IOERR_MMAP: An I/O error occurred during memory mapping." },
+    { 3082, "SQLITE_IOERR_NOMEM: An I/O error occurred due to a memory allocation failure." },
+    { 2314, "SQLITE_IOERR_RDLOCK: An I/O error occurred while trying to read-lock the database file." },
+    { 266, "SQLITE_IOERR_READ: An I/O error occurred while reading from the database file." },
+    { 7946, "SQLITE_IOERR_ROLLBACK_ATOMIC: An I/O error occurred during an atomic rollback." },
+    { 5642, "SQLITE_IOERR_SEEK: An I/O error occurred while seeking in the database file." },
+    { 5130, "SQLITE_IOERR_SHMLOCK: An I/O error occurred while locking a shared memory segment." },
+    { 5386, "SQLITE_IOERR_SHMMAP: An I/O error occurred while mapping a shared memory segment." },
+    { 4618, "SQLITE_IOERR_SHMOPEN: An I/O error occurred while opening a shared memory segment." },
+    { 4874, "SQLITE_IOERR_SHMSIZE: An I/O error occurred while setting the size of a shared memory segment." },
+    { 522, "SQLITE_IOERR_SHORT_READ: An I/O error occurred due to a short read." },
+    { 1546, "SQLITE_IOERR_TRUNCATE: An I/O error occurred while truncating the database file." },
+    { 2058, "SQLITE_IOERR_UNLOCK: An I/O error occurred while unlocking the database file." },
+    { 6922, "SQLITE_IOERR_VNODE: A virtual node I/O error occurred." },
+    { 778, "SQLITE_IOERR_WRITE: An I/O error occurred while writing to the database file." },
+    {
+      262,
+      "SQLITE_LOCKED_SHAREDCACHE: A write operation could not continue due to a conflict within the shared cache."
+    },
+    { 518, "SQLITE_LOCKED_VTAB: A virtual table is locked." },
+    { 539, "SQLITE_NOTICE_RECOVER_ROLLBACK: A rollback was performed to recover from a previous error." },
+    { 283, "SQLITE_NOTICE_RECOVER_WAL: Recovery was performed from the Write-Ahead Log." },
+    { 256, "SQLITE_OK_LOAD_PERMANENTLY: Operation completed successfully; the extension was loaded permanently." },
+    {
+      1288,
+      "SQLITE_READONLY_CANTINIT: Attempt to write to a read-only database failed because initialization is not allowed."
+    },
+    { 520, "SQLITE_READONLY_CANTLOCK: A read-only database cannot be locked." },
+    { 1032, "SQLITE_READONLY_DBMOVED: The database file has been moved, making it read-only." },
+    { 1544, "SQLITE_READONLY_DIRECTORY: The database is read-only because it is a directory." },
+    { 264, "SQLITE_READONLY_RECOVERY: The database is read-only due to recovery mode." },
+    { 776, "SQLITE_READONLY_ROLLBACK: The database is read-only because a rollback is required." },
+    { 284, "SQLITE_WARNING_AUTOINDEX: Automatic indexing is in use." },
+  };
+}

@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Serialisation.V2.Send;
@@ -13,8 +14,9 @@ public abstract class ChannelSaver<T>
   private const int MAX_PARALLELISM_HTTP = 4;
   private const int HTTP_CAPACITY = 500;
   private const int MAX_CACHE_WRITE_PARALLELISM = 4;
-  private const int MAX_CACHE_BATCH = 200;
+  private const int MAX_CACHE_BATCH = 500;
 
+  private readonly List<Exception> _exceptions = new();
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
     {
@@ -27,13 +29,13 @@ public abstract class ChannelSaver<T>
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start(CancellationToken cancellationToken = default) =>
+  public Task Start(CancellationToken cancellationToken) =>
     _checkCacheChannel
       .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
-        async x => await SendToServer(x, cancellationToken).ConfigureAwait(false),
+        async x => await SendToServer(x).ConfigureAwait(false),
         HTTP_CAPACITY,
         false,
         cancellationToken
@@ -41,17 +43,65 @@ public abstract class ChannelSaver<T>
       .Join()
       .Batch(MAX_CACHE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken);
+      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
+      .ContinueWith(
+        t =>
+        {
+          Exception? ex = t.Exception;
+          if (ex is null && t.Status is TaskStatus.Canceled && !cancellationToken.IsCancellationRequested)
+          {
+            ex = new OperationCanceledException();
+          }
 
-  public ValueTask Save(T item, CancellationToken cancellationToken = default) =>
-    _checkCacheChannel.Writer.WriteAsync(item, cancellationToken);
+          if (ex is not null)
+          {
+            lock (_exceptions)
+            {
+              _exceptions.Add(ex);
+            }
+          }
+          _checkCacheChannel.Writer.TryComplete(ex);
+        },
+        CancellationToken.None,
+        TaskContinuationOptions.ExecuteSynchronously,
+        TaskScheduler.Current
+      );
 
-  public abstract Task<List<T>> SendToServer(Batch<T> batch, CancellationToken cancellationToken);
+  public async ValueTask Save(T item, CancellationToken cancellationToken) =>
+    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(true);
 
-  public Task Done()
+  public async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
   {
-    _checkCacheChannel.Writer.Complete();
-    return Task.CompletedTask;
+    await SendToServer((Batch<T>)batch).ConfigureAwait(false);
+    return batch;
+  }
+
+  public abstract Task SendToServer(Batch<T> batch);
+
+  public void DoneTraversing() => _checkCacheChannel.Writer.TryComplete();
+
+  public async Task DoneSaving()
+  {
+    await _checkCacheChannel.Reader.Completion.ConfigureAwait(true);
+    lock (_exceptions)
+    {
+      if (_exceptions.Count > 0)
+      {
+        var exceptions = new List<Exception>();
+        foreach (var ex in _exceptions)
+        {
+          if (ex is AggregateException ae)
+          {
+            exceptions.AddRange(ae.Flatten().InnerExceptions);
+          }
+          else
+          {
+            exceptions.Add(ex);
+          }
+        }
+        throw new AggregateException(exceptions);
+      }
+    }
   }
 
   public abstract void SaveToCache(List<T> item);

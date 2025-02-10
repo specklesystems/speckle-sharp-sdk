@@ -1,11 +1,10 @@
 #pragma warning disable CA1506
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Sdk;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
@@ -43,15 +42,15 @@ var token = serviceProvider.GetRequiredService<IAccountManager>().GetDefaultAcco
 var progress = new Progress(true);
 
 var factory = new SerializeProcessFactory(
-  serviceProvider.GetRequiredService<ISpeckleHttp>(),
-  serviceProvider.GetRequiredService<ISdkActivityFactory>(),
   new BaseChildFinder(new BasePropertyGatherer()),
   new ObjectSerializerFactory(new BasePropertyGatherer()),
-  new ObjectDeserializerFactory(),
-  serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>()
+  new BaseDeserializer(new ObjectDeserializerFactory()),
+  serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>(),
+  serviceProvider.GetRequiredService<IServerObjectManagerFactory>(),
+  new NullLoggerFactory()
 );
-var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, new(skipCacheReceive));
-var @base = await process.Deserialize(rootId, default).ConfigureAwait(false);
+var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, default, new(skipCacheReceive));
+var @base = await process.Deserialize(rootId).ConfigureAwait(false);
 Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
@@ -61,9 +60,10 @@ using var process2 = factory.CreateSerializeProcess(
   streamId,
   token,
   progress,
+  default,
   new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true, true)
 );
-await process2.Serialize(@base, default).ConfigureAwait(false);
+await process2.Serialize(@base).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
 #pragma warning restore CA1506

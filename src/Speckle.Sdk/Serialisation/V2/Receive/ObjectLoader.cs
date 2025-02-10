@@ -9,6 +9,8 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
+public partial interface IObjectLoader : IDisposable;
+
 [GenerateAutoInterface]
 public sealed class ObjectLoader(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
@@ -19,9 +21,14 @@ public sealed class ObjectLoader(
   private int? _allChildrenCount;
   private long _checkCache;
   private long _cached;
-  private DeserializeProcessOptions _options = new(false);
+  private long _downloaded;
+  private long _totalToDownload;
+  private DeserializeProcessOptions _options = new();
 
-  public async Task<(string, IReadOnlyCollection<string>)> GetAndCache(
+  [AutoInterfaceIgnore]
+  public void Dispose() => sqLiteJsonCacheManager.Dispose();
+
+  public async Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(
     string rootId,
     DeserializeProcessOptions options,
     CancellationToken cancellationToken
@@ -35,29 +42,35 @@ public sealed class ObjectLoader(
       if (rootJson != null)
       {
         //assume everything exists as the root is there.
-        var allChildren = ClosureParser.GetChildrenIds(rootJson).ToList();
-        return (rootJson, allChildren);
+        var allChildren = ClosureParser.GetChildrenIds(rootJson, cancellationToken).Select(x => new Id(x)).ToList();
+        //this probably yields away from the Main thread to let host apps update progress
+        //in any case, this fixes a Revit only issue for this situation
+        await Task.Yield();
+        return (new(rootJson), allChildren);
       }
     }
     rootJson = await serverObjectManager
       .DownloadSingleObject(rootId, progress, cancellationToken)
       .NotNull()
       .ConfigureAwait(false);
-    IReadOnlyCollection<string> allChildrenIds = ClosureParser
-      .GetClosures(rootJson)
+    IReadOnlyCollection<Id> allChildrenIds = ClosureParser
+      .GetClosures(rootJson, cancellationToken)
       .OrderByDescending(x => x.Item2)
-      .Select(x => x.Item1)
-      .Where(x => !x.StartsWith("blob", StringComparison.Ordinal))
+      .Select(x => new Id(x.Item1))
+      .Where(x => !x.Value.StartsWith("blob", StringComparison.Ordinal))
       .Freeze();
     _allChildrenCount = allChildrenIds.Count;
-    await GetAndCache(allChildrenIds, cancellationToken).ConfigureAwait(false);
+    await GetAndCache(allChildrenIds.Select(x => x.Value), cancellationToken, _options.MaxParallelism)
+      .ConfigureAwait(false);
 
+    CheckForExceptions();
+    cancellationToken.ThrowIfCancellationRequested();
     //save the root last to shortcut later
     if (!options.SkipCache)
     {
       sqLiteJsonCacheManager.SaveObject(rootId, rootJson);
     }
-    return (rootJson, allChildrenIds);
+    return (new(rootJson), allChildrenIds);
   }
 
   [AutoInterfaceIgnore]
@@ -67,6 +80,7 @@ public sealed class ObjectLoader(
     progress?.Report(new(ProgressEvent.CacheCheck, _checkCache, _allChildrenCount));
     if (!_options.SkipCache && !sqLiteJsonCacheManager.HasObject(id))
     {
+      Interlocked.Increment(ref _totalToDownload);
       return id;
     }
 
@@ -81,6 +95,8 @@ public sealed class ObjectLoader(
       var (id, json) in serverObjectManager.DownloadObjects(ids.Select(x => x.NotNull()).ToList(), progress, default)
     )
     {
+      Interlocked.Increment(ref _downloaded);
+      progress?.Report(new(ProgressEvent.DownloadObjects, _downloaded, _totalToDownload));
       toCache.Add(new(new(id), new(json), true, null));
     }
 

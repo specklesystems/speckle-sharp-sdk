@@ -1,18 +1,18 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[TestFixture, TestOf(nameof(Sdk.Api.Operations.Receive))]
-public sealed partial class OperationsReceiveTests
+public sealed partial class OperationsReceiveTests : IDisposable
 {
   private static readonly Base[] s_testObjects;
-  private IOperations _operations;
+  private readonly IOperations _operations;
+  private readonly MemoryTransport _testCaseTransport;
 
   static OperationsReceiveTests()
   {
@@ -29,18 +29,19 @@ public sealed partial class OperationsReceiveTests
     ];
   }
 
-  public static IEnumerable<string> TestCases()
+  public OperationsReceiveTests()
   {
-    List<string> ret = new();
-    foreach (var s in s_testObjects)
+    Reset();
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
+    _testCaseTransport = new MemoryTransport();
+
+    // Simulate a one-time setup action
+    foreach (var b in s_testObjects)
     {
-      ret.Add(s.GetId(true));
+      _ = _operations.Send(b, _testCaseTransport, false).GetAwaiter().GetResult();
     }
-
-    return ret;
   }
-
-  private MemoryTransport _testCaseTransport;
 
   private static void Reset()
   {
@@ -48,45 +49,37 @@ public sealed partial class OperationsReceiveTests
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
 
-  [OneTimeSetUp]
-  public async Task GlobalSetup()
+  public static IEnumerable<object[]> TestCases()
   {
-    Reset();
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
-    _operations = serviceProvider.GetRequiredService<IOperations>();
-    _testCaseTransport = new MemoryTransport();
-    foreach (var b in s_testObjects)
+    foreach (var s in s_testObjects)
     {
-      await _operations.Send(b, _testCaseTransport, false);
+      yield return [s.GetId(true)];
     }
   }
 
-  [SetUp]
-  public void Setup()
-  {
-    Reset();
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
-    _operations = serviceProvider.GetRequiredService<IOperations>();
-  }
-
-  [Test, TestCaseSource(nameof(TestCases))]
+  [Theory]
+  [MemberData(nameof(TestCases))]
   public async Task Receive_FromLocal_ExistingObjects(string id)
   {
     Base result = await _operations.Receive(id, null, _testCaseTransport);
 
-    Assert.That(result.id, Is.EqualTo(id));
+    Assert.NotNull(result);
+    Assert.Equal(id, result.id);
   }
 
-  [Test, TestCaseSource(nameof(TestCases))]
+  [Theory]
+  [MemberData(nameof(TestCases))]
   public async Task Receive_FromRemote_ExistingObjects(string id)
   {
     MemoryTransport localTransport = new();
     Base result = await _operations.Receive(id, _testCaseTransport, localTransport);
 
-    Assert.That(result.id, Is.EqualTo(id));
+    Assert.NotNull(result);
+    Assert.Equal(id, result.id);
   }
 
-  [Test, TestCaseSource(nameof(TestCases))]
+  [Theory]
+  [MemberData(nameof(TestCases))]
   public async Task Receive_FromLocal_OnProgressActionCalled(string id)
   {
     bool wasCalled = false;
@@ -97,6 +90,11 @@ public sealed partial class OperationsReceiveTests
       onProgressAction: new UnitTestProgress<ProgressArgs>(_ => wasCalled = true)
     );
 
-    Assert.That(wasCalled, Is.True);
+    Assert.True(wasCalled);
+  }
+
+  public void Dispose()
+  {
+    // Cleanup resources if necessary
   }
 }

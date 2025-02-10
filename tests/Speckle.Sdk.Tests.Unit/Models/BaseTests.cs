@@ -1,50 +1,38 @@
-using System.Collections.Concurrent;
-using System.Text;
-using NUnit.Framework;
-using Shouldly;
-using Speckle.Newtonsoft.Json.Linq;
+using FluentAssertions;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Serialisation.V2;
-using Speckle.Sdk.Serialisation.V2.Send;
-using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
-[TestFixture]
-[TestOf(typeof(Base))]
-[TestOf(typeof(DynamicBase))]
 public class BaseTests
 {
-  [SetUp]
-  public void Setup()
+  public BaseTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(BaseTests).Assembly);
   }
 
-  [Test]
+  [Fact]
   public void CanGetSetDynamicItemProp()
   {
     var @base = new Base();
     @base["Item"] = "Item";
 
-    Assert.That(@base["Item"], Is.EqualTo("Item"));
+    @base["Item"].Should().Be("Item");
   }
 
-  [Test]
+  [Fact]
   public void CanGetSetTypedItemProp()
   {
     var @base = new ObjectWithItemProp { Item = "baz" };
 
-    Assert.That(@base["Item"], Is.EqualTo("baz"));
-    Assert.That(@base.Item, Is.EqualTo("baz"));
+    @base["Item"].Should().Be("baz");
+    @base.Item.Should().Be("baz");
   }
 
-  [Test(Description = "Checks if validation is performed in property names")]
+  [Fact(DisplayName = "Checks if validation is performed in property names")]
   public void CanValidatePropNames()
   {
     dynamic @base = new Base();
@@ -54,27 +42,35 @@ public class BaseTests
 
     // Only single leading @ allowed
     @base["@something"] = "A";
-    Assert.Throws<InvalidPropNameException>(() =>
-    {
-      @base["@@@something"] = "Testing";
-    });
+    FluentActions
+      .Invoking(() =>
+      {
+        @base["@@@something"] = "Testing";
+      })
+      .Should()
+      .Throw<InvalidPropNameException>();
 
     // Invalid chars:  ./
-    Assert.Throws<InvalidPropNameException>(() =>
-    {
-      @base["some.thing"] = "Testing";
-    });
-    Assert.Throws<InvalidPropNameException>(() =>
-    {
-      @base["some/thing"] = "Testing";
-    });
-
+    FluentActions
+      .Invoking(() =>
+      {
+        @base["some.thing"] = "Testing";
+      })
+      .Should()
+      .Throw<InvalidPropNameException>();
+    FluentActions
+      .Invoking(() =>
+      {
+        @base["some/thing"] = "Testing";
+      })
+      .Should()
+      .Throw<InvalidPropNameException>();
     // Trying to change a class member value will throw exceptions.
     //Assert.Throws<Exception>(() => { @base["speckle_type"] = "Testing"; });
     //Assert.Throws<Exception>(() => { @base["id"] = "Testing"; });
   }
 
-  [Test]
+  [Fact]
   public void CountDynamicChunkables()
   {
     const int MAX_NUM = 3000;
@@ -92,10 +88,10 @@ public class BaseTests
     @base["@(1000)cc2"] = customChunkArr;
 
     var num = @base.GetTotalChildrenCount();
-    Assert.That(num, Is.EqualTo(MAX_NUM / 1000 * 2 + 1));
+    num.Should().Be(MAX_NUM / 1000 * 2 + 1);
   }
 
-  [Test]
+  [Fact]
   public void CountTypedChunkables()
   {
     const int MAX_NUM = 3000;
@@ -114,33 +110,33 @@ public class BaseTests
 
     var num = @base.GetTotalChildrenCount();
     var actualNum = 1 + MAX_NUM / 300 + MAX_NUM / 1000;
-    Assert.That(num, Is.EqualTo(actualNum));
+    num.Should().Be(actualNum);
   }
 
-  [Test(Description = "Checks that no ignored or obsolete properties are returned")]
+  [Fact(DisplayName = "Checks that no ignored or obsolete properties are returned")]
   public void CanGetMemberNames()
   {
     var @base = new SampleObject();
     var dynamicProp = "dynamicProp";
     @base[dynamicProp] = 123;
     var names = @base.GetMembers().Keys;
-    Assert.That(names, Has.No.Member(nameof(@base.IgnoredSchemaProp)));
-    Assert.That(names, Has.No.Member(nameof(@base.ObsoleteSchemaProp)));
-    Assert.That(names, Has.Member(dynamicProp));
-    Assert.That(names, Has.Member(nameof(@base.attachedProp)));
+    names.Should().NotContain(nameof(@base.IgnoredSchemaProp));
+    names.Should().NotContain(nameof(@base.ObsoleteSchemaProp));
+    names.Should().Contain(dynamicProp);
+    names.Should().Contain(nameof(@base.attachedProp));
   }
 
-  [Test(Description = "Checks that only instance properties are returned, excluding obsolete and ignored.")]
+  [Fact(DisplayName = "Checks that only instance properties are returned, excluding obsolete and ignored.")]
   public void CanGetMembers_OnlyInstance()
   {
     var @base = new SampleObject();
     @base["dynamicProp"] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Instance).Keys;
-    Assert.That(names, Has.Member(nameof(@base.attachedProp)));
+    names.Should().Contain(nameof(@base.attachedProp));
   }
 
-  [Test(Description = "Checks that only dynamic properties are returned")]
+  [Fact(DisplayName = "Checks that only dynamic properties are returned")]
   public void CanGetMembers_OnlyDynamic()
   {
     var @base = new SampleObject();
@@ -148,33 +144,33 @@ public class BaseTests
     @base[dynamicProp] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Dynamic).Keys;
-    Assert.That(names, Has.Member(dynamicProp));
-    Assert.That(names, Has.Count.EqualTo(1));
+    names.Should().Contain(dynamicProp);
+    names.Count.Should().Be(1);
   }
 
-  [Test(Description = "Checks that all typed properties (including ignored ones) are returned")]
+  [Fact(DisplayName = "Checks that all typed properties (including ignored ones) are returned")]
   public void CanGetMembers_OnlyInstance_IncludeIgnored()
   {
     var @base = new SampleObject();
     @base["dynamicProp"] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.SchemaIgnored).Keys;
-    Assert.That(names, Has.Member(nameof(@base.IgnoredSchemaProp)));
-    Assert.That(names, Has.Member(nameof(@base.attachedProp)));
+    names.Should().Contain(nameof(@base.IgnoredSchemaProp));
+    names.Should().Contain(nameof(@base.attachedProp));
   }
 
-  [Test(Description = "Checks that all typed properties (including obsolete ones) are returned")]
+  [Fact(DisplayName = "Checks that all typed properties (including obsolete ones) are returned")]
   public void CanGetMembers_OnlyInstance_IncludeObsolete()
   {
     var @base = new SampleObject();
     @base["dynamicProp"] = 123;
 
     var names = @base.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Obsolete).Keys;
-    Assert.That(names, Has.Member(nameof(@base.ObsoleteSchemaProp)));
-    Assert.That(names, Has.Member(nameof(@base.attachedProp)));
+    names.Should().Contain(nameof(@base.ObsoleteSchemaProp));
+    names.Should().Contain(nameof(@base.attachedProp));
   }
 
-  [Test]
+  [Fact]
   public void CanGetDynamicMembers()
   {
     var @base = new SampleObject();
@@ -182,11 +178,11 @@ public class BaseTests
     @base[dynamicProp] = null;
 
     var names = @base.GetDynamicMemberNames();
-    Assert.That(names, Has.Member(dynamicProp));
-    Assert.That(@base[dynamicProp], Is.Null);
+    names.Should().Contain(dynamicProp);
+    @base[dynamicProp].Should().BeNull();
   }
 
-  [Test]
+  [Fact]
   public void CanSetDynamicMembers()
   {
     var @base = new SampleObject();
@@ -194,19 +190,19 @@ public class BaseTests
     var value = "something";
     // Can create a new dynamic member
     @base[key] = value;
-    Assert.That(value, Is.EqualTo((string)@base[key].NotNull()));
+    value.Should().Be((string)@base[key].NotNull());
 
     // Can overwrite existing
     value = "some other value";
     @base[key] = value;
-    Assert.That(value, Is.EqualTo((string)@base[key].NotNull()));
+    value.Should().Be((string)@base[key].NotNull());
 
     // Accepts null values
     @base[key] = null;
-    Assert.That(@base[key], Is.Null);
+    @base[key].Should().BeNull();
   }
 
-  [Test]
+  [Fact]
   public void CanShallowCopy()
   {
     var sample = new SampleObject();
@@ -217,8 +213,8 @@ public class BaseTests
     var sampleMembers = sample.GetMembers(selectedMembers);
     var copyMembers = copy.GetMembers(selectedMembers);
 
-    Assert.That(copyMembers.Keys, Is.EquivalentTo(sampleMembers.Keys));
-    Assert.That(copyMembers.Values, Is.EquivalentTo(sampleMembers.Values));
+    copyMembers.Keys.Should().BeEquivalentTo(sampleMembers.Keys);
+    copyMembers.Values.Should().BeEquivalentTo(sampleMembers.Values);
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Models.BaseTests+SampleObject")]

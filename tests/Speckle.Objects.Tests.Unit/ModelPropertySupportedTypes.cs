@@ -1,5 +1,5 @@
-﻿using System.Drawing;
-using NUnit.Framework;
+using System.Drawing;
+using FluentAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
@@ -15,8 +15,7 @@ namespace Speckle.Objects.Tests.Unit;
 /// </summary>
 public class ModelPropertySupportedTypes
 {
-  [SetUp]
-  public void Setup()
+  public ModelPropertySupportedTypes()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Speckle.Objects.Geometry.Arc).Assembly);
@@ -62,7 +61,7 @@ public class ModelPropertySupportedTypes
     typeof(Matrix4x4),
   };
 
-  [Test]
+  [Fact]
   public void TestObjects()
   {
     foreach ((string _, Type type, List<string> _) in TypeLoader.Types)
@@ -72,19 +71,24 @@ public class ModelPropertySupportedTypes
       foreach (var prop in members)
       {
         if (prop.PropertyType.IsAssignableTo(typeof(Base)))
+        {
           continue;
+        }
+
         if (prop.PropertyType.IsEnum)
+        {
           continue;
+        }
+
         if (prop.PropertyType.IsSZArray)
+        {
           continue;
+        }
 
         Type propType = prop.PropertyType;
         Type typeDef = propType.IsGenericType ? propType.GetGenericTypeDefinition() : propType;
-        Assert.That(
-          _allowedTypes,
-          Does.Contain(typeDef),
-          $"{typeDef} was not in allowedTypes. (Origin: {type}.{prop.Name})"
-        );
+
+        _allowedTypes.Should().Contain(typeDef, $"{typeDef} was not in allowedTypes. (Origin: {type}.{prop.Name})");
       }
     }
   }
