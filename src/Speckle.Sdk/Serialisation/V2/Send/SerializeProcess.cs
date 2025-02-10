@@ -94,10 +94,10 @@ public sealed class SerializeProcess(
         _highest
       );
     }
-    await Traverse(root).ConfigureAwait(true);
-    await DoneTraversing().ConfigureAwait(true);
-    await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(true);
-    await DoneSaving(cancellationToken).ConfigureAwait(true);
+    await Traverse(root).ConfigureAwait(false);
+    await DoneTraversing().ConfigureAwait(false);
+    await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
+    await DoneSaving(cancellationToken).ConfigureAwait(false);
     cancellationToken.ThrowIfCancellationRequested();
     await WaitForSchedulerCompletion().ConfigureAwait(true);
     cancellationToken.ThrowIfCancellationRequested();
@@ -124,7 +124,7 @@ public sealed class SerializeProcess(
       cancellationToken.ThrowIfCancellationRequested();
       var t = Task
         .Factory.StartNew(
-          async () => await Traverse(tmp).ConfigureAwait(true),
+          async () => await Traverse(tmp).ConfigureAwait(false),
           cancellationToken,
           TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
           _belowNormal
@@ -136,7 +136,7 @@ public sealed class SerializeProcess(
     Dictionary<Id, NodeInfo>[] taskClosures = [];
     if (tasks.Count > 0)
     {
-      taskClosures = await Task.WhenAll(tasks).ConfigureAwait(true);
+      taskClosures = await Task.WhenAll(tasks).ConfigureAwait(false);
     }
     var childClosures = _childClosurePool.Get();
     foreach (var childClosure in taskClosures)
@@ -158,7 +158,7 @@ public sealed class SerializeProcess(
       if (item.NeedsStorage)
       {
         Interlocked.Increment(ref _objectsSerialized);
-        await Save(item, cancellationToken).ConfigureAwait(true);
+        await Save(item, cancellationToken).ConfigureAwait(false);
       }
 
       if (!currentClosures.ContainsKey(item.Id))

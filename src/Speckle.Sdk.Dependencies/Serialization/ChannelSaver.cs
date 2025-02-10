@@ -70,7 +70,7 @@ public abstract class ChannelSaver<T>
       );
 
   public async ValueTask Save(T item, CancellationToken cancellationToken) =>
-    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(true);
+    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
 
   private async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
   {
