@@ -75,7 +75,7 @@ Target(RESTORE, () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"
 
 Target(
   BUILD,
-  DependsOn(RESTORE),
+  DependsOn(RESTORE, BUILD_SERVER_VERSION),
   async () =>
   {
     var json = File.ReadAllText("version.json");
@@ -175,8 +175,8 @@ Target(
 
 static Task RunPack() => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build");
 
-Target(PACK, DependsOn(BUILD_SERVER_VERSION, BUILD), RunPack);
-Target(PACK_LOCAL, DependsOn(BUILD_SERVER_VERSION, BUILD), RunPack);
+Target(PACK, DependsOn(BUILD), RunPack);
+Target(PACK_LOCAL, DependsOn(BUILD), RunPack);
 
 Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
 
