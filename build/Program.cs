@@ -61,7 +61,6 @@ Target(RESTORE_TOOLS, () => RunAsync("dotnet", "tool restore"));
 
 Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --check ."));
 
-
 Target(
   BUILD_SERVER_VERSION,
   DependsOn(RESTORE_TOOLS),
@@ -81,7 +80,11 @@ Target(
     var version = Environment.GetEnvironmentVariable("GitVersion_FullSemVer") ?? "3.0.0-localBuild";
     var fileVersion = Environment.GetEnvironmentVariable("GitVersion_AssemblySemFileVer") ?? "3.0.0.0";
     Console.WriteLine($"Version: {version} & {fileVersion}");
-    await RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore -warnaserror -p:Version={version} -p:FileVersion={fileVersion}").ConfigureAwait(false);
+    await RunAsync(
+        "dotnet",
+        $"build Speckle.Sdk.sln -c Release --no-restore -warnaserror -p:Version={version} -p:FileVersion={fileVersion}"
+      )
+      .ConfigureAwait(false);
   }
 );
 
@@ -168,7 +171,7 @@ Target(
 
 static Task RunPack() => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build");
 
-Target(PACK, DependsOn(BUILD_SERVER_VERSION, TEST), RunPack);
+Target(PACK, DependsOn(BUILD_SERVER_VERSION, BUILD), RunPack);
 Target(PACK_LOCAL, DependsOn(BUILD_SERVER_VERSION, BUILD), RunPack);
 
 Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
