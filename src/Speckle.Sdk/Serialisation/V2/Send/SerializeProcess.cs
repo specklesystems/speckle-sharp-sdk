@@ -95,9 +95,9 @@ public sealed class SerializeProcess(
       );
     }
     await Traverse(root).ConfigureAwait(true);
-    DoneTraversing();
+    await DoneTraversing().ConfigureAwait(true);
     await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(true);
-    await DoneSaving().ConfigureAwait(true);
+    await DoneSaving(cancellationToken).ConfigureAwait(true);
     cancellationToken.ThrowIfCancellationRequested();
     await WaitForSchedulerCompletion().ConfigureAwait(true);
     cancellationToken.ThrowIfCancellationRequested();

@@ -6,8 +6,10 @@ using Speckle.Sdk.Serialisation.V2.Send;
 namespace Speckle.Sdk.Dependencies.Serialization;
 
 public abstract class ChannelSaver<T>
-  where T : IHasSize
+  where T : IHasSize, new()
 {
+  private readonly T EMPTY = new T();
+  private bool _emptied;
   private const int SEND_CAPACITY = 500;
   private const int HTTP_SEND_CHUNK_SIZE = 25_000_000; //bytes
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
@@ -43,7 +45,7 @@ public abstract class ChannelSaver<T>
       .Join()
       .Batch(MAX_CACHE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
+      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCacheInternal, cancellationToken)
       .ContinueWith(
         t =>
         {
@@ -70,19 +72,53 @@ public abstract class ChannelSaver<T>
   public async ValueTask Save(T item, CancellationToken cancellationToken) =>
     await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(true);
 
-  public async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
+  private async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
   {
+    var b = (Batch<T>)batch;
+    int index = b.Items.IndexOf(EMPTY);
+    if (index != -1)
+    {
+      b.Items.RemoveAt(index);
+    }
     await SendToServer((Batch<T>)batch).ConfigureAwait(false);
+    if (index != -1)
+    {
+      b.Add(EMPTY);
+    }
     return batch;
   }
 
   public abstract Task SendToServer(Batch<T> batch);
 
-  public void DoneTraversing() => _checkCacheChannel.Writer.TryComplete();
+  private void SaveToCacheInternal(List<T> batch)
+  {
+    int index = batch.IndexOf(EMPTY);
+    if (index != -1)
+    {
+      batch.RemoveAt(index);
+    }
+    SaveToCache(batch);
+    if (index != -1)
+    {
+      _emptied = true;
+    }
+  }
 
-  public async Task DoneSaving()
+  public abstract void SaveToCache(List<T> item);
+
+  public async Task DoneTraversing()
+  {
+    await Save(EMPTY, CancellationToken.None).ConfigureAwait(true);
+    _checkCacheChannel.Writer.TryComplete();
+  }
+
+  public async Task DoneSaving(CancellationToken cancellationToken)
   {
     await _checkCacheChannel.Reader.Completion.ConfigureAwait(true);
+    while (!_emptied && !cancellationToken.IsCancellationRequested && _exceptions.Count == 0)
+    {
+      await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken).ConfigureAwait(false);
+    }
     lock (_exceptions)
     {
       if (_exceptions.Count > 0)
@@ -103,6 +139,4 @@ public abstract class ChannelSaver<T>
       }
     }
   }
-
-  public abstract void SaveToCache(List<T> item);
 }
