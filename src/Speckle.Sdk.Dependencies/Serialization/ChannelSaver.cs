@@ -108,13 +108,13 @@ public abstract class ChannelSaver<T>
 
   public async Task DoneTraversing()
   {
-    await Save(EMPTY, CancellationToken.None).ConfigureAwait(true);
+    await Save(EMPTY, CancellationToken.None).ConfigureAwait(false);
     _checkCacheChannel.Writer.TryComplete();
   }
 
   public async Task DoneSaving(CancellationToken cancellationToken)
   {
-    await _checkCacheChannel.Reader.Completion.ConfigureAwait(true);
+    await _checkCacheChannel.Reader.Completion.ConfigureAwait(false);
     while (!_emptied && !cancellationToken.IsCancellationRequested && _exceptions.Count == 0)
     {
       await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken).ConfigureAwait(false);

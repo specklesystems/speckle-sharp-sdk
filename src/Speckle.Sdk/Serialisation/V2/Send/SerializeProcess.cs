@@ -99,7 +99,7 @@ public sealed class SerializeProcess(
     await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
     await DoneSaving(cancellationToken).ConfigureAwait(false);
     cancellationToken.ThrowIfCancellationRequested();
-    await WaitForSchedulerCompletion().ConfigureAwait(true);
+    await WaitForSchedulerCompletion().ConfigureAwait(false);
     cancellationToken.ThrowIfCancellationRequested();
     return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
   }
