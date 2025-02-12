@@ -20,7 +20,8 @@ public static class ObjectsTestData
       faces = [3, 0, 1, 2],
       applicationId = "asdfasdf",
       units = Units.Meters,
-      area = 420,
+      area = 42,
+      volume = 420,
       colors = [-10185235, -10185235, -10185235],
     };
     yield return new Point()

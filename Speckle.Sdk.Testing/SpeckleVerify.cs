@@ -54,4 +54,7 @@ public static class SpeckleVerify
     IDictionary<Id, Json> objects,
     [CallerFilePath] string sourceFile = ""
   ) => VerifyJsonObjects(objects.ToDictionary(x => x.Key.Value, x => x.Value), sourceFile);
+
+  public static SettingsTask VerifyJsons(IReadOnlyCollection<Json> objects, [CallerFilePath] string sourceFile = "") =>
+    VerifyJson(JArray.FromObject(objects, _jsonSerializer).ToString(), sourceFile: sourceFile);
 }

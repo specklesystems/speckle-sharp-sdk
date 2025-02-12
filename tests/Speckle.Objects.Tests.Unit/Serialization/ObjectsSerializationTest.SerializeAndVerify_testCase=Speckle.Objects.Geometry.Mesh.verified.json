@@ -1,5 +1,5 @@
-﻿{
-  "13da8e855141b835e68bba721411046e": {
+﻿[
+  {
     "applicationId": null,
     "data": [
       3,
@@ -10,14 +10,40 @@
     "id": "13da8e855141b835e68bba721411046e",
     "speckle_type": "Speckle.Core.Models.DataChunk"
   },
-  "a4533df610f9c8380e0c22bb9b1c5c38": {
+  {
+    "applicationId": null,
+    "data": [
+      -10185235,
+      -10185235,
+      -10185235
+    ],
+    "id": "cc9d42395b317ed25947b1285bbd5103",
+    "speckle_type": "Speckle.Core.Models.DataChunk"
+  },
+  {
+    "applicationId": null,
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "id": "ede4848fc3abda9275a19fee3447ffbd",
+    "speckle_type": "Speckle.Core.Models.DataChunk"
+  },
+  {
     "__closure": {
       "13da8e855141b835e68bba721411046e": 100,
       "cc9d42395b317ed25947b1285bbd5103": 100,
       "ede4848fc3abda9275a19fee3447ffbd": 100
     },
     "applicationId": "asdfasdf",
-    "area": 420.0,
+    "area": 42.0,
     "bbox": null,
     "colors": [
       {
@@ -33,7 +59,7 @@
         "speckle_type": "reference"
       }
     ],
-    "id": "a4533df610f9c8380e0c22bb9b1c5c38",
+    "id": "f7197b7434ebc6045f8528eac32a37b1",
     "speckle_type": "Objects.Geometry.Mesh",
     "textureCoordinates": [],
     "units": "m",
@@ -44,32 +70,6 @@
         "speckle_type": "reference"
       }
     ],
-    "volume": 0.0
-  },
-  "cc9d42395b317ed25947b1285bbd5103": {
-    "applicationId": null,
-    "data": [
-      -10185235,
-      -10185235,
-      -10185235
-    ],
-    "id": "cc9d42395b317ed25947b1285bbd5103",
-    "speckle_type": "Speckle.Core.Models.DataChunk"
-  },
-  "ede4848fc3abda9275a19fee3447ffbd": {
-    "applicationId": null,
-    "data": [
-      0.0,
-      0.0,
-      0.0,
-      1.0,
-      0.0,
-      0.0,
-      1.0,
-      1.0,
-      0.0
-    ],
-    "id": "ede4848fc3abda9275a19fee3447ffbd",
-    "speckle_type": "Speckle.Core.Models.DataChunk"
+    "volume": 420.0
   }
-}
+]

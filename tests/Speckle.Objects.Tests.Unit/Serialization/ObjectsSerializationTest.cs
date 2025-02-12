@@ -27,8 +27,7 @@ public sealed class ObjectsSerializationTest
 
   private static SettingsTask VerifySerialized(IReadOnlyList<(Id, Json, Dictionary<Id, int>)> serializedResult)
   {
-    var dictionary = serializedResult.DistinctBy(x => x.Item1).ToDictionary(x => x.Item1, x => x.Item2);
-
-    return SpeckleVerify.VerifyJsonDictionary(dictionary);
+    var jsons = serializedResult.OrderBy(x => x.Item1.Value).Select(x => x.Item2).ToArray();
+    return SpeckleVerify.VerifyJsons(jsons);
   }
 }

@@ -1,5 +1,5 @@
-﻿{
-  "282d78f7ca1a2ec37bf3fcf3f24e7a27": {
+﻿[
+  {
     "applicationId": "iosdf;juasdfioj",
     "bbox": null,
     "id": "282d78f7ca1a2ec37bf3fcf3f24e7a27",
@@ -9,4 +9,4 @@
     "y": 222.111,
     "z": -1.001
   }
-}
+]
