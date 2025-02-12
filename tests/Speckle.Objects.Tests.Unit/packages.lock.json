@@ -318,6 +318,20 @@
         "resolved": "2.0.3",
         "contentHash": "pot1I4YOxlWjIb5jmwvvQNbTrZ3lJQ+jUGkGjWE3hEFM0l5gOnBWS+H3qsex68s5cO52g+44vpGzhAt+42vwKg=="
       },
+      "xunit.analyzers": {
+        "type": "Transitive",
+        "resolved": "1.18.0",
+        "contentHash": "OtFMHN8yqIcYP9wcVIgJrq01AfTxijjAqVDy/WeQVSyrDC1RzBWeQPztL49DN2syXRah8TYnfvk035s7L95EZQ=="
+      },
+      "xunit.core": {
+        "type": "Transitive",
+        "resolved": "2.9.3",
+        "contentHash": "BiAEvqGvyme19wE0wTKdADH+NloYqikiU0mcnmiNyXaF9HyHmE6sr/3DC5vnBkgsWaE6yPyWszKSPSApWdRVeQ==",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.9.3]",
+          "xunit.extensibility.execution": "[2.9.3]"
+        }
+      },
       "xunit.extensibility.core": {
         "type": "Transitive",
         "resolved": "2.9.3",
@@ -366,6 +380,19 @@
           "xunit.runner.visualstudio": "[3.0.1, )"
         }
       },
+      "speckle.sdk.tests.unit": {
+        "type": "Project",
+        "dependencies": {
+          "AwesomeAssertions": "[8.0.0, )",
+          "Microsoft.Extensions.DependencyInjection": "[2.2.0, 2.2.0]",
+          "Microsoft.NET.Test.Sdk": "[17.12.0, )",
+          "Speckle.DoubleNumerics": "[4.0.1, )",
+          "Speckle.Sdk": "[1.0.0, )",
+          "altcover": "[9.0.1, )",
+          "xunit": "[2.9.3, )",
+          "xunit.runner.visualstudio": "[3.0.1, )"
+        }
+      },
       "GraphQL.Client": {
         "type": "CentralTransitive",
         "requested": "[6.0.0, )",
@@ -391,6 +418,15 @@
         "dependencies": {
           "Microsoft.Data.Sqlite.Core": "7.0.5",
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.4"
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection": {
+        "type": "CentralTransitive",
+        "requested": "[2.2.0, 2.2.0]",
+        "resolved": "2.2.0",
+        "contentHash": "MZtBIwfDFork5vfjpJdG5g8wuJFt7d/y3LOSVVtDK/76wlbtz6cjltfKHqLx2TKVqTj5/c41t77m1+h20zqtPA==",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "2.2.0"
         }
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
@@ -447,6 +483,17 @@
           "Verify": "28.10.1",
           "xunit.abstractions": "2.0.3",
           "xunit.extensibility.execution": "2.9.3"
+        }
+      },
+      "xunit": {
+        "type": "CentralTransitive",
+        "requested": "[2.9.3, )",
+        "resolved": "2.9.3",
+        "contentHash": "TlXQBinK35LpOPKHAqbLY4xlEen9TBafjs0V5KnA4wZsoQLQJiirCR4CbIXvOH8NzkW4YeJKP5P/Bnrodm0h9Q==",
+        "dependencies": {
+          "xunit.analyzers": "1.18.0",
+          "xunit.assert": "2.9.3",
+          "xunit.core": "[2.9.3]"
         }
       }
     }
