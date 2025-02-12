@@ -42,16 +42,16 @@ public static class SpeckleVerify
     Converters = { new JsonStringSerializer() },
   };
 
-  private static async Task VerifyJsonObjects(IDictionary<string, Json> objects, string sourceFile) =>
-    await VerifyJson(JObject.FromObject(objects, _jsonSerializer).ToString(), sourceFile: sourceFile);
+  private static SettingsTask VerifyJsonObjects(IDictionary<string, Json> objects, string sourceFile) =>
+    VerifyJson(JObject.FromObject(objects, _jsonSerializer).ToString(), sourceFile: sourceFile);
 
-  public static async Task VerifyJsonDictionary(
+  public static SettingsTask VerifyJsonDictionary(
     IDictionary<string, string> objects,
     [CallerFilePath] string sourceFile = ""
-  ) => await VerifyJsonObjects(objects.ToDictionary(x => x.Key, x => new Json(x.Value)), sourceFile);
+  ) => VerifyJsonObjects(objects.ToDictionary(x => x.Key, x => new Json(x.Value)), sourceFile);
 
-  public static async Task VerifyJsonDictionary(
+  public static SettingsTask VerifyJsonDictionary(
     IDictionary<Id, Json> objects,
     [CallerFilePath] string sourceFile = ""
-  ) => await VerifyJsonObjects(objects.ToDictionary(x => x.Key.Value, x => x.Value), sourceFile);
+  ) => VerifyJsonObjects(objects.ToDictionary(x => x.Key.Value, x => x.Value), sourceFile);
 }
