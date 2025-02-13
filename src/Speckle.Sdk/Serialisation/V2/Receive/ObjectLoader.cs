@@ -46,28 +46,33 @@ public sealed class ObjectLoader(
         return (new(rootJson), allChildren);
       }
     }
-    rootJson = await serverObjectManager
-      .DownloadSingleObject(rootId, progress, cancellationToken)
-      .NotNull()
-      .ConfigureAwait(false);
-    IReadOnlyCollection<Id> allChildrenIds = ClosureParser
-      .GetClosures(rootJson, cancellationToken)
-      .OrderByDescending(x => x.Item2)
-      .Select(x => new Id(x.Item1))
-      .Where(x => !x.Value.StartsWith("blob", StringComparison.Ordinal))
-      .Freeze();
-    _allChildrenCount = allChildrenIds.Count;
-    await GetAndCache(allChildrenIds.Select(x => x.Value), cancellationToken, _options.MaxParallelism)
-      .ConfigureAwait(false);
-
-    CheckForExceptions();
-    cancellationToken.ThrowIfCancellationRequested();
-    //save the root last to shortcut later
-    if (!options.SkipCache)
+    if (!options.SkipServer)
     {
-      sqLiteJsonCacheManager.SaveObject(rootId, rootJson);
+      rootJson = await serverObjectManager
+        .DownloadSingleObject(rootId, progress, cancellationToken)
+        .NotNull()
+        .ConfigureAwait(false);
+      IReadOnlyCollection<Id> allChildrenIds = ClosureParser
+        .GetClosures(rootJson, cancellationToken)
+        .OrderByDescending(x => x.Item2)
+        .Select(x => new Id(x.Item1))
+        .Where(x => !x.Value.StartsWith("blob", StringComparison.Ordinal))
+        .Freeze();
+      _allChildrenCount = allChildrenIds.Count;
+      await GetAndCache(allChildrenIds.Select(x => x.Value), cancellationToken, _options.MaxParallelism)
+        .ConfigureAwait(false);
+
+      CheckForExceptions();
+      cancellationToken.ThrowIfCancellationRequested();
+      //save the root last to shortcut later
+      if (!options.SkipCache)
+      {
+        sqLiteJsonCacheManager.SaveObject(rootId, rootJson);
+      }
+
+      return (new(rootJson), allChildrenIds);
     }
-    return (new(rootJson), allChildrenIds);
+    throw new SpeckleException("Cannot skip server and cache. Please choose one.");
   }
 
   [AutoInterfaceIgnore]
