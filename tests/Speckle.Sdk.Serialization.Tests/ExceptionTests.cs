@@ -66,11 +66,12 @@ public class ExceptionTests
     var o = new ObjectLoader(
       new DummySqLiteReceiveManager(new Dictionary<string, string>()),
       new ExceptionServerObjectManager(),
-      null
+      null,
+      default
     );
     using var process = new DeserializeProcess(
-      null,
       o,
+      null,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,
