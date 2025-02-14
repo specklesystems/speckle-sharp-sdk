@@ -24,7 +24,7 @@ public class ExceptionTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     var objects = new Dictionary<string, string>();
-    using var process2 = new SerializeProcess(
+    await using var process2 = new SerializeProcess(
       null,
       new DummySendCacheManager(objects),
       new ExceptionServerObjectManager(),
@@ -45,7 +45,7 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    using var process2 = new SerializeProcess(
+    await using var process2 = new SerializeProcess(
       null,
       new ExceptionSendCacheManager(),
       new DummyServerObjectManager(),
@@ -69,7 +69,7 @@ public class ExceptionTests
       null,
       default
     );
-    using var process = new DeserializeProcess(
+    await using var process = new DeserializeProcess(
       o,
       null,
       new BaseDeserializer(new ObjectDeserializerFactory()),
@@ -92,7 +92,7 @@ public class ExceptionTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    using var process = new DeserializeProcess(
+    await using var process = new DeserializeProcess(
       new DummySqLiteReceiveManager(closures),
       new ExceptionServerObjectManager(),
       null,
@@ -117,7 +117,7 @@ public class ExceptionTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    using var process = new DeserializeProcess(
+    await using var process = new DeserializeProcess(
       new ExceptionSendCacheManager(hasObject),
       new DummyReceiveServerObjectManager(closures),
       null,

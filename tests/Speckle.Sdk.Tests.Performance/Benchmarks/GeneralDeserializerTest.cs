@@ -56,7 +56,7 @@ public class GeneralDeserializer : IDisposable
       streamId,
       null
     );
-    using var process = new DeserializeProcess(
+    await using var process = new DeserializeProcess(
       sqlite,
       serverObjects,
       null,

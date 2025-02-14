@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
@@ -22,7 +23,7 @@ public readonly record struct SerializeProcessResults(
   IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
 );
 
-public partial interface ISerializeProcess : IDisposable;
+public partial interface ISerializeProcess : IAsyncDisposable;
 
 [GenerateAutoInterface]
 public sealed class SerializeProcess(
@@ -36,12 +37,17 @@ public sealed class SerializeProcess(
   SerializeProcessOptions? options = null
 ) : ChannelSaver<BaseItem>, ISerializeProcess
 {
+  //async dispose
+  [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
   private readonly PriorityScheduler _highest = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.Highest,
     2,
     cancellationToken
   );
+
+  //async dispose
+  [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
   private readonly PriorityScheduler _belowNormal = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.BelowNormal,
@@ -67,11 +73,12 @@ public sealed class SerializeProcess(
   private long _cached;
 
   [AutoInterfaceIgnore]
-  public void Dispose()
+  public async ValueTask DisposeAsync()
   {
     _highest.Dispose();
     _belowNormal.Dispose();
     sqLiteJsonCacheManager.Dispose();
+    await WaitForSchedulerCompletion().ConfigureAwait(false);
   }
 
   private async Task WaitForSchedulerCompletion()

@@ -17,7 +17,7 @@ public record DeserializeProcessOptions(
   bool SkipServer = false
 );
 
-public partial interface IDeserializeProcess : IDisposable;
+public partial interface IDeserializeProcess : IAsyncDisposable;
 
 [GenerateAutoInterface]
 public sealed class DeserializeProcess(
@@ -68,10 +68,11 @@ public sealed class DeserializeProcess(
   public long Total { get; private set; }
 
   [AutoInterfaceIgnore]
-  public void Dispose()
+  public async ValueTask DisposeAsync()
   {
     objectLoader.Dispose();
     _belowNormal.Dispose();
+    await _belowNormal.WaitForCompletion().ConfigureAwait(false);
   }
 
   /// <summary>

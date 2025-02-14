@@ -107,7 +107,7 @@ public class SerializationTests
   public async Task Basic_Namespace_Validation_New(string fileName)
   {
     var closures = await TestFileManager.GetFileAsClosures(fileName);
-    using var process = new DeserializeProcess(
+    await using var process = new DeserializeProcess(
       new TestObjectLoader(closures),
       null,
       new BaseDeserializer(new ObjectDeserializerFactory()),
@@ -212,7 +212,7 @@ public class SerializationTests
       )
     )
     {
-      using var process = new DeserializeProcess(
+      await using var process = new DeserializeProcess(
         o,
         null,
         new BaseDeserializer(new ObjectDeserializerFactory()),
@@ -226,7 +226,7 @@ public class SerializationTests
     }
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
-    using (
+    await using (
       var serializeProcess = new SerializeProcess(
         null,
         new DummySqLiteSendManager(),
@@ -242,8 +242,6 @@ public class SerializationTests
       var (rootId2, _) = await serializeProcess.Serialize(root);
       rootId2.Should().Be(root.id);
     }
-    //ensures threads are done?
-    await Task.Delay(TimeSpan.FromSeconds(2));
     newIdToJson.Count.Should().Be(newCount);
 
     foreach (var newKvp in newIdToJson)

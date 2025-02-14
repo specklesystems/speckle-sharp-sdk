@@ -21,16 +21,15 @@ public partial class Operations
     metricsFactory.CreateCounter<long>("Receive").Add(1);
 
     receiveActivity?.SetTag("objectId", objectId);
-
+    var process = serializeProcessFactory.CreateDeserializeProcess(
+      url,
+      streamId,
+      authorizationToken,
+      onProgressAction,
+      cancellationToken
+    );
     try
     {
-      using var process = serializeProcessFactory.CreateDeserializeProcess(
-        url,
-        streamId,
-        authorizationToken,
-        onProgressAction,
-        cancellationToken
-      );
       var result = await process.Deserialize(objectId).ConfigureAwait(false);
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return result;
@@ -40,6 +39,10 @@ public partial class Operations
       receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
       receiveActivity?.RecordException(ex);
       throw;
+    }
+    finally
+    {
+      await process.DisposeAsync().ConfigureAwait(false);
     }
   }
 
