@@ -35,7 +35,9 @@ public sealed class SerializeProcess(
   ILoggerFactory loggerFactory,
   CancellationToken cancellationToken,
   SerializeProcessOptions? options = null
-) : ChannelSaver<BaseItem>, ISerializeProcess
+#pragma warning disable CA2254
+) : ChannelSaver<BaseItem>(x => loggerFactory.CreateLogger<SerializeProcess>().LogWarning(x)), ISerializeProcess
+#pragma warning restore CA2254
 {
   //async dispose
   [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
