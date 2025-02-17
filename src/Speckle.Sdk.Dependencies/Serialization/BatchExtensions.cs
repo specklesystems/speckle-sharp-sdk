@@ -16,7 +16,8 @@ public static class BatchExtensions
   public static void AddBatchItem<T>(this IMemoryOwner<T> batch, T item)
     where T : IHasSize => ((Batch<T>)batch).Add(item);
 
-  public static int GetBatchSize<T>(this IMemoryOwner<T> batch, int maxBatchSize)    where T : IHasSize
+  public static int GetBatchSize<T>(this IMemoryOwner<T> batch, int maxBatchSize)
+    where T : IHasSize
   {
     var currentSize = ((Batch<T>)batch).Size;
     if (currentSize > maxBatchSize)

@@ -5,7 +5,6 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class BatchTests
 {
-
   /*** from BatchingChannelReader.cs **
   bool full = GetBatchSize(c) == _batchSize;
   while (!full && source.TryRead(out item))
@@ -40,26 +39,25 @@ public class BatchTests
   {
     const int MAX_BATCH_SIZE = 5;
 
-
     using var batch = new Batch<TestBatchItem>();
     batch.AddBatchItem(new TestBatchItem { Size = 2 });
-    bool full =  batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    bool full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeFalse();
     batch.AddBatchItem(new TestBatchItem { Size = 2 });
-    full =  batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeFalse();
     batch.AddBatchItem(new TestBatchItem { Size = 2 });
-    full =  batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeTrue();
   }
-  
+
   [Fact]
   public void Large_Message_Problem_2()
   {
     const int MAX_BATCH_SIZE = 5;
     using var batch = new Batch<TestBatchItem>();
     batch.AddBatchItem(new TestBatchItem { Size = 6 });
-    bool full =  batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    bool full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeTrue();
   }
 }
