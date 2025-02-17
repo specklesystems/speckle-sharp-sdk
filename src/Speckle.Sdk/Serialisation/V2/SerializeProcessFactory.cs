@@ -69,11 +69,14 @@ public class SerializeProcessFactory(
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
     var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
-
-#pragma warning disable CA2000
-    //owned by process, refactor later
-    var objectLoader = new ObjectLoader(sqLiteJsonCacheManager, serverObjectManager, progress);
-#pragma warning restore CA2000
-    return new DeserializeProcess(progress, objectLoader, baseDeserializer, loggerFactory, cancellationToken, options);
+    return new DeserializeProcess(
+      sqLiteJsonCacheManager,
+      serverObjectManager,
+      progress,
+      baseDeserializer,
+      loggerFactory,
+      cancellationToken,
+      options
+    );
   }
 }

@@ -19,7 +19,7 @@ public class ExplicitInterfaceTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     var objects = new Dictionary<string, string>();
-    using var process2 = new SerializeProcess(
+    await using var process2 = new SerializeProcess(
       null,
       new DummySendCacheManager(objects),
       new DummyServerObjectManager(),
