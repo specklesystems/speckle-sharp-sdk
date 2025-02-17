@@ -4,9 +4,9 @@ using Open.ChannelExtensions;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public interface IHasSize
+public interface IHasByteSize
 {
-  int Size { get; }
+  int ByteSize { get; }
 }
 
 public sealed class SizeBatchingChannelReader<T>(
@@ -22,7 +22,7 @@ public sealed class SizeBatchingChannelReader<T>(
     singleReader,
     syncCont
   )
-  where T : IHasSize
+  where T : IHasByteSize
 {
   private readonly int _batchSize = batchSize;
 

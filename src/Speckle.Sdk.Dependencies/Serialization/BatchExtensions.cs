@@ -5,10 +5,10 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 public static class BatchExtensions
 {
   public static Batch<T> CreateBatch<T>()
-    where T : IHasSize => new();
+    where T : IHasByteSize => new();
 
   public static void TrimBatch<T>(ref IMemoryOwner<T> batch, bool isVerifiedFull)
-    where T : IHasSize
+    where T : IHasByteSize
   {
     if (!isVerifiedFull)
     {
@@ -17,12 +17,12 @@ public static class BatchExtensions
   }
 
   public static void AddBatchItem<T>(this IMemoryOwner<T> batch, T item)
-    where T : IHasSize => ((Batch<T>)batch).Add(item);
+    where T : IHasByteSize => ((Batch<T>)batch).Add(item);
 
   public static int GetBatchSize<T>(this IMemoryOwner<T> batch, int maxBatchSize)
-    where T : IHasSize
+    where T : IHasByteSize
   {
-    var currentSize = ((Batch<T>)batch).Size;
+    var currentSize = ((Batch<T>)batch).BatchByteSize;
     if (currentSize > maxBatchSize)
     {
       return maxBatchSize;
