@@ -4,6 +4,9 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public static class BatchExtensions
 {
+  public static Batch<T> CreateBatch<T>()
+    where T : IHasSize => new();
+
   public static void TrimBatch<T>(ref IMemoryOwner<T> batch, bool isVerifiedFull)
     where T : IHasSize
   {

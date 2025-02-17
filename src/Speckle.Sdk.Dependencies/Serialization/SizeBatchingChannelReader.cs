@@ -14,12 +14,19 @@ public sealed class SizeBatchingChannelReader<T>(
   int batchSize,
   bool singleReader,
   bool syncCont = false
-) : BatchingChannelReader<T, IMemoryOwner<T>>(x => new Batch<T>(), source, batchSize, singleReader, syncCont)
+)
+  : BatchingChannelReader<T, IMemoryOwner<T>>(
+    _ => BatchExtensions.CreateBatch<T>(),
+    source,
+    batchSize,
+    singleReader,
+    syncCont
+  )
   where T : IHasSize
 {
   private readonly int _batchSize = batchSize;
 
-  protected override IMemoryOwner<T> CreateBatch(int capacity) => new Batch<T>();
+  protected override IMemoryOwner<T> CreateBatch(int capacity) => BatchExtensions.CreateBatch<T>();
 
   protected override void TrimBatch(ref IMemoryOwner<T> batch, bool isVerifiedFull) =>
     BatchExtensions.TrimBatch(ref batch, isVerifiedFull);

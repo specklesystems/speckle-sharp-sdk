@@ -13,7 +13,7 @@ public class BatchTests
     full = GetBatchSize(c) == _batchSize;
   }*/
 
-  public class TestBatchItem : IHasSize
+  private class TestBatchItem : IHasSize
   {
     public int Size { get; set; }
   }
@@ -21,17 +21,21 @@ public class BatchTests
   [Fact]
   public void Basics()
   {
-    using var batch = new Batch<TestBatchItem>();
-    batch.Add(new TestBatchItem { Size = 2 });
+    using var batch = BatchExtensions.CreateBatch<TestBatchItem>();
+    batch.AddBatchItem(new TestBatchItem { Size = 2 });
     batch.Size.Should().Be(2);
-    batch.Add(new TestBatchItem { Size = 2 });
+    batch.AddBatchItem(new TestBatchItem { Size = 2 });
     batch.Size.Should().Be(4);
-    batch.Add(new TestBatchItem { Size = 2 });
+    batch.AddBatchItem(new TestBatchItem { Size = 2 });
     batch.Size.Should().Be(6);
 
     batch.TrimExcess();
     batch.Size.Should().Be(6);
     batch.Items.Count.Should().Be(3);
+
+    batch.AddBatchItem(new TestBatchItem { Size = 2 });
+    batch.Size.Should().Be(8);
+    batch.Items.Count.Should().Be(4);
   }
 
   [Fact]
@@ -39,7 +43,7 @@ public class BatchTests
   {
     const int MAX_BATCH_SIZE = 5;
 
-    using var batch = new Batch<TestBatchItem>();
+    using var batch = BatchExtensions.CreateBatch<TestBatchItem>();
     batch.AddBatchItem(new TestBatchItem { Size = 2 });
     bool full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeFalse();
@@ -55,7 +59,8 @@ public class BatchTests
   public void Large_Message_Problem_2()
   {
     const int MAX_BATCH_SIZE = 5;
-    using var batch = new Batch<TestBatchItem>();
+
+    using var batch = BatchExtensions.CreateBatch<TestBatchItem>();
     batch.AddBatchItem(new TestBatchItem { Size = 6 });
     bool full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeTrue();
