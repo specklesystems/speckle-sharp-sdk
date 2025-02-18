@@ -4,7 +4,14 @@ namespace Speckle.Sdk.Dependencies;
 
 public static class Collections
 {
-  public static IReadOnlyCollection<T> Freeze<T>(this IEnumerable<T> source) => source.ToFrozenSet();
+#if NET5_0_OR_GREATER
+  public static IReadOnlySet<T> Freeze<T>(this IEnumerable<T> source)
+#else
+  public static IReadOnlyCollection<T> Freeze<T>(this IEnumerable<T> source)
+#endif
+  {
+    return source.ToFrozenSet();
+  }
 
   public static IReadOnlyDictionary<TKey, TValue> Freeze<TKey, TValue>(
     this IEnumerable<KeyValuePair<TKey, TValue>> source
