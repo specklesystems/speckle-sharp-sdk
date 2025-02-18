@@ -17,8 +17,8 @@ public sealed class PriorityScheduler(
 
   protected override IEnumerable<Task> GetScheduledTasks() => _tasks;
 
-  public async ValueTask DisposeAsync() 
-  { 
+  public async ValueTask DisposeAsync()
+  {
     await WaitForCompletion().ConfigureAwait(false);
     _tasks.Dispose();
   }
@@ -34,7 +34,7 @@ public sealed class PriorityScheduler(
     {
       await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
     }
-    _threads  = null;
+    _threads = null;
   }
 
   protected override void QueueTask(Task task)
@@ -100,5 +100,4 @@ public sealed class PriorityScheduler(
   }
 
   protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued) => false; // we might not want to execute task that should schedule as high or low priority inline
-
 }
