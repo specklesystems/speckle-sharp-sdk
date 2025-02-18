@@ -60,7 +60,7 @@ public class ServerObjectManager : IServerObjectManager
     childrenHttpMessage.Headers.Add("Accept", "text/plain");
 
     HttpResponseMessage childrenHttpResponse = await _client
-      .SendAsync(childrenHttpMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+      .SendAsync(childrenHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)
       .ConfigureAwait(false);
 
     await foreach (var (id, json) in ResponseProgress(childrenHttpResponse, progress, false, cancellationToken))
@@ -87,7 +87,7 @@ public class ServerObjectManager : IServerObjectManager
     rootHttpMessage.Method = HttpMethod.Get;
 
     HttpResponseMessage rootHttpResponse = await _client
-      .SendAsync(rootHttpMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+      .SendAsync(rootHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)
       .ConfigureAwait(false);
 
     var (_, json) = await ResponseProgress(rootHttpResponse, progress, true, cancellationToken)
