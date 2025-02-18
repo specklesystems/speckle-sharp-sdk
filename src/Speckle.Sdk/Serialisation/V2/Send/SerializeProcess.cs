@@ -75,10 +75,10 @@ public sealed class SerializeProcess(
   [AutoInterfaceIgnore]
   public async ValueTask DisposeAsync()
   {
-    _highest.Dispose();
-    _belowNormal.Dispose();
-    sqLiteJsonCacheManager.Dispose();
     await WaitForSchedulerCompletion().ConfigureAwait(false);
+    await _highest.DisposeAsync().ConfigureAwait(false);
+    await _belowNormal.DisposeAsync().ConfigureAwait(false);
+    sqLiteJsonCacheManager.Dispose();
   }
 
   private async Task WaitForSchedulerCompletion()
