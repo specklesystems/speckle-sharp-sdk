@@ -6,7 +6,6 @@ using static SimpleExec.Command;
 const string CLEAN = "clean";
 const string FORMAT = "format";
 const string RESTORE_TOOLS = "restore-tools";
-const string BUILD_SERVER_VERSION = "build-server-version";
 
 const string RESTORE = "restore";
 const string BUILD = "build";
@@ -17,6 +16,16 @@ const string PACK_LOCAL = "pack-local";
 const string CLEAN_LOCKS = "clean-locks";
 const string PERF = "perf";
 const string DEEP_CLEAN = "deep-clean";
+
+static async Task<(string, string)> GetVersions()
+{
+  var (output, _) = await ReadAsync("dotnet", "dotnet-gitversion /output json").ConfigureAwait(false);
+  output = output.Trim();
+  var jDoc = JsonDocument.Parse(output);
+  var version = jDoc.RootElement.GetProperty("FullSemVer").GetString() ?? "3.0.0-localBuild";
+  var fileVersion = jDoc.RootElement.GetProperty("AssemblySemFileVer").GetString() ?? "3.0.0.0";
+  return (version, fileVersion);
+}
 
 Target(
   CLEAN_LOCKS,
@@ -62,27 +71,14 @@ Target(RESTORE_TOOLS, () => RunAsync("dotnet", "tool restore"));
 
 Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --check ."));
 
-Target(
-  BUILD_SERVER_VERSION,
-  DependsOn(RESTORE_TOOLS),
-  () =>
-  {
-    Run("dotnet", "tool run dotnet-gitversion /output json /output buildserver /output file /outputfile version.json");
-  }
-);
-
 Target(RESTORE, () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
 
 Target(
   BUILD,
-  DependsOn(RESTORE, BUILD_SERVER_VERSION),
+  DependsOn(RESTORE),
   async () =>
   {
-    var json = File.ReadAllText("version.json");
-    var jsonNode = JsonDocument.Parse(json);
-
-    var version = jsonNode.RootElement.GetProperty("FullSemVer").GetString() ?? "3.0.0-localBuild";
-    var fileVersion = jsonNode.RootElement.GetProperty("AssemblySemFileVer").GetString() ?? "3.0.0.0";
+    var (version, fileVersion) = await GetVersions().ConfigureAwait(false);
     Console.WriteLine($"Version: {version} & {fileVersion}");
     await RunAsync(
         "dotnet",

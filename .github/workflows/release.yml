@@ -22,9 +22,6 @@ jobs:
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-
-      - name: ⚒️ Run GitVersion
-        run: ./build.sh build-server-version
               
       - name: 🔫 Build and Pack
         run: ./build.sh pack
