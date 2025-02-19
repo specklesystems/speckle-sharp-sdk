@@ -6,7 +6,7 @@ using Speckle.Sdk.Serialisation.V2.Send;
 namespace Speckle.Sdk.Dependencies.Serialization;
 
 public abstract class ChannelSaver<T>
-  where T : IHasSize
+  where T : IHasByteSize
 {
   private const int SEND_CAPACITY = 500;
   private const int HTTP_SEND_CHUNK_SIZE = 25_000_000; //bytes
@@ -31,7 +31,7 @@ public abstract class ChannelSaver<T>
 
   public Task Start(CancellationToken cancellationToken) =>
     _checkCacheChannel
-      .Reader.BatchBySize(HTTP_SEND_CHUNK_SIZE)
+      .Reader.BatchByByteSize(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
@@ -68,9 +68,9 @@ public abstract class ChannelSaver<T>
       );
 
   public async ValueTask Save(T item, CancellationToken cancellationToken) =>
-    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(true);
+    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
 
-  public async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
+  private async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
   {
     await SendToServer((Batch<T>)batch).ConfigureAwait(false);
     return batch;
@@ -78,11 +78,17 @@ public abstract class ChannelSaver<T>
 
   public abstract Task SendToServer(Batch<T> batch);
 
-  public void DoneTraversing() => _checkCacheChannel.Writer.TryComplete();
+  public abstract void SaveToCache(List<T> item);
+
+  public Task DoneTraversing()
+  {
+    _checkCacheChannel.Writer.TryComplete();
+    return Task.CompletedTask;
+  }
 
   public async Task DoneSaving()
   {
-    await _checkCacheChannel.Reader.Completion.ConfigureAwait(true);
+    await _checkCacheChannel.Reader.Completion.ConfigureAwait(false);
     lock (_exceptions)
     {
       if (_exceptions.Count > 0)
@@ -103,6 +109,4 @@ public abstract class ChannelSaver<T>
       }
     }
   }
-
-  public abstract void SaveToCache(List<T> item);
 }

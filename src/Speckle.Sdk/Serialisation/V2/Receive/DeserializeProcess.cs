@@ -4,6 +4,7 @@ using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
@@ -12,27 +13,51 @@ public record DeserializeProcessOptions(
   bool SkipCache = false,
   bool ThrowOnMissingReferences = true,
   bool SkipInvalidConverts = false,
-  int? MaxParallelism = null
+  int? MaxParallelism = null,
+  bool SkipServer = false
 );
 
-public partial interface IDeserializeProcess : IDisposable;
+public partial interface IDeserializeProcess : IAsyncDisposable;
 
 [GenerateAutoInterface]
 public sealed class DeserializeProcess(
-  IProgress<ProgressArgs>? progress,
   IObjectLoader objectLoader,
+  IProgress<ProgressArgs>? progress,
   IBaseDeserializer baseDeserializer,
   ILoggerFactory loggerFactory,
   CancellationToken cancellationToken,
   DeserializeProcessOptions? options = null
 ) : IDeserializeProcess
 {
+  public DeserializeProcess(
+    ISqLiteJsonCacheManager sqLiteJsonCacheManager,
+    IServerObjectManager serverObjectManager,
+    IProgress<ProgressArgs>? progress,
+    IBaseDeserializer baseDeserializer,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken,
+    DeserializeProcessOptions? options = null
+  )
+    :
+#pragma warning disable CA2000
+  this(
+      new ObjectLoader(sqLiteJsonCacheManager, serverObjectManager, progress, cancellationToken),
+      progress,
+      baseDeserializer,
+      loggerFactory,
+      cancellationToken,
+      options
+    )
+#pragma warning restore CA2000
+  { }
+
   private readonly PriorityScheduler _belowNormal = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.BelowNormal,
     Environment.ProcessorCount * 2,
     cancellationToken
   );
+
   private readonly DeserializeProcessOptions _options = options ?? new();
 
   private readonly ConcurrentDictionary<Id, (Json, IReadOnlyCollection<Id>)> _closures = new();
@@ -43,10 +68,11 @@ public sealed class DeserializeProcess(
   public long Total { get; private set; }
 
   [AutoInterfaceIgnore]
-  public void Dispose()
+  public async ValueTask DisposeAsync()
   {
     objectLoader.Dispose();
     _belowNormal.Dispose();
+    await _belowNormal.WaitForCompletion().ConfigureAwait(false);
   }
 
   /// <summary>
@@ -56,9 +82,7 @@ public sealed class DeserializeProcess(
 
   public async Task<Base> Deserialize(string rootId)
   {
-    var (rootJson, childrenIds) = await objectLoader
-      .GetAndCache(rootId, _options, cancellationToken)
-      .ConfigureAwait(false);
+    var (rootJson, childrenIds) = await objectLoader.GetAndCache(rootId, _options).ConfigureAwait(false);
     var root = new Id(rootId);
     //childrenIds is already frozen but need to just add root?
     _allIds = childrenIds.Concat([root]).Freeze();
@@ -67,6 +91,7 @@ public sealed class DeserializeProcess(
     _closures.TryAdd(root, (rootJson, childrenIds));
     progress?.Report(new(ProgressEvent.DeserializeObject, _baseCache.Count, childrenIds.Count));
     await Traverse(root).ConfigureAwait(false);
+    await _belowNormal.WaitForCompletion().ConfigureAwait(false);
     return _baseCache[root];
   }
 

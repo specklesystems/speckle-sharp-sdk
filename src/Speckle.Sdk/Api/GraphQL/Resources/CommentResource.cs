@@ -150,6 +150,7 @@ public sealed class CommentResource
                 objectId
                 versionId
               }
+              viewerState
             }
           }
         }

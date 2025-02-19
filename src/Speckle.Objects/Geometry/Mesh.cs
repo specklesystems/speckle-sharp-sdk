@@ -45,6 +45,13 @@ public class Mesh : Base, IHasBoundingBox, IHasVolume, IHasArea, ITransformable<
   public List<double> textureCoordinates { get; set; } = new();
 
   /// <summary>
+  /// <summary>Flat list of vertex normal data (flat <c>x,y,z,x,y,z...</c> list)</summary>
+  /// <remarks>Expected that there are either 1 texture coordinate per vertex, or an empty <see cref="List{T}"/></remarks>
+  /// </summary>
+  [DetachProperty, Chunkable(31250)]
+  public List<double> vertexNormals { get; set; } = new();
+
+  /// <summary>
   /// The unit's this <see cref="Mesh"/> is in.
   /// This should be one of <see cref="Units"/>
   /// </summary>

@@ -55,7 +55,7 @@ Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-using var process2 = factory.CreateSerializeProcess(
+var process2 = factory.CreateSerializeProcess(
   new Uri(url),
   streamId,
   token,
@@ -66,4 +66,5 @@ using var process2 = factory.CreateSerializeProcess(
 await process2.Serialize(@base).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
+await process2.DisposeAsync().ConfigureAwait(false);
 #pragma warning restore CA1506

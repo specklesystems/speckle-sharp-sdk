@@ -50,11 +50,9 @@ public class ServerObjectManager : IServerObjectManager
     using var _ = _activityFactory.Start();
     cancellationToken.ThrowIfCancellationRequested();
 
-    using var childrenHttpMessage = new HttpRequestMessage
-    {
-      RequestUri = new Uri($"/api/getobjects/{_streamId}", UriKind.Relative),
-      Method = HttpMethod.Post,
-    };
+    using var childrenHttpMessage = new HttpRequestMessage();
+    childrenHttpMessage.RequestUri = new Uri($"/api/getobjects/{_streamId}", UriKind.Relative);
+    childrenHttpMessage.Method = HttpMethod.Post;
 
     Dictionary<string, string> postParameters = new() { { "objects", JsonConvert.SerializeObject(objectIds) } };
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
@@ -62,7 +60,7 @@ public class ServerObjectManager : IServerObjectManager
     childrenHttpMessage.Headers.Add("Accept", "text/plain");
 
     HttpResponseMessage childrenHttpResponse = await _client
-      .SendAsync(childrenHttpMessage, cancellationToken)
+      .SendAsync(childrenHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)
       .ConfigureAwait(false);
 
     await foreach (var (id, json) in ResponseProgress(childrenHttpResponse, progress, false, cancellationToken))
@@ -84,11 +82,9 @@ public class ServerObjectManager : IServerObjectManager
     cancellationToken.ThrowIfCancellationRequested();
 
     // Get root object
-    using var rootHttpMessage = new HttpRequestMessage
-    {
-      RequestUri = new Uri($"/objects/{_streamId}/{objectId}/single", UriKind.Relative),
-      Method = HttpMethod.Get,
-    };
+    using var rootHttpMessage = new HttpRequestMessage();
+    rootHttpMessage.RequestUri = new Uri($"/objects/{_streamId}/{objectId}/single", UriKind.Relative);
+    rootHttpMessage.Method = HttpMethod.Get;
 
     HttpResponseMessage rootHttpResponse = await _client
       .SendAsync(rootHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)

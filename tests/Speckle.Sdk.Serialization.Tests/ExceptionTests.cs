@@ -24,7 +24,7 @@ public class ExceptionTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     var objects = new Dictionary<string, string>();
-    using var process2 = new SerializeProcess(
+    await using var process2 = new SerializeProcess(
       null,
       new DummySendCacheManager(objects),
       new ExceptionServerObjectManager(),
@@ -45,7 +45,7 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    using var process2 = new SerializeProcess(
+    await using var process2 = new SerializeProcess(
       null,
       new ExceptionSendCacheManager(),
       new DummyServerObjectManager(),
@@ -60,6 +60,31 @@ public class ExceptionTests
     await Verify(ex);
   }
 
+  [Fact]
+  public async Task Test_Exceptions_Receive_Server_Skip_Both()
+  {
+    var o = new ObjectLoader(
+      new DummySqLiteReceiveManager(new Dictionary<string, string>()),
+      new ExceptionServerObjectManager(),
+      null,
+      default
+    );
+    await using var process = new DeserializeProcess(
+      o,
+      null,
+      new BaseDeserializer(new ObjectDeserializerFactory()),
+      new NullLoggerFactory(),
+      default,
+      new(SkipCache: true, MaxParallelism: 1, SkipServer: true)
+    );
+
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
+    {
+      var root = await process.Deserialize(Guid.NewGuid().ToString());
+    });
+    await Verify(ex);
+  }
+
   [Theory]
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Test_Exceptions_Receive_Server(string fileName, string rootId, int oldCount)
@@ -67,10 +92,10 @@ public class ExceptionTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    var o = new ObjectLoader(new DummySqLiteReceiveManager(closures), new ExceptionServerObjectManager(), null);
-    using var process = new DeserializeProcess(
+    await using var process = new DeserializeProcess(
+      new DummySqLiteReceiveManager(closures),
+      new ExceptionServerObjectManager(),
       null,
-      o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,
@@ -92,14 +117,10 @@ public class ExceptionTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    var o = new ObjectLoader(
+    await using var process = new DeserializeProcess(
       new ExceptionSendCacheManager(hasObject),
       new DummyReceiveServerObjectManager(closures),
-      null
-    );
-    using var process = new DeserializeProcess(
       null,
-      o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,
