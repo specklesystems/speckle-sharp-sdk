@@ -83,6 +83,15 @@ public sealed class SerializeProcess(
     await WaitForSchedulerCompletion().ConfigureAwait(false);
   }
 
+  public void ThrowIfFailed()
+  {
+    if (Exception is not null)
+    {
+      throw new SpeckleException("Error while sending", Exception);
+    }
+    cancellationToken.ThrowIfCancellationRequested();
+  }
+
   private async Task WaitForSchedulerCompletion()
   {
     await _highest.WaitForCompletion().ConfigureAwait(false);
@@ -97,7 +106,7 @@ public sealed class SerializeProcess(
       var findTotalObjectsTask = Task.CompletedTask;
       if (!_options.SkipFindTotalObjects)
       {
-        cancellationToken.ThrowIfCancellationRequested();
+        ThrowIfFailed();
         findTotalObjectsTask = Task.Factory.StartNew(
           () => TraverseTotal(root),
           cancellationToken,
@@ -109,11 +118,11 @@ public sealed class SerializeProcess(
       await Traverse(root).ConfigureAwait(false);
       DoneTraversing();
       await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
-      cancellationToken.ThrowIfCancellationRequested();
+      ThrowIfFailed();
       await DoneSaving().ConfigureAwait(false);
-      cancellationToken.ThrowIfCancellationRequested();
+      ThrowIfFailed();
       await WaitForSchedulerCompletion().ConfigureAwait(false);
-      cancellationToken.ThrowIfCancellationRequested();
+      ThrowIfFailed();
       return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
     }
     catch (TaskCanceledException)

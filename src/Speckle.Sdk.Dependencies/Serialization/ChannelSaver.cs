@@ -16,7 +16,6 @@ public abstract class ChannelSaver<T>(CancellationToken cancellationToken)
   private const int MAX_CACHE_WRITE_PARALLELISM = 4;
   private const int MAX_CACHE_BATCH = 500;
 
-  private Exception? _exception;
   private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
@@ -68,7 +67,7 @@ public abstract class ChannelSaver<T>(CancellationToken cancellationToken)
 
   public async ValueTask Save(T item)
   {
-    if (_exception is not null || _cts.IsCancellationRequested)
+    if (Exception is not null || _cts.IsCancellationRequested)
     {
       return; //don't save if we're already done through an error
     }
@@ -117,20 +116,13 @@ public abstract class ChannelSaver<T>(CancellationToken cancellationToken)
     {
       await _checkCacheChannel.Reader.Completion.ConfigureAwait(false);
     }
-    ThrowIfFailed();
   }
 
-  public void ThrowIfFailed()
-  {
-    if (_exception is not null)
-    {
-      throw _exception;
-    }
-  }
+  protected Exception? Exception { get; set; }
 
   private void RecordException(Exception ex)
   {
-    _exception = ex;
+    Exception = ex;
     _checkCacheChannel.Writer.TryComplete(ex);
     //cancel everything!
     _cts.Cancel();

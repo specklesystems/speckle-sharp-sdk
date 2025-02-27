@@ -64,16 +64,15 @@ public sealed class ObjectLoader(
           .Where(x => !x.Value.StartsWith("blob", StringComparison.Ordinal))
           .Freeze();
         _allChildrenCount = allChildrenIds.Count;
-        await GetAndCache(allChildrenIds.Select(x => x.Value), _options.MaxParallelism).ConfigureAwait(false);
-
         ThrowIfFailed();
-        cancellationToken.ThrowIfCancellationRequested();
+        await GetAndCache(allChildrenIds.Select(x => x.Value), _options.MaxParallelism).ConfigureAwait(false);
+        ThrowIfFailed();
         //save the root last to shortcut later
         if (!options.SkipCache)
         {
           sqLiteJsonCacheManager.SaveObject(rootId, rootJson);
         }
-
+        ThrowIfFailed();
         return (new(rootJson), allChildrenIds);
       }
     }
@@ -140,4 +139,13 @@ public sealed class ObjectLoader(
   }
 
   public string? LoadId(string id) => sqLiteJsonCacheManager.GetObject(id);
+
+  private void ThrowIfFailed()
+  {
+    if (Exception is not null)
+    {
+      throw new SpeckleException("Error while sending", Exception);
+    }
+    cancellationToken.ThrowIfCancellationRequested();
+  }
 }

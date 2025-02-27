@@ -13,7 +13,6 @@ public abstract class ChannelLoader<T>(CancellationToken cancellationToken)
   private const int MAX_SAVE_CACHE_BATCH = 500;
   private const int MAX_SAVE_CACHE_PARALLELISM = 4;
 
-  private Exception? _exception;
   private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
   private readonly Channel<string> _channel = Channel.CreateBounded<string>(
@@ -103,17 +102,11 @@ public abstract class ChannelLoader<T>(CancellationToken cancellationToken)
 
   protected abstract void SaveToCacheInternal(List<T> batch);
 
-  public void ThrowIfFailed()
-  {
-    if (_exception is not null)
-    {
-      throw _exception;
-    }
-  }
+  protected Exception? Exception { get; private set; }
 
   private void RecordException(Exception ex)
   {
-    _exception = ex;
+    Exception = ex;
     _channel.Writer.TryComplete(ex);
     //cancel everything!
     _cts.Cancel();
