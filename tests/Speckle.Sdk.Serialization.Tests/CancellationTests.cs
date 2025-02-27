@@ -104,7 +104,7 @@ public class CancellationTests
       new(MaxParallelism: 1)
     );
 
-    var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+    var ex = await Assert.ThrowsAsync<TaskCanceledException>(async () =>
     {
       var root = await process.Deserialize(rootId);
     });

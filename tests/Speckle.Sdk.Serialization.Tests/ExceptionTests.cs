@@ -127,21 +127,10 @@ public class ExceptionTests
       new(MaxParallelism: 1)
     );
 
-    Exception ex;
-    if (hasObject == true)
+    var ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
     {
-      ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
-      {
-        var root = await process.Deserialize(rootId);
-      });
-    }
-    else
-    {
-      ex = await Assert.ThrowsAsync<AggregateException>(async () =>
-      {
-        var root = await process.Deserialize(rootId);
-      });
-    }
+      var root = await process.Deserialize(rootId);
+    });
 
     await Verify(ex).UseParameters(hasObject);
   }
