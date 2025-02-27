@@ -35,7 +35,9 @@ public sealed class SerializeProcess(
   ILoggerFactory loggerFactory,
   CancellationToken cancellationToken,
   SerializeProcessOptions? options = null
-) : ChannelSaver<BaseItem>, ISerializeProcess
+#pragma warning disable CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.
+) : ChannelSaver<BaseItem>(cancellationToken), ISerializeProcess
+#pragma warning restore CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.
 {
   //async dispose
   [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
@@ -81,6 +83,15 @@ public sealed class SerializeProcess(
     await WaitForSchedulerCompletion().ConfigureAwait(false);
   }
 
+  public void ThrowIfFailed()
+  {
+    if (Exception is not null)
+    {
+      throw new SpeckleException("Error while sending", Exception);
+    }
+    cancellationToken.ThrowIfCancellationRequested();
+  }
+
   private async Task WaitForSchedulerCompletion()
   {
     await _highest.WaitForCompletion().ConfigureAwait(false);
@@ -89,27 +100,36 @@ public sealed class SerializeProcess(
 
   public async Task<SerializeProcessResults> Serialize(Base root)
   {
-    var channelTask = Start(cancellationToken);
-    var findTotalObjectsTask = Task.CompletedTask;
-    if (!_options.SkipFindTotalObjects)
+    try
     {
-      cancellationToken.ThrowIfCancellationRequested();
-      findTotalObjectsTask = Task.Factory.StartNew(
-        () => TraverseTotal(root),
-        cancellationToken,
-        TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
-        _highest
-      );
+      var channelTask = Start();
+      var findTotalObjectsTask = Task.CompletedTask;
+      if (!_options.SkipFindTotalObjects)
+      {
+        ThrowIfFailed();
+        findTotalObjectsTask = Task.Factory.StartNew(
+          () => TraverseTotal(root),
+          cancellationToken,
+          TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
+          _highest
+        );
+      }
+
+      await Traverse(root).ConfigureAwait(false);
+      DoneTraversing();
+      await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
+      ThrowIfFailed();
+      await DoneSaving().ConfigureAwait(false);
+      ThrowIfFailed();
+      await WaitForSchedulerCompletion().ConfigureAwait(false);
+      ThrowIfFailed();
+      return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
     }
-    await Traverse(root).ConfigureAwait(false);
-    await DoneTraversing().ConfigureAwait(false);
-    await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
-    cancellationToken.ThrowIfCancellationRequested();
-    await DoneSaving().ConfigureAwait(false);
-    cancellationToken.ThrowIfCancellationRequested();
-    await WaitForSchedulerCompletion().ConfigureAwait(false);
-    cancellationToken.ThrowIfCancellationRequested();
-    return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
+    catch (TaskCanceledException)
+    {
+      ThrowIfFailed();
+      throw;
+    }
   }
 
   private void TraverseTotal(Base obj)
@@ -166,7 +186,7 @@ public sealed class SerializeProcess(
       if (item.NeedsStorage)
       {
         Interlocked.Increment(ref _objectsSerialized);
-        await Save(item, cancellationToken).ConfigureAwait(false);
+        await Save(item).ConfigureAwait(false);
       }
 
       if (!currentClosures.ContainsKey(item.Id))
@@ -178,7 +198,7 @@ public sealed class SerializeProcess(
     return currentClosures;
   }
 
-  public override async Task SendToServer(Batch<BaseItem> batch)
+  protected override async Task SendToServerInternal(Batch<BaseItem> batch)
   {
     try
     {
