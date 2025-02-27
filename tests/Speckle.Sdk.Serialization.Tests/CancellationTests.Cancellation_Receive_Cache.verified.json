@@ -1,5 +1,5 @@
 ﻿{
-  "Type": "System.Threading.Tasks.TaskCanceledException",
-  "Message": "A task was canceled.",
+  "Type": "System.OperationCanceledException",
+  "Message": "The operation was canceled.",
   "Source": "System.Private.CoreLib"
 }

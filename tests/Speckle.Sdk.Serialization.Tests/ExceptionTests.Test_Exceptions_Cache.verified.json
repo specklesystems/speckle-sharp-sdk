@@ -1,8 +1,5 @@
 ﻿{
-  "Type": "System.AggregateException",
-  "InnerException": {
-  "Type": "System.AggregateException",
-  "Message": "One or more errors occurred. (The method or operation is not implemented.)",
-  "Source": null
-}
+  "Type": "Speckle.Sdk.SpeckleException",
+  "Message": "Error while sending",
+  "Source": "Speckle.Sdk"
 }

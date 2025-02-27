@@ -36,7 +36,7 @@ public class ExceptionTests
     );
 
     //4 exceptions are fine because we use 4 threads for saving cache
-    var ex = await Assert.ThrowsAsync<NotImplementedException>(async () => await process2.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
 
@@ -56,7 +56,7 @@ public class ExceptionTests
       new SerializeProcessOptions(false, false, false, true)
     );
 
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
 
@@ -127,11 +127,21 @@ public class ExceptionTests
       new(MaxParallelism: 1)
     );
 
-    var ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
+    Exception ex;
+    if (hasObject == true)
     {
-      var root = await process.Deserialize(rootId);
-    });
-
+      ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
+      {
+        var root = await process.Deserialize(rootId);
+      });
+    }
+    else
+    {
+      ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
+      {
+        var root = await process.Deserialize(rootId);
+      });
+    }
     await Verify(ex).UseParameters(hasObject);
   }
 }
