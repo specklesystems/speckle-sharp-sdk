@@ -1,6 +1,4 @@
 ﻿using FluentAssertions;
-using Microsoft.Data.Sqlite;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.SQLite;
 using Xunit;
 
@@ -9,15 +7,12 @@ namespace Speckle.Sdk.Tests.Unit.SQLite;
 public class SQLiteJsonCacheManagerTests : IDisposable
 {
   private readonly string _basePath = $"{Guid.NewGuid()}.db";
-  private readonly string? _connectionString;
-
-  public SQLiteJsonCacheManagerTests() => _connectionString = $"Data Source={_basePath};";
 
   public void Dispose()
   {
     if (File.Exists(_basePath))
     {
-      SqliteConnection.ClearAllPools();
+      //don't disable the pool because we should be disabling it in the manager
       GC.Collect();
       GC.WaitForPendingFinalizers();
       File.Delete(_basePath);
@@ -28,7 +23,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   public void TestGetAll()
   {
     var data = new List<(string id, string json)>() { ("id1", "1"), ("id2", "2") };
-    using var manager = new SqLiteJsonCacheManager(_connectionString.NotNull(), 2);
+    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
     manager.SaveObjects(data);
     var items = manager.GetAllObjects();
     items.Count.Should().Be(data.Count);
@@ -44,7 +39,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   public void TestGet()
   {
     var data = new List<(string id, string json)>() { ("id1", "1"), ("id2", "2") };
-    using var manager = new SqLiteJsonCacheManager(_connectionString.NotNull(), 2);
+    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
     foreach (var d in data)
     {
       manager.SaveObject(d.id, d.json);
