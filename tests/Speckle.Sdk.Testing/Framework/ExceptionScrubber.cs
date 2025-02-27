@@ -4,21 +4,15 @@ namespace Speckle.Sdk.Testing.Framework;
 
 public class ExceptionScrubber : WriteOnlyJsonConverter<Exception>
 {
-  public ExceptionScrubber() { }
-
   public override void Write(VerifyJsonWriter writer, Exception value)
   {
-    if (value.StackTrace != null)
+    var ex = new JObject
     {
-      var ex = new JObject
-      {
-        ["Type"] = value.GetType().FullName,
-        ["Message"] = value.Message,
-        ["Source"] = value.Source?.Trim(),
-      };
-      writer.WriteRawValue(ex.ToString(Formatting.Indented));
-      return;
-    }
-    base.Write(writer, value.ToString());
+      ["Type"] = value.GetType().FullName,
+      ["Message"] = value.Message,
+      ["Source"] = value.Source?.Trim(),
+    };
+    //intentionally removed stacktrace to avoid errors on different machines and line numbers
+    writer.WriteRawValue(ex.ToString(Formatting.Indented));
   }
 }
