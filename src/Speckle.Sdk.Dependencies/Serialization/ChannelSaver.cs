@@ -5,7 +5,7 @@ using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-public abstract class ChannelSaver<T>(CancellationToken cancellationToken)
+public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationToken cancellationToken)
   where T : IHasByteSize
 {
   private const int SEND_CAPACITY = 500;
@@ -32,7 +32,7 @@ public abstract class ChannelSaver<T>(CancellationToken cancellationToken)
 
   public Task Start() =>
     _checkCacheChannel
-      .Reader.BatchByByteSize(HTTP_SEND_CHUNK_SIZE)
+      .Reader.BatchByByteSize(logAsWarning, HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
