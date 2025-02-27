@@ -36,7 +36,7 @@ public class ExceptionTests
     );
 
     //4 exceptions are fine because we use 4 threads for saving cache
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<NotImplementedException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
 

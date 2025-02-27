@@ -107,7 +107,7 @@ public sealed class SerializeProcess(
       }
 
       await Traverse(root).ConfigureAwait(false);
-      await DoneTraversing().ConfigureAwait(false);
+      DoneTraversing();
       await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
       cancellationToken.ThrowIfCancellationRequested();
       await DoneSaving().ConfigureAwait(false);
@@ -177,7 +177,7 @@ public sealed class SerializeProcess(
       if (item.NeedsStorage)
       {
         Interlocked.Increment(ref _objectsSerialized);
-        await TrySave(item).ConfigureAwait(false);
+        await Save(item).ConfigureAwait(false);
       }
 
       if (!currentClosures.ContainsKey(item.Id))

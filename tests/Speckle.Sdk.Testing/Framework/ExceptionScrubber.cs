@@ -8,17 +8,17 @@ public class ExceptionScrubber : WriteOnlyJsonConverter<Exception>
 
   public override void Write(VerifyJsonWriter writer, Exception value)
   {
+    
+    var ex = new JObject
+    {
+      ["Type"] = value.GetType().FullName,
+      ["Message"] = value.Message,
+      ["Source"] = value.Source?.Trim(),
+    };
     if (value.StackTrace != null)
     {
-      var ex = new JObject
-      {
-        ["Type"] = value.GetType().FullName,
-        ["Message"] = value.Message,
-        ["Source"] = value.Source?.Trim(),
-      };
-      writer.WriteRawValue(ex.ToString(Formatting.Indented));
-      return;
+      ex["StackTrace"] = value.StackTrace;
     }
-    base.Write(writer, value.ToString());
+    writer.WriteRawValue(ex.ToString(Formatting.Indented));
   }
 }
