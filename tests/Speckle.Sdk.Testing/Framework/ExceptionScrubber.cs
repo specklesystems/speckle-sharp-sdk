@@ -8,7 +8,6 @@ public class ExceptionScrubber : WriteOnlyJsonConverter<Exception>
 
   public override void Write(VerifyJsonWriter writer, Exception value)
   {
-    
     var ex = new JObject
     {
       ["Type"] = value.GetType().FullName,

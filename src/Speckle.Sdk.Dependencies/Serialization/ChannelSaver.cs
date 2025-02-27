@@ -18,7 +18,7 @@ public abstract class ChannelSaver<T>(CancellationToken cancellationToken)
 
   private Exception? _exception;
   private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-  
+
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
     {
@@ -57,7 +57,7 @@ public abstract class ChannelSaver<T>(CancellationToken cancellationToken)
 
           if (ex is not null)
           {
-           RecordException(ex);
+            RecordException(ex);
           }
           _checkCacheChannel.Writer.TryComplete(ex);
         },
@@ -71,7 +71,7 @@ public abstract class ChannelSaver<T>(CancellationToken cancellationToken)
     if (_exception is not null || _cts.IsCancellationRequested)
     {
       return; //don't save if we're already done through an error
-    } 
+    }
     await _checkCacheChannel.Writer.WriteAsync(item).ConfigureAwait(false);
   }
 
