@@ -1,6 +1,5 @@
 ﻿{
   "Type": "System.Threading.Tasks.TaskCanceledException",
   "Message": "A task was canceled.",
-  "Source": "System.Private.CoreLib",
-  "StackTrace": "   at Speckle.Sdk.Serialisation.V2.Send.SerializeProcess.Serialize(Base root) in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\src\\Speckle.Sdk\\Serialisation\\V2\\Send\\SerializeProcess.cs:line 111\r\n   at Speckle.Sdk.Serialization.Tests.CancellationTests.<>c__DisplayClass2_0.<<Cancellation_Save_Server>b__0>d.MoveNext() in C:\\Users\\adam\\Git\\speckle-sharp-sdk\\tests\\Speckle.Sdk.Serialization.Tests\\CancellationTests.cs:line 64\r\n--- End of stack trace from previous location ---\r\n   at Xunit.Assert.RecordExceptionAsync(Func`1 testCode) in /_/src/xunit.assert/Asserts/Record.cs:line 114"
+  "Source": "System.Private.CoreLib"
 }
