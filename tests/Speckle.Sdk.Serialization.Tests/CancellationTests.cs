@@ -60,7 +60,7 @@ public class CancellationTests
       cancellationSource.Token,
       new SerializeProcessOptions(true, false, false, true)
     );
-    var ex = await Assert.ThrowsAsync<OperationCanceledException>(
+    var ex = await Assert.ThrowsAsync<TaskCanceledException>(
       async () => await serializeProcess.Serialize(testClass)
     );
     await Verify(ex);
@@ -83,7 +83,7 @@ public class CancellationTests
       cancellationSource.Token,
       new SerializeProcessOptions(true, false, false, true)
     );
-    var ex = await Assert.ThrowsAsync<OperationCanceledException>(
+    var ex = await Assert.ThrowsAsync<TaskCanceledException>(
       async () => await serializeProcess.Serialize(testClass)
     );
     await Verify(ex);

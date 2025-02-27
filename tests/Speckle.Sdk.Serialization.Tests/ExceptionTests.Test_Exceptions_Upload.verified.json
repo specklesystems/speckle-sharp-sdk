@@ -1,25 +1,8 @@
 ﻿{
   "Type": "System.AggregateException",
-  "InnerExceptions": [
-    {
-  "Type": "System.NotImplementedException",
-  "Message": "The method or operation is not implemented.",
-  "Source": "Speckle.Sdk.Serialization.Tests"
-},
-    {
-  "Type": "System.NotImplementedException",
-  "Message": "The method or operation is not implemented.",
-  "Source": "Speckle.Sdk.Serialization.Tests"
-},
-    {
-  "Type": "System.NotImplementedException",
-  "Message": "The method or operation is not implemented.",
-  "Source": "Speckle.Sdk.Serialization.Tests"
-},
-    {
+  "InnerException": {
   "Type": "System.NotImplementedException",
   "Message": "The method or operation is not implemented.",
   "Source": "Speckle.Sdk.Serialization.Tests"
 }
-  ]
 }

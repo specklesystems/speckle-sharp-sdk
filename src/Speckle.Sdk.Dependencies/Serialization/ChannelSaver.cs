@@ -1,11 +1,12 @@
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Open.ChannelExtensions;
 using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-public abstract class ChannelSaver<T>
+public abstract class ChannelSaver<T>(CancellationToken cancellationToken)
   where T : IHasByteSize
 {
   private const int SEND_CAPACITY = 500;
@@ -16,7 +17,9 @@ public abstract class ChannelSaver<T>
   private const int MAX_CACHE_WRITE_PARALLELISM = 4;
   private const int MAX_CACHE_BATCH = 500;
 
-  private readonly List<Exception> _exceptions = new();
+  private readonly ConcurrentBag<Exception> _exceptions = new();
+  private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+  
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
     {
@@ -29,7 +32,7 @@ public abstract class ChannelSaver<T>
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start(CancellationToken cancellationToken) =>
+  public Task Start() =>
     _checkCacheChannel
       .Reader.BatchByByteSize(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
@@ -38,45 +41,75 @@ public abstract class ChannelSaver<T>
         async x => await SendToServer(x).ConfigureAwait(false),
         HTTP_CAPACITY,
         false,
-        cancellationToken
+        _cts.Token
       )
       .Join()
       .Batch(MAX_CACHE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
+      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, _cts.Token)
       .ContinueWith(
         t =>
         {
           Exception? ex = t.Exception;
-          if (ex is null && t.Status is TaskStatus.Canceled && !cancellationToken.IsCancellationRequested)
+          if (ex is null && t.Status is TaskStatus.Canceled && !_cts.Token.IsCancellationRequested)
           {
             ex = new OperationCanceledException();
           }
 
           if (ex is not null)
           {
-            lock (_exceptions)
-            {
-              _exceptions.Add(ex);
-            }
+           RecordException(ex);
           }
           _checkCacheChannel.Writer.TryComplete(ex);
         },
-        CancellationToken.None,
+        _cts.Token,
         TaskContinuationOptions.ExecuteSynchronously,
         TaskScheduler.Current
       );
 
-  public async ValueTask Save(T item, CancellationToken cancellationToken) =>
-    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
+  public async ValueTask<bool> TrySave(T item)
+  {
+    if (IsCompleted)
+    {
+      return false;
+    }
+    await _checkCacheChannel.Writer.WriteAsync(item).ConfigureAwait(false);
+    return true;
+  }
+
+  public bool IsCompleted => !_exceptions.IsEmpty;
 
   private async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
   {
-    await SendToServer((Batch<T>)batch).ConfigureAwait(false);
-    return batch;
+    try
+    {
+      await SendToServer((Batch<T>)batch).ConfigureAwait(false);
+      return batch;
+    }
+#pragma warning disable CA1031
+    catch (Exception ex)
+#pragma warning restore CA1031
+    {
+      RecordException(ex);
+      return batch;
+    }
   }
 
-  public abstract Task SendToServer(Batch<T> batch);
+  public async Task SendToServer(Batch<T> batch)
+  {
+    try
+    {
+      await SendToServerInternal(batch).ConfigureAwait(false);
+    }
+#pragma warning disable CA1031
+    catch (Exception ex)
+#pragma warning restore CA1031
+    {
+      RecordException(ex);
+    }
+  }
+
+  protected abstract Task SendToServerInternal(Batch<T> batch);
 
   public abstract void SaveToCache(List<T> item);
 
@@ -88,25 +121,47 @@ public abstract class ChannelSaver<T>
 
   public async Task DoneSaving()
   {
-    await _checkCacheChannel.Reader.Completion.ConfigureAwait(false);
-    lock (_exceptions)
+    if (!_checkCacheChannel.Reader.Completion.IsCompleted)
     {
-      if (_exceptions.Count > 0)
+      await _checkCacheChannel.Reader.Completion.ConfigureAwait(false);
+    }
+    ThrowIfFailed();
+  }
+
+  public void ThrowIfFailed()
+  {
+    if (!_exceptions.IsEmpty)
+    {
+      var exceptions = new List<Exception>();
+      foreach (var ex in _exceptions)
       {
-        var exceptions = new List<Exception>();
-        foreach (var ex in _exceptions)
+        if (ex is AggregateException ae)
         {
-          if (ex is AggregateException ae)
-          {
-            exceptions.AddRange(ae.Flatten().InnerExceptions);
-          }
-          else
-          {
-            exceptions.Add(ex);
-          }
+          exceptions.AddRange(ae.Flatten().InnerExceptions);
         }
-        throw new AggregateException(exceptions);
+        else
+        {
+          exceptions.Add(ex);
+        }
+      }
+      throw new AggregateException(exceptions);
+    }
+  }
+
+  private void RecordException(Exception ex)
+  {
+    if (ex is AggregateException ae)
+    {
+      foreach (var innerException in ae.Flatten().InnerExceptions)
+      {
+        _exceptions.Add(innerException);
       }
     }
+    else
+    {
+      _exceptions.Add(ex);
+    }
+    _checkCacheChannel.Writer.TryComplete(ex);
+    _cts.Cancel();
   }
 }
