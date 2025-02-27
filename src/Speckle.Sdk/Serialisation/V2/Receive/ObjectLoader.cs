@@ -17,7 +17,9 @@ public sealed class ObjectLoader(
   IServerObjectManager serverObjectManager,
   IProgress<ProgressArgs>? progress,
   CancellationToken cancellationToken
-) : ChannelLoader<BaseItem>, IObjectLoader
+#pragma warning disable CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.
+) : ChannelLoader<BaseItem>(cancellationToken), IObjectLoader
+#pragma warning restore CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.
 {
   private int? _allChildrenCount;
   private long _checkCache;
@@ -31,47 +33,55 @@ public sealed class ObjectLoader(
 
   public async Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(string rootId, DeserializeProcessOptions options)
   {
-    _options = options;
-    string? rootJson;
-    if (!options.SkipCache)
+    try
     {
-      rootJson = sqLiteJsonCacheManager.GetObject(rootId);
-      if (rootJson != null)
-      {
-        //assume everything exists as the root is there.
-        var allChildren = ClosureParser.GetChildrenIds(rootJson, cancellationToken).Select(x => new Id(x)).ToList();
-        //this probably yields away from the Main thread to let host apps update progress
-        //in any case, this fixes a Revit only issue for this situation
-        await Task.Yield();
-        return (new(rootJson), allChildren);
-      }
-    }
-    if (!options.SkipServer)
-    {
-      rootJson = await serverObjectManager
-        .DownloadSingleObject(rootId, progress, cancellationToken)
-        .NotNull()
-        .ConfigureAwait(false);
-      IReadOnlyCollection<Id> allChildrenIds = ClosureParser
-        .GetClosures(rootJson, cancellationToken)
-        .OrderByDescending(x => x.Item2)
-        .Select(x => new Id(x.Item1))
-        .Where(x => !x.Value.StartsWith("blob", StringComparison.Ordinal))
-        .Freeze();
-      _allChildrenCount = allChildrenIds.Count;
-      await GetAndCache(allChildrenIds.Select(x => x.Value), cancellationToken, _options.MaxParallelism)
-        .ConfigureAwait(false);
-
-      CheckForExceptions();
-      cancellationToken.ThrowIfCancellationRequested();
-      //save the root last to shortcut later
+      _options = options;
+      string? rootJson;
       if (!options.SkipCache)
       {
-        sqLiteJsonCacheManager.SaveObject(rootId, rootJson);
+        rootJson = sqLiteJsonCacheManager.GetObject(rootId);
+        if (rootJson != null)
+        {
+          //assume everything exists as the root is there.
+          var allChildren = ClosureParser.GetChildrenIds(rootJson, cancellationToken).Select(x => new Id(x)).ToList();
+          //this probably yields away from the Main thread to let host apps update progress
+          //in any case, this fixes a Revit only issue for this situation
+          await Task.Yield();
+          return (new(rootJson), allChildren);
+        }
       }
 
-      return (new(rootJson), allChildrenIds);
+      if (!options.SkipServer)
+      {
+        rootJson = await serverObjectManager
+          .DownloadSingleObject(rootId, progress, cancellationToken)
+          .NotNull()
+          .ConfigureAwait(false);
+        IReadOnlyCollection<Id> allChildrenIds = ClosureParser
+          .GetClosures(rootJson, cancellationToken)
+          .OrderByDescending(x => x.Item2)
+          .Select(x => new Id(x.Item1))
+          .Where(x => !x.Value.StartsWith("blob", StringComparison.Ordinal))
+          .Freeze();
+        _allChildrenCount = allChildrenIds.Count;
+        ThrowIfFailed();
+        await GetAndCache(allChildrenIds.Select(x => x.Value), _options.MaxParallelism).ConfigureAwait(false);
+        ThrowIfFailed();
+        //save the root last to shortcut later
+        if (!options.SkipCache)
+        {
+          sqLiteJsonCacheManager.SaveObject(rootId, rootJson);
+        }
+        ThrowIfFailed();
+        return (new(rootJson), allChildrenIds);
+      }
     }
+    catch (TaskCanceledException)
+    {
+      ThrowIfFailed();
+      throw;
+    }
+
     throw new SpeckleException("Cannot skip server and cache. Please choose one.");
   }
 
@@ -90,7 +100,7 @@ public sealed class ObjectLoader(
   }
 
   [AutoInterfaceIgnore]
-  public override async Task<List<BaseItem>> Download(List<string?> ids)
+  protected override async Task<List<BaseItem>> DownloadInternal(List<string?> ids)
   {
     var toCache = new List<BaseItem>();
     await foreach (
@@ -117,7 +127,7 @@ public sealed class ObjectLoader(
   }
 
   [AutoInterfaceIgnore]
-  public override void SaveToCache(List<BaseItem> batch)
+  protected override void SaveToCacheInternal(List<BaseItem> batch)
   {
     if (!_options.SkipCache)
     {
@@ -129,4 +139,13 @@ public sealed class ObjectLoader(
   }
 
   public string? LoadId(string id) => sqLiteJsonCacheManager.GetObject(id);
+
+  private void ThrowIfFailed()
+  {
+    if (Exception is not null)
+    {
+      throw new SpeckleException("Error while sending", Exception);
+    }
+    cancellationToken.ThrowIfCancellationRequested();
+  }
 }

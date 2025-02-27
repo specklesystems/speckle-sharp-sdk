@@ -8,6 +8,14 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  /// <summary>
+  /// Receives a Object to the provided URL and Caches the results
+  /// </summary>
+  /// <remarks/>
+  /// <exception cref="ArgumentException">No transports were specified</exception>
+  /// <exception cref="ArgumentNullException">The <paramref name="objectId"/> was <see langword="null"/></exception>
+  /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
+  /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
   public async Task<Base> Receive2(
     Uri url,
     string streamId,

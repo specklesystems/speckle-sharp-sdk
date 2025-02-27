@@ -3,7 +3,7 @@ using Open.ChannelExtensions;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-public abstract class ChannelLoader<T>
+public abstract class ChannelLoader<T>(CancellationToken cancellationToken)
 {
   private const int RECEIVE_CAPACITY = 5000;
 
@@ -13,7 +13,8 @@ public abstract class ChannelLoader<T>
   private const int MAX_SAVE_CACHE_BATCH = 500;
   private const int MAX_SAVE_CACHE_PARALLELISM = 4;
 
-  private readonly List<Exception> _exceptions = new();
+  private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
   private readonly Channel<string> _channel = Channel.CreateBounded<string>(
     new BoundedChannelOptions(RECEIVE_CAPACITY)
     {
@@ -26,14 +27,10 @@ public abstract class ChannelLoader<T>
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  protected async Task GetAndCache(
-    IEnumerable<string> allChildrenIds,
-    CancellationToken cancellationToken,
-    int? maxParallelism = null
-  ) =>
+  protected async Task GetAndCache(IEnumerable<string> allChildrenIds, int? maxParallelism = null) =>
     await _channel
-      .Source(allChildrenIds, cancellationToken)
-      .Pipe(maxParallelism ?? Environment.ProcessorCount, CheckCache, cancellationToken: cancellationToken)
+      .Source(allChildrenIds, _cts.Token)
+      .Pipe(maxParallelism ?? Environment.ProcessorCount, CheckCache, cancellationToken: _cts.Token)
       .Filter(x => x is not null)
       .Batch(HTTP_GET_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
@@ -42,52 +39,76 @@ public abstract class ChannelLoader<T>
         async x => await Download(x).ConfigureAwait(false),
         -1,
         false,
-        cancellationToken
+        _cts.Token
       )
       .Join()
       .Batch(MAX_SAVE_CACHE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(maxParallelism ?? MAX_SAVE_CACHE_PARALLELISM, SaveToCache, cancellationToken)
+      .ReadAllConcurrently(maxParallelism ?? MAX_SAVE_CACHE_PARALLELISM, SaveToCache, _cts.Token)
       .ContinueWith(
         t =>
         {
           Exception? ex = t.Exception;
-          if (ex is null && t.Status is TaskStatus.Canceled && !cancellationToken.IsCancellationRequested)
+          if (ex is null && t.Status is TaskStatus.Canceled && !_cts.Token.IsCancellationRequested)
           {
             ex = new OperationCanceledException();
           }
 
           if (ex is not null)
           {
-            if (ex is AggregateException ae)
-            {
-              _exceptions.AddRange(ae.Flatten().InnerExceptions);
-            }
-            else
-            {
-              _exceptions.Add(ex);
-            }
+            RecordException(ex);
           }
 
           _channel.Writer.TryComplete(ex);
         },
-        CancellationToken.None,
+        _cts.Token,
         TaskContinuationOptions.ExecuteSynchronously,
         TaskScheduler.Current
       )
       .ConfigureAwait(false);
 
-  public void CheckForExceptions()
+  public abstract string? CheckCache(string id);
+
+  public async Task<List<T>> Download(List<string?> ids)
   {
-    if (_exceptions.Count > 0)
+    try
     {
-      throw new AggregateException(_exceptions);
+      return await DownloadInternal(ids).ConfigureAwait(false);
+    }
+#pragma warning disable CA1031
+    catch (Exception ex)
+#pragma warning restore CA1031
+    {
+      RecordException(ex);
+      return [];
     }
   }
 
-  public abstract string? CheckCache(string id);
+  protected abstract Task<List<T>> DownloadInternal(List<string?> batch);
 
-  public abstract Task<List<T>> Download(List<string?> ids);
+  public void SaveToCache(List<T> batch)
+  {
+    try
+    {
+      SaveToCacheInternal(batch);
+    }
+#pragma warning disable CA1031
+    catch (Exception ex)
+#pragma warning restore CA1031
+    {
+      RecordException(ex);
+    }
+  }
 
-  public abstract void SaveToCache(List<T> x);
+  protected abstract void SaveToCacheInternal(List<T> batch);
+
+  protected Exception? Exception { get; private set; }
+
+  private void RecordException(Exception ex)
+  {
+    Exception = ex;
+    _channel.Writer.TryComplete(ex);
+    //cancel everything!
+    _cts.Cancel();
+  }
 }

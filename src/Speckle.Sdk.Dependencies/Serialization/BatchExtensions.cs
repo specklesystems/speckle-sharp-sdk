@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
@@ -19,12 +19,13 @@ public static class BatchExtensions
   public static void AddBatchItem<T>(this IMemoryOwner<T> batch, T item)
     where T : IHasByteSize => ((Batch<T>)batch).Add(item);
 
-  public static int GetBatchSize<T>(this IMemoryOwner<T> batch, int maxBatchSize)
+  public static int GetBatchSize<T>(this IMemoryOwner<T> batch, Action<string> logAsWarning, int maxBatchSize)
     where T : IHasByteSize
   {
     var currentSize = ((Batch<T>)batch).BatchByteSize;
     if (currentSize > maxBatchSize)
     {
+      logAsWarning($"Batch size exceeded. Current size: {currentSize} bytes. Max size: {maxBatchSize} bytes.");
       return maxBatchSize;
     }
 
