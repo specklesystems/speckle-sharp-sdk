@@ -35,9 +35,13 @@ public sealed class SerializeProcess(
   ILoggerFactory loggerFactory,
   CancellationToken cancellationToken,
   SerializeProcessOptions? options = null
-#pragma warning disable CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.
-) : ChannelSaver<BaseItem>(cancellationToken), ISerializeProcess
-#pragma warning restore CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.
+#pragma warning disable CS9107
+#pragma warning disable CA2254
+)
+  : ChannelSaver<BaseItem>(x => loggerFactory.CreateLogger<SerializeProcess>().LogWarning(x), cancellationToken),
+    ISerializeProcess
+#pragma warning restore CA2254
+#pragma warning restore CS9107
 {
   //async dispose
   [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
