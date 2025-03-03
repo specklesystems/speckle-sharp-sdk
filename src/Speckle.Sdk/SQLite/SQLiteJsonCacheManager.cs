@@ -10,14 +10,14 @@ public partial interface ISqLiteJsonCacheManager : IDisposable;
 [GenerateAutoInterface]
 public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {
-  private readonly string _connectionString;
   private readonly CacheDbCommandPool _pool;
 
-  public SqLiteJsonCacheManager(string connectionString, int concurrency)
+  public SqLiteJsonCacheManager(string path, int concurrency)
   {
-    _connectionString = connectionString;
+    //disable pooling as we pool ourselves
+    var builder = new SqliteConnectionStringBuilder { Pooling = false, DataSource = path };
+    _pool = new CacheDbCommandPool(builder.ToString(), concurrency);
     Initialize();
-    _pool = new CacheDbCommandPool(_connectionString, concurrency);
   }
 
   [AutoInterfaceIgnore]
@@ -32,41 +32,51 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     //  foreach (var str2 in HexChars)
     //    cart.Add(str + str2);
 
-    using var c = new SqliteConnection(_connectionString);
-    c.Open();
-    const string COMMAND_TEXT =
-      @"
+    _pool.Use(c =>
+    {
+      const string COMMAND_TEXT =
+        @"
             CREATE TABLE IF NOT EXISTS objects(
               hash TEXT PRIMARY KEY,
               content TEXT
             ) WITHOUT ROWID;
           ";
-    using (var command = new SqliteCommand(COMMAND_TEXT, c))
-    {
-      command.ExecuteNonQuery();
-    }
+      using (var command = new SqliteCommand(COMMAND_TEXT, c))
+      {
+        command.ExecuteNonQuery();
+      }
 
-    // Insert Optimisations
+      // Insert Optimisations
 
-    using SqliteCommand cmd0 = new("PRAGMA journal_mode='wal';", c);
-    cmd0.ExecuteNonQuery();
+      //Note / Hack: This setting has the potential to corrupt the db.
+      //cmd = new SqliteCommand("PRAGMA synchronous=OFF;", Connection);
+      //cmd.ExecuteNonQuery();
 
-    //Note / Hack: This setting has the potential to corrupt the db.
-    //cmd = new SqliteCommand("PRAGMA synchronous=OFF;", Connection);
-    //cmd.ExecuteNonQuery();
+      using (SqliteCommand cmd1 = new("PRAGMA count_changes=OFF;", c))
+      {
+        cmd1.ExecuteNonQuery();
+      }
 
-    using SqliteCommand cmd1 = new("PRAGMA count_changes=OFF;", c);
-    cmd1.ExecuteNonQuery();
+      using (SqliteCommand cmd2 = new("PRAGMA temp_store=MEMORY;", c))
+      {
+        cmd2.ExecuteNonQuery();
+      }
 
-    using SqliteCommand cmd2 = new("PRAGMA temp_store=MEMORY;", c);
-    cmd2.ExecuteNonQuery();
+      using (SqliteCommand cmd3 = new("PRAGMA mmap_size = 30000000000;", c))
+      {
+        cmd3.ExecuteNonQuery();
+      }
 
-    using SqliteCommand cmd3 = new("PRAGMA mmap_size = 30000000000;", c);
-    cmd3.ExecuteNonQuery();
+      using (SqliteCommand cmd4 = new("PRAGMA page_size = 32768;", c))
+      {
+        cmd4.ExecuteNonQuery();
+      }
 
-    using SqliteCommand cmd4 = new("PRAGMA page_size = 32768;", c);
-    cmd4.ExecuteNonQuery();
-    c.Close();
+      using (SqliteCommand cmd0 = new("PRAGMA journal_mode='wal';", c))
+      {
+        cmd0.ExecuteNonQuery();
+      }
+    });
   }
 
   public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() =>
