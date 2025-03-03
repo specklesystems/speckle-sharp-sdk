@@ -71,8 +71,8 @@ public sealed class DeserializeProcess(
   public async ValueTask DisposeAsync()
   {
     objectLoader.Dispose();
-    _belowNormal.Dispose();
     await _belowNormal.WaitForCompletion().ConfigureAwait(false);
+    await _belowNormal.DisposeAsync().ConfigureAwait(false);
   }
 
   /// <summary>
