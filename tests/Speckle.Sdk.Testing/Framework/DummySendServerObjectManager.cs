@@ -22,10 +22,8 @@ public class DummySendServerObjectManager(ConcurrentDictionary<string, string> s
   public Task<Dictionary<string, bool>> HasObjects(
     IReadOnlyCollection<string> objectIds,
     CancellationToken cancellationToken
-  )
-  {
-    return Task.FromResult(objectIds.Distinct().ToDictionary(x => x, savedObjects.ContainsKey));
-  }
+  ) =>
+    Task.FromResult(objectIds.Distinct().ToDictionary(x => x, _=> false));
 
   public Task UploadObjects(
     IReadOnlyList<BaseItem> objects,
