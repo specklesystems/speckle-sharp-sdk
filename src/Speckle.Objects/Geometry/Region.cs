@@ -12,12 +12,12 @@ namespace Speckle.Objects.Geometry;
 public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<Mesh>>, ITransformable
 {
   /// <summary>
-  /// Indication whether the region is just a geometry (false) or has a hatch pattern (true).
+  /// Boundary of a region.
   /// </summary>
   public required ICurve boundary { get; set; }
 
   /// <summary>
-  /// Indication whether the region is just a geometry (false) or has a hatch pattern (true).
+  /// Loops (voids) in the region.
   /// </summary>
   public List<ICurve> innerLoops { get; set; } = new();
 
