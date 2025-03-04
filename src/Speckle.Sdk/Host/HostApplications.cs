@@ -1,5 +1,3 @@
-using System.Diagnostics.Contracts;
-
 namespace Speckle.Sdk.Host;
 
 /// <summary>
