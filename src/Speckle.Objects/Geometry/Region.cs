@@ -81,7 +81,7 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<ICurve
       {
         boundary = transformedBoundary,
         innerLoops = transformedLoops,
-        hasHatchPattern = false,
+        hasHatchPattern = hasHatchPattern,
         bbox = null, // maybe calculate in the future if we make Box ITransformable
         displayValue = allCurves,
         units = units,
