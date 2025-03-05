@@ -203,17 +203,7 @@ public class ServerObjectManagerTests : MoqTest
   private async Task<HttpResponseMessage> HandleUploadRequest(HttpRequestMessage req, bool compressed)
   {
     var content = await req.Content.NotNull().ReadAsStringAsync().ConfigureAwait(false);
-    try
-    {
-      await Verify(content).UseParameters(compressed);
-    }
-#pragma warning disable CA1031
-    catch
-#pragma warning restore CA1031
-    {
-      return new HttpResponseMessage(HttpStatusCode.BadRequest);
-    }
-
+    await Verify(content).UseParameters(compressed);
     return new HttpResponseMessage(HttpStatusCode.OK);
   }
 }
