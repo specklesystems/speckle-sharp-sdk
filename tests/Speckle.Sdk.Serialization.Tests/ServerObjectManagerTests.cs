@@ -1,11 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using Moq;
 using RichardSzalay.MockHttp;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
@@ -63,7 +67,7 @@ public class ServerObjectManagerTests : MoqTest
       uri,
       streamId,
       token,
-      timeout
+      new(timeout: TimeSpan.FromSeconds(timeout))
     );
     var results = serverObjectManager.DownloadObjects(new List<string> { id, id2 }, null, ct);
     var objects = new JObject();
@@ -102,7 +106,7 @@ public class ServerObjectManagerTests : MoqTest
       uri,
       streamId,
       token,
-      timeout
+      new(timeout: TimeSpan.FromSeconds(timeout))
     );
     var json = await serverObjectManager.DownloadSingleObject(id, null, ct);
     await VerifyJson(json);
@@ -118,8 +122,6 @@ public class ServerObjectManagerTests : MoqTest
     var timeout = 2;
     var uri = new Uri("http://localhost");
     var streamId = "streamId";
-    var jObject = new JObject { { "id", id }, { "value", true } };
-    var jObject2 = new JObject { { "id", id2 }, { "value", true } };
     var mockHttp = new MockHttpMessageHandler();
     Dictionary<string, string> postParameters = new()
     {
@@ -145,10 +147,73 @@ public class ServerObjectManagerTests : MoqTest
       uri,
       streamId,
       token,
-      timeout
+      new(timeout: TimeSpan.FromSeconds(timeout))
     );
     var results = await serverObjectManager.HasObjects(new List<string> { id, id2 }, ct);
 
     await Verify(results);
+  }
+
+  [Theory]
+  [InlineData(true)]
+  [InlineData(false)]
+  public async Task UploadObjects(bool compressed)
+  {
+    var id = Guid.Parse("6f422a35-6183-48b9-8021-d22ec97e8674").ToString();
+    var id2 = Guid.Parse("ef2f7ea0-495a-46af-a9ad-f18a8a298597").ToString();
+    var ct = new CancellationToken();
+    var token = "token";
+    var timeout = 2;
+    var uri = new Uri("http://localhost");
+    var streamId = "streamId";
+    var jObject = new JObject { { "id", id }, { "value", true } };
+    var jObject2 = new JObject { { "id", id2 }, { "value", true } };
+
+    var mockHttp = new MockHttpMessageHandler();
+    mockHttp
+      .When(HttpMethod.Post, $"http://localhost/objects/{streamId}")
+      .Respond(x => HandleUploadRequest(x, compressed));
+    var httpClient = mockHttp.ToHttpClient();
+    var http = Create<ISpeckleHttp>();
+    http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
+
+    var activityFactory = Create<ISdkActivityFactory>();
+    activityFactory.Setup(x => x.Start(null, "UploadObjects")).Returns((ISdkActivity?)null);
+
+    var serverObjectManager = new ServerObjectManager(
+      http.Object,
+      activityFactory.Object,
+      uri,
+      streamId,
+      token,
+      new(timeout: TimeSpan.FromSeconds(timeout), boundary: "boundary")
+    );
+    await serverObjectManager.UploadObjects(
+      new List<BaseItem>
+      {
+        new(new(id), new Json(jObject.ToString()), true, null),
+        new(new(id2), new Json(jObject2.ToString()), true, null),
+      },
+      compressed,
+      null,
+      ct
+    );
+  }
+
+  private async Task<HttpResponseMessage> HandleUploadRequest(HttpRequestMessage req, bool compressed)
+  {
+    var content = await req.Content.NotNull().ReadAsStringAsync().ConfigureAwait(false);
+    try
+    {
+      await Verify(content).UseParameters(compressed);
+    }
+#pragma warning disable CA1031
+    catch
+#pragma warning restore CA1031
+    {
+      return new HttpResponseMessage(HttpStatusCode.BadRequest);
+    }
+
+    return new HttpResponseMessage(HttpStatusCode.OK);
   }
 }

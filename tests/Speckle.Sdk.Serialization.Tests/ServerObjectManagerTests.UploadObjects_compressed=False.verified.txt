@@ -1,0 +1,12 @@
+﻿--boundary
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: form-data; name=batch-0; filename=batch-0; filename*=utf-8''batch-0
+
+[{
+  "id": "6f422a35-6183-48b9-8021-d22ec97e8674",
+  "value": true
+},{
+  "id": "ef2f7ea0-495a-46af-a9ad-f18a8a298597",
+  "value": true
+}]
+--boundary--
