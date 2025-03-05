@@ -1,5 +1,4 @@
 using Speckle.Objects.Other;
-using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 
@@ -30,13 +29,13 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<Mesh>>
   /// <summary>
   /// Indication whether the region is just a geometry (false) or has a hatch pattern (true).
   /// </summary>
-  public bool hasHatchPattern { get; set; }
+  public required bool hasHatchPattern { get; set; }
 
   /// <inheritdoc/>
   public double area { get; set; }
 
   /// <inheritdoc/>
-  public required Box bbox { get; set; }
+  public required Box? bbox { get; set; }
 
   /// <inheritdoc/>
   [DetachProperty]
@@ -72,16 +71,9 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<Mesh>>
       {
         boundary = (ICurve)transformedBoundary,
         innerLoops = transformedLoops,
-        bbox = new Box()
-        {
-          plane = bbox.plane,
-          xSize = Interval.UnitInterval,
-          ySize = Interval.UnitInterval,
-          zSize = Interval.UnitInterval,
-          units = units,
-        },
+        hasHatchPattern = false,
+        bbox = null,
         displayValue = new(),
-        applicationId = applicationId,
         units = units,
       };
       return true;
