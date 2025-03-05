@@ -28,6 +28,7 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<Mesh>>
 
   /// <summary>
   /// Indication whether the region is just a geometry (false) or has a hatch pattern (true).
+  /// This is a useful distinction for receive in apps that support both Region and Hatch (aka region with hatch pattern)
   /// </summary>
   public required bool hasHatchPattern { get; set; }
 
