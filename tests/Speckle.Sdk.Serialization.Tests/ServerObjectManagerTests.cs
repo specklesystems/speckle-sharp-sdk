@@ -12,7 +12,7 @@ namespace Speckle.Sdk.Serialization.Tests;
 [ExcludeFromCodeCoverage]
 public abstract class MoqTest : IDisposable
 {
-  protected  MoqTest() => Repository = new(MockBehavior.Strict);
+  protected MoqTest() => Repository = new(MockBehavior.Strict);
 
   public void Dispose() => Repository.VerifyAll();
 
@@ -21,6 +21,7 @@ public abstract class MoqTest : IDisposable
   protected Mock<T> Create<T>(MockBehavior behavior = MockBehavior.Strict)
     where T : class => Repository.Create<T>(behavior);
 }
+
 public class ServerObjectManagerTests : MoqTest
 {
   [Fact]
@@ -40,22 +41,35 @@ public class ServerObjectManagerTests : MoqTest
     jObject2.Add("id", id2);
     jObject2.Add("value", true);
     var mockHttp = new MockHttpMessageHandler();
-    Dictionary<string, string> postParameters =
-      new() { { "objects", JsonConvert.SerializeObject(new List<string> { id, id2 }) } };
-    
+    Dictionary<string, string> postParameters = new()
+    {
+      { "objects", JsonConvert.SerializeObject(new List<string> { id, id2 }) },
+    };
+
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
-    mockHttp.When(HttpMethod.Post, $"http://localhost/api/getobjects/{streamId}")
-      .WithContent(serializedPayload).Respond("application/json", 
-      $"{id}\t{jObject.ToString(Formatting.None)}\n{id2}\t{jObject2.ToString(Formatting.None)}\n");
+    mockHttp
+      .When(HttpMethod.Post, $"http://localhost/api/getobjects/{streamId}")
+      .WithContent(serializedPayload)
+      .Respond(
+        "application/json",
+        $"{id}\t{jObject.ToString(Formatting.None)}\n{id2}\t{jObject2.ToString(Formatting.None)}\n"
+      );
     var httpClient = mockHttp.ToHttpClient();
     var http = Create<ISpeckleHttp>();
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
-    
+
     var activityFactory = Create<ISdkActivityFactory>();
     activityFactory.Setup(x => x.Start(null, "DownloadObjects")).Returns((ISdkActivity?)null);
-    
-    var serverObjectManager = new ServerObjectManager(http.Object, activityFactory.Object,uri, streamId, token, timeout);
-    var results = serverObjectManager.DownloadObjects(new List<string> {id, id2}, null, ct);
+
+    var serverObjectManager = new ServerObjectManager(
+      http.Object,
+      activityFactory.Object,
+      uri,
+      streamId,
+      token,
+      timeout
+    );
+    var results = serverObjectManager.DownloadObjects(new List<string> { id, id2 }, null, ct);
     var objects = new JObject();
     await foreach (var (x, json) in results)
     {
@@ -64,7 +78,7 @@ public class ServerObjectManagerTests : MoqTest
 
     await VerifyJson(objects.ToString(Formatting.Indented));
   }
-  
+
   [Fact]
   public async Task DownloadSingleObject()
   {
@@ -78,16 +92,24 @@ public class ServerObjectManagerTests : MoqTest
     jObject.Add("id", id);
     jObject.Add("value", true);
     var mockHttp = new MockHttpMessageHandler();
-    mockHttp.When(HttpMethod.Get, $"http://localhost/objects/{streamId}/{id}/single").Respond("application/json", 
-      $"{jObject.ToString(Formatting.None)}\n");
+    mockHttp
+      .When(HttpMethod.Get, $"http://localhost/objects/{streamId}/{id}/single")
+      .Respond("application/json", $"{jObject.ToString(Formatting.None)}\n");
     var httpClient = mockHttp.ToHttpClient();
     var http = Create<ISpeckleHttp>();
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
-    
+
     var activityFactory = Create<ISdkActivityFactory>();
     activityFactory.Setup(x => x.Start(null, "DownloadSingleObject")).Returns((ISdkActivity?)null);
-    
-    var serverObjectManager = new ServerObjectManager(http.Object, activityFactory.Object,uri, streamId, token, timeout);
+
+    var serverObjectManager = new ServerObjectManager(
+      http.Object,
+      activityFactory.Object,
+      uri,
+      streamId,
+      token,
+      timeout
+    );
     var json = await serverObjectManager.DownloadSingleObject(id, null, ct);
     await VerifyJson(json);
   }

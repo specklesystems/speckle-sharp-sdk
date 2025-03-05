@@ -11,7 +11,7 @@ public class SerializationTypeTests
     var json = new Json("{}");
     json.ToString().Should().Be("{}");
   }
-  
+
   [Fact]
   public void Id()
   {
