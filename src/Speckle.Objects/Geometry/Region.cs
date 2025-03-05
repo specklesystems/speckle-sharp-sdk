@@ -8,7 +8,7 @@ namespace Speckle.Objects.Geometry;
 /// Flat polygon, defined by an outer boundary and inner loops.
 /// </summary>
 [SpeckleType("Objects.Geometry.Region")]
-public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<Mesh>>, ITransformable
+public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<ICurve>>, ITransformable
 {
   /// <summary>
   /// Boundary of a region.
@@ -17,8 +17,9 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<Mesh>>
 
   /// <summary>
   /// Loops (voids) in the region.
+  /// TODO: conditions for a valid object
   /// </summary>
-  public List<ICurve> innerLoops { get; set; } = new();
+  public required List<ICurve> innerLoops { get; set; } = new();
 
   /// <summary>
   /// The units this object's coordinates are in.
@@ -40,7 +41,7 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<Mesh>>
 
   /// <inheritdoc/>
   [DetachProperty]
-  public required List<Mesh> displayValue { get; set; }
+  public required List<ICurve> displayValue { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out ITransformable transformed)
