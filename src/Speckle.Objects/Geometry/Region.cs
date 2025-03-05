@@ -12,12 +12,14 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<ICurve
 {
   /// <summary>
   /// Boundary of a region.
+  /// Should be a planar, non-self-intersecting ICurve.
   /// </summary>
   public required ICurve boundary { get; set; }
 
   /// <summary>
   /// Loops (voids) in the region.
-  /// TODO: conditions for a valid object
+  /// Each loop should be planar, non-self-intersecting ICurve, located inside the boundary.
+  /// The loops should not intersect or touch each other.
   /// </summary>
   public required List<ICurve> innerLoops { get; set; } = new();
 
@@ -29,7 +31,7 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<ICurve
 
   /// <summary>
   /// Indication whether the region is just a geometry (false) or has a hatch pattern (true).
-  /// This is a useful distinction for receive in apps that support both Region and Hatch (aka region with hatch pattern)
+  /// It's a distinction for receiving in apps that support both Region and Hatch (aka region with hatch pattern)
   /// </summary>
   public required bool hasHatchPattern { get; set; }
 
@@ -46,12 +48,14 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<ICurve
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out ITransformable transformed)
   {
-    // assign self, in case transformation fails
+    // assign self to the returned object, in case transformation fails
     transformed = this;
+
     // transform boundary
     if (boundary is ITransformable boundaryTransformable)
     {
-      boundaryTransformable.TransformTo(transform, out ITransformable transformedBoundary);
+      boundaryTransformable.TransformTo(transform, out ITransformable transformedBoundaryResult);
+      var transformedBoundary = (ICurve)transformedBoundaryResult;
 
       // transform inner loops
       var transformedLoops = new List<ICurve>();
@@ -68,14 +72,18 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<ICurve
         }
       }
 
+      List<ICurve> allCurves = new List<ICurve> { transformedBoundary }
+        .Concat(transformedLoops)
+        .ToList();
+
       // if boundary and loops transformations succeeded
       transformed = new Region
       {
-        boundary = (ICurve)transformedBoundary,
+        boundary = transformedBoundary,
         innerLoops = transformedLoops,
         hasHatchPattern = false,
-        bbox = null, // TODO
-        displayValue = new(), // TODO
+        bbox = null, // maybe calculate in the future if we make Box ITransformable
+        displayValue = allCurves,
         units = units,
       };
       return true;
