@@ -1,5 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Text;
+using FluentAssertions;
+using HttpMultipartParser;
 using Moq;
 using RichardSzalay.MockHttp;
 using Speckle.Newtonsoft.Json;
@@ -172,7 +175,7 @@ public class ServerObjectManagerTests : MoqTest
     var mockHttp = new MockHttpMessageHandler();
     mockHttp
       .When(HttpMethod.Post, $"http://localhost/objects/{streamId}")
-      .Respond(x => HandleUploadRequest(x, compressed));
+      .Respond(x => HandleUploadRequest(x, compressed, new List<JObject> { jObject, jObject2 }));
     var httpClient = mockHttp.ToHttpClient();
     var http = Create<ISpeckleHttp>();
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
@@ -200,10 +203,27 @@ public class ServerObjectManagerTests : MoqTest
     );
   }
 
-  private async Task<HttpResponseMessage> HandleUploadRequest(HttpRequestMessage req, bool compressed)
+  private async Task<HttpResponseMessage> HandleUploadRequest(
+    HttpRequestMessage req,
+    bool compressed,
+    List<JObject> objects
+  )
   {
     var content = await req.Content.NotNull().ReadAsStringAsync().ConfigureAwait(false);
-    await Verify(content).UseParameters(compressed);
+    var stream = new MemoryStream(Encoding.Default.GetBytes(content));
+    var formData = await MultipartFormDataParser.ParseAsync(stream, "boundary");
+    formData.Files.Count.Should().Be(1);
+    var file = formData.Files[0];
+    file.FileName.Should().Be("batch-0");
+    // file.ContentType.Should().Be("application/json");
+    if (!compressed)
+    {
+      var dataStream = file.Data;
+      using var reader = new StreamReader(dataStream);
+      var s = await reader.ReadToEndAsync();
+      JsonConvert.DeserializeObject<List<JObject>>(s).Should().BeEquivalentTo(objects);
+    }
+
     return new HttpResponseMessage(HttpStatusCode.OK);
   }
 }
