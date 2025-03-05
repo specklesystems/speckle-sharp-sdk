@@ -72,8 +72,8 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<Mesh>>
         boundary = (ICurve)transformedBoundary,
         innerLoops = transformedLoops,
         hasHatchPattern = false,
-        bbox = null,
-        displayValue = new(),
+        bbox = null, // TODO
+        displayValue = new(), // TODO
         units = units,
       };
       return true;
