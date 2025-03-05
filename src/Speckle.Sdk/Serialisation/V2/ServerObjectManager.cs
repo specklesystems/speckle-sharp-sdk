@@ -139,10 +139,8 @@ public class ServerObjectManager : IServerObjectManager
     CancellationToken cancellationToken
   )
   {
+    using var _ = _activityFactory.Start();
     cancellationToken.ThrowIfCancellationRequested();
-
-    // Stopwatch sw = new Stopwatch(); sw.Start();
-
     string objectsPostParameter = JsonConvert.SerializeObject(objectIds);
     var payload = new Dictionary<string, string> { { "objects", objectsPostParameter } };
     string serializedPayload = JsonConvert.SerializeObject(payload);
