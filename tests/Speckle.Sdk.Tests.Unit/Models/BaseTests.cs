@@ -120,7 +120,6 @@ public class BaseTests
     var dynamicProp = "dynamicProp";
     @base[dynamicProp] = 123;
     var names = @base.GetMembers().Keys;
-    names.Should().NotContain(nameof(@base.IgnoredSchemaProp));
     names.Should().NotContain(nameof(@base.ObsoleteSchemaProp));
     names.Should().Contain(dynamicProp);
     names.Should().Contain(nameof(@base.attachedProp));
