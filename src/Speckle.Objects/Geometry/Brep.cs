@@ -3,7 +3,6 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
