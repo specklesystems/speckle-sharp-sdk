@@ -16,7 +16,7 @@ namespace Speckle.Sdk.Serialisation.V2;
 public class ServerObjectManagerOptions(TimeSpan? timeout = null, string? boundary = null)
 {
   public TimeSpan Timeout => timeout ?? TimeSpan.FromSeconds(120);
-  public string Boundary => boundary ?? Guid.NewGuid().ToString();
+  public string Boundary => boundary ??= Guid.NewGuid().ToString();
 }
 
 [GenerateAutoInterface]
