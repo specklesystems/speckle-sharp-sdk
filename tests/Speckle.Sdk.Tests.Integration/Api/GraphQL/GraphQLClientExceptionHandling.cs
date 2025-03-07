@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Tests.Integration.Api.GraphQL;
 
 public class GraphQLClientExceptionHandling : IAsyncLifetime
 {
-  private Client _sut;
+  private IClient _sut;
 
   public Task DisposeAsync() => Task.CompletedTask;
 

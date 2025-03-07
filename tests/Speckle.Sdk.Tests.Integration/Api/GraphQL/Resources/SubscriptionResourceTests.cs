@@ -11,7 +11,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 public class SubscriptionResourceTests : IAsyncLifetime
 {
   private const int WAIT_PERIOD = 300;
-  private Client _testUser;
+  private IClient _testUser;
   private Project _testProject;
   private Model _testModel;
   private Version _testVersion;

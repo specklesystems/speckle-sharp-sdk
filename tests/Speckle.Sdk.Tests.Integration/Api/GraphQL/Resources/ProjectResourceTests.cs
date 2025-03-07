@@ -9,7 +9,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class ProjectResourceTests
 {
-  private readonly Client _testUser;
+  private readonly IClient _testUser;
   private readonly Project _testProject;
   private ProjectResource Sut => _testUser.Project;
 
@@ -20,7 +20,7 @@ public class ProjectResourceTests
     (_testUser, _testProject) = setupTask.Result;
   }
 
-  private async Task<(Client TestUser, Project TestProject)> Setup()
+  private async Task<(IClient TestUser, Project TestProject)> Setup()
   {
     var testUser = await Fixtures.SeedUserWithClient();
     var testProject = await testUser.Project.Create(new ProjectCreateInput("test project123", "desc", null));

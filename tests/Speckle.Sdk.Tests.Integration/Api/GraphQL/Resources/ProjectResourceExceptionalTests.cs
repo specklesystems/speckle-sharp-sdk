@@ -11,7 +11,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class ProjectResourceExceptionalTests : IAsyncLifetime
 {
-  private Client _testUser,
+  private IClient _testUser,
     _secondUser,
     _unauthedUser;
   private Project _testProject;

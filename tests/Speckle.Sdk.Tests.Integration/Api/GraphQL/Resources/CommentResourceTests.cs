@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class CommentResourceTests : IAsyncLifetime
 {
-  private Client _testUser;
+  private IClient _testUser;
   private CommentResource Sut;
   private Project _project;
   private Model _model;

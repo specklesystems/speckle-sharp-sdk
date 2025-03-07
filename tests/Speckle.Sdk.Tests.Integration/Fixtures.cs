@@ -30,17 +30,17 @@ public static class Fixtures
     ServiceProvider = TestServiceSetup.GetServiceProvider();
   }
 
-  public static Client Unauthed =>
+  public static IClient Unauthed =>
     ServiceProvider
       .GetRequiredService<IClientFactory>()
       .Create(new Account { serverInfo = Server, userInfo = new UserInfo() });
 
-  public static async Task<Client> SeedUserWithClient()
+  public static async Task<IClient> SeedUserWithClient()
   {
     return ServiceProvider.GetRequiredService<IClientFactory>().Create(await SeedUser());
   }
 
-  public static async Task<Version> CreateVersion(Client client, string projectId, string modelId)
+  public static async Task<Version> CreateVersion(IClient client, string projectId, string modelId)
   {
     using var remote = ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(client.Account, projectId);
     var (objectId, _) = await ServiceProvider
@@ -157,7 +157,7 @@ public static class Fixtures
     return new Blob(filePath);
   }
 
-  internal static async Task<Comment> CreateComment(Client client, string projectId, string modelId, string versionId)
+  internal static async Task<Comment> CreateComment(IClient client, string projectId, string modelId, string versionId)
   {
     var blobs = await SendBlobData(client.Account, projectId);
     var blobIds = blobs.Select(b => b.id.NotNull()).ToList();

@@ -40,8 +40,13 @@ public sealed class SpeckleHttpClientHandlerFactory(ISdkActivityFactory activity
     return Policy.WrapAsync(retryPolicy, timeoutPolicy);
   }
 
-  public SpeckleHttpClientHandler Create(
+  public DelegatingHandler Create(
     HttpMessageHandler? innerHandler = null,
     int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS
-  ) => new(innerHandler ?? new HttpClientHandler(), activityFactory, HttpAsyncPolicy(timeoutSeconds: timeoutSeconds));
+  ) =>
+    new SpeckleHttpClientHandler(
+      innerHandler ?? new HttpClientHandler(),
+      activityFactory,
+      HttpAsyncPolicy(timeoutSeconds: timeoutSeconds)
+    );
 }
