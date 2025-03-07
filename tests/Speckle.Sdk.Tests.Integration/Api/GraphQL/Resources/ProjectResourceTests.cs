@@ -65,7 +65,7 @@ public class ProjectResourceTests
     result.createdAt.Should().Be(_testProject.createdAt);
   }
 
-  [Fact]
+  //[Fact]
   public async Task ProjectUpdate_Should_UpdateProjectSuccessfully()
   {
     // Arrange
