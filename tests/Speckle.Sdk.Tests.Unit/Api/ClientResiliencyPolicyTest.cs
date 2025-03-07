@@ -9,7 +9,7 @@ namespace Speckle.Sdk.Tests.Unit.Api;
 
 public sealed class GraphQLClientTests : IDisposable
 {
-  private readonly Client _client;
+  private readonly IClient _client;
 
   public GraphQLClientTests()
   {

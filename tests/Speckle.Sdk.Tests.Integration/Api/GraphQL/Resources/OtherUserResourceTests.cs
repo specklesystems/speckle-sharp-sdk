@@ -7,7 +7,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class OtherUserResourceTests
 {
-  private readonly Client _testUser;
+  private readonly IClient _testUser;
   private readonly Account _testData;
   private OtherUserResource Sut => _testUser.OtherUser;
 
