@@ -29,7 +29,7 @@ public class ProjectResourceTests
 
   [Theory]
   [InlineData("Very private project", "My secret project", ProjectVisibility.Private)]
-  [InlineData("Very public project", null, ProjectVisibility.Public)]
+  [InlineData("Very unlisted project", null, ProjectVisibility.Unlisted)]
   public async Task ProjectCreate_Should_CreateProjectSuccessfully(
     string name,
     string? description,
