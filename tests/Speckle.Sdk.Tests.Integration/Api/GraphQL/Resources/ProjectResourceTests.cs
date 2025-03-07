@@ -70,7 +70,7 @@ public class ProjectResourceTests
     // Arrange
     const string NEW_NAME = "MY new name";
     const string NEW_DESCRIPTION = "MY new desc";
-    const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Public;
+    const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Unlisted;
 
     // Act
     var newProject = await Sut.Update(
