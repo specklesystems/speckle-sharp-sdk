@@ -2,7 +2,7 @@ using FluentAssertions;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Deprecated;
-using Xunit;
+
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation
 {

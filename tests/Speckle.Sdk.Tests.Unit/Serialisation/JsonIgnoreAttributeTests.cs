@@ -5,7 +5,7 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
-using Xunit;
+
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 

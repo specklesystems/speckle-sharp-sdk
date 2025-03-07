@@ -1,6 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using Speckle.Sdk.SQLite;
-using Xunit;
+
 
 namespace Speckle.Sdk.Tests.Unit.SQLite;
 

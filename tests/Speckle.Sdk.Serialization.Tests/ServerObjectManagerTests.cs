@@ -13,21 +13,10 @@ using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
+using Speckle.Sdk.Testing;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
-[ExcludeFromCodeCoverage]
-public abstract class MoqTest : IDisposable
-{
-  protected MoqTest() => Repository = new(MockBehavior.Strict);
-
-  public void Dispose() => Repository.VerifyAll();
-
-  protected MockRepository Repository { get; private set; } = new(MockBehavior.Strict);
-
-  protected Mock<T> Create<T>(MockBehavior behavior = MockBehavior.Strict)
-    where T : class => Repository.Create<T>(behavior);
-}
 
 public class ServerObjectManagerTests : MoqTest
 {

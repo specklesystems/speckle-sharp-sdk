@@ -2,7 +2,7 @@
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Xunit;
+
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
