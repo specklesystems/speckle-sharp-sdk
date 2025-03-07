@@ -66,7 +66,7 @@ public class ProjectResourceTests
   }
 
   //[Fact]
-  public async Task ProjectUpdate_Should_UpdateProjectSuccessfully()
+  private async Task ProjectUpdate_Should_UpdateProjectSuccessfully()
   {
     // Arrange
     const string NEW_NAME = "MY new name";
