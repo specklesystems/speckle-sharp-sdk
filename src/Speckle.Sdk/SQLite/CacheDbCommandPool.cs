@@ -25,6 +25,13 @@ public sealed class CacheDbCommandPool : IDisposable
     }
   }
 
+  public void Use(Action<SqliteConnection> handler) =>
+    Use(conn =>
+    {
+      handler(conn);
+      return true;
+    });
+
   public void Use(CacheOperation type, Action<SqliteCommand> handler) =>
     Use(
       type,
@@ -94,8 +101,7 @@ public sealed class CacheDbCommandPool : IDisposable
         cmd.Dispose();
       }
     }
-
-    foreach (var conn in _connections)
+    while (_connections.TryTake(out var conn))
     {
       conn.Close();
       conn.Dispose();
