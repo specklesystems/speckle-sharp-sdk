@@ -16,9 +16,14 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
   /// <exception cref="System.Net.Http.HttpRequestException">Request to <paramref name="uri"/> failed</exception>
   public async Task<HttpResponseMessage> HttpPing(Uri uri)
   {
+    using var httpClient = CreateHttpClient();
+    return await HttpPing(uri, httpClient).ConfigureAwait(false);
+  }
+
+  public async Task<HttpResponseMessage> HttpPing(Uri uri, HttpClient httpClient)
+  {
     try
     {
-      using var httpClient = CreateHttpClient();
       HttpResponseMessage response = await httpClient.GetAsync(uri).ConfigureAwait(false);
       response.EnsureSuccessStatusCode();
       logger.LogInformation("Successfully pinged {uri}", uri);

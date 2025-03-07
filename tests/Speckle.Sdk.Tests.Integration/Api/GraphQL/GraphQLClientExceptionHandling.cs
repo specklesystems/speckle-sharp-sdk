@@ -5,7 +5,6 @@ using GraphQL.Client.Http;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.Api.GraphQL;
 
