@@ -20,7 +20,7 @@ public sealed class TraversalRule : ITraversalBuilderReturn, ITraversalBuilderTr
 
   public ITraversalBuilderReturn ContinueTraversing(SelectMembers membersToTraverse)
   {
-    this._membersToTraverse = membersToTraverse;
+    _membersToTraverse = membersToTraverse;
     return this;
   }
 

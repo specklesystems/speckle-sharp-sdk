@@ -1,37 +1,40 @@
-using NUnit.Framework;
+using FluentAssertions;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Transports;
 
-[TestFixture]
-[TestOf(nameof(DiskTransport))]
-public sealed class DiskTransportTests : TransportTests
+public sealed class DiskTransportTests : TransportTests, IDisposable
 {
+  private readonly DiskTransport _diskTransport;
+  private readonly string _basePath = $"./temp_{Guid.NewGuid()}";
+  private const string ApplicationName = "Speckle Integration Tests";
+  private readonly string _fullPath;
+
   protected override ITransport Sut => _diskTransport.NotNull();
 
-  private DiskTransport _diskTransport;
-
-  private static readonly string s_basePath = $"./temp {Guid.NewGuid()}";
-  private const string APPLICATION_NAME = "Speckle Integration Tests";
-  private static readonly string s_fullPath = Path.Combine(s_basePath, APPLICATION_NAME);
-
-  [SetUp]
-  public void Setup()
+  public DiskTransportTests()
   {
-    _diskTransport = new DiskTransport(s_fullPath);
+    _fullPath = Path.Combine(_basePath, ApplicationName);
+    _diskTransport = new DiskTransport(_fullPath);
   }
 
-  [TearDown]
-  public void TearDown()
-  {
-    Directory.Delete(s_basePath, true);
-  }
-
-  [Test]
+  [Fact]
   public void DirectoryCreated_AfterInitialization()
   {
-    bool fileExists = Directory.Exists(s_fullPath);
-    Assert.That(fileExists, Is.True);
+    // Act
+    var directoryExists = Directory.Exists(_fullPath);
+
+    // Assert
+    directoryExists.Should().BeTrue();
+  }
+
+  public void Dispose()
+  {
+    if (Directory.Exists(_basePath))
+    {
+      Directory.Delete(_basePath, true);
+    }
   }
 }

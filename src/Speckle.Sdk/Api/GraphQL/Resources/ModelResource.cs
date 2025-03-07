@@ -25,8 +25,8 @@ public sealed class ModelResource
     //language=graphql
     const string QUERY = """
       query ModelGet($modelId: String!, $projectId: String!) {
-        project(id: $projectId) {
-          model(id: $modelId) {
+        data:project(id: $projectId) {
+          data:model(id: $modelId) {
             id
             name
             previewUrl
@@ -50,10 +50,10 @@ public sealed class ModelResource
     var request = new GraphQLRequest { Query = QUERY, Variables = new { modelId, projectId } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Model>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.project.model;
+    return response.data.data;
   }
 
   /// <param name="projectId"></param>
@@ -65,7 +65,7 @@ public sealed class ModelResource
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
   /// <see cref="Get"/>
-  public async Task<Model> GetWithVersions(
+  public async Task<ModelWithVersions> GetWithVersions(
     string modelId,
     string projectId,
     int versionsLimit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
@@ -77,8 +77,8 @@ public sealed class ModelResource
     //language=graphql
     const string QUERY = """
       query ModelGetWithVersions($modelId: String!, $projectId: String!, $versionsLimit: Int!, $versionsCursor: String, $versionsFilter: ModelVersionsFilter) {
-        project(id: $projectId) {
-          model(id: $modelId) {
+        data:project(id: $projectId) {
+          data:model(id: $modelId) {
             id
             name
             previewUrl
@@ -92,6 +92,7 @@ public sealed class ModelResource
                 createdAt
                 previewUrl
                 authorUser {
+                  avatar
                   id
                   name
                   bio
@@ -130,14 +131,14 @@ public sealed class ModelResource
         versionsLimit,
         versionsCursor,
         versionsFilter,
-      }
+      },
     };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ModelWithVersions>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.project.model;
+    return response.data.data;
   }
 
   /// <param name="projectId"></param>
@@ -158,8 +159,8 @@ public sealed class ModelResource
     //language=graphql
     const string QUERY = """
       query ProjectGetWithModels($projectId: String!, $modelsLimit: Int!, $modelsCursor: String, $modelsFilter: ProjectModelsFilter) {
-        project(id: $projectId) {
-          models(limit: $modelsLimit, cursor: $modelsCursor, filter: $modelsFilter) {
+        data:project(id: $projectId) {
+          data:models(limit: $modelsLimit, cursor: $modelsCursor, filter: $modelsFilter) {
             items {
               id
               name
@@ -168,6 +169,15 @@ public sealed class ModelResource
               displayName
               description
               createdAt
+              author {
+                avatar
+                bio
+                company
+                id
+                name
+                role
+                verified
+              }
             }
             totalCount
             cursor
@@ -175,23 +185,22 @@ public sealed class ModelResource
         }
       }
       """;
-    GraphQLRequest request =
-      new()
+    GraphQLRequest request = new()
+    {
+      Query = QUERY,
+      Variables = new
       {
-        Query = QUERY,
-        Variables = new
-        {
-          projectId,
-          modelsLimit,
-          modelsCursor,
-          modelsFilter
-        }
-      };
+        projectId,
+        modelsLimit,
+        modelsCursor,
+        modelsFilter,
+      },
+    };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ResourceCollection<Model>>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.project.models;
+    return response.data.data;
   }
 
   /// <param name="input"></param>
@@ -203,8 +212,8 @@ public sealed class ModelResource
     //language=graphql
     const string QUERY = """
       mutation ModelCreate($input: CreateModelInput!) {
-        modelMutations {
-          create(input: $input) {
+        data:modelMutations {
+          data:create(input: $input) {
             id
             displayName
             name
@@ -229,23 +238,23 @@ public sealed class ModelResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var res = await _client
-      .ExecuteGraphQLRequest<ModelMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Model>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return res.modelMutations.create;
+    return res.data.data;
   }
 
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<bool> Delete(DeleteModelInput input, CancellationToken cancellationToken = default)
+  public async Task Delete(DeleteModelInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
       mutation ModelDelete($input: DeleteModelInput!) {
-        modelMutations {
-          delete(input: $input)
+        data:modelMutations {
+          data:delete(input: $input)
         }
       }
       """;
@@ -253,10 +262,14 @@ public sealed class ModelResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var res = await _client
-      .ExecuteGraphQLRequest<ModelMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return res.modelMutations.delete;
+    if (!res.data.data)
+    {
+      //This should never happen, the server should never return `false` without providing a reason
+      throw new InvalidOperationException("GraphQL data did not indicate success, but no GraphQL error was provided");
+    }
   }
 
   /// <param name="input"></param>
@@ -268,8 +281,8 @@ public sealed class ModelResource
     //language=graphql
     const string QUERY = """
       mutation ModelUpdate($input: UpdateModelInput!) {
-        modelMutations {
-          update(input: $input) {
+        data:modelMutations {
+          data:update(input: $input) {
             id
             name
             displayName
@@ -294,9 +307,9 @@ public sealed class ModelResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var res = await _client
-      .ExecuteGraphQLRequest<ModelMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Model>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return res.modelMutations.update;
+    return res.data.data;
   }
 }

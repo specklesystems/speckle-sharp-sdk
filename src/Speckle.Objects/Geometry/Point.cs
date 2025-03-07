@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Common;
@@ -12,7 +13,7 @@ namespace Speckle.Objects.Geometry;
 /// TODO: The Point class does not override the Equality operator, which means that there may be cases where `Equals` is used instead of `==`, as the comparison will be done by reference, not value.
 /// </remarks>
 [SpeckleType("Objects.Geometry.Point")]
-public class Point : Base, ITransformable<Point>
+public class Point : Base, ITransformable<Point>, IEquatable<Point>
 {
   /// <inheritdoc/>
   public Point() { }
@@ -25,7 +26,8 @@ public class Point : Base, ITransformable<Point>
   /// <param name="z">The z coordinate</param>
   /// <param name="units">The units of the point's coordinates. Defaults to Meters. </param>
   /// <param name="applicationId">The object's unique application ID</param>
-  public Point(double x, double y, double z = 0d, string units = Units.Meters, string? applicationId = null)
+  [SetsRequiredMembers]
+  public Point(double x, double y, double z, string units, string? applicationId = null)
   {
     this.x = x;
     this.y = y;
@@ -35,47 +37,25 @@ public class Point : Base, ITransformable<Point>
   }
 
   /// <summary>
-  /// Constructs a new <see cref="Point"/> from a <see cref="Vector"/>
-  /// </summary>
-  /// <param name="vector">The Vector whose coordinates will be used for the Point</param>
-  public Point(Vector vector)
-    : this(vector.x, vector.y, vector.z, vector.units, vector.applicationId) { }
-
-  /// <summary>
-  /// Gets or sets the coordinates of the <see cref="Point"/>
-  /// </summary>
-  [JsonProperty(NullValueHandling = NullValueHandling.Ignore), Obsolete("Use x,y,z properties instead", true)]
-  public List<double> value
-  {
-    get => null!;
-    set
-    {
-      x = value[0];
-      y = value[1];
-      z = value.Count > 2 ? value[2] : 0;
-    }
-  }
-
-  /// <summary>
   /// The x coordinate of the point.
   /// </summary>
-  public double x { get; set; }
+  public required double x { get; set; }
 
   /// <summary>
   /// The y coordinate of the point.
   /// </summary>
-  public double y { get; set; }
+  public required double y { get; set; }
 
   /// <summary>
   /// The z coordinate of the point.
   /// </summary>
-  public double z { get; set; }
+  public required double z { get; set; }
 
   /// <summary>
   /// The units this <see cref="Point"/> is in.
   /// This should be one of the units specified in <see cref="Units"/>
   /// </summary>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out Point transformed)
@@ -88,7 +68,7 @@ public class Point : Base, ITransformable<Point>
     var y = (this.x * matrix.M21 + this.y * matrix.M22 + this.z * matrix.M23 + unitFactor * matrix.M24) / divisor;
     var z = (this.x * matrix.M31 + this.y * matrix.M32 + this.z * matrix.M33 + unitFactor * matrix.M34) / divisor;
 
-    transformed = new Point(x, y, z) { units = units, applicationId = applicationId };
+    transformed = new Point(x, y, z, units, applicationId);
     return true;
   }
 
@@ -107,6 +87,11 @@ public class Point : Base, ITransformable<Point>
   public List<double> ToList()
   {
     return new List<double> { x, y, z };
+  }
+
+  public Vector ToVector()
+  {
+    return new Vector(x, y, z, units, applicationId);
   }
 
   /// <summary>
@@ -216,20 +201,47 @@ public class Point : Base, ITransformable<Point>
     return Math.Sqrt(Math.Pow(x - point.x, 2) + Math.Pow(y - point.y, 2) + Math.Pow(z - point.z, 2));
   }
 
-  public override bool Equals(object obj)
+  public bool Equals(Point? other) => this == other;
+
+  public override bool Equals(object? obj)
   {
     if (ReferenceEquals(this, obj))
     {
       return true;
     }
 
-    if (ReferenceEquals(obj, null))
+    if (obj is Point p)
     {
-      return false;
+      return this == p;
     }
 
-    return this == (Point)obj;
+    return false;
   }
 
-  public override int GetHashCode() => HashCode.Of(units).And(x).And(y).And(y);
+  public override int GetHashCode()
+  {
+#if NETSTANDARD2_0
+    return HashCode.Of(units).And(x).And(y).And(y);
+#else
+    return HashCode.Combine(units, x, y, z);
+#endif
+  }
+
+  [Obsolete($"Use {nameof(Vector.ToPoint)}", true)]
+  public Point(Vector _) { }
+
+  /// <summary>
+  /// Gets or sets the coordinates of the <see cref="Point"/>
+  /// </summary>
+  [JsonProperty(NullValueHandling = NullValueHandling.Ignore), Obsolete("Use x,y,z properties instead", true)]
+  public List<double> value
+  {
+    get => null!;
+    set
+    {
+      x = value[0];
+      y = value[1];
+      z = value.Count > 2 ? value[2] : 0;
+    }
+  }
 }

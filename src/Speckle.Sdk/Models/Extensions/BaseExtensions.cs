@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Diagnostics.Contracts;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Models.Collections;
 
 namespace Speckle.Sdk.Models.Extensions;
@@ -30,7 +32,7 @@ public static class BaseExtensions
       root,
       b =>
       {
-        if (!cache.Add(b.id))
+        if (!cache.Add(b.id.NotNull()))
         {
           return true;
         }
@@ -41,7 +43,7 @@ public static class BaseExtensions
 
     foreach (var b in traversal)
     {
-      if (!cache.Contains(b.id))
+      if (!cache.Contains(b.id.NotNull()))
       {
         yield return b;
       }
@@ -200,7 +202,7 @@ public static class BaseExtensions
       T b => new List<T> { b },
       IReadOnlyList<T> list => list,
       IEnumerable enumerable => enumerable.OfType<T>().ToList(),
-      _ => null
+      _ => null,
     };
   }
 
@@ -288,4 +290,13 @@ public static class BaseExtensions
       }
     }
   }
+
+  /// <summary>
+  /// <c>totalChildrenCount</c> was a property in v2 on all Base objects,
+  /// it has since been removed, so is a reliable albeit hacky way to tell if a <paramref name="speckleObject"/> was from v2
+  /// </summary>
+  /// <param name="speckleObject"></param>
+  /// <returns>true if the <paramref name="speckleObject"/> is likley to have come from a v2 data source</returns>
+  [Pure]
+  public static bool SmellsLikeV2Data(this Base speckleObject) => speckleObject["totalChildrenCount"] is not null;
 }

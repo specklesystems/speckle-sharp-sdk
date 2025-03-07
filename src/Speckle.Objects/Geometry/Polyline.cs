@@ -59,7 +59,7 @@ public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
       value = transformedPoints.SelectMany(o => o.ToList()).ToList(),
       closed = closed,
       applicationId = applicationId,
-      units = units
+      units = units,
     };
 
     return true;
@@ -118,7 +118,7 @@ public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
       closed = (int)list[2] == 1,
       domain = new Interval { start = list[3], end = list[4] },
       value = list.GetRange(6, pointCount),
-      units = Units.GetUnitFromEncoding(list[^1])
+      units = Units.GetUnitFromEncoding(list[^1]),
     };
   }
 }

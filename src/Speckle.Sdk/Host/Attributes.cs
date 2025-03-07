@@ -1,13 +1,12 @@
-#nullable disable
 namespace Speckle.Sdk.Host;
 
 [AttributeUsage(AttributeTargets.Constructor)]
-public sealed class SchemaInfo : Attribute
+public sealed class SchemaInfoAttribute : Attribute
 {
-  public SchemaInfo(string name, string description)
+  public SchemaInfoAttribute(string name, string description)
     : this(name, description, null, null) { }
 
-  public SchemaInfo(string name, string description, string category, string subcategory)
+  public SchemaInfoAttribute(string name, string description, string? category, string? subcategory)
   {
     Name = name;
     Description = description;
@@ -15,9 +14,9 @@ public sealed class SchemaInfo : Attribute
     Subcategory = subcategory;
   }
 
-  public string Subcategory { get; }
+  public string? Subcategory { get; }
 
-  public string Category { get; }
+  public string? Category { get; }
 
   public string Description { get; }
 
@@ -25,12 +24,12 @@ public sealed class SchemaInfo : Attribute
 }
 
 [AttributeUsage(AttributeTargets.Constructor)]
-public sealed class SchemaDeprecated : Attribute { }
+public sealed class SchemaDeprecatedAttribute : Attribute { }
 
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class SchemaParamInfo : Attribute
+public sealed class SchemaParamInfoAttribute : Attribute
 {
-  public SchemaParamInfo(string description)
+  public SchemaParamInfoAttribute(string description)
   {
     Description = description;
   }
@@ -42,7 +41,7 @@ public sealed class SchemaParamInfo : Attribute
 /// Used to indicate which is the main input parameter of the schema builder component. Schema info will be attached to this object.
 /// </summary>
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class SchemaMainParam : Attribute { }
+public sealed class SchemaMainParamAttribute : Attribute { }
 
 // TODO: this could be nuked, as it's only used to hide props on Base,
 // which we might want to expose anyways...
@@ -50,7 +49,7 @@ public sealed class SchemaMainParam : Attribute { }
 /// Used to ignore properties from expand objects etc
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class SchemaIgnore : Attribute { }
+public sealed class SchemaIgnoreAttribute : Attribute { }
 
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class SchemaComputedAttribute : Attribute

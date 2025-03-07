@@ -1,6 +1,4 @@
-﻿#nullable disable
-
-namespace Speckle.Sdk.Api.GraphQL.Models;
+﻿namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public class ViewerResourceGroup
 {

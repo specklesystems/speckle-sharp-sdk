@@ -14,6 +14,82 @@ public sealed class CommentResource
     _client = client;
   }
 
+  /// <param name="commentId"></param>
+  /// <param name="projectId"></param>
+  /// <param name="repliesLimit">Max number of comment replies to fetch</param>
+  /// <param name="repliesCursor">Optional cursor for pagination</param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<Comment> Get(
+    string commentId,
+    string projectId,
+    int repliesLimit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
+    string? repliesCursor = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      query CommentThreads($projectId: String!, $commentId: String!, $repliesLimit: Int, $repliesCursor: String) {
+        data:project(id: $projectId) {
+          data:comment(id: $commentId) {
+            archived
+              authorId
+              createdAt
+              hasParent
+              id
+              rawText
+              replies(limit: $repliesLimit, cursor: $repliesCursor) {
+                cursor
+                items {
+                  archived
+                  authorId
+                  createdAt
+                  hasParent
+                  id
+                  rawText
+                  updatedAt
+                  viewedAt
+                }
+                totalCount
+              }
+              resources {
+                resourceId
+                resourceType
+              }
+              screenshot
+              updatedAt
+              viewedAt
+              viewerResources {
+                modelId
+                objectId
+                versionId
+              }
+          }
+        }
+      }
+      """;
+
+    GraphQLRequest request = new()
+    {
+      Query = QUERY,
+      Variables = new
+      {
+        commentId,
+        projectId,
+        repliesLimit,
+        repliesCursor,
+      },
+    };
+
+    var response = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Comment>>>(request, cancellationToken)
+      .ConfigureAwait(false);
+
+    return response.data.data;
+  }
+
   /// <param name="projectId"></param>
   /// <param name="limit">Max number of comments to fetch</param>
   /// <param name="cursor">Optional cursor for pagination</param>
@@ -23,7 +99,7 @@ public sealed class CommentResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<ResourceCollection<Comment>> GetProjectComments(
+  public async Task<ProjectCommentCollection> GetProjectComments(
     string projectId,
     int limit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
     string? cursor = null,
@@ -36,8 +112,8 @@ public sealed class CommentResource
     //language=graphql
     const string QUERY = """
       query CommentThreads($projectId: String!, $cursor: String, $limit: Int!, $filter: ProjectCommentsFilter, $repliesLimit: Int, $repliesCursor: String) {
-        project(id: $projectId) {
-          commentThreads(cursor: $cursor, limit: $limit, filter: $filter) {
+        data:project(id: $projectId) {
+          data:commentThreads(cursor: $cursor, limit: $limit, filter: $filter) {
             cursor
             totalArchivedCount
             totalCount
@@ -74,33 +150,32 @@ public sealed class CommentResource
                 objectId
                 versionId
               }
-              data
+              viewerState
             }
           }
         }
       }
       """;
 
-    GraphQLRequest request =
-      new()
+    GraphQLRequest request = new()
+    {
+      Query = QUERY,
+      Variables = new
       {
-        Query = QUERY,
-        Variables = new
-        {
-          projectId,
-          cursor,
-          limit,
-          filter,
-          repliesLimit,
-          repliesCursor,
-        }
-      };
+        projectId,
+        cursor,
+        limit,
+        filter,
+        repliesLimit,
+        repliesCursor,
+      },
+    };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ProjectCommentCollection>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.project.commentThreads;
+    return response.data.data;
   }
 
   /// <remarks>
@@ -117,7 +192,7 @@ public sealed class CommentResource
     const string QUERY = """
       mutation Mutation($input: CreateCommentInput!) {
         data:commentMutations {
-          create(input: $input) {
+          data:create(input: $input) {
             archived
             authorId
             createdAt
@@ -136,16 +211,15 @@ public sealed class CommentResource
               objectId
               versionId
             }
-            data
           }
         }
       }
       """;
     GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Comment>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.create;
+    return res.data.data;
   }
 
   /// <remarks><inheritdoc cref="Create"/></remarks>
@@ -159,7 +233,7 @@ public sealed class CommentResource
     const string QUERY = """
       mutation Mutation($input: EditCommentInput!) {
         data:commentMutations {
-          edit(input: $input) {
+          data:edit(input: $input) {
             archived
             authorId
             createdAt
@@ -178,59 +252,67 @@ public sealed class CommentResource
               objectId
               versionId
             }
-            data
           }
         }
       }
       """;
     GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Comment>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.edit;
+    return res.data.data;
   }
 
-  /// <param name="commentId"></param>
-  /// <param name="archive"></param>
+  /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<bool> Archive(string commentId, bool archive = true, CancellationToken cancellationToken = default)
+  public async Task Archive(ArchiveCommentInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
-      mutation Mutation($commentId: String!, $archive: Boolean!) {
+      mutation Mutation($input: ArchiveCommentInput!) {
         data:commentMutations {
-           archive(commentId: $commentId, archived: $archive)
+            data:archive(input: $input)
         }
       }
       """;
-    GraphQLRequest request = new(QUERY, variables: new { commentId, archive });
+    GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.archive;
+
+    if (!res.data.data)
+    {
+      //This should never happen, the server should never return `false` without providing a reason
+      throw new InvalidOperationException("GraphQL data did not indicate success, but no GraphQL error was provided");
+    }
   }
 
-  /// <param name="commentId"></param>
+  /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<bool> MarkViewed(string commentId, CancellationToken cancellationToken = default)
+  public async Task MarkViewed(MarkCommentViewedInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
-      mutation Mutation($commentId: String!) {
+      mutation Mutation($input: MarkCommentViewedInput!) {
         data:commentMutations {
-          markViewed(commentId: $commentId)
+          data:markViewed(input: $input)
         }
       }
       """;
-    GraphQLRequest request = new(QUERY, variables: new { commentId });
+    GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.markViewed;
+
+    if (!res.data.data)
+    {
+      //This should never happen, the server should never return `false` without providing a reason
+      throw new InvalidOperationException("GraphQL data did not indicate success, but no GraphQL error was provided");
+    }
   }
 
   /// <remarks><inheritdoc cref="Create"/></remarks>
@@ -244,7 +326,7 @@ public sealed class CommentResource
     const string QUERY = """
       mutation Mutation($input: CreateCommentReplyInput!) {
         data:commentMutations {
-          reply(input: $input) {
+          data:reply(input: $input) {
             archived
             authorId
             createdAt
@@ -263,15 +345,14 @@ public sealed class CommentResource
               objectId
               versionId
             }
-            data
           }
         }
       }
       """;
     GraphQLRequest request = new(QUERY, variables: new { input });
     var res = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<CommentMutation>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Comment>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return res.data.reply;
+    return res.data.data;
   }
 }

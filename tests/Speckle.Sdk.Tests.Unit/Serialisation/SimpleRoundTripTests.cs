@@ -1,25 +1,29 @@
 ﻿using System.Reflection;
-using NUnit.Framework;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 public class SimpleRoundTripTests
 {
-  static SimpleRoundTripTests()
-  {
-    Reset();
-  }
+  private readonly IOperations _operations;
 
-  private static void Reset()
+  public SimpleRoundTripTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
-  public static IEnumerable<Base> TestData()
+  public static IEnumerable<object[]> TestData() => TestDataInternal().Select(x => new object[] { x });
+
+  public static IEnumerable<Base> TestDataInternal()
   {
     yield return new DiningTable { ["@strangeVariable_NAme3"] = new TableLegFixture() };
 
@@ -31,15 +35,13 @@ public class SimpleRoundTripTests
     yield return polyline;
   }
 
-  [SetUp]
-  public void Setup() => Reset();
-
-  [TestCaseSource(nameof(TestData))]
-  public void SimpleSerialization(Base testData)
+  [Theory]
+  [MemberData(nameof(TestData))]
+  public async Task SimpleSerialization(Base testData)
   {
-    var result = Sdk.Api.Operations.Serialize(testData);
-    var test = Sdk.Api.Operations.Deserialize(result);
+    var result = _operations.Serialize(testData);
+    var test = await _operations.DeserializeAsync(result);
 
-    Assert.That(testData.GetId(), Is.EqualTo(test.GetId()));
+    testData.GetId().Should().Be(test.GetId());
   }
 }

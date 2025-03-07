@@ -1,47 +1,66 @@
-using NUnit.Framework;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Speckle.Sdk.Api;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Tests.Unit.Host;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 /// <summary>
-/// Test fixture that documents what property typing changes break backwards/cross/forwards compatibility, and are "breaking" changes.
+/// Test class that documents what property typing changes break backwards/cross/forwards compatibility,
+/// and are "breaking" changes.
 /// This doesn't guarantee things work this way for SpecklePy
 /// Nor does it encompass other tricks (like deserialize callback, or computed json ignored properties)
 /// </summary>
-[TestFixture]
-[Description(
-  "For certain types, changing property from one type to another is a breaking change, and not backwards/forwards compatible"
-)]
 public class SerializerBreakingChanges : PrimitiveTestFixture
 {
-  [Test]
-  public void StringToInt_ShouldThrow()
+  private readonly IOperations _operations;
+
+  // xUnit does not support a Setup method; instead, you can use the constructor for initialization.
+  public SerializerBreakingChanges()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
+  }
+
+  [Fact]
+  public async Task StringToInt_ShouldThrow()
   {
     var from = new StringValueMock { value = "testValue" };
 
-    Assert.Throws<SpeckleDeserializeException>(() => from.SerializeAsTAndDeserialize<IntValueMock>());
+    await FluentActions
+      .Invoking(async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations))
+      .Should()
+      .ThrowAsync<SpeckleDeserializeException>();
   }
 
-  [Test, TestCaseSource(nameof(MyEnums))]
-  public void StringToEnum_ShouldThrow(MyEnum testCase)
+  [Theory]
+  [MemberData(nameof(MyEnums))] // Replaces [TestCaseSource(nameof(MyEnums))]
+  public async Task StringToEnum_ShouldThrow(MyEnum testCase)
   {
     var from = new StringValueMock { value = testCase.ToString() };
 
-    Assert.Throws<SpeckleDeserializeException>(() =>
-    {
-      var res = from.SerializeAsTAndDeserialize<EnumValueMock>();
-    });
+    await FluentActions
+      .Invoking(async () => await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations))
+      .Should()
+      .ThrowAsync<SpeckleDeserializeException>();
   }
 
-  [
-    Test,
-    Description("Deserialization of a JTokenType.Float to a .NET short/int/long should throw exception"),
-    TestCaseSource(nameof(Float64TestCases)),
-    TestCase(1e+30)
-  ]
-  public void DoubleToInt_ShouldThrow(double testCase)
+  [Theory(DisplayName = "Deserialization of a JTokenType.Float to a .NET short/int/long should throw exception")]
+  [MemberData(nameof(Float64TestCases))]
+  [InlineData(1e+30)] // Inline test case replaces [TestCase(1e+30)]
+  public async Task DoubleToInt_ShouldThrow(double testCase)
   {
     var from = new DoubleValueMock { value = testCase };
-    Assert.Throws<SpeckleDeserializeException>(() => from.SerializeAsTAndDeserialize<IntValueMock>());
+
+    await FluentActions
+      .Invoking(async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations))
+      .Should()
+      .ThrowAsync<SpeckleDeserializeException>();
   }
 }

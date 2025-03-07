@@ -5,11 +5,11 @@ namespace Speckle.Sdk.Serialisation.Utilities;
 
 public static class ClosureParser
 {
-  public static IReadOnlyList<(string, int)> GetClosures(string rootObjectJson)
+  public static IReadOnlyList<(string, int)> GetClosures(string json, CancellationToken cancellationToken)
   {
     try
     {
-      using JsonTextReader reader = new(new StringReader(rootObjectJson));
+      using JsonTextReader reader = SpeckleObjectSerializerPool.Instance.GetJsonTextReader(new StringReader(json));
       reader.Read();
       while (reader.TokenType != JsonToken.EndObject)
       {
@@ -17,13 +17,8 @@ public static class ClosureParser
         {
           case JsonToken.StartObject:
           {
-            var closureList = ReadObject(reader);
-            if (closureList?.Any() ?? false)
-            {
-              closureList.Sort((a, b) => b.Item2.CompareTo(a.Item2));
-              return closureList;
-            }
-            return Array.Empty<(string, int)>();
+            var closureList = ReadObject(reader, cancellationToken);
+            return closureList;
           }
           default:
             reader.Read();
@@ -33,14 +28,18 @@ public static class ClosureParser
       }
     }
     catch (Exception ex) when (!ex.IsFatal()) { }
-    return Array.Empty<(string, int)>();
+    return [];
   }
 
-  private static List<(string, int)>? ReadObject(JsonTextReader reader)
+  public static IEnumerable<string> GetChildrenIds(string json, CancellationToken cancellationToken) =>
+    GetClosures(json, cancellationToken).Select(x => x.Item1);
+
+  private static IReadOnlyList<(string, int)> ReadObject(JsonTextReader reader, CancellationToken cancellationToken)
   {
     reader.Read();
     while (reader.TokenType != JsonToken.EndObject)
     {
+      cancellationToken.ThrowIfCancellationRequested();
       switch (reader.TokenType)
       {
         case JsonToken.PropertyName:
@@ -48,7 +47,7 @@ public static class ClosureParser
             if (reader.Value as string == "__closure")
             {
               reader.Read(); //goes to prop vale
-              var closureList = ReadClosureList(reader);
+              var closureList = ReadClosureEnumerable(reader, cancellationToken);
               return closureList;
             }
             reader.Read(); //goes to prop vale
@@ -63,21 +62,33 @@ public static class ClosureParser
           break;
       }
     }
-    return null;
+    return [];
   }
 
-  private static List<(string, int)> ReadClosureList(JsonTextReader reader)
+  public static IReadOnlyList<(string, int)> GetClosures(JsonReader reader, CancellationToken cancellationToken)
+  {
+    if (reader.TokenType != JsonToken.StartObject)
+    {
+      return Array.Empty<(string, int)>();
+    }
+
+    var closureList = ReadClosureEnumerable(reader, cancellationToken);
+    closureList.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+    return closureList;
+  }
+
+  private static List<(string, int)> ReadClosureEnumerable(JsonReader reader, CancellationToken cancellationToken)
   {
     List<(string, int)> closureList = new();
     reader.Read(); //startobject
     while (reader.TokenType != JsonToken.EndObject)
     {
+      cancellationToken.ThrowIfCancellationRequested();
       var childId = (reader.Value as string).NotNull(); // propertyName
-      int childMinDepth = reader.ReadAsInt32().NotNull(); //propertyValue
+      int childMinDepth = (reader.ReadAsInt32()).NotNull(); //propertyValue
       reader.Read();
       closureList.Add((childId, childMinDepth));
     }
-
     return closureList;
   }
 }

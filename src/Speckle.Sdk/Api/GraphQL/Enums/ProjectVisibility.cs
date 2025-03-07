@@ -4,5 +4,5 @@ public enum ProjectVisibility
 {
   Private,
   Public,
-  Unlisted
+  Unlisted,
 }

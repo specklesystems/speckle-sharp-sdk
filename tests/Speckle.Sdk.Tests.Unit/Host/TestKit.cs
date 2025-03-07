@@ -34,7 +34,7 @@ public class DiningTable : Base
     {
       length = 200,
       width = 12,
-      thickness = 3
+      thickness = 3,
     };
   }
 

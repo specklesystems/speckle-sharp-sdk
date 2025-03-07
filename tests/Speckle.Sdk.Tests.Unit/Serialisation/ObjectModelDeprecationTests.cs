@@ -1,41 +1,42 @@
-using NUnit.Framework;
-using Shouldly;
+using FluentAssertions;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Deprecated;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation
 {
-  [TestFixture]
-  [TestOf(typeof(TypeLoader))]
   public class TypeLoaderTests
   {
-    [SetUp]
-    public void Setup()
+    // Constructor replaces the [SetUp] functionality in NUnit
+    public TypeLoaderTests()
     {
       TypeLoader.Reset();
       TypeLoader.Initialize(typeof(Base).Assembly, typeof(MySpeckleBase).Assembly);
     }
 
-    [Test]
+    [Fact] // Replaces [Test]
     public void TestThatTypeWithoutAttributeFails()
     {
-      var e = Assert.Throws<InvalidOperationException>(() => TypeLoader.ParseType(typeof(string)));
-      e.ShouldNotBeNull();
+      // Record.Exception is the xUnit alternative of Assert.Throws
+      var exception = Record.Exception(() => TypeLoader.ParseType(typeof(string)));
+
+      exception.Should().NotBeNull(); // Shouldly assertion
+      exception.Should().BeOfType<InvalidOperationException>(); // Ensure it's the correct exception type
     }
 
-    [Test]
+    [Fact] // Replaces [Test]
     public void TestThatTypeWithoutMultipleAttributes()
     {
       string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
 
       var result = TypeLoader.GetAtomicType(destinationType);
-      Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));
+      result.Should().Be(typeof(MySpeckleBase)); // Shouldly assertion replaces Assert.That
 
       destinationType = $"Speckle.Core.Serialisation.Deprecated.{nameof(MySpeckleBase)}";
 
       result = TypeLoader.GetAtomicType(destinationType);
-      Assert.That(result, Is.EqualTo(typeof(MySpeckleBase)));
+      result.Should().Be(typeof(MySpeckleBase)); // Shouldly assertion replaces Assert.That
     }
   }
 }

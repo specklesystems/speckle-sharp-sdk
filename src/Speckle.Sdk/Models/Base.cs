@@ -1,13 +1,11 @@
-#nullable disable
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
 
@@ -25,17 +23,13 @@ namespace Speckle.Sdk.Models;
 [SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Serialized property names are camelCase by design")]
 public class Base : DynamicBase, ISpeckleObject
 {
-  private static readonly Regex s_chunkSyntax = Constants.ChunkPropertyNameRegex;
-
-  private string _type;
+  private string? _type;
 
   /// <summary>
-  /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. Use the <see cref="GetId(bool)"/> function to get it.</b>
+  /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. Use the <see cref="GetId"/> function to get it.</b>
   /// </summary>
   [SchemaIgnore]
-  public virtual string id { get; set; }
-
-#nullable enable //Starting nullability syntax here so that `id` null oblivious,
+  public virtual string? id { get; set; }
 
   /// <summary>
   /// Secondary, ideally host application driven, object identifier.
@@ -72,8 +66,9 @@ public class Base : DynamicBase, ISpeckleObject
   /// <returns>the resulting id (hash)</returns>
   public string GetId(bool decompose = false)
   {
+    //TODO remove me
     var transports = decompose ? [new MemoryTransport()] : Array.Empty<ITransport>();
-    var serializer = new BaseObjectSerializerV2(transports);
+    var serializer = new SpeckleObjectSerializer(transports);
 
     string obj = serializer.Serialize(this);
     return JObject.Parse(obj).GetValue(nameof(id))?.ToString() ?? string.Empty;
@@ -91,12 +86,10 @@ public class Base : DynamicBase, ISpeckleObject
 
   private static long CountDescendants(Base @base, ISet<int> parsed)
   {
-    if (parsed.Contains(@base.GetHashCode()))
+    if (!parsed.Add(@base.GetHashCode()))
     {
       return 0;
     }
-
-    parsed.Add(@base.GetHashCode());
 
     long count = 0;
     var typedProps = @base.GetInstanceMembers();
@@ -109,13 +102,13 @@ public class Base : DynamicBase, ISpeckleObject
         continue;
       }
 
-      var detachAttribute = prop.GetCustomAttribute<DetachProperty>(true);
+      var detachAttribute = prop.GetCustomAttribute<DetachPropertyAttribute>(true);
 
-      object value = prop.GetValue(@base);
+      object? value = prop.GetValue(@base);
 
       if (detachAttribute is { Detachable: true })
       {
-        var chunkAttribute = prop.GetCustomAttribute<Chunkable>(true);
+        var chunkAttribute = prop.GetCustomAttribute<ChunkableAttribute>(true);
         if (chunkAttribute == null)
         {
           count += HandleObjectCount(value, parsed);
@@ -131,20 +124,17 @@ public class Base : DynamicBase, ISpeckleObject
       }
     }
 
-    var dynamicProps = @base.GetDynamicPropertyKeys();
+    var dynamicProps = @base.DynamicPropertyKeys;
     foreach (var propName in dynamicProps)
     {
-      if (!propName.StartsWith("@"))
+      if (!PropNameValidator.IsDetached(propName))
       {
         continue;
       }
 
       // Simplfied dynamic prop chunking handling
-      if (s_chunkSyntax.IsMatch(propName))
+      if (PropNameValidator.IsChunkable(propName, out int chunkSize))
       {
-        var match = s_chunkSyntax.Match(propName);
-        _ = int.TryParse(match.Groups[match.Groups.Count - 1].Value, out int chunkSize);
-
         if (chunkSize != -1 && @base[propName] is IList asList)
         {
           count += asList.Count / chunkSize;
@@ -216,7 +206,7 @@ public class Base : DynamicBase, ISpeckleObject
   public Base ShallowCopy()
   {
     Type type = GetType();
-    Base myDuplicate = (Base)Activator.CreateInstance(type);
+    Base myDuplicate = (Base)Activator.CreateInstance(type).NotNull();
     myDuplicate.id = id;
     myDuplicate.applicationId = applicationId;
 
@@ -231,24 +221,7 @@ public class Base : DynamicBase, ISpeckleObject
       {
         continue;
       }
-
-      try
-      {
-        myDuplicate[kvp.Key] = kvp.Value;
-      }
-      catch (Exception ex) when (!ex.IsFatal())
-      {
-        // avoids any last ditch unsettable or strange props.
-        SpeckleLog.Logger.Warning(
-          "Shallow copy of {type} failed to copy {propertyName} of type {propertyType} with value {valueType} - CanWrite / CanRead",
-          type,
-          kvp.Key,
-          propertyInfo?.PropertyType,
-          kvp.Value?.GetType(),
-          propertyInfo?.CanWrite,
-          propertyInfo?.CanRead
-        );
-      }
+      myDuplicate[kvp.Key] = kvp.Value;
     }
 
     return myDuplicate;

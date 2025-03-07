@@ -1,17 +1,20 @@
-﻿#nullable disable
-using System.Runtime.InteropServices;
+﻿namespace Speckle.Sdk.Api.GraphQL.Models;
 
-namespace Speckle.Sdk.Api.GraphQL.Models;
+public sealed class AuthStrategy
+{
+  public string? color { get; init; }
+  public string icon { get; init; }
+  public string id { get; init; }
+  public string name { get; init; }
+  public string url { get; init; }
+}
 
-[ClassInterface(ClassInterfaceType.AutoDual)]
-[ComVisible(true)]
 public sealed class ServerInfo
 {
   public string name { get; init; }
-  public string company { get; init; }
-  public string version { get; init; }
-  public string adminContact { get; init; }
-  public string description { get; init; }
+  public string? company { get; init; }
+  public string? version { get; init; }
+  public string? description { get; init; }
 
   /// <remarks>
   /// This field is not returned from the GQL API,
@@ -27,18 +30,18 @@ public sealed class ServerInfo
   /// </remarks>
   public string url { get; set; }
 
-  public ServerMigration migration { get; init; }
+  public ServerMigration? migration { get; init; }
 }
 
 public sealed class ServerMigration
 {
   /// <summary>
-  /// New URI where this server is now deployed
-  /// </summary>
-  public Uri movedTo { get; set; }
-
-  /// <summary>
   /// Previous URI where this server used to be deployed
   /// </summary>
-  public Uri movedFrom { get; set; }
+  public Uri? movedFrom { get; set; }
+
+  /// <summary>
+  /// New URI where this server is now deployed
+  /// </summary>
+  public Uri? movedTo { get; set; }
 }

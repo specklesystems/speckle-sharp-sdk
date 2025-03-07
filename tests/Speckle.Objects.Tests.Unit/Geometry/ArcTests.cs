@@ -1,32 +1,77 @@
-using System;
-using NUnit.Framework;
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 
-namespace Objects.Tests.Unit.Geometry;
+namespace Speckle.Objects.Tests.Unit.Geometry;
 
-[TestFixture, TestOf(typeof(Arc))]
 public class ArcTests
 {
-  private Plane TestPlane =>
+  private Plane TestPlaneCounterClockwise =>
     new()
     {
-      origin = new Point(0, 0),
-      normal = new Vector(0, 0, 1),
-      xdir = new Vector(1, 0, 0),
-      ydir = new Vector(0, 1, 0),
+      origin = new Point(0, 0, 0, Units.Meters),
+      normal = new Vector(0, 0, 1, Units.Meters),
+      xdir = new Vector(1, 0, 0, Units.Meters),
+      ydir = new Vector(0, 1, 0, Units.Meters),
       units = Units.Meters,
     };
 
-  [Test]
-  public void CanCreateArc_HalfCircle()
+  private Plane TestPlaneClockwise =>
+    new()
+    {
+      origin = new Point(0, 0, 0, Units.Meters),
+      normal = new Vector(0, 0, -1, Units.Meters),
+      xdir = new Vector(-1, 0, 0, Units.Meters),
+      ydir = new Vector(0, 1, 0, Units.Meters),
+      units = Units.Meters,
+    };
+
+  [Fact]
+  public void CanCreateArc_HalfCircle_CounterClockwise()
   {
-    var arc = new Arc(TestPlane, new Point(-5, 5), new Point(5, 5), Math.PI);
+    var counterClockwiseArc = new Arc()
+    {
+      plane = TestPlaneCounterClockwise,
+      startPoint = new Point(1, 0, 0, Units.Meters),
+      endPoint = new Point(-1, 0, 0, Units.Meters),
+      midPoint = new Point(0, 1, 0, Units.Meters),
+      units = Units.Meters,
+    };
 
-    Assert.That(arc.startAngle, Is.EqualTo(0));
-    Assert.That(arc.endAngle, Is.EqualTo(Math.PI));
+    Point.Distance(counterClockwiseArc.midPoint, new Point(0, 1, 0, Units.Meters)).Should().BeApproximately(0, 0.0001);
 
-    Assert.That(Point.Distance(arc.midPoint, new Point(0, 0)), Is.EqualTo(0).Within(0.0001));
-    Assert.That(Point.Distance(arc.plane.origin, new Point(0, 5)), Is.EqualTo(0).Within(0.0001));
+    Point
+      .Distance(counterClockwiseArc.plane.origin, new Point(0, 0, 0, Units.Meters))
+      .Should()
+      .BeApproximately(0, 0.0001);
+
+    (counterClockwiseArc.measure - Math.PI).Should().BeApproximately(0, 0.0001);
+
+    counterClockwiseArc.radius.Should().BeApproximately(1, 0.0001);
+
+    counterClockwiseArc.length.Should().BeApproximately(Math.PI, 0.0001);
+  }
+
+  [Fact]
+  public void CanCreateArc_HalfCircle_Clockwise()
+  {
+    var clockwiseArc = new Arc()
+    {
+      plane = TestPlaneClockwise,
+      endPoint = new Point(1, 0, 0, Units.Meters),
+      startPoint = new Point(-1, 0, 0, Units.Meters),
+      midPoint = new Point(0, 1, 0, Units.Meters),
+      units = Units.Meters,
+    };
+
+    Point.Distance(clockwiseArc.midPoint, new Point(0, 1, 0, Units.Meters)).Should().BeApproximately(0, 0.0001);
+
+    Point.Distance(clockwiseArc.plane.origin, new Point(0, 0, 0, Units.Meters)).Should().BeApproximately(0, 0.0001);
+
+    (clockwiseArc.measure - Math.PI).Should().BeApproximately(0, 0.0001);
+
+    clockwiseArc.radius.Should().BeApproximately(1, 0.0001);
+
+    clockwiseArc.length.Should().BeApproximately(Math.PI, 0.0001);
   }
 }

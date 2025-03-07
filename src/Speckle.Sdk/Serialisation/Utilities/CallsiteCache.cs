@@ -28,7 +28,7 @@ internal static class CallSiteCache
           new List<CSharpArgumentInfo>
           {
             CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null),
-            CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null)
+            CSharpArgumentInfo.Create(CSharpArgumentInfoFlags.None, null),
           }
         );
         return CallSite<Func<CallSite, object, object?, object>>.Create(binder);

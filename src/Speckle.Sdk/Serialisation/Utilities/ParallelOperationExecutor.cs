@@ -12,6 +12,8 @@ internal abstract class ParallelOperationExecutor<TOperation> : IDisposable
   public int NumThreads { get; protected set; }
   public bool HasStarted => Threads.Count > 0;
 
+  protected volatile bool IsDisposed;
+
   protected abstract void ThreadMain();
 
   protected virtual void Stop()
@@ -56,6 +58,7 @@ internal abstract class ParallelOperationExecutor<TOperation> : IDisposable
       Stop();
     }
 
+    IsDisposed = true;
     Tasks.Dispose();
   }
 }

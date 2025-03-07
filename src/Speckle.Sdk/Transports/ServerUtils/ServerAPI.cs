@@ -12,6 +12,7 @@ namespace Speckle.Sdk.Transports.ServerUtils;
 
 public sealed class ServerApi : IDisposable, IServerApi
 {
+  private readonly ISdkActivityFactory _activityFactory;
   private const int BATCH_SIZE_GET_OBJECTS = 10000;
   private const int BATCH_SIZE_HAS_OBJECTS = 100000;
 
@@ -26,21 +27,26 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   private readonly HttpClient _client;
 
-  public ServerApi(Uri baseUri, string? authorizationToken, string blobStorageFolder, int timeoutSeconds = 120)
+  public ServerApi(
+    ISpeckleHttp speckleHttp,
+    ISdkActivityFactory activityFactory,
+    Uri baseUri,
+    string? authorizationToken,
+    string blobStorageFolder,
+    int timeoutSeconds = 120
+  )
   {
+    _activityFactory = activityFactory;
     CancellationToken = CancellationToken.None;
 
     BlobStorageFolder = blobStorageFolder;
 
-    _client = Http.GetHttpProxyClient(
-      new SpeckleHttpClientHandler(
-        new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
-        Http.HttpAsyncPolicy(timeoutSeconds: timeoutSeconds)
-      )
+    _client = speckleHttp.CreateHttpClient(
+      new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
+      timeoutSeconds: timeoutSeconds,
+      authorizationToken: authorizationToken
     );
     _client.BaseAddress = baseUri;
-
-    Http.AddAuthHeader(_client, authorizationToken);
   }
 
   public CancellationToken CancellationToken { get; set; }
@@ -53,19 +59,19 @@ public sealed class ServerApi : IDisposable, IServerApi
     _client.Dispose();
   }
 
-  public async Task<string?> DownloadSingleObject(string streamId, string objectId, Action<ProgressArgs>? progress)
+  public async Task<string?> DownloadSingleObject(string streamId, string objectId, IProgress<ProgressArgs>? progress)
   {
-    using var _ = SpeckleActivityFactory.Start();
+    using var _ = _activityFactory.Start();
     CancellationToken.ThrowIfCancellationRequested();
 
     // Get root object
     using var rootHttpMessage = new HttpRequestMessage
     {
       RequestUri = new Uri($"/objects/{streamId}/{objectId}/single", UriKind.Relative),
-      Method = HttpMethod.Get
+      Method = HttpMethod.Get,
     };
 
-    HttpResponseMessage rootHttpResponse = await _client
+    var rootHttpResponse = await _client
       .SendAsync(rootHttpMessage, HttpCompletionOption.ResponseContentRead, CancellationToken)
       .ConfigureAwait(false);
 
@@ -77,7 +83,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   public async Task DownloadObjects(
     string streamId,
     IReadOnlyList<string> objectIds,
-    Action<ProgressArgs>? progress,
+    IProgress<ProgressArgs>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -85,7 +91,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       return;
     }
-    using var _ = SpeckleActivityFactory.Start();
+    using var _ = _activityFactory.Start();
 
     if (objectIds.Count < BATCH_SIZE_GET_OBJECTS)
     {
@@ -143,7 +149,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   public async Task UploadObjects(
     string streamId,
     IReadOnlyList<(string, string)> objects,
-    Action<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress
   )
   {
     if (objects.Count == 0)
@@ -213,7 +219,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   public async Task UploadBlobs(
     string streamId,
     IReadOnlyList<(string, string)> objects,
-    Action<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress
   )
   {
     CancellationToken.ThrowIfCancellationRequested();
@@ -235,16 +241,14 @@ public sealed class ServerApi : IDisposable, IServerApi
       multipartFormDataContent.Add(fsc, $"hash:{hash}", fileName);
     }
 
-    using var message = new HttpRequestMessage
-    {
-      RequestUri = new Uri($"/api/stream/{streamId}/blob", UriKind.Relative),
-      Method = HttpMethod.Post,
-      Content = new ProgressContent(multipartFormDataContent, progress)
-    };
+    using var message = new HttpRequestMessage();
+    message.RequestUri = new Uri($"/api/stream/{streamId}/blob", UriKind.Relative);
+    message.Method = HttpMethod.Post;
+    message.Content = new ProgressContent(multipartFormDataContent, progress);
 
     try
     {
-      HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
+      var response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
 
       response.EnsureSuccessStatusCode();
 
@@ -262,30 +266,25 @@ public sealed class ServerApi : IDisposable, IServerApi
     }
   }
 
-  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, Action<ProgressArgs>? progress)
+  public async Task DownloadBlobs(string streamId, IReadOnlyList<string> blobIds, IProgress<ProgressArgs>? progress)
   {
     foreach (var blobId in blobIds)
     {
       try
       {
-        using var blobMessage = new HttpRequestMessage
-        {
-          RequestUri = new Uri($"api/stream/{streamId}/blob/{blobId}", UriKind.Relative),
-          Method = HttpMethod.Get
-        };
+        using var blobMessage = new HttpRequestMessage();
+        blobMessage.RequestUri = new Uri($"api/stream/{streamId}/blob/{blobId}", UriKind.Relative);
+        blobMessage.Method = HttpMethod.Get;
 
         using var response = await _client.SendAsync(blobMessage, CancellationToken).ConfigureAwait(false);
         response.Content.Headers.TryGetValues("Content-Disposition", out IEnumerable<string>? cdHeaderValues);
 
-        var cdHeader = cdHeaderValues.First();
-        var fileName = cdHeader.Split(s_filenameSeparator, StringSplitOptions.None)[1].TrimStart('"').TrimEnd('"');
+        var cdHeader = cdHeaderValues?.FirstOrDefault();
+        string? fileName = cdHeader?.Split(s_filenameSeparator, StringSplitOptions.None)[1].TrimStart('"').TrimEnd('"');
 
-        string fileLocation = Path.Combine(
-          BlobStorageFolder,
-          $"{blobId.Substring(0, Blob.LocalHashPrefixLength)}-{fileName}"
-        );
+        string fileLocation = Path.Combine(BlobStorageFolder, $"{blobId[..Blob.LocalHashPrefixLength]}-{fileName}");
         using var source = new ProgressStream(
-          await response.Content.ReadAsStreamAsync(),
+          await response.Content.ReadAsStreamAsync().ConfigureAwait(false),
           response.Content.Headers.ContentLength,
           progress,
           true
@@ -303,7 +302,7 @@ public sealed class ServerApi : IDisposable, IServerApi
   private async Task DownloadObjectsImpl(
     string streamId,
     IReadOnlyList<string> objectIds,
-    Action<ProgressArgs>? progress,
+    IProgress<ProgressArgs>? progress,
     CbObjectDownloaded onObjectCallback
   )
   {
@@ -314,7 +313,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     using var childrenHttpMessage = new HttpRequestMessage
     {
       RequestUri = new Uri($"/api/getobjects/{streamId}", UriKind.Relative),
-      Method = HttpMethod.Post
+      Method = HttpMethod.Post,
     };
 
     Dictionary<string, string> postParameters = new() { { "objects", JsonConvert.SerializeObject(objectIds) } };
@@ -331,7 +330,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
   private async Task ResponseProgress(
     HttpResponseMessage childrenHttpResponse,
-    Action<ProgressArgs>? progress,
+    IProgress<ProgressArgs>? progress,
     CbObjectDownloaded onObjectCallback,
     bool isSingle
   )
@@ -370,7 +369,7 @@ public sealed class ServerApi : IDisposable, IServerApi
     var uri = new Uri($"/api/diff/{streamId}", UriKind.Relative);
 
     using StringContent stringContent = new(serializedPayload, Encoding.UTF8, "application/json");
-    HttpResponseMessage response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
+    var response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
 
@@ -382,22 +381,22 @@ public sealed class ServerApi : IDisposable, IServerApi
     {
       hasObjects[prop.Key] = (bool)prop.Value.NotNull();
     }
-
-    // Console.WriteLine($"ServerApi::HasObjects({objectIds.Count}) request in {sw.ElapsedMilliseconds / 1000.0} sec");
-
     return hasObjects;
   }
 
   private async Task UploadObjectsImpl(
     string streamId,
     List<List<(string, string)>> multipartedObjects,
-    Action<ProgressArgs>? progress
+    IProgress<ProgressArgs>? progress
   )
   {
     CancellationToken.ThrowIfCancellationRequested();
 
-    using HttpRequestMessage message =
-      new() { RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative), Method = HttpMethod.Post };
+    using HttpRequestMessage message = new()
+    {
+      RequestUri = new Uri($"/objects/{streamId}", UriKind.Relative),
+      Method = HttpMethod.Post,
+    };
 
     MultipartFormDataContent multipart = new();
 
@@ -431,7 +430,7 @@ public sealed class ServerApi : IDisposable, IServerApi
       }
     }
     message.Content = new ProgressContent(multipart, progress);
-    HttpResponseMessage response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
+    var response = await _client.SendAsync(message, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
   }
@@ -445,7 +444,7 @@ public sealed class ServerApi : IDisposable, IServerApi
 
     using StringContent stringContent = new(payload, Encoding.UTF8, "application/json");
 
-    HttpResponseMessage response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
+    var response = await _client.PostAsync(uri, stringContent, CancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
 

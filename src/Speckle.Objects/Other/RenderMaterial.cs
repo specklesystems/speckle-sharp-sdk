@@ -1,6 +1,5 @@
 using System.Drawing;
 using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Proxies;
 
@@ -17,33 +16,13 @@ namespace Speckle.Objects.Other;
 [SpeckleType("Objects.Other.RenderMaterial")]
 public class RenderMaterial : Base
 {
-  public RenderMaterial() { }
-
-  [SchemaInfo("RenderMaterial", "Creates a render material.", "BIM", "Other")]
-  public RenderMaterial(
-    double opacity = 1,
-    double metalness = 0,
-    double roughness = 1,
-    Color? diffuse = null,
-    Color? emissive = null
-  )
-  {
-    this.opacity = opacity;
-    this.metalness = metalness;
-    this.roughness = roughness;
-    this.diffuse = diffuse.HasValue ? diffuse.Value.ToArgb() : Color.LightGray.ToArgb();
-    this.emissive = emissive.HasValue ? emissive.Value.ToArgb() : Color.Black.ToArgb();
-  }
-
-  public string name { get; set; }
+  public required string name { get; set; }
   public double opacity { get; set; } = 1;
   public double metalness { get; set; }
   public double roughness { get; set; } = 1;
 
-  [SchemaIgnore]
-  public int diffuse { get; set; } = Color.LightGray.ToArgb();
+  public required int diffuse { get; set; } = Color.LightGray.ToArgb();
 
-  [SchemaIgnore]
   public int emissive { get; set; } = Color.Black.ToArgb();
 
   [JsonIgnore]
@@ -67,21 +46,13 @@ public class RenderMaterial : Base
 [SpeckleType("Objects.Other.RenderMaterialProxy")]
 public class RenderMaterialProxy : Base, IProxyCollection
 {
-  public RenderMaterialProxy() { }
-
-  public RenderMaterialProxy(RenderMaterial renderMaterial, List<string> objects)
-  {
-    value = renderMaterial;
-    this.objects = objects;
-  }
-
   /// <summary>
   /// The list of application ids of objects that use this render material
   /// </summary>
-  public List<string> objects { get; set; }
+  public required List<string> objects { get; set; }
 
   /// <summary>
   /// The render material used by <see cref="objects"/>
   /// </summary>
-  public RenderMaterial value { get; set; }
+  public required RenderMaterial value { get; set; }
 }

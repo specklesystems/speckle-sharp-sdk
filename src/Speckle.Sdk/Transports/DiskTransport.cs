@@ -28,7 +28,7 @@ public class DiskTransport : ICloneable, ITransport
       CancellationToken = CancellationToken,
       OnErrorAction = OnErrorAction,
       OnProgressAction = OnProgressAction,
-      TransportName = TransportName
+      TransportName = TransportName,
     };
   }
 
@@ -39,12 +39,12 @@ public class DiskTransport : ICloneable, ITransport
     {
       { "name", TransportName },
       { "type", GetType().Name },
-      { "basePath", RootPath }
+      { "basePath", RootPath },
     };
 
   public CancellationToken CancellationToken { get; set; }
 
-  public Action<ProgressArgs>? OnProgressAction { get; set; }
+  public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 
   public Action<string, Exception>? OnErrorAction { get; set; }
 
@@ -59,17 +59,17 @@ public class DiskTransport : ICloneable, ITransport
 
   public void EndWrite() { }
 
-  public string? GetObject(string id)
+  public Task<string?> GetObject(string id)
   {
     CancellationToken.ThrowIfCancellationRequested();
 
     var filePath = Path.Combine(RootPath, id);
     if (File.Exists(filePath))
     {
-      return File.ReadAllText(filePath, Encoding.UTF8);
+      return Task.FromResult<string?>(File.ReadAllText(filePath, Encoding.UTF8));
     }
 
-    return null;
+    return Task.FromResult<string?>(null);
   }
 
   public void SaveObject(string id, string serializedObject)
@@ -93,7 +93,6 @@ public class DiskTransport : ICloneable, ITransport
     }
 
     SavedObjectCount++;
-    OnProgressAction?.Invoke(new(ProgressEvent.DownloadObject, SavedObjectCount, null));
     stopwatch.Stop();
     Elapsed += stopwatch.Elapsed;
   }
@@ -103,20 +102,12 @@ public class DiskTransport : ICloneable, ITransport
     return Task.CompletedTask;
   }
 
-  public Task<string> CopyObjectAndChildren(
-    string id,
-    ITransport targetTransport,
-    Action<int>? onTotalChildrenCountKnown = null
-  )
+  public async Task<string> CopyObjectAndChildren(string id, ITransport targetTransport)
   {
-    string res = TransportHelpers.CopyObjectAndChildrenSync(
-      id,
-      this,
-      targetTransport,
-      onTotalChildrenCountKnown,
-      CancellationToken
-    );
-    return Task.FromResult(res);
+    string res = await TransportHelpers
+      .CopyObjectAndChildrenAsync(id, this, targetTransport, CancellationToken)
+      .ConfigureAwait(false);
+    return res;
   }
 
   public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)

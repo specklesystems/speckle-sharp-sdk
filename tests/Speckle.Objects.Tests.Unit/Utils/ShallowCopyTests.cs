@@ -1,26 +1,48 @@
 using System.Collections;
-using System.Collections.Generic;
-using NUnit.Framework;
-using Speckle.Objects.BuiltElements;
+using FluentAssertions;
+using Speckle.Objects.Data;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
+using Speckle.Sdk.Models;
 
-namespace Objects.Tests.Unit.Utils;
+namespace Speckle.Objects.Tests.Unit.Utils;
 
-[TestFixture]
 public class ShallowCopyTests
 {
-  [Test]
+  public ShallowCopyTests()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+  }
+
+  [Fact]
   public void CanShallowCopy_Wall()
   {
-    var wall = new Wall(5, new Line(new Point(0, 0), new Point(3, 0)))
+    const string UNITS = Units.Meters;
+    var ds = new DataObject()
     {
-      units = Units.Meters,
-      displayValue = new List<Mesh> { new(), new() }
+      name = "directShape",
+      displayValue = new List<Base>
+      {
+        new Mesh
+        {
+          vertices = new(),
+          faces = new(),
+          units = UNITS,
+        },
+        new Mesh
+        {
+          vertices = new(),
+          faces = new(),
+          units = UNITS,
+        },
+      },
+      properties = new Dictionary<string, object?>(),
     };
 
-    var shallow = wall.ShallowCopy();
+    var shallow = ds.ShallowCopy();
     var displayValue = (IList)shallow["displayValue"].NotNull();
-    Assert.That(wall.displayValue, Has.Count.EqualTo(displayValue.Count));
+    ds.displayValue.Count.Should().Be(displayValue.Count);
   }
 }

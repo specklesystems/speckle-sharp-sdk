@@ -6,7 +6,7 @@ namespace Speckle.Sdk.Models;
 /// <para>Only applies to properties of types derived from the Base class.</para>
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class DetachProperty : Attribute
+public sealed class DetachPropertyAttribute : Attribute
 {
   /// <summary>
   /// <para>Flags an object's property as being detachable.</para>
@@ -14,7 +14,7 @@ public sealed class DetachProperty : Attribute
   /// <para>Only applies to properties of types derived from the Base class.</para>
   /// </summary>
   /// <param name="detachable">Whether to detach the property or not.</param>
-  public DetachProperty(bool detachable = true)
+  public DetachPropertyAttribute(bool detachable = true)
   {
     Detachable = detachable;
   }
@@ -23,14 +23,14 @@ public sealed class DetachProperty : Attribute
 }
 
 /// <summary>
-/// Flags a list or array as splittable into chunks during serialisation. These chunks will be recomposed on deserialisation into the original list. Note: this attribute should be used in conjunction with <see cref="DetachProperty"/>.
+/// Flags a list or array as splittable into chunks during serialisation. These chunks will be recomposed on deserialisation into the original list. Note: this attribute should be used in conjunction with <see cref="DetachPropertyAttribute"/>.
 /// <para>Use this attribute on properties that can become very long and are not worth detaching into individual elements.</para>
 /// <para>Objects per chunk: for simple types, like numbers, use a high value (>10000); for other objects, use a more conservative number depending on their serialised size.</para>
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
-public sealed class Chunkable : Attribute
+public sealed class ChunkableAttribute : Attribute
 {
-  public Chunkable(int maxObjCountPerChunk = 1000)
+  public ChunkableAttribute(int maxObjCountPerChunk = 1000)
   {
     MaxObjCountPerChunk = maxObjCountPerChunk;
   }

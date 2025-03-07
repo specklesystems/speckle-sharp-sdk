@@ -1,0 +1,5 @@
+﻿{
+  "Type": "System.OperationCanceledException",
+  "Message": "The operation was canceled.",
+  "Source": "System.Private.CoreLib"
+}

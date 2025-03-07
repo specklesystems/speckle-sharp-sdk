@@ -1,0 +1,90 @@
+﻿{
+  "basePlane": {
+    "origin": {
+      "units": "m",
+      "speckle_type": "Objects.Geometry.Point",
+      "DynamicPropertyKeys": []
+    },
+    "normal": {
+      "units": "m",
+      "z": 1.0,
+      "Length": 1.0,
+      "speckle_type": "Objects.Geometry.Vector",
+      "DynamicPropertyKeys": []
+    },
+    "xdir": {
+      "units": "m",
+      "x": 1.0,
+      "Length": 1.0,
+      "speckle_type": "Objects.Geometry.Vector",
+      "DynamicPropertyKeys": []
+    },
+    "ydir": {
+      "units": "m",
+      "y": 1.0,
+      "Length": 1.0,
+      "speckle_type": "Objects.Geometry.Vector",
+      "DynamicPropertyKeys": []
+    },
+    "units": "m",
+    "speckle_type": "Objects.Geometry.Plane",
+    "DynamicPropertyKeys": []
+  },
+  "plane": {
+    "origin": {
+      "units": "m",
+      "speckle_type": "Objects.Geometry.Point",
+      "DynamicPropertyKeys": []
+    },
+    "normal": {
+      "units": "m",
+      "z": 1.0,
+      "Length": 1.0,
+      "speckle_type": "Objects.Geometry.Vector",
+      "DynamicPropertyKeys": []
+    },
+    "xdir": {
+      "units": "m",
+      "x": 1.0,
+      "Length": 1.0,
+      "speckle_type": "Objects.Geometry.Vector",
+      "DynamicPropertyKeys": []
+    },
+    "ydir": {
+      "units": "m",
+      "y": 1.0,
+      "Length": 1.0,
+      "speckle_type": "Objects.Geometry.Vector",
+      "DynamicPropertyKeys": []
+    },
+    "units": "m",
+    "speckle_type": "Objects.Geometry.Plane",
+    "DynamicPropertyKeys": []
+  },
+  "xSize": {
+    "start": -1.0,
+    "end": 1.0,
+    "Length": 2.0,
+    "speckle_type": "Objects.Primitive.Interval",
+    "DynamicPropertyKeys": []
+  },
+  "ySize": {
+    "start": -2.0,
+    "end": 2.0,
+    "Length": 4.0,
+    "speckle_type": "Objects.Primitive.Interval",
+    "DynamicPropertyKeys": []
+  },
+  "zSize": {
+    "start": -3.0,
+    "end": 3.0,
+    "Length": 6.0,
+    "speckle_type": "Objects.Primitive.Interval",
+    "DynamicPropertyKeys": []
+  },
+  "units": "m",
+  "area": 88.0,
+  "volume": 48.0,
+  "speckle_type": "Objects.Geometry.Box",
+  "DynamicPropertyKeys": []
+}

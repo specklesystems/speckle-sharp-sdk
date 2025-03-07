@@ -77,7 +77,8 @@ public sealed class ProjectVersionsUpdatedMessage : EventArgs
   [JsonRequired]
   public ProjectVersionsUpdatedMessageType type { get; init; }
 
-  public string? modelId { get; init; }
+  [JsonRequired]
+  public string modelId { get; init; }
 
   public Version? version { get; init; }
 }

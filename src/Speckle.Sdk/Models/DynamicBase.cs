@@ -1,7 +1,8 @@
 using System.Dynamic;
 using System.Reflection;
+using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Models;
 
@@ -72,6 +73,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         _properties[key] = value;
         return;
       }
+
       try
       {
         prop.SetValue(this, value);
@@ -112,7 +114,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
     return valid;
   }
 
-  private static readonly HashSet<char> s_disallowedPropNameChars = new() { '.', '/' };
+  private static readonly char[] s_disallowedPropNameChars = { '.', '/' };
 
   public static string RemoveDisallowedPropNameChars(string name)
   {
@@ -124,37 +126,45 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
     return name;
   }
 
-  public bool IsPropNameValid(string name, out string reason)
+  //apparently used a lot so optimize the check
+  public unsafe bool IsPropNameValid(string name, out string reason)
   {
-    if (string.IsNullOrEmpty(name) || name == "@")
+    if (string.IsNullOrEmpty(name) || name.Equals("@", StringComparison.Ordinal))
     {
       reason = "Found empty prop name";
       return false;
     }
 
-    if (name.StartsWith("@@"))
+    if (name.StartsWith("@@", StringComparison.Ordinal))
     {
       reason = "Only one leading '@' char is allowed. This signals the property value should be detached.";
       return false;
     }
 
-    foreach (char c in name)
+    int len = name.Length;
+    fixed (char* ptr = name)
     {
-      if (s_disallowedPropNameChars.Contains(c))
+      for (int i = 0; i < len; i++)
       {
-        reason = $"Prop with name '{name}' contains invalid characters. The following characters are not allowed: ./";
-        return false;
+        for (int j = 0; j < s_disallowedPropNameChars.Length; j++)
+        {
+          if (s_disallowedPropNameChars[j] == ptr[i])
+          {
+            reason =
+              $"Prop with name '{name}' contains invalid characters. The following characters are not allowed: ./";
+            return false;
+          }
+        }
       }
+      // talk to ptr[0] etc; DO NOT go outside of ptr[0] <---> ptr[len-1]
     }
-
-    reason = "";
+    reason = string.Empty;
     return true;
   }
 
   /// <summary>
   /// Gets all of the property names on this class, dynamic or not.
   /// </summary> <returns></returns>
-  [Obsolete("Use `GetMembers(DynamicBaseMemberType.All).Keys` instead")]
   public override IEnumerable<string> GetDynamicMemberNames()
   {
     var pinfos = TypeLoader.GetBaseProperties(GetType());
@@ -223,7 +233,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         .GetBaseProperties(GetType())
         .Where(x =>
         {
-          var hasIgnored = x.IsDefined(typeof(SchemaIgnore), true);
+          var hasIgnored = x.IsDefined(typeof(SchemaIgnoreAttribute), true);
           var hasObsolete = x.IsDefined(typeof(ObsoleteAttribute), true);
 
           // If obsolete is false and prop has obsolete attr
@@ -251,16 +261,8 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         .ToList()
         .ForEach(e =>
         {
-          var attr = e.GetCustomAttribute<SchemaComputedAttribute>();
-          try
-          {
-            dic[attr.Name] = e.Invoke(this, null);
-          }
-          catch (Exception ex) when (!ex.IsFatal())
-          {
-            SpeckleLog.Logger.Warning(ex, "Failed to get computed member: {name}", attr.Name);
-            dic[attr.Name] = null;
-          }
+          var attr = e.GetCustomAttribute<SchemaComputedAttribute>().NotNull();
+          dic[attr.Name] = e.Invoke(this, null);
         });
     }
 
@@ -271,10 +273,8 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
   /// Gets the dynamically added property names only.
   /// </summary>
   /// <returns></returns>
-  public IReadOnlyCollection<string> GetDynamicPropertyKeys()
-  {
-    return _properties.Keys;
-  }
+  [JsonIgnore]
+  public IReadOnlyCollection<string> DynamicPropertyKeys => _properties.Keys;
 }
 
 /// <summary>

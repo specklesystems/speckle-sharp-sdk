@@ -1,6 +1,4 @@
-﻿#nullable disable
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Models;
@@ -39,13 +37,13 @@ public class Blob : Base
   /// <summary>
   /// For blobs, the id is the same as the file hash. Please note, when deserialising, the id will be set from the original hash generated on sending.
   /// </summary>
-  public override string id
+  public override string? id
   {
     get => GetFileHash();
     set => base.id = value;
   }
 
-  public string GetFileHash()
+  public string? GetFileHash()
   {
     if ((_isHashExpired || _hash == null) && filePath != null)
     {
@@ -64,6 +62,7 @@ public class Blob : Base
   public string GetLocalDestinationPath(string blobStorageFolder)
   {
     var fileName = Path.GetFileName(filePath);
-    return Path.Combine(blobStorageFolder, $"{id.Substring(0, 10)}-{fileName}");
+    var x = id ?? throw new ArgumentException("id is empty");
+    return Path.Combine(blobStorageFolder, $"{x[..10]}-{fileName}");
   }
 }

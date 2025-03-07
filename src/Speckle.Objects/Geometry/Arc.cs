@@ -1,8 +1,7 @@
+using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
-using Speckle.Sdk;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
@@ -11,218 +10,78 @@ namespace Speckle.Objects.Geometry;
 /// Represents a sub-curve of a three-dimensional circle.
 /// </summary>
 [SpeckleType("Objects.Geometry.Arc")]
-public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
+public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
 {
-  /// <inheritdoc/>
-  public Arc() { }
-
   /// <summary>
-  /// Constructs a new <see cref="Arc"/> using angle values.
+  /// Gets or sets the plane of the <see cref="Arc"/>.
+  /// The plane origin is the <see cref="Arc"/> center.
+  /// The plane normal indicates the handedness of the <see cref="Arc"/> such that direction from <see cref="startPoint"/> to <see cref="endPoint"/> is counterclockwise.
   /// </summary>
-  /// <param name="plane">The Plane where the arc will be drawn</param>
-  /// <param name="radius">The radius of the Arc</param>
-  /// <param name="startAngle">The angle formed between the start point and the X Axis of the plane</param>
-  /// <param name="endAngle">The angle formed between the end point and the X Axis of the plane</param>
-  /// <param name="angleRadians">The total angle of the Arc in Radians</param>
-  /// <param name="units">The object's units</param>
-  /// <param name="applicationId">The object's unique application ID</param>
-  public Arc(
-    Plane plane,
-    double radius,
-    double startAngle,
-    double endAngle,
-    double angleRadians,
-    string units = Units.Meters,
-    string? applicationId = null
-  )
-  {
-    this.plane = plane;
-    this.radius = radius;
-    this.startAngle = startAngle;
-    this.endAngle = endAngle;
-    this.angleRadians = angleRadians;
-    domain =
-      angleRadians > 0
-        ? new Interval { start = 0, end = angleRadians }
-        : new Interval { start = angleRadians, end = 0 };
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  /// <summary>
-  /// Initialise an `Arc` using the arc angle and the start and end points.
-  /// The radius, midpoint, start angle, and end angle will be calculated.
-  /// For now, this assumes 2D arcs on the XY plane
-  /// </summary>
-  /// <param name="startPoint">The start point of the arc</param>
-  /// <param name="endPoint">The end point of the arc</param>
-  /// <param name="angleRadians">The arc angle</param>
-  /// <param name="units">Units (defaults to "m")</param>
-  /// <param name="applicationId">ID given to the arc in the authoring programme (defaults to null)</param>
-  public Arc(
-    Point startPoint,
-    Point endPoint,
-    double angleRadians,
-    string units = Units.Meters,
-    string? applicationId = null
-  )
-    : this(
-      new Plane
-      {
-        origin = startPoint,
-        normal = new Vector(0, 0, 1),
-        xdir = new Vector(1, 0, 0),
-        ydir = new Vector(0, 1, 0),
-        units = units
-      },
-      startPoint,
-      endPoint,
-      angleRadians,
-      units,
-      applicationId
-    ) { }
-
-  /// <summary>
-  /// Initialise an `Arc` using a plane, the arc angle and the start and end points.
-  /// The radius, midpoint, start angle, and end angle will be calculated.
-  /// </summary>
-  /// <param name="plane">The Plane where the arc will be drawn</param>
-  /// <param name="startPoint">The start point of the arc</param>
-  /// <param name="endPoint">The end point of the arc</param>
-  /// <param name="angleRadians">The arc angle</param>
-  /// <param name="units">Units (defaults to "m")</param>
-  /// <param name="applicationId">ID given to the arc in the authoring programme (defaults to null)</param>
-  public Arc(
-    Plane plane,
-    Point startPoint,
-    Point endPoint,
-    double angleRadians,
-    string units = Units.Meters,
-    string? applicationId = null
-  )
-  {
-    // don't be annoying
-    if (angleRadians > Math.PI * 2)
-    {
-      throw new SpeckleException("Can't create an arc with an angle greater than 2pi");
-    }
-
-    if (startPoint == endPoint)
-    {
-      throw new SpeckleException("Can't create an arc where the start and end points are the same");
-    }
-
-    this.units = units;
-    this.startPoint = startPoint;
-    this.endPoint = endPoint;
-    this.angleRadians = angleRadians;
-    domain =
-      angleRadians > 0
-        ? new Interval { start = 0, end = angleRadians }
-        : new Interval { start = angleRadians, end = 0 };
-    this.applicationId = applicationId;
-
-    // find chord and chord angle which may differ from the arc angle
-    var chordMidpoint = Point.Midpoint(startPoint, endPoint);
-    var chordLength = Point.Distance(startPoint, endPoint);
-    var chordAngle = angleRadians;
-    if (chordAngle > Math.PI)
-    {
-      chordAngle -= Math.PI * 2;
-    }
-    else if (chordAngle < -Math.PI)
-    {
-      chordAngle += Math.PI * 2;
-    }
-    // use the law of cosines for an isosceles triangle to get the radius
-    radius = chordLength / Math.Sqrt(2 - 2 * Math.Cos(chordAngle));
-
-    // find the chord vector then calculate the perpendicular vector which points to the centre
-    // which can be used to find the circle centre point
-    var dir = chordAngle < 0 ? -1 : 1;
-    var centreToChord = Math.Sqrt(Math.Pow((double)radius, 2) - Math.Pow(chordLength * 0.5, 2));
-    var perp = Vector.CrossProduct(new Vector(endPoint - startPoint), plane.normal);
-    var circleCentre = chordMidpoint + new Point(perp.Unit() * centreToChord * -dir);
-    plane.origin = circleCentre;
-
-    // use the perpendicular vector in the other direction (from the centre to the arc) to find the arc midpoint
-    midPoint =
-      angleRadians > Math.PI
-        ? chordMidpoint + new Point(perp.Unit() * ((double)radius + centreToChord) * -dir)
-        : chordMidpoint + new Point(perp.Unit() * ((double)radius - centreToChord) * dir);
-
-    // find the start angle using trig (correcting for quadrant position) and add the arc angle to get the end angle
-    startAngle = Math.Tan((startPoint.y - circleCentre.y) / (startPoint.x - circleCentre.x)) % (2 * Math.PI);
-    if (startPoint.x > circleCentre.x && startPoint.y < circleCentre.y) // Q4
-    {
-      startAngle *= -1;
-    }
-    else if (startPoint.x < circleCentre.x && startPoint.y < circleCentre.y) // Q3
-    {
-      startAngle += Math.PI;
-    }
-    else if (startPoint.x < circleCentre.x && startPoint.y > circleCentre.y) // Q2
-    {
-      startAngle = Math.PI - startAngle;
-    }
-
-    endAngle = startAngle + angleRadians;
-    // Set the plane of this arc
-    this.plane = plane;
-  }
-
-  /// <summary>
-  /// The radius of the <see cref="Arc"/>
-  /// </summary>
-  public double? radius { get; set; }
-
-  /// <summary>
-  /// The start angle of the <see cref="Arc"/> based on it's <see cref="Arc.plane"/>
-  /// </summary>
-  public double? startAngle { get; set; }
-
-  /// <summary>
-  /// The end angle of the <see cref="Arc"/> based on it's <see cref="Arc.plane"/>
-  /// </summary>
-  public double? endAngle { get; set; }
-
-  /// <summary>
-  /// The inner angle of the <see cref="Arc"/>
-  /// </summary>
-  public double angleRadians { get; set; }
-
-  /// <summary>
-  /// Gets or sets the plane of the <see cref="Arc"/>. The plane origin is the <see cref="Arc"/> center.
-  /// </summary>
-  public Plane plane { get; set; }
+  public required Plane plane { get; set; }
 
   /// <summary>
   /// The start <see cref="Point"/> of the <see cref="Arc"/>
   /// </summary>
-  public Point startPoint { get; set; }
+  public required Point startPoint { get; set; }
 
   /// <summary>
   /// Gets or sets the point at 0.5 length.
   /// </summary>
-  public Point midPoint { get; set; }
+  public required Point midPoint { get; set; }
 
   /// <summary>
   /// The end <see cref="Point"/> of the <see cref="Arc"/>
   /// </summary>
-  public Point endPoint { get; set; }
+  public required Point endPoint { get; set; }
+
+  /// <summary>
+  /// The radius of the <see cref="Arc"/>
+  /// </summary>
+  public double radius => Point.Distance(plane.origin, startPoint);
+
+  /// <summary>
+  /// OBSOLETE - This is just here for backwards compatibility.
+  /// </summary>
+  [JsonIgnore, Obsolete("start angle should be calculated from arc startpoint and plane if needed", true)]
+  public double? startAngle { get; set; }
+
+  /// <summary>
+  /// OBSOLETE - This is just here for backwards compatibility.
+  /// </summary>
+  [JsonIgnore, Obsolete("end angle should be calculated from arc endpoint and plane if needed", true)]
+  public double? endAngle { get; set; }
+
+  /// <summary>
+  /// OBSOLETE - This is just here for backwards compatibility.
+  /// </summary>
+  [JsonIgnore, Obsolete("Refer to measure instead", true)]
+  public double angleRadians { get; set; }
+
+  /// <summary>
+  /// The measure of the <see cref="Arc"/> in radians.
+  /// Calculated using the arc addition postulate using the <see cref="midPoint"/>.
+  /// </summary>
+  public double measure =>
+    (2 * Math.Asin(Point.Distance(startPoint, midPoint) / (2 * radius)))
+    + (2 * Math.Asin(Point.Distance(midPoint, endPoint) / (2 * radius)));
 
   /// <summary>
   /// The units this object was specified in.
   /// </summary>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <inheritdoc/>
   public Interval domain { get; set; } = new() { start = 0, end = 0 };
 
-  /// <inheritdoc/>
-  public double length { get; set; }
+  /// <summary>
+  /// The length of the <see cref="Arc"/>
+  /// </summary>
+  public double length => radius * measure;
 
-  /// <inheritdoc/>
+  /// <summary>
+  /// OBSOLETE - This is just here for backwards compatibility.
+  /// </summary>
+  [JsonIgnore, Obsolete("Area property does not belong on an arc", true)]
   public double area { get; set; }
 
   /// <inheritdoc/>
@@ -235,10 +94,14 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
     midPoint.TransformTo(transform, out Point transformedMidpoint);
     endPoint.TransformTo(transform, out Point transformedEndPoint);
     plane.TransformTo(transform, out Plane pln);
-    var arc = new Arc(pln, transformedStartPoint, transformedEndPoint, angleRadians, units)
+    Arc arc = new()
     {
+      startPoint = transformedStartPoint,
+      endPoint = transformedEndPoint,
       midPoint = transformedMidpoint,
-      domain = domain
+      plane = pln,
+      domain = domain,
+      units = units,
     };
     transformed = arc;
     return true;
@@ -260,13 +123,12 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
   public List<double> ToList()
   {
     var list = new List<double>();
-    list.Add(radius ?? 0);
-    list.Add(startAngle ?? 0);
-    list.Add(endAngle ?? 0);
-    list.Add(angleRadians);
+    list.Add(radius);
+    list.Add(0); // Backwards compatibility: start angle
+    list.Add(0); // Backwards compatibility: end angle
+    list.Add(measure);
     list.Add(domain?.start ?? 0);
     list.Add(domain?.end ?? 0);
-
     list.AddRange(plane.ToList());
     list.AddRange(startPoint.ToList());
     list.AddRange(midPoint.ToList());
@@ -286,21 +148,18 @@ public class Arc : Base, IHasBoundingBox, ICurve, IHasArea, ITransformable<Arc>
   /// <returns>A new <see cref="Arc"/> with the values assigned from the list.</returns>
   public static Arc FromList(List<double> list)
   {
-    var arc = new Arc
+    string units = Units.GetUnitFromEncoding(list[^1]);
+    Arc arc = new()
     {
-      radius = list[2],
-      startAngle = list[3],
-      endAngle = list[4],
-      angleRadians = list[5],
       domain = new Interval { start = list[6], end = list[7] },
-      units = Units.GetUnitFromEncoding(list[list.Count - 1]),
-      plane = Plane.FromList(list.GetRange(8, 13))
+      units = units,
+      plane = Plane.FromList(list.GetRange(8, 13)),
+      startPoint = Point.FromList(list.GetRange(21, 3), units),
+      midPoint = Point.FromList(list.GetRange(24, 3), units),
+      endPoint = Point.FromList(list.GetRange(27, 3), units),
     };
-    arc.startPoint = Point.FromList(list.GetRange(21, 3), arc.units);
-    arc.midPoint = Point.FromList(list.GetRange(24, 3), arc.units);
-    arc.endPoint = Point.FromList(list.GetRange(27, 3), arc.units);
-    arc.plane.units = arc.units;
 
+    arc.plane.units = arc.units;
     return arc;
   }
 }

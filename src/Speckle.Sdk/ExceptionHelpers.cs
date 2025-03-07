@@ -37,8 +37,7 @@ public static class ExceptionHelpers
       or InvalidProgramException
       or AccessViolationException
       or AppDomainUnloadedException
-      or BadImageFormatException
-        => true,
+      or BadImageFormatException => true,
       _ => false,
     };
   }

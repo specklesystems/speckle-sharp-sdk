@@ -1,5 +1,3 @@
-using Speckle.Sdk.Logging;
-
 namespace Speckle.Sdk.Models;
 
 public class InvalidPropNameException : SpeckleException

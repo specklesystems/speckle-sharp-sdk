@@ -1,0 +1,88 @@
+﻿[
+  {
+    "Name": "list",
+    "PropertyAttributeInfo": {
+      "ChunkSize": 1000,
+      "IsChunkable": true,
+      "IsDetachable": true
+    },
+    "Value": []
+  },
+  {
+    "Name": "arr",
+    "PropertyAttributeInfo": {
+      "ChunkSize": 300,
+      "IsChunkable": true,
+      "IsDetachable": true
+    }
+  },
+  {
+    "Name": "detachedProp",
+    "PropertyAttributeInfo": {
+      "ChunkSize": 1000,
+      "IsChunkable": false,
+      "IsDetachable": true
+    },
+    "Value": {
+      "name": "detachedProp",
+      "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase",
+      "DynamicPropertyKeys": []
+    }
+  },
+  {
+    "Name": "attachedProp",
+    "PropertyAttributeInfo": {
+      "ChunkSize": 1000,
+      "IsChunkable": false,
+      "IsDetachable": false
+    },
+    "Value": {
+      "name": "attachedProp",
+      "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase",
+      "DynamicPropertyKeys": []
+    }
+  },
+  {
+    "Name": "crazyProp",
+    "PropertyAttributeInfo": {
+      "ChunkSize": 1000,
+      "IsChunkable": false,
+      "IsDetachable": false
+    }
+  },
+  {
+    "Name": "applicationId",
+    "PropertyAttributeInfo": {
+      "ChunkSize": 1000,
+      "IsChunkable": false,
+      "IsDetachable": false
+    }
+  },
+  {
+    "Name": "speckle_type",
+    "PropertyAttributeInfo": {
+      "ChunkSize": 1000,
+      "IsChunkable": false,
+      "IsDetachable": false
+    },
+    "Value": "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase"
+  },
+  {
+    "Name": "dynamicProp",
+    "PropertyAttributeInfo": {
+      "ChunkSize": 1000,
+      "IsChunkable": false,
+      "IsDetachable": false
+    },
+    "Value": 123
+  },
+  {
+    "Name": "@prop2",
+    "PropertyAttributeInfo": {
+      "ChunkSize": -1,
+      "IsChunkable": false,
+      "IsDetachable": true
+    },
+    "Value": 2
+  }
+]

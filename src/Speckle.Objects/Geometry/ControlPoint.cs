@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Models;
@@ -9,17 +10,14 @@ public class ControlPoint : Point, ITransformable<ControlPoint>
 {
   public ControlPoint() { }
 
-  public ControlPoint(double x, double y, double z, string units, string? applicationId = null)
-    : base(x, y, z, units, applicationId)
-  {
-    weight = 1;
-  }
-
+  [SetsRequiredMembers]
   public ControlPoint(double x, double y, double z, double w, string units, string? applicationId = null)
     : base(x, y, z, units, applicationId)
   {
     weight = w;
   }
+
+  public required double weight { get; set; }
 
   /// <summary>
   /// OBSOLETE - This is just here for backwards compatibility.
@@ -41,8 +39,6 @@ public class ControlPoint : Point, ITransformable<ControlPoint>
       weight = value.Count > 3 ? value[3] : 1;
     }
   }
-
-  public double weight { get; set; }
 
   public bool TransformTo(Transform transform, out ControlPoint transformed)
   {

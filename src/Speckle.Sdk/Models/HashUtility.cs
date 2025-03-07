@@ -8,7 +8,7 @@ public static class HashUtility
   public enum HashingFunctions
   {
     SHA256,
-    MD5
+    MD5,
   }
 
   public const int HASH_LENGTH = 32;

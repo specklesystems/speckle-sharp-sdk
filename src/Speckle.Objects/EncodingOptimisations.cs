@@ -18,7 +18,7 @@ public static class CurveTypeEncoding
 /// </summary>
 public static class CurveArrayEncodingExtensions
 {
-  public static List<double> ToArray(List<ICurve> curves)
+  public static List<double> ToArray(IReadOnlyCollection<ICurve> curves)
   {
     var list = new List<double>();
     foreach (var curve in curves)
@@ -47,7 +47,7 @@ public static class CurveArrayEncodingExtensions
           list.AddRange(p.ToList());
           break;
         default:
-          throw new Exception($"Unkown curve type: {curve.GetType()}.");
+          throw new ArgumentOutOfRangeException(nameof(curves), $"Unkown curve type: {curve.GetType()}.");
       }
     }
 
