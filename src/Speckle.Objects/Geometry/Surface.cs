@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
@@ -11,45 +12,43 @@ namespace Speckle.Objects.Geometry;
 [SpeckleType("Objects.Geometry.Surface")]
 public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
 {
-  /// <summary>
-  /// Constructs a new empty <see cref="Surface"/>
-  /// </summary>
+  [Obsolete("Constructor should only be used by serializer, use one of the other constructors instead")]
   public Surface()
   {
-    applicationId = null;
-    pointData = new List<double>();
+    pointData = [];
   }
 
-  /// <summary>
-  /// Constructs a new empty <see cref="Surface"/>
-  /// </summary>
-  /// <param name="units">The units this surface is modeled in</param>
-  /// <param name="applicationId">This surface's unique identifier on a specific application</param>
-  public Surface(string units = Units.Meters, string? applicationId = null)
+  public Surface(List<List<ControlPoint>> controlPoints)
   {
-    this.applicationId = applicationId;
-    this.units = units;
+    SetControlPoints(controlPoints);
+  }
+
+  public Surface(IList<double> pointData, int countU, int countV)
+  {
+    this.pointData = pointData;
+    this.countU = countU;
+    this.countV = countV;
   }
 
   /// <summary>
   /// The degree of the surface in the U direction
   /// </summary>
-  public int degreeU { get; set; }
+  public required int degreeU { get; set; }
 
   /// <summary>
   /// The degree of the surface in the V direction
   /// </summary>
-  public int degreeV { get; set; }
+  public required int degreeV { get; set; }
 
   /// <summary>
   /// Determines if the <see cref="Surface"/> is rational.
   /// </summary>
-  public bool rational { get; set; }
+  public required bool rational { get; set; }
 
   /// <summary>
-  /// The raw data of the surface's control points. Use GetControlPoints or SetControlPoints instead of accessing this directly.
+  /// The raw data of the surface's control points. Use <see cref="GetControlPoints"/> or <see cref="SetControlPoints"/> instead of accessing this directly.
   /// </summary>
-  public List<double> pointData { get; set; }
+  public IList<double> pointData { get; set; }
 
   /// <summary>
   /// The number of control points in the U direction
@@ -64,38 +63,38 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
   /// <summary>
   /// The knot vector in the U direction
   /// </summary>
-  public List<double> knotsU { get; set; }
+  public required List<double> knotsU { get; set; }
 
   /// <summary>
   /// The knot vector in the V direction
   /// </summary>
-  public List<double> knotsV { get; set; }
+  public required List<double> knotsV { get; set; }
 
   /// <summary>
   /// The surface's domain in the U direction
   /// </summary>
-  public Interval domainU { get; set; }
+  public required Interval domainU { get; set; }
 
   /// <summary>
   /// The surface's domain in the V direction
   /// </summary>
-  public Interval domainV { get; set; }
+  public required Interval domainV { get; set; }
 
   /// <summary>
   /// Determines if a surface is closed around the <see cref="domainU"/>.
   /// </summary>
-  public bool closedU { get; set; }
+  public required bool closedU { get; set; }
 
   /// <summary>
   /// Determines if a surface is closed around the <see cref="domainV"/>
   /// </summary>
-  public bool closedV { get; set; }
+  public required bool closedV { get; set; }
 
   /// <summary>
   /// The unit's this <see cref="Surface"/> is in.
   /// This should be one of <see cref="Units"/>
   /// </summary>
-  public string units { get; set; }
+  public required string units { get; set; }
 
   /// <inheritdoc/>
   public double area { get; set; }
@@ -116,7 +115,7 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
       }
     }
 
-    transformed = new Surface
+    transformed = new Surface(ptMatrix)
     {
       degreeU = degreeU,
       degreeV = degreeV,
@@ -129,9 +128,8 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
       domainV = domainV,
       knotsU = knotsU,
       knotsV = knotsV,
-      units = units
+      units = units,
     };
-    transformed.SetControlPoints(ptMatrix);
 
     return true;
   }
@@ -172,6 +170,9 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
   /// </summary>
   /// <param name="value">A 2-dimensional array of <see cref="ControlPoint"/> instances.</param>
   /// <remarks>The <paramref name="value"/> must be ordered following directions "[u][v]"</remarks>
+  [MemberNotNull(nameof(pointData))]
+  [MemberNotNull(nameof(countU))]
+  [MemberNotNull(nameof(countV))]
   public void SetControlPoints(List<List<ControlPoint>> value)
   {
     List<double> data = new();
@@ -229,29 +230,27 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
   /// <returns>A new <see cref="Surface"/> with the provided values.</returns>
   public static Surface FromList(List<double> list)
   {
-    var srf = new Surface
+    var pointCount = (int)list[11];
+    var knotsUCount = (int)list[12];
+    var knotsVCount = (int)list[13];
+    var countU = (int)list[2];
+    var countV = (int)list[3];
+
+    var pointData = list.GetRange(14, pointCount);
+    var u = list[^1];
+
+    return new Surface(pointData, countU, countV)
     {
       degreeU = (int)list[0],
       degreeV = (int)list[1],
-      countU = (int)list[2],
-      countV = (int)list[3],
       rational = list[4] == 1,
       closedU = list[5] == 1,
       closedV = list[6] == 1,
       domainU = new Interval { start = list[7], end = list[8] },
-      domainV = new Interval { start = list[9], end = list[10] }
+      domainV = new Interval { start = list[9], end = list[10] },
+      knotsU = list.GetRange(14 + pointCount, knotsUCount),
+      knotsV = list.GetRange(14 + pointCount + knotsUCount, knotsVCount),
+      units = Units.GetUnitFromEncoding(u),
     };
-
-    var pointCount = (int)list[11];
-    var knotsUCount = (int)list[12];
-    var knotsVCount = (int)list[13];
-
-    srf.pointData = list.GetRange(14, pointCount);
-    srf.knotsU = list.GetRange(14 + pointCount, knotsUCount);
-    srf.knotsV = list.GetRange(14 + pointCount + knotsUCount, knotsVCount);
-
-    var u = list[list.Count - 1];
-    srf.units = Units.GetUnitFromEncoding(u);
-    return srf;
   }
 }

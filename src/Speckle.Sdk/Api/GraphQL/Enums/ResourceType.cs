@@ -5,5 +5,5 @@ public enum ResourceType
   commit,
   stream,
   @object,
-  comment
+  comment,
 }

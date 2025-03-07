@@ -8,13 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="altcover" />
+    <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="Microsoft.NET.Test.Sdk"  />
-    <PackageReference Include="NUnit" />
-    <PackageReference Include="NUnit3TestAdapter" />
-    <PackageReference Include="Shouldly" />
+    <PackageReference Include="xunit.assert" />
+    <PackageReference Include="xunit.runner.visualstudio"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Speckle.Objects\Speckle.Objects.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk.Testing\Speckle.Sdk.Testing.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,5 @@
 using System.Diagnostics.Contracts;
+using Speckle.Sdk.Dependencies;
 
 namespace Speckle.Sdk.Common;
 
@@ -19,8 +20,18 @@ public static class Units
   /// <summary>US Survey foot, now not supported by Speckle, kept privately for backwards compatibility</summary>
   private const string USFeet = "us_ft";
 
-  internal static readonly List<string> SupportedUnits =
-    new() { Millimeters, Centimeters, Meters, Kilometers, Inches, Feet, Yards, Miles, None };
+  internal static readonly IReadOnlyCollection<string> SupportedUnits = new[]
+  {
+    Millimeters,
+    Centimeters,
+    Meters,
+    Kilometers,
+    Inches,
+    Feet,
+    Yards,
+    Miles,
+    None,
+  }.Freeze();
 
   /// <param name="unit"></param>
   /// <returns><see langword="true"/> if <paramref name="unit"/> is a recognised/supported unit string, otherwise <see langword="false"/></returns>

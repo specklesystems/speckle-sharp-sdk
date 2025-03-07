@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Transports;
@@ -16,7 +17,7 @@ public abstract class Fixtures
 
   public static void UpdateOrSaveAccount(Account account)
   {
-    DeleteLocalAccount(account.id);
+    DeleteLocalAccount(account.id.NotNull());
     string serializedObject = JsonConvert.SerializeObject(account);
     s_accountStorage.SaveObjectSync(account.id, serializedObject);
   }
@@ -27,13 +28,7 @@ public abstract class Fixtures
     File.WriteAllText(s_accountPath, json);
   }
 
-  public static void DeleteLocalAccount(string id)
-  {
-    s_accountStorage.DeleteObject(id);
-  }
+  public static void DeleteLocalAccount(string id) => s_accountStorage.DeleteObject(id);
 
-  public static void DeleteLocalAccountFile()
-  {
-    File.Delete(s_accountPath);
-  }
+  public static void DeleteLocalAccountFile() => File.Delete(s_accountPath);
 }

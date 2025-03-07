@@ -1,43 +1,42 @@
-﻿using NUnit.Framework;
-using Shouldly;
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Geometry.Autocad;
-using Speckle.Objects.Structural.GSA.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Point = Speckle.Objects.Geometry.Point;
 
-namespace Objects.Tests.Unit;
+namespace Speckle.Objects.Tests.Unit;
 
 public class ObjectBaseValidityTests
 {
-  [Test]
+  [Fact]
   public void TestThatTypeWithoutAttributeFails()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
   }
 
-  [Test]
+  [Fact]
   public void InheritanceTest_Disallow()
   {
     var exception = Assert.Throws<InvalidOperationException>(() =>
     {
       TypeLoader.Reset();
-      TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly, typeof(Test).Assembly);
+      TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly, typeof(Test).Assembly);
     });
-    exception.ShouldNotBeNull();
-    exception.Message.ShouldBe(
-      "Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute"
-    );
+    exception.Should().NotBeNull();
+    exception
+      .Message.Should()
+      .Be("Speckle.Objects.Tests.Unit.ObjectBaseValidityTests+Test inherits from Base has no SpeckleTypeAttribute");
   }
 
-  [Test]
+  [Fact]
   public void InheritanceTest_Allow()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(GSAAssembly).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     var fullTypeString = TypeLoader.GetFullTypeString(typeof(AutocadPolycurve));
-    fullTypeString.ShouldBe("Objects.Geometry.Polycurve:Objects.Geometry.Autocad.AutocadPolycurve");
+    fullTypeString.Should().Be("Objects.Geometry.Polycurve:Objects.Geometry.Autocad.AutocadPolycurve");
   }
 
   public class Test : Polycurve;

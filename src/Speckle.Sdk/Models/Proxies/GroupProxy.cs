@@ -8,10 +8,10 @@ namespace Speckle.Sdk.Models.Proxies;
 [DeprecatedSpeckleType("Speckle.Core.Models.Instances.GroupProxy")]
 public class GroupProxy : Base, IProxyCollection
 {
-  public List<string> objects { get; set; }
+  public required List<string> objects { get; set; }
 
   /// <summary>
   /// Name of the group proxy collection which is unique for rhino, autocad and sketchup
   /// </summary>
-  public string name { get; set; }
+  public required string name { get; set; }
 }

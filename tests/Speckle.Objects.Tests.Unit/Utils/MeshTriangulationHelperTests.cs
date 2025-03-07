@@ -1,19 +1,27 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework;
+using FluentAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Dependencies;
 
-namespace Objects.Tests.Unit.Utils;
+namespace Speckle.Objects.Tests.Unit.Utils;
 
-[TestFixture, TestOf(typeof(MeshTriangulationHelper))]
 public class MeshTriangulationHelperTests
 {
-  [Test]
-  public void PolygonTest([Range(3, 9)] int n, [Values] bool planar)
+  public static IEnumerable<object[]> PolygonTestSource()
   {
-    //Test Setup
+    foreach (var x in EnumerableExtensions.RangeFrom(3, 9))
+    {
+      yield return new object[] { x, true };
+      yield return new object[] { x, false };
+    }
+  }
+
+  [Theory]
+  [MemberData(nameof(PolygonTestSource))]
+  public void PolygonTest(int n, bool planar)
+  {
+    // Test Setup
     List<double> vertices = new(n) { 0, planar ? 0 : 1, 1 };
     for (int i = 1; i < n; i++)
     {
@@ -25,68 +33,87 @@ public class MeshTriangulationHelperTests
     List<int> faces = new(n + 1) { n };
     faces.AddRange(Enumerable.Range(0, n));
 
-    Mesh mesh = new(vertices, faces);
+    Mesh mesh = new()
+    {
+      vertices = vertices,
+      faces = faces,
+      units = Units.Meters,
+    };
 
-    //Test
+    // Test
     mesh.TriangulateMesh();
 
-    //Results
+    // Results
     int numExpectedTriangles = n - 2;
     int expectedFaceCount = numExpectedTriangles * 4;
 
-    Assert.That(mesh.faces, Has.Count.EqualTo(expectedFaceCount));
+    mesh.faces.Count.Should().Be(expectedFaceCount);
+
     for (int i = 0; i < expectedFaceCount; i += 4)
     {
-      Assert.That(mesh.faces[i], Is.EqualTo(3));
-      Assert.That(mesh.faces.GetRange(i + 1, 3), Is.Unique);
+      mesh.faces[i].Should().Be(3);
+      mesh.faces.GetRange(i + 1, 3).Should().OnlyHaveUniqueItems();
     }
 
-    Assert.That(mesh.faces, Is.SupersetOf(Enumerable.Range(0, n)));
-
-    Assert.That(mesh.faces, Is.All.GreaterThanOrEqualTo(0));
-    Assert.That(mesh.faces, Is.All.LessThan(Math.Max(n, 4)));
+    var range = EnumerableExtensions.RangeFrom(0, n).ToList();
+    mesh.faces.Should().BeSubsetOf(range);
+    mesh.faces.Should().AllSatisfy(x => x.Should().BeGreaterThanOrEqualTo(0).And.BeLessThan(Math.Max(n, 4)));
   }
 
-  [Test]
+  [Fact]
   public void DoesntFlipNormals()
   {
-    //Test Setup
+    // Test Setup
     List<double> vertices = new() { 0, 0, 0, 1, 0, 0, 1, 0, 1 };
 
     List<int> faces = new() { 3, 0, 1, 2 };
 
-    Mesh mesh = new(vertices, new List<int>(faces));
+    Mesh mesh = new()
+    {
+      vertices = vertices,
+      faces = new List<int>(faces),
+      units = Units.Meters,
+    };
 
-    //Test
+    // Test
     mesh.TriangulateMesh();
 
-    //Results
-
+    // Results
     List<int> shift1 = faces;
     List<int> shift2 = new() { 3, 1, 2, 0 };
     List<int> shift3 = new() { 3, 2, 0, 1 };
 
-    Assert.That(mesh.faces, Is.AnyOf(shift1, shift2, shift3));
+    new List<int>[] { shift1, shift2, shift3 }
+      .Any(x => mesh.faces.SequenceEqual(x))
+      .Should()
+      .BeTrue();
   }
 
-  [Test]
-  public void PreserveQuads([Values] bool preserveQuads)
+  [Theory]
+  [InlineData(true)]
+  [InlineData(false)]
+  public void PreserveQuads(bool preserveQuads)
   {
-    //Test Setup
+    // Test Setup
     List<double> vertices = new() { 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1 };
 
     List<int> faces = new() { 4, 0, 1, 2, 3 };
 
-    Mesh mesh = new(vertices, new List<int>(faces));
+    Mesh mesh = new()
+    {
+      vertices = vertices,
+      faces = new List<int>(faces),
+      units = Units.Meters,
+    };
 
-    //Test
+    // Tests
     mesh.TriangulateMesh(preserveQuads);
 
-    //Results
+    // Results
     int expectedN = preserveQuads ? 4 : 3;
     int expectedFaceCount = preserveQuads ? 5 : 8;
 
-    Assert.That(mesh.faces, Has.Count.EqualTo(expectedFaceCount));
-    Assert.That(mesh.faces[0], Is.EqualTo(expectedN));
+    mesh.faces.Count.Should().Be(expectedFaceCount);
+    mesh.faces[0].Should().Be(expectedN);
   }
 }

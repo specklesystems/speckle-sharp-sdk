@@ -11,18 +11,12 @@ public sealed record ProjectInviteCreateInput(string? email, string? role, strin
 public sealed record ProjectInviteUseInput(bool accept, string projectId, string token);
 
 public sealed record ProjectModelsFilter(
-  IReadOnlyList<string>? contributors,
-  IReadOnlyList<string>? excludeIds,
-  IReadOnlyList<string>? ids,
-  bool? onlyWithVersions,
-  string? search,
-  IReadOnlyList<string> sourceApps
-);
-
-public sealed record ProjectModelsTreeFilter(
-  IReadOnlyList<string>? contributors,
-  string? search,
-  IReadOnlyList<string>? sourceApps
+  IReadOnlyList<string>? contributors = null,
+  IReadOnlyList<string>? excludeIds = null,
+  IReadOnlyList<string>? ids = null,
+  bool? onlyWithVersions = null,
+  string? search = null,
+  IReadOnlyList<string>? sourceApps = null
 );
 
 public sealed record ProjectUpdateInput(

@@ -24,7 +24,7 @@ public enum DynamicBaseMemberType
   Obsolete = 4,
 
   /// <summary>
-  /// The typed members flagged with <see cref="SchemaIgnore"/> attribute.
+  /// The typed members flagged with <see cref="SchemaIgnoreAttribute"/> attribute.
   /// </summary>
   SchemaIgnored = 8,
 
@@ -34,12 +34,12 @@ public enum DynamicBaseMemberType
   SchemaComputed = 16,
 
   /// <summary>
-  /// All the typed members, including ones with <see cref="ObsoleteAttribute"/> or <see cref="SchemaIgnore"/> attributes.
+  /// All the typed members, including ones with <see cref="ObsoleteAttribute"/> or <see cref="SchemaIgnoreAttribute"/> attributes.
   /// </summary>
   InstanceAll = Instance + Obsolete + SchemaIgnored,
 
   /// <summary>
-  /// All the members, including dynamic and instance members flagged with <see cref="ObsoleteAttribute"/> or <see cref="SchemaIgnore"/> attributes
+  /// All the members, including dynamic and instance members flagged with <see cref="ObsoleteAttribute"/> or <see cref="SchemaIgnoreAttribute"/> attributes
   /// </summary>
-  All = InstanceAll + Dynamic
+  All = InstanceAll + Dynamic,
 }

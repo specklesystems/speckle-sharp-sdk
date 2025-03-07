@@ -1,225 +1,214 @@
 using System.Drawing;
-using NUnit.Framework;
-using Speckle.DoubleNumerics;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
+using Xunit;
+using Matrix4x4 = Speckle.DoubleNumerics.Matrix4x4;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
-/// <summary>
-/// Test fixture that documents what property typing changes maintain backwards/cross/forwards compatibility, and are "non-breaking" changes.
-/// This doesn't guarantee things work this way for SpecklePy
-/// Nor does it encompass other tricks (like deserialize callback, or computed json ignored properties)
-/// </summary>
-[TestFixture]
-[Description("For certain types, changing property from one type to another should be implicitly backwards compatible")]
 public class SerializerNonBreakingChanges : PrimitiveTestFixture
 {
-  [SetUp]
-  public void Setup()
+  private readonly IOperations _operations;
+
+  public SerializerNonBreakingChanges()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(StringValueMock).Assembly);
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
-  [Test, TestCaseSource(nameof(Int8TestCases)), TestCaseSource(nameof(Int32TestCases))]
-  public void IntToColor(int argb)
+  [Theory, MemberData(nameof(Int8TestCases)), MemberData(nameof(Int32TestCases))]
+  public async Task IntToColor(int argb)
   {
     var from = new IntValueMock { value = argb };
 
-    var res = from.SerializeAsTAndDeserialize<ColorValueMock>();
-    Assert.That(res.value.ToArgb(), Is.EqualTo(argb));
+    var res = await from.SerializeAsTAndDeserialize<ColorValueMock>(_operations);
+    res.value.ToArgb().Should().Be(argb);
   }
 
-  [Test, TestCaseSource(nameof(Int8TestCases)), TestCaseSource(nameof(Int32TestCases))]
-  public void ColorToInt(int argb)
+  [Theory, MemberData(nameof(Int8TestCases)), MemberData(nameof(Int32TestCases))]
+  public async Task ColorToInt(int argb)
   {
     var from = new ColorValueMock { value = Color.FromArgb(argb) };
 
-    var res = from.SerializeAsTAndDeserialize<IntValueMock>();
-    Assert.That(res.value, Is.EqualTo(argb));
+    var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
+    res.value.Should().Be(argb);
   }
 
-  [
-    Test,
-    TestCaseSource(nameof(Int8TestCases)),
-    TestCaseSource(nameof(Int32TestCases)),
-    TestCaseSource(nameof(Int64TestCases))
-  ]
-  public void IntToDouble(long testCase)
+  [Theory, MemberData(nameof(Int8TestCases)), MemberData(nameof(Int32TestCases)), MemberData(nameof(Int64TestCases))]
+  public async Task IntToDouble(long testCase)
   {
     var from = new IntValueMock { value = testCase };
 
-    var res = from.SerializeAsTAndDeserialize<DoubleValueMock>();
-    Assert.That(res.value, Is.EqualTo(testCase));
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
+    res.value.Should().Be(testCase);
   }
 
-  [Test]
-  public void NullToInt()
+  [Fact]
+  public async Task NullToInt()
   {
     var from = new ObjectValueMock { value = null };
 
-    var res = from.SerializeAsTAndDeserialize<IntValueMock>();
-    Assert.That(res.value, Is.EqualTo(default(int)));
+    var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
+    res.value.Should().Be(default(int));
   }
 
-  [Test]
-  public void NullToDouble()
+  [Fact]
+  public async Task NullToDouble()
   {
     var from = new ObjectValueMock { value = null };
 
-    var res = from.SerializeAsTAndDeserialize<DoubleValueMock>();
-    Assert.That(res.value, Is.EqualTo(default(double)));
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
+    res.value.Should().Be(0);
   }
 
-  [
-    Test,
-    TestCaseSource(nameof(Int8TestCases)),
-    TestCaseSource(nameof(Int32TestCases)),
-    TestCaseSource(nameof(Int64TestCases))
-  ]
-  public void IntToString(long testCase)
+  [Theory]
+  [MemberData(nameof(UInt64TestCases))]
+  public async Task UIntToDouble(ulong testCase)
+  {
+    var from = new UIntValueMock { value = testCase };
+
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
+    res.value.Should().BeApproximately(testCase, 2048);
+  }
+
+  [Theory, MemberData(nameof(Int8TestCases)), MemberData(nameof(Int32TestCases)), MemberData(nameof(Int64TestCases))]
+  public async Task IntToString(long testCase)
   {
     var from = new IntValueMock { value = testCase };
 
-    var res = from.SerializeAsTAndDeserialize<StringValueMock>();
-    Assert.That(res.value, Is.EqualTo(testCase.ToString()));
+    var res = await from.SerializeAsTAndDeserialize<StringValueMock>(_operations);
+    res.value.Should().Be(testCase.ToString());
   }
 
-  private static readonly double[][] s_arrayTestCases =
-  {
-    Array.Empty<double>(),
-    new double[] { 0, 1, int.MaxValue, int.MinValue },
-    new[] { default, double.Epsilon, double.MaxValue, double.MinValue }
-  };
+  public static IEnumerable<object[]> s_arrayTestCases =>
+    new object[]
+    {
+      Array.Empty<double>(),
+      new double[] { 0, 1, int.MaxValue, int.MinValue },
+      new[] { default, double.Epsilon, double.MaxValue, double.MinValue },
+    }.Select(x => new[] { x });
 
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void ArrayToList(double[] testCase)
+  [Theory, MemberData(nameof(s_arrayTestCases))]
+  public async Task ArrayToList(double[] testCase)
   {
     var from = new ArrayDoubleValueMock { value = testCase };
 
-    var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
+    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
+    res.value.Should().BeEquivalentTo(testCase);
   }
 
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void ListToArray(double[] testCase)
+  [Theory, MemberData(nameof(s_arrayTestCases))]
+  public async Task ListToArray(double[] testCase)
   {
     var from = new ListDoubleValueMock { value = testCase.ToList() };
 
-    var res = from.SerializeAsTAndDeserialize<ArrayDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
+    var res = await from.SerializeAsTAndDeserialize<ArrayDoubleValueMock>(_operations);
+    res.value.Should().BeEquivalentTo(testCase);
   }
 
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void ListToIList(double[] testCase)
+  [Theory, MemberData(nameof(s_arrayTestCases))]
+  public async Task ListToIList(double[] testCase)
   {
     var from = new ListDoubleValueMock { value = testCase.ToList() };
 
-    var res = from.SerializeAsTAndDeserialize<IReadOnlyListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
+    var res = await from.SerializeAsTAndDeserialize<IReadOnlyListDoubleValueMock>(_operations);
+    res.value.Should().BeEquivalentTo(testCase);
   }
 
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void ListToIReadOnlyList(double[] testCase)
+  [Theory, MemberData(nameof(s_arrayTestCases))]
+  public async Task ListToIReadOnlyList(double[] testCase)
   {
     var from = new ListDoubleValueMock { value = testCase.ToList() };
 
-    var res = from.SerializeAsTAndDeserialize<IListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
+    var res = await from.SerializeAsTAndDeserialize<IListDoubleValueMock>(_operations);
+    res.value.Should().BeEquivalentTo(testCase);
   }
 
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void IListToList(double[] testCase)
+  [Theory, MemberData(nameof(s_arrayTestCases))]
+  public async Task IListToList(double[] testCase)
   {
     var from = new IListDoubleValueMock { value = testCase.ToList() };
 
-    var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
+    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
+    res.value.Should().BeEquivalentTo(testCase);
   }
 
-  [Test, TestCaseSource(nameof(s_arrayTestCases))]
-  public void IReadOnlyListToList(double[] testCase)
+  [Theory, MemberData(nameof(s_arrayTestCases))]
+  public async Task IReadOnlyListToList(double[] testCase)
   {
     var from = new IReadOnlyListDoubleValueMock { value = testCase.ToList() };
 
-    var res = from.SerializeAsTAndDeserialize<ListDoubleValueMock>();
-    Assert.That(res.value, Is.EquivalentTo(testCase));
+    var res = await from.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
+    res.value.Should().BeEquivalentTo(testCase);
   }
 
-  [Test, TestCaseSource(nameof(MyEnums))]
-  public void EnumToInt(MyEnum testCase)
+  [Theory, MemberData(nameof(MyEnums))]
+  public async Task EnumToInt(MyEnum testCase)
   {
     var from = new EnumValueMock { value = testCase };
 
-    var res = from.SerializeAsTAndDeserialize<IntValueMock>();
-    Assert.That(res.value, Is.EqualTo((int)testCase));
+    var res = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
+    res.value.Should().Be((int)testCase);
   }
 
-  [Test, TestCaseSource(nameof(MyEnums))]
-  public void IntToEnum(MyEnum testCase)
+  [Theory, MemberData(nameof(MyEnums))]
+  public async Task IntToEnum(MyEnum testCase)
   {
     var from = new IntValueMock { value = (int)testCase };
 
-    var res = from.SerializeAsTAndDeserialize<EnumValueMock>();
-    Assert.That(res.value, Is.EqualTo(testCase));
+    var res = await from.SerializeAsTAndDeserialize<EnumValueMock>(_operations);
+    res.value.Should().Be(testCase);
   }
 
-  [Test]
-  [TestCaseSource(nameof(Float64TestCases))]
-  [TestCaseSource(nameof(Float32TestCases))]
-  public void DoubleToDouble(double testCase)
+  [Theory, MemberData(nameof(Float32TestCases)), MemberData(nameof(Float64TestCases))]
+  public async Task DoubleToDouble(double testCase)
   {
     var from = new DoubleValueMock { value = testCase };
 
-    var res = from.SerializeAsTAndDeserialize<DoubleValueMock>();
-    Assert.That(res.value, Is.EqualTo(testCase));
+    var res = await from.SerializeAsTAndDeserialize<DoubleValueMock>(_operations);
+    res.value.Should().Be(testCase);
   }
 
-  [Test]
-  [TestCase(123, 255)]
-  [TestCase(256, 1)]
-  [TestCase(256, float.MinValue)]
-  public void ListToMatrix64(int seed, double scalar)
+  [Theory]
+  [InlineData(123, 255)]
+  [InlineData(256, 1)]
+  [InlineData(256, float.MinValue)]
+  public async Task ListToMatrix64(int seed, double scalar)
   {
     Random rand = new(seed);
     List<double> testCase = Enumerable.Range(0, 16).Select(_ => rand.NextDouble() * scalar).ToList();
 
-    ListDoubleValueMock from = new() { value = testCase, };
+    ListDoubleValueMock from = new() { value = testCase };
 
-    //Test List -> Matrix
-    var res = from.SerializeAsTAndDeserialize<Matrix64ValueMock>();
-    Assert.That(res.value.M11, Is.EqualTo(testCase[0]));
-    Assert.That(res.value.M44, Is.EqualTo(testCase[testCase.Count - 1]));
+    var res = await from.SerializeAsTAndDeserialize<Matrix64ValueMock>(_operations);
+    res.value.M11.Should().Be(testCase[0]);
+    res.value.M44.Should().Be(testCase[^1]);
 
-    //Test Matrix -> List
-    var backAgain = res.SerializeAsTAndDeserialize<ListDoubleValueMock>();
-    Assert.That(backAgain.value, Is.Not.Null);
-    Assert.That(backAgain.value, Is.EquivalentTo(testCase));
+    var backAgain = await res.SerializeAsTAndDeserialize<ListDoubleValueMock>(_operations);
+    backAgain.value.Should().NotBeNull();
+    backAgain.value.Should().BeEquivalentTo(testCase);
   }
 
-  [Test]
-  [TestCase(123, 255)]
-  [TestCase(256, 1)]
-  [DefaultFloatingPointTolerance(Constants.EPS)]
-  public void Matrix32ToMatrix64(int seed, float scalar)
+  [Theory]
+  [InlineData(123, 255)]
+  [InlineData(256, 1)]
+  public async Task Matrix32ToMatrix64(int seed, float scalar)
   {
     Random rand = new(seed);
     List<double> testCase = Enumerable.Range(0, 16).Select(_ => rand.NextDouble() * scalar).ToList();
 
-    ListDoubleValueMock from = new() { value = testCase, };
+    ListDoubleValueMock from = new() { value = testCase };
 
-    //Test List -> Matrix
-    var res = from.SerializeAsTAndDeserialize<Matrix32ValueMock>();
-    Assert.That(res.value.M11, Is.EqualTo(testCase[0]));
-    Assert.That(res.value.M44, Is.EqualTo(testCase[testCase.Count - 1]));
-
-    //Test Matrix -> List
-    var backAgain = res.SerializeAsTAndDeserialize<ListDoubleValueMock>();
-    Assert.That(backAgain.value, Is.Not.Null);
-    Assert.That(backAgain.value, Is.EquivalentTo(testCase));
+    await FluentActions
+      .Invoking(async () => await from.SerializeAsTAndDeserialize<Matrix32ValueMock>(_operations))
+      .Should()
+      .ThrowAsync<SpeckleDeserializeException>();
   }
 }
 
@@ -257,6 +246,12 @@ public class ArrayDoubleValueMock : SerializerMock
 public class IntValueMock : SerializerMock
 {
   public long value { get; set; }
+}
+
+[SpeckleType("Speckle.Core.Tests.Unit.Serialisation.IntValueMock")]
+public class UIntValueMock : SerializerMock
+{
+  public ulong value { get; set; }
 }
 
 [SpeckleType("Speckle.Core.Tests.Unit.Serialisation.StringValueMock")]
@@ -309,7 +304,7 @@ public enum MyEnum
   Three,
   Neg = -1,
   Min = int.MinValue,
-  Max = int.MaxValue
+  Max = int.MaxValue,
 }
 
 public abstract class SerializerMock : Base
@@ -330,53 +325,16 @@ public abstract class SerializerMock : Base
     _speckle_type = target.speckle_type;
   }
 
-  internal TTo SerializeAsTAndDeserialize<TTo>()
+  internal async Task<TTo> SerializeAsTAndDeserialize<TTo>(IOperations operations)
     where TTo : Base, new()
   {
     SerializeAs<TTo>();
 
-    var json = Operations.Serialize(this);
+    var json = operations.Serialize(this);
 
-    Base result = Operations.Deserialize(json);
-    Assert.That(result, Is.Not.Null);
-    Assert.That(result, Is.TypeOf<TTo>());
+    Base result = await operations.DeserializeAsync(json);
+    result.Should().NotBeNull();
+    result.Should().BeOfType<TTo>();
     return (TTo)result;
   }
-}
-
-public abstract class PrimitiveTestFixture
-{
-  public static readonly sbyte[] Int8TestCases = { default, sbyte.MaxValue, sbyte.MinValue };
-  public static readonly short[] Int16TestCases = { short.MaxValue, short.MinValue };
-  public static readonly int[] Int32TestCases = { int.MinValue, int.MaxValue };
-  public static readonly long[] Int64TestCases = { long.MaxValue, long.MinValue };
-
-  public static double[] Float64TestCases { get; } =
-    {
-      default,
-      double.Epsilon,
-      double.MaxValue,
-      double.MinValue,
-      double.PositiveInfinity,
-      double.NegativeInfinity,
-      double.NaN
-    };
-
-  public static float[] Float32TestCases { get; } =
-    {
-      default,
-      float.Epsilon,
-      float.MaxValue,
-      float.MinValue,
-      float.PositiveInfinity,
-      float.NegativeInfinity,
-      float.NaN
-    };
-
-  public static Half[] Float16TestCases { get; } =
-    { default, Half.Epsilon, Half.MaxValue, Half.MinValue, Half.PositiveInfinity, Half.NegativeInfinity, Half.NaN };
-
-  public static float[] FloatIntegralTestCases { get; } = { 0, 1, int.MaxValue, int.MinValue };
-
-  public static MyEnum[] MyEnums { get; } = Enum.GetValues(typeof(MyEnum)).Cast<MyEnum>().ToArray();
 }

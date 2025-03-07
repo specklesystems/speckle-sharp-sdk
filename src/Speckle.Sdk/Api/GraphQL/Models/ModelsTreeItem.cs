@@ -1,6 +1,4 @@
-﻿#nullable disable
-
-namespace Speckle.Sdk.Api.GraphQL.Models;
+﻿namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public sealed class ModelsTreeItem
 {
@@ -8,7 +6,7 @@ public sealed class ModelsTreeItem
   public string fullName { get; init; }
   public bool hasChildren { get; init; }
   public string id { get; init; }
-  public Model model { get; init; }
+  public Model? model { get; init; }
   public string name { get; init; }
   public DateTime updatedAt { get; init; }
 }

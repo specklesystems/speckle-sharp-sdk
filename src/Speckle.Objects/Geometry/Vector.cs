@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Sdk.Common;
@@ -21,24 +22,8 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// <param name="y">The y coordinate of the vector</param>
   /// <param name="units">The units the coordinates are in.</param>
   /// <param name="applicationId">The unique application ID of the object.</param>
-  public Vector(double x, double y, string units = Units.Meters, string? applicationId = null)
-  {
-    this.x = x;
-    this.y = y;
-    z = 0;
-    this.applicationId = applicationId;
-    this.units = units;
-  }
-
-  /// <summary>
-  /// Constructs a new 2D <see cref="Vector"/> from it's X and Y coordinates.
-  /// </summary>
-  /// <param name="x">The x coordinate of the vector</param>
-  /// <param name="y">The y coordinate of the vector</param>
-  /// <param name="z">The y coordinate of the vector</param>
-  /// <param name="units">The units the coordinates are in.</param>
-  /// <param name="applicationId">The unique application ID of the object.</param>
-  public Vector(double x, double y, double z, string units = Units.Meters, string? applicationId = null)
+  [SetsRequiredMembers]
+  public Vector(double x, double y, double z, string units, string? applicationId = null)
   {
     this.x = x;
     this.y = y;
@@ -48,53 +33,25 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   }
 
   /// <summary>
-  /// Constructs a new <see cref="Vector"/> from a <see cref="Point"/>
-  /// </summary>
-  /// <param name="point">The point whose coordinates will be used</param>
-  /// <param name="applicationId">The unique application ID of the object.</param>
-  public Vector(Point point, string? applicationId = null)
-    : this(point.x, point.y, point.z, point.units ?? Units.None, applicationId) { }
-
-  /// <summary>
-  /// Gets or sets the coordinates of the vector
-  /// </summary>
-  [
-    JsonProperty(NullValueHandling = NullValueHandling.Ignore),
-    Obsolete("Use X,Y,Z fields to access coordinates instead", true)
-  ]
-  public List<double> value
-  {
-#pragma warning disable CS8603 // Possible null reference return.
-    get => null;
-#pragma warning restore CS8603 // Possible null reference return.
-    set
-    {
-      x = value[0];
-      y = value[1];
-      z = value.Count > 2 ? value[2] : 0;
-    }
-  }
-
-  /// <summary>
   /// The unit's this <see cref="Vector"/> is in.
   /// This should be one of <see cref="Units"/>
   /// </summary>
-  public string units { get; set; } = Units.None;
+  public required string units { get; set; }
 
   /// <summary>
   /// The x coordinate of the vector.
   /// </summary>
-  public double x { get; set; }
+  public required double x { get; set; }
 
   /// <summary>
   /// The y coordinate of the vector.
   /// </summary>
-  public double y { get; set; }
+  public required double y { get; set; }
 
   /// <summary>
   /// The z coordinate of the vector.
   /// </summary>
-  public double z { get; set; }
+  public required double z { get; set; }
 
   /// <summary>
   /// Gets the Euclidean length of this vector.
@@ -129,10 +86,9 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// Returns the coordinates of this <see cref="Vector"/> as a list of numbers
   /// </summary>
   /// <returns>A list of coordinates {x, y, z} </returns>
-  public List<double> ToList()
-  {
-    return new List<double> { x, y, z };
-  }
+  public List<double> ToList() => [x, y, z];
+
+  public Point ToPoint() => new(x, y, z, units, applicationId);
 
   /// <summary>
   /// Creates a new vector based on a list of coordinates and the unit they're drawn in.
@@ -140,7 +96,7 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// <param name="list">The list of coordinates {x, y, z}</param>
   /// <param name="units">The units the coordinates are in</param>
   /// <returns>A new <see cref="Vector"/> with the provided coordinates.</returns>
-  public static Vector FromList(List<double> list, string units)
+  public static Vector FromList(IReadOnlyList<double> list, string units)
   {
     return new Vector(list[0], list[1], list[2], units);
   }
@@ -202,22 +158,16 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// <returns>Vector result of the cross product.</returns>
   public static Vector CrossProduct(Vector u, Vector v)
   {
+    if (u.units != v.units && u.units != Units.None && v.units != Units.None)
+    {
+      throw new ArgumentException("Cannot perform cross product on two vectors with different unit systems");
+    }
+
     var x = u.y * v.z - u.z * v.y;
     var y = u.z * v.x - u.x * v.z;
     var z = u.x * v.y - u.y * v.x;
 
-    return new Vector(x, y, z);
-  }
-
-  public static double Angle(Vector u, Vector v)
-  {
-    return Math.Acos(DotProduct(u, v) / (u.Length * v.Length));
-  }
-
-  [Obsolete("Renamed to " + nameof(Normalize), true)]
-  public void Unitize()
-  {
-    Normalize();
+    return new Vector(x, y, z, units: u.units);
   }
 
   /// <summary>
@@ -245,16 +195,22 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   }
 
   /// <summary>
-  /// Returns a normalized copy of this vector.
+  /// Gets or sets the coordinates of the vector
   /// </summary>
-  /// <returns>A copy of this vector unitized.</returns>
-  public Vector Unit()
+  [
+    JsonProperty(NullValueHandling = NullValueHandling.Ignore),
+    Obsolete("Use X,Y,Z fields to access coordinates instead", true)
+  ]
+  public List<double> value
   {
-    return this / Length;
-  }
-
-  public static Vector Divide(Vector left, Vector right)
-  {
-    throw new NotImplementedException();
+#pragma warning disable CS8603 // Possible null reference return.
+    get => null;
+#pragma warning restore CS8603 // Possible null reference return.
+    set
+    {
+      x = value[0];
+      y = value[1];
+      z = value.Count > 2 ? value[2] : 0;
+    }
   }
 }

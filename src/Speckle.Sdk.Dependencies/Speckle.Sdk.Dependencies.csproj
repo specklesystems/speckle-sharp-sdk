@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Label="Compiler Properties">
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <Configurations>Debug;Release;Local</Configurations>
+    <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
+    <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
+    <ILRepackMergeDebugSymbols>true</ILRepackMergeDebugSymbols>
+  </PropertyGroup>
+  
+  <PropertyGroup Label="Nugetspec Package Properties">
+    <PackageId>Speckle.Sdk.Dependencies</PackageId>
+    <Description>The .NET SDK for Speckle</Description>
+    <PackageTags>$(PackageTags) core sdk</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Nuget Package Properties">
+    <IsPackable>true</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup Label="Package References">
+  <PackageReference Include="ILRepack.FullAuto">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" PrivateAssets="all" />    
+    <PackageReference Include="Polly" PrivateAssets="all" />
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" PrivateAssets="all" />
+    <PackageReference Include="Polly.Extensions.Http" PrivateAssets="all" />
+    <PackageReference Include="Open.ChannelExtensions" PrivateAssets="all" />
+    <PackageReference Include="System.Threading.Channels" PrivateAssets="all" />
+
+  </ItemGroup>
+</Project>

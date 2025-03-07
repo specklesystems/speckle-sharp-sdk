@@ -1,51 +1,69 @@
-﻿using NUnit.Framework;
+﻿using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Speckle.Sdk.Api;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public class SendObjectReferences
 {
-  [TestCase(0)]
-  [TestCase(1)]
-  [TestCase(10)]
+  private readonly IOperations _operations;
+
+  public SendObjectReferences()
+  {
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
+  }
+
+  [Theory]
+  [InlineData(0)]
+  [InlineData(1)]
+  [InlineData(10)]
   public async Task SendObjectsWithApplicationIds(int testDepth)
   {
     Base testData = GenerateTestCase(testDepth, true);
     MemoryTransport transport = new();
-    var result = await Speckle.Sdk.Api.Operations.Send(testData, [transport]);
+    var result = await _operations.Send(testData, [transport]);
 
-    Assert.That(result.rootObjId, Is.Not.Null);
-    Assert.That(result.rootObjId, Has.Length.EqualTo(32));
+    result.rootObjId.Should().NotBeNull();
 
-    Assert.That(result.convertedReferences, Has.Count.EqualTo(Math.Pow(2, testDepth + 1) - 2));
+    result.rootObjId.Length.Should().Be(32);
+
+    result.convertedReferences.Count.Should().Be((int)(Math.Pow(2, testDepth + 1) - 2));
   }
 
-  [TestCase(0)]
-  [TestCase(1)]
-  [TestCase(10)]
+  [Theory]
+  [InlineData(0)]
+  [InlineData(1)]
+  [InlineData(10)]
   public async Task SendObjectsWithoutApplicationIds(int testDepth)
   {
     Base testData = GenerateTestCase(testDepth, false);
     MemoryTransport transport = new();
-    var result = await Speckle.Sdk.Api.Operations.Send(testData, [transport]);
+    var result = await _operations.Send(testData, [transport]);
 
-    Assert.That(result.rootObjId, Is.Not.Null);
-    Assert.That(result.rootObjId, Has.Length.EqualTo(32));
+    result.rootObjId.Should().NotBeNull();
 
-    Assert.That(result.convertedReferences, Is.Empty);
+    result.rootObjId.Length.Should().Be(32);
+
+    result.convertedReferences.Should().BeEmpty();
   }
 
   private Base GenerateTestCase(int depth, bool withAppId)
   {
     var appId = withAppId ? $"{Guid.NewGuid()}" : null;
-    var ret = new Base() { applicationId = appId, };
+    var ret = new Base() { applicationId = appId };
     if (depth > 0)
     {
       ret["@elements"] = new List<Base>
       {
         GenerateTestCase(depth - 1, withAppId),
-        GenerateTestCase(depth - 1, withAppId)
+        GenerateTestCase(depth - 1, withAppId),
       };
     }
 

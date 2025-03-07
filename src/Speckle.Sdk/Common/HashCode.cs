@@ -1,3 +1,4 @@
+#if NETSTANDARD2_0
 using System.ComponentModel;
 
 namespace Speckle.Sdk.Common;
@@ -7,21 +8,21 @@ namespace Speckle.Sdk.Common;
 /// </summary>
 public readonly struct HashCode : IEquatable<HashCode>
 {
-  private const int EmptyCollectionPrimeNumber = 19;
-  private readonly int value;
+  private const int EMPTY_COLLECTION_PRIME_NUMBER = 19;
+  private readonly int _value;
 
   /// <summary>
   /// Initializes a new instance of the <see cref="HashCode"/> struct.
   /// </summary>
   /// <param name="value">The value.</param>
-  private HashCode(int value) => this.value = value;
+  private HashCode(int value) => _value = value;
 
   /// <summary>
   /// Performs an implicit conversion from <see cref="HashCode"/> to <see cref="int"/>.
   /// </summary>
   /// <param name="hashCode">The hash code.</param>
   /// <returns>The result of the conversion.</returns>
-  public static implicit operator int(HashCode hashCode) => hashCode.value;
+  public static implicit operator int(HashCode hashCode) => hashCode.ToInt32();
 
   /// <summary>
   /// Implements the operator ==.
@@ -53,7 +54,7 @@ public readonly struct HashCode : IEquatable<HashCode>
   /// <typeparam name="T">The type of the items.</typeparam>
   /// <param name="items">The collection.</param>
   /// <returns>The new hash code.</returns>
-  public static HashCode OfEach<T>(IEnumerable<T> items) =>
+  public static HashCode OfEach<T>(IEnumerable<T>? items) =>
     items == null ? new HashCode(0) : new HashCode(GetHashCode(items, 0));
 
   /// <summary>
@@ -62,7 +63,7 @@ public readonly struct HashCode : IEquatable<HashCode>
   /// <typeparam name="T">The type of the item.</typeparam>
   /// <param name="item">The item.</param>
   /// <returns>The new hash code.</returns>
-  public HashCode And<T>(T item) => new HashCode(CombineHashCodes(this.value, GetHashCode(item)));
+  public HashCode And<T>(T item) => new HashCode(CombineHashCodes(_value, GetHashCode(item)));
 
   /// <summary>
   /// Adds the hash code of the specified items in the collection.
@@ -70,38 +71,32 @@ public readonly struct HashCode : IEquatable<HashCode>
   /// <typeparam name="T">The type of the items.</typeparam>
   /// <param name="items">The collection.</param>
   /// <returns>The new hash code.</returns>
-  public HashCode AndEach<T>(IEnumerable<T> items)
+  public HashCode AndEach<T>(IEnumerable<T>? items)
   {
     if (items == null)
     {
-      return new HashCode(this.value);
+      return new HashCode(_value);
     }
 
-    return new HashCode(GetHashCode(items, this.value));
+    return new HashCode(GetHashCode(items, _value));
   }
 
   /// <inheritdoc />
-  public bool Equals(HashCode other) => this.value.Equals(other.value);
+  public bool Equals(HashCode other) => _value.Equals(other._value);
 
   /// <inheritdoc />
-  public override bool Equals(object obj)
+  public override bool Equals(object? obj)
   {
-    if (obj is HashCode)
+    if (obj is HashCode code)
     {
-      return this.Equals((HashCode)obj);
+      return Equals(code);
     }
 
     return false;
   }
 
-  /// <summary>
-  /// Throws <see cref="NotSupportedException" />.
-  /// </summary>
-  /// <returns>Does not return.</returns>
-  /// <exception cref="NotSupportedException">Implicitly convert this struct to an <see cref="int" /> to get the hash code.</exception>
   [EditorBrowsable(EditorBrowsableState.Never)]
-  public override int GetHashCode() =>
-    throw new NotSupportedException("Implicitly convert this struct to an int to get the hash code.");
+  public override int GetHashCode() => ToInt32();
 
   private static int CombineHashCodes(int h1, int h2)
   {
@@ -130,9 +125,15 @@ public readonly struct HashCode : IEquatable<HashCode>
     }
     else
     {
-      temp = CombineHashCodes(temp, EmptyCollectionPrimeNumber);
+      temp = CombineHashCodes(temp, EMPTY_COLLECTION_PRIME_NUMBER);
     }
 
     return temp;
   }
+
+  public int ToInt32()
+  {
+    return _value;
+  }
 }
+#endif

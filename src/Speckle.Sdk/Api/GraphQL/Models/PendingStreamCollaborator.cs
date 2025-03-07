@@ -1,6 +1,4 @@
-﻿#nullable disable
-
-namespace Speckle.Sdk.Api.GraphQL.Models;
+﻿namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public sealed class PendingStreamCollaborator
 {
@@ -13,12 +11,6 @@ public sealed class PendingStreamCollaborator
   public string title { get; init; }
   public string role { get; init; }
   public LimitedUser invitedBy { get; init; }
-  public LimitedUser user { get; init; }
-  public string token { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public string streamId { get; init; }
-
-  [Obsolete(DeprecationMessages.FE1_DEPRECATION_MESSAGE)]
-  public string streamName { get; init; }
+  public LimitedUser? user { get; init; }
+  public string? token { get; init; }
 }

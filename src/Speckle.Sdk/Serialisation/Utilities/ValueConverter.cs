@@ -1,17 +1,22 @@
-using System.Buffers;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
 using Speckle.DoubleNumerics;
-using Speckle.Sdk.Logging;
+using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 
 internal static class ValueConverter
 {
-  private static object[] _singleValue = new object[1];
+  private static readonly object[] s_singleValue = new object[1];
 
+  [SuppressMessage(
+    "Maintainability",
+    "CA1502:Avoid excessive complexity",
+    Justification = "To fix this requires rewrite of serializaiton"
+  )]
   public static bool ConvertValue(Type type, object? value, out object? convertedValue)
   {
     // TODO: Document list of supported values in the SDK. (and grow it as needed)
@@ -169,9 +174,9 @@ internal static class ValueConverter
       var targetType = typeof(List<>).MakeGenericType(type.GenericTypeArguments);
       Type listElementType = type.GenericTypeArguments[0];
 
-      _singleValue[0] = valueList.Count;
+      s_singleValue[0] = valueList.Count;
       //reuse array to avoid params array allocation
-      IList ret = (IList)Activator.CreateInstance(targetType, _singleValue);
+      IList ret = (IList)Activator.CreateInstance(targetType, s_singleValue).NotNull();
 
       foreach (object inputListElement in valueList)
       {
@@ -200,7 +205,7 @@ internal static class ValueConverter
       }
 
       Type dictValueType = type.GenericTypeArguments[1];
-      IDictionary ret = (IDictionary)Activator.CreateInstance(type);
+      IDictionary ret = (IDictionary)Activator.CreateInstance(type).NotNull();
 
       foreach (KeyValuePair<string, object> kv in valueDict)
       {
@@ -261,33 +266,9 @@ internal static class ValueConverter
     }
 
     #region BACKWARDS COMPATIBILITY: matrix4x4 changed from System.Numerics float to System.DoubleNumerics double in release 2.16
-    if (type == typeof(System.Numerics.Matrix4x4) && value is IReadOnlyList<object> lMatrix)
+    if (type == typeof(System.Numerics.Matrix4x4) && value is IReadOnlyList<object>)
     {
-      SpeckleLog.Logger.Warning(
-        "This kept for backwards compatibility, no one should be using {this}",
-        "ValueConverter deserialize to System.Numerics.Matrix4x4"
-      );
-      convertedValue = new System.Numerics.Matrix4x4(
-        I(0),
-        I(1),
-        I(2),
-        I(3),
-        I(4),
-        I(5),
-        I(6),
-        I(7),
-        I(8),
-        I(9),
-        I(10),
-        I(11),
-        I(12),
-        I(13),
-        I(14),
-        I(15)
-      );
-      return true;
-
-      float I(int index) => Convert.ToSingle(lMatrix[index]);
+      throw new ArgumentException("Only Speckle.DoubleNumerics.Matrix4x4 is supported.", nameof(type));
     }
     #endregion
 

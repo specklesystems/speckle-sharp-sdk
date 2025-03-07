@@ -66,7 +66,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
       segments = transformed,
       applicationId = applicationId,
       closed = closed,
-      units = units
+      units = units,
     };
 
     return success;
@@ -79,27 +79,37 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   /// <returns>A <see cref="Polycurve"/> with the same shape as the provided polyline.</returns>
   public static implicit operator Polycurve(Polyline polyline)
   {
-    Polycurve polycurve =
-      new()
-      {
-        segments = new(),
-        units = polyline.units,
-        area = polyline.area,
-        domain = polyline.domain,
-        closed = polyline.closed,
-        bbox = polyline.bbox,
-        length = polyline.length
-      };
+    Polycurve polycurve = new()
+    {
+      segments = new(),
+      units = polyline.units,
+      area = polyline.area,
+      domain = polyline.domain,
+      closed = polyline.closed,
+      bbox = polyline.bbox,
+      length = polyline.length,
+    };
 
     var points = polyline.GetPoints();
     for (var i = 0; i < points.Count - 1; i++)
     {
-      var line = new Line(points[i], points[i + 1], polyline.units);
+      var line = new Line
+      {
+        start = points[i],
+        end = points[i + 1],
+        units = polyline.units,
+      };
       polycurve.segments.Add(line);
     }
+
     if (polyline.closed)
     {
-      var line = new Line(points[^1], points[0], polyline.units);
+      var line = new Line
+      {
+        start = points[^1],
+        end = points[0],
+        units = polyline.units,
+      };
       polycurve.segments.Add(line);
     }
 

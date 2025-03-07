@@ -19,7 +19,7 @@ public sealed class ProjectInviteResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<Project> Create(
+  public async Task<ProjectWithTeam> Create(
     string projectId,
     ProjectInviteCreateInput input,
     CancellationToken cancellationToken = default
@@ -28,9 +28,9 @@ public sealed class ProjectInviteResource
     //language=graphql
     const string QUERY = """
       mutation ProjectInviteCreate($projectId: ID!, $input: ProjectInviteCreateInput!) {
-        projectMutations {
-          invites {
-            create(projectId: $projectId, input: $input) {
+        data:projectMutations {
+          data:invites {
+            data:create(projectId: $projectId, input: $input) {
               id
               name
               description
@@ -39,7 +39,10 @@ public sealed class ProjectInviteResource
               role
               createdAt
               updatedAt
+              workspaceId
+              sourceApps
               team {
+                id
                 role
                 user {
                   id
@@ -86,24 +89,27 @@ public sealed class ProjectInviteResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ProjectWithTeam>>>>(
+        request,
+        cancellationToken
+      )
       .ConfigureAwait(false);
 
-    return response.projectMutations.invites.create;
+    return response.data.data.data;
   }
 
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<bool> Use(ProjectInviteUseInput input, CancellationToken cancellationToken = default)
+  public async Task Use(ProjectInviteUseInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
       mutation ProjectInviteUse($input: ProjectInviteUseInput!) {
-        projectMutations {
-          invites {
-            use(input: $input)
+        data:projectMutations {
+          data:invites {
+            data:use(input: $input)
           }
         }
       }
@@ -111,9 +117,14 @@ public sealed class ProjectInviteResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<bool>>>>(request, cancellationToken)
       .ConfigureAwait(false);
-    return response.projectMutations.invites.use;
+
+    if (!response.data.data.data)
+    {
+      //This should never happen, the server should never return `false` without providing a reason
+      throw new InvalidOperationException("GraphQL data did not indicate success, but no GraphQL error was provided");
+    }
   }
 
   /// <param name="projectId"></param>
@@ -130,7 +141,7 @@ public sealed class ProjectInviteResource
     //language=graphql
     const string QUERY = """
       query ProjectInvite($projectId: String!, $token: String) {
-        projectInvite(projectId: $projectId, token: $token) {
+        data:projectInvite(projectId: $projectId, token: $token) {
           id
           inviteId
           invitedBy {
@@ -162,10 +173,10 @@ public sealed class ProjectInviteResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, token } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectInviteResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<NullableResponse<PendingStreamCollaborator>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.projectInvite;
+    return response.data;
   }
 
   /// <param name="projectId"></param>
@@ -173,14 +184,18 @@ public sealed class ProjectInviteResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  public async Task<Project> Cancel(string projectId, string inviteId, CancellationToken cancellationToken = default)
+  public async Task<ProjectWithTeam> Cancel(
+    string projectId,
+    string inviteId,
+    CancellationToken cancellationToken = default
+  )
   {
     //language=graphql
     const string QUERY = """
       mutation ProjectInviteCancel($projectId: ID!, $inviteId: String!) {
-        projectMutations {
-          invites {
-            cancel(projectId: $projectId, inviteId: $inviteId) {
+        data:projectMutations {
+          data:invites {
+            data:cancel(projectId: $projectId, inviteId: $inviteId) {
               id
               name
               description
@@ -189,7 +204,10 @@ public sealed class ProjectInviteResource
               role
               createdAt
               updatedAt
+              sourceApps
+              workspaceId
               team {
+                id
                 role
                 user {
                   id
@@ -236,9 +254,12 @@ public sealed class ProjectInviteResource
     GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, inviteId } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<ProjectMutationResponse>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ProjectWithTeam>>>>(
+        request,
+        cancellationToken
+      )
       .ConfigureAwait(false);
 
-    return response.projectMutations.invites.cancel;
+    return response.data.data.data;
   }
 }

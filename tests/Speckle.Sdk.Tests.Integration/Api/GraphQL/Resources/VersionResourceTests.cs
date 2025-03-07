@@ -1,13 +1,14 @@
-﻿using Speckle.Sdk.Api;
+﻿using FluentAssertions;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Xunit;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[TestOf(typeof(VersionResource))]
-public class VersionResourceTests
+public class VersionResourceTests : IAsyncLifetime
 {
   private Client _testUser;
   private VersionResource Sut => _testUser.Version;
@@ -16,95 +17,100 @@ public class VersionResourceTests
   private Model _model2;
   private Version _version;
 
-  [SetUp]
-  public async Task Setup()
+  public Task DisposeAsync() => Task.CompletedTask;
+
+  public async Task InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new("Test project", "", null));
     _model1 = await _testUser.Model.Create(new("Test Model 1", "", _project.id));
     _model2 = await _testUser.Model.Create(new("Test Model 2", "", _project.id));
 
-    string versionId = await Fixtures.CreateVersion(_testUser, _project.id, _model1.id);
-
-    _version = await Sut.Get(versionId, _model1.id, _project.id);
+    _version = await Fixtures.CreateVersion(_testUser, _project.id, _model1.id);
   }
 
-  [Test]
+  [Fact]
   public async Task VersionGet()
   {
-    Version result = await Sut.Get(_version.id, _model1.id, _project.id);
+    Version result = await Sut.Get(_version.id, _project.id);
 
-    Assert.That(result, Has.Property(nameof(Version.id)).EqualTo(_version.id));
-    Assert.That(result, Has.Property(nameof(Version.message)).EqualTo(_version.message));
+    result.id.Should().Be(_version.id);
+    result.message.Should().Be(_version.message);
   }
 
-  [Test]
+  [Fact]
   public async Task VersionsGet()
   {
     ResourceCollection<Version> result = await Sut.GetVersions(_model1.id, _project.id);
 
-    Assert.That(result.items, Has.Count.EqualTo(1));
-    Assert.That(result.totalCount, Is.EqualTo(1));
-    Assert.That(result.items[0], Has.Property(nameof(Version.id)).EqualTo(_version.id));
+    result.items.Count.Should().Be(1);
+    result.totalCount.Should().Be(1);
+    result.items[0].id.Should().Be(_version.id);
   }
 
-  [Test]
+  [Fact]
   public async Task VersionReceived()
   {
     MarkReceivedVersionInput input = new(_version.id, _project.id, "Integration test");
-    var result = await Sut.Received(input);
-
-    Assert.That(result, Is.True);
+    await Sut.Received(input);
   }
 
-  [Test]
+  [Fact]
   public async Task ModelGetWithVersions()
   {
-    Model result = await _testUser.Model.GetWithVersions(_model1.id, _project.id);
+    var result = await _testUser.Model.GetWithVersions(_model1.id, _project.id);
 
-    Assert.That(result, Has.Property(nameof(Model.id)).EqualTo(_model1.id));
-    Assert.That(result.versions.items, Has.Count.EqualTo(1));
-    Assert.That(result.versions.totalCount, Is.EqualTo(1));
-    Assert.That(result.versions.items[0], Has.Property(nameof(Version.id)).EqualTo(_version.id));
+    result.id.Should().Be(_model1.id);
+    result.versions.items.Count.Should().Be(1);
+    result.versions.totalCount.Should().Be(1);
+    result.versions.items[0].id.Should().Be(_version.id);
   }
 
-  [Test]
+  [Fact]
   public async Task VersionUpdate()
   {
     const string NEW_MESSAGE = "MY new version message";
 
-    UpdateVersionInput input = new(_version.id, NEW_MESSAGE);
+    UpdateVersionInput input = new(_version.id, _project.id, NEW_MESSAGE);
     Version updatedVersion = await Sut.Update(input);
 
-    Assert.That(updatedVersion, Has.Property(nameof(Version.id)).EqualTo(_version.id));
-    Assert.That(updatedVersion, Has.Property(nameof(Version.message)).EqualTo(NEW_MESSAGE));
-    Assert.That(updatedVersion, Has.Property(nameof(Version.previewUrl)).EqualTo(_version.previewUrl));
+    updatedVersion.id.Should().Be(_version.id);
+    updatedVersion.message.Should().Be(NEW_MESSAGE);
+    updatedVersion.previewUrl.Should().Be(_version.previewUrl);
   }
 
-  [Test]
+  [Fact]
   public async Task VersionMoveToModel()
   {
-    MoveVersionsInput input = new(_model2.name, new[] { _version.id });
+    MoveVersionsInput input = new(_project.id, _model2.name, [_version.id]);
     string id = await Sut.MoveToModel(input);
-    Assert.That(id, Is.EqualTo(_model2.id));
-    Version movedVersion = await Sut.Get(_version.id, _model2.id, _project.id);
 
-    Assert.That(movedVersion, Has.Property(nameof(Version.id)).EqualTo(_version.id));
-    Assert.That(movedVersion, Has.Property(nameof(Version.message)).EqualTo(_version.message));
-    Assert.That(movedVersion, Has.Property(nameof(Version.previewUrl)).EqualTo(_version.previewUrl));
+    id.Should().Be(_model2.id);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => await Sut.Get(id, _model1.id, _project.id));
+    Version movedVersion = await Sut.Get(_version.id, _project.id);
+
+    movedVersion.id.Should().Be(_version.id);
+    movedVersion.message.Should().Be(_version.message);
+    movedVersion.previewUrl.Should().Be(_version.previewUrl);
   }
 
-  [Test]
+  [Fact]
   public async Task VersionDelete()
   {
-    DeleteVersionsInput input = new(new[] { _version.id });
+    DeleteVersionsInput input = new([_version.id], _project.id);
 
-    bool response = await Sut.Delete(input);
-    Assert.That(response, Is.True);
+    await Sut.Delete(input);
 
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Get(_version.id, _model1.id, _project.id));
-    Assert.CatchAsync<SpeckleGraphQLException>(async () => _ = await Sut.Delete(input));
+    var getEx = await FluentActions
+      .Invoking(async () => await Sut.Get(_version.id, _project.id))
+      .Should()
+      .ThrowAsync<AggregateException>();
+    getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
+
+    var delEx = await FluentActions
+      .Invoking(async () => await Sut.Delete(input))
+      .Should()
+      .ThrowAsync<AggregateException>();
+    delEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
 }

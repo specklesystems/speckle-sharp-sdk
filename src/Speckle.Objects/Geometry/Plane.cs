@@ -5,7 +5,7 @@ using Speckle.Sdk.Models;
 namespace Speckle.Objects.Geometry;
 
 /// <summary>
-/// A 3-dimensional Plane consisting of an origin <see cref="Point"/>, and 3 <see cref="Vector"/> as it's X, Y and Z axis.
+/// A 3-dimensional Plane consisting of an origin <see cref="Point"/>, and 3 <see cref="Vector"/> as its X, Y and Z axis.
 /// </summary>
 [SpeckleType("Objects.Geometry.Plane")]
 public class Plane : Base, ITransformable<Plane>
@@ -50,7 +50,7 @@ public class Plane : Base, ITransformable<Plane>
       xdir = transformedXdir,
       ydir = transformedYdir,
       applicationId = applicationId,
-      units = units
+      units = units,
     };
 
     return true;
@@ -87,9 +87,9 @@ public class Plane : Base, ITransformable<Plane>
   /// </summary>
   /// <param name="list">The list of values representing this plane</param>
   /// <returns>A new <see cref="Plane"/> with the provided values.</returns>
-  public static Plane FromList(List<double> list)
+  public static Plane FromList(IReadOnlyList<double> list)
   {
-    var units = Units.GetUnitFromEncoding(list[list.Count - 1]);
+    var units = Units.GetUnitFromEncoding(list[^1]);
     var plane = new Plane
     {
       origin = new Point(list[0], list[1], list[2], units),

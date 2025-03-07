@@ -1,7 +1,5 @@
-#nullable disable
 using System.Runtime.InteropServices;
 using Speckle.Sdk.Api.GraphQL.Models;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 
 namespace Speckle.Sdk.Credentials;
@@ -49,7 +47,7 @@ public class Account : IEquatable<Account>
 
   private static string CleanURL(string server)
   {
-    if (Uri.TryCreate(server, UriKind.Absolute, out Uri newUri))
+    if (Uri.TryCreate(server, UriKind.Absolute, out Uri? newUri))
     {
       server = newUri.Authority;
     }
@@ -73,28 +71,29 @@ public class Account : IEquatable<Account>
     return Crypt.Md5(CleanURL(url), "X2");
   }
 
-  public async Task<UserInfo> Validate()
-  {
-    Uri server = new(serverInfo.url);
-    return await AccountManager.GetUserInfo(token, server).ConfigureAwait(false);
-  }
-
   public override string ToString()
   {
     return $"Account ({userInfo.email} | {serverInfo.url})";
   }
 
-  public bool Equals(Account other)
+  public bool Equals(Account? other)
   {
     return other is not null && other.userInfo.email == userInfo.email && other.serverInfo.url == serverInfo.url;
   }
 
-  public override bool Equals(object obj)
+  public override bool Equals(object? obj)
   {
     return obj is Account acc && Equals(acc);
   }
 
-  public override int GetHashCode() => HashCode.Of(userInfo.email).And(serverInfo.url);
+  public override int GetHashCode()
+  {
+#if  NETSTANDARD2_0
+    return Speckle.Sdk.Common.HashCode.Of(userInfo.email).And(serverInfo.url);
+#else
+    return HashCode.Combine(userInfo.email, serverInfo.url);
+#endif
+  }
 
   #endregion
 

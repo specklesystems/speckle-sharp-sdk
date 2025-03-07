@@ -1,38 +1,42 @@
 using System.Drawing;
-using NUnit.Framework;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
+using Xunit;
 using Point = Speckle.Sdk.Tests.Unit.Host.Point;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[TestFixture]
-[TestOf(typeof(Sdk.Api.Operations))]
 public class ObjectSerialization
 {
-  [SetUp]
-  public void Setup()
+  private readonly IOperations _operations;
+
+  public ObjectSerialization()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly, typeof(ColorMock).Assembly);
+    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
-  [Test]
-  public void IgnoreCircularReferences()
+  [Fact]
+  public async Task IgnoreCircularReferences()
   {
     var pt = new Point(1, 2, 3);
     pt["circle"] = pt;
 
-    var test = Sdk.Api.Operations.Serialize(pt);
+    var test = _operations.Serialize(pt);
 
-    var result = Sdk.Api.Operations.Deserialize(test);
+    var result = await _operations.DeserializeAsync(test);
     var circle = result["circle"];
-    Assert.That(circle, Is.Null);
+    circle.Should().BeNull();
   }
 
-  [Test]
-  public void InterfacePropHandling()
+  [Fact]
+  public async Task InterfacePropHandling()
   {
     Line tail = new() { Start = new Point(0, 0, 0), End = new Point(42, 42, 42) };
     PolygonalFeline cat = new() { Tail = tail };
@@ -42,7 +46,7 @@ public class ObjectSerialization
       cat.Claws[$"Claw number {i}"] = new Line
       {
         Start = new Point(i, i, i),
-        End = new Point(i + 3.14, i + 3.14, i + 3.14)
+        End = new Point(i + 3.14, i + 3.14, i + 3.14),
       };
 
       if (i % 2 == 0)
@@ -63,32 +67,32 @@ public class ObjectSerialization
       cat.Fur[i] = new Line { Start = new Point(i, i, i), End = new Point(i + 3.14, i + 3.14, i + 3.14) };
     }
 
-    var result = Sdk.Api.Operations.Serialize(cat);
+    var result = _operations.Serialize(cat);
 
-    var deserialisedFeline = Sdk.Api.Operations.Deserialize(result);
+    var deserialisedFeline = await _operations.DeserializeAsync(result);
 
-    Assert.That(deserialisedFeline.GetId(), Is.EqualTo(cat.GetId())); // If we're getting the same hash... we're probably fine!
+    deserialisedFeline.GetId().Should().Be(cat.GetId());
   }
 
-  [Test]
-  public void InheritanceTests()
+  [Fact]
+  public async Task InheritanceTests()
   {
     var superPoint = new SuperPoint
     {
       X = 10,
       Y = 10,
       Z = 10,
-      W = 42
+      W = 42,
     };
 
-    var str = Sdk.Api.Operations.Serialize(superPoint);
-    var sstr = Sdk.Api.Operations.Deserialize(str);
+    var str = _operations.Serialize(superPoint);
+    var sstr = await _operations.DeserializeAsync(str);
 
-    Assert.That(sstr.speckle_type, Is.EqualTo(superPoint.speckle_type));
+    sstr.speckle_type.Should().Be(superPoint.speckle_type);
   }
 
-  [Test]
-  public void ListDynamicProp()
+  [Fact]
+  public async Task ListDynamicProp()
   {
     var point = new Point();
     var test = new List<Base>();
@@ -100,49 +104,50 @@ public class ObjectSerialization
 
     point["test"] = test;
 
-    var str = Sdk.Api.Operations.Serialize(point);
-    var dsrls = Sdk.Api.Operations.Deserialize(str);
+    var str = _operations.Serialize(point);
+    var dsrls = await _operations.DeserializeAsync(str);
 
-    var list = dsrls["test"] as List<object>; // NOTE: on dynamically added lists, we cannot infer the inner type and we always fall back to a generic list<object>.
-    Assert.That(list, Has.Count.EqualTo(100));
+    var list = dsrls["test"] as List<object>;
+    list.Should().NotBeNull(); // Ensure the list isn't null in first place
+    list!.Count.Should().Be(100);
   }
 
-  [Test]
-  public void ChunkSerialisation()
+  [Fact]
+  public async Task ChunkSerialisation()
   {
-    var baseBasedChunk = new DataChunk();
+    var baseBasedChunk = new DataChunk() { data = new() };
     for (var i = 0; i < 200; i++)
     {
       baseBasedChunk.data.Add(new SuperPoint { W = i });
     }
 
-    var stringBasedChunk = new DataChunk();
+    var stringBasedChunk = new DataChunk() { data = new() };
     for (var i = 0; i < 200; i++)
     {
       stringBasedChunk.data.Add(i + "_hai");
     }
 
-    var doubleBasedChunk = new DataChunk();
+    var doubleBasedChunk = new DataChunk() { data = new() };
     for (var i = 0; i < 200; i++)
     {
       doubleBasedChunk.data.Add(i + 0.33);
     }
 
-    var baseChunkString = Sdk.Api.Operations.Serialize(baseBasedChunk);
-    var stringChunkString = Sdk.Api.Operations.Serialize(stringBasedChunk);
-    var doubleChunkString = Sdk.Api.Operations.Serialize(doubleBasedChunk);
+    var baseChunkString = _operations.Serialize(baseBasedChunk);
+    var stringChunkString = _operations.Serialize(stringBasedChunk);
+    var doubleChunkString = _operations.Serialize(doubleBasedChunk);
 
-    var baseChunkDeserialised = (DataChunk)Sdk.Api.Operations.Deserialize(baseChunkString);
-    var stringChunkDeserialised = (DataChunk)Sdk.Api.Operations.Deserialize(stringChunkString);
-    var doubleChunkDeserialised = (DataChunk)Sdk.Api.Operations.Deserialize(doubleChunkString);
+    var baseChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(baseChunkString);
+    var stringChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(stringChunkString);
+    var doubleChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(doubleChunkString);
 
-    Assert.That(baseChunkDeserialised.data, Has.Count.EqualTo(baseBasedChunk.data.Count));
-    Assert.That(stringChunkDeserialised.data, Has.Count.EqualTo(stringBasedChunk.data.Count));
-    Assert.That(doubleChunkDeserialised.data, Has.Count.EqualTo(doubleBasedChunk.data.Count));
+    baseChunkDeserialised.data.Count.Should().Be(baseBasedChunk.data.Count);
+    stringChunkDeserialised.data.Count.Should().Be(stringBasedChunk.data.Count);
+    doubleChunkDeserialised.data.Count.Should().Be(doubleBasedChunk.data.Count);
   }
 
-  [Test]
-  public void ObjectWithChunksSerialisation()
+  [Fact]
+  public async Task ObjectWithChunksSerialisation()
   {
     const int MAX_NUM = 2020;
     var mesh = new FakeMesh { ArrayOfDoubles = new double[MAX_NUM], ArrayOfLegs = new TableLeg[MAX_NUM] };
@@ -163,13 +168,13 @@ public class ObjectSerialization
     mesh["@(800)CustomChunk"] = customChunk;
     mesh["@()DefaultChunk"] = defaultChunk;
 
-    var serialised = Sdk.Api.Operations.Serialize(mesh);
-    var deserialised = Sdk.Api.Operations.Deserialize(serialised);
+    var serialised = _operations.Serialize(mesh);
+    var deserialised = await _operations.DeserializeAsync(serialised);
 
-    Assert.That(mesh.GetId(), Is.EqualTo(deserialised.GetId()));
+    mesh.GetId().Should().Be(deserialised.GetId());
   }
 
-  [Test]
+  [Fact]
   public void EmptyListSerialisationTests()
   {
     // NOTE: expected behaviour is that empty lists should serialize as empty lists. Don't ask why, it's complicated.
@@ -184,7 +189,7 @@ public class ObjectSerialization
     test["nestedList"] = new List<object> { new List<object> { new List<object>() } };
     test["@nestedDetachableList"] = new List<object> { new List<object> { new List<object>() } };
 
-    var serialised = Sdk.Api.Operations.Serialize(test);
+    var serialised = _operations.Serialize(test);
     var isCorrect =
       serialised.Contains("\"@(5)emptyChunks\":[]")
       && serialised.Contains("\"emptyList\":[]")
@@ -192,7 +197,7 @@ public class ObjectSerialization
       && serialised.Contains("\"nestedList\":[[[]]]")
       && serialised.Contains("\"@nestedDetachableList\":[[[]]]");
 
-    Assert.That(isCorrect, Is.EqualTo(true));
+    isCorrect.Should().BeTrue();
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+DateMock")]
@@ -201,16 +206,16 @@ public class ObjectSerialization
     public DateTime TestField { get; set; }
   }
 
-  [Test]
-  public void DateSerialisation()
+  [Fact]
+  public async Task DateSerialisation()
   {
     var date = new DateTime(2020, 1, 14);
     var mockBase = new DateMock { TestField = date };
 
-    var result = Sdk.Api.Operations.Serialize(mockBase);
-    var test = (DateMock)Sdk.Api.Operations.Deserialize(result);
+    var result = _operations.Serialize(mockBase);
+    var test = (DateMock)await _operations.DeserializeAsync(result);
 
-    Assert.That(test.TestField, Is.EqualTo(date));
+    test.TestField.Should().Be(date);
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+GUIDMock")]
@@ -219,16 +224,16 @@ public class ObjectSerialization
     public Guid TestField { get; set; }
   }
 
-  [Test]
-  public void GuidSerialisation()
+  [Fact]
+  public async Task GuidSerialisation()
   {
     var guid = Guid.NewGuid();
     var mockBase = new GUIDMock { TestField = guid };
 
-    var result = Sdk.Api.Operations.Serialize(mockBase);
-    var test = (GUIDMock)Sdk.Api.Operations.Deserialize(result);
+    var result = _operations.Serialize(mockBase);
+    var test = (GUIDMock)await _operations.DeserializeAsync(result);
 
-    Assert.That(test.TestField, Is.EqualTo(guid));
+    test.TestField.Should().Be(guid);
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+ColorMock")]
@@ -237,16 +242,16 @@ public class ObjectSerialization
     public Color TestField { get; set; }
   }
 
-  [Test]
-  public void ColorSerialisation()
+  [Fact]
+  public async Task ColorSerialisation()
   {
     var color = Color.FromArgb(255, 4, 126, 251);
     var mockBase = new ColorMock { TestField = color };
 
-    var result = Sdk.Api.Operations.Serialize(mockBase);
-    var test = (ColorMock)Sdk.Api.Operations.Deserialize(result);
+    var result = _operations.Serialize(mockBase);
+    var test = (ColorMock)await _operations.DeserializeAsync(result);
 
-    Assert.That(test.TestField, Is.EqualTo(color));
+    test.TestField.Should().Be(color);
   }
 
   [SpeckleType("Speckle.Core.Tests.Unit.Api.Operations.ObjectSerialization+StringDateTimeRegressionMock")]
@@ -255,14 +260,14 @@ public class ObjectSerialization
     public string TestField { get; set; }
   }
 
-  [Test]
-  public void StringDateTimeRegression()
+  [Fact]
+  public async Task StringDateTimeRegression()
   {
     var mockBase = new StringDateTimeRegressionMock { TestField = "2021-11-12T11:32:01" };
 
-    var result = Sdk.Api.Operations.Serialize(mockBase);
-    var test = (StringDateTimeRegressionMock)Sdk.Api.Operations.Deserialize(result);
+    var result = _operations.Serialize(mockBase);
+    var test = (StringDateTimeRegressionMock)await _operations.DeserializeAsync(result);
 
-    Assert.That(test.TestField, Is.EqualTo(mockBase.TestField));
+    test.TestField.Should().Be(mockBase.TestField);
   }
 }

@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Reflection;
-using NUnit.Framework;
+using FluentAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
-using Speckle.Objects;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 
-namespace Objects.Tests.Unit;
+namespace Speckle.Objects.Tests.Unit;
 
 /// <summary>
 /// Tests that all Base object models in the kit have properties that are an allowed type
@@ -21,8 +15,7 @@ namespace Objects.Tests.Unit;
 /// </summary>
 public class ModelPropertySupportedTypes
 {
-  [SetUp]
-  public void Setup()
+  public ModelPropertySupportedTypes()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Speckle.Objects.Geometry.Arc).Assembly);
@@ -35,41 +28,40 @@ public class ModelPropertySupportedTypes
   /// <remarks>
   /// If you're tempted to add to this list, please ensure both our serializer and deserializer support properties of this type
   /// Check the <see cref="Speckle.Sdk.Serialisation.Utilities.ValueConverter"/>
-  /// Check the <see cref="BaseObjectSerializerV2"/>
+  /// Check the <see cref="SpeckleObjectSerializer"/>
   /// (or is an interface where all concrete types are supported)
   /// You should also consider adding a test in SerializerNonBreakingChanges
   /// </remarks>
-  private static readonly HashSet<Type> _allowedTypes =
-    new()
-    {
-      typeof(Boolean),
-      typeof(Byte),
-      typeof(UInt32),
-      typeof(UInt64),
-      typeof(Int16),
-      typeof(Int32),
-      typeof(Int64),
-      //typeof(Half),
-      typeof(Single),
-      typeof(Double),
-      typeof(Char),
-      typeof(string),
-      typeof(DateTime),
-      typeof(Guid),
-      typeof(Color),
-      typeof(List<>),
-      typeof(Nullable<>),
-      typeof(IList<>),
-      typeof(IReadOnlyList<>),
-      typeof(Dictionary<,>),
-      //typeof(IDictionary<,>),
-      //typeof(IReadOnlyDictionary<,>),
-      typeof(ICurve),
-      typeof(Object),
-      typeof(Matrix4x4),
-    };
+  private static readonly HashSet<Type> _allowedTypes = new()
+  {
+    typeof(Boolean),
+    typeof(Byte),
+    typeof(UInt32),
+    typeof(UInt64),
+    typeof(Int16),
+    typeof(Int32),
+    typeof(Int64),
+    //typeof(Half),
+    typeof(Single),
+    typeof(Double),
+    typeof(Char),
+    typeof(string),
+    typeof(DateTime),
+    typeof(Guid),
+    typeof(Color),
+    typeof(List<>),
+    typeof(Nullable<>),
+    typeof(IList<>),
+    typeof(IReadOnlyList<>),
+    typeof(Dictionary<,>),
+    //typeof(IDictionary<,>),
+    //typeof(IReadOnlyDictionary<,>),
+    typeof(ICurve),
+    typeof(Object),
+    typeof(Matrix4x4),
+  };
 
-  [Test]
+  [Fact]
   public void TestObjects()
   {
     foreach ((string _, Type type, List<string> _) in TypeLoader.Types)
@@ -79,15 +71,24 @@ public class ModelPropertySupportedTypes
       foreach (var prop in members)
       {
         if (prop.PropertyType.IsAssignableTo(typeof(Base)))
+        {
           continue;
+        }
+
         if (prop.PropertyType.IsEnum)
+        {
           continue;
+        }
+
         if (prop.PropertyType.IsSZArray)
+        {
           continue;
+        }
 
         Type propType = prop.PropertyType;
         Type typeDef = propType.IsGenericType ? propType.GetGenericTypeDefinition() : propType;
-        Assert.That(_allowedTypes, Does.Contain(typeDef), $"{typeDef} was not in allowedTypes");
+
+        _allowedTypes.Should().Contain(typeDef, $"{typeDef} was not in allowedTypes. (Origin: {type}.{prop.Name})");
       }
     }
   }

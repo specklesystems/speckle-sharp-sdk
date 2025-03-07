@@ -1,4 +1,3 @@
-using Speckle.Objects.BuiltElements;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
@@ -84,31 +83,19 @@ public interface ITransformable : ISpeckleObject
   bool TransformTo(Transform transform, out ITransformable transformed);
 }
 
-#endregion
-
-#region GIS
-public interface IGisFeature : ISpeckleObject
-{
-  Base attributes { get; set; }
-}
-
-#endregion
-
-#region Built elements
-
 /// <summary>
-/// Specifies displayable <see cref="Base"/> value(s) to be used as a fallback
+/// Specifies displayable <see cref="Base"/> simple geometries to be used as a fallback
 /// if a displayable form cannot be converted.
 /// </summary>
 /// <example>
 /// <see cref="Base"/> objects that represent conceptual / abstract / mathematically derived geometry
 /// can use <see cref="displayValue"/> to be used in case the object lacks a natively displayable form.
-/// (e.g <see cref="Spiral"/>, <see cref="Wall"/>, <see cref="Pipe"/>)
+/// (e.g <see cref="Spiral"/>)
 /// </example>
 /// <typeparam name="T">
 /// Type of display value.
 /// Expected to be either a <see cref="Base"/> type or a <see cref="List{T}"/> of <see cref="Base"/>s,
-/// most likely <see cref="Mesh"/> or <see cref="Polyline"/>.
+/// Should be constrained to types of <see cref="Point"/>, <see cref="Line"/>, <see cref="Mesh"/> or <see cref="Polyline"/>.
 /// </typeparam>
 public interface IDisplayValue<out T> : ISpeckleObject
 {
@@ -119,16 +106,77 @@ public interface IDisplayValue<out T> : ISpeckleObject
   T displayValue { get; }
 }
 
+#endregion
+
+#region Data objects
+
 /// <summary>
-/// Represents a calculated object for civil disciplines
+/// Specifies properties on objects to be used for data-based workflows
 /// </summary>
-public interface ICivilCalculatedObject : ISpeckleObject
+public interface IProperties : ISpeckleObject
+{
+  Dictionary<string, object?> properties { get; }
+}
+
+public interface IDataObject : IProperties, IDisplayValue<IReadOnlyList<Base>>
 {
   /// <summary>
-  /// <see cref="codes"/> for this calculated object.
+  /// The name of the object, primarily used to decorate the object for consumption in frontend and other apps
   /// </summary>
-  List<string> codes { get; set; }
+  string name { get; }
 }
+
+public interface IRevitObject : IDataObject
+{
+  string type { get; }
+
+  string family { get; }
+
+  string category { get; }
+
+  Base? location { get; }
+
+  IReadOnlyList<IRevitObject> elements { get; }
+}
+
+public interface ICivilObject : IDataObject
+{
+  string type { get; }
+
+  List<ICurve>? baseCurves { get; }
+
+  IReadOnlyList<Base> elements { get; }
+}
+
+public interface ITeklaObject : IDataObject
+{
+  string type { get; }
+
+  IReadOnlyList<ITeklaObject> elements { get; }
+}
+
+public interface ICsiObject : IDataObject
+{
+  string type { get; }
+
+  IReadOnlyList<ICsiObject> elements { get; }
+}
+
+public interface IGisObject : IDataObject
+{
+  string type { get; }
+}
+
+public interface IArchicadObject : IDataObject
+{
+  string type { get; }
+
+  string level { get; }
+
+  IReadOnlyList<IArchicadObject> elements { get; }
+}
+
+public interface INavisworksObject : IDataObject { }
 
 
 #endregion

@@ -1,14 +1,13 @@
 using System.Runtime.InteropServices;
-using NUnit.Framework;
+using FluentAssertions;
 using Speckle.Sdk.Logging;
+using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Helpers;
 
-[TestFixture]
-[TestOf(nameof(SpecklePathProvider))]
 public class SpecklePathTests
 {
-  [Test]
+  [Fact]
   public void TestUserApplicationDataPath()
   {
     var userPath = SpecklePathProvider.UserApplicationDataPath();
@@ -39,19 +38,10 @@ public class SpecklePathTests
       throw new NotImplementedException("Your OS platform is not supported");
     }
 
-    Assert.That(userPath, Does.Match(pattern));
+    userPath.Should().MatchRegex(pattern);
   }
 
-  [Test]
-  public void TestUserApplicationDataPathOverride()
-  {
-    var newPath = Path.GetTempPath();
-    SpecklePathProvider.OverrideApplicationDataPath(newPath);
-    Assert.That(SpecklePathProvider.UserApplicationDataPath(), Is.EqualTo(newPath));
-    SpecklePathProvider.OverrideApplicationDataPath(null);
-  }
-
-  [Test]
+  [Fact]
   public void TestInstallApplicationDataPath()
   {
     var installPath = SpecklePathProvider.InstallApplicationDataPath;
@@ -87,6 +77,6 @@ public class SpecklePathTests
       throw new NotImplementedException("Your OS platform is not supported");
     }
 
-    Assert.That(installPath, Does.Match(pattern));
+    installPath.Should().MatchRegex(pattern);
   }
 }
