@@ -1,5 +1,3 @@
-using Speckle.Sdk.Host;
-
 namespace Speckle.Sdk.Models;
 
 /// <summary>
@@ -24,22 +22,17 @@ public enum DynamicBaseMemberType
   Obsolete = 4,
 
   /// <summary>
-  /// The typed members flagged with <see cref="SchemaIgnoreAttribute"/> attribute.
-  /// </summary>
-  SchemaIgnored = 8,
-
-  /// <summary>
   /// The typed methods flagged with TODO:
   /// </summary>
   SchemaComputed = 16,
 
   /// <summary>
-  /// All the typed members, including ones with <see cref="ObsoleteAttribute"/> or <see cref="SchemaIgnoreAttribute"/> attributes.
+  /// All the typed members, including ones with <see cref="ObsoleteAttribute"/>  attributes.
   /// </summary>
-  InstanceAll = Instance + Obsolete + SchemaIgnored,
+  InstanceAll = Instance + Obsolete,
 
   /// <summary>
-  /// All the members, including dynamic and instance members flagged with <see cref="ObsoleteAttribute"/> or <see cref="SchemaIgnoreAttribute"/> attributes
+  /// All the members, including dynamic and instance members flagged with <see cref="ObsoleteAttribute"/> attributes
   /// </summary>
   All = InstanceAll + Dynamic,
 }

@@ -1,7 +1,6 @@
 using System.Dynamic;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 
 namespace Speckle.Sdk.Models;
@@ -233,16 +232,12 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         .GetBaseProperties(GetType())
         .Where(x =>
         {
-          var hasIgnored = x.IsDefined(typeof(SchemaIgnoreAttribute), true);
           var hasObsolete = x.IsDefined(typeof(ObsoleteAttribute), true);
 
           // If obsolete is false and prop has obsolete attr
           // OR
           // If schemaIgnored is true and prop has schemaIgnore attr
-          return !(
-            !includeMembers.HasFlag(DynamicBaseMemberType.SchemaIgnored) && hasIgnored
-            || !includeMembers.HasFlag(DynamicBaseMemberType.Obsolete) && hasObsolete
-          );
+          return !(!includeMembers.HasFlag(DynamicBaseMemberType.Obsolete) && hasObsolete);
         });
       foreach (var pi in pinfos)
       {
@@ -252,20 +247,6 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         }
       }
     }
-
-    if (includeMembers.HasFlag(DynamicBaseMemberType.SchemaComputed))
-    {
-      GetType()
-        .GetMethods()
-        .Where(e => e.IsDefined(typeof(SchemaComputedAttribute)) && !e.IsDefined(typeof(ObsoleteAttribute)))
-        .ToList()
-        .ForEach(e =>
-        {
-          var attr = e.GetCustomAttribute<SchemaComputedAttribute>().NotNull();
-          dic[attr.Name] = e.Invoke(this, null);
-        });
-    }
-
     return dic;
   }
 

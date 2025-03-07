@@ -28,20 +28,17 @@ public class Base : DynamicBase, ISpeckleObject
   /// <summary>
   /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. Use the <see cref="GetId"/> function to get it.</b>
   /// </summary>
-  [SchemaIgnore]
   public virtual string? id { get; set; }
 
   /// <summary>
   /// Secondary, ideally host application driven, object identifier.
   /// </summary>
-  [SchemaIgnore]
   public string? applicationId { get; set; }
 
   /// <summary>
   /// Holds the type information of this speckle object, derived automatically
   /// from its assembly name and inheritance.
   /// </summary>
-  [SchemaIgnore]
   public virtual string speckle_type
   {
     get
@@ -210,11 +207,7 @@ public class Base : DynamicBase, ISpeckleObject
     myDuplicate.id = id;
     myDuplicate.applicationId = applicationId;
 
-    foreach (
-      var kvp in GetMembers(
-        DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic | DynamicBaseMemberType.SchemaIgnored
-      )
-    )
+    foreach (var kvp in GetMembers())
     {
       var propertyInfo = type.GetProperty(kvp.Key);
       if (propertyInfo is not null && !propertyInfo.CanWrite)
