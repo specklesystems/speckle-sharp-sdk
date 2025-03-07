@@ -71,7 +71,7 @@ Target(RESTORE_TOOLS, () => RunAsync("dotnet", "tool restore"));
 
 Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --check ."));
 
-Target(RESTORE, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
+Target(RESTORE, DependsOn(FORMAT), () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
 
 Target(
   BUILD,
