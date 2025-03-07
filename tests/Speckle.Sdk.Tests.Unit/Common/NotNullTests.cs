@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using Speckle.Sdk.Common;
 
-
 namespace Speckle.Sdk.Tests.Unit.Common;
 
 public class NotNullTests

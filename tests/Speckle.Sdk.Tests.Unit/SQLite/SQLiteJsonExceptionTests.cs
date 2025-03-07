@@ -1,7 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using Speckle.Sdk.SQLite;
 
-
 namespace Speckle.Sdk.Tests.Unit.SQLite;
 
 public class SqLiteJsonCacheExceptionTests

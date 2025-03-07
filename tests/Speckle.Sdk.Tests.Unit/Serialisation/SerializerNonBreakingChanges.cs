@@ -5,7 +5,6 @@ using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
-
 using Matrix4x4 = Speckle.DoubleNumerics.Matrix4x4;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;

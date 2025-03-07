@@ -4,7 +4,6 @@ using FluentAssertions;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 
-
 namespace Speckle.Sdk.Tests.Unit.Transports;
 
 public sealed class MemoryTransportTests : TransportTests

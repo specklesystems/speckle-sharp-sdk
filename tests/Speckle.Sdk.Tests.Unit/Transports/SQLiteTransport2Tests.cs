@@ -4,7 +4,6 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
-
 namespace Speckle.Sdk.Tests.Unit.Transports;
 
 public sealed class SQLiteTransport2Tests : TransportTests, IDisposable

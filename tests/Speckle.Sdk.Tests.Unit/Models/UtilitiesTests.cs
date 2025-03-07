@@ -2,7 +2,6 @@
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
 
-
 namespace Speckle.Sdk.Tests.Unit.Models;
 
 public sealed class HashUtilityTests

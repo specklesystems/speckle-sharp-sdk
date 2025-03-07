@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using Speckle.Sdk.SQLite;
 
-
 namespace Speckle.Sdk.Tests.Unit.SQLite;
 
 public class SQLiteJsonCacheManagerTests : IDisposable

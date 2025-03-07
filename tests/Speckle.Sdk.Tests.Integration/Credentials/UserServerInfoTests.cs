@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 
-
 namespace Speckle.Sdk.Tests.Integration.Credentials;
 
 public class UserServerInfoTests : IAsyncLifetime

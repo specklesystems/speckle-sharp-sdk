@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 
-
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
 public class AccountServerMigrationTests : IDisposable

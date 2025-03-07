@@ -7,7 +7,6 @@ using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Common;
 
-
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class ProjectResourceExceptionalTests : IAsyncLifetime

@@ -3,7 +3,6 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
 
-
 namespace Speckle.Sdk.Tests.Unit.Models;
 
 public class TraversalTests

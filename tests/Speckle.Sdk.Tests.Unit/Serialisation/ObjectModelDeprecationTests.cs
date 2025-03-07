@@ -3,7 +3,6 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Deprecated;
 
-
 namespace Speckle.Sdk.Tests.Unit.Serialisation
 {
   public class TypeLoaderTests

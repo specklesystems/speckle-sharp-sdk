@@ -1,6 +1,5 @@
 ﻿using Speckle.Sdk.Dependencies;
 
-
 namespace Speckle.Sdk.Tests.Unit.Common;
 
 public class RangeFromTests

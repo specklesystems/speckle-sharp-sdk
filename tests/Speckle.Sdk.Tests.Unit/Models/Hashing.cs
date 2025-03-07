@@ -4,7 +4,6 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 
-
 namespace Speckle.Sdk.Tests.Unit.Models;
 
 // Removed [TestFixture] and [TestOf] annotations as they are NUnit specific

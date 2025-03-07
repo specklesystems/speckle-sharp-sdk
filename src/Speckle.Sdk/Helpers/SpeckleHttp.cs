@@ -19,7 +19,7 @@ public class SpeckleHttp(ILogger<SpeckleHttp> logger, ISpeckleHttpClientHandlerF
     using var httpClient = CreateHttpClient();
     return await HttpPing(uri, httpClient).ConfigureAwait(false);
   }
-  
+
   public async Task<HttpResponseMessage> HttpPing(Uri uri, HttpClient httpClient)
   {
     try

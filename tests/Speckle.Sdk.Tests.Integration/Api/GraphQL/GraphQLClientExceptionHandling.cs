@@ -6,7 +6,6 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 
-
 namespace Speckle.Sdk.Tests.Integration.Api.GraphQL;
 
 public class GraphQLClientExceptionHandling : IAsyncLifetime

@@ -3,7 +3,6 @@ using GraphQL;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 
-
 namespace Speckle.Sdk.Tests.Unit.Api;
 
 public class GraphQLErrorHandlerTests

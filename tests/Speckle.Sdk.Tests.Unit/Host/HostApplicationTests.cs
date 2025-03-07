@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using Speckle.Sdk.Host;
 
-
 namespace Speckle.Sdk.Tests.Unit.Host;
 
 public class HostApplicationTests

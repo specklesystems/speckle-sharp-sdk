@@ -5,7 +5,6 @@ using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 
-
 namespace Speckle.Sdk.Tests.Unit.Api;
 
 public sealed class GraphQLClientTests : IDisposable

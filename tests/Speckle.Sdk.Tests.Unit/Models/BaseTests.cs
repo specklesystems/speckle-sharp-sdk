@@ -3,7 +3,6 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
-
 namespace Speckle.Sdk.Tests.Unit.Models;
 
 public class BaseTests

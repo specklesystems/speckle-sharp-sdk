@@ -1,6 +1,5 @@
 ﻿using Speckle.Sdk.Transports;
 
-
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public partial class OperationsReceiveTests

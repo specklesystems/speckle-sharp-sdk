@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Speckle.Sdk.Models.Extensions;
 
-
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
 
 public class ExceptionTests

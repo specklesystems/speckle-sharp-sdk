@@ -6,7 +6,6 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
-
 namespace Speckle.Sdk.Tests.Integration;
 
 public class MemoryTransportTests : IDisposable

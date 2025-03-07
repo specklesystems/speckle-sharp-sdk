@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Speckle.Sdk.Transports;
 
-
 namespace Speckle.Sdk.Tests.Unit.Transports;
 
 public sealed class SQLiteTransportTests : TransportTests, IDisposable

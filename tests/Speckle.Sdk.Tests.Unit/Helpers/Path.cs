@@ -2,7 +2,6 @@ using System.Runtime.InteropServices;
 using FluentAssertions;
 using Speckle.Sdk.Logging;
 
-
 namespace Speckle.Sdk.Tests.Unit.Helpers;
 
 public class SpecklePathTests

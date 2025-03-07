@@ -5,7 +5,6 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
-
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public class SendObjectReferences

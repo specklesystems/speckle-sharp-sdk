@@ -4,7 +4,6 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.Extensions;
 
-
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
 
 public class BaseExtensionsTests

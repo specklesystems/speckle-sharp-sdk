@@ -8,7 +8,6 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
 
-
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 public class Closures

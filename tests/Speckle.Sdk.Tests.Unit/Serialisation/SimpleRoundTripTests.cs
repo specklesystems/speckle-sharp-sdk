@@ -6,7 +6,6 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 
-
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
 public class SimpleRoundTripTests

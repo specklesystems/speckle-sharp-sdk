@@ -4,7 +4,6 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.GraphTraversal;
 
-
 namespace Speckle.Sdk.Tests.Unit.Models.GraphTraversal;
 
 public class GraphTraversalTests

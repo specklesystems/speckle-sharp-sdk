@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using FluentAssertions;
 using HttpMultipartParser;
@@ -16,7 +15,6 @@ using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Testing;
 
 namespace Speckle.Sdk.Serialization.Tests;
-
 
 public class ServerObjectManagerTests : MoqTest
 {
