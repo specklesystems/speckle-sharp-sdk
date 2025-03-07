@@ -1,3 +1,4 @@
+using System.Text.Json;
 using GlobExpressions;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
@@ -15,6 +16,16 @@ const string PACK_LOCAL = "pack-local";
 const string CLEAN_LOCKS = "clean-locks";
 const string PERF = "perf";
 const string DEEP_CLEAN = "deep-clean";
+
+static async Task<(string, string)> GetVersions()
+{
+  var (output, _) = await ReadAsync("dotnet", "dotnet-gitversion /output json").ConfigureAwait(false);
+  output = output.Trim();
+  var jDoc = JsonDocument.Parse(output);
+  var version = jDoc.RootElement.GetProperty("FullSemVer").GetString() ?? "3.0.0-localBuild";
+  var fileVersion = jDoc.RootElement.GetProperty("AssemblySemFileVer").GetString() ?? "3.0.0.0";
+  return (version, fileVersion);
+}
 
 Target(
   CLEAN_LOCKS,
@@ -67,7 +78,13 @@ Target(
   DependsOn(RESTORE),
   async () =>
   {
-    await RunAsync("dotnet", $"build Speckle.Sdk.sln -c Release --no-restore -warnaserror").ConfigureAwait(false);
+    var (version, fileVersion) = await GetVersions().ConfigureAwait(false);
+    Console.WriteLine($"Version: {version} & {fileVersion}");
+    await RunAsync(
+        "dotnet",
+        $"build Speckle.Sdk.sln -c Release --no-restore -warnaserror -p:Version={version} -p:FileVersion={fileVersion}"
+      )
+      .ConfigureAwait(false);
   }
 );
 
@@ -154,7 +171,7 @@ Target(
 
 static Task RunPack() => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build");
 
-Target(PACK, DependsOn(TEST), RunPack);
+Target(PACK, DependsOn(BUILD), RunPack);
 Target(PACK_LOCAL, DependsOn(BUILD), RunPack);
 
 Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
