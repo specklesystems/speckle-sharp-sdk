@@ -12,7 +12,6 @@ const string BUILD = "build";
 const string TEST = "test";
 const string INTEGRATION = "integration";
 const string PACK = "pack";
-const string PACK_LOCAL = "pack-local";
 const string CLEAN_LOCKS = "clean-locks";
 const string PERF = "perf";
 const string DEEP_CLEAN = "deep-clean";
@@ -169,10 +168,19 @@ Target(
   }
 );
 
-static Task RunPack() => RunAsync("dotnet", "pack Speckle.Sdk.sln -c Release -o output --no-build");
-
-Target(PACK, DependsOn(BUILD), RunPack);
-Target(PACK_LOCAL, DependsOn(BUILD), RunPack);
+Target(
+  PACK,
+  DependsOn(BUILD),
+  async () =>
+  {
+    {
+      var (version, fileVersion) = await GetVersions().ConfigureAwait(false);
+      Console.WriteLine($"Version: {version} & {fileVersion}");
+      await RunAsync("dotnet", $"pack Speckle.Sdk.sln -c Release -o output --no-build -p:Version={version}")
+        .ConfigureAwait(false);
+    }
+  }
+);
 
 Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
 
