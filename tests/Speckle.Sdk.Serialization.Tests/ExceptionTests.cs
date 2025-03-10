@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
@@ -143,5 +144,24 @@ public class ExceptionTests
       });
     }
     await Verify(ex).UseParameters(hasObject);
+  }
+
+  [SpeckleType("Objects.Geometry.BadBase")]
+  public class BadBase : Base
+  {
+#pragma warning disable CA1065
+    public string BadProp => throw new NotImplementedException();
+#pragma warning restore CA1065
+  }
+
+  [Fact]
+  public void Test_SpeckleSerializerException()
+  {
+    var factory = new ObjectSerializerFactory(new BasePropertyGatherer());
+    var serializer = factory.Create(new Dictionary<Id, NodeInfo>(), default);
+    Assert.Throws<SpeckleSerializeException>(() =>
+    {
+      var _ = serializer.Serialize(new BadBase()).ToList();
+    });
   }
 }

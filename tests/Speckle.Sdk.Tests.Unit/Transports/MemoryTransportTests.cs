@@ -3,7 +3,6 @@
 using FluentAssertions;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Transports;
 

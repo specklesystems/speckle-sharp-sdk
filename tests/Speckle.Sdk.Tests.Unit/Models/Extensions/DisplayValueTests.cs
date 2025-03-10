@@ -2,7 +2,6 @@ using FluentAssertions;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
 
