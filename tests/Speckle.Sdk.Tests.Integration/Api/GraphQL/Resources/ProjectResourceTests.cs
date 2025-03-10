@@ -65,8 +65,8 @@ public class ProjectResourceTests
     result.createdAt.Should().Be(_testProject.createdAt);
   }
 
-  //[Fact]
-  private async Task ProjectUpdate_Should_UpdateProjectSuccessfully()
+  [Fact]
+  public async Task ProjectUpdate_Should_UpdateProjectSuccessfully()
   {
     // Arrange
     const string NEW_NAME = "MY new name";
