@@ -12,19 +12,19 @@ public class Region : Base, IHasArea, IHasBoundingBox, ITransformable
 {
   /// <summary>
   /// Boundary of a region.
-  /// Should be a planar, non-self-intersecting ICurve.
+  /// Should be a planar, closed, non-self-intersecting ICurve.
   /// </summary>
   public required ICurve boundary { get; set; }
 
   /// <summary>
   /// Loops (voids) in the region.
-  /// Each loop should be planar, non-self-intersecting ICurve, located inside the boundary.
+  /// Each loop should be planar, closed, non-self-intersecting ICurve, located inside the boundary.
   /// The loops should not intersect or touch each other.
   /// </summary>
   public required List<ICurve> innerLoops { get; set; } = new();
 
   /// <summary>
-  /// The units this object's coordinates are in.
+  /// The units of object's coordinates.
   /// This should be one of <see cref="Units"/>
   /// </summary>
   public required string units { get; set; }
@@ -43,7 +43,7 @@ public class Region : Base, IHasArea, IHasBoundingBox, ITransformable
 
   /// <inheritdoc/>
   [DetachProperty]
-  public List<Base> displayValue { get; set; } = new();
+  public List<Mesh> displayValue { get; set; } = new();
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out ITransformable transformed)
@@ -72,8 +72,7 @@ public class Region : Base, IHasArea, IHasBoundingBox, ITransformable
         }
       }
 
-      // if boundary and loops transformations succeeded
-      // don't create displayValue for Transformed Regions: we don't know yet if it's gonna be Curves or Mesh
+      // TODO: transform mesh of display value
       transformed = new Region
       {
         boundary = transformedBoundary,
