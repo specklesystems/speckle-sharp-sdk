@@ -4,7 +4,6 @@ using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -30,7 +29,7 @@ public class ProjectResourceTests
 
   [Theory]
   [InlineData("Very private project", "My secret project", ProjectVisibility.Private)]
-  [InlineData("Very public project", null, ProjectVisibility.Public)]
+  [InlineData("Very unlisted project", null, ProjectVisibility.Unlisted)]
   public async Task ProjectCreate_Should_CreateProjectSuccessfully(
     string name,
     string? description,
@@ -71,7 +70,7 @@ public class ProjectResourceTests
     // Arrange
     const string NEW_NAME = "MY new name";
     const string NEW_DESCRIPTION = "MY new desc";
-    const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Public;
+    const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Unlisted;
 
     // Act
     var newProject = await Sut.Update(
