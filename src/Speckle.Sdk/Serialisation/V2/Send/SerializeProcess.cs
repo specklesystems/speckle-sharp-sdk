@@ -4,12 +4,12 @@ using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
-using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
+
+
 
 public record SerializeProcessOptions(
   bool SkipCacheRead = false,
@@ -28,8 +28,7 @@ public partial interface ISerializeProcess : IAsyncDisposable;
 [GenerateAutoInterface]
 public sealed class SerializeProcess(
   IProgress<ProgressArgs>? progress,
-  ISqLiteJsonCacheManager sqLiteJsonCacheManager,
-  IServerObjectManager serverObjectManager,
+  IObjectSaver objectSaver,
   IBaseChildFinder baseChildFinder,
   IBaseSerializer baseSerializer,
   ILoggerFactory loggerFactory,
@@ -38,7 +37,7 @@ public sealed class SerializeProcess(
 #pragma warning disable CS9107
 #pragma warning disable CA2254
 )
-  : ChannelSaver<BaseItem>(x => loggerFactory.CreateLogger<SerializeProcess>().LogWarning(x), cancellationToken),
+  : 
     ISerializeProcess
 #pragma warning restore CA2254
 #pragma warning restore CS9107
@@ -62,7 +61,6 @@ public sealed class SerializeProcess(
   );
 
   private readonly SerializeProcessOptions _options = options ?? new();
-  private readonly ILogger<SerializeProcess> _logger = loggerFactory.CreateLogger<SerializeProcess>();
 
   private readonly Pool<Dictionary<Id, NodeInfo>> _currentClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
   private readonly Pool<ConcurrentDictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateConcurrentDictionaryPool<
@@ -75,25 +73,22 @@ public sealed class SerializeProcess(
 
   private long _objectsSerialized;
 
-  private long _uploaded;
-  private long _cached;
-
   [AutoInterfaceIgnore]
   public async ValueTask DisposeAsync()
   {
     await WaitForSchedulerCompletion().ConfigureAwait(false);
     await _highest.DisposeAsync().ConfigureAwait(false);
     await _belowNormal.DisposeAsync().ConfigureAwait(false);
-    sqLiteJsonCacheManager.Dispose();
+    objectSaver.Dispose();
   }
 
   public void ThrowIfFailed()
   {
-    if (Exception is not null)
-    {
-      throw new SpeckleException("Error while sending", Exception);
-    }
     cancellationToken.ThrowIfCancellationRequested();
+    if (objectSaver.Exception is not null)
+    {
+      throw new SpeckleException("Error while sending", objectSaver.Exception);
+    }
   }
 
   private async Task WaitForSchedulerCompletion()
@@ -106,7 +101,7 @@ public sealed class SerializeProcess(
   {
     try
     {
-      var channelTask = Start();
+      var channelTask = objectSaver.Start();
       var findTotalObjectsTask = Task.CompletedTask;
       if (!_options.SkipFindTotalObjects)
       {
@@ -120,10 +115,10 @@ public sealed class SerializeProcess(
       }
 
       await Traverse(root).ConfigureAwait(false);
-      DoneTraversing();
+      objectSaver.DoneTraversing();
       await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
       ThrowIfFailed();
-      await DoneSaving().ConfigureAwait(false);
+      await objectSaver.DoneSaving().ConfigureAwait(false);
       ThrowIfFailed();
       await WaitForSchedulerCompletion().ConfigureAwait(false);
       ThrowIfFailed();
@@ -190,7 +185,7 @@ public sealed class SerializeProcess(
       if (item.NeedsStorage)
       {
         Interlocked.Increment(ref _objectsSerialized);
-        await Save(item).ConfigureAwait(false);
+        await objectSaver.SaveItem(item).ConfigureAwait(false);
       }
 
       if (!currentClosures.ContainsKey(item.Id))
@@ -200,62 +195,5 @@ public sealed class SerializeProcess(
     }
     _childClosurePool.Return(childClosures);
     return currentClosures;
-  }
-
-  protected override async Task SendToServerInternal(Batch<BaseItem> batch)
-  {
-    try
-    {
-      if (!_options.SkipServer && batch.Items.Count != 0)
-      {
-        var objectBatch = batch.Items.Distinct().ToList();
-        var hasObjects = await serverObjectManager
-          .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), cancellationToken)
-          .ConfigureAwait(false);
-        objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
-        if (objectBatch.Count != 0)
-        {
-          await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
-          Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
-        }
-
-        progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
-      }
-    }
-    catch (OperationCanceledException)
-    {
-      throw;
-    }
-#pragma warning disable CA1031
-    catch (Exception e)
-#pragma warning restore CA1031
-    {
-      _logger.LogError(e, "Error sending objects to server");
-      throw;
-    }
-  }
-
-  public override void SaveToCache(List<BaseItem> batch)
-  {
-    try
-    {
-      if (!_options.SkipCacheWrite && batch.Count != 0)
-      {
-        sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
-        Interlocked.Exchange(ref _cached, _cached + batch.Count);
-        progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
-      }
-    }
-    catch (OperationCanceledException)
-    {
-      throw;
-    }
-#pragma warning disable CA1031
-    catch (Exception e)
-#pragma warning restore CA1031
-    {
-      _logger.LogError(e, "Error sending objects to server");
-      throw;
-    }
   }
 }

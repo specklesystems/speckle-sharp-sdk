@@ -1,4 +1,5 @@
-﻿using Speckle.Sdk.Serialisation.V2;
+﻿using System.Collections.Concurrent;
+using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Testing.Framework;
 using Speckle.Sdk.Transports;
@@ -24,7 +25,7 @@ public class CancellationSqLiteSendManager(CancellationTokenSource cancellationT
   }
 }
 
-public class CancellationServerObjectManager(CancellationTokenSource cancellationTokenSource) : DummyServerObjectManager
+public class CancellationServerObjectManager(CancellationTokenSource cancellationTokenSource) : MemoryServerObjectManager(new ConcurrentDictionary<string, string>())
 {
   public override Task UploadObjects(
     IReadOnlyList<BaseItem> objects,
