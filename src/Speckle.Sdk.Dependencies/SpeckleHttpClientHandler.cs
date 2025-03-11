@@ -3,7 +3,7 @@ using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Helpers;
 
-public sealed class SpeckleHttpClientHandler : DelegatingHandler
+internal sealed class SpeckleHttpClientHandler : DelegatingHandler
 {
   private readonly IAsyncPolicy<HttpResponseMessage> _resiliencePolicy;
   private readonly ISdkActivityFactory _activityFactory;
