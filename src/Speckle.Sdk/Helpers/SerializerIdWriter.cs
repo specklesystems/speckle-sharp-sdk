@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Dependencies;
@@ -5,6 +6,8 @@ using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Helpers;
 
+//just a wrapper around a lot of newtonsoft overloads
+[ExcludeFromCodeCoverage]
 public sealed class SerializerIdWriter : JsonWriter
 {
   private readonly JsonWriter _jsonWriter;
