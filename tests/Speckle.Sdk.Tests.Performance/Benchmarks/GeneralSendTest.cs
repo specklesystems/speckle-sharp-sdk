@@ -26,7 +26,7 @@ public class GeneralSendTest
   private IOperations _operations;
   private ServerTransport _remote;
   private Account acc;
-  private Client client;
+  private IClient client;
 
   private Project _project;
 
