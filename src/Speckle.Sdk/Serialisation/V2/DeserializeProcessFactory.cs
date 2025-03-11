@@ -7,7 +7,6 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
-
 [GenerateAutoInterface]
 public class DeserializeProcessFactory(
   IBaseDeserializer baseDeserializer,
@@ -16,8 +15,6 @@ public class DeserializeProcessFactory(
   ILoggerFactory loggerFactory
 ) : IDeserializeProcessFactory
 {
-  
-
   public IDeserializeProcess CreateDeserializeProcess(
     Uri url,
     string streamId,
@@ -39,7 +36,7 @@ public class DeserializeProcessFactory(
       options
     );
   }
-  
+
   public IDeserializeProcess CreateDeserializeProcess(
     ConcurrentDictionary<Id, Json> jsonCache,
     ConcurrentDictionary<string, string> objects,

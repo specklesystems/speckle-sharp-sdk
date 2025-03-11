@@ -4,10 +4,9 @@ using Speckle.Sdk.SQLite;
 namespace Speckle.Sdk.Serialisation.V2;
 
 #pragma warning disable CA1063
-public  class MemoryJsonCacheManager(ConcurrentDictionary<Id, Json> jsonCache) : ISqLiteJsonCacheManager
+public class MemoryJsonCacheManager(ConcurrentDictionary<Id, Json> jsonCache) : ISqLiteJsonCacheManager
 #pragma warning restore CA1063
 {
-
   public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() =>
     jsonCache.Select(x => (x.Key.Value, x.Value.Value)).ToList();
 
@@ -34,6 +33,5 @@ public  class MemoryJsonCacheManager(ConcurrentDictionary<Id, Json> jsonCache) :
   public void Dispose()
 #pragma warning restore CA1816
 #pragma warning restore CA1063
-  {
-  }
+  { }
 }

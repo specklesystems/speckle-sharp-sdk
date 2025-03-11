@@ -35,11 +35,11 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    var objects = new ConcurrentDictionary<string, string>();
+    var objects = new ConcurrentDictionary<Id, Json>();
 
     await using var serializeProcess = _factory.CreateSerializeProcess(
-      new ConcurrentDictionary<Id, Json>(),
-      objects,
+      new MemoryJsonCacheManager(objects),
+      new ExceptionServerObjectManager(),
       null,
       default,
       new SerializeProcessOptions(false, false, false, true)
@@ -56,8 +56,8 @@ public class ExceptionTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     await using var serializeProcess = _factory.CreateSerializeProcess(
-      new ConcurrentDictionary<Id, Json>(),
-      new ConcurrentDictionary<string, string>(),
+      new ExceptionSendCacheManager(),
+      new MemoryServerObjectManager(new()),
       null,
       default,
       new SerializeProcessOptions(false, false, false, true)
