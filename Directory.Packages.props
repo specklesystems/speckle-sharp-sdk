@@ -6,33 +6,34 @@
     <PackageVersion Include="Bullseye" Version="5.0.0" />
     <PackageVersion Include="GraphQL.Client" Version="6.0.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
+    <PackageVersion Include="HttpMultipartParser" Version="9.0.0" />
     <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <!-- Keep at exactly 7.0.5 for side by side with V2 -->
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="[7.0.5]" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="[7.0.5,)" />
     <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.1" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="[2.2.0]" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.2.0]" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="[2.2.0]" />
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[5.0.0]" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="[2.2.0,)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.2.0,)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="[2.2.0,)" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[5.0.0,)" />
     <PackageVersion Include="Moq" Version="4.20.70" />
     <PackageVersion Include="Open.ChannelExtensions" Version="9.0.0" />
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
+    <PackageVersion Include="RichardSzalay.MockHttp" Version="7.0.0" />
     <PackageVersion Include="Speckle.Newtonsoft.Json" Version="13.0.2" />
-    <PackageVersion Include="Speckle.DoubleNumerics" Version="4.0.1" />
+    <PackageVersion Include="Speckle.DoubleNumerics" Version="4.1.0" />
     <PackageVersion Include="SimpleExec" Version="12.0.0" />
-    <PackageVersion Include="System.Threading.Channels" Version="9.0.1" />
+    <PackageVersion Include="System.Threading.Channels" Version="9.0.2" />
     <PackageVersion Include="Verify.Quibble" Version="2.1.1" />
     <PackageVersion Include="Verify.Xunit" Version="28.10.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.assert" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
     <GlobalPackageReference Include="PolySharp" Version="1.15.0" />
     <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
-    <GlobalPackageReference Include="GitVersion.MsBuild" Version="5.12.0" />
     <GlobalPackageReference Include="Speckle.InterfaceGenerator" Version="0.9.6" />
   </ItemGroup>
 </Project>

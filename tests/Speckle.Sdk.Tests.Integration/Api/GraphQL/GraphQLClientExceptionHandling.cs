@@ -5,13 +5,12 @@ using GraphQL.Client.Http;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.Api.GraphQL;
 
 public class GraphQLClientExceptionHandling : IAsyncLifetime
 {
-  private Client _sut;
+  private IClient _sut;
 
   public Task DisposeAsync() => Task.CompletedTask;
 

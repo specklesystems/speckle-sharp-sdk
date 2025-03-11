@@ -8,19 +8,34 @@ public sealed class PriorityScheduler(
   ThreadPriority priority,
   int maximumConcurrencyLevel,
   CancellationToken cancellationToken
-) : TaskScheduler, IDisposable
+) : TaskScheduler, IAsyncDisposable
 {
-#pragma warning disable CA2213
-  //intentionally not disposing this because syncing to when all the threads are done AFTER the BC is done/disposed is hard.  BC will still be cleaned up by the finalizer
   private readonly BlockingCollection<Task> _tasks = new();
-#pragma warning restore CA2213
   private Thread[]? _threads;
-
-  public void Dispose() => _tasks.CompleteAdding();
 
   public override int MaximumConcurrencyLevel => maximumConcurrencyLevel;
 
   protected override IEnumerable<Task> GetScheduledTasks() => _tasks;
+
+  public async ValueTask DisposeAsync()
+  {
+    await WaitForCompletion().ConfigureAwait(false);
+    _tasks.Dispose();
+  }
+
+  public async ValueTask WaitForCompletion()
+  {
+    if (_tasks.IsCompleted && _threads is null)
+    {
+      return;
+    }
+    _tasks.CompleteAdding();
+    while (_threads != null && _threads.Any(x => x.IsAlive))
+    {
+      await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+    }
+    _threads = null;
+  }
 
   protected override void QueueTask(Task task)
   {

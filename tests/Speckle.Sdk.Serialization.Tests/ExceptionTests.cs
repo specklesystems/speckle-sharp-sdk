@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
@@ -24,7 +25,7 @@ public class ExceptionTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     var objects = new Dictionary<string, string>();
-    using var process2 = new SerializeProcess(
+    await using var process2 = new SerializeProcess(
       null,
       new DummySendCacheManager(objects),
       new ExceptionServerObjectManager(),
@@ -36,7 +37,7 @@ public class ExceptionTests
     );
 
     //4 exceptions are fine because we use 4 threads for saving cache
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
 
@@ -45,7 +46,7 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    using var process2 = new SerializeProcess(
+    await using var process2 = new SerializeProcess(
       null,
       new ExceptionSendCacheManager(),
       new DummyServerObjectManager(),
@@ -56,7 +57,32 @@ public class ExceptionTests
       new SerializeProcessOptions(false, false, false, true)
     );
 
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => await process2.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
+    await Verify(ex);
+  }
+
+  [Fact]
+  public async Task Test_Exceptions_Receive_Server_Skip_Both()
+  {
+    var o = new ObjectLoader(
+      new DummySqLiteReceiveManager(new Dictionary<string, string>()),
+      new ExceptionServerObjectManager(),
+      null,
+      default
+    );
+    await using var process = new DeserializeProcess(
+      o,
+      null,
+      new BaseDeserializer(new ObjectDeserializerFactory()),
+      new NullLoggerFactory(),
+      default,
+      new(SkipCache: true, MaxParallelism: 1, SkipServer: true)
+    );
+
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
+    {
+      var root = await process.Deserialize(Guid.NewGuid().ToString());
+    });
     await Verify(ex);
   }
 
@@ -67,10 +93,10 @@ public class ExceptionTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    var o = new ObjectLoader(new DummySqLiteReceiveManager(closures), new ExceptionServerObjectManager(), null);
-    using var process = new DeserializeProcess(
+    await using var process = new DeserializeProcess(
+      new DummySqLiteReceiveManager(closures),
+      new ExceptionServerObjectManager(),
       null,
-      o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,
@@ -92,14 +118,10 @@ public class ExceptionTests
     var closures = await TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
-    var o = new ObjectLoader(
+    await using var process = new DeserializeProcess(
       new ExceptionSendCacheManager(hasObject),
       new DummyReceiveServerObjectManager(closures),
-      null
-    );
-    using var process = new DeserializeProcess(
       null,
-      o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,
@@ -116,12 +138,30 @@ public class ExceptionTests
     }
     else
     {
-      ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
       {
         var root = await process.Deserialize(rootId);
       });
     }
-
     await Verify(ex).UseParameters(hasObject);
+  }
+
+  [SpeckleType("Objects.Geometry.BadBase")]
+  public class BadBase : Base
+  {
+#pragma warning disable CA1065
+    public string BadProp => throw new NotImplementedException();
+#pragma warning restore CA1065
+  }
+
+  [Fact]
+  public void Test_SpeckleSerializerException()
+  {
+    var factory = new ObjectSerializerFactory(new BasePropertyGatherer());
+    var serializer = factory.Create(new Dictionary<Id, NodeInfo>(), default);
+    Assert.Throws<SpeckleSerializeException>(() =>
+    {
+      var _ = serializer.Serialize(new BadBase()).ToList();
+    });
   }
 }

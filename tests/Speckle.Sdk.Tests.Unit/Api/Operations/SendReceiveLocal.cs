@@ -6,7 +6,6 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 

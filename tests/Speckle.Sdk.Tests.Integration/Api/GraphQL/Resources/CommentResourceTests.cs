@@ -4,14 +4,13 @@ using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Common;
-using Xunit;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class CommentResourceTests : IAsyncLifetime
 {
-  private Client _testUser;
+  private IClient _testUser;
   private CommentResource Sut;
   private Project _project;
   private Model _model;

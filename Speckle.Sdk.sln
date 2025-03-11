@@ -24,6 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{DA2AED
 		docker-compose.yml = docker-compose.yml
 		CodeMetricsConfig.txt = CodeMetricsConfig.txt
 		Directory.Build.Targets = Directory.Build.Targets
+		.config\dotnet-tools.json = .config\dotnet-tools.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{58D37DA9-F948-48CA-9A73-F5BBBD533DBF}"
@@ -46,7 +47,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Serialization.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Dependencies", "src\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj", "{27584AB4-8ACD-4850-8CC2-7E5BC739FB78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Testing", "Speckle.Sdk.Testing\Speckle.Sdk.Testing.csproj", "{7B617C0D-2354-415C-993C-5071D4113E27}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Testing", "tests\Speckle.Sdk.Testing\Speckle.Sdk.Testing.csproj", "{7B617C0D-2354-415C-993C-5071D4113E27}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "performance", "performance", "{FFB07238-87E8-463A-AA39-3B38AAAA94C1}"
 EndProject

@@ -8,6 +8,14 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  /// <summary>
+  /// Receives a Object to the provided URL and Caches the results
+  /// </summary>
+  /// <remarks/>
+  /// <exception cref="ArgumentException">No transports were specified</exception>
+  /// <exception cref="ArgumentNullException">The <paramref name="objectId"/> was <see langword="null"/></exception>
+  /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
+  /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
   public async Task<Base> Receive2(
     Uri url,
     string streamId,
@@ -21,16 +29,15 @@ public partial class Operations
     metricsFactory.CreateCounter<long>("Receive").Add(1);
 
     receiveActivity?.SetTag("objectId", objectId);
-
+    var process = serializeProcessFactory.CreateDeserializeProcess(
+      url,
+      streamId,
+      authorizationToken,
+      onProgressAction,
+      cancellationToken
+    );
     try
     {
-      using var process = serializeProcessFactory.CreateDeserializeProcess(
-        url,
-        streamId,
-        authorizationToken,
-        onProgressAction,
-        cancellationToken
-      );
       var result = await process.Deserialize(objectId).ConfigureAwait(false);
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return result;
@@ -40,6 +47,10 @@ public partial class Operations
       receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
       receiveActivity?.RecordException(ex);
       throw;
+    }
+    finally
+    {
+      await process.DisposeAsync().ConfigureAwait(false);
     }
   }
 

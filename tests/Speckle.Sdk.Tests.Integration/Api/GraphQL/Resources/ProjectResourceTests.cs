@@ -4,13 +4,12 @@ using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class ProjectResourceTests
 {
-  private readonly Client _testUser;
+  private readonly IClient _testUser;
   private readonly Project _testProject;
   private ProjectResource Sut => _testUser.Project;
 
@@ -21,7 +20,7 @@ public class ProjectResourceTests
     (_testUser, _testProject) = setupTask.Result;
   }
 
-  private async Task<(Client TestUser, Project TestProject)> Setup()
+  private async Task<(IClient TestUser, Project TestProject)> Setup()
   {
     var testUser = await Fixtures.SeedUserWithClient();
     var testProject = await testUser.Project.Create(new ProjectCreateInput("test project123", "desc", null));
@@ -30,7 +29,7 @@ public class ProjectResourceTests
 
   [Theory]
   [InlineData("Very private project", "My secret project", ProjectVisibility.Private)]
-  [InlineData("Very public project", null, ProjectVisibility.Public)]
+  [InlineData("Very unlisted project", null, ProjectVisibility.Unlisted)]
   public async Task ProjectCreate_Should_CreateProjectSuccessfully(
     string name,
     string? description,
@@ -71,7 +70,7 @@ public class ProjectResourceTests
     // Arrange
     const string NEW_NAME = "MY new name";
     const string NEW_DESCRIPTION = "MY new desc";
-    const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Public;
+    const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Unlisted;
 
     // Act
     var newProject = await Sut.Update(

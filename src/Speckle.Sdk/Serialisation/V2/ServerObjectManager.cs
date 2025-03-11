@@ -13,6 +13,12 @@ using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
+public class ServerObjectManagerOptions(TimeSpan? timeout = null, string? boundary = null)
+{
+  public TimeSpan Timeout => timeout ?? TimeSpan.FromSeconds(120);
+  public string Boundary => boundary ??= Guid.NewGuid().ToString();
+}
+
 [GenerateAutoInterface]
 public class ServerObjectManager : IServerObjectManager
 {
@@ -21,6 +27,7 @@ public class ServerObjectManager : IServerObjectManager
   private readonly ISdkActivityFactory _activityFactory;
   private readonly HttpClient _client;
   private readonly string _streamId;
+  private readonly ServerObjectManagerOptions _serverObjectManagerOptions;
 
   public ServerObjectManager(
     ISpeckleHttp speckleHttp,
@@ -28,13 +35,14 @@ public class ServerObjectManager : IServerObjectManager
     Uri baseUri,
     string streamId,
     string? authorizationToken,
-    int timeoutSeconds = 120
+    ServerObjectManagerOptions? options = null
   )
   {
+    _serverObjectManagerOptions = options ?? new();
     _activityFactory = activityFactory;
     _client = speckleHttp.CreateHttpClient(
       new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip },
-      timeoutSeconds: timeoutSeconds,
+      timeoutSeconds: (int)_serverObjectManagerOptions.Timeout.TotalSeconds,
       authorizationToken: authorizationToken
     );
     _client.BaseAddress = baseUri;
@@ -50,11 +58,9 @@ public class ServerObjectManager : IServerObjectManager
     using var _ = _activityFactory.Start();
     cancellationToken.ThrowIfCancellationRequested();
 
-    using var childrenHttpMessage = new HttpRequestMessage
-    {
-      RequestUri = new Uri($"/api/getobjects/{_streamId}", UriKind.Relative),
-      Method = HttpMethod.Post,
-    };
+    using var childrenHttpMessage = new HttpRequestMessage();
+    childrenHttpMessage.RequestUri = new Uri($"/api/getobjects/{_streamId}", UriKind.Relative);
+    childrenHttpMessage.Method = HttpMethod.Post;
 
     Dictionary<string, string> postParameters = new() { { "objects", JsonConvert.SerializeObject(objectIds) } };
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
@@ -62,7 +68,7 @@ public class ServerObjectManager : IServerObjectManager
     childrenHttpMessage.Headers.Add("Accept", "text/plain");
 
     HttpResponseMessage childrenHttpResponse = await _client
-      .SendAsync(childrenHttpMessage, cancellationToken)
+      .SendAsync(childrenHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)
       .ConfigureAwait(false);
 
     await foreach (var (id, json) in ResponseProgress(childrenHttpResponse, progress, false, cancellationToken))
@@ -84,11 +90,9 @@ public class ServerObjectManager : IServerObjectManager
     cancellationToken.ThrowIfCancellationRequested();
 
     // Get root object
-    using var rootHttpMessage = new HttpRequestMessage
-    {
-      RequestUri = new Uri($"/objects/{_streamId}/{objectId}/single", UriKind.Relative),
-      Method = HttpMethod.Get,
-    };
+    using var rootHttpMessage = new HttpRequestMessage();
+    rootHttpMessage.RequestUri = new Uri($"/objects/{_streamId}/{objectId}/single", UriKind.Relative);
+    rootHttpMessage.Method = HttpMethod.Get;
 
     HttpResponseMessage rootHttpResponse = await _client
       .SendAsync(rootHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)
@@ -143,10 +147,8 @@ public class ServerObjectManager : IServerObjectManager
     CancellationToken cancellationToken
   )
   {
+    using var _ = _activityFactory.Start();
     cancellationToken.ThrowIfCancellationRequested();
-
-    // Stopwatch sw = new Stopwatch(); sw.Start();
-
     string objectsPostParameter = JsonConvert.SerializeObject(objectIds);
     var payload = new Dictionary<string, string> { { "objects", objectsPostParameter } };
     string serializedPayload = JsonConvert.SerializeObject(payload);
@@ -173,6 +175,7 @@ public class ServerObjectManager : IServerObjectManager
     CancellationToken cancellationToken
   )
   {
+    using var _ = _activityFactory.Start();
     cancellationToken.ThrowIfCancellationRequested();
 
     using HttpRequestMessage message = new()
@@ -181,7 +184,7 @@ public class ServerObjectManager : IServerObjectManager
       Method = HttpMethod.Post,
     };
 
-    MultipartFormDataContent multipart = new();
+    MultipartFormDataContent multipart = new(_serverObjectManagerOptions.Boundary);
 
     int mpId = 0;
     var ctBuilder = new StringBuilder("[");

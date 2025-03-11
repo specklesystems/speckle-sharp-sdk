@@ -125,7 +125,7 @@ public sealed class VersionResource
 
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
-  /// <returns>id of the created <see cref="Version"/></returns>
+  /// <returns>The created <see cref="Version"/></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
   public async Task<Version> Create(CreateVersionInput input, CancellationToken cancellationToken = default)
   {

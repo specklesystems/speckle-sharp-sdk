@@ -26,7 +26,7 @@ public class CancellationTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     using var cancellationSource = new CancellationTokenSource();
-    using var serializeProcess = new SerializeProcess(
+    await using var serializeProcess = new SerializeProcess(
       null,
       new DummySqLiteSendManager(),
       new DummyServerObjectManager(),
@@ -50,7 +50,7 @@ public class CancellationTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     using var cancellationSource = new CancellationTokenSource();
-    using var serializeProcess = new SerializeProcess(
+    await using var serializeProcess = new SerializeProcess(
       null,
       new DummySqLiteSendManager(),
       new CancellationServerObjectManager(cancellationSource),
@@ -73,7 +73,7 @@ public class CancellationTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     using var cancellationSource = new CancellationTokenSource();
-    using var serializeProcess = new SerializeProcess(
+    await using var serializeProcess = new SerializeProcess(
       null,
       new CancellationSqLiteSendManager(cancellationSource),
       new DummyServerObjectManager(),
@@ -98,14 +98,10 @@ public class CancellationTests
     closures.Count.Should().Be(oldCount);
 
     using var cancellationSource = new CancellationTokenSource();
-    var o = new ObjectLoader(
+    await using var process = new DeserializeProcess(
       new CancellationSqLiteJsonCacheManager(cancellationSource),
       new DummyReceiveServerObjectManager(closures),
-      null
-    );
-    using var process = new DeserializeProcess(
       null,
-      o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       cancellationSource.Token,
@@ -129,14 +125,10 @@ public class CancellationTests
     closures.Count.Should().Be(oldCount);
 
     using var cancellationSource = new CancellationTokenSource();
-    var o = new ObjectLoader(
+    await using var process = new DeserializeProcess(
       new DummyCancellationSqLiteSendManager(),
       new CancellationServerObjectManager(cancellationSource),
-      null
-    );
-    using var process = new DeserializeProcess(
       null,
-      o,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       cancellationSource.Token,
@@ -160,14 +152,10 @@ public class CancellationTests
     closures.Count.Should().Be(oldCount);
 
     using var cancellationSource = new CancellationTokenSource();
-    var o = new ObjectLoader(
+    await using var process = new DeserializeProcess(
       new DummySqLiteReceiveManager(closures),
       new DummyReceiveServerObjectManager(closures),
-      null
-    );
-    using var process = new DeserializeProcess(
       null,
-      o,
       new CancellationBaseDeserializer(cancellationSource),
       new NullLoggerFactory(),
       cancellationSource.Token,

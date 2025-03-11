@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
@@ -22,7 +23,7 @@ public readonly record struct SerializeProcessResults(
   IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
 );
 
-public partial interface ISerializeProcess : IDisposable;
+public partial interface ISerializeProcess : IAsyncDisposable;
 
 [GenerateAutoInterface]
 public sealed class SerializeProcess(
@@ -34,14 +35,25 @@ public sealed class SerializeProcess(
   ILoggerFactory loggerFactory,
   CancellationToken cancellationToken,
   SerializeProcessOptions? options = null
-) : ChannelSaver<BaseItem>, ISerializeProcess
+#pragma warning disable CS9107
+#pragma warning disable CA2254
+)
+  : ChannelSaver<BaseItem>(x => loggerFactory.CreateLogger<SerializeProcess>().LogWarning(x), cancellationToken),
+    ISerializeProcess
+#pragma warning restore CA2254
+#pragma warning restore CS9107
 {
+  //async dispose
+  [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
   private readonly PriorityScheduler _highest = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.Highest,
     2,
     cancellationToken
   );
+
+  //async dispose
+  [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
   private readonly PriorityScheduler _belowNormal = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.BelowNormal,
@@ -67,33 +79,61 @@ public sealed class SerializeProcess(
   private long _cached;
 
   [AutoInterfaceIgnore]
-  public void Dispose()
+  public async ValueTask DisposeAsync()
   {
-    _highest.Dispose();
-    _belowNormal.Dispose();
+    await WaitForSchedulerCompletion().ConfigureAwait(false);
+    await _highest.DisposeAsync().ConfigureAwait(false);
+    await _belowNormal.DisposeAsync().ConfigureAwait(false);
     sqLiteJsonCacheManager.Dispose();
+  }
+
+  public void ThrowIfFailed()
+  {
+    if (Exception is not null)
+    {
+      throw new SpeckleException("Error while sending", Exception);
+    }
+    cancellationToken.ThrowIfCancellationRequested();
+  }
+
+  private async Task WaitForSchedulerCompletion()
+  {
+    await _highest.WaitForCompletion().ConfigureAwait(false);
+    await _belowNormal.WaitForCompletion().ConfigureAwait(false);
   }
 
   public async Task<SerializeProcessResults> Serialize(Base root)
   {
-    var channelTask = Start(cancellationToken);
-    var findTotalObjectsTask = Task.CompletedTask;
-    if (!_options.SkipFindTotalObjects)
+    try
     {
-      cancellationToken.ThrowIfCancellationRequested();
-      findTotalObjectsTask = Task.Factory.StartNew(
-        () => TraverseTotal(root),
-        cancellationToken,
-        TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
-        _highest
-      );
+      var channelTask = Start();
+      var findTotalObjectsTask = Task.CompletedTask;
+      if (!_options.SkipFindTotalObjects)
+      {
+        ThrowIfFailed();
+        findTotalObjectsTask = Task.Factory.StartNew(
+          () => TraverseTotal(root),
+          cancellationToken,
+          TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
+          _highest
+        );
+      }
+
+      await Traverse(root).ConfigureAwait(false);
+      DoneTraversing();
+      await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
+      ThrowIfFailed();
+      await DoneSaving().ConfigureAwait(false);
+      ThrowIfFailed();
+      await WaitForSchedulerCompletion().ConfigureAwait(false);
+      ThrowIfFailed();
+      return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
     }
-    await Traverse(root).ConfigureAwait(true);
-    DoneTraversing();
-    await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(true);
-    await DoneSaving().ConfigureAwait(true);
-    cancellationToken.ThrowIfCancellationRequested();
-    return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
+    catch (TaskCanceledException)
+    {
+      ThrowIfFailed();
+      throw;
+    }
   }
 
   private void TraverseTotal(Base obj)
@@ -116,7 +156,7 @@ public sealed class SerializeProcess(
       cancellationToken.ThrowIfCancellationRequested();
       var t = Task
         .Factory.StartNew(
-          async () => await Traverse(tmp).ConfigureAwait(true),
+          async () => await Traverse(tmp).ConfigureAwait(false),
           cancellationToken,
           TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
           _belowNormal
@@ -128,7 +168,7 @@ public sealed class SerializeProcess(
     Dictionary<Id, NodeInfo>[] taskClosures = [];
     if (tasks.Count > 0)
     {
-      taskClosures = await Task.WhenAll(tasks).ConfigureAwait(true);
+      taskClosures = await Task.WhenAll(tasks).ConfigureAwait(false);
     }
     var childClosures = _childClosurePool.Get();
     foreach (var childClosure in taskClosures)
@@ -150,7 +190,7 @@ public sealed class SerializeProcess(
       if (item.NeedsStorage)
       {
         Interlocked.Increment(ref _objectsSerialized);
-        await Save(item, cancellationToken).ConfigureAwait(true);
+        await Save(item).ConfigureAwait(false);
       }
 
       if (!currentClosures.ContainsKey(item.Id))
@@ -162,7 +202,7 @@ public sealed class SerializeProcess(
     return currentClosures;
   }
 
-  public override async Task SendToServer(Batch<BaseItem> batch)
+  protected override async Task SendToServerInternal(Batch<BaseItem> batch)
   {
     try
     {
