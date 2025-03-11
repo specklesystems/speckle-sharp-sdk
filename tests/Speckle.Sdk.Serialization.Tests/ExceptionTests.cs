@@ -1,9 +1,12 @@
-/*using FluentAssertions;
+using System.Collections.Concurrent;
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
@@ -13,10 +16,17 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class ExceptionTests
 {
+  private readonly ISerializeProcessFactory _factory;
   public ExceptionTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
+    
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+
+    _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
   }
 
   [Fact]
@@ -24,20 +34,15 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    var objects = new Dictionary<string, string>();
-    await using var process2 = new SerializeProcess(
+    var objects = new ConcurrentDictionary<string, string>();
+
+    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
+      objects,
       null,
-      new DummySendCacheManager(objects),
-      new ExceptionServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
-      default,
-      new SerializeProcessOptions(false, false, false, true)
-    );
+      default, new SerializeProcessOptions(false, false, false, true));
 
     //4 exceptions are fine because we use 4 threads for saving cache
-    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
     await Verify(ex);
   }
 
@@ -46,18 +51,13 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    await using var process2 = new SerializeProcess(
-      null,
-      new ExceptionSendCacheManager(),
-      new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new ExceptionSendCacheManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
-      default,
-      new SerializeProcessOptions(false, false, false, true)
-    );
 
-    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
+    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
+      new ConcurrentDictionary<string, string>(),
+      null,
+      default, new SerializeProcessOptions(false, false, false, true));
+
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
     await Verify(ex);
   }
 
@@ -165,4 +165,3 @@ public class ExceptionTests
     });
   }
 }
-*/

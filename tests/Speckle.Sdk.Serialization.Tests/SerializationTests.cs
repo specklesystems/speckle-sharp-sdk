@@ -18,7 +18,8 @@ using Speckle.Sdk.Testing.Framework;
 namespace Speckle.Sdk.Serialization.Tests;
 
 public class SerializationTests
-{ private readonly ISerializeProcessFactory _factory;
+{ 
+  private readonly ISerializeProcessFactory _factory;
   public SerializationTests()
   {
     TypeLoader.Reset();
