@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
@@ -8,6 +9,7 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
+using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
@@ -16,33 +18,18 @@ using Speckle.Sdk.Testing.Framework;
 namespace Speckle.Sdk.Serialization.Tests;
 
 public class SerializationTests
-{
-  private class TestLoader(string json) : IObjectLoader
+{ private readonly ISerializeProcessFactory _factory;
+  public SerializationTests()
   {
-    public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(string rootId, DeserializeProcessOptions? options)
-    {
-      var childrenIds = ClosureParser.GetChildrenIds(new(json), default).Select(x => new Id(x)).ToList();
-      return Task.FromResult<(Json, IReadOnlyCollection<Id>)>((new(json), childrenIds));
-    }
+    TypeLoader.Reset();
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestClass).Assembly);
+    
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+    var serviceProvider = serviceCollection.BuildServiceProvider();
 
-    public string? LoadId(string id) => null;
-
-    public void Dispose() { }
+    _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
   }
-
-  /*
-    [Test]
-    [TestCase("RevitObject.json")]
-    public async Task RunTest2(string fileName)
-    {
-      var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
-      var json = await ReadJson(fullName);
-      var closure = await ReadAsObjects(json);
-      using DeserializeProcess sut = new(null, new TestLoader(json), new TestTransport(closure));
-      var @base = await sut.Deserialize("551513ff4f3596024547fc818f1f3f70");
-      @base.Should().NotBeNull();
-    }*/
-
   public class TestObjectLoader(IReadOnlyDictionary<string, string> idToObject) : IObjectLoader
   {
     public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(string rootId, DeserializeProcessOptions? options)
@@ -226,18 +213,13 @@ public class SerializationTests
     }
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
-    await using (
-      var serializeProcess = new SerializeProcess(
-        null,
-        new DummySqLiteSendManager(),
-        new DummySendServerObjectManager(newIdToJson),
-        new BaseChildFinder(new BasePropertyGatherer()),
-        new BaseSerializer(new DummySqLiteSendManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
-        new NullLoggerFactory(),
-        default,
-        new SerializeProcessOptions(true, true, false, true)
-      )
-    )
+
+    await using (var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
+      newIdToJson,
+      null,
+      default, new SerializeProcessOptions(true, true, false, true)))
+   
+    
     {
       var (rootId2, _) = await serializeProcess.Serialize(root);
       rootId2.Should().Be(root.id);

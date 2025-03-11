@@ -20,7 +20,7 @@ public class CancellationTests
   public CancellationTests()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestClass).Assembly, typeof(Polyline).Assembly);
     
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
