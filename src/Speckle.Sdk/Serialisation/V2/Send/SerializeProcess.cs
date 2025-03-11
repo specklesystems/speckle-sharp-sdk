@@ -177,7 +177,7 @@ public sealed class SerializeProcess(
     var currentClosures = _currentClosurePool.Get();
     Interlocked.Increment(ref _objectCount);
     progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound)));
-    foreach (var item in items)
+    foreach (var item in items.DistinctBy(x => x.Id))
     {
       if (item.NeedsStorage)
       {

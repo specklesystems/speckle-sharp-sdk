@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;

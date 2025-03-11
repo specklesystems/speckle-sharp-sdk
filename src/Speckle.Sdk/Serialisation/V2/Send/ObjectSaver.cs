@@ -44,16 +44,17 @@ public sealed class ObjectSaver(
     {
       if (!_options.SkipServer && batch.Items.Count != 0)
       {
-        var objectBatch = batch.Items.Distinct().ToList();
+        var distinctBatch = batch.Items.DistinctBy(x => x.Id).ToList();
         var hasObjects = await serverObjectManager
-          .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), cancellationToken)
+          .HasObjects(distinctBatch.Select(x => x.Id.Value).Freeze(), cancellationToken)
           .ConfigureAwait(false);
-        objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
+        var objectBatch = distinctBatch.Where(x => !hasObjects[x.Id.Value]).ToList();
         if (objectBatch.Count != 0)
         {
           await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
-          Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
         }
+        //intentionally use batch instead of distinct and HasObjects results for complete numbers
+        Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
 
         progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
       }
@@ -74,7 +75,6 @@ public sealed class ObjectSaver(
   public async ValueTask SaveItem(BaseItem item)
   {
     Interlocked.Increment(ref _objectsSerialized);
-
     await Save(item).ConfigureAwait(false);
   }
 

@@ -78,7 +78,7 @@ public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationT
   {
     try
     {
-      await SendToServer((Batch<T>)batch).ConfigureAwait(false);
+      await SendToServerInternal((Batch<T>)batch).ConfigureAwait(false);
       return batch;
     }
 #pragma warning disable CA1031
@@ -87,20 +87,6 @@ public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationT
     {
       RecordException(ex);
       return batch;
-    }
-  }
-
-  public async Task SendToServer(Batch<T> batch)
-  {
-    try
-    {
-      await SendToServerInternal(batch).ConfigureAwait(false);
-    }
-#pragma warning disable CA1031
-    catch (Exception ex)
-#pragma warning restore CA1031
-    {
-      RecordException(ex);
     }
   }
 
