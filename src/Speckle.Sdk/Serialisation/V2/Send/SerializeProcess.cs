@@ -84,6 +84,7 @@ public sealed class SerializeProcess(
 
   public void ThrowIfFailed()
   {
+    //always check for cancellation first
     cancellationToken.ThrowIfCancellationRequested();
     if (objectSaver.Exception is not null)
     {
