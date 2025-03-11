@@ -86,7 +86,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     catch (Exception ex) when (!ex.IsFatal()) { }
   }
 
-  public async Task<T> ExecuteWithResiliencePolicies<T>(Func<Task<T>> func) =>
+  internal async Task<T> ExecuteWithResiliencePolicies<T>(Func<Task<T>> func) =>
     await GraphQLRetry
       .ExecuteAsync<T, SpeckleGraphQLInternalErrorException>(
         func,

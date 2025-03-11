@@ -9,23 +9,24 @@ namespace Speckle.Sdk.Tests.Unit.Api;
 
 public sealed class GraphQLClientTests : IDisposable
 {
-  private readonly IClient _client;
+  private readonly Client _client;
 
   public GraphQLClientTests()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
-    _client = serviceProvider
-      .GetRequiredService<IClientFactory>()
-      .Create(
-        new Account
-        {
-          token = "this is a scam",
-          serverInfo = new ServerInfo { url = "http://goto.testing" },
-        }
-      );
+    _client = (Client)
+      serviceProvider
+        .GetRequiredService<IClientFactory>()
+        .Create(
+          new Account
+          {
+            token = "this is a scam",
+            serverInfo = new ServerInfo { url = "http://goto.testing" },
+          }
+        );
   }
 
-  public void Dispose() => _client?.Dispose();
+  public void Dispose() => _client.Dispose();
 
   [Fact]
   public async Task TestExecuteWithResiliencePoliciesDoesntRetryTaskCancellation()
