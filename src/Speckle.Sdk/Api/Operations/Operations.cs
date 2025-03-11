@@ -15,5 +15,6 @@ public partial class Operations(
   ILogger<Operations> logger,
   ISdkActivityFactory activityFactory,
   ISdkMetricsFactory metricsFactory,
-  ISerializeProcessFactory serializeProcessFactory
+  ISerializeProcessFactory serializeProcessFactory,
+  IDeserializeProcessFactory deserializeProcessFactory
 ) : IOperations;

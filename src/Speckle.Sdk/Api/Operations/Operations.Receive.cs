@@ -29,7 +29,7 @@ public partial class Operations
     metricsFactory.CreateCounter<long>("Receive").Add(1);
 
     receiveActivity?.SetTag("objectId", objectId);
-    var process = serializeProcessFactory.CreateDeserializeProcess(
+    var process = deserializeProcessFactory.CreateDeserializeProcess(
       url,
       streamId,
       authorizationToken,

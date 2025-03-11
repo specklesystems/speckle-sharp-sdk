@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Testing.Framework;
@@ -7,7 +8,7 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Serialization.Tests;
 
 public sealed class CancellationSqLiteJsonCacheManager(CancellationTokenSource cancellationTokenSource)
-  : DummySqLiteJsonCacheManager
+  : MemoryJsonCacheManager(new ConcurrentDictionary<Id, Json>())
 {
   public override void SaveObjects(IEnumerable<(string id, string json)> items)
   {
