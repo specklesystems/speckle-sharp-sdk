@@ -34,7 +34,7 @@ public interface ISerializeProcessFactory
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
   );
-  
+
   public ISerializeProcess CreateSerializeProcess(
     ISqLiteJsonCacheManager sqLiteJsonCacheManager,
     IServerObjectManager serverObjectManager,
@@ -64,15 +64,9 @@ public class SerializeProcessFactory(
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
     var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
-    return CreateSerializeProcess(
-      sqLiteJsonCacheManager,
-      serverObjectManager,
-      progress,
-      cancellationToken,
-      options
-    );
+    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager, progress, cancellationToken, options);
   }
-  
+
   public ISerializeProcess CreateSerializeProcess(
     ISqLiteJsonCacheManager sqLiteJsonCacheManager,
     IServerObjectManager serverObjectManager,
@@ -82,9 +76,7 @@ public class SerializeProcessFactory(
   ) =>
     new SerializeProcess(
       progress,
-      new ObjectSaver(progress,
-        sqLiteJsonCacheManager,
-        serverObjectManager, loggerFactory, cancellationToken),
+      new ObjectSaver(progress, sqLiteJsonCacheManager, serverObjectManager, loggerFactory, cancellationToken),
       baseChildFinder,
       new BaseSerializer(sqLiteJsonCacheManager, objectSerializerFactory),
       loggerFactory,
@@ -113,7 +105,7 @@ public class SerializeProcessFactory(
       options
     );
   }
-  
+
   public ISerializeProcess CreateSerializeProcess(
     ConcurrentDictionary<Id, Json> jsonCache,
     ConcurrentDictionary<string, string> objects,
@@ -127,9 +119,13 @@ public class SerializeProcessFactory(
 #pragma warning restore CA2000
     return new SerializeProcess(
       progress,
-      new ObjectSaver(progress,
+      new ObjectSaver(
+        progress,
         memoryJsonCacheManager,
-        new MemoryServerObjectManager(objects), loggerFactory, cancellationToken),
+        new MemoryServerObjectManager(objects),
+        loggerFactory,
+        cancellationToken
+      ),
       baseChildFinder,
       new BaseSerializer(memoryJsonCacheManager, objectSerializerFactory),
       loggerFactory,
@@ -173,7 +169,7 @@ public class MemoryServerObjectManager(ConcurrentDictionary<string, string> obje
     [EnumeratorCancellation] CancellationToken cancellationToken
   )
   {
-    foreach(var item in objects.Where(x => objectIds.Contains(x.Key)))
+    foreach (var item in objects.Where(x => objectIds.Contains(x.Key)))
     {
       cancellationToken.ThrowIfCancellationRequested();
       yield return (item.Key, item.Value);
@@ -181,15 +177,23 @@ public class MemoryServerObjectManager(ConcurrentDictionary<string, string> obje
     await Task.CompletedTask.ConfigureAwait(false);
   }
 
-  public virtual  Task<string?> DownloadSingleObject(string objectId, IProgress<ProgressArgs>? progress, CancellationToken cancellationToken) =>
-  Task.FromResult(objects.TryGetValue(objectId, out var json) ? json : null);
-  
-  public virtual  Task<Dictionary<string, bool>> HasObjects(IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken) => 
-  Task.FromResult(objectIds.ToDictionary(x => x, objects.ContainsKey));
-
-  public virtual Task UploadObjects(IReadOnlyList<BaseItem> objectToUpload, bool compressPayloads,
+  public virtual Task<string?> DownloadSingleObject(
+    string objectId,
     IProgress<ProgressArgs>? progress,
-    CancellationToken cancellationToken)
+    CancellationToken cancellationToken
+  ) => Task.FromResult(objects.TryGetValue(objectId, out var json) ? json : null);
+
+  public virtual Task<Dictionary<string, bool>> HasObjects(
+    IReadOnlyCollection<string> objectIds,
+    CancellationToken cancellationToken
+  ) => Task.FromResult(objectIds.ToDictionary(x => x, objects.ContainsKey));
+
+  public virtual Task UploadObjects(
+    IReadOnlyList<BaseItem> objectToUpload,
+    bool compressPayloads,
+    IProgress<ProgressArgs>? progress,
+    CancellationToken cancellationToken
+  )
   {
     foreach (BaseItem baseItem in objectToUpload)
     {

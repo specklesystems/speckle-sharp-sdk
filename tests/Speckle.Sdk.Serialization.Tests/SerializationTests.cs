@@ -18,19 +18,21 @@ using Speckle.Sdk.Testing.Framework;
 namespace Speckle.Sdk.Serialization.Tests;
 
 public class SerializationTests
-{ 
+{
   private readonly ISerializeProcessFactory _factory;
+
   public SerializationTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestClass).Assembly);
-    
+
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
     var serviceProvider = serviceCollection.BuildServiceProvider();
 
     _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
   }
+
   public class TestObjectLoader(IReadOnlyDictionary<string, string> idToObject) : IObjectLoader
   {
     public Task<(Json, IReadOnlyCollection<Id>)> GetAndCache(string rootId, DeserializeProcessOptions? options)
@@ -215,12 +217,15 @@ public class SerializationTests
 
     var newIdToJson = new ConcurrentDictionary<string, string>();
 
-    await using (var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
-      newIdToJson,
-      null,
-      default, new SerializeProcessOptions(true, true, false, true)))
-   
-    
+    await using (
+      var serializeProcess = _factory.CreateSerializeProcess(
+        new ConcurrentDictionary<Id, Json>(),
+        newIdToJson,
+        null,
+        default,
+        new SerializeProcessOptions(true, true, false, true)
+      )
+    )
     {
       var (rootId2, _) = await serializeProcess.Serialize(root);
       rootId2.Should().Be(root.id);

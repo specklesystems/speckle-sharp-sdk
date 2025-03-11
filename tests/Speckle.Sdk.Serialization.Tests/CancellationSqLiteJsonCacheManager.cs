@@ -25,7 +25,8 @@ public class CancellationSqLiteSendManager(CancellationTokenSource cancellationT
   }
 }
 
-public class CancellationServerObjectManager(CancellationTokenSource cancellationTokenSource) : MemoryServerObjectManager(new ConcurrentDictionary<string, string>())
+public class CancellationServerObjectManager(CancellationTokenSource cancellationTokenSource)
+  : MemoryServerObjectManager(new ConcurrentDictionary<string, string>())
 {
   public override Task UploadObjects(
     IReadOnlyList<BaseItem> objects,

@@ -9,8 +9,6 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-
-
 public record SerializeProcessOptions(
   bool SkipCacheRead = false,
   bool SkipCacheWrite = false,
@@ -36,9 +34,7 @@ public sealed class SerializeProcess(
   SerializeProcessOptions? options = null
 #pragma warning disable CS9107
 #pragma warning disable CA2254
-)
-  : 
-    ISerializeProcess
+) : ISerializeProcess
 #pragma warning restore CA2254
 #pragma warning restore CS9107
 {

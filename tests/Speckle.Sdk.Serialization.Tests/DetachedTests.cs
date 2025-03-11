@@ -17,11 +17,12 @@ namespace Speckle.Sdk.Serialization.Tests;
 public class DetachedTests
 {
   private readonly ISerializeProcessFactory _factory;
+
   public DetachedTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
-    
+
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
     var serviceProvider = serviceCollection.BuildServiceProvider();
@@ -39,11 +40,13 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-
-    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
-                   objects,
-                   null,
-                   default, new SerializeProcessOptions(false, false, true, true));
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      objects,
+      null,
+      default,
+      new SerializeProcessOptions(false, false, true, true)
+    );
     await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
@@ -119,11 +122,13 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-
-    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default, new SerializeProcessOptions(false, false, true, true));
+      default,
+      new SerializeProcessOptions(false, false, true, true)
+    );
     var results = await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
@@ -184,11 +189,14 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
-        objects,
-        null,
-        default, new SerializeProcessOptions(false, false, true, true));
-    
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      objects,
+      null,
+      default,
+      new SerializeProcessOptions(false, false, true, true)
+    );
+
     var results = await serializeProcess.Serialize(@base);
 
     objects.Count.Should().Be(3);
@@ -214,11 +222,13 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-
-    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default, new SerializeProcessOptions(false, false, true, true));
+      default,
+      new SerializeProcessOptions(false, false, true, true)
+    );
     var results = await serializeProcess.Serialize(@base);
     await VerifyJsonDictionary(objects);
   }

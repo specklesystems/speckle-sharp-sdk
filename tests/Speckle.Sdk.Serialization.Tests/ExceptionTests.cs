@@ -17,11 +17,12 @@ namespace Speckle.Sdk.Serialization.Tests;
 public class ExceptionTests
 {
   private readonly ISerializeProcessFactory _factory;
+
   public ExceptionTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
-    
+
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
     var serviceProvider = serviceCollection.BuildServiceProvider();
@@ -36,10 +37,13 @@ public class ExceptionTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default, new SerializeProcessOptions(false, false, false, true));
+      default,
+      new SerializeProcessOptions(false, false, false, true)
+    );
 
     //4 exceptions are fine because we use 4 threads for saving cache
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
@@ -51,11 +55,13 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-
-    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
       new ConcurrentDictionary<string, string>(),
       null,
-      default, new SerializeProcessOptions(false, false, false, true));
+      default,
+      new SerializeProcessOptions(false, false, false, true)
+    );
 
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
     await Verify(ex);

@@ -17,11 +17,12 @@ namespace Speckle.Sdk.Serialization.Tests;
 public class CancellationTests
 {
   private readonly ISerializeProcessFactory _factory;
+
   public CancellationTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestClass).Assembly, typeof(Polyline).Assembly);
-    
+
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
     var serviceProvider = serviceCollection.BuildServiceProvider();
@@ -36,10 +37,13 @@ public class CancellationTests
 
     using var cancellationSource = new CancellationTokenSource();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(),
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
       new ConcurrentDictionary<string, string>(),
       null,
-      cancellationSource.Token, new SerializeProcessOptions(true, true, false, true));
+      cancellationSource.Token,
+      new SerializeProcessOptions(true, true, false, true)
+    );
     await cancellationSource.CancelAsync();
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(
       async () => await serializeProcess.Serialize(testClass)
@@ -54,12 +58,14 @@ public class CancellationTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     using var cancellationSource = new CancellationTokenSource();
-    
+
     await using var serializeProcess = _factory.CreateSerializeProcess(
       new DummySqLiteSendManager(),
       new CancellationServerObjectManager(cancellationSource),
       null,
-      cancellationSource.Token, new SerializeProcessOptions(true, true, false, true));
+      cancellationSource.Token,
+      new SerializeProcessOptions(true, true, false, true)
+    );
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(
       async () => await serializeProcess.Serialize(testClass)
     );
@@ -74,11 +80,13 @@ public class CancellationTests
 
     using var cancellationSource = new CancellationTokenSource();
     await using var serializeProcess = _factory.CreateSerializeProcess(
-        new DummySqLiteSendManager(),
-        new CancellationServerObjectManager(cancellationSource),
-        null,
-        cancellationSource.Token, new SerializeProcessOptions(true, true, false, true));
-    
+      new DummySqLiteSendManager(),
+      new CancellationServerObjectManager(cancellationSource),
+      null,
+      cancellationSource.Token,
+      new SerializeProcessOptions(true, true, false, true)
+    );
+
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(
       async () => await serializeProcess.Serialize(testClass)
     );

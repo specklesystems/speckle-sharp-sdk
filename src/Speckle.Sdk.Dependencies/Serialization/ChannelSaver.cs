@@ -5,7 +5,6 @@ using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-
 public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationToken cancellationToken)
   where T : IHasByteSize
 {

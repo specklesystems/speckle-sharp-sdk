@@ -14,17 +14,19 @@ public interface IObjectSaver : IDisposable
   Task DoneSaving();
   ValueTask SaveItem(BaseItem item);
 }
+
 public sealed class ObjectSaver(
   IProgress<ProgressArgs>? progress,
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   ILoggerFactory loggerFactory,
   CancellationToken cancellationToken,
- 
 #pragma warning disable CS9107
 #pragma warning disable CA2254
-  SerializeProcessOptions? options = null)  : ChannelSaver<BaseItem>(x => loggerFactory.CreateLogger<SerializeProcess>().LogWarning(x), cancellationToken), IObjectSaver
-
+  SerializeProcessOptions? options = null
+)
+  : ChannelSaver<BaseItem>(x => loggerFactory.CreateLogger<SerializeProcess>().LogWarning(x), cancellationToken),
+    IObjectSaver
 #pragma warning restore CA2254
 #pragma warning restore CS9107
 {
@@ -35,6 +37,7 @@ public sealed class ObjectSaver(
   private long _cached;
 
   private long _objectsSerialized;
+
   protected override async Task SendToServerInternal(Batch<BaseItem> batch)
   {
     try
@@ -71,7 +74,7 @@ public sealed class ObjectSaver(
   public async ValueTask SaveItem(BaseItem item)
   {
     Interlocked.Increment(ref _objectsSerialized);
-    
+
     await Save(item).ConfigureAwait(false);
   }
 
@@ -98,6 +101,6 @@ public sealed class ObjectSaver(
       throw;
     }
   }
-  
+
   public void Dispose() => sqLiteJsonCacheManager.Dispose();
 }
