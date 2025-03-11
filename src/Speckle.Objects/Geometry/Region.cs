@@ -8,7 +8,7 @@ namespace Speckle.Objects.Geometry;
 /// Flat polygon, defined by an outer boundary and inner loops.
 /// </summary>
 [SpeckleType("Objects.Geometry.Region")]
-public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<ICurve>>, ITransformable
+public class Region : Base, IHasArea, IHasBoundingBox, ITransformable
 {
   /// <summary>
   /// Boundary of a region.
@@ -43,7 +43,7 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<ICurve
 
   /// <inheritdoc/>
   [DetachProperty]
-  public required List<ICurve> displayValue { get; set; }
+  public List<Base> displayValue { get; set; } = new();
 
   /// <inheritdoc/>
   public bool TransformTo(Transform transform, out ITransformable transformed)
@@ -72,18 +72,14 @@ public class Region : Base, IHasArea, IHasBoundingBox, IDisplayValue<List<ICurve
         }
       }
 
-      List<ICurve> allCurves = new List<ICurve> { transformedBoundary }
-        .Concat(transformedLoops)
-        .ToList();
-
       // if boundary and loops transformations succeeded
+      // don't create displayValue for Transformed Regions: we don't know yet if it's gonna be Curves or Mesh
       transformed = new Region
       {
         boundary = transformedBoundary,
         innerLoops = transformedLoops,
         hasHatchPattern = hasHatchPattern,
         bbox = null, // maybe calculate in the future if we make Box ITransformable
-        displayValue = allCurves,
         units = units,
       };
       return true;
