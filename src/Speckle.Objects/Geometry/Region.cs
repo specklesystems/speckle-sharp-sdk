@@ -81,7 +81,6 @@ public class Region : Base, IHasArea, IHasBoundingBox, ITransformable, IDisplayV
       }
 
       // if boundary and loops transformations succeeded
-
       transformed = new Region
       {
         boundary = transformedBoundary,
