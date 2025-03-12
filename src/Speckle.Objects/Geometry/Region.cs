@@ -81,7 +81,7 @@ public class Region : Base, IHasArea, IHasBoundingBox, ITransformable, IDisplayV
       }
 
       // if boundary and loops transformations succeeded
-      // don't create displayValue for Transformed Regions: we don't know yet if it's gonna be Curves or Mesh
+
       transformed = new Region
       {
         boundary = transformedBoundary,
