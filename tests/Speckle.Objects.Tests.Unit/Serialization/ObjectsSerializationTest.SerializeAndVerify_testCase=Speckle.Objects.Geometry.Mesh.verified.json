@@ -1,0 +1,76 @@
+﻿[
+  {
+    "applicationId": null,
+    "data": [
+      3,
+      0,
+      1,
+      2
+    ],
+    "id": "13da8e855141b835e68bba721411046e",
+    "speckle_type": "Speckle.Core.Models.DataChunk"
+  },
+  {
+    "__closure": {
+      "13da8e855141b835e68bba721411046e": 100,
+      "cc9d42395b317ed25947b1285bbd5103": 100,
+      "ede4848fc3abda9275a19fee3447ffbd": 100
+    },
+    "applicationId": "asdfasdf",
+    "area": 42.0,
+    "bbox": null,
+    "colors": [
+      {
+        "__closure": null,
+        "referencedId": "cc9d42395b317ed25947b1285bbd5103",
+        "speckle_type": "reference"
+      }
+    ],
+    "faces": [
+      {
+        "__closure": null,
+        "referencedId": "13da8e855141b835e68bba721411046e",
+        "speckle_type": "reference"
+      }
+    ],
+    "id": "85fdad62ca935832449ffb359ebed7b8",
+    "speckle_type": "Objects.Geometry.Mesh",
+    "textureCoordinates": [],
+    "units": "m",
+    "vertexNormals": [],
+    "vertices": [
+      {
+        "__closure": null,
+        "referencedId": "ede4848fc3abda9275a19fee3447ffbd",
+        "speckle_type": "reference"
+      }
+    ],
+    "volume": 420.0
+  },
+  {
+    "applicationId": null,
+    "data": [
+      -10185235,
+      -10185235,
+      -10185235
+    ],
+    "id": "cc9d42395b317ed25947b1285bbd5103",
+    "speckle_type": "Speckle.Core.Models.DataChunk"
+  },
+  {
+    "applicationId": null,
+    "data": [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "id": "ede4848fc3abda9275a19fee3447ffbd",
+    "speckle_type": "Speckle.Core.Models.DataChunk"
+  }
+]

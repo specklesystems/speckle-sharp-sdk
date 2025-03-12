@@ -11,7 +11,7 @@ public class BaseExtensionsTests
   public BaseExtensionsTests()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestBase).Assembly);
   }
 
   [Theory]
