@@ -7,7 +7,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class ActiveUserResourceTests : IAsyncLifetime
 {
-  private Client _testUser;
+  private IClient _testUser;
   private ActiveUserResource Sut => _testUser.ActiveUser;
 
   // Setup method for xUnit using IAsyncLifetime
