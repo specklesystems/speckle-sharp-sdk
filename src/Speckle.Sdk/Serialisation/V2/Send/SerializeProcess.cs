@@ -89,11 +89,12 @@ public sealed class SerializeProcess(
 
   public void ThrowIfFailed()
   {
+    //always check for cancellation first
+    cancellationToken.ThrowIfCancellationRequested();
     if (Exception is not null)
     {
       throw new SpeckleException("Error while sending", Exception);
     }
-    cancellationToken.ThrowIfCancellationRequested();
   }
 
   private async Task WaitForSchedulerCompletion()
