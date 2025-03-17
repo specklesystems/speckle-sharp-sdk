@@ -15,7 +15,7 @@ public class RevitObject : DataObject, IRevitObject
   /// <summary>
   /// The level constraint of the object.
   /// For objects constrained by multiple levels, this represents the base constraint.
-  /// For objects with no level constraint, this should be "none".
+  /// For objects with no level constraint, this should be null.
   /// </summary>
   public required string? level { get; set; }
 
