@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Host;
@@ -16,10 +16,18 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class DetachedTests
 {
+  private readonly ISerializeProcessFactory _factory;
+
   public DetachedTests()
   {
     TypeLoader.Reset();
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
+
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+
+    _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
   }
 
   [Fact]
@@ -30,19 +38,16 @@ public class DetachedTests
     @base.detachedProp = new SamplePropBase() { name = "detachedProp" };
     @base.attachedProp = new SamplePropBase() { name = "attachedProp" };
 
-    var objects = new Dictionary<string, string>();
+    var objects = new ConcurrentDictionary<string, string>();
 
-    await using var process2 = new SerializeProcess(
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      objects,
       null,
-      new DummySendCacheManager(objects),
-      new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
     );
-    await process2.Serialize(@base);
+    await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
   }
@@ -115,19 +120,16 @@ public class DetachedTests
       line = new Polyline() { units = "test", value = [3.0, 4.0] },
     };
 
-    var objects = new Dictionary<string, string>();
+    var objects = new ConcurrentDictionary<string, string>();
 
-    await using var process2 = new SerializeProcess(
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      objects,
       null,
-      new DummySendCacheManager(objects),
-      new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
     );
-    var results = await process2.Serialize(@base);
+    var results = await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
   }
@@ -185,19 +187,17 @@ public class DetachedTests
     @base.list = new List<double>() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
     @base.list2 = new List<double>() { 1, 10 };
 
-    var objects = new Dictionary<string, string>();
+    var objects = new ConcurrentDictionary<string, string>();
 
-    await using var process2 = new SerializeProcess(
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      objects,
       null,
-      new DummySendCacheManager(objects),
-      new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
     );
-    var results = await process2.Serialize(@base);
+
+    var results = await serializeProcess.Serialize(@base);
 
     objects.Count.Should().Be(3);
     var x = JObject.Parse(objects["efeadaca70a85ae6d3acfc93a8b380db"]);
@@ -220,19 +220,16 @@ public class DetachedTests
     @base.list2 = new List<double>() { 1, 10 };
     @base.arr = [1, 10];
 
-    var objects = new Dictionary<string, string>();
+    var objects = new ConcurrentDictionary<string, string>();
 
-    await using var process2 = new SerializeProcess(
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      objects,
       null,
-      new DummySendCacheManager(objects),
-      new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, true, true)
     );
-    var results = await process2.Serialize(@base);
+    var results = await serializeProcess.Serialize(@base);
     await VerifyJsonDictionary(objects);
   }
 }
