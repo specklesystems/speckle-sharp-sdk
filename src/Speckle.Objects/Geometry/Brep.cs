@@ -3,7 +3,6 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Geometry;
@@ -31,7 +30,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <summary>
   /// Gets or sets the flat list of numbers representing the <see cref="Brep"/>'s surfaces.
   /// </summary>
-  [DetachProperty, SchemaIgnore, Chunkable(31250)]
+  [DetachProperty, Chunkable(31250)]
   public List<double> SurfacesValue
   {
     get
@@ -77,7 +76,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <remarks>
   /// This is only used for the <see cref="Brep"/> class serialisation/deserialisation. You should use <see cref="Brep.Curve3D"/> instead.
   /// </remarks>
-  [DetachProperty, SchemaIgnore, Chunkable(31250)]
+  [DetachProperty, Chunkable(31250)]
   public List<double> Curve3DValues
   {
     get => CurveArrayEncodingExtensions.ToArray(Curve3D);
@@ -102,7 +101,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <remarks>
   /// This is only used for the <see cref="Brep"/> class serialisation/deserialisation. You should use <see cref="Brep.Curve2D"/> instead.
   /// </remarks>
-  [DetachProperty, SchemaIgnore, Chunkable(31250)]
+  [DetachProperty, Chunkable(31250)]
   public List<double> Curve2DValues
   {
     get => CurveArrayEncodingExtensions.ToArray(Curve2D);
@@ -127,7 +126,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <remarks>
   /// This is only used for the <see cref="Brep"/> class serialisation/deserialisation. You should use <see cref="Brep.Vertices"/> instead.
   /// </remarks>
-  [DetachProperty, SchemaIgnore, Chunkable(31250)]
+  [DetachProperty, Chunkable(31250)]
   public List<double> VerticesValue
   {
     get
@@ -167,7 +166,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <remarks>
   /// This is only used for the <see cref="Brep"/> class serialisation/deserialisation. You should use <see cref="Brep.Edges"/> instead.
   /// </remarks>
-  [DetachProperty, SchemaIgnore, Chunkable(62500)]
+  [DetachProperty, Chunkable(62500)]
   public List<double?> EdgesValue
   {
     get =>
@@ -241,7 +240,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <remarks>
   /// This is only used for the <see cref="Brep"/> class serialisation/deserialisation. You should use <see cref="Brep.Loops"/> instead.
   /// </remarks>
-  [DetachProperty, SchemaIgnore, Chunkable(62500)]
+  [DetachProperty, Chunkable(62500)]
   public List<int> LoopsValue
   {
     get =>
@@ -297,7 +296,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <remarks>
   /// This is only used for the <see cref="Brep"/> class serialisation/deserialisation. You should use <see cref="Brep.Trims"/> instead.
   /// </remarks>
-  [DetachProperty, SchemaIgnore, Chunkable(62500)]
+  [DetachProperty, Chunkable(62500)]
   public List<int> TrimsValue
   {
     get
@@ -363,7 +362,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
   /// <remarks>
   /// This is only used for the <see cref="Brep"/> class serialisation/deserialisation. You should use <see cref="Brep.Faces"/> instead.
   /// </remarks>
-  [DetachProperty, SchemaIgnore, Chunkable(62500)]
+  [DetachProperty, Chunkable(62500)]
   public List<int> FacesValue
   {
     get =>

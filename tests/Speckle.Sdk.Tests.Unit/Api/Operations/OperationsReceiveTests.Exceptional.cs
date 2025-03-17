@@ -1,5 +1,4 @@
 ﻿using Speckle.Sdk.Transports;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 

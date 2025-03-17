@@ -6,6 +6,7 @@
     <PackageVersion Include="Bullseye" Version="5.0.0" />
     <PackageVersion Include="GraphQL.Client" Version="6.0.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
+    <PackageVersion Include="HttpMultipartParser" Version="9.0.0" />
     <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <!-- Keep at exactly 7.0.5 for side by side with V2 -->
@@ -21,6 +22,7 @@
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
+    <PackageVersion Include="RichardSzalay.MockHttp" Version="7.0.0" />
     <PackageVersion Include="Speckle.Newtonsoft.Json" Version="13.0.2" />
     <PackageVersion Include="Speckle.DoubleNumerics" Version="4.1.0" />
     <PackageVersion Include="SimpleExec" Version="12.0.0" />

@@ -4,13 +4,12 @@ using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class ModelResourceExceptionalTests : IAsyncLifetime
 {
-  private Client _testUser;
+  private IClient _testUser;
   private ModelResource Sut => _testUser.Model;
   private Project _project;
   private Model _model;
