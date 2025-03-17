@@ -1,0 +1,11 @@
+﻿[
+  {
+    "applicationId": "iosdf;juasdfioj",
+    "id": "035cad79be39e59c765b7946c4ea5f0c",
+    "speckle_type": "Objects.Geometry.Point",
+    "units": "ft",
+    "x": 123.123,
+    "y": 111.222,
+    "z": -0.001
+  }
+]
