@@ -13,6 +13,13 @@ public class RevitObject : DataObject, IRevitObject
   public required string category { get; set; }
 
   /// <summary>
+  /// The level constraint of the object.
+  /// For objects constrained by multiple levels, this represents the base constraint.
+  /// For objects with no level constraint, this should be "none".
+  /// </summary>
+  public required string level { get; set; }
+
+  /// <summary>
   /// A Curve or Point object representing the location of a Revit element.
   /// </summary>
   public required Base? location { get; set; }
