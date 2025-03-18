@@ -1,4 +1,4 @@
-namespace Speckle.Sdk.Transports;
+namespace Speckle.Sdk.Serialisation;
 
 public readonly record struct ProgressArgs(ProgressEvent ProgressEvent, long Count, long? Total);
 

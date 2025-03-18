@@ -1,7 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
@@ -13,9 +12,7 @@ public class SendObjectReferences
 
   public SendObjectReferences()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider(typeof(Base).Assembly, typeof(DataChunk).Assembly);
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 

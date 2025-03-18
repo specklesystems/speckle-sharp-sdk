@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Reflection;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
@@ -16,10 +17,10 @@ public sealed class TestDataHelper : IDisposable
   public static IServiceProvider ServiceProvider { get; set; }
   public string ObjectId { get; private set; }
 
-  public TestDataHelper()
+  public TestDataHelper(params Assembly[] assemblies)
   {
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "3.0.0", assemblies);
     ServiceProvider = serviceCollection.BuildServiceProvider();
   }
 

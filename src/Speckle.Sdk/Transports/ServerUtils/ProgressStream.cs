@@ -1,4 +1,6 @@
-﻿namespace Speckle.Sdk.Transports;
+﻿using Speckle.Sdk.Serialisation;
+
+namespace Speckle.Sdk.Transports;
 
 internal sealed class ProgressStream(
   Stream input,

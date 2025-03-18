@@ -2,8 +2,8 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
 
@@ -15,9 +15,7 @@ public sealed class SendReceiveLocal : IDisposable
 
   public SendReceiveLocal()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider(typeof(Base).Assembly, typeof(Point).Assembly);
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 

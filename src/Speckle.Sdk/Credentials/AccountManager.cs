@@ -149,7 +149,7 @@ public sealed class AccountManager(
   /// <param name="server">Server URL</param>
   /// <returns></returns>
   internal async Task<ActiveUserServerInfoResponse> GetUserServerInfo(
-    string token,
+    string? token,
     Uri server,
     CancellationToken ct = default
   )
