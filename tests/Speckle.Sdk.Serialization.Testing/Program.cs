@@ -1,11 +1,9 @@
 #pragma warning disable CA1506
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Sdk;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
@@ -15,8 +13,6 @@ using Speckle.Sdk.SQLite;
 const bool skipCacheReceive = false;
 const bool skipCacheSendCheck = true;
 const bool skipCacheSendSave = false;
-TypeLoader.Reset();
-TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
 
 var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 var streamId = "a3ac1b2706";

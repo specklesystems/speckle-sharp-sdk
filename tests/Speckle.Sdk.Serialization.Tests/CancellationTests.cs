@@ -105,7 +105,7 @@ public class CancellationTests
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       cancellationSource.Token,
-      new(MaxParallelism: 1)
+      new(UseMaxParallelismOfOne: true)
     );
 
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
@@ -132,7 +132,7 @@ public class CancellationTests
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       cancellationSource.Token,
-      new(MaxParallelism: 1)
+      new(UseMaxParallelismOfOne: true)
     );
 
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
@@ -159,7 +159,7 @@ public class CancellationTests
       new CancellationBaseDeserializer(cancellationSource),
       new NullLoggerFactory(),
       cancellationSource.Token,
-      new(MaxParallelism: 1)
+      new(UseMaxParallelismOfOne: true)
     );
 
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () =>

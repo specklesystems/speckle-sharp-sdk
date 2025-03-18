@@ -65,7 +65,7 @@ public sealed class ObjectLoader(
           .Freeze();
         _allChildrenCount = allChildrenIds.Count;
         ThrowIfFailed();
-        await GetAndCache(allChildrenIds.Select(x => x.Value), _options.MaxParallelism).ConfigureAwait(false);
+        await GetAndCache(allChildrenIds.Select(x => x.Value), options.UseMaxParallelismOfOne ? 1 : null).ConfigureAwait(false);
         ThrowIfFailed();
         //save the root last to shortcut later
         if (!options.SkipCache)

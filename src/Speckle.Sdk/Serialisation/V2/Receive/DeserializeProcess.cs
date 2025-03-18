@@ -13,8 +13,8 @@ public record DeserializeProcessOptions(
   bool SkipCache = false,
   bool ThrowOnMissingReferences = true,
   bool SkipInvalidConverts = false,
-  int? MaxParallelism = null,
-  bool SkipServer = false
+  bool SkipServer = false,
+  bool UseMaxParallelismOfOne = false
 );
 
 public partial interface IDeserializeProcess : IAsyncDisposable;
