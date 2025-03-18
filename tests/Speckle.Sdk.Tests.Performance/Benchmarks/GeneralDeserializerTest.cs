@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
@@ -36,8 +35,7 @@ public class GeneralDeserializer : IDisposable
   [GlobalSetup]
   public async Task Setup()
   {
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
-    _dataSource = new TestDataHelper();
+    _dataSource = new TestDataHelper(typeof(Base).Assembly, typeof(Point).Assembly);
     await _dataSource
       .SeedTransport(new Account() { serverInfo = new() { url = url } }, streamId, rootId, skipCache)
       .ConfigureAwait(false);

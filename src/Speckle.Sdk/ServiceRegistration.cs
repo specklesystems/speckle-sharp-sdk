@@ -68,13 +68,15 @@ public static class ServiceRegistration
     this IServiceCollection serviceCollection,
     HostApplication application,
     HostAppVersion version,
-    string speckleVersion
+    string speckleVersion,
+    IEnumerable<Assembly>? assemblies = null
   ) =>
     serviceCollection.AddSpeckleSdk(
       application.Name,
       HostApplications.GetVersion(version),
       application.Slug,
-      speckleVersion
+      speckleVersion,
+      assemblies
     );
 
   public static IServiceCollection AddMatchingInterfacesAsTransient(

@@ -2,7 +2,6 @@ using System.Drawing;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Matrix4x4 = Speckle.DoubleNumerics.Matrix4x4;
@@ -15,9 +14,7 @@ public class SerializerNonBreakingChanges : PrimitiveTestFixture
 
   public SerializerNonBreakingChanges()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(StringValueMock).Assembly);
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider(typeof(StringValueMock).Assembly);
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 

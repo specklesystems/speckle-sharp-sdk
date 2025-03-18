@@ -7,7 +7,6 @@ using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
@@ -33,8 +32,7 @@ public class GeneralSendTest
   [GlobalSetup]
   public async Task Setup()
   {
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
-    using var dataSource = new TestDataHelper();
+    using var dataSource = new TestDataHelper(typeof(Base).Assembly, typeof(Point).Assembly);
     await dataSource
       .SeedTransport(
         new Account() { serverInfo = new() { url = "https://latest.speckle.systems/" } },

@@ -2,7 +2,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 
@@ -14,9 +13,7 @@ public class SimpleRoundTripTests
 
   public SimpleRoundTripTests()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 

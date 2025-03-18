@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
@@ -16,9 +15,7 @@ public class Closures
 
   public Closures()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 

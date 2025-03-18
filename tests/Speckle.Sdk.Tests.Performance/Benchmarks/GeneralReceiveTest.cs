@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
@@ -34,8 +33,7 @@ public class GeneralReceiveTest : IDisposable
   [GlobalSetup]
   public async Task Setup()
   {
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
-    _dataSource = new TestDataHelper();
+    _dataSource = new TestDataHelper(typeof(Base).Assembly, typeof(Point).Assembly);
     var acc = new Account() { serverInfo = new() { url = url } };
     await _dataSource.SeedTransport(acc, streamId, rootId, true).ConfigureAwait(false);
     _operations = TestDataHelper.ServiceProvider.GetRequiredService<IOperations>();

@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Tests.Unit.Host;
@@ -21,9 +20,7 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   // xUnit does not support a Setup method; instead, you can use the constructor for initialization.
   public SerializerBreakingChanges()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider(typeof(Base).Assembly, typeof(Point).Assembly);
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 

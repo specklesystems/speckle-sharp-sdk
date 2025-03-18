@@ -1,7 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
@@ -15,7 +14,6 @@ public sealed partial class OperationsReceiveTests : IDisposable
 
   static OperationsReceiveTests()
   {
-    Reset();
     s_testObjects =
     [
       new() { ["string prop"] = "simple test case", ["numerical prop"] = 123 },
@@ -30,8 +28,7 @@ public sealed partial class OperationsReceiveTests : IDisposable
 
   public OperationsReceiveTests()
   {
-    Reset();
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
     _operations = serviceProvider.GetRequiredService<IOperations>();
     _testCaseTransport = new MemoryTransport();
 
@@ -40,12 +37,6 @@ public sealed partial class OperationsReceiveTests : IDisposable
     {
       _ = _operations.Send(b, _testCaseTransport, false).GetAwaiter().GetResult();
     }
-  }
-
-  private static void Reset()
-  {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
 
   public static IEnumerable<object[]> TestCases()
