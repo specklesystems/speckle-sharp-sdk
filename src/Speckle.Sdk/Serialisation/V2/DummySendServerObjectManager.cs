@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2;
 

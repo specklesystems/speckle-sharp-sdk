@@ -12,15 +12,14 @@ services.AddSpeckleSdk("Initialization-Test", "test", "1.0", assemblies: [typeof
 var serviceProvider = services.BuildServiceProvider();
 
 var speckle = serviceProvider.GetSpeckle();
-var speckleClient = await speckle.Create(new Uri(url), null);
+var speckleClient = await speckle.Create(new Uri(url), null).ConfigureAwait(false);
 
-var root = await speckleClient.Receive(streamId, rootId, CancellationToken.None).ConfigureAwait(false);
+var root = await speckleClient.Receive(streamId, rootId).ConfigureAwait(false);
 
 await speckleClient
   .Send(
     streamId,
-    root,
-    CancellationToken.None
+    root
   // new SerializeProcessOptions(SkipCacheRead: true, SkipCacheWrite: true, SkipServer: true)
   )
   .ConfigureAwait(false);

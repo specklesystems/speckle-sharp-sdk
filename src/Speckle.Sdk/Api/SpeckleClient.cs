@@ -22,13 +22,18 @@ public interface ISpeckleClient
 {
   IClient Client { get; }
 
-  Task Send(string projectId, Base root, CancellationToken ct = default, IProgress<ProgressArgs>? progress = null);
+  Task Send(
+    string projectId,
+    Base root,
+    IProgress<ProgressArgs>? progress = null,
+    CancellationToken cancellationToken = default
+  );
 
   Task<Base> Receive(
     string projectId,
     string commitId,
-    CancellationToken ct = default,
-    IProgress<ProgressArgs>? progress = null
+    IProgress<ProgressArgs>? progress = null,
+    CancellationToken cancellationToken = default
   );
 }
 
@@ -38,7 +43,7 @@ internal class SpeckleHelper(AccountManager accountManager, IClientFactory clien
 {
   public async Task<ISpeckleClient> Create(Uri url, string? token)
   {
-    var response = await accountManager.GetUserServerInfo(token, url);
+    var response = await accountManager.GetUserServerInfo(token, url).ConfigureAwait(false);
     var account = new Account
     {
       token = token!,
@@ -60,14 +65,20 @@ internal class SpeckleHelper(AccountManager accountManager, IClientFactory clien
   public async Task Send(
     string projectId,
     Base root,
-    CancellationToken ct = default,
-    IProgress<ProgressArgs>? progress = null
-  ) => await operations.Send2(Client.NotNull().ServerUrl, projectId, Client.Account.token, root, progress, ct);
+    IProgress<ProgressArgs>? progress = null,
+    CancellationToken cancellationToken = default
+  ) =>
+    await operations
+      .Send2(Client.NotNull().ServerUrl, projectId, Client.Account.token, root, progress, cancellationToken)
+      .ConfigureAwait(false);
 
   public async Task<Base> Receive(
     string projectId,
     string commitId,
-    CancellationToken ct = default,
-    IProgress<ProgressArgs>? progress = null
-  ) => await operations.Receive2(Client.NotNull().ServerUrl, projectId, commitId, Client.Account.token, progress, ct);
+    IProgress<ProgressArgs>? progress = null,
+    CancellationToken cancellationToken = default
+  ) =>
+    await operations
+      .Receive2(Client.NotNull().ServerUrl, projectId, commitId, Client.Account.token, progress, cancellationToken)
+      .ConfigureAwait(false);
 }

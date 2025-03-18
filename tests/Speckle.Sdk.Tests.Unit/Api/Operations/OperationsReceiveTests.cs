@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
