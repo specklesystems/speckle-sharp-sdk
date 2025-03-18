@@ -18,8 +18,9 @@ public record SpeckleSdkOptions(
 public static class ServiceRegistration
 {
   public static IServiceCollection AddSpeckleSdk(
-    this IServiceCollection serviceCollection,SpeckleSdkOptions speckleSdkOptions)
-
+    this IServiceCollection serviceCollection,
+    SpeckleSdkOptions speckleSdkOptions
+  )
   {
     var currentAssembly = Assembly.GetExecutingAssembly();
     var allAssembles = speckleSdkOptions.Assemblies?.ToList() ?? [];
@@ -29,7 +30,7 @@ public static class ServiceRegistration
     }
     TypeLoader.Reset();
     TypeLoader.Initialize(allAssembles.ToArray());
-    
+
     serviceCollection.AddLogging();
 
     serviceCollection.AddSingleton<ISpeckleApplication>(
@@ -48,7 +49,8 @@ public static class ServiceRegistration
     return serviceCollection;
   }
 
-  private static string GetAssemblyVersion() => Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
+  private static string GetAssemblyVersion() =>
+    Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
 
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
@@ -56,15 +58,24 @@ public static class ServiceRegistration
     string applicationSlug,
     string applicationVersion,
     string? speckleVersion = null,
-    IEnumerable<Assembly>? assemblies = null)
-  => serviceCollection.AddSpeckleSdk(new (applicationName, applicationSlug, applicationVersion, speckleVersion, assemblies));
+    IEnumerable<Assembly>? assemblies = null
+  ) =>
+    serviceCollection.AddSpeckleSdk(
+      new(applicationName, applicationSlug, applicationVersion, speckleVersion, assemblies)
+    );
+
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
     HostApplication application,
     HostAppVersion version,
     string speckleVersion
   ) =>
-    serviceCollection.AddSpeckleSdk(application.Name, HostApplications.GetVersion(version), application.Slug, speckleVersion);
+    serviceCollection.AddSpeckleSdk(
+      application.Name,
+      HostApplications.GetVersion(version),
+      application.Slug,
+      speckleVersion
+    );
 
   public static IServiceCollection AddMatchingInterfacesAsTransient(
     this IServiceCollection serviceCollection,
