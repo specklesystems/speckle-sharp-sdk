@@ -399,8 +399,9 @@ public sealed class AccountManager(
   /// <summary>
   /// Refetches user and server info for each account
   /// </summary>
+  /// <param name="app"> It is defaultAppId in the server. By default it is "sca" to not break existing parts that this function involves.</param>
   /// <returns></returns>
-  public async Task UpdateAccounts(CancellationToken ct = default)
+  public async Task UpdateAccounts(CancellationToken ct = default, string app = "sca")
   {
     // need to ToList() the GetAccounts call or the UpdateObject call at the end of this method
     // will not work because sqlite does not support concurrent db calls
@@ -415,7 +416,7 @@ public sealed class AccountManager(
         //TODO: once we get a token expired exception from the server use that instead
         if (userServerInfo?.activeUser == null || userServerInfo.serverInfo == null)
         {
-          var tokenResponse = await GetRefreshedToken(account.refreshToken, url).ConfigureAwait(false);
+          var tokenResponse = await GetRefreshedToken(account.refreshToken, url, app).ConfigureAwait(false);
           userServerInfo = await GetUserServerInfo(tokenResponse.token, url, ct).ConfigureAwait(false);
 
           if (userServerInfo?.activeUser == null || userServerInfo.serverInfo == null)
@@ -766,7 +767,7 @@ public sealed class AccountManager(
     }
   }
 
-  private async Task<TokenExchangeResponse> GetRefreshedToken(string refreshToken, Uri server)
+  private async Task<TokenExchangeResponse> GetRefreshedToken(string refreshToken, Uri server, string app = "sca")
   {
     try
     {
@@ -774,8 +775,8 @@ public sealed class AccountManager(
 
       var body = new
       {
-        appId = "sca",
-        appSecret = "sca",
+        appId = app,
+        appSecret = app,
         refreshToken,
       };
 
