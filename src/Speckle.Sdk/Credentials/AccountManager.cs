@@ -435,7 +435,7 @@ public sealed class AccountManager(
       }
 
       ct.ThrowIfCancellationRequested();
-      _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
+      _accountStorage.UpdateObject(account.id, JsonConvert.SerializeObject(account));
     }
   }
 
