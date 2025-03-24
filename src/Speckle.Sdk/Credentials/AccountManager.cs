@@ -416,16 +416,9 @@ public sealed class AccountManager(
         //TODO: once we get a token expired exception from the server use that instead
         if (userServerInfo?.activeUser == null || userServerInfo.serverInfo == null)
         {
-          var tokenResponse = await GetRefreshedToken(account.refreshToken, url, app).ConfigureAwait(false);
-          userServerInfo = await GetUserServerInfo(tokenResponse.token, url, ct).ConfigureAwait(false);
-
-          if (userServerInfo?.activeUser == null || userServerInfo.serverInfo == null)
-          {
-            throw new SpeckleException("Could not refresh token");
-          }
-
-          account.token = tokenResponse.token;
-          account.refreshToken = tokenResponse.refreshToken;
+          // We were initially was handling refresh token here bc quite a while ago server was returning null
+          // for activeUser and serverInfo instead of throwing exception. In short, our logic moved into catch block to cover both.
+          throw new SpeckleException("Token is expired");
         }
 
         account.isOnline = true;
@@ -438,11 +431,32 @@ public sealed class AccountManager(
       }
       catch (Exception ex) when (!ex.IsFatal())
       {
-        account.isOnline = false;
+        await RefreshAndSetAccountToken(account, app).ConfigureAwait(false);
       }
 
       ct.ThrowIfCancellationRequested();
       _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
+    }
+  }
+
+  /// <summary>
+  /// Mutates the account with new tokens.
+  /// </summary>
+  /// <param name="account"></param>
+  /// <param name="app"></param>
+  private async Task RefreshAndSetAccountToken(Account account, string app)
+  {
+    try
+    {
+      Uri url = new(account.serverInfo.url);
+      var tokenResponse = await GetRefreshedToken(account.refreshToken, url, app).ConfigureAwait(false);
+      account.token = tokenResponse.token;
+      account.refreshToken = tokenResponse.refreshToken;
+      account.isOnline = true;
+    }
+    catch (Exception ex) when (!ex.IsFatal())
+    {
+      account.isOnline = false;
     }
   }
 
