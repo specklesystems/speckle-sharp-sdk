@@ -96,7 +96,7 @@ public class ExceptionTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Test_Exceptions_Receive_Server(string fileName, string rootId, int oldCount)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     await using var process = new DeserializeProcess(
@@ -121,7 +121,7 @@ public class ExceptionTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, true)]
   public async Task Test_Exceptions_Receive_Cache(string fileName, string rootId, int oldCount, bool? hasObject)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     await using var process = new DeserializeProcess(

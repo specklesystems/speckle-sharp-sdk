@@ -11,48 +11,39 @@ namespace Speckle.Sdk.Serialization.Tests.Framework;
 
 public static class TestFileManager
 {
-  private static readonly SemaphoreSlim s_semaphore = new(1, 1);
-  private static readonly Assembly _assembly = Assembly.GetExecutingAssembly(); //test
-  private static readonly Assembly _speckleAssembly = typeof(Base).Assembly; //speckle.sdk
-  private static readonly Assembly _speckleObjectsAssembly = typeof(Polyline).Assembly; //speckle.sdk
-  private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> _objects = new();
+  private static readonly Assembly s_assembly = Assembly.GetExecutingAssembly(); //test
+  private static readonly Assembly s_speckleAssembly = typeof(Base).Assembly; //speckle.sdk
+  private static readonly Assembly s_speckleObjectsAssembly = typeof(Polyline).Assembly; //speckle.sdk
+  private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> s_objects = new();
 
-  public static async Task<IReadOnlyDictionary<string, string>> GetFileAsClosures(string fileName)
+  public static IReadOnlyDictionary<string, string> GetFileAsClosures(string fileName)
   {
-    if (!_objects.TryGetValue(fileName, out var closure))
+    lock (s_objects)
     {
-      await s_semaphore.WaitAsync();
-      try
+      if (!s_objects.TryGetValue(fileName, out var closure))
       {
-        if (!_objects.TryGetValue(fileName, out closure))
-        {
-          TypeLoader.Reset();
-          TypeLoader.Initialize(_assembly, _speckleAssembly, _speckleObjectsAssembly);
-          var fullName = _assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
-          var json = await ReadJson(fullName);
-          closure = ReadAsObjects(json);
-          _objects.Add(fileName, closure);
-        }
+        TypeLoader.Reset();
+        TypeLoader.Initialize(s_assembly, s_speckleAssembly, s_speckleObjectsAssembly);
+        var fullName = s_assembly.GetManifestResourceNames().Single(x => x.EndsWith(fileName));
+        var json = ReadJson(fullName);
+        closure = ReadAsObjects(json);
+        s_objects.Add(fileName, closure);
       }
-      finally
-      {
-        s_semaphore.Release();
-      }
+      return closure;
     }
-    return closure;
   }
 
-  private static async Task<string> ReadJson(string fullName)
+  private static string ReadJson(string fullName)
   {
-    await using var stream = _assembly.GetManifestResourceStream(fullName).NotNull();
+    using var stream = s_assembly.GetManifestResourceStream(fullName).NotNull();
     if (fullName.EndsWith(".gz"))
     {
-      await using var z = new GZipStream(stream, CompressionMode.Decompress);
+      using var z = new GZipStream(stream, CompressionMode.Decompress);
       using var reader2 = new StreamReader(z);
-      return await reader2.ReadToEndAsync();
+      return reader2.ReadToEnd();
     }
     using var reader = new StreamReader(stream);
-    return await reader.ReadToEndAsync();
+    return reader.ReadToEnd();
   }
 
   private static ConcurrentDictionary<string, string> ReadAsObjects(string json)

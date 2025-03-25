@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Objects.Geometry;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
@@ -24,7 +25,7 @@ public class SerializationTests
   public SerializationTests()
   {
     TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestClass).Assembly);
+    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Mesh).Assembly, typeof(TestClass).Assembly);
 
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
@@ -56,7 +57,7 @@ public class SerializationTests
   [InlineData("RevitObject.json.gz")]
   public async Task Basic_Namespace_Validation(string fileName)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     var deserializer = new SpeckleObjectDeserializer
     {
       ReadTransport = new TestTransport(closures),
@@ -96,7 +97,7 @@ public class SerializationTests
   [InlineData("RevitObject.json.gz")]
   public async Task Basic_Namespace_Validation_New(string fileName)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     await using var process = new DeserializeProcess(
       new TestObjectLoader(closures),
       null,
@@ -155,7 +156,7 @@ public class SerializationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Roundtrip_Test_Old(string fileName, string _, int count)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     var deserializer = new SpeckleObjectDeserializer
     {
       ReadTransport = new TestTransport(closures),
@@ -189,7 +190,7 @@ public class SerializationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, 4674)]
   public async Task Roundtrip_Test_New(string fileName, string rootId, int oldCount, int newCount)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     Base root;

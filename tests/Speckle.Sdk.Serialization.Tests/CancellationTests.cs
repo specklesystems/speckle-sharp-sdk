@@ -98,7 +98,7 @@ public class CancellationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Cancellation_Receive_Cache(string fileName, string rootId, int oldCount)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     using var cancellationSource = new CancellationTokenSource();
@@ -125,7 +125,7 @@ public class CancellationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Cancellation_Receive_Server(string fileName, string rootId, int oldCount)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     using var cancellationSource = new CancellationTokenSource();
@@ -152,7 +152,7 @@ public class CancellationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Cancellation_Receive_Deserialize(string fileName, string rootId, int oldCount)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     using var cancellationSource = new CancellationTokenSource();
