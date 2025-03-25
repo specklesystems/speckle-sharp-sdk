@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Api;
 
@@ -13,7 +15,7 @@ public sealed class GraphQLClientTests : IDisposable
 
   public GraphQLClientTests()
   {
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider(typeof(Base).Assembly, typeof(Point).Assembly);
     _client = (Client)
       serviceProvider
         .GetRequiredService<IClientFactory>()

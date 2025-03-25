@@ -5,7 +5,6 @@ using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
@@ -65,7 +64,8 @@ public sealed class ObjectLoader(
           .Freeze();
         _allChildrenCount = allChildrenIds.Count;
         ThrowIfFailed();
-        await GetAndCache(allChildrenIds.Select(x => x.Value), _options.MaxParallelism).ConfigureAwait(false);
+        await GetAndCache(allChildrenIds.Select(x => x.Value), options.UseMaxParallelismOfOne ? 1 : null)
+          .ConfigureAwait(false);
         ThrowIfFailed();
         //save the root last to shortcut later
         if (!options.SkipCache)

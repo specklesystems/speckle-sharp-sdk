@@ -2,7 +2,6 @@ using System.Drawing;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Point = Speckle.Sdk.Tests.Unit.Host.Point;
@@ -15,9 +14,11 @@ public class ObjectSerialization
 
   public ObjectSerialization()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly, typeof(ColorMock).Assembly);
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceProvider = TestServiceSetup.GetServiceProvider(
+      typeof(Base).Assembly,
+      typeof(DataChunk).Assembly,
+      typeof(ColorMock).Assembly
+    );
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
 
