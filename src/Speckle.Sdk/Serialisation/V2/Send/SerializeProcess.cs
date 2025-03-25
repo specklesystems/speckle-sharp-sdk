@@ -82,7 +82,7 @@ public sealed class SerializeProcess(
   {
     //always check for cancellation first
     cancellationToken.ThrowIfCancellationRequested();
-    if (objectSaver.Exception is not null)
+    if (Exception is not null)
     {
       throw new SpeckleException("Error while sending", objectSaver.Exception);
     }
