@@ -63,14 +63,14 @@ public abstract class ChannelSaver<T>
         TaskScheduler.Current
       );
 
-  public void Save(T item,CancellationToken cancellationToken)
+  public void Save(T item, CancellationToken cancellationToken)
   {
     if (Exception is not null || cancellationToken.IsCancellationRequested)
     {
       return; //don't save if we're already done through an error
     }
     // ReSharper disable once MethodSupportsCancellation
-     _checkCacheChannel.Writer.TryWrite(item);
+    _checkCacheChannel.Writer.TryWrite(item);
   }
 
   private async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)

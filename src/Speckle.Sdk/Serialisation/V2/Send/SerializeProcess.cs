@@ -26,7 +26,7 @@ public readonly record struct SerializeProcessResults(
 public partial interface ISerializeProcess : IAsyncDisposable;
 
 [GenerateAutoInterface]
-public sealed class SerializeProcess: ChannelSaver<BaseItem>, ISerializeProcess
+public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
 {
   private readonly IProgress<ProgressArgs>? _progress;
   private readonly ISqLiteJsonCacheManager _sqLiteJsonCacheManager;
@@ -43,7 +43,7 @@ public sealed class SerializeProcess: ChannelSaver<BaseItem>, ISerializeProcess
     ILoggerFactory loggerFactory,
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
-  ) 
+  )
   {
     _progress = progress;
     _sqLiteJsonCacheManager = sqLiteJsonCacheManager;
@@ -58,14 +58,12 @@ public sealed class SerializeProcess: ChannelSaver<BaseItem>, ISerializeProcess
     _highest = new(
       loggerFactory.CreateLogger<PriorityScheduler>(),
       ThreadPriority.Highest,
-      2,
-      _processSource.Token
+      2
     );
     _belowNormal = new(
       loggerFactory.CreateLogger<PriorityScheduler>(),
       ThreadPriority.BelowNormal,
-      Environment.ProcessorCount * 2,
-      _processSource.Token
+      Environment.ProcessorCount * 2
     );
   }
 
@@ -137,7 +135,7 @@ public sealed class SerializeProcess: ChannelSaver<BaseItem>, ISerializeProcess
         );
       }
 
-      await TryTraverse(root).ConfigureAwait(true);
+      await TryTraverse(root, _processSource.Token).ConfigureAwait(true);
       ThrowIfFailed();
       DoneTraversing();
       await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(true);
@@ -156,7 +154,7 @@ public sealed class SerializeProcess: ChannelSaver<BaseItem>, ISerializeProcess
   }
 
   private void TraverseTotal(Base obj)
-  { 
+  {
     if (_processSource.Token.IsCancellationRequested)
     {
       return;
@@ -169,27 +167,33 @@ public sealed class SerializeProcess: ChannelSaver<BaseItem>, ISerializeProcess
     }
   }
 
-  private async Task<Dictionary<Id, NodeInfo>> TryTraverse(Base obj)
+  private async Task<(bool, Dictionary<Id, NodeInfo>)> TryTraverse(Base obj, CancellationToken token)
   {
-    if (_processSource.Token.IsCancellationRequested)
+    if (token.IsCancellationRequested)
     {
-      return new Dictionary<Id, NodeInfo>();
+      return (false, new Dictionary<Id, NodeInfo>());
     }
+
     try
     {
-      var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
+      var tasks = new List<Task<(bool, Dictionary<Id, NodeInfo>)>>();
+      using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token);
       foreach (var child in _baseChildFinder.GetChildren(obj))
       {
         // tmp is necessary because of the way closures close over loop variables
         var tmp = child;
-        if (_processSource.Token.IsCancellationRequested)
+        if (_processSource.IsCancellationRequested)
         {
-          return new Dictionary<Id, NodeInfo>();
+          return (false, new Dictionary<Id, NodeInfo>());
         }
         var t = Task
           .Factory.StartNew(
-            async () => await TryTraverse(tmp).ConfigureAwait(true),
-            _processSource.Token,
+            async () =>
+            {
+              
+              return await TryTraverse(tmp, linkedCts.Token).ConfigureAwait(true);
+            },
+            linkedCts.Token,
             TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
             _belowNormal
           )
@@ -197,22 +201,49 @@ public sealed class SerializeProcess: ChannelSaver<BaseItem>, ISerializeProcess
         tasks.Add(t);
       }
 
-      Dictionary<Id, NodeInfo>[] taskClosures = [];
+      if (token.IsCancellationRequested)
+      {
+        return (false, new Dictionary<Id, NodeInfo>());
+      }
+
+      List<Dictionary<Id, NodeInfo>> taskClosures = new();
       if (tasks.Count > 0)
       {
-        taskClosures = await Task.WhenAll(tasks).ConfigureAwait(true);
+        var currentTasks = tasks.ToList();
+        do
+        {
+          var t = await Task.WhenAny(currentTasks).ConfigureAwait(true);
+          if (t.IsCanceled)
+          {
+            return (false, new Dictionary<Id, NodeInfo>());
+          }
+          if (t.IsFaulted)
+          {
+            if (t.Exception is not null)
+            {
+              RecordException(t.Exception);
+            }
+            return (false, new Dictionary<Id, NodeInfo>());
+          }
+          var (success, results) = t.Result;
+          if (!success)
+          {
+            return (false, new Dictionary<Id, NodeInfo>());
+          }
+
+          taskClosures.Add(results);
+          currentTasks.Remove(t);
+        } while (currentTasks.Count > 0);
       }
-      if (_processSource.Token.IsCancellationRequested)
+
+      if (token.IsCancellationRequested)
       {
-        return new Dictionary<Id, NodeInfo>();
+        return (false, new Dictionary<Id, NodeInfo>());
       }
+
       var childClosures = _childClosurePool.Get();
       foreach (var childClosure in taskClosures)
       {
-        if (_processSource.Token.IsCancellationRequested)
-        {
-          return new Dictionary<Id, NodeInfo>();
-        }
         foreach (var kvp in childClosure)
         {
           childClosures[kvp.Key] = kvp.Value;
@@ -221,45 +252,66 @@ public sealed class SerializeProcess: ChannelSaver<BaseItem>, ISerializeProcess
         _currentClosurePool.Return(childClosure);
       }
 
-      var items = _baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, _processSource.Token);
-      if (_processSource.Token.IsCancellationRequested)
+      if (token.IsCancellationRequested)
       {
-        return new Dictionary<Id, NodeInfo>();
+        return (false, new Dictionary<Id, NodeInfo>());
       }
+
+      var items = _baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, token);
+      if (token.IsCancellationRequested)
+      {
+        return (false, new Dictionary<Id, NodeInfo>());
+      }
+
       var currentClosures = _currentClosurePool.Get();
-      Interlocked.Increment(ref _objectCount);
-      _progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound)));
-      foreach (var item in items)
-      {if (_processSource.Token.IsCancellationRequested)
+      try
+      {
+        Interlocked.Increment(ref _objectCount);
+        _progress?.Report(
+          new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound))
+        );
+        foreach (var item in items)
         {
-          return new Dictionary<Id, NodeInfo>();
-        }
-        if (item.NeedsStorage)
-        {
-          Interlocked.Increment(ref _objectsSerialized);
-          Save(item, _processSource.Token);
-        }
+          if (item.NeedsStorage)
+          {
+            if (token.IsCancellationRequested)
+            {
+              return (false, new Dictionary<Id, NodeInfo>());
+            }
 
-        if (!currentClosures.ContainsKey(item.Id))
-        {
-          currentClosures.Add(item.Id, new NodeInfo(item.Json, item.Closures));
+            Interlocked.Increment(ref _objectsSerialized);
+            Save(item, token);
+          }
+
+          if (!currentClosures.ContainsKey(item.Id))
+          {
+            currentClosures.Add(item.Id, new NodeInfo(item.Json, item.Closures));
+          }
         }
       }
+      finally
+      {
+        _childClosurePool.Return(childClosures);
+      }
 
-      _childClosurePool.Return(childClosures);
-      return currentClosures;
+      return (true, currentClosures);
+    }
+    catch (OperationCanceledException)
+    {
+      return (false, new Dictionary<Id, NodeInfo>());
     }
 #pragma warning disable CA1031
     catch (Exception e)
 #pragma warning restore CA1031
     {
       RecordException(e);
-      return new Dictionary<Id, NodeInfo>();
+      return (false, new Dictionary<Id, NodeInfo>());
     }
   }
 
   protected override async Task SendToServerInternal(Batch<BaseItem> batch)
-  { if (_processSource.IsCancellationRequested)
+  {
+    if (_processSource.IsCancellationRequested)
     {
       return;
     }
@@ -274,7 +326,9 @@ public sealed class SerializeProcess: ChannelSaver<BaseItem>, ISerializeProcess
         objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
         if (objectBatch.Count != 0)
         {
-          await _serverObjectManager.UploadObjects(objectBatch, true, _progress, _processSource.Token).ConfigureAwait(true);
+          await _serverObjectManager
+            .UploadObjects(objectBatch, true, _progress, _processSource.Token)
+            .ConfigureAwait(true);
           Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
         }
 
