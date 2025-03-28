@@ -54,8 +54,7 @@ public sealed class DeserializeProcess(
   private readonly PriorityScheduler _belowNormal = new(
     loggerFactory.CreateLogger<PriorityScheduler>(),
     ThreadPriority.BelowNormal,
-    Environment.ProcessorCount * 2,
-    cancellationToken
+    Environment.ProcessorCount * 2
   );
 
   private readonly DeserializeProcessOptions _options = options ?? new();
