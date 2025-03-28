@@ -26,57 +26,40 @@ public readonly record struct SerializeProcessResults(
 public partial interface ISerializeProcess : IAsyncDisposable;
 
 [GenerateAutoInterface]
-public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
+public sealed class SerializeProcess(
+  IProgress<ProgressArgs>? progress,
+  ISqLiteJsonCacheManager sqLiteJsonCacheManager,
+  IServerObjectManager serverObjectManager,
+  IBaseChildFinder baseChildFinder,
+  IBaseSerializer baseSerializer,
+  ILoggerFactory loggerFactory,
+  CancellationToken cancellationToken,
+  SerializeProcessOptions? options = null
+) : ChannelSaver<BaseItem>, ISerializeProcess
 {
-  private readonly IProgress<ProgressArgs>? _progress;
-  private readonly ISqLiteJsonCacheManager _sqLiteJsonCacheManager;
-  private readonly IServerObjectManager _serverObjectManager;
-  private readonly IBaseChildFinder _baseChildFinder;
-  private readonly IBaseSerializer _baseSerializer;
+  //this listens to the user but also will cancel when the process fails
 
-  public SerializeProcess(
-    IProgress<ProgressArgs>? progress,
-    ISqLiteJsonCacheManager sqLiteJsonCacheManager,
-    IServerObjectManager serverObjectManager,
-    IBaseChildFinder baseChildFinder,
-    IBaseSerializer baseSerializer,
-    ILoggerFactory loggerFactory,
-    CancellationToken cancellationToken,
-    SerializeProcessOptions? options = null
-  )
-  {
-    _progress = progress;
-    _sqLiteJsonCacheManager = sqLiteJsonCacheManager;
-    _serverObjectManager = serverObjectManager;
-    _baseChildFinder = baseChildFinder;
-    _baseSerializer = baseSerializer;
-    _options = options ?? new();
-    _logger = loggerFactory.CreateLogger<SerializeProcess>();
-    //this listens to the user but also will cancel when the process fails
-    _processSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-    
-    _highest = new(
-      loggerFactory.CreateLogger<PriorityScheduler>(),
-      ThreadPriority.Highest,
-      2
-    );
-    _belowNormal = new(
-      loggerFactory.CreateLogger<PriorityScheduler>(),
-      ThreadPriority.BelowNormal,
-      Environment.ProcessorCount * 2
-    );
-  }
-
-  private readonly CancellationTokenSource _processSource;
-  //async dispose
-  [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
-  private readonly PriorityScheduler _highest;
+  private readonly CancellationTokenSource _processSource = CancellationTokenSource.CreateLinkedTokenSource(
+    cancellationToken
+  );
 
   //async dispose
   [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
-  private readonly PriorityScheduler _belowNormal;
-  private readonly SerializeProcessOptions _options;
-  private readonly ILogger<SerializeProcess> _logger;
+  private readonly PriorityScheduler _highest = new(
+    loggerFactory.CreateLogger<PriorityScheduler>(),
+    ThreadPriority.Highest,
+    2
+  );
+
+  //async dispose
+  [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
+  private readonly PriorityScheduler _belowNormal = new(
+    loggerFactory.CreateLogger<PriorityScheduler>(),
+    ThreadPriority.BelowNormal,
+    Environment.ProcessorCount * 2
+  );
+  private readonly SerializeProcessOptions _options = options ?? new();
+  private readonly ILogger<SerializeProcess> _logger = loggerFactory.CreateLogger<SerializeProcess>();
 
   private readonly Pool<Dictionary<Id, NodeInfo>> _currentClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
   private readonly Pool<ConcurrentDictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateConcurrentDictionaryPool<
@@ -98,7 +81,7 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
     await WaitForSchedulerCompletion().ConfigureAwait(true);
     await _highest.DisposeAsync().ConfigureAwait(true);
     await _belowNormal.DisposeAsync().ConfigureAwait(true);
-    _sqLiteJsonCacheManager.Dispose();
+    sqLiteJsonCacheManager.Dispose();
     _processSource.Dispose();
   }
 
@@ -144,7 +127,7 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
       ThrowIfFailed();
       await WaitForSchedulerCompletion().ConfigureAwait(true);
       ThrowIfFailed();
-      return new(root.id.NotNull(), _baseSerializer.ObjectReferences.Freeze());
+      return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
     }
     catch (TaskCanceledException)
     {
@@ -159,10 +142,10 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
     {
       return;
     }
-    foreach (var child in _baseChildFinder.GetChildren(obj))
+    foreach (var child in baseChildFinder.GetChildren(obj))
     {
       _objectsFound++;
-      _progress?.Report(new(ProgressEvent.FindingChildren, _objectsFound, null));
+      progress?.Report(new(ProgressEvent.FindingChildren, _objectsFound, null));
       TraverseTotal(child);
     }
   }
@@ -177,23 +160,21 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
     try
     {
       var tasks = new List<Task<(bool, Dictionary<Id, NodeInfo>)>>();
-      using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token);
-      foreach (var child in _baseChildFinder.GetChildren(obj))
+      using var childCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+      foreach (var child in baseChildFinder.GetChildren(obj))
       {
         // tmp is necessary because of the way closures close over loop variables
         var tmp = child;
-        if (_processSource.IsCancellationRequested)
+        if (token.IsCancellationRequested)
         {
           return (false, new Dictionary<Id, NodeInfo>());
         }
         var t = Task
           .Factory.StartNew(
-            async () =>
-            {
-              
-              return await TryTraverse(tmp, linkedCts.Token).ConfigureAwait(true);
-            },
-            linkedCts.Token,
+            // ReSharper disable once AccessToDisposedClosure
+            // don't need to capture here
+            async () => await TryTraverse(tmp, childCancellationTokenSource.Token).ConfigureAwait(true),
+            childCancellationTokenSource.Token,
             TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
             _belowNormal
           )
@@ -212,6 +193,7 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
         var currentTasks = tasks.ToList();
         do
         {
+          //grab when any Task is done and see if we're cancelling
           var t = await Task.WhenAny(currentTasks).ConfigureAwait(true);
           if (t.IsCanceled)
           {
@@ -257,7 +239,7 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
         return (false, new Dictionary<Id, NodeInfo>());
       }
 
-      var items = _baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, token);
+      var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, token);
       if (token.IsCancellationRequested)
       {
         return (false, new Dictionary<Id, NodeInfo>());
@@ -267,9 +249,7 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
       try
       {
         Interlocked.Increment(ref _objectCount);
-        _progress?.Report(
-          new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound))
-        );
+        progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound)));
         foreach (var item in items)
         {
           if (item.NeedsStorage)
@@ -280,7 +260,7 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
             }
 
             Interlocked.Increment(ref _objectsSerialized);
-            Save(item, token);
+            Save(item, childCancellationTokenSource.Token);
           }
 
           if (!currentClosures.ContainsKey(item.Id))
@@ -320,19 +300,19 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
       if (!_options.SkipServer && batch.Items.Count != 0)
       {
         var objectBatch = batch.Items.Distinct().ToList();
-        var hasObjects = await _serverObjectManager
+        var hasObjects = await serverObjectManager
           .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), _processSource.Token)
           .ConfigureAwait(true);
         objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
         if (objectBatch.Count != 0)
         {
-          await _serverObjectManager
-            .UploadObjects(objectBatch, true, _progress, _processSource.Token)
+          await serverObjectManager
+            .UploadObjects(objectBatch, true, progress, _processSource.Token)
             .ConfigureAwait(true);
           Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
         }
 
-        _progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
+        progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
       }
     }
     catch (OperationCanceledException)
@@ -357,9 +337,9 @@ public sealed class SerializeProcess : ChannelSaver<BaseItem>, ISerializeProcess
     {
       if (!_options.SkipCacheWrite && batch.Count != 0)
       {
-        _sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
+        sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
         Interlocked.Exchange(ref _cached, _cached + batch.Count);
-        _progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
+        progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
       }
     }
     catch (OperationCanceledException)
