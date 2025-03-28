@@ -78,9 +78,9 @@ public sealed class SerializeProcess(
   [AutoInterfaceIgnore]
   public async ValueTask DisposeAsync()
   {
-    await WaitForSchedulerCompletion().ConfigureAwait(true);
-    await _highest.DisposeAsync().ConfigureAwait(true);
-    await _belowNormal.DisposeAsync().ConfigureAwait(true);
+    await WaitForSchedulerCompletion().ConfigureAwait(false);
+    await _highest.DisposeAsync().ConfigureAwait(false);
+    await _belowNormal.DisposeAsync().ConfigureAwait(false);
     sqLiteJsonCacheManager.Dispose();
     _processSource.Dispose();
   }
@@ -97,8 +97,8 @@ public sealed class SerializeProcess(
 
   private async Task WaitForSchedulerCompletion()
   {
-    await _highest.WaitForCompletion().ConfigureAwait(true);
-    await _belowNormal.WaitForCompletion().ConfigureAwait(true);
+    await _highest.WaitForCompletion().ConfigureAwait(false);
+    await _belowNormal.WaitForCompletion().ConfigureAwait(false);
   }
 
   public async Task<SerializeProcessResults> Serialize(Base root)
@@ -118,14 +118,14 @@ public sealed class SerializeProcess(
         );
       }
 
-      await TryTraverse(root, _processSource.Token).ConfigureAwait(true);
+      await TryTraverse(root, _processSource.Token).ConfigureAwait(false);
       ThrowIfFailed();
       DoneTraversing();
-      await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(true);
+      await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
       ThrowIfFailed();
-      await DoneSaving().ConfigureAwait(true);
+      await DoneSaving().ConfigureAwait(false);
       ThrowIfFailed();
-      await WaitForSchedulerCompletion().ConfigureAwait(true);
+      await WaitForSchedulerCompletion().ConfigureAwait(false);
       ThrowIfFailed();
       return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
     }
@@ -173,7 +173,7 @@ public sealed class SerializeProcess(
           .Factory.StartNew(
             // ReSharper disable once AccessToDisposedClosure
             // don't need to capture here
-            async () => await TryTraverse(tmp, childCancellationTokenSource.Token).ConfigureAwait(true),
+            async () => await TryTraverse(tmp, childCancellationTokenSource.Token).ConfigureAwait(false),
             childCancellationTokenSource.Token,
             TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
             _belowNormal
@@ -194,7 +194,7 @@ public sealed class SerializeProcess(
         do
         {
           //grab when any Task is done and see if we're cancelling
-          var t = await Task.WhenAny(currentTasks).ConfigureAwait(true);
+          var t = await Task.WhenAny(currentTasks).ConfigureAwait(false);
           if (t.IsCanceled)
           {
             return (false, new Dictionary<Id, NodeInfo>());
@@ -302,13 +302,13 @@ public sealed class SerializeProcess(
         var objectBatch = batch.Items.Distinct().ToList();
         var hasObjects = await serverObjectManager
           .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), _processSource.Token)
-          .ConfigureAwait(true);
+          .ConfigureAwait(false);
         objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
         if (objectBatch.Count != 0)
         {
           await serverObjectManager
             .UploadObjects(objectBatch, true, progress, _processSource.Token)
-            .ConfigureAwait(true);
+            .ConfigureAwait(false);
           Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
         }
 
