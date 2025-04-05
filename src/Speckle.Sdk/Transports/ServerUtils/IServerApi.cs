@@ -1,3 +1,5 @@
+using Speckle.Sdk.Serialisation;
+
 namespace Speckle.Sdk.Transports.ServerUtils;
 
 public delegate void CbObjectDownloaded(string id, string json);

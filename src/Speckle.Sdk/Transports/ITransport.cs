@@ -1,4 +1,5 @@
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Transports;
 

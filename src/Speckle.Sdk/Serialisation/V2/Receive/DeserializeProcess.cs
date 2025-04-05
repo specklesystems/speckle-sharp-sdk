@@ -5,7 +5,6 @@ using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.SQLite;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
@@ -13,8 +12,8 @@ public record DeserializeProcessOptions(
   bool SkipCache = false,
   bool ThrowOnMissingReferences = true,
   bool SkipInvalidConverts = false,
-  int? MaxParallelism = null,
-  bool SkipServer = false
+  bool SkipServer = false,
+  bool UseMaxParallelismOfOne = false
 );
 
 public partial interface IDeserializeProcess : IAsyncDisposable;

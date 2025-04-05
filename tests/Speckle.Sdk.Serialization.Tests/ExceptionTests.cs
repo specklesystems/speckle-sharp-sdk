@@ -76,7 +76,7 @@ public class ExceptionTests
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,
-      new(SkipCache: true, MaxParallelism: 1, SkipServer: true)
+      new(SkipCache: true, UseMaxParallelismOfOne: true, SkipServer: true)
     );
 
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
@@ -100,7 +100,7 @@ public class ExceptionTests
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,
-      new(true, MaxParallelism: 1)
+      new(true, UseMaxParallelismOfOne: true)
     );
 
     var ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
@@ -125,7 +125,7 @@ public class ExceptionTests
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
       default,
-      new(MaxParallelism: 1)
+      new(UseMaxParallelismOfOne: true)
     );
 
     Exception ex;
