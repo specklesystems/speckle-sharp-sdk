@@ -32,11 +32,7 @@ public sealed class SerializeProcess(
   ILoggerFactory loggerFactory,
   CancellationToken cancellationToken,
   SerializeProcessOptions? options = null
-#pragma warning disable CS9107
-#pragma warning disable CA2254
 ) : ISerializeProcess
-#pragma warning restore CA2254
-#pragma warning restore CS9107
 {
   private static readonly Dictionary<Id, NodeInfo> EMPTY_CLOSURES = new();
 
