@@ -37,7 +37,7 @@ public sealed class SerializeProcess(
   SerializeProcessOptions? options = null
 ) : ChannelSaver<BaseItem>, ISerializeProcess
 {
-  private static readonly Dictionary<Id, NodeInfo> EMPTY_CLOSURES = new ();
+  private static readonly Dictionary<Id, NodeInfo> EMPTY_CLOSURES = new();
 
   private readonly CancellationTokenSource _processSource = CancellationTokenSource.CreateLinkedTokenSource(
     cancellationToken

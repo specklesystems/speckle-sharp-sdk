@@ -60,7 +60,7 @@ public class ExceptionTests
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
-  
+
   [Fact]
   public async Task Test_Exceptions_Cache_ExceptionsAfter_10()
   {
@@ -68,7 +68,8 @@ public class ExceptionTests
 
     var jsonManager = new ExceptionSendCacheManager(exceptionsAfter: 10);
     await using var process2 = new SerializeProcess(
-      null,jsonManager,
+      null,
+      jsonManager,
       new DummyServerObjectManager(),
       new BaseChildFinder(new BasePropertyGatherer()),
       new BaseSerializer(jsonManager, new ObjectSerializerFactory(new BasePropertyGatherer())),
@@ -148,11 +149,10 @@ public class ExceptionTests
       new(MaxParallelism: 1)
     );
 
-
-  var    ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
-      {
-        var root = await process.Deserialize(rootId);
-      });
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
+    {
+      var root = await process.Deserialize(rootId);
+    });
     ex.Message.Should().StartWith("Missing object id in SQLite cache:");
     await Verify(ex).UseParameters(hasObject).ScrubMember("Message");
   }

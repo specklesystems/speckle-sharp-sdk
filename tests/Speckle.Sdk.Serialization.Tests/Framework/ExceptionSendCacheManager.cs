@@ -5,6 +5,7 @@ namespace Speckle.Sdk.Serialization.Tests.Framework;
 public class ExceptionSendCacheManager(bool? hasObject = null, int? exceptionsAfter = null) : ISqLiteJsonCacheManager
 {
   private int _count;
+
   public void Dispose() { }
 
   public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() => throw new NotImplementedException();
