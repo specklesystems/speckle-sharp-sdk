@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
@@ -14,11 +13,8 @@ public class ExplicitInterfaceTests
 
   public ExplicitInterfaceTests()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestClass).Assembly);
-
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+    serviceCollection.AddSpeckleSdk("Tests", "test", "v3", typeof(TestClass).Assembly);
     var serviceProvider = serviceCollection.BuildServiceProvider();
 
     _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();

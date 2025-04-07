@@ -1,10 +1,7 @@
 #pragma warning disable CA1506
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
-using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Testing;
@@ -12,8 +9,6 @@ using Speckle.Sdk.Serialization.Testing;
 const bool skipCacheReceive = false;
 const bool skipCacheSendCheck = true;
 const bool skipCacheSendSave = false;
-TypeLoader.Reset();
-TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
 
 var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 var streamId = "a3ac1b2706";
@@ -30,7 +25,7 @@ var streamId = "2099ac4b5f";
 var rootId = "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6";*/
 
 var serviceCollection = new ServiceCollection();
-serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+serviceCollection.AddSpeckleSdk("Tests", "test", "v3");
 var serviceProvider = serviceCollection.BuildServiceProvider();
 
 Console.WriteLine("Attach");

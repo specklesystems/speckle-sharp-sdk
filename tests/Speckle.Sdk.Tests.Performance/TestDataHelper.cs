@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
@@ -19,7 +18,7 @@ public sealed class TestDataHelper : IDisposable
   public TestDataHelper()
   {
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+    serviceCollection.AddSpeckleSdk("Tests", "test", "v3");
     ServiceProvider = serviceCollection.BuildServiceProvider();
   }
 

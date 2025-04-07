@@ -3,7 +3,6 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
@@ -20,11 +19,8 @@ public class CancellationTests
 
   public CancellationTests()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestClass).Assembly, typeof(Polyline).Assembly);
-
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+    serviceCollection.AddSpeckleSdk("Tests", "test", "v3", typeof(TestClass).Assembly, typeof(Polyline).Assembly);
     var serviceProvider = serviceCollection.BuildServiceProvider();
 
     _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
