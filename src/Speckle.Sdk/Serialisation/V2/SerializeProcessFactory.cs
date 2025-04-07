@@ -39,7 +39,13 @@ public class SerializeProcessFactory(
   ) =>
     new SerializeProcess(
       progress,
-      new ObjectSaver(progress, sqLiteJsonCacheManager, serverObjectManager, loggerFactory, cancellationToken),
+      new ObjectSaver(
+        progress,
+        sqLiteJsonCacheManager,
+        serverObjectManager,
+        loggerFactory.CreateLogger<ObjectSaver>(),
+        cancellationToken
+      ),
       baseChildFinder,
       new BaseSerializer(sqLiteJsonCacheManager, objectSerializerFactory),
       loggerFactory,
@@ -64,7 +70,7 @@ public class SerializeProcessFactory(
         progress,
         memoryJsonCacheManager,
         new MemoryServerObjectManager(objects),
-        loggerFactory,
+        loggerFactory.CreateLogger<ObjectSaver>(),
         cancellationToken
       ),
       baseChildFinder,

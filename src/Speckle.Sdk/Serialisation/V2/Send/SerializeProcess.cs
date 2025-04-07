@@ -43,6 +43,7 @@ public sealed class SerializeProcess(
   private readonly CancellationTokenSource _processSource = CancellationTokenSource.CreateLinkedTokenSource(
     cancellationToken
   );
+  private readonly ILogger<SerializeProcess> _logger = loggerFactory.CreateLogger<SerializeProcess>();
 
   //async dispose
   [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
@@ -78,14 +79,14 @@ public sealed class SerializeProcess(
     await WaitForSchedulerCompletion().ConfigureAwait(false);
     await _highest.DisposeAsync().ConfigureAwait(false);
     await _belowNormal.DisposeAsync().ConfigureAwait(false);
-    sqLiteJsonCacheManager.Dispose();
+    objectSaver.Dispose();
     _processSource.Dispose();
   }
 
   private void ThrowIfFailed()
   {
     //order here matters...null with cancellation means a user did it, otherwise it's a real Exception
-    if (Exception is not null)
+    if (objectSaver.Exception is not null)
     {
       throw new SpeckleException("Error while sending", objectSaver.Exception);
     }
@@ -102,7 +103,7 @@ public sealed class SerializeProcess(
   {
     try
     {
-      var channelTask = Start(_processSource.Token);
+      var channelTask = objectSaver.Start(_processSource.Token);
       var findTotalObjectsTask = Task.CompletedTask;
       if (!_options.SkipFindTotalObjects)
       {
@@ -117,7 +118,7 @@ public sealed class SerializeProcess(
 
       await Traverse(root, _processSource.Token).ConfigureAwait(false);
       ThrowIfFailed();
-      DoneTraversing();
+      objectSaver.DoneTraversing();
       await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
       ThrowIfFailed();
       await objectSaver.DoneSaving().ConfigureAwait(false);
@@ -251,7 +252,7 @@ public sealed class SerializeProcess(
             }
 
             Interlocked.Increment(ref _objectsSerialized);
-            Save(item, childCancellationTokenSource.Token);
+            objectSaver.SaveItem(item, childCancellationTokenSource.Token);
           }
 
           if (!currentClosures.ContainsKey(item.Id))
@@ -280,76 +281,11 @@ public sealed class SerializeProcess(
     }
   }
 
-  protected override async Task SendToServerInternal(Batch<BaseItem> batch)
-  {
-    if (_processSource.IsCancellationRequested)
-    {
-      return;
-    }
-    try
-    {
-      if (!_options.SkipServer && batch.Items.Count != 0)
-      {
-        var objectBatch = batch.Items.Distinct().ToList();
-        var hasObjects = await serverObjectManager
-          .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), _processSource.Token)
-          .ConfigureAwait(false);
-        objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
-        if (objectBatch.Count != 0)
-        {
-          await serverObjectManager
-            .UploadObjects(objectBatch, true, progress, _processSource.Token)
-            .ConfigureAwait(false);
-          Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
-        }
-
-        progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
-      }
-    }
-    catch (OperationCanceledException)
-    {
-      _processSource.Cancel();
-    }
-#pragma warning disable CA1031
-    catch (Exception e)
-#pragma warning restore CA1031
-    {
-      RecordException(e);
-    }
-  }
-
-  public override void SaveToCache(List<BaseItem> batch)
-  {
-    if (_processSource.IsCancellationRequested)
-    {
-      return;
-    }
-    try
-    {
-      if (!_options.SkipCacheWrite && batch.Count != 0)
-      {
-        sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
-        Interlocked.Exchange(ref _cached, _cached + batch.Count);
-        progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
-      }
-    }
-    catch (OperationCanceledException)
-    {
-      _processSource.Cancel();
-    }
-#pragma warning disable CA1031
-    catch (Exception e)
-#pragma warning restore CA1031
-    {
-      RecordException(e);
-    }
-  }
-
   private void RecordException(Exception e)
   {
     //order here matters
     _logger.LogError(e, "Error in SDK");
-    Exception = e;
+    objectSaver.Exception = e;
     _processSource.Cancel();
   }
 }

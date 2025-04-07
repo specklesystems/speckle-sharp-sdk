@@ -8,30 +8,31 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 
 public interface IObjectSaver : IDisposable
 {
-  Exception? Exception { get; }
-  Task Start();
+  Exception? Exception { get; set; }
+  Task Start(CancellationToken cancellationToken);
   void DoneTraversing();
   Task DoneSaving();
-  ValueTask SaveItem(BaseItem item);
+  void SaveItem(BaseItem item, CancellationToken cancellationToken);
 }
 
 public sealed class ObjectSaver(
   IProgress<ProgressArgs>? progress,
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
-  ILoggerFactory loggerFactory,
+  ILogger<ObjectSaver> logger,
   CancellationToken cancellationToken,
 #pragma warning disable CS9107
 #pragma warning disable CA2254
   SerializeProcessOptions? options = null
-)
-  : ChannelSaver<BaseItem>(x => loggerFactory.CreateLogger<SerializeProcess>().LogWarning(x), cancellationToken),
-    IObjectSaver
+) : ChannelSaver<BaseItem>, IObjectSaver
 #pragma warning restore CA2254
 #pragma warning restore CS9107
 {
+  private readonly CancellationTokenSource _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
+    cancellationToken
+  );
+
   private readonly SerializeProcessOptions _options = options ?? new();
-  private readonly ILogger<SerializeProcess> _logger = loggerFactory.CreateLogger<SerializeProcess>();
 
   private long _uploaded;
   private long _cached;
@@ -40,46 +41,54 @@ public sealed class ObjectSaver(
 
   protected override async Task SendToServerInternal(Batch<BaseItem> batch)
   {
+    if (_cancellationTokenSource.IsCancellationRequested)
+    {
+      return;
+    }
     try
     {
       if (!_options.SkipServer && batch.Items.Count != 0)
       {
-        var distinctBatch = batch.Items.DistinctBy(x => x.Id).ToList();
+        var objectBatch = batch.Items.Distinct().ToList();
         var hasObjects = await serverObjectManager
-          .HasObjects(distinctBatch.Select(x => x.Id.Value).Freeze(), cancellationToken)
+          .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), _cancellationTokenSource.Token)
           .ConfigureAwait(false);
-        var objectBatch = distinctBatch.Where(x => !hasObjects[x.Id.Value]).ToList();
+        objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
         if (objectBatch.Count != 0)
         {
-          await serverObjectManager.UploadObjects(objectBatch, true, progress, cancellationToken).ConfigureAwait(false);
+          await serverObjectManager
+            .UploadObjects(objectBatch, true, progress, _cancellationTokenSource.Token)
+            .ConfigureAwait(false);
+          Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
         }
-        //intentionally use batch instead of distinct and HasObjects results for complete numbers
-        Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
 
         progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
       }
     }
     catch (OperationCanceledException)
     {
-      throw;
+      _cancellationTokenSource.Cancel();
     }
 #pragma warning disable CA1031
     catch (Exception e)
 #pragma warning restore CA1031
     {
-      _logger.LogError(e, "Error sending objects to server");
-      throw;
+      RecordException(e);
     }
   }
 
-  public async ValueTask SaveItem(BaseItem item)
+  public void SaveItem(BaseItem item, CancellationToken cancellationToken)
   {
     Interlocked.Increment(ref _objectsSerialized);
-    await Save(item).ConfigureAwait(false);
+    Save(item, cancellationToken);
   }
 
   public override void SaveToCache(List<BaseItem> batch)
   {
+    if (_cancellationTokenSource.IsCancellationRequested)
+    {
+      return;
+    }
     try
     {
       if (!_options.SkipCacheWrite && batch.Count != 0)
@@ -91,16 +100,27 @@ public sealed class ObjectSaver(
     }
     catch (OperationCanceledException)
     {
-      throw;
+      _cancellationTokenSource.Cancel();
     }
 #pragma warning disable CA1031
     catch (Exception e)
 #pragma warning restore CA1031
     {
-      _logger.LogError(e, "Error sending objects to server");
-      throw;
+      RecordException(e);
     }
   }
 
-  public void Dispose() => sqLiteJsonCacheManager.Dispose();
+  private void RecordException(Exception e)
+  {
+    //order here matters
+    logger.LogError(e, "Error in SDK");
+    Exception = e;
+    _cancellationTokenSource.Cancel();
+  }
+
+  public void Dispose()
+  {
+    _cancellationTokenSource.Dispose();
+    sqLiteJsonCacheManager.Dispose();
+  }
 }

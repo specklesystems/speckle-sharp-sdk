@@ -72,19 +72,15 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    var jsonManager = new ExceptionSendCacheManager(exceptionsAfter: 10);
-    await using var process2 = new SerializeProcess(
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ExceptionSendCacheManager(exceptionsAfter: 10),
+      new MemoryServerObjectManager(new()),
       null,
-      jsonManager,
-      new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(jsonManager, new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
       default,
       new SerializeProcessOptions(false, false, false, true)
     );
 
-    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
     await Verify(ex);
   }
 
