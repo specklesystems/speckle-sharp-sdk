@@ -68,6 +68,27 @@ public class ExceptionTests
   }
 
   [Fact]
+  public async Task Test_Exceptions_Cache_ExceptionsAfter_10()
+  {
+    var testClass = new TestClass() { RegularProperty = "Hello" };
+
+    var jsonManager = new ExceptionSendCacheManager(exceptionsAfter: 10);
+    await using var process2 = new SerializeProcess(
+      null,
+      jsonManager,
+      new DummyServerObjectManager(),
+      new BaseChildFinder(new BasePropertyGatherer()),
+      new BaseSerializer(jsonManager, new ObjectSerializerFactory(new BasePropertyGatherer())),
+      new NullLoggerFactory(),
+      default,
+      new SerializeProcessOptions(false, false, false, true)
+    );
+
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
+    await Verify(ex);
+  }
+
+  [Fact]
   public async Task Test_Exceptions_Receive_Server_Skip_Both()
   {
     var o = new ObjectLoader(
