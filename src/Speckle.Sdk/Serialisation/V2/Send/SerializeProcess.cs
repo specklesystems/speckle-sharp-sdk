@@ -36,11 +36,7 @@ public sealed class SerializeProcess(
   CancellationToken cancellationToken,
   SerializeProcessOptions? options = null
 #pragma warning disable CS9107
-#pragma warning disable CA2254
-)
-  : ChannelSaver<BaseItem>(x => loggerFactory.CreateLogger<SerializeProcess>().LogWarning(x), cancellationToken),
-    ISerializeProcess
-#pragma warning restore CA2254
+) : ChannelSaver<BaseItem>(cancellationToken), ISerializeProcess
 #pragma warning restore CS9107
 {
   //async dispose

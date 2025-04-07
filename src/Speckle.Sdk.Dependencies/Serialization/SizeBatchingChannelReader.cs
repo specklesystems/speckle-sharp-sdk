@@ -11,7 +11,6 @@ public interface IHasByteSize
 
 public sealed class SizeBatchingChannelReader<T>(
   ChannelReader<T> source,
-  Action<string> logAsWarning,
   int batchSize,
   bool singleReader,
   bool syncCont = false
@@ -34,5 +33,5 @@ public sealed class SizeBatchingChannelReader<T>(
 
   protected override void AddBatchItem(IMemoryOwner<T> batch, T item) => batch.AddBatchItem(item);
 
-  protected override int GetBatchSize(IMemoryOwner<T> batch) => batch.GetBatchSize(logAsWarning, _batchSize);
+  protected override int GetBatchSize(IMemoryOwner<T> batch) => batch.GetBatchSize(_batchSize);
 }
