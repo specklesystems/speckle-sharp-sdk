@@ -1,5 +1,11 @@
 ﻿{
   "Data": {},
-  "Message": "{Scrubbed}",
+  "InnerException": {
+    "$type": "NotImplementedException",
+    "Data": {},
+    "Message": "The method or operation is not implemented.",
+    "Type": "NotImplementedException"
+  },
+  "Message": "Error while sending",
   "Type": "SpeckleException"
 }

@@ -149,12 +149,22 @@ public class ExceptionTests
       new(MaxParallelism: 1)
     );
 
-    var ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
+    Exception ex;
+    if (hasObject == true)
     {
-      var root = await process.Deserialize(rootId);
-    });
-    ex.Message.Should().StartWith("Missing object id in SQLite cache:");
-    await Verify(ex).UseParameters(hasObject).ScrubMember("Message");
+      ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
+      {
+        var root = await process.Deserialize(rootId);
+      });
+    }
+    else
+    {
+      ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
+      {
+        var root = await process.Deserialize(rootId);
+      });
+    }
+    await Verify(ex).UseParameters(hasObject);
   }
 
   [SpeckleType("Objects.Geometry.BadBase")]

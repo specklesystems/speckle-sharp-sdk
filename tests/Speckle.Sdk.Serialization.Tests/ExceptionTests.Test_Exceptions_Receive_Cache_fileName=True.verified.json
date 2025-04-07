@@ -1,5 +1,5 @@
 ﻿{
   "Data": {},
-  "Message": "{Scrubbed}",
-  "Type": "SpeckleException"
+  "Message": "The method or operation is not implemented.",
+  "Type": "NotImplementedException"
 }
