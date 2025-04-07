@@ -8,7 +8,7 @@ public static class TestServiceSetup
   public static IServiceProvider GetServiceProvider()
   {
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk("Tests", "test", "v3",  Assembly.GetExecutingAssembly());
+    serviceCollection.AddSpeckleSdk("Tests", "test", "v3", Assembly.GetExecutingAssembly());
     return serviceCollection.BuildServiceProvider();
   }
 }
