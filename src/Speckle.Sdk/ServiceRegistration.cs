@@ -6,6 +6,7 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk;
+
 public record SpeckleSdkOptions(
   string ApplicationName,
   string ApplicationSlug,
@@ -13,6 +14,7 @@ public record SpeckleSdkOptions(
   string? SpeckleVersion,
   IEnumerable<Assembly>? Assemblies
 );
+
 public static class ServiceRegistration
 {
   private static string GetAssemblyVersion() =>
@@ -29,7 +31,7 @@ public static class ServiceRegistration
     serviceCollection.AddSpeckleSdk(
       new(applicationName, applicationSlug, applicationVersion, speckleVersion, assemblies)
     );
-  
+
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
     string applicationName,
@@ -41,33 +43,29 @@ public static class ServiceRegistration
     serviceCollection.AddSpeckleSdk(
       new(applicationName, applicationSlug, applicationVersion, speckleVersion, assemblies)
     );
+
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
     string applicationName,
     string applicationSlug,
     string applicationVersion,
     params Assembly[] assemblies
-  ) =>
-    serviceCollection.AddSpeckleSdk(
-      new(applicationName, applicationSlug, applicationVersion, null, assemblies)
-    );
+  ) => serviceCollection.AddSpeckleSdk(new(applicationName, applicationSlug, applicationVersion, null, assemblies));
 
-
-    public static IServiceCollection AddSpeckleSdk(
-      this IServiceCollection serviceCollection,
-      SpeckleSdkOptions speckleSdkOptions
-    )
+  public static IServiceCollection AddSpeckleSdk(
+    this IServiceCollection serviceCollection,
+    SpeckleSdkOptions speckleSdkOptions
+  )
+  {
+    var currentAssembly = Assembly.GetExecutingAssembly();
+    var allAssembles = speckleSdkOptions.Assemblies?.ToList() ?? [];
+    if (!allAssembles.Contains(currentAssembly))
     {
-      var currentAssembly = Assembly.GetExecutingAssembly();
-      var allAssembles = speckleSdkOptions.Assemblies?.ToList() ?? [];
-      if (!allAssembles.Contains(currentAssembly))
-      {
-        allAssembles.Add(currentAssembly);
-      }
-      TypeLoader.Reset();
-      TypeLoader.Initialize(allAssembles.ToArray());
+      allAssembles.Add(currentAssembly);
+    }
+    TypeLoader.Reset();
+    TypeLoader.Initialize(allAssembles.ToArray());
     serviceCollection.AddLogging();
-    
 
     serviceCollection.AddSingleton<ISpeckleApplication>(
       new SpeckleApplication
