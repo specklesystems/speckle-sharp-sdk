@@ -2,21 +2,39 @@
 
 namespace Speckle.Sdk.Serialization.Tests.Framework;
 
-public class ExceptionSendCacheManager(bool? hasObject = null) : ISqLiteJsonCacheManager
+public class ExceptionSendCacheManager(bool? hasObject = null, int? exceptionsAfter = null) : ISqLiteJsonCacheManager
 {
+  private int _count;
   public void Dispose() { }
 
   public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() => throw new NotImplementedException();
 
-  public void DeleteObject(string id) => throw new NotImplementedException();
+  public void DeleteObject(string id) => CheckExceptions();
 
   public string? GetObject(string id) => null;
 
-  public void SaveObject(string id, string json) => throw new NotImplementedException();
+  public void SaveObject(string id, string json) => CheckExceptions();
 
-  public void UpdateObject(string id, string json) => throw new NotImplementedException();
+  public void UpdateObject(string id, string json) => CheckExceptions();
 
-  public void SaveObjects(IEnumerable<(string id, string json)> items) => throw new NotImplementedException();
+  public void SaveObjects(IEnumerable<(string id, string json)> items) => CheckExceptions();
 
   public bool HasObject(string objectId) => hasObject ?? throw new NotImplementedException();
+
+  private void CheckExceptions()
+  {
+    if (exceptionsAfter is not null)
+    {
+      if (exceptionsAfter.Value > _count)
+      {
+        _count++;
+      }
+      else
+      {
+        throw new Exception("Count exceeded");
+      }
+    }
+
+    throw new NotImplementedException();
+  }
 }

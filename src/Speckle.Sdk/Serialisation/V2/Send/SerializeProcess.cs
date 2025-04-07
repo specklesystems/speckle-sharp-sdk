@@ -37,7 +37,7 @@ public sealed class SerializeProcess(
   SerializeProcessOptions? options = null
 ) : ChannelSaver<BaseItem>, ISerializeProcess
 {
-  //this listens to the user but also will cancel when the process fails
+  private static readonly Dictionary<Id, NodeInfo> EMPTY_CLOSURES = new ();
 
   private readonly CancellationTokenSource _processSource = CancellationTokenSource.CreateLinkedTokenSource(
     cancellationToken
@@ -118,7 +118,7 @@ public sealed class SerializeProcess(
         );
       }
 
-      await TryTraverse(root, _processSource.Token).ConfigureAwait(false);
+      await Traverse(root, _processSource.Token).ConfigureAwait(false);
       ThrowIfFailed();
       DoneTraversing();
       await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
@@ -150,16 +150,16 @@ public sealed class SerializeProcess(
     }
   }
 
-  private async Task<(bool, Dictionary<Id, NodeInfo>)> TryTraverse(Base obj, CancellationToken token)
+  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, CancellationToken token)
   {
     if (token.IsCancellationRequested)
     {
-      return (false, new Dictionary<Id, NodeInfo>());
+      return EMPTY_CLOSURES;
     }
 
     try
     {
-      var tasks = new List<Task<(bool, Dictionary<Id, NodeInfo>)>>();
+      var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
       using var childCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
       foreach (var child in baseChildFinder.GetChildren(obj))
       {
@@ -167,13 +167,13 @@ public sealed class SerializeProcess(
         var tmp = child;
         if (token.IsCancellationRequested)
         {
-          return (false, new Dictionary<Id, NodeInfo>());
+          return EMPTY_CLOSURES;
         }
         var t = Task
           .Factory.StartNew(
             // ReSharper disable once AccessToDisposedClosure
             // don't need to capture here
-            async () => await TryTraverse(tmp, childCancellationTokenSource.Token).ConfigureAwait(false),
+            async () => await Traverse(tmp, childCancellationTokenSource.Token).ConfigureAwait(false),
             childCancellationTokenSource.Token,
             TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
             _belowNormal
@@ -184,7 +184,7 @@ public sealed class SerializeProcess(
 
       if (token.IsCancellationRequested)
       {
-        return (false, new Dictionary<Id, NodeInfo>());
+        return EMPTY_CLOSURES;
       }
 
       List<Dictionary<Id, NodeInfo>> taskClosures = new();
@@ -197,7 +197,7 @@ public sealed class SerializeProcess(
           var t = await Task.WhenAny(currentTasks).ConfigureAwait(false);
           if (t.IsCanceled)
           {
-            return (false, new Dictionary<Id, NodeInfo>());
+            return EMPTY_CLOSURES;
           }
           if (t.IsFaulted)
           {
@@ -205,22 +205,16 @@ public sealed class SerializeProcess(
             {
               RecordException(t.Exception);
             }
-            return (false, new Dictionary<Id, NodeInfo>());
+            return EMPTY_CLOSURES;
           }
-          var (success, results) = t.Result;
-          if (!success)
-          {
-            return (false, new Dictionary<Id, NodeInfo>());
-          }
-
-          taskClosures.Add(results);
+          taskClosures.Add(t.Result);
           currentTasks.Remove(t);
         } while (currentTasks.Count > 0);
       }
 
       if (token.IsCancellationRequested)
       {
-        return (false, new Dictionary<Id, NodeInfo>());
+        return EMPTY_CLOSURES;
       }
 
       var childClosures = _childClosurePool.Get();
@@ -236,13 +230,13 @@ public sealed class SerializeProcess(
 
       if (token.IsCancellationRequested)
       {
-        return (false, new Dictionary<Id, NodeInfo>());
+        return EMPTY_CLOSURES;
       }
 
       var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, token);
       if (token.IsCancellationRequested)
       {
-        return (false, new Dictionary<Id, NodeInfo>());
+        return EMPTY_CLOSURES;
       }
 
       var currentClosures = _currentClosurePool.Get();
@@ -256,7 +250,7 @@ public sealed class SerializeProcess(
           {
             if (token.IsCancellationRequested)
             {
-              return (false, new Dictionary<Id, NodeInfo>());
+              return EMPTY_CLOSURES;
             }
 
             Interlocked.Increment(ref _objectsSerialized);
@@ -274,18 +268,18 @@ public sealed class SerializeProcess(
         _childClosurePool.Return(childClosures);
       }
 
-      return (true, currentClosures);
+      return currentClosures;
     }
     catch (OperationCanceledException)
     {
-      return (false, new Dictionary<Id, NodeInfo>());
+      return EMPTY_CLOSURES;
     }
 #pragma warning disable CA1031
     catch (Exception e)
 #pragma warning restore CA1031
     {
       RecordException(e);
-      return (false, new Dictionary<Id, NodeInfo>());
+      return EMPTY_CLOSURES;
     }
   }
 

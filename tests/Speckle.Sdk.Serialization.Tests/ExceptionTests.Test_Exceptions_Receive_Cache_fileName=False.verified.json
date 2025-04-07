@@ -1,5 +1,5 @@
 ﻿{
-  "Type": "Speckle.Sdk.SpeckleException",
-  "Message": "Error while sending",
-  "Source": "Speckle.Sdk"
+  "Data": {},
+  "Message": "{Scrubbed}",
+  "Type": "SpeckleException"
 }

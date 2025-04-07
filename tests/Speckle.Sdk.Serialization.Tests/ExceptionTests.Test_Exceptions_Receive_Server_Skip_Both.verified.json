@@ -1,5 +1,5 @@
 ﻿{
-  "Type": "Speckle.Sdk.SpeckleException",
+  "Data": {},
   "Message": "Cannot skip server and cache. Please choose one.",
-  "Source": "Speckle.Sdk"
+  "Type": "SpeckleException"
 }

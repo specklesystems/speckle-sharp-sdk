@@ -60,6 +60,26 @@ public class ExceptionTests
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
     await Verify(ex);
   }
+  
+  [Fact]
+  public async Task Test_Exceptions_Cache_ExceptionsAfter_10()
+  {
+    var testClass = new TestClass() { RegularProperty = "Hello" };
+
+    var jsonManager = new ExceptionSendCacheManager(exceptionsAfter: 10);
+    await using var process2 = new SerializeProcess(
+      null,jsonManager,
+      new DummyServerObjectManager(),
+      new BaseChildFinder(new BasePropertyGatherer()),
+      new BaseSerializer(jsonManager, new ObjectSerializerFactory(new BasePropertyGatherer())),
+      new NullLoggerFactory(),
+      default,
+      new SerializeProcessOptions(false, false, false, true)
+    );
+
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
+    await Verify(ex);
+  }
 
   [Fact]
   public async Task Test_Exceptions_Receive_Server_Skip_Both()
@@ -128,22 +148,13 @@ public class ExceptionTests
       new(MaxParallelism: 1)
     );
 
-    Exception ex;
-    if (hasObject == true)
-    {
-      ex = await Assert.ThrowsAsync<NotImplementedException>(async () =>
+
+  var    ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
       {
         var root = await process.Deserialize(rootId);
       });
-    }
-    else
-    {
-      ex = await Assert.ThrowsAsync<SpeckleException>(async () =>
-      {
-        var root = await process.Deserialize(rootId);
-      });
-    }
-    await Verify(ex).UseParameters(hasObject);
+    ex.Message.Should().StartWith("Missing object id in SQLite cache:");
+    await Verify(ex).UseParameters(hasObject).ScrubMember("Message");
   }
 
   [SpeckleType("Objects.Geometry.BadBase")]
