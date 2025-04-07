@@ -45,8 +45,8 @@ Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-var factory2 = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
-var process2 = factory2.CreateSerializeProcess(
+var serializeProcessFactory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
+var serializeProcess = serializeProcessFactory.CreateSerializeProcess(
   new Uri(url),
   streamId,
   token,
@@ -54,8 +54,8 @@ var process2 = factory2.CreateSerializeProcess(
   default,
   new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true, true)
 );
-await process2.Serialize(@base).ConfigureAwait(false);
+await serializeProcess.Serialize(@base).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
-await process2.DisposeAsync().ConfigureAwait(false);
+await serializeProcess.DisposeAsync().ConfigureAwait(false);
 #pragma warning restore CA1506

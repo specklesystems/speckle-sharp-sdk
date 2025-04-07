@@ -59,7 +59,7 @@ public sealed class ObjectSaver(
           await serverObjectManager
             .UploadObjects(objectBatch, true, progress, _cancellationTokenSource.Token)
             .ConfigureAwait(false);
-          Interlocked.Exchange(ref _uploaded, _uploaded + batch.Items.Count);
+          Interlocked.Add(ref _uploaded, batch.Items.Count);
         }
 
         progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
@@ -94,7 +94,7 @@ public sealed class ObjectSaver(
       if (!_options.SkipCacheWrite && batch.Count != 0)
       {
         sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
-        Interlocked.Exchange(ref _cached, _cached + batch.Count);
+        Interlocked.Add(ref _cached, batch.Count);
         progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
       }
     }
