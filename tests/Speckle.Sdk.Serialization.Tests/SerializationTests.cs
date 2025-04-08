@@ -24,11 +24,8 @@ public class SerializationTests
 
   public SerializationTests()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Mesh).Assembly, typeof(TestClass).Assembly);
-
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+    serviceCollection.AddSpeckleSdk(new("Tests", "test"), "v3", typeof(TestClass).Assembly, typeof(Polyline).Assembly);
     var serviceProvider = serviceCollection.BuildServiceProvider();
 
     _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
