@@ -22,4 +22,23 @@ public static class Collections
 public static class EnumerableExtensions
 {
   public static IEnumerable<int> RangeFrom(int from, int to) => Enumerable.Range(from, to - from + 1);
+
+#if NETSTANDARD2_0
+  public static IEnumerable<TSource> DistinctBy<TSource, TKey>(
+    this IEnumerable<TSource> source,
+    Func<TSource, TKey> keySelector
+  )
+  {
+    var keys = new HashSet<TKey>();
+    foreach (var element in source)
+    {
+      if (keys.Contains(keySelector(element)))
+      {
+        continue;
+      }
+      keys.Add(keySelector(element));
+      yield return element;
+    }
+  }
+#endif
 }

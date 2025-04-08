@@ -1,35 +1,16 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Speckle.Sdk.Serialisation.V2.Receive;
+using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
-public interface ISerializeProcessFactory
-{
-  ISerializeProcess CreateSerializeProcess(
-    Uri url,
-    string streamId,
-    string? authorizationToken,
-    IProgress<ProgressArgs>? progress,
-    CancellationToken cancellationToken,
-    SerializeProcessOptions? options = null
-  );
-  IDeserializeProcess CreateDeserializeProcess(
-    Uri url,
-    string streamId,
-    string? authorizationToken,
-    IProgress<ProgressArgs>? progress,
-    CancellationToken cancellationToken,
-    DeserializeProcessOptions? options = null
-  );
-}
-
+[GenerateAutoInterface]
 public class SerializeProcessFactory(
   IBaseChildFinder baseChildFinder,
   IObjectSerializerFactory objectSerializerFactory,
-  IBaseDeserializer baseDeserializer,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory,
   IServerObjectManagerFactory serverObjectManagerFactory,
   ILoggerFactory loggerFactory
@@ -46,34 +27,54 @@ public class SerializeProcessFactory(
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
     var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
-    return new SerializeProcess(
+    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager, progress, cancellationToken, options);
+  }
+
+  public ISerializeProcess CreateSerializeProcess(
+    ISqLiteJsonCacheManager sqLiteJsonCacheManager,
+    IServerObjectManager serverObjectManager,
+    IProgress<ProgressArgs>? progress,
+    CancellationToken cancellationToken,
+    SerializeProcessOptions? options = null
+  ) =>
+    new SerializeProcess(
       progress,
-      sqLiteJsonCacheManager,
-      serverObjectManager,
+      new ObjectSaver(
+        progress,
+        sqLiteJsonCacheManager,
+        serverObjectManager,
+        loggerFactory.CreateLogger<ObjectSaver>(),
+        cancellationToken
+      ),
       baseChildFinder,
       new BaseSerializer(sqLiteJsonCacheManager, objectSerializerFactory),
       loggerFactory,
       cancellationToken,
       options
     );
-  }
 
-  public IDeserializeProcess CreateDeserializeProcess(
-    Uri url,
-    string streamId,
-    string? authorizationToken,
+  public ISerializeProcess CreateSerializeProcess(
+    ConcurrentDictionary<Id, Json> jsonCache,
+    ConcurrentDictionary<string, string> objects,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,
-    DeserializeProcessOptions? options = null
+    SerializeProcessOptions? options = null
   )
   {
-    var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
-    var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
-    return new DeserializeProcess(
-      sqLiteJsonCacheManager,
-      serverObjectManager,
+#pragma warning disable CA2000
+    var memoryJsonCacheManager = new MemoryJsonCacheManager(jsonCache);
+#pragma warning restore CA2000
+    return new SerializeProcess(
       progress,
-      baseDeserializer,
+      new ObjectSaver(
+        progress,
+        memoryJsonCacheManager,
+        new MemoryServerObjectManager(objects),
+        loggerFactory.CreateLogger<ObjectSaver>(),
+        cancellationToken
+      ),
+      baseChildFinder,
+      new BaseSerializer(memoryJsonCacheManager, objectSerializerFactory),
       loggerFactory,
       cancellationToken,
       options
