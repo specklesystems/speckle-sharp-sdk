@@ -20,7 +20,7 @@ public class DetachedTests
   public DetachedTests()
   {
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk("Tests", "test", "v3", typeof(TestClass).Assembly, typeof(Polyline).Assembly);
+    serviceCollection.AddSpeckleSdk(new("Tests", "test"), "v3", typeof(TestClass).Assembly, typeof(Polyline).Assembly);
     var serviceProvider = serviceCollection.BuildServiceProvider();
 
     _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();

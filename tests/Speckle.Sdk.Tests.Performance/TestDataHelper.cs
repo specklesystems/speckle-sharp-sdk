@@ -18,7 +18,7 @@ public sealed class TestDataHelper : IDisposable
   public TestDataHelper()
   {
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk("Tests", "test", "v3");
+    serviceCollection.AddSpeckleSdk(new("Tests", "test"), "v3");
     ServiceProvider = serviceCollection.BuildServiceProvider();
   }
 

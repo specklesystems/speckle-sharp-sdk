@@ -14,7 +14,7 @@ public class ExplicitInterfaceTests
   public ExplicitInterfaceTests()
   {
     var serviceCollection = new ServiceCollection();
-    serviceCollection.AddSpeckleSdk("Tests", "test", "v3", typeof(TestClass).Assembly);
+    serviceCollection.AddSpeckleSdk(new("Tests", "test"), "v3", typeof(TestClass).Assembly);
     var serviceProvider = serviceCollection.BuildServiceProvider();
 
     _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();

@@ -7,9 +7,10 @@ using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk;
 
+public record Application(string Name, string Slug);
+
 public record SpeckleSdkOptions(
-  string ApplicationName,
-  string ApplicationSlug,
+  Application Application,
   string ApplicationVersion,
   string? SpeckleVersion,
   IEnumerable<Assembly>? Assemblies
@@ -22,35 +23,26 @@ public static class ServiceRegistration
 
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
-    string applicationName,
-    string applicationSlug,
+    Application application,
     string applicationVersion,
     string? speckleVersion = null,
     IEnumerable<Assembly>? assemblies = null
-  ) =>
-    serviceCollection.AddSpeckleSdk(
-      new(applicationName, applicationSlug, applicationVersion, speckleVersion, assemblies)
-    );
+  ) => serviceCollection.AddSpeckleSdk(new(application, applicationVersion, speckleVersion, assemblies));
 
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
-    string applicationName,
-    string applicationSlug,
+    Application application,
     string applicationVersion,
     string? speckleVersion,
     params Assembly[] assemblies
-  ) =>
-    serviceCollection.AddSpeckleSdk(
-      new(applicationName, applicationSlug, applicationVersion, speckleVersion, assemblies)
-    );
+  ) => serviceCollection.AddSpeckleSdk(new(application, applicationVersion, speckleVersion, assemblies));
 
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
-    string applicationName,
-    string applicationSlug,
+    Application application,
     string applicationVersion,
     params Assembly[] assemblies
-  ) => serviceCollection.AddSpeckleSdk(new(applicationName, applicationSlug, applicationVersion, null, assemblies));
+  ) => serviceCollection.AddSpeckleSdk(new(application, applicationVersion, null, assemblies));
 
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
@@ -70,9 +62,9 @@ public static class ServiceRegistration
     serviceCollection.AddSingleton<ISpeckleApplication>(
       new SpeckleApplication
       {
-        HostApplication = speckleSdkOptions.ApplicationName,
+        HostApplication = speckleSdkOptions.Application.Name,
         HostApplicationVersion = speckleSdkOptions.ApplicationVersion,
-        Slug = speckleSdkOptions.ApplicationSlug,
+        Slug = speckleSdkOptions.Application.Slug,
         SpeckleVersion = speckleSdkOptions.SpeckleVersion ?? GetAssemblyVersion(),
       }
     );

@@ -25,7 +25,7 @@ var streamId = "2099ac4b5f";
 var rootId = "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6";*/
 
 var serviceCollection = new ServiceCollection();
-serviceCollection.AddSpeckleSdk("Tests", "test", "v3");
+serviceCollection.AddSpeckleSdk(new("Tests", "test"), "v3");
 var serviceProvider = serviceCollection.BuildServiceProvider();
 
 Console.WriteLine("Attach");
