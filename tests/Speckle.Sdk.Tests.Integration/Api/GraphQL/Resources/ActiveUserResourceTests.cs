@@ -2,13 +2,12 @@
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class ActiveUserResourceTests : IAsyncLifetime
 {
-  private Client _testUser;
+  private IClient _testUser;
   private ActiveUserResource Sut => _testUser.ActiveUser;
 
   // Setup method for xUnit using IAsyncLifetime

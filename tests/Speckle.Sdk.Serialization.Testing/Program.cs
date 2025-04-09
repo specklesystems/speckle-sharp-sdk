@@ -1,22 +1,14 @@
 #pragma warning disable CA1506
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Sdk;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Host;
-using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
-using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Testing;
-using Speckle.Sdk.SQLite;
 
 const bool skipCacheReceive = false;
 const bool skipCacheSendCheck = true;
 const bool skipCacheSendSave = false;
-TypeLoader.Reset();
-TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
 
 var url = "https://latest.speckle.systems/projects/a3ac1b2706/models/59d3b0f3c6"; //small?
 var streamId = "a3ac1b2706";
@@ -33,7 +25,7 @@ var streamId = "2099ac4b5f";
 var rootId = "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6";*/
 
 var serviceCollection = new ServiceCollection();
-serviceCollection.AddSpeckleSdk(HostApplications.Navisworks, HostAppVersion.v2023, "Test");
+serviceCollection.AddSpeckleSdk(new("Tests", "test"), "v3");
 var serviceProvider = serviceCollection.BuildServiceProvider();
 
 Console.WriteLine("Attach");
@@ -41,21 +33,15 @@ Console.WriteLine("Attach");
 var token = serviceProvider.GetRequiredService<IAccountManager>().GetDefaultAccount()?.token;
 var progress = new Progress(true);
 
-var factory = new SerializeProcessFactory(
-  new BaseChildFinder(new BasePropertyGatherer()),
-  new ObjectSerializerFactory(new BasePropertyGatherer()),
-  new BaseDeserializer(new ObjectDeserializerFactory()),
-  serviceProvider.GetRequiredService<ISqLiteJsonCacheManagerFactory>(),
-  serviceProvider.GetRequiredService<IServerObjectManagerFactory>(),
-  new NullLoggerFactory()
-);
+var factory = serviceProvider.GetRequiredService<IDeserializeProcessFactory>();
 var process = factory.CreateDeserializeProcess(new Uri(url), streamId, token, progress, default, new(skipCacheReceive));
 var @base = await process.Deserialize(rootId).ConfigureAwait(false);
 Console.WriteLine("Deserialized");
 Console.ReadLine();
 Console.WriteLine("Executing");
 
-var process2 = factory.CreateSerializeProcess(
+var serializeProcessFactory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
+var serializeProcess = serializeProcessFactory.CreateSerializeProcess(
   new Uri(url),
   streamId,
   token,
@@ -63,8 +49,8 @@ var process2 = factory.CreateSerializeProcess(
   default,
   new SerializeProcessOptions(skipCacheSendCheck, skipCacheSendSave, true, true)
 );
-await process2.Serialize(@base).ConfigureAwait(false);
+await serializeProcess.Serialize(@base).ConfigureAwait(false);
 Console.WriteLine("Detach");
 Console.ReadLine();
-await process2.DisposeAsync().ConfigureAwait(false);
+await serializeProcess.DisposeAsync().ConfigureAwait(false);
 #pragma warning restore CA1506

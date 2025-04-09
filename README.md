@@ -8,7 +8,7 @@ Speckle | Sharp | SDK
 
 ### .NET SDK, Tests, and Objects
 
-[![Codecov](https://codecov.io/gh/specklesystems/speckle-sharp-sdk/graph/badge.svg?token=TTM5OGr38m)](https://codecov.io/gh/specklesystems/speckle-sharp-sdk)
+[![codecov](https://codecov.io/gh/specklesystems/speckle-sharp-sdk/branch/dev/graph/badge.svg?token=TTM5OGr38m)](https://codecov.io/gh/specklesystems/speckle-sharp-sdk)
 
 > [!WARNING]
 > This is an early beta release, not meant for use in production! We're working to stabilise the 3.0 API, and until then there will be breaking changes. You have been warned!

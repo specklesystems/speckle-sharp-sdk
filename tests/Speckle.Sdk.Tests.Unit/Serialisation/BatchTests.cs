@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Serialisation.V2.Send;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
@@ -12,8 +11,6 @@ public class BatchTests
     public int ByteSize { get; } = size;
   }
 
-  private static readonly Action<string> EMPTY_LOGGER = _ => { };
-
   [Fact]
   public void TestBatchSize_Calc()
   {
@@ -22,16 +19,6 @@ public class BatchTests
     batch.BatchByteSize.Should().Be(1);
     batch.Add(new BatchItem(2));
     batch.BatchByteSize.Should().Be(3);
-  }
-
-  [Fact]
-  public void Ensure_logging()
-  {
-    using var batch = new Batch<BatchItem>();
-    batch.AddBatchItem(new BatchItem(2));
-    bool called = false;
-    batch.GetBatchSize(x => called = true, 1);
-    called.Should().BeTrue();
   }
 
   [Fact]
@@ -76,13 +63,13 @@ public class BatchTests
 
     using var batch = BatchExtensions.CreateBatch<BatchItem>();
     batch.AddBatchItem(new BatchItem(2));
-    bool full = batch.GetBatchSize(EMPTY_LOGGER, MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    bool full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeFalse();
     batch.AddBatchItem(new BatchItem(2));
-    full = batch.GetBatchSize(EMPTY_LOGGER, MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeFalse();
     batch.AddBatchItem(new BatchItem(2));
-    full = batch.GetBatchSize(EMPTY_LOGGER, MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeTrue();
   }
 
@@ -93,7 +80,7 @@ public class BatchTests
 
     using var batch = BatchExtensions.CreateBatch<BatchItem>();
     batch.AddBatchItem(new BatchItem(63));
-    bool full = batch.GetBatchSize(EMPTY_LOGGER, MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    bool full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeTrue();
   }
 
@@ -104,10 +91,10 @@ public class BatchTests
 
     using var batch = BatchExtensions.CreateBatch<BatchItem>();
     batch.AddBatchItem(new BatchItem(2));
-    bool full = batch.GetBatchSize(EMPTY_LOGGER, MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    bool full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeFalse();
     batch.AddBatchItem(new BatchItem(63));
-    full = batch.GetBatchSize(EMPTY_LOGGER, MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
+    full = batch.GetBatchSize(MAX_BATCH_SIZE) == MAX_BATCH_SIZE;
     full.Should().BeTrue();
   }
 }

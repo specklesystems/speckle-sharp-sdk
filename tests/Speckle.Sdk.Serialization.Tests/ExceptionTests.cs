@@ -1,8 +1,11 @@
+using System.Collections.Concurrent;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
@@ -12,10 +15,15 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class ExceptionTests
 {
+  private readonly ISerializeProcessFactory _factory;
+
   public ExceptionTests()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(new("Tests", "test"), "v3", typeof(TestClass).Assembly, typeof(Polyline).Assembly);
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+
+    _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
   }
 
   [Fact]
@@ -23,20 +31,18 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    var objects = new Dictionary<string, string>();
-    await using var process2 = new SerializeProcess(
-      null,
-      new DummySendCacheManager(objects),
+    var objects = new ConcurrentDictionary<Id, Json>();
+
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new MemoryJsonCacheManager(objects),
       new ExceptionServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySendCacheManager(objects), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
+      null,
       default,
       new SerializeProcessOptions(false, false, false, true)
     );
 
     //4 exceptions are fine because we use 4 threads for saving cache
-    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
     await Verify(ex);
   }
 
@@ -45,18 +51,32 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    await using var process2 = new SerializeProcess(
-      null,
+    await using var serializeProcess = _factory.CreateSerializeProcess(
       new ExceptionSendCacheManager(),
-      new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new ExceptionSendCacheManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
+      new MemoryServerObjectManager(new()),
+      null,
       default,
       new SerializeProcessOptions(false, false, false, true)
     );
 
-    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await process2.Serialize(testClass));
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
+    await Verify(ex);
+  }
+
+  [Fact]
+  public async Task Test_Exceptions_Cache_ExceptionsAfter_10()
+  {
+    var testClass = new TestClass() { RegularProperty = "Hello" };
+
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ExceptionSendCacheManager(exceptionsAfter: 10),
+      new MemoryServerObjectManager(new()),
+      null,
+      default,
+      new SerializeProcessOptions(false, false, false, true)
+    );
+
+    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
     await Verify(ex);
   }
 
@@ -89,7 +109,7 @@ public class ExceptionTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Test_Exceptions_Receive_Server(string fileName, string rootId, int oldCount)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     await using var process = new DeserializeProcess(
@@ -114,7 +134,7 @@ public class ExceptionTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, true)]
   public async Task Test_Exceptions_Receive_Cache(string fileName, string rootId, int oldCount, bool? hasObject)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     await using var process = new DeserializeProcess(
@@ -143,5 +163,24 @@ public class ExceptionTests
       });
     }
     await Verify(ex).UseParameters(hasObject);
+  }
+
+  [SpeckleType("Objects.Geometry.BadBase")]
+  public class BadBase : Base
+  {
+#pragma warning disable CA1065
+    public string BadProp => throw new NotImplementedException();
+#pragma warning restore CA1065
+  }
+
+  [Fact]
+  public void Test_SpeckleSerializerException()
+  {
+    var factory = new ObjectSerializerFactory(new BasePropertyGatherer());
+    var serializer = factory.Create(new Dictionary<Id, NodeInfo>(), default);
+    Assert.Throws<SpeckleSerializeException>(() =>
+    {
+      var _ = serializer.Serialize(new BadBase()).ToList();
+    });
   }
 }

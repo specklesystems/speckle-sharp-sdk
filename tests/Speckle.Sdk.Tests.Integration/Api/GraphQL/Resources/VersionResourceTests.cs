@@ -3,14 +3,13 @@ using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Xunit;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class VersionResourceTests : IAsyncLifetime
 {
-  private Client _testUser;
+  private IClient _testUser;
   private VersionResource Sut => _testUser.Version;
   private Project _project;
   private Model _model1;
