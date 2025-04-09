@@ -42,7 +42,7 @@ Target(
 
 Target(
   CLEAN,
-  ForEach("**/output"),
+  forEach: ["**/output"],
   dir =>
   {
     IEnumerable<string> GetDirectories(string d)
@@ -68,13 +68,13 @@ Target(
 
 Target(RESTORE_TOOLS, () => RunAsync("dotnet", "tool restore"));
 
-Target(FORMAT, DependsOn(RESTORE_TOOLS), () => RunAsync("dotnet", "csharpier --check ."));
+Target(FORMAT, dependsOn: [RESTORE_TOOLS], () => RunAsync("dotnet", "csharpier --check ."));
 
-Target(RESTORE, DependsOn(FORMAT), () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
+Target(RESTORE, dependsOn: [FORMAT], () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
 
 Target(
   BUILD,
-  DependsOn(RESTORE),
+  dependsOn: [RESTORE],
   async () =>
   {
     var (version, fileVersion) = await GetVersions().ConfigureAwait(false);
@@ -89,7 +89,7 @@ Target(
 
 Target(
   TEST,
-  DependsOn(BUILD),
+  dependsOn: [BUILD],
   Glob.Files(".", "**/*.Tests.Unit.csproj").Concat(Glob.Files(".", "**/*.Tests.csproj")),
   async file =>
   {
@@ -103,7 +103,7 @@ Target(
 
 Target(
   INTEGRATION,
-  DependsOn(BUILD),
+  dependsOn: [BUILD],
   async () =>
   {
     await RunAsync("docker", "compose -f docker-compose.yml up --wait").ConfigureAwait(false);
@@ -170,7 +170,7 @@ Target(
 
 Target(
   PACK,
-  DependsOn(TEST),
+  dependsOn: [TEST],
   async () =>
   {
     {
@@ -182,6 +182,6 @@ Target(
   }
 );
 
-Target("default", DependsOn(FORMAT, TEST, INTEGRATION), () => Console.WriteLine("Done!"));
+Target("default", dependsOn: [FORMAT, TEST, INTEGRATION], () => Console.WriteLine("Done!"));
 
 await RunTargetsAndExitAsync(args).ConfigureAwait(true);
