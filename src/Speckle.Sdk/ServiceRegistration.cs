@@ -7,25 +7,65 @@ using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk;
 
+public record Application(string Name, string Slug);
+
+public record SpeckleSdkOptions(
+  Application Application,
+  string ApplicationVersion,
+  string? SpeckleVersion,
+  IEnumerable<Assembly>? Assemblies
+);
+
 public static class ServiceRegistration
 {
+  private static string GetAssemblyVersion() =>
+    Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
+
   public static IServiceCollection AddSpeckleSdk(
     this IServiceCollection serviceCollection,
-    HostApplication application,
-    HostAppVersion version,
-    string speckleVersion
+    Application application,
+    string applicationVersion,
+    string? speckleVersion = null,
+    IEnumerable<Assembly>? assemblies = null
+  ) => serviceCollection.AddSpeckleSdk(new(application, applicationVersion, speckleVersion, assemblies));
+
+  public static IServiceCollection AddSpeckleSdk(
+    this IServiceCollection serviceCollection,
+    Application application,
+    string applicationVersion,
+    string? speckleVersion,
+    params Assembly[] assemblies
+  ) => serviceCollection.AddSpeckleSdk(new(application, applicationVersion, speckleVersion, assemblies));
+
+  public static IServiceCollection AddSpeckleSdk(
+    this IServiceCollection serviceCollection,
+    Application application,
+    string applicationVersion,
+    params Assembly[] assemblies
+  ) => serviceCollection.AddSpeckleSdk(new(application, applicationVersion, null, assemblies));
+
+  public static IServiceCollection AddSpeckleSdk(
+    this IServiceCollection serviceCollection,
+    SpeckleSdkOptions speckleSdkOptions
   )
   {
+    var currentAssembly = Assembly.GetExecutingAssembly();
+    var allAssembles = speckleSdkOptions.Assemblies?.ToList() ?? [];
+    if (!allAssembles.Contains(currentAssembly))
+    {
+      allAssembles.Add(currentAssembly);
+    }
+    TypeLoader.Reset();
+    TypeLoader.Initialize(allAssembles.ToArray());
     serviceCollection.AddLogging();
-    string name = application.Name;
 
     serviceCollection.AddSingleton<ISpeckleApplication>(
       new SpeckleApplication
       {
-        HostApplication = name,
-        SpeckleVersion = speckleVersion,
-        HostApplicationVersion = HostApplications.GetVersion(version),
-        Slug = application.Slug,
+        HostApplication = speckleSdkOptions.Application.Name,
+        HostApplicationVersion = speckleSdkOptions.ApplicationVersion,
+        Slug = speckleSdkOptions.Application.Slug,
+        SpeckleVersion = speckleSdkOptions.SpeckleVersion ?? GetAssemblyVersion(),
       }
     );
     serviceCollection.TryAddSingleton<ISdkActivityFactory, NullActivityFactory>();
