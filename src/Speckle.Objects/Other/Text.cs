@@ -42,6 +42,13 @@ public class Text : Base
   /// Plane will be null if the text object orientation follows camera view
   /// </summary>
   public Plane? plane { get; set; }
+
+  /// <summary>
+  /// Maximum width of the text field (in 'units').
+  /// Text will be split into lines (wrapped) to fit into the width.
+  /// null, if text should not be wrapped.
+  /// </summary>
+  public double? maxWidth { get; set; }
 }
 
 public enum alignmentHorizontal
