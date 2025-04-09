@@ -1,5 +1,5 @@
-using System.Drawing;
 using Speckle.Objects.Geometry;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Point = Speckle.Objects.Geometry.Point;
 
@@ -12,27 +12,48 @@ namespace Speckle.Objects.Other;
 public class Text : Base
 {
   /// <summary>
-  /// The text itself, without formatting
+  /// Plain text, without formatting
   /// </summary>
   public required string value { get; set; }
   public required Point origin { get; set; }
 
   /// <summary>
-  /// Height in linear units or pixels (keep "units" as null)
+  /// Height in linear units or pixels (if Units.None)
   /// </summary>
   public required double height { get; set; }
 
   /// <summary>
-  /// Units will be null if the text size is defined in pixels (stays the same size
+  /// Units will be 'Units.None' if the text size is defined in pixels (stays the same size
   /// independently of zooming the model). Default pixel size it 17px (used for Viewer measurements)
   /// </summary>
-  public required string? units { get; set; }
-  public int alignmentH { get; set; }
-  public int alignmentV { get; set; }
-  public int color { get; set; } = Color.Black.ToArgb();
+  public required string units { get; set; }
+
+  /// <summary>
+  /// Horizontal alignment: Left, Center or Right
+  /// </summary>
+  public alignmentHorizontal alignmentH { get; set; }
+
+  /// <summary>
+  /// Vertical alignment: Top, Center or Bottom
+  /// </summary>
+  public alignmentVertical alignmentV { get; set; }
 
   /// <summary>
   /// Plane will be null if the text object orientation follows camera view
   /// </summary>
   public Plane? plane { get; set; }
+}
+
+public enum alignmentHorizontal
+{
+  Left,
+  Center,
+  Right,
+}
+
+public enum alignmentVertical
+{
+  Top,
+  Center,
+  Bottom,
 }
