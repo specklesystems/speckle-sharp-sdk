@@ -2,7 +2,9 @@
 
 public enum ProjectVisibility
 {
-  Private,
-  Public,
-  Unlisted,
+  Private = 0,
+
+  [Obsolete("Use Unlisted instead", true)]
+  Public = 1,
+  Unlisted = 2,
 }

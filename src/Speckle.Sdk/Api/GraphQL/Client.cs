@@ -4,6 +4,7 @@ using System.Reflection;
 using GraphQL;
 using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
+using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Serialization;
 using Speckle.Sdk.Api.GraphQL;
@@ -16,8 +17,14 @@ using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Api;
 
+public partial interface IClient : IDisposable
+{
+  GraphQLHttpClient GQLClient { get; }
+}
+
 [SuppressMessage("Maintainability", "CA1506:Avoid excessive class coupling", Justification = "Class needs refactor")]
-public sealed class Client : ISpeckleGraphQLClient, IDisposable
+[GenerateAutoInterface]
+public sealed class Client : ISpeckleGraphQLClient, IClient
 {
   private readonly ILogger<Client> _logger;
   private readonly ISdkActivityFactory _activityFactory;
@@ -37,6 +44,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
 
   private HttpClient HttpClient { get; }
 
+  [AutoInterfaceIgnore]
   public GraphQLHttpClient GQLClient { get; }
 
   /// <param name="account"></param>
@@ -67,6 +75,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     GQLClient = CreateGraphQLClient(account, HttpClient);
   }
 
+  [AutoInterfaceIgnore]
   public void Dispose()
   {
     try
@@ -132,6 +141,7 @@ public sealed class Client : ISpeckleGraphQLClient, IDisposable
     }
   }
 
+  [AutoInterfaceIgnore]
   IDisposable ISpeckleGraphQLClient.SubscribeTo<T>(GraphQLRequest request, Action<object, T> callback) =>
     SubscribeTo(request, callback);
 

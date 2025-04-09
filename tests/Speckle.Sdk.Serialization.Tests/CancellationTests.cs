@@ -1,10 +1,11 @@
 using System.Collections.Concurrent;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
@@ -14,10 +15,15 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class CancellationTests
 {
+  private readonly ISerializeProcessFactory _factory;
+
   public CancellationTests()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DetachedTests).Assembly, typeof(Polyline).Assembly);
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddSpeckleSdk(new("Tests", "test"), "v3", typeof(TestClass).Assembly, typeof(Polyline).Assembly);
+    var serviceProvider = serviceCollection.BuildServiceProvider();
+
+    _factory = serviceProvider.GetRequiredService<ISerializeProcessFactory>();
   }
 
   [Fact]
@@ -26,13 +32,11 @@ public class CancellationTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     using var cancellationSource = new CancellationTokenSource();
-    await using var serializeProcess = new SerializeProcess(
+
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      new ConcurrentDictionary<string, string>(),
       null,
-      new DummySqLiteSendManager(),
-      new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySqLiteSendManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
       cancellationSource.Token,
       new SerializeProcessOptions(true, true, false, true)
     );
@@ -50,15 +54,13 @@ public class CancellationTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     using var cancellationSource = new CancellationTokenSource();
-    await using var serializeProcess = new SerializeProcess(
-      null,
+
+    await using var serializeProcess = _factory.CreateSerializeProcess(
       new DummySqLiteSendManager(),
       new CancellationServerObjectManager(cancellationSource),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySqLiteSendManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
+      null,
       cancellationSource.Token,
-      new SerializeProcessOptions(true, false, false, true)
+      new SerializeProcessOptions(true, true, false, true)
     );
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(
       async () => await serializeProcess.Serialize(testClass)
@@ -73,16 +75,14 @@ public class CancellationTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     using var cancellationSource = new CancellationTokenSource();
-    await using var serializeProcess = new SerializeProcess(
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new DummySqLiteSendManager(),
+      new CancellationServerObjectManager(cancellationSource),
       null,
-      new CancellationSqLiteSendManager(cancellationSource),
-      new DummyServerObjectManager(),
-      new BaseChildFinder(new BasePropertyGatherer()),
-      new BaseSerializer(new DummySqLiteSendManager(), new ObjectSerializerFactory(new BasePropertyGatherer())),
-      new NullLoggerFactory(),
       cancellationSource.Token,
-      new SerializeProcessOptions(true, false, false, true)
+      new SerializeProcessOptions(true, true, false, true)
     );
+
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(
       async () => await serializeProcess.Serialize(testClass)
     );
@@ -94,7 +94,7 @@ public class CancellationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Cancellation_Receive_Cache(string fileName, string rootId, int oldCount)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     using var cancellationSource = new CancellationTokenSource();
@@ -121,7 +121,7 @@ public class CancellationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Cancellation_Receive_Server(string fileName, string rootId, int oldCount)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     using var cancellationSource = new CancellationTokenSource();
@@ -148,7 +148,7 @@ public class CancellationTests
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Cancellation_Receive_Deserialize(string fileName, string rootId, int oldCount)
   {
-    var closures = await TestFileManager.GetFileAsClosures(fileName);
+    var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
     using var cancellationSource = new CancellationTokenSource();

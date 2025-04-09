@@ -5,7 +5,7 @@ using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Dependencies.Serialization;
 
-public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationToken cancellationToken)
+public abstract class ChannelSaver<T>
   where T : IHasByteSize
 {
   private const int SEND_CAPACITY = 500;
@@ -15,8 +15,6 @@ public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationT
   private const int HTTP_CAPACITY = 500;
   private const int MAX_CACHE_WRITE_PARALLELISM = 4;
   private const int MAX_CACHE_BATCH = 500;
-
-  private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
@@ -30,26 +28,26 @@ public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationT
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start() =>
+  public Task Start(CancellationToken cancellationToken) =>
     _checkCacheChannel
-      .Reader.BatchByByteSize(logAsWarning, HTTP_SEND_CHUNK_SIZE)
+      .Reader.BatchByByteSize(HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         MAX_PARALLELISM_HTTP,
         async x => await SendToServer(x).ConfigureAwait(false),
         HTTP_CAPACITY,
         false,
-        _cts.Token
+        cancellationToken
       )
       .Join()
       .Batch(MAX_CACHE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, _cts.Token)
+      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
       .ContinueWith(
         t =>
         {
           Exception? ex = t.Exception;
-          if (ex is null && t.Status is TaskStatus.Canceled && !_cts.Token.IsCancellationRequested)
+          if (ex is null && t.Status is TaskStatus.Canceled && !cancellationToken.IsCancellationRequested)
           {
             ex = new OperationCanceledException();
           }
@@ -60,25 +58,26 @@ public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationT
           }
           _checkCacheChannel.Writer.TryComplete(ex);
         },
-        _cts.Token,
+        cancellationToken,
         TaskContinuationOptions.ExecuteSynchronously,
         TaskScheduler.Current
       );
 
-  public async ValueTask Save(T item)
+  public void Save(T item, CancellationToken cancellationToken)
   {
-    if (Exception is not null || _cts.IsCancellationRequested)
+    if (Exception is not null || cancellationToken.IsCancellationRequested)
     {
       return; //don't save if we're already done through an error
     }
-    await _checkCacheChannel.Writer.WriteAsync(item).ConfigureAwait(false);
+    // ReSharper disable once MethodSupportsCancellation
+    _checkCacheChannel.Writer.TryWrite(item);
   }
 
   private async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
   {
     try
     {
-      await SendToServer((Batch<T>)batch).ConfigureAwait(false);
+      await SendToServerInternal((Batch<T>)batch).ConfigureAwait(false);
       return batch;
     }
 #pragma warning disable CA1031
@@ -87,20 +86,6 @@ public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationT
     {
       RecordException(ex);
       return batch;
-    }
-  }
-
-  public async Task SendToServer(Batch<T> batch)
-  {
-    try
-    {
-      await SendToServerInternal(batch).ConfigureAwait(false);
-    }
-#pragma warning disable CA1031
-    catch (Exception ex)
-#pragma warning restore CA1031
-    {
-      RecordException(ex);
     }
   }
 
@@ -118,13 +103,11 @@ public abstract class ChannelSaver<T>(Action<string> logAsWarning, CancellationT
     }
   }
 
-  protected Exception? Exception { get; set; }
+  public Exception? Exception { get; set; }
 
   private void RecordException(Exception ex)
   {
     Exception = ex;
     _checkCacheChannel.Writer.TryComplete(ex);
-    //cancel everything!
-    _cts.Cancel();
   }
 }

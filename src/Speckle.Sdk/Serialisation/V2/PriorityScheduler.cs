@@ -6,8 +6,7 @@ namespace Speckle.Sdk.Serialisation.V2;
 public sealed class PriorityScheduler(
   ILogger<PriorityScheduler> logger,
   ThreadPriority priority,
-  int maximumConcurrencyLevel,
-  CancellationToken cancellationToken
+  int maximumConcurrencyLevel
 ) : TaskScheduler, IAsyncDisposable
 {
   private readonly BlockingCollection<Task> _tasks = new();
@@ -56,18 +55,13 @@ public sealed class PriorityScheduler(
           while (true)
           {
             //we're done so leave
-            if (_tasks.IsCompleted || cancellationToken.IsCancellationRequested)
+            if (_tasks.IsCompleted)
             {
               break;
             }
             var success = _tasks.TryTake(out var t, TimeSpan.FromSeconds(1));
             //no task and we're done so leave
             if (success && _tasks.IsCompleted)
-            {
-              break;
-            }
-            //cancelled just leave
-            if (cancellationToken.IsCancellationRequested)
             {
               break;
             }

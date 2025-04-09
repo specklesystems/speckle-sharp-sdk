@@ -5,9 +5,9 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Host;
 
-public record LoadedType(string Name, Type Type, List<string> DeprecatedNames);
+internal record LoadedType(string Name, Type Type, List<string> DeprecatedNames);
 
-public static class TypeLoader
+internal static class TypeLoader
 {
   private static bool s_initialized;
   private static List<LoadedType> s_availableTypes = new();

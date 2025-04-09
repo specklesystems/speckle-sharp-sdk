@@ -2,7 +2,6 @@ using FluentAssertions;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Xunit;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
@@ -120,7 +119,6 @@ public class BaseTests
     var dynamicProp = "dynamicProp";
     @base[dynamicProp] = 123;
     var names = @base.GetMembers().Keys;
-    names.Should().NotContain(nameof(@base.IgnoredSchemaProp));
     names.Should().NotContain(nameof(@base.ObsoleteSchemaProp));
     names.Should().Contain(dynamicProp);
     names.Should().Contain(nameof(@base.attachedProp));
@@ -154,7 +152,7 @@ public class BaseTests
     var @base = new SampleObject();
     @base["dynamicProp"] = 123;
 
-    var names = @base.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.SchemaIgnored).Keys;
+    var names = @base.GetMembers(DynamicBaseMemberType.Instance).Keys;
     names.Should().Contain(nameof(@base.IgnoredSchemaProp));
     names.Should().Contain(nameof(@base.attachedProp));
   }
@@ -208,8 +206,7 @@ public class BaseTests
     var sample = new SampleObject();
     var copy = sample.ShallowCopy();
 
-    var selectedMembers =
-      DynamicBaseMemberType.Dynamic | DynamicBaseMemberType.Instance | DynamicBaseMemberType.SchemaIgnored;
+    var selectedMembers = DynamicBaseMemberType.Dynamic | DynamicBaseMemberType.Instance;
     var sampleMembers = sample.GetMembers(selectedMembers);
     var copyMembers = copy.GetMembers(selectedMembers);
 
@@ -232,8 +229,6 @@ public class BaseTests
     public SampleProp attachedProp { get; set; }
 
     public string crazyProp { get; set; }
-
-    [SchemaIgnore]
     public string IgnoredSchemaProp { get; set; }
 
     [Obsolete("Use attached prop")]

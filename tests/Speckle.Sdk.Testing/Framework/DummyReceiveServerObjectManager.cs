@@ -37,14 +37,14 @@ public class DummyReceiveServerObjectManager(IReadOnlyDictionary<string, string>
   ) => throw new NotImplementedException();
 
   public Task UploadObjects(
-    IReadOnlyList<BaseItem> objects,
+    IReadOnlyList<BaseItem> objectsToUpload,
     bool compressPayloads,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
   )
   {
     long totalBytes = 0;
-    foreach (var item in objects)
+    foreach (var item in objectsToUpload)
     {
       totalBytes += Encoding.Default.GetByteCount(item.Json.Value);
     }

@@ -8,7 +8,6 @@ public static class ChannelExtensions
 {
   public static BatchingChannelReader<T, IMemoryOwner<T>> BatchByByteSize<T>(
     this ChannelReader<T> source,
-    Action<string> logAsWarning,
     int batchSize,
     bool singleReader = false,
     bool allowSynchronousContinuations = false
@@ -16,7 +15,6 @@ public static class ChannelExtensions
     where T : IHasByteSize =>
     new SizeBatchingChannelReader<T>(
       source ?? throw new ArgumentNullException(nameof(source)),
-      logAsWarning,
       batchSize,
       singleReader,
       allowSynchronousContinuations

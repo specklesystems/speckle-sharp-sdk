@@ -1,5 +1,5 @@
 ﻿{
-  "Type": "System.NotImplementedException",
+  "Data": {},
   "Message": "The method or operation is not implemented.",
-  "Source": "Speckle.Sdk.Serialization.Tests"
+  "Type": "NotImplementedException"
 }

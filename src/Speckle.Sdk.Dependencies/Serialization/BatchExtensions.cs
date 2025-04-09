@@ -19,13 +19,13 @@ public static class BatchExtensions
   public static void AddBatchItem<T>(this IMemoryOwner<T> batch, T item)
     where T : IHasByteSize => ((Batch<T>)batch).Add(item);
 
-  public static int GetBatchSize<T>(this IMemoryOwner<T> batch, Action<string> logAsWarning, int maxBatchSize)
+  public static int GetBatchSize<T>(this IMemoryOwner<T> batch, int maxBatchSize)
     where T : IHasByteSize
   {
     var currentSize = ((Batch<T>)batch).BatchByteSize;
     if (currentSize > maxBatchSize)
     {
-      logAsWarning($"Batch size exceeded. Current size: {currentSize} bytes. Max size: {maxBatchSize} bytes.");
+      //doing this to say it's full since the channel reader only does full being equivalent
       return maxBatchSize;
     }
 
