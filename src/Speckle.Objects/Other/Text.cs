@@ -30,12 +30,12 @@ public class Text : Base
   /// <summary>
   /// Horizontal alignment: Left, Center or Right
   /// </summary>
-  public alignmentHorizontal alignmentH { get; set; }
+  public AlignmentHorizontal alignmentH { get; set; }
 
   /// <summary>
   /// Vertical alignment: Top, Center or Bottom
   /// </summary>
-  public alignmentVertical alignmentV { get; set; }
+  public AlignmentVertical alignmentV { get; set; }
 
   /// <summary>
   /// Plane will be null if the text object orientation follows camera view
@@ -50,14 +50,14 @@ public class Text : Base
   public double? maxWidth { get; set; }
 }
 
-public enum alignmentHorizontal
+public enum AlignmentHorizontal
 {
   Left,
   Center,
   Right,
 }
 
-public enum alignmentVertical
+public enum AlignmentVertical
 {
   Top,
   Center,
