@@ -1,5 +1,4 @@
 using Speckle.Objects.Geometry;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Point = Speckle.Objects.Geometry.Point;
 
