@@ -23,7 +23,7 @@ public class Text : Base
 
   /// <summary>
   /// Units will be 'Units.None' if the text size is defined in pixels (stays the same size
-  /// independently of zooming the model). Default pixel size it 17px (used for Viewer measurements)
+  /// independently of zooming the model). Default height in pixels is 17px (used for Viewer measurements)
   /// </summary>
   public required string units { get; set; }
 
