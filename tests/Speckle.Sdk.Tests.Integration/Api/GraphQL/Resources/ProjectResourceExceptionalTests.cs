@@ -73,7 +73,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     var ex = await Assert.ThrowsAsync<AggregateException>(
       async () => _ = await Sut.Update(new("NonExistentProject", "My new name"))
     );
-    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLStreamNotFoundException>();
   }
 
   [Fact]
