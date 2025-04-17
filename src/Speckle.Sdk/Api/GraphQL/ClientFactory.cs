@@ -16,4 +16,7 @@ public class ClientFactory(
 {
   public IClient Create(Account account) =>
     new Client(loggerFactory.CreateLogger<Client>(), activityFactory, application, speckleHttp, account);
+
+  public IClient Create(Uri serverUrl, string token) =>
+    new Client(loggerFactory.CreateLogger<Client>(), activityFactory, application, speckleHttp, serverUrl, token);
 }

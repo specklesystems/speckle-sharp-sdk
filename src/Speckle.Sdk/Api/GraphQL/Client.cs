@@ -37,18 +37,13 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   public CommentResource Comment { get; }
   public SubscriptionResource Subscription { get; }
 
-  public Uri ServerUrl => new(Account.serverInfo.url);
-
-  [JsonIgnore]
-  public Account Account { get; }
+  public Uri ServerUrl { get; }
 
   private HttpClient HttpClient { get; }
 
   [AutoInterfaceIgnore]
   public GraphQLHttpClient GQLClient { get; }
 
-  /// <param name="account"></param>
-  /// <exception cref="ArgumentException"><paramref name="account"/> was null</exception>
   public Client(
     ILogger<Client> logger,
     ISdkActivityFactory activityFactory,
@@ -56,11 +51,21 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     ISpeckleHttp speckleHttp,
     Account account
   )
+    : this(logger, activityFactory, application, speckleHttp, new Uri(account.serverInfo.url), account.token) { }
+
+  public Client(
+    ILogger<Client> logger,
+    ISdkActivityFactory activityFactory,
+    ISpeckleApplication application,
+    ISpeckleHttp speckleHttp,
+    Uri serverUrl,
+    string token
+  )
   {
     _logger = logger;
     _activityFactory = activityFactory;
-    Account = account ?? throw new ArgumentException("Provided account is null.");
 
+    ServerUrl = serverUrl;
     Project = new(this);
     Model = new(this);
     Version = new(this);
@@ -72,7 +77,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
 
     HttpClient = CreateHttpClient(application, speckleHttp, account);
 
-    GQLClient = CreateGraphQLClient(account, HttpClient);
+    GQLClient = CreateGraphQLClient(ServerUrl, token, HttpClient);
   }
 
   [AutoInterfaceIgnore]
@@ -187,19 +192,17 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     }
   }
 
-  private static GraphQLHttpClient CreateGraphQLClient(Account account, HttpClient httpClient)
+  private static GraphQLHttpClient CreateGraphQLClient(Uri serverUrl, string token, HttpClient httpClient)
   {
     var gQLClient = new GraphQLHttpClient(
       new GraphQLHttpClientOptions
       {
-        EndPoint = new Uri(new Uri(account.serverInfo.url), "/graphql"),
+        EndPoint = new Uri(serverUrl, "/graphql"),
         UseWebSocketForQueriesAndMutations = false,
         WebSocketProtocol = "graphql-ws",
         ConfigureWebSocketConnectionInitPayload = _ =>
         {
-          return SpeckleHttp.CanAddAuth(account.token, out string? authValue)
-            ? new { Authorization = authValue }
-            : null;
+          return SpeckleHttp.CanAddAuth(token, out string? authValue) ? new { Authorization = authValue } : null;
         },
       },
       new NewtonsoftJsonSerializer(
@@ -233,9 +236,9 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     return gQLClient;
   }
 
-  private static HttpClient CreateHttpClient(ISpeckleApplication application, ISpeckleHttp speckleHttp, Account account)
+  private static HttpClient CreateHttpClient(ISpeckleApplication application, ISpeckleHttp speckleHttp, string token)
   {
-    var httpClient = speckleHttp.CreateHttpClient(timeoutSeconds: 30, authorizationToken: account.token);
+    var httpClient = speckleHttp.CreateHttpClient(timeoutSeconds: 30, authorizationToken: token);
 
     httpClient.DefaultRequestHeaders.Add("apollographql-client-name", application.ApplicationAndVersion);
     httpClient.DefaultRequestHeaders.Add(
