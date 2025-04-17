@@ -75,7 +75,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     Comment = new(this);
     Subscription = new(this);
 
-    HttpClient = CreateHttpClient(application, speckleHttp, account);
+    HttpClient = CreateHttpClient(application, speckleHttp, token);
 
     GQLClient = CreateGraphQLClient(ServerUrl, token, HttpClient);
   }
