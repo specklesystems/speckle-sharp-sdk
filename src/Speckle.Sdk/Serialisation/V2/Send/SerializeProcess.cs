@@ -159,12 +159,12 @@ public sealed class SerializeProcess(
     try
     {
       var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
-      using var childCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+      using var childCts = CancellationTokenSource.CreateLinkedTokenSource(token);
       foreach (var child in baseChildFinder.GetChildren(obj))
       {
         // tmp is necessary because of the way closures close over loop variables
         var tmp = child;
-        if (token.IsCancellationRequested)
+        if (childCts.Token.IsCancellationRequested)
         {
           return EMPTY_CLOSURES;
         }
@@ -172,8 +172,8 @@ public sealed class SerializeProcess(
           .Factory.StartNew(
             // ReSharper disable once AccessToDisposedClosure
             // don't need to capture here
-            async () => await Traverse(tmp, childCancellationTokenSource.Token).ConfigureAwait(false),
-            childCancellationTokenSource.Token,
+            async () => await Traverse(tmp, childCts.Token).ConfigureAwait(false),
+            childCts.Token,
             TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
             _belowNormal
           )
@@ -181,7 +181,7 @@ public sealed class SerializeProcess(
         tasks.Add(t);
       }
 
-      if (token.IsCancellationRequested)
+      if (childCts.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
@@ -211,7 +211,7 @@ public sealed class SerializeProcess(
         } while (currentTasks.Count > 0);
       }
 
-      if (token.IsCancellationRequested)
+      if (childCts.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
@@ -227,16 +227,20 @@ public sealed class SerializeProcess(
         _currentClosurePool.Return(childClosure);
       }
 
-      if (token.IsCancellationRequested)
+    
+      if (childCts.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
 
-      var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, token);
-      if (token.IsCancellationRequested)
+
+      var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, childCts.Token);
+     
+      if (childCts.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
+
 
       var currentClosures = _currentClosurePool.Get();
       try
@@ -247,13 +251,15 @@ public sealed class SerializeProcess(
         {
           if (item.NeedsStorage)
           {
-            if (token.IsCancellationRequested)
+           
+            if (childCts.Token.IsCancellationRequested)
             {
               return EMPTY_CLOSURES;
             }
 
+
             Interlocked.Increment(ref _objectsSerialized);
-            objectSaver.SaveItem(item, childCancellationTokenSource.Token);
+            objectSaver.SaveItem(item, childCts.Token);
           }
 
           if (!currentClosures.ContainsKey(item.Id))
