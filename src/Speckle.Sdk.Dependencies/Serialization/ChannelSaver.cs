@@ -28,9 +28,14 @@ public abstract class ChannelSaver<T>
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start(int? maxParallelism, int? httpBatchSize, int? cacheBatchSize, CancellationToken cancellationToken) =>
+  public Task Start(
+    int? maxParallelism,
+    int? httpBatchSize,
+    int? cacheBatchSize,
+    CancellationToken cancellationToken
+  ) =>
     _checkCacheChannel
-      .Reader.BatchByByteSize(httpBatchSize ??HTTP_SEND_CHUNK_SIZE)
+      .Reader.BatchByByteSize(httpBatchSize ?? HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
         maxParallelism ?? MAX_PARALLELISM_HTTP,

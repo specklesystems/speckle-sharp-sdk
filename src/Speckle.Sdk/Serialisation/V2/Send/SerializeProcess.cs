@@ -104,7 +104,12 @@ public sealed class SerializeProcess(
   {
     try
     {
-      var channelTask = objectSaver.Start(options?.MaxParallelism, options?.MaxHttpSendSize, options?.MaxCacheSize, _processSource.Token);
+      var channelTask = objectSaver.Start(
+        options?.MaxParallelism,
+        options?.MaxHttpSendSize,
+        options?.MaxCacheSize,
+        _processSource.Token
+      );
       var findTotalObjectsTask = Task.CompletedTask;
       if (!_options.SkipFindTotalObjects)
       {
@@ -227,20 +232,17 @@ public sealed class SerializeProcess(
         _currentClosurePool.Return(childClosure);
       }
 
-    
       if (childCts.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
-
 
       var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, childCts.Token);
-     
+
       if (childCts.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
-
 
       var currentClosures = _currentClosurePool.Get();
       try
@@ -251,12 +253,10 @@ public sealed class SerializeProcess(
         {
           if (item.NeedsStorage)
           {
-           
             if (childCts.Token.IsCancellationRequested)
             {
               return EMPTY_CLOSURES;
             }
-
 
             Interlocked.Increment(ref _objectsSerialized);
             objectSaver.SaveItem(item, childCts.Token);

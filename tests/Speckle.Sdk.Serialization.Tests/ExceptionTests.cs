@@ -97,7 +97,7 @@ public class ExceptionTests
       {
         MaxHttpSendSize = 1,
         MaxCacheSize = 1,
-        MaxParallelism = 1
+        MaxParallelism = 1,
       }
     );
 
