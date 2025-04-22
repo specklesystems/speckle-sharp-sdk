@@ -14,7 +14,12 @@ public record SerializeProcessOptions(
   bool SkipCacheWrite = false,
   bool SkipServer = false,
   bool SkipFindTotalObjects = false
-);
+)
+{
+  public int? MaxHttpSendSize { get; set; }
+  public int? MaxCacheSize { get; set; }
+  public int? MaxParallelism { get; set; }
+}
 
 public readonly record struct SerializeProcessResults(
   string RootId,
@@ -99,7 +104,7 @@ public sealed class SerializeProcess(
   {
     try
     {
-      var channelTask = objectSaver.Start(_processSource.Token);
+      var channelTask = objectSaver.Start(options?.MaxParallelism, options?.MaxHttpSendSize, options?.MaxCacheSize, _processSource.Token);
       var findTotalObjectsTask = Task.CompletedTask;
       if (!_options.SkipFindTotalObjects)
       {

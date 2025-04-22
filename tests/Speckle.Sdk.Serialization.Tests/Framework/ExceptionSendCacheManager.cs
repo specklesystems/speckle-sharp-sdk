@@ -4,6 +4,7 @@ namespace Speckle.Sdk.Serialization.Tests.Framework;
 
 public class ExceptionSendCacheManager(bool? hasObject = null, int? exceptionsAfter = null) : ISqLiteJsonCacheManager
 {
+  private readonly object _lock = new();
   private int _count;
 
   public void Dispose() { }
@@ -24,18 +25,23 @@ public class ExceptionSendCacheManager(bool? hasObject = null, int? exceptionsAf
 
   private void CheckExceptions()
   {
-    if (exceptionsAfter is not null)
+    lock (_lock)
     {
-      if (exceptionsAfter.Value > _count)
+      if (exceptionsAfter is not null)
       {
-        _count++;
+        if (exceptionsAfter.Value > _count)
+        {
+          _count++;
+        }
+        else
+        {
+          throw new Exception("Count exceeded");
+        }
       }
       else
       {
-        throw new Exception("Count exceeded");
+        throw new NotImplementedException();
       }
     }
-
-    throw new NotImplementedException();
   }
 }
