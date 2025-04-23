@@ -280,8 +280,8 @@
       },
       "System.IO.Hashing": {
         "type": "Transitive",
-        "resolved": "9.0.3",
-        "contentHash": "BrMGzDRLz410PE4qC8UeKeAc0hFRjBkiCUOLTwuod65NAjqg5tDNqYU7gP0A09taEXtecB+HJc1NNnnTjsKFAQ=="
+        "resolved": "9.0.4",
+        "contentHash": "WogPvgAFqQORFD8Iyha6RZ+/1QB3dsWRWxbwi8/HHVgiGQ8z0oMWpwe8Kk3Ti+Roe+P6a3sBg+WwBfEsyziZKg=="
       },
       "System.Management": {
         "type": "Transitive",
@@ -326,13 +326,13 @@
       },
       "Verify": {
         "type": "Transitive",
-        "resolved": "29.2.0",
-        "contentHash": "EhhwhXIeip9AJGWRPXh47NAUoiELnWzeBnAzFSl0+ryAfijTV1T+B4m6P6GbheWQ1CJ1cC1ZFLzgH276D5Bu3A==",
+        "resolved": "29.3.0",
+        "contentHash": "Urc7/If0eLpawVFtZrzYso3YrIWXOVkIY9iFiAhm/XrqUHDIP+wT5P/6uj5GCSGsY2yDT7OZ9xAwiLbxhEGnVw==",
         "dependencies": {
           "Argon": "0.27.0",
           "DiffEngine": "16.1.0",
           "SimpleInfoName": "3.1.0",
-          "System.IO.Hashing": "9.0.3"
+          "System.IO.Hashing": "9.0.4"
         }
       },
       "xunit.abstractions": {
@@ -393,7 +393,7 @@
           "Moq": "[4.20.72, )",
           "Speckle.Sdk": "[1.0.0, )",
           "Verify.Quibble": "[2.1.1, )",
-          "Verify.Xunit": "[29.2.0, )",
+          "Verify.Xunit": "[29.3.0, )",
           "xunit": "[2.9.3, )",
           "xunit.runner.visualstudio": "[3.0.2, )"
         }
@@ -471,15 +471,15 @@
       },
       "Verify.Xunit": {
         "type": "CentralTransitive",
-        "requested": "[29.2.0, )",
-        "resolved": "29.2.0",
-        "contentHash": "MdcslVf40AzSA319ZHMzR+U4JqyquX28JFSrI9zA89yeZNaNcaSIb5PmE0XZ6p60Iy7eRYtnGEgSDimEUeXHZw==",
+        "requested": "[29.3.0, )",
+        "resolved": "29.3.0",
+        "contentHash": "o/NvBDYh6fmybQDCnq27AMhKCzXjUrfe5gQT9B5YKDVR2xLezktmrAB0JXwxbpNAFOKcx0wuEECo9OTsDqYmpA==",
         "dependencies": {
           "Argon": "0.27.0",
           "DiffEngine": "16.1.0",
           "SimpleInfoName": "3.1.0",
-          "System.IO.Hashing": "9.0.3",
-          "Verify": "29.2.0",
+          "System.IO.Hashing": "9.0.4",
+          "Verify": "29.3.0",
           "xunit.abstractions": "2.0.3",
           "xunit.extensibility.execution": "2.9.3"
         }
