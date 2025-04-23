@@ -13,6 +13,7 @@
     <PackageReference Include="RichardSzalay.MockHttp" />
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="xunit.assert" />
     <PackageReference Include="xunit.runner.visualstudio"/>
   </ItemGroup>
   
