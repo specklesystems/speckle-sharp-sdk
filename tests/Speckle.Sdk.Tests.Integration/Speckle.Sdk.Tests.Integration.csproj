@@ -1,21 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <IsTestProject>true</IsTestProject>
     <PolySharpExcludeGeneratedTypes>System.Runtime.CompilerServices.IsExternalInit</PolySharpExcludeGeneratedTypes>
   </PropertyGroup>
-  
   <ItemGroup>
     <PackageReference Include="altcover" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio"/>
+    <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
-  
   <ItemGroup>
     <ProjectReference Include="..\..\src\Speckle.Sdk\Speckle.Sdk.csproj" />
     <ProjectReference Include="..\Speckle.Sdk.Tests.Unit\Speckle.Sdk.Tests.Unit.csproj" />
   </ItemGroup>
-
 </Project>

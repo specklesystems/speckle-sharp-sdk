@@ -41,8 +41,8 @@ public class CancellationTests
       new SerializeProcessOptions(true, true, false, true)
     );
     await cancellationSource.CancelAsync();
-    var ex = await Assert.ThrowsAsync<OperationCanceledException>(
-      async () => await serializeProcess.Serialize(testClass)
+    var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+      await serializeProcess.Serialize(testClass)
     );
     await Verify(ex);
     cancellationSource.IsCancellationRequested.Should().BeTrue();
@@ -62,8 +62,8 @@ public class CancellationTests
       cancellationSource.Token,
       new SerializeProcessOptions(true, true, false, true)
     );
-    var ex = await Assert.ThrowsAsync<OperationCanceledException>(
-      async () => await serializeProcess.Serialize(testClass)
+    var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+      await serializeProcess.Serialize(testClass)
     );
     await Verify(ex);
     cancellationSource.IsCancellationRequested.Should().BeTrue();
@@ -83,8 +83,8 @@ public class CancellationTests
       new SerializeProcessOptions(true, true, false, true)
     );
 
-    var ex = await Assert.ThrowsAsync<OperationCanceledException>(
-      async () => await serializeProcess.Serialize(testClass)
+    var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+      await serializeProcess.Serialize(testClass)
     );
     await Verify(ex);
     cancellationSource.IsCancellationRequested.Should().BeTrue();

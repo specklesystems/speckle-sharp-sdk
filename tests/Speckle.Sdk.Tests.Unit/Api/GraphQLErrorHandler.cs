@@ -24,12 +24,11 @@ public class GraphQLErrorHandlerTests
   [MemberData(nameof(ErrorCases))]
   public void TestExceptionThrowingFromGraphQLErrors(Type exType, Map extensions)
   {
-    var ex = Assert.Throws<AggregateException>(
-      () =>
-        new GraphQLResponse<GraphQLClientTests.FakeGqlResponseModel>
-        {
-          Errors = [new() { Extensions = extensions }],
-        }.EnsureGraphQLSuccess()
+    var ex = Assert.Throws<AggregateException>(() =>
+      new GraphQLResponse<GraphQLClientTests.FakeGqlResponseModel>
+      {
+        Errors = [new() { Extensions = extensions }],
+      }.EnsureGraphQLSuccess()
     );
     ex.InnerExceptions.Count.Should().Be(1);
     ex.InnerExceptions[0].Should().BeOfType(exType);

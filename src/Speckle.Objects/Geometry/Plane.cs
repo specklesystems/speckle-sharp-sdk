@@ -68,7 +68,6 @@ public class Plane : Base, ITransformable<Plane>
   /// Returns the values of this <see cref="Plane"/> as a list of numbers
   /// </summary>
   /// <returns>A list of values representing the Plane.</returns>
-
   public List<double> ToList()
   {
     var list = new List<double>();
