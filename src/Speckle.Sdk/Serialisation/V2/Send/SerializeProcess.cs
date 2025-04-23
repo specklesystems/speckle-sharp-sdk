@@ -122,7 +122,7 @@ public sealed class SerializeProcess(
         );
       }
 
-      await Traverse(root, _processSource.Token).ConfigureAwait(false);
+      await Traverse(root).ConfigureAwait(false);
       ThrowIfFailed();
       objectSaver.DoneTraversing();
       await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
@@ -133,7 +133,7 @@ public sealed class SerializeProcess(
       ThrowIfFailed();
       return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
     }
-    catch (TaskCanceledException)
+    catch (OperationCanceledException)
     {
       ThrowIfFailed();
       throw;
@@ -148,15 +148,15 @@ public sealed class SerializeProcess(
     }
     foreach (var child in baseChildFinder.GetChildren(obj))
     {
-      _objectsFound++;
+      Interlocked.Increment(ref _objectsFound);
       progress?.Report(new(ProgressEvent.FindingChildren, _objectsFound, null));
       TraverseTotal(child);
     }
   }
 
-  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, CancellationToken token)
+  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj)
   {
-    if (token.IsCancellationRequested)
+    if (_processSource.Token.IsCancellationRequested)
     {
       return EMPTY_CLOSURES;
     }
@@ -164,12 +164,11 @@ public sealed class SerializeProcess(
     try
     {
       var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
-      using var childCts = CancellationTokenSource.CreateLinkedTokenSource(token);
       foreach (var child in baseChildFinder.GetChildren(obj))
       {
         // tmp is necessary because of the way closures close over loop variables
         var tmp = child;
-        if (childCts.Token.IsCancellationRequested)
+        if (_processSource.Token.IsCancellationRequested)
         {
           return EMPTY_CLOSURES;
         }
@@ -177,8 +176,8 @@ public sealed class SerializeProcess(
           .Factory.StartNew(
             // ReSharper disable once AccessToDisposedClosure
             // don't need to capture here
-            async () => await Traverse(tmp, childCts.Token).ConfigureAwait(false),
-            childCts.Token,
+            async () => await Traverse(tmp).ConfigureAwait(false),
+            _processSource.Token,
             TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
             _belowNormal
           )
@@ -186,7 +185,7 @@ public sealed class SerializeProcess(
         tasks.Add(t);
       }
 
-      if (childCts.Token.IsCancellationRequested)
+      if (_processSource.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
@@ -216,7 +215,7 @@ public sealed class SerializeProcess(
         } while (currentTasks.Count > 0);
       }
 
-      if (childCts.Token.IsCancellationRequested)
+      if (_processSource.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
@@ -232,14 +231,14 @@ public sealed class SerializeProcess(
         _currentClosurePool.Return(childClosure);
       }
 
-      if (childCts.Token.IsCancellationRequested)
+      if (_processSource.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
 
-      var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, childCts.Token);
+      var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, _processSource.Token);
 
-      if (childCts.Token.IsCancellationRequested)
+      if (_processSource.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
@@ -253,13 +252,13 @@ public sealed class SerializeProcess(
         {
           if (item.NeedsStorage)
           {
-            if (childCts.Token.IsCancellationRequested)
+            if (_processSource.Token.IsCancellationRequested)
             {
               return EMPTY_CLOSURES;
             }
 
             Interlocked.Increment(ref _objectsSerialized);
-            objectSaver.SaveItem(item, childCts.Token);
+            objectSaver.SaveItem(item);
           }
 
           if (!currentClosures.ContainsKey(item.Id))

@@ -72,9 +72,14 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
         cmd4.ExecuteNonQuery();
       }
 
-      using (SqliteCommand cmd0 = new("PRAGMA journal_mode='wal';", c))
+      using (SqliteCommand cmd5 = new("PRAGMA journal_mode='wal';", c))
       {
-        cmd0.ExecuteNonQuery();
+        cmd5.ExecuteNonQuery();
+      }
+      //do this to wait 5 seconds to avoid db lock exceptions
+      using (SqliteCommand cmd6 = new("PRAGMA busy_timeout=5000;", c))
+      {
+        cmd6.ExecuteNonQuery();
       }
     });
   }
