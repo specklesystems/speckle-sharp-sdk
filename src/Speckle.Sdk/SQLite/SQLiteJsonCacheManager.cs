@@ -76,7 +76,7 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
       {
         cmd5.ExecuteNonQuery();
       }
-      //do this to wait 5 seconds to avoid db lock exceptions
+      //do this to wait 5 seconds to avoid db lock exceptions, this is 0 by default
       using (SqliteCommand cmd6 = new("PRAGMA busy_timeout=5000;", c))
       {
         cmd6.ExecuteNonQuery();
