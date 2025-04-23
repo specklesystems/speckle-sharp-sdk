@@ -100,7 +100,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
       .Invoking(async () => await Sut.Update(input))
       .Should()
       .ThrowAsync<AggregateException>();
-    ex.WithInnerExceptionExactly<SpeckleGraphQLForbiddenException>();
+    ex.WithInnerExceptionExactly<SpeckleGraphQLStreamNotFoundException>();
   }
 
   [Fact]
