@@ -48,8 +48,8 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
 
       """;
     GraphQLRequest request = new(query: QUERY);
-    var ex = await Assert.ThrowsAsync<AggregateException>(
-      async () => await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
     );
     ex.InnerExceptions.OfType<SpeckleGraphQLForbiddenException>().Count().Should().Be(1);
   }
@@ -66,8 +66,8 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
       }
       """;
     GraphQLRequest request = new(query: QUERY);
-    var ex = await Assert.ThrowsAsync<AggregateException>(
-      async () => await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
     );
     ex.InnerExceptions.OfType<SpeckleGraphQLInvalidQueryException>().Count().Should().Be(1);
   }
@@ -79,8 +79,8 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
   public async Task TestGraphQLLayer_BadInput()
   {
     ProjectUpdateRoleInput input = new(null!, null!, null);
-    var ex = await Assert.ThrowsAsync<AggregateException>(
-      async () => await _sut.Project.UpdateRole(input).ConfigureAwait(false)
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      await _sut.Project.UpdateRole(input).ConfigureAwait(false)
     );
     ex.InnerExceptions.OfType<SpeckleGraphQLBadInputException>().Count().Should().Be(2);
   }
@@ -91,8 +91,8 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
     using CancellationTokenSource cts = new();
     await cts.CancelAsync();
 
-    var ex = await Assert.ThrowsAsync<TaskCanceledException>(
-      async () => await _sut.ActiveUser.Get(cts.Token).ConfigureAwait(false)
+    var ex = await Assert.ThrowsAsync<TaskCanceledException>(async () =>
+      await _sut.ActiveUser.Get(cts.Token).ConfigureAwait(false)
     );
 
     ex.CancellationToken.Should().BeEquivalentTo(cts.Token);
@@ -121,8 +121,8 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
       }
       """;
     GraphQLRequest request = new(query: QUERY);
-    await Assert.ThrowsAsync<JsonReaderException>(
-      async () => await _sut.ExecuteGraphQLRequest<int>(request).ConfigureAwait(false)
+    await Assert.ThrowsAsync<JsonReaderException>(async () =>
+      await _sut.ExecuteGraphQLRequest<int>(request).ConfigureAwait(false)
     );
   }
 }
