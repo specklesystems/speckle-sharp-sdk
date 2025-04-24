@@ -1,10 +1,10 @@
 ﻿{
   "Data": {},
   "InnerException": {
-    "$type": "NotImplementedException",
+    "$type": "Exception",
     "Data": {},
-    "Message": "The method or operation is not implemented.",
-    "Type": "NotImplementedException"
+    "Message": "Count exceeded",
+    "Type": "Exception"
   },
   "Message": "Error while sending",
   "Type": "SpeckleException"
