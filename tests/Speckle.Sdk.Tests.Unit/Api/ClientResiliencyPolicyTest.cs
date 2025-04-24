@@ -37,16 +37,15 @@ public sealed class GraphQLClientTests : IDisposable
     {
       var tokenSource = new CancellationTokenSource();
       tokenSource.Cancel();
-      await _client.ExecuteWithResiliencePolicies(
-        async () =>
-          await Task.Run(
-            async () =>
-            {
-              await Task.Delay(1000);
-              return "foo";
-            },
-            tokenSource.Token
-          )
+      await _client.ExecuteWithResiliencePolicies(async () =>
+        await Task.Run(
+          async () =>
+          {
+            await Task.Delay(1000);
+            return "foo";
+          },
+          tokenSource.Token
+        )
       );
     });
     timer.Stop();

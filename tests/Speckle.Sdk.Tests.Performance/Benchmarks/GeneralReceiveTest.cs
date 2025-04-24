@@ -22,7 +22,6 @@ public class GeneralReceiveTest : IDisposable
   private const string streamId = "a3ac1b2706";S
   private const string rootId = "7d53bcf28c6696ecac8781684a0aa006";*/
 
-
   private const string url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e"; //perf?
   private readonly Uri _baseUrl = new("https://latest.speckle.systems");
   private const string streamId = "2099ac4b5f";
