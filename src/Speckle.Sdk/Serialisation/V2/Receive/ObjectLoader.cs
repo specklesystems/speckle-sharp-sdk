@@ -146,7 +146,7 @@ public sealed class ObjectLoader(
     cancellationToken.ThrowIfCancellationRequested();
     if (Exception is not null)
     {
-      throw new SpeckleException("Error while sending", Exception);
+      throw new SpeckleException("Error while loading", Exception);
     }
   }
 }
