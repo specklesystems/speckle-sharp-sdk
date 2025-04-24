@@ -1,9 +1,18 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Speckle.Sdk.Api;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models.GraphTraversal;
+using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.Serialisation.V2.Receive;
+using Speckle.Sdk.Serialisation.V2.Send;
+using Speckle.Sdk.SQLite;
+using Speckle.Sdk.Transports;
+using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk;
 
@@ -70,18 +79,39 @@ public static class ServiceRegistration
     );
     serviceCollection.TryAddSingleton<ISdkActivityFactory, NullActivityFactory>();
     serviceCollection.TryAddSingleton<ISdkMetricsFactory, NullSdkMetricsFactory>();
-    serviceCollection.AddMatchingInterfacesAsTransient(Assembly.GetExecutingAssembly());
+    serviceCollection.AddMatchingInterfacesAsTransient(
+      Assembly.GetExecutingAssembly(),
+      typeof(ServerTransport),
+      typeof(Account),
+      typeof(ServerApi),
+      typeof(SqLiteJsonCacheManager),
+      typeof(ServerObjectManager),
+      typeof(BaseSerializer),
+      typeof(SerializeProcess),
+      typeof(ObjectSaver),
+      typeof(ObjectSerializer),
+      typeof(ObjectDeserializer),
+      typeof(DeserializeProcess),
+      typeof(ObjectLoader),
+      typeof(TraversalRule),
+      typeof(Client)
+    );
     serviceCollection.AddMatchingInterfacesAsTransient(typeof(GraphQLRetry).Assembly);
     return serviceCollection;
   }
 
   public static IServiceCollection AddMatchingInterfacesAsTransient(
     this IServiceCollection serviceCollection,
-    Assembly assembly
+    Assembly assembly,
+    params Type[] classesToIgnore
   )
   {
     foreach (var type in assembly.ExportedTypes.Where(t => t.IsNonAbstractClass()))
     {
+      if (classesToIgnore.Contains(type))
+      {
+        continue;
+      }
       foreach (var matchingInterface in type.FindMatchingInterface())
       {
         serviceCollection.TryAddTransient(matchingInterface, type);

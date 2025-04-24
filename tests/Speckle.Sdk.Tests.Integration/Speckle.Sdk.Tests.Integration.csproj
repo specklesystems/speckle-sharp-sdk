@@ -8,6 +8,8 @@
   
   <ItemGroup>
     <PackageReference Include="altcover" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio"/>
@@ -15,7 +17,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\..\src\Speckle.Sdk\Speckle.Sdk.csproj" />
-    <ProjectReference Include="..\Speckle.Sdk.Tests.Unit\Speckle.Sdk.Tests.Unit.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk.Testing\Speckle.Sdk.Testing.csproj" />
   </ItemGroup>
 
 </Project>
