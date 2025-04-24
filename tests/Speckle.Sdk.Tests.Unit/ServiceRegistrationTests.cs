@@ -14,6 +14,7 @@ public class ServiceRegistrationTests
     serviceProvider.Should().NotBeNull();
   }
 
+  [Fact]
   public void RegisterDependencies_Scopes()
   {
     var serviceCollection = new ServiceCollection();
