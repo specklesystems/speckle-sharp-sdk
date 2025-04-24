@@ -13,9 +13,9 @@
       },
       "Microsoft.Extensions.ObjectPool": {
         "type": "Direct",
-        "requested": "[9.0.3, )",
-        "resolved": "9.0.3",
-        "contentHash": "4uPdnj9hLRrb3ZSeVEDtwIm9nNrrT9vAXYC9o1/yTW8lGOPwTyI2QlkcICwYEGM1LESGTFidcPMFACznUZKbIQ=="
+        "requested": "[9.0.4, )",
+        "resolved": "9.0.4",
+        "contentHash": "G7p1k2xVZ+2aVANz0JdSiafr+AHDHeS1kF8+Y0ABbIsByd0erOL59IDXBs9vcdJf3pPV/murO0mbtr4k40QxWw=="
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -38,13 +38,13 @@
       },
       "Open.ChannelExtensions": {
         "type": "Direct",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "DP+l5S6G46wcuY4I4kNXE+RDOmJr0DKuMienOdt0mMBN9z7vmLSC8YQbqCyb9i9LNjXj1tgCx5LyitJiRr/v7g==",
+        "requested": "[9.1.0, )",
+        "resolved": "9.1.0",
+        "contentHash": "D6c24vMGy1oZ06vmkD2/FNzWHK7ZIihuv2spDgYEeaUp+eobrILQnrNQKRoASFXD4JGfZ7nfvTM0e+AX79dt8Q==",
         "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "9.0.0",
-          "System.Collections.Immutable": "9.0.0",
-          "System.Threading.Channels": "9.0.0"
+          "Microsoft.Bcl.AsyncInterfaces": "9.0.4",
+          "System.Collections.Immutable": "9.0.4",
+          "System.Threading.Channels": "9.0.4"
         }
       },
       "Polly": {
@@ -82,11 +82,11 @@
       },
       "System.Threading.Channels": {
         "type": "Direct",
-        "requested": "[9.0.2, )",
-        "resolved": "9.0.2",
-        "contentHash": "pUmqkuBS9OxWHOlfNad09Oxc8gRbxgN9UQtsqHPst4jfcgZRxQetNcsT2oe+VnUpEFAtBy1FZcJZiOscrBmA7g==",
+        "requested": "[9.0.4, )",
+        "resolved": "9.0.4",
+        "contentHash": "4qBn2H6/aXBpE/Pm3wY5yusY/pEvQz99NlWHrTUji0qCmOdbhhjaALcpmbfW2ksxlPM6i6S+QFLkpOQdyfeKYQ==",
         "dependencies": {
-          "Microsoft.Bcl.AsyncInterfaces": "9.0.2",
+          "Microsoft.Bcl.AsyncInterfaces": "9.0.4",
           "System.Threading.Tasks.Extensions": "4.5.4"
         }
       },
@@ -117,8 +117,8 @@
       },
       "System.Collections.Immutable": {
         "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "QhkXUl2gNrQtvPmtBTQHb0YsUrDiDQ2QS09YbtTTiSjGcf7NBqtYbrG/BE06zcBPCKEwQGzIv13IVdXNOSub2w==",
+        "resolved": "9.0.4",
+        "contentHash": "wfm2NgK22MmBe5qJjp52qzpkeDZKb4l9LbdubhZSehY1z4LS+lld6R+B+UQNb2AZRHu/QJlHxEUcRst5hIEejg==",
         "dependencies": {
           "System.Memory": "4.5.5",
           "System.Runtime.CompilerServices.Unsafe": "6.0.0"
@@ -155,8 +155,8 @@
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "CentralTransitive",
         "requested": "[5.0.0, )",
-        "resolved": "9.0.2",
-        "contentHash": "1CED0BGD7dCKsbe7tDhzpPB2Qdi9x35QChu6zkBEI4s0T5bDkkttGReqQnOeOfRNSxtP2WvpX6Ik/0O93XDuMw==",
+        "resolved": "9.0.4",
+        "contentHash": "9VGI5kxIvrNG2mqLQZnUR6y/3fcnygD8eNpHR+CqfbnIXvea6nehnYknDKQTxZVPMpzpNca+7DxLBmpdB3q0Bw==",
         "dependencies": {
           "System.Threading.Tasks.Extensions": "4.5.4"
         }
@@ -174,9 +174,9 @@
       },
       "Microsoft.Extensions.ObjectPool": {
         "type": "Direct",
-        "requested": "[9.0.3, )",
-        "resolved": "9.0.3",
-        "contentHash": "4uPdnj9hLRrb3ZSeVEDtwIm9nNrrT9vAXYC9o1/yTW8lGOPwTyI2QlkcICwYEGM1LESGTFidcPMFACznUZKbIQ=="
+        "requested": "[9.0.4, )",
+        "resolved": "9.0.4",
+        "contentHash": "G7p1k2xVZ+2aVANz0JdSiafr+AHDHeS1kF8+Y0ABbIsByd0erOL59IDXBs9vcdJf3pPV/murO0mbtr4k40QxWw=="
       },
       "Microsoft.SourceLink.GitHub": {
         "type": "Direct",
@@ -190,9 +190,9 @@
       },
       "Open.ChannelExtensions": {
         "type": "Direct",
-        "requested": "[9.0.0, )",
-        "resolved": "9.0.0",
-        "contentHash": "DP+l5S6G46wcuY4I4kNXE+RDOmJr0DKuMienOdt0mMBN9z7vmLSC8YQbqCyb9i9LNjXj1tgCx5LyitJiRr/v7g=="
+        "requested": "[9.1.0, )",
+        "resolved": "9.1.0",
+        "contentHash": "D6c24vMGy1oZ06vmkD2/FNzWHK7ZIihuv2spDgYEeaUp+eobrILQnrNQKRoASFXD4JGfZ7nfvTM0e+AX79dt8Q=="
       },
       "Polly": {
         "type": "Direct",
@@ -229,9 +229,9 @@
       },
       "System.Threading.Channels": {
         "type": "Direct",
-        "requested": "[9.0.2, )",
-        "resolved": "9.0.2",
-        "contentHash": "pUmqkuBS9OxWHOlfNad09Oxc8gRbxgN9UQtsqHPst4jfcgZRxQetNcsT2oe+VnUpEFAtBy1FZcJZiOscrBmA7g=="
+        "requested": "[9.0.4, )",
+        "resolved": "9.0.4",
+        "contentHash": "4qBn2H6/aXBpE/Pm3wY5yusY/pEvQz99NlWHrTUji0qCmOdbhhjaALcpmbfW2ksxlPM6i6S+QFLkpOQdyfeKYQ=="
       },
       "ILRepack": {
         "type": "Transitive",
