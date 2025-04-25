@@ -13,8 +13,6 @@ public interface IObjectSaver : IDisposable
   void DoneTraversing();
   Task DoneSaving();
   Task SaveAsync(BaseItem item);
-  long Uploaded { get; }
-  long Cached { get; }
 }
 
 public sealed class ObjectSaver(
@@ -40,8 +38,6 @@ public sealed class ObjectSaver(
   private long _cached;
 
   private long _objectsSerialized;
-  public long Cached => _cached;
-  public long Uploaded => _uploaded;
 
   protected override async Task SendToServerInternal(Batch<BaseItem> batch)
   {
