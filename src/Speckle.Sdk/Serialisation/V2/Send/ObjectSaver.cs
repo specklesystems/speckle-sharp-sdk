@@ -12,7 +12,7 @@ public interface IObjectSaver : IDisposable
   Task Start(int? maxParallelism, int? httpBatchSize, int? cacheBatchSize, CancellationToken cancellationToken);
   void DoneTraversing();
   Task DoneSaving();
-  void SaveItem(BaseItem item);
+  Task SaveAsync(BaseItem item);
   long Uploaded { get; }
   long Cached { get; }
 }
@@ -81,10 +81,10 @@ public sealed class ObjectSaver(
     }
   }
 
-  public void SaveItem(BaseItem item)
+  public async Task SaveAsync(BaseItem item)
   {
     Interlocked.Increment(ref _objectsSerialized);
-    Save(item);
+     await SaveAsync(item, _cancellationTokenSource.Token).ConfigureAwait(false);
   }
 
   public override void SaveToCache(List<BaseItem> batch)
