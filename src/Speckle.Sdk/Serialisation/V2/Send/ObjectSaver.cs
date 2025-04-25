@@ -80,7 +80,7 @@ public sealed class ObjectSaver(
   public async Task SaveAsync(BaseItem item)
   {
     Interlocked.Increment(ref _objectsSerialized);
-     await SaveAsync(item, _cancellationTokenSource.Token).ConfigureAwait(false);
+    await SaveAsync(item, _cancellationTokenSource.Token).ConfigureAwait(false);
   }
 
   public override void SaveToCache(List<BaseItem> batch)
