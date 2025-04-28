@@ -76,7 +76,7 @@ public abstract class ChannelSaver<T>
     }
     //can switch to check then try pattern when back pressure is needed or exceptions are too much
     //the trees don't need to respond to back pressure
-    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken);
+    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
   }
 
   private async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
