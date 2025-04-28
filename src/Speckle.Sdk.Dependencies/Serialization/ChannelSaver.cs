@@ -74,12 +74,9 @@ public abstract class ChannelSaver<T>
     {
       return; //don't save if we're already done through an error
     }
-    //better wait to handle writes instead of WriteAsync to create unlimited tasks
-    while (await _checkCacheChannel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false))
-    {
-      if (_checkCacheChannel.Writer.TryWrite(item))
-        return;
-    }
+    //can switch to check then try pattern when back pressure is needed or exceptions are too much
+    //the trees don't need to respond to back pressure
+    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken);
   }
 
   private async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)
