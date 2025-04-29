@@ -14,6 +14,10 @@ public class Text : Base
   /// Plain text, without formatting
   /// </summary>
   public required string value { get; set; }
+
+  /// <summary>
+  /// Origin point, relation to the text is defined by AlignmentHorizontal & AlignmentVertical
+  /// </summary>
   public required Point origin { get; set; }
 
   /// <summary>
