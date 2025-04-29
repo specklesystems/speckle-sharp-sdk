@@ -1,4 +1,3 @@
-
 namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public sealed class PermissionCheckResult
