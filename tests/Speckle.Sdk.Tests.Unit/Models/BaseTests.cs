@@ -133,14 +133,13 @@ public class BaseTests
     var names = @base.GetMembers(DynamicBaseMemberType.Instance).Keys;
     names.Should().Contain(nameof(@base.attachedProp));
   }
-  
-  [Fact(DisplayName = $"Checks that all instance members are returned including ones on super classes (e.g. {nameof(Base)}")]
+
+  [Fact(
+    DisplayName = $"Checks that all instance members are returned including ones on super classes (e.g. {nameof(Base)}"
+  )]
   public async Task CanGetMembers_BaseMembers()
   {
-    var @base = new SampleObject
-    {
-      applicationId = "ajsdf",
-    };
+    var @base = new SampleObject { applicationId = "ajsdf" };
     var members = @base.GetMembers();
     await Verify(members);
   }
