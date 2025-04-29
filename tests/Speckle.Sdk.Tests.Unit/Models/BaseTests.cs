@@ -141,7 +141,7 @@ public class BaseTests
     {
       applicationId = "ajsdf",
     };
-    var names = @base.GetMembers().Keys;
+    var names = @base.GetMembers();
     names.Should().Contain(nameof(@base.id));
     names.Should().Contain(nameof(@base.list));
     names.Should().Contain(nameof(@base.applicationId));
