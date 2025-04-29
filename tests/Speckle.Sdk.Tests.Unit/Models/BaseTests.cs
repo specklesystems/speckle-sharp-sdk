@@ -133,6 +133,21 @@ public class BaseTests
     var names = @base.GetMembers(DynamicBaseMemberType.Instance).Keys;
     names.Should().Contain(nameof(@base.attachedProp));
   }
+  
+  [Fact(DisplayName = $"Checks that all instance members are returned including ones on super classes (e.g. {nameof(Base)}")]
+  public void CanGetMembers_BaseMembers()
+  {
+    var @base = new SampleObject
+    {
+      applicationId = "ajsdf",
+    };
+    var names = @base.GetMembers().Keys;
+    names.Should().Contain(nameof(@base.id));
+    names.Should().Contain(nameof(@base.list));
+    names.Should().Contain(nameof(@base.applicationId));
+    names.Should().Contain(nameof(@base.speckle_type));
+    names.Should().Contain(nameof(@base.crazyProp));
+  }
 
   [Fact(DisplayName = "Checks that only dynamic properties are returned")]
   public void CanGetMembers_OnlyDynamic()
