@@ -16,7 +16,7 @@ public class Text : Base
   public required string value { get; set; }
 
   /// <summary>
-  /// Origin point, relation to the text is defined by AlignmentHorizontal & AlignmentVertical
+  /// Origin point, relation to the text is defined by AlignmentHorizontal and AlignmentVertical
   /// </summary>
   public required Point origin { get; set; }
 
