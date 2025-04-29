@@ -14,7 +14,12 @@ public record SerializeProcessOptions(
   bool SkipCacheWrite = false,
   bool SkipServer = false,
   bool SkipFindTotalObjects = false
-);
+)
+{
+  public int? MaxHttpSendSize { get; set; }
+  public int? MaxCacheSize { get; set; }
+  public int? MaxParallelism { get; set; }
+}
 
 public readonly record struct SerializeProcessResults(
   string RootId,
@@ -99,7 +104,12 @@ public sealed class SerializeProcess(
   {
     try
     {
-      var channelTask = objectSaver.Start(_processSource.Token);
+      var channelTask = objectSaver.Start(
+        options?.MaxParallelism,
+        options?.MaxHttpSendSize,
+        options?.MaxCacheSize,
+        _processSource.Token
+      );
       var findTotalObjectsTask = Task.CompletedTask;
       if (!_options.SkipFindTotalObjects)
       {
@@ -112,7 +122,7 @@ public sealed class SerializeProcess(
         );
       }
 
-      await Traverse(root, _processSource.Token).ConfigureAwait(false);
+      await Traverse(root).ConfigureAwait(false);
       ThrowIfFailed();
       objectSaver.DoneTraversing();
       await Task.WhenAll(findTotalObjectsTask, channelTask).ConfigureAwait(false);
@@ -123,7 +133,7 @@ public sealed class SerializeProcess(
       ThrowIfFailed();
       return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
     }
-    catch (TaskCanceledException)
+    catch (OperationCanceledException)
     {
       ThrowIfFailed();
       throw;
@@ -138,15 +148,15 @@ public sealed class SerializeProcess(
     }
     foreach (var child in baseChildFinder.GetChildren(obj))
     {
-      _objectsFound++;
+      Interlocked.Increment(ref _objectsFound);
       progress?.Report(new(ProgressEvent.FindingChildren, _objectsFound, null));
       TraverseTotal(child);
     }
   }
 
-  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj, CancellationToken token)
+  private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj)
   {
-    if (token.IsCancellationRequested)
+    if (_processSource.Token.IsCancellationRequested)
     {
       return EMPTY_CLOSURES;
     }
@@ -154,12 +164,11 @@ public sealed class SerializeProcess(
     try
     {
       var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
-      using var childCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
       foreach (var child in baseChildFinder.GetChildren(obj))
       {
         // tmp is necessary because of the way closures close over loop variables
         var tmp = child;
-        if (token.IsCancellationRequested)
+        if (_processSource.Token.IsCancellationRequested)
         {
           return EMPTY_CLOSURES;
         }
@@ -167,8 +176,8 @@ public sealed class SerializeProcess(
           .Factory.StartNew(
             // ReSharper disable once AccessToDisposedClosure
             // don't need to capture here
-            async () => await Traverse(tmp, childCancellationTokenSource.Token).ConfigureAwait(false),
-            childCancellationTokenSource.Token,
+            async () => await Traverse(tmp).ConfigureAwait(false),
+            _processSource.Token,
             TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
             _belowNormal
           )
@@ -176,7 +185,7 @@ public sealed class SerializeProcess(
         tasks.Add(t);
       }
 
-      if (token.IsCancellationRequested)
+      if (_processSource.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
@@ -206,7 +215,7 @@ public sealed class SerializeProcess(
         } while (currentTasks.Count > 0);
       }
 
-      if (token.IsCancellationRequested)
+      if (_processSource.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
@@ -222,13 +231,14 @@ public sealed class SerializeProcess(
         _currentClosurePool.Return(childClosure);
       }
 
-      if (token.IsCancellationRequested)
+      if (_processSource.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
 
-      var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, token);
-      if (token.IsCancellationRequested)
+      var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, _processSource.Token);
+
+      if (_processSource.Token.IsCancellationRequested)
       {
         return EMPTY_CLOSURES;
       }
@@ -242,13 +252,13 @@ public sealed class SerializeProcess(
         {
           if (item.NeedsStorage)
           {
-            if (token.IsCancellationRequested)
+            if (_processSource.Token.IsCancellationRequested)
             {
               return EMPTY_CLOSURES;
             }
 
             Interlocked.Increment(ref _objectsSerialized);
-            objectSaver.SaveItem(item, childCancellationTokenSource.Token);
+            await objectSaver.SaveAsync(item).ConfigureAwait(false);
           }
 
           if (!currentClosures.ContainsKey(item.Id))

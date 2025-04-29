@@ -8,7 +8,7 @@ namespace Speckle.Sdk.Dependencies.Serialization;
 public abstract class ChannelSaver<T>
   where T : IHasByteSize
 {
-  private const int SEND_CAPACITY = 500;
+  private const int SEND_CAPACITY = 1000;
   private const int HTTP_SEND_CHUNK_SIZE = 25_000_000; //bytes
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
   private const int MAX_PARALLELISM_HTTP = 4;
@@ -28,21 +28,26 @@ public abstract class ChannelSaver<T>
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
-  public Task Start(CancellationToken cancellationToken) =>
+  public Task Start(
+    int? maxParallelism,
+    int? httpBatchSize,
+    int? cacheBatchSize,
+    CancellationToken cancellationToken
+  ) =>
     _checkCacheChannel
-      .Reader.BatchByByteSize(HTTP_SEND_CHUNK_SIZE)
+      .Reader.BatchByByteSize(httpBatchSize ?? HTTP_SEND_CHUNK_SIZE)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .PipeAsync(
-        MAX_PARALLELISM_HTTP,
+        maxParallelism ?? MAX_PARALLELISM_HTTP,
         async x => await SendToServer(x).ConfigureAwait(false),
         HTTP_CAPACITY,
         false,
         cancellationToken
       )
       .Join()
-      .Batch(MAX_CACHE_BATCH)
+      .Batch(cacheBatchSize ?? MAX_CACHE_BATCH)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
+      .ReadAllConcurrently(maxParallelism ?? MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
       .ContinueWith(
         t =>
         {
@@ -63,14 +68,15 @@ public abstract class ChannelSaver<T>
         TaskScheduler.Current
       );
 
-  public void Save(T item, CancellationToken cancellationToken)
+  public async Task SaveAsync(T item, CancellationToken cancellationToken)
   {
-    if (Exception is not null || cancellationToken.IsCancellationRequested)
+    if (Exception is not null)
     {
       return; //don't save if we're already done through an error
     }
-    // ReSharper disable once MethodSupportsCancellation
-    _checkCacheChannel.Writer.TryWrite(item);
+    //can switch to check then try pattern when back pressure is needed or exceptions are too much
+    //the trees don't need to respond to back pressure
+    await _checkCacheChannel.Writer.WriteAsync(item, cancellationToken).ConfigureAwait(false);
   }
 
   private async Task<IMemoryOwner<T>> SendToServer(IMemoryOwner<T> batch)

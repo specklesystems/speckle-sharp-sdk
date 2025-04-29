@@ -9,10 +9,10 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 public interface IObjectSaver : IDisposable
 {
   Exception? Exception { get; set; }
-  Task Start(CancellationToken cancellationToken);
+  Task Start(int? maxParallelism, int? httpBatchSize, int? cacheBatchSize, CancellationToken cancellationToken);
   void DoneTraversing();
   Task DoneSaving();
-  void SaveItem(BaseItem item, CancellationToken cancellationToken);
+  Task SaveAsync(BaseItem item);
 }
 
 public sealed class ObjectSaver(
@@ -77,10 +77,10 @@ public sealed class ObjectSaver(
     }
   }
 
-  public void SaveItem(BaseItem item, CancellationToken cancellationToken)
+  public async Task SaveAsync(BaseItem item)
   {
     Interlocked.Increment(ref _objectsSerialized);
-    Save(item, cancellationToken);
+    await SaveAsync(item, _cancellationTokenSource.Token).ConfigureAwait(false);
   }
 
   public override void SaveToCache(List<BaseItem> batch)
