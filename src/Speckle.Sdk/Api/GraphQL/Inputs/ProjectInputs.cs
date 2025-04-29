@@ -5,6 +5,7 @@ namespace Speckle.Sdk.Api.GraphQL.Inputs;
 public sealed record ProjectCommentsFilter(bool? includeArchived, bool? loadedVersionsOnly, string? resourceIdString);
 
 public sealed record ProjectCreateInput(string? name, string? description, ProjectVisibility? visibility);
+public sealed record WorkspaceProjectCreateInput(string? name, string? description, ProjectVisibility? visibility);
 
 public sealed record ProjectInviteCreateInput(string? email, string? role, string? serverRole, string? userId);
 
@@ -29,4 +30,4 @@ public sealed record ProjectUpdateInput(
 
 public sealed record ProjectUpdateRoleInput(string userId, string projectId, string? role);
 
-public sealed record UserProjectsFilter(string search, IReadOnlyList<string>? onlyWithRoles = null);
+public sealed record WorkspaceProjectsFilter(string? search, bool? withProjectRoleOnly);

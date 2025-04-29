@@ -1,0 +1,19 @@
+﻿{
+  Type: AggregateException,
+  InnerException: {
+    Type: SpeckleGraphQLException,
+    Message: WORKSPACES_MODULE_DISABLED_ERROR: Workspaces are not enabled on this server
+  },
+  StackTrace:
+at Speckle.Sdk.Api.GraphQL.GraphQLErrorHandler.EnsureGraphQLSuccess(IReadOnlyCollection`1 errors)
+at Speckle.Sdk.Api.GraphQL.GraphQLErrorHandler.EnsureGraphQLSuccess(IGraphQLResponse response)
+--- End of stack trace from previous location ---
+at Polly.Retry.<6f9b95f3-9db6-444d-9fed-d3cc1f1d71cb>AsyncRetryEngine.ImplementationAsync[TResult](Func`3 action, <6f9b95f3-9db6-444d-9fed-d3cc1f1d71cb>Context context, CancellationToken cancellationToken, <6f9b95f3-9db6-444d-9fed-d3cc1f1d71cb>ExceptionPredicates shouldRetryExceptionPredicates, <6f9b95f3-9db6-444d-9fed-d3cc1f1d71cb>ResultPredicates`1 shouldRetryResultPredicates, Func`5 onRetryAsync, Int32 permittedRetryCount, IEnumerable`1 sleepDurationsEnumerable, Func`4 sleepDurationProvider, Boolean continueOnCapturedContext)
+at Polly.<6f9b95f3-9db6-444d-9fed-d3cc1f1d71cb>AsyncPolicy.ExecuteAsync[TResult](Func`3 action, <6f9b95f3-9db6-444d-9fed-d3cc1f1d71cb>Context context, CancellationToken cancellationToken, Boolean continueOnCapturedContext)
+at Speckle.Sdk.Dependencies.GraphQLRetry.ExecuteAsync[T,TInnerException](Func`1 func, Action`2 onRetry)
+at Speckle.Sdk.Api.Client.ExecuteWithResiliencePolicies[T](Func`1 func)
+at Speckle.Sdk.Api.Client.ExecuteGraphQLRequest[T](GraphQLRequest request, CancellationToken cancellationToken)
+at Speckle.Sdk.Api.GraphQL.Resources.ActiveUserResource.GetWorkspaces(Int32 limit, String cursor, UserWorkspacesFilter filter, CancellationToken cancellationToken)
+at Speckle.Sdk.Tests.Integration.API.GraphQL.Resources.ActiveUserResourceTests.<ActiveUserGetWorkspaces>b__11_0()
+at Xunit.Assert.RecordExceptionAsync(Func`1 testCode)
+}

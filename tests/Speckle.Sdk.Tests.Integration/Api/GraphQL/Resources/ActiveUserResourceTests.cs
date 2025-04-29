@@ -74,4 +74,20 @@ public class ActiveUserResourceTests : IAsyncLifetime
       .Should()
       .ThrowAsync<SpeckleGraphQLException>();
   }
+
+  [Fact]
+  public async Task ActiveUserProjectCreationPermission()
+  {
+    var res = await Sut.CanCreatePersonalProjects();
+    res.EnsureAuthorised();
+
+    res.authorized.Should().Be(true);
+  }
+
+  [Fact]
+  public async Task ActiveUserGetWorkspaces()
+  {
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.GetWorkspaces());
+    await Verify(ex);
+  }
 }
