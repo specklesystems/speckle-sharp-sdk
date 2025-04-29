@@ -1,0 +1,10 @@
+﻿{
+  applicationId: ajsdf,
+  arr: null,
+  attachedProp: null,
+  crazyProp: null,
+  detachedProp: null,
+  id: null,
+  IgnoredSchemaProp: null,
+  speckle_type: Speckle.Core.Tests.Unit.Models.BaseTests+SampleObject
+}

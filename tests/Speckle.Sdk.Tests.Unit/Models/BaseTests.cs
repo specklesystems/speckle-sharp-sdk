@@ -135,18 +135,14 @@ public class BaseTests
   }
   
   [Fact(DisplayName = $"Checks that all instance members are returned including ones on super classes (e.g. {nameof(Base)}")]
-  public void CanGetMembers_BaseMembers()
+  public async Task CanGetMembers_BaseMembers()
   {
     var @base = new SampleObject
     {
       applicationId = "ajsdf",
     };
-    var names = @base.GetMembers();
-    names.Should().Contain(nameof(@base.id));
-    names.Should().Contain(nameof(@base.list));
-    names.Should().Contain(nameof(@base.applicationId));
-    names.Should().Contain(nameof(@base.speckle_type));
-    names.Should().Contain(nameof(@base.crazyProp));
+    var members = @base.GetMembers();
+    await Verify(members);
   }
 
   [Fact(DisplayName = "Checks that only dynamic properties are returned")]
