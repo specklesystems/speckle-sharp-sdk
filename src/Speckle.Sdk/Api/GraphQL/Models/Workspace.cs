@@ -8,6 +8,12 @@ public sealed class Workspace
   public string slug { get; init; }
   public string? description { get; init; }
   public WorkspacePermissionChecks permissions { get; init; }
+  public WorkspaceCreationState? creationState { get; init; }
+}
+
+public sealed class WorkspaceCreationState
+{
+  public bool completed { get; init; }
 }
 
 public sealed class WorkspacePermissionChecks
