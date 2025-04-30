@@ -258,7 +258,7 @@ public sealed class SerializeProcess(
             }
 
             Interlocked.Increment(ref _objectsSerialized);
-            objectSaver.SaveItem(item);
+            await objectSaver.SaveAsync(item).ConfigureAwait(false);
           }
 
           if (!currentClosures.ContainsKey(item.Id))
