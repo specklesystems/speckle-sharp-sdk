@@ -95,8 +95,8 @@
       },
       "Argon": {
         "type": "Transitive",
-        "resolved": "0.27.0",
-        "contentHash": "LtZKATYeTwDyYq1AXrgVU/ly+nI6GvE0GK1isJYFPQOnb2uHUxvDA+yh40QYaITGTLViXK7rbWhNKpbZ5pb9XA=="
+        "resolved": "0.28.0",
+        "contentHash": "78BmoFm8SK733nq4F/SjqNKkXJHdrg/MslvYfNjJX/nM/mEkltHUzPJRjBE9VI/zghsjFPQxMRPEUaqIgg98zg=="
       },
       "Castle.Core": {
         "type": "Transitive",
@@ -108,17 +108,17 @@
       },
       "DiffEngine": {
         "type": "Transitive",
-        "resolved": "16.1.0",
-        "contentHash": "ImEFC6BN62paN0N7v8vrLY3x/LpfbJaJy5yDtL+/L2As6FI1npGJcFZwzz1A7pdDjIYPOXE91qv6BpgEUGjDkA==",
+        "resolved": "16.2.1",
+        "contentHash": "UfMgXClqOGkPNfth210upiTY18LPCgjsfNrh0Olo5qI+QTkkCO6wHSuOwknxJdKtsWoaJ+E132Y2nzD0PiLWRw==",
         "dependencies": {
-          "EmptyFiles": "8.8.0",
+          "EmptyFiles": "8.9.1",
           "System.Management": "8.0.0"
         }
       },
       "EmptyFiles": {
         "type": "Transitive",
-        "resolved": "8.8.0",
-        "contentHash": "d0pgc/vMyKgQ9T3qiiJBn1uYUSZ1/OShh6tySnNSkELRSgM4A4IOrpdQhLqwCkPwYvdJqzKuxQ6wn3MQAd4GNA=="
+        "resolved": "8.9.1",
+        "contentHash": "GbGf+oH/xiI3C5vJ5TnoA4sx7x7LhtOvN00fxihRZJsj40XuXk2TMz/4m26PfNSJj8JMAqo3BUBirjvam+3xkA=="
       },
       "FSharp.Core": {
         "type": "Transitive",
@@ -356,11 +356,11 @@
       },
       "Verify": {
         "type": "Transitive",
-        "resolved": "29.3.0",
-        "contentHash": "Urc7/If0eLpawVFtZrzYso3YrIWXOVkIY9iFiAhm/XrqUHDIP+wT5P/6uj5GCSGsY2yDT7OZ9xAwiLbxhEGnVw==",
+        "resolved": "29.4.0",
+        "contentHash": "wlqJ6ygXORa3lrAaErTA4EWkDcK9pBG2k5iC/I5F2UpWfyV7aXw/+SwGiWYe4XSk9d7VObe4xi4+0AV9rLRsBw==",
         "dependencies": {
-          "Argon": "0.27.0",
-          "DiffEngine": "16.1.0",
+          "Argon": "0.28.0",
+          "DiffEngine": "16.2.1",
           "SimpleInfoName": "3.1.0",
           "System.IO.Hashing": "9.0.4"
         }
@@ -414,7 +414,7 @@
           "Moq": "[4.20.72, )",
           "Speckle.Sdk": "[1.0.0, )",
           "Verify.Quibble": "[2.1.1, )",
-          "Verify.Xunit": "[29.3.0, )"
+          "Verify.Xunit": "[29.4.0, )"
         }
       },
       "GraphQL.Client": {
@@ -487,15 +487,15 @@
       },
       "Verify.Xunit": {
         "type": "CentralTransitive",
-        "requested": "[29.3.0, )",
-        "resolved": "29.3.0",
-        "contentHash": "o/NvBDYh6fmybQDCnq27AMhKCzXjUrfe5gQT9B5YKDVR2xLezktmrAB0JXwxbpNAFOKcx0wuEECo9OTsDqYmpA==",
+        "requested": "[29.4.0, )",
+        "resolved": "29.4.0",
+        "contentHash": "P8HYW7aromKGm90Cgx0XKL3qKKmYZHDwHTQfBfDCCPnhNlVWevJzrpuUQ0+3vTVdRAtsts2a1OE/tD+3yjJbHA==",
         "dependencies": {
-          "Argon": "0.27.0",
-          "DiffEngine": "16.1.0",
+          "Argon": "0.28.0",
+          "DiffEngine": "16.2.1",
           "SimpleInfoName": "3.1.0",
           "System.IO.Hashing": "9.0.4",
-          "Verify": "29.3.0",
+          "Verify": "29.4.0",
           "xunit.abstractions": "2.0.3",
           "xunit.extensibility.execution": "2.9.3"
         }

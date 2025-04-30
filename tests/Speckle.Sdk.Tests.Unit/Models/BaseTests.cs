@@ -134,6 +134,16 @@ public class BaseTests
     names.Should().Contain(nameof(@base.attachedProp));
   }
 
+  [Fact(
+    DisplayName = $"Checks that all instance members are returned including ones on super classes (e.g. {nameof(Base)}"
+  )]
+  public async Task CanGetMembers_BaseMembers()
+  {
+    var @base = new SampleObject { applicationId = "ajsdf" };
+    var members = @base.GetMembers();
+    await Verify(members);
+  }
+
   [Fact(DisplayName = "Checks that only dynamic properties are returned")]
   public void CanGetMembers_OnlyDynamic()
   {
