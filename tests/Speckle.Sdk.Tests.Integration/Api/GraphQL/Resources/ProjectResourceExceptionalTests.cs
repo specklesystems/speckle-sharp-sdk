@@ -85,6 +85,17 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
+  [Fact]
+  public async Task ProjectCreateInWorkspace_NonWorkspaceServer()
+  {
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      _ = await _unauthedUser.Project.CreateInWorkspace(
+        new(_testProject.id, "My new name", ProjectVisibility.Unlisted, "NonExistentWorkspace")
+      )
+    );
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLException>();
+  }
+
   [Theory]
   [InlineData(StreamRoles.STREAM_OWNER)]
   [InlineData(StreamRoles.STREAM_CONTRIBUTOR)]
@@ -124,6 +135,6 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
   [Fact]
   public async Task ProjectInvites_NoAuth()
   {
-    await Assert.ThrowsAsync<SpeckleException>(async () => await Fixtures.Unauthed.ActiveUser.ProjectInvites());
+    await Assert.ThrowsAsync<SpeckleException>(async () => await Fixtures.Unauthed.ActiveUser.GetProjectInvites());
   }
 }

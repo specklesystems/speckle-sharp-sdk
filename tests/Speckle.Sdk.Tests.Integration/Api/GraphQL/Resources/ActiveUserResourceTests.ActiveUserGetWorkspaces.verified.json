@@ -1,0 +1,8 @@
+﻿{
+  "Type": "AggregateException",
+  "InnerException": {
+    "Data": {},
+    "Message": "WORKSPACES_MODULE_DISABLED_ERROR: Workspaces are not enabled on this server",
+    "Type": "SpeckleGraphQLException"
+  }
+}

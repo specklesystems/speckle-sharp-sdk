@@ -6,3 +6,13 @@ public sealed record UserUpdateInput(
   string? company = null,
   string? name = null
 );
+
+public sealed record UserProjectsFilter(
+  string? search = null,
+  IReadOnlyList<string>? onlyWithRoles = null,
+  string? workspaceId = null,
+  bool? personalOnly = null,
+  bool? includeImplicitAccess = null
+);
+
+public sealed record UserWorkspacesFilter(string? search);
