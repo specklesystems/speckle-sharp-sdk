@@ -112,8 +112,8 @@ public class ActiveUserResourceTests : IAsyncLifetime
   [Fact]
   public async Task ActiveUserGetActiveWorkspace()
   {
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.GetActiveWorkspace());
-    await Verify(ex);
+    var res = await Sut.GetActiveWorkspace();
+    res.Should().Be(null);
   }
 
   [Fact]
