@@ -85,6 +85,7 @@ public sealed class ActiveUserResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  /// <exception cref="SpeckleException">The ActiveUser could not be found (e.g. the client is not authenticated)</exception>
   public async Task<ResourceCollection<Project>> GetProjects(
     int limit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
     string? cursor = null,
@@ -135,7 +136,7 @@ public sealed class ActiveUserResource
 
     if (response.data is null)
     {
-      throw new SpeckleGraphQLException("GraphQL response indicated that the ActiveUser could not be found");
+      throw new SpeckleException("GraphQL response indicated that the ActiveUser could not be found");
     }
 
     return response.data.data;

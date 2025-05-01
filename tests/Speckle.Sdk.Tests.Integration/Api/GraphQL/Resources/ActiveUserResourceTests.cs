@@ -72,7 +72,7 @@ public class ActiveUserResourceTests : IAsyncLifetime
     await FluentActions
       .Invoking(async () => await Fixtures.Unauthed.ActiveUser.GetProjects())
       .Should()
-      .ThrowAsync<SpeckleGraphQLException>();
+      .ThrowAsync<SpeckleException>();
   }
 
   [Fact]
@@ -85,9 +85,27 @@ public class ActiveUserResourceTests : IAsyncLifetime
   }
 
   [Fact]
+  public async Task ActiveUserProjectCreationPermission_NoAuth()
+  {
+    await FluentActions
+      .Invoking(async () => await Fixtures.Unauthed.ActiveUser.CanCreatePersonalProjects())
+      .Should()
+      .ThrowAsync<SpeckleException>();
+  }
+
+  [Fact]
   public async Task ActiveUserGetWorkspaces()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.GetWorkspaces());
     await Verify(ex);
+  }
+
+  [Fact]
+  public async Task ActiveUserGetWorkspaces_NoAuth()
+  {
+    await FluentActions
+      .Invoking(async () => await Fixtures.Unauthed.ActiveUser.GetWorkspaces())
+      .Should()
+      .ThrowAsync<SpeckleException>();
   }
 }
