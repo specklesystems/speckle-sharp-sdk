@@ -268,6 +268,10 @@ public sealed class ActiveUserResource
               updatedAt
               readOnly
               description
+              creationState
+              {
+                completed
+              }
               permissions {
                 canCreateProject {
                   authorized
@@ -327,6 +331,10 @@ public sealed class ActiveUserResource
             updatedAt
             readOnly
             description
+            creationState
+            {
+              completed
+            }
             permissions {
               canCreateProject {
                 authorized

@@ -33,6 +33,10 @@ public sealed class WorkspaceResource
           updatedAt
           readOnly
           description
+          creationState
+          {
+            completed
+          }
           permissions {
             canCreateProject {
               authorized
