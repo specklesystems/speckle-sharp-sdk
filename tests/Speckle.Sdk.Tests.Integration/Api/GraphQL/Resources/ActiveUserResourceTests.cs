@@ -108,4 +108,20 @@ public class ActiveUserResourceTests : IAsyncLifetime
       .Should()
       .ThrowAsync<SpeckleException>();
   }
+
+  [Fact]
+  public async Task ActiveUserGetActiveWorkspace()
+  {
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.GetActiveWorkspace());
+    await Verify(ex);
+  }
+
+  [Fact]
+  public async Task ActiveUserGetActiveWorkspace_NoAuth()
+  {
+    await FluentActions
+      .Invoking(async () => await Fixtures.Unauthed.ActiveUser.GetActiveWorkspace())
+      .Should()
+      .ThrowAsync<SpeckleException>();
+  }
 }
