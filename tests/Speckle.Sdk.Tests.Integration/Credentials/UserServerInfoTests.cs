@@ -40,8 +40,8 @@ public class UserServerInfoTests : IAsyncLifetime
     Uri serverUrl = new(_acc.serverInfo.url);
 
     await FluentActions
-      .Invoking(
-        async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
+      .Invoking(async () =>
+        await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
       )
       .Should()
       .ThrowAsync<HttpRequestException>();
@@ -53,8 +53,8 @@ public class UserServerInfoTests : IAsyncLifetime
     Uri serverUrl = new("http://invalidserver.local");
 
     await FluentActions
-      .Invoking(
-        async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
+      .Invoking(async () =>
+        await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
       )
       .Should()
       .ThrowAsync<HttpRequestException>();
@@ -81,8 +81,8 @@ public class UserServerInfoTests : IAsyncLifetime
     Uri serverUrl = new("http://invalidserver.local");
 
     await FluentActions
-      .Invoking(
-        async () => await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo("", serverUrl)
+      .Invoking(async () =>
+        await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetUserInfo("", serverUrl)
       )
       .Should()
       .ThrowAsync<HttpRequestException>();
@@ -93,11 +93,10 @@ public class UserServerInfoTests : IAsyncLifetime
   {
     Uri serverUrl = new(_acc.serverInfo.url);
     await FluentActions
-      .Invoking(
-        async () =>
-          await Fixtures
-            .ServiceProvider.GetRequiredService<IAccountManager>()
-            .GetUserInfo("Bearer 08913c3c1e7ac65d779d1e1f11b942a44ad9672ca9", serverUrl)
+      .Invoking(async () =>
+        await Fixtures
+          .ServiceProvider.GetRequiredService<IAccountManager>()
+          .GetUserInfo("Bearer 08913c3c1e7ac65d779d1e1f11b942a44ad9672ca9", serverUrl)
       )
       .Should()
       .ThrowAsync<GraphQLHttpRequestException>();

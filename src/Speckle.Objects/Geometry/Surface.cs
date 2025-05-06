@@ -147,7 +147,6 @@ public class Surface : Base, IHasBoundingBox, IHasArea, ITransformable<Surface>
   /// </summary>
   /// <returns>A 2-dimensional array representing this <see cref="Surface"/>s control points.</returns>
   /// <remarks>The ControlPoints will be ordered following directions "[u][v]"</remarks>
-
   public List<List<ControlPoint>> GetControlPoints()
   {
     var matrix = new List<List<ControlPoint>>();

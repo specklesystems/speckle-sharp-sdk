@@ -20,7 +20,7 @@ public class ProjectResourceTests
     (_testUser, _testProject) = setupTask.Result;
   }
 
-  private async Task<(IClient TestUser, Project TestProject)> Setup()
+  private static async Task<(IClient TestUser, Project TestProject)> Setup()
   {
     var testUser = await Fixtures.SeedUserWithClient();
     var testProject = await testUser.Project.Create(new ProjectCreateInput("test project123", "desc", null));
@@ -98,5 +98,13 @@ public class ProjectResourceTests
       .Invoking(async () => await Sut.Get(toDelete.id))
       .Should()
       .ThrowAsync<SpeckleGraphQLStreamNotFoundException>();
+  }
+
+  [Fact]
+  public async Task TestUserHasProjectPermissions()
+  {
+    var res = await Sut.GetPermissions(_testProject.id);
+    res.canCreateModel.authorized.Should().Be(true);
+    res.canDelete.authorized.Should().Be(true);
   }
 }

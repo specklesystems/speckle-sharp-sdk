@@ -1,4 +1,5 @@
 using Speckle.Sdk.Api.GraphQL;
+using Speckle.Sdk.Api.GraphQL.Models;
 
 namespace Speckle.Sdk.Api;
 
@@ -94,5 +95,17 @@ public sealed class SpeckleGraphQLInvalidQueryException : SpeckleGraphQLExceptio
     : base(message) { }
 
   public SpeckleGraphQLInvalidQueryException(string? message, Exception? innerException)
+    : base(message, innerException) { }
+}
+
+/// <seealso cref="PermissionCheckResult"/>
+public sealed class WorkspacePermissionException : SpeckleGraphQLException
+{
+  public WorkspacePermissionException() { }
+
+  public WorkspacePermissionException(string? message)
+    : base(message) { }
+
+  public WorkspacePermissionException(string? message, Exception? innerException)
     : base(message, innerException) { }
 }

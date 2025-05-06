@@ -1,5 +1,4 @@
 <Project>
-  
   <PropertyGroup Label="Compiler Properties">
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
@@ -7,7 +6,6 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
-  
   <PropertyGroup Label="Nugetspec Package Properties">
     <!-- Defines common Nugetspec properties -->
     <!-- Inheriting packable projects should define the rest of the nugetspec properties (PackageId, Description) -->
@@ -22,18 +20,16 @@
     <PackageTags>speckle</PackageTags>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
-
   <PropertyGroup Label="Nuget Package Properties">
-    <IsPackable>false</IsPackable> <!--Can be set to true in inheriting .props/.csproj files for projects that should be packed-->
+    <IsPackable>false</IsPackable>
+    <!--Can be set to true in inheriting .props/.csproj files for projects that should be packed-->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
-
   <PropertyGroup Label="Analyers">
     <EnableNetAnalyzers>true</EnableNetAnalyzers>
     <AnalysisLevel>latest-AllEnabledByDefault</AnalysisLevel>
@@ -41,7 +37,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    
     <!-- Ingored warnings, some aspirational but too noisy for now, some by design.  -->
     <NoWarn>
       <!--Disabled by design-->
@@ -59,28 +54,20 @@
       <!-- Aspirational -->
       CA1502;CA1716;NETSDK1206;
       $(NoWarn)
-    </NoWarn>
+    </NoWarn
+    >
   </PropertyGroup>
-  
   <PropertyGroup>
     <!-- Expose the repository root to all projects -->
     <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
-  </PropertyGroup>  
-  
+  </PropertyGroup>
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
-    <None
-      Condition="'$(IsPackable)' == 'true'"
-      Include="..\..\logo.png"
-      Pack="true"
-      PackagePath="\"
-      Visible="false"/>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Condition="'$(IsPackable)' == 'true'" Include="..\..\logo.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
-
   <ItemGroup>
     <!-- This file contains the configuration for some analyzer warnings, such as cyclomatic
 complexity threshold -->
-    <AdditionalFiles Include="$(RepositoryRoot)CodeMetricsConfig.txt"/>
+    <AdditionalFiles Include="$(RepositoryRoot)CodeMetricsConfig.txt" />
   </ItemGroup>
-  
 </Project>

@@ -1,4 +1,4 @@
-﻿namespace Speckle.Sdk.Testing;
+﻿namespace Speckle.Sdk.Tests.Unit;
 
 public class VerifyTests
 {
