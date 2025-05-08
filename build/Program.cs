@@ -1,4 +1,5 @@
 using System.Text.Json;
+using build;
 using GlobExpressions;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
@@ -23,6 +24,16 @@ static async Task<(string, string)> GetVersions()
   var jDoc = JsonDocument.Parse(output);
   var version = jDoc.RootElement.GetProperty("FullSemVer").GetString() ?? "3.0.0-localBuild";
   var fileVersion = jDoc.RootElement.GetProperty("AssemblySemFileVer").GetString() ?? "3.0.0.0";
+  
+  var sv = SpeckleVersion.Parse(version);
+  var branch = jDoc.RootElement.GetProperty("BranchName").GetString();
+  if (branch == "main")
+  {
+    sv.Channel = "beta";
+  }
+  sv.Release = jDoc.RootElement.GetProperty("PreReleaseNumber").GetInt32().ToString() ?? "0";
+
+  Console.WriteLine($"Version: {version} & {fileVersion}");
   return (version, fileVersion);
 }
 
@@ -74,11 +85,9 @@ Target(RESTORE, dependsOn: [FORMAT], () => RunAsync("dotnet", "restore Speckle.S
 
 Target(
   BUILD,
-  dependsOn: [RESTORE],
   async () =>
   {
     var (version, fileVersion) = await GetVersions().ConfigureAwait(false);
-    Console.WriteLine($"Version: {version} & {fileVersion}");
     await RunAsync(
         "dotnet",
         $"build Speckle.Sdk.sln -c Release --no-restore -warnaserror -p:Version={version} -p:FileVersion={fileVersion}"
@@ -173,12 +182,11 @@ Target(
   dependsOn: [TEST],
   async () =>
   {
-    {
-      var (version, fileVersion) = await GetVersions().ConfigureAwait(false);
-      Console.WriteLine($"Version: {version} & {fileVersion}");
+    
+      var (version, _) = await GetVersions().ConfigureAwait(false);
       await RunAsync("dotnet", $"pack Speckle.Sdk.sln -c Release -o output --no-build -p:Version={version}")
         .ConfigureAwait(false);
-    }
+    
   }
 );
 

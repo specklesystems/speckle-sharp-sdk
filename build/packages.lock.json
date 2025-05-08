@@ -24,6 +24,12 @@
           "Microsoft.SourceLink.Common": "8.0.0"
         }
       },
+      "NuGet.Versioning": {
+        "type": "Direct",
+        "requested": "[6.13.2, )",
+        "resolved": "6.13.2",
+        "contentHash": "pGYNyvCVM+Z9jITTiJiuxFC8oJXFdh2k25ZDV4tSAOSuKyAWvh1VcfJy0WZGWdI6J7Avkbl0qra7XENYFSy4Ng=="
+      },
       "PolySharp": {
         "type": "Direct",
         "requested": "[1.15.0, )",

@@ -6,6 +6,7 @@
   <ItemGroup>
     <PackageReference Include="Bullseye" />
     <PackageReference Include="Glob" />
+    <PackageReference Include="NuGet.Versioning" />
     <PackageReference Include="SimpleExec" />
   </ItemGroup>
 </Project>
