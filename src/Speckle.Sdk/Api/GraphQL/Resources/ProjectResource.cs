@@ -71,6 +71,16 @@ public sealed class ProjectResource
               code
               message
             }
+            canLoad {
+              authorized
+              code
+              message
+            }
+            canPublish {
+              authorized
+              code
+              message
+            }
           }
         }
       }
