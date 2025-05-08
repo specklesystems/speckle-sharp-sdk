@@ -69,6 +69,10 @@ public sealed class SerializeProcess(
     NodeInfo
   >();
 
+  private readonly Pool<List<Task<Dictionary<Id, NodeInfo>>>> _taskResultPool = Pools.CreateListPool<
+    Task<Dictionary<Id, NodeInfo>>
+  >();
+
   private long _objectCount;
   private long _objectsFound;
 
@@ -163,7 +167,7 @@ public sealed class SerializeProcess(
 
     try
     {
-      var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
+      var tasks = _taskResultPool.Get();
       foreach (var child in baseChildFinder.GetChildren(obj))
       {
         // tmp is necessary because of the way closures close over loop variables
@@ -193,9 +197,10 @@ public sealed class SerializeProcess(
       Dictionary<Id, NodeInfo>[] taskClosures = [];
       if (tasks.Count > 0)
       {
-        //grab when any Task is done and see if we're cancelling
+        //get child results
         taskClosures = await Task.WhenAll(tasks).ConfigureAwait(false);
       }
+      _taskResultPool.Return(tasks);
 
       if (_processSource.Token.IsCancellationRequested)
       {
