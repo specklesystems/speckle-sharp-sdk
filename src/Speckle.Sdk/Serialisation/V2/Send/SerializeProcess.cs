@@ -190,29 +190,11 @@ public sealed class SerializeProcess(
         return EMPTY_CLOSURES;
       }
 
-      List<Dictionary<Id, NodeInfo>> taskClosures = new();
+      Dictionary<Id, NodeInfo>[] taskClosures = [];
       if (tasks.Count > 0)
       {
-        var currentTasks = tasks.ToList();
-        do
-        {
           //grab when any Task is done and see if we're cancelling
-          var t = await Task.WhenAny(currentTasks).ConfigureAwait(false);
-          if (t.IsCanceled)
-          {
-            return EMPTY_CLOSURES;
-          }
-          if (t.IsFaulted)
-          {
-            if (t.Exception is not null)
-            {
-              RecordException(t.Exception);
-            }
-            return EMPTY_CLOSURES;
-          }
-          taskClosures.Add(t.Result);
-          currentTasks.Remove(t);
-        } while (currentTasks.Count > 0);
+          taskClosures = await Task.WhenAll(tasks).ConfigureAwait(false);
       }
 
       if (_processSource.Token.IsCancellationRequested)
