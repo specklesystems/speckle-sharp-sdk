@@ -67,6 +67,19 @@ public class ActiveUserResourceTests : IAsyncLifetime
   }
 
   [Fact]
+  public async Task ActiveUserGetProjectsWithPermissions()
+  {
+    var p1 = await _testUser.Project.Create(new("Project 3", null, null));
+    var p2 = await _testUser.Project.Create(new("Project 4", null, null));
+
+    var res = await Sut.GetProjectsWithPermissions();
+
+    res.items.Should().Contain(x => x.id == p1.id);
+    res.items.Should().Contain(x => x.id == p2.id);
+    res.items.Count.Should().Be(2);
+  }
+
+  [Fact]
   public async Task ActiveUserGetProjects_NoAuth()
   {
     await FluentActions
