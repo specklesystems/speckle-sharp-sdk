@@ -193,8 +193,8 @@ public sealed class SerializeProcess(
       Dictionary<Id, NodeInfo>[] taskClosures = [];
       if (tasks.Count > 0)
       {
-          //grab when any Task is done and see if we're cancelling
-          taskClosures = await Task.WhenAll(tasks).ConfigureAwait(false);
+        //grab when any Task is done and see if we're cancelling
+        taskClosures = await Task.WhenAll(tasks).ConfigureAwait(false);
       }
 
       if (_processSource.Token.IsCancellationRequested)
