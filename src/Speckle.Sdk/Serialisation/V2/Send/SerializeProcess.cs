@@ -69,6 +69,10 @@ public sealed class SerializeProcess(
     NodeInfo
   >();
 
+  private readonly Pool<List<Task<Dictionary<Id, NodeInfo>>>> _taskResultPool = Pools.CreateListPool<
+    Task<Dictionary<Id, NodeInfo>>
+  >();
+
   private long _objectCount;
   private long _objectsFound;
 
@@ -163,7 +167,7 @@ public sealed class SerializeProcess(
 
     try
     {
-      var tasks = new List<Task<Dictionary<Id, NodeInfo>>>();
+      var tasks = _taskResultPool.Get();
       foreach (var child in baseChildFinder.GetChildren(obj))
       {
         // tmp is necessary because of the way closures close over loop variables
@@ -190,30 +194,27 @@ public sealed class SerializeProcess(
         return EMPTY_CLOSURES;
       }
 
-      List<Dictionary<Id, NodeInfo>> taskClosures = new();
+      Dictionary<Id, NodeInfo>[] taskClosures = [];
       if (tasks.Count > 0)
       {
-        var currentTasks = tasks.ToList();
-        do
+        //get child results
+        var childTask = Task.WhenAll(tasks);
+        await Task.WhenAny(childTask, Task.Delay(Timeout.InfiniteTimeSpan, _processSource.Token)).ConfigureAwait(false);
+        if (childTask.IsFaulted)
         {
-          //grab when any Task is done and see if we're cancelling
-          var t = await Task.WhenAny(currentTasks).ConfigureAwait(false);
-          if (t.IsCanceled)
+          if (childTask.Exception is not null)
           {
-            return EMPTY_CLOSURES;
+            RecordException(childTask.Exception);
           }
-          if (t.IsFaulted)
-          {
-            if (t.Exception is not null)
-            {
-              RecordException(t.Exception);
-            }
-            return EMPTY_CLOSURES;
-          }
-          taskClosures.Add(t.Result);
-          currentTasks.Remove(t);
-        } while (currentTasks.Count > 0);
+          return EMPTY_CLOSURES;
+        }
+        if (!childTask.IsCompleted)
+        {
+          return EMPTY_CLOSURES;
+        }
+        taskClosures = childTask.Result;
       }
+      _taskResultPool.Return(tasks);
 
       if (_processSource.Token.IsCancellationRequested)
       {
