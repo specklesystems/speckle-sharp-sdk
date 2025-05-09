@@ -198,21 +198,21 @@ public sealed class SerializeProcess(
       if (tasks.Count > 0)
       {
         //get child results
-         var childTask = Task.WhenAll(tasks);
-         await Task.WhenAny(childTask, Task.Delay(Timeout.InfiniteTimeSpan, _processSource.Token)).ConfigureAwait(false);
-         if (childTask.IsFaulted)	
-         {	
-           if (childTask.Exception is not null)	
-           {	
-             RecordException(childTask.Exception);	
-           }	
-           return EMPTY_CLOSURES;	
-         }
-         if (!childTask.IsCompleted)
-         {
-           return EMPTY_CLOSURES;	
-         }
-         taskClosures = childTask.Result;
+        var childTask = Task.WhenAll(tasks);
+        await Task.WhenAny(childTask, Task.Delay(Timeout.InfiniteTimeSpan, _processSource.Token)).ConfigureAwait(false);
+        if (childTask.IsFaulted)
+        {
+          if (childTask.Exception is not null)
+          {
+            RecordException(childTask.Exception);
+          }
+          return EMPTY_CLOSURES;
+        }
+        if (!childTask.IsCompleted)
+        {
+          return EMPTY_CLOSURES;
+        }
+        taskClosures = childTask.Result;
       }
       _taskResultPool.Return(tasks);
 
