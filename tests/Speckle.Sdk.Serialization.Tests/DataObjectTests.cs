@@ -6,11 +6,11 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Send;
+
 namespace Speckle.Sdk.Serialization.Tests;
 
 public class DataObjectTests
 {
-  
   private readonly ISerializeProcessFactory _factory;
 
   public DataObjectTests()
