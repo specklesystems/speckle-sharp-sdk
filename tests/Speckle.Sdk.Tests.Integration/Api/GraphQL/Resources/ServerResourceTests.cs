@@ -1,7 +1,5 @@
 ﻿using FluentAssertions;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Api.GraphQL.Inputs;
-using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
