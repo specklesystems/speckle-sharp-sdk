@@ -72,6 +72,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     Comment = new(this);
     Subscription = new(this);
     Workspace = new(this);
+    Server = new(this);
 
     HttpClient = CreateHttpClient(application, speckleHttp, account);
 

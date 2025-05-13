@@ -20,10 +20,10 @@ public sealed class ServerResource
   {
     //language=graphql
     const string QUERY = """
-       query User {
+       query {
         data:serverInfo {
           data:workspaces {
-            workspacesEnabled      
+            data:workspacesEnabled      
           }
         }
       }
@@ -31,9 +31,9 @@ public sealed class ServerResource
     var request = new GraphQLRequest { Query = QUERY };
 
     var response = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<bool>>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<bool>>>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.data.data;
+    return response.data.data.data;
   }
 }
