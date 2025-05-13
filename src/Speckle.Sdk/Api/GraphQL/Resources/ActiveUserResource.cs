@@ -361,4 +361,89 @@ public sealed class ActiveUserResource
 
     return response.data.data;
   }
+
+  /// <param name="limit">Max number of projects to fetch</param>
+  /// <param name="cursor">Optional cursor for pagination</param>
+  /// <param name="filter">Optional filter</param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  /// <exception cref="SpeckleException">The ActiveUser could not be found (e.g. the client is not authenticated)</exception>
+  public async Task<ResourceCollection<ProjectWithPermissions>> GetProjectsWithPermissions(
+    int limit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
+    string? cursor = null,
+    UserProjectsFilter? filter = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      query User($limit: Int!, $cursor: String, $filter: UserProjectsFilter) {
+        data: activeUser {
+          data: projects(limit: $limit, cursor: $cursor, filter: $filter) {
+            totalCount
+            cursor
+            items {
+              id
+              name
+              description
+              visibility
+              allowPublicComments
+              role
+              createdAt
+              updatedAt
+              sourceApps
+              workspaceId
+              permissions {
+                canCreateModel {
+                  code
+                  authorized
+                  message
+                }
+                canDelete {
+                  code
+                  authorized
+                  message
+                }
+                canLoad {
+                  code
+                  authorized
+                  message
+                }
+                canPublish {
+                  code
+                  authorized
+                  message
+                }
+              }
+            }
+          }
+        }
+      }
+      """;
+    var request = new GraphQLRequest
+    {
+      Query = QUERY,
+      Variables = new
+      {
+        limit,
+        cursor,
+        filter,
+      },
+    };
+
+    var response = await _client
+      .ExecuteGraphQLRequest<NullableResponse<RequiredResponse<ResourceCollection<ProjectWithPermissions>>?>>(
+        request,
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+
+    if (response.data is null)
+    {
+      throw new SpeckleException("GraphQL response indicated that the ActiveUser could not be found");
+    }
+
+    return response.data.data;
+  }
 }

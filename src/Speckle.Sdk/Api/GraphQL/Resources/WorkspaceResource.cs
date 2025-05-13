@@ -50,10 +50,10 @@ public sealed class WorkspaceResource
     var request = new GraphQLRequest { Query = QUERY, Variables = new { workspaceId } };
 
     var response = await _client
-      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Workspace>>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<Workspace>>(request, cancellationToken)
       .ConfigureAwait(false);
 
-    return response.data.data;
+    return response.data;
   }
 
   /// <param name="workspaceId"></param>
