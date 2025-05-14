@@ -36,6 +36,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   public ProjectInviteResource ProjectInvite { get; }
   public CommentResource Comment { get; }
   public SubscriptionResource Subscription { get; }
+  public WorkspaceResource Workspace { get; }
 
   public Uri ServerUrl => new(Account.serverInfo.url);
 
@@ -69,6 +70,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     ProjectInvite = new(this);
     Comment = new(this);
     Subscription = new(this);
+    Workspace = new(this);
 
     HttpClient = CreateHttpClient(application, speckleHttp, account);
 

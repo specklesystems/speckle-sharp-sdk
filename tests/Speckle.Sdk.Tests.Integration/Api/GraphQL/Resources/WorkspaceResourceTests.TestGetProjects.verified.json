@@ -1,0 +1,8 @@
+﻿{
+  "Type": "AggregateException",
+  "InnerException": {
+    "Data": {},
+    "Message": "FORBIDDEN: Your auth token does not have the required scope: workspace:read.",
+    "Type": "SpeckleGraphQLForbiddenException"
+  }
+}

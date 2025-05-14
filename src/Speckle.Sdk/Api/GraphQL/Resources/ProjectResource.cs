@@ -48,6 +48,52 @@ public sealed class ProjectResource
   }
 
   /// <param name="projectId"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<ProjectPermissionChecks> GetPermissions(
+    string projectId,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      query Project($projectId: String!) {
+        data:project(id: $projectId) {
+          data:permissions {
+            canCreateModel {
+              authorized
+              code
+              message
+            }
+            canDelete {
+              authorized
+              code
+              message
+            }
+            canLoad {
+              authorized
+              code
+              message
+            }
+            canPublish {
+              authorized
+              code
+              message
+            }
+          }
+        }
+      }
+      """;
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId } };
+
+    var response = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ProjectPermissionChecks>>>(request, cancellationToken)
+      .ConfigureAwait(false);
+    return response.data.data;
+  }
+
+  /// <param name="projectId"></param>
   /// <param name="modelsLimit">Max number of models to fetch</param>
   /// <param name="modelsCursor">Optional cursor for pagination</param>
   /// <param name="modelsFilter">Optional models filter</param>
@@ -186,6 +232,10 @@ public sealed class ProjectResource
     return response.data;
   }
 
+  /// <summary>
+  /// Creates a non-workspace project (aka Personal Project)<br/>
+  /// See <see cref="ActiveUserResource.CanCreatePersonalProjects"/> to see if the user has permission
+  /// </summary>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
@@ -217,6 +267,49 @@ public sealed class ProjectResource
       .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<Project>>>(request, cancellationToken)
       .ConfigureAwait(false);
     return response.data.data;
+  }
+
+  /// <summary>
+  /// Creates a workspace project.<br/>
+  /// This feature is only supported on Workspace Enabled Servers (e.g. app.speckle.systems)
+  /// See <see cref="ActiveUserResource.CanCreatePersonalProjects"/> to see if the user has permission
+  /// </summary>
+  /// <param name="input"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<Project> CreateInWorkspace(
+    WorkspaceProjectCreateInput input,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      mutation WorkspaceProjectCreate($input: WorkspaceProjectCreateInput!) {
+        data:workspaceMutations {
+          data:projects {
+            data:create(input: $input) {
+              id
+              name
+              description
+              visibility
+              allowPublicComments
+              role
+              createdAt
+              updatedAt
+              sourceApps
+              workspaceId
+            }
+          }
+        }
+      }
+      """;
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
+
+    var response = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<Project>>>>(request, cancellationToken)
+      .ConfigureAwait(false);
+    return response.data.data.data;
   }
 
   /// <param name="input"></param>

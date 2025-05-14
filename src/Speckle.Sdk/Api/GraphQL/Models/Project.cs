@@ -26,3 +26,8 @@ public sealed class ProjectWithTeam : Project
   public List<PendingStreamCollaborator> invitedTeam { get; init; }
   public List<ProjectCollaborator> team { get; init; }
 }
+
+public sealed class ProjectWithPermissions : Project
+{
+  public ProjectPermissionChecks permissions { get; init; }
+}
