@@ -1,4 +1,4 @@
-﻿namespace Speckle.Sdk.Api.GraphQL.Enums;
+namespace Speckle.Sdk.Api.GraphQL.Enums;
 
 public enum ProjectVisibility
 {
@@ -7,5 +7,5 @@ public enum ProjectVisibility
   [Obsolete("Use Unlisted instead")]
   Public,
   Unlisted,
-  Workspaces,
+  Workspace,
 }
