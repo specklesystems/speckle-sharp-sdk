@@ -1,8 +1,8 @@
 ﻿namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
-internal sealed record CommentContentInput(IReadOnlyCollection<string>? blobIds, object? doc);
+internal record CommentContentInput(IReadOnlyCollection<string>? blobIds, object? doc);
 
-internal sealed record CreateCommentInput(
+internal record CreateCommentInput(
   CommentContentInput content,
   string projectId,
   string resourceIdString,
@@ -10,10 +10,10 @@ internal sealed record CreateCommentInput(
   object? viewerState
 );
 
-internal sealed record EditCommentInput(CommentContentInput content, string commentId, string projectId);
+internal record EditCommentInput(CommentContentInput content, string commentId, string projectId);
 
-internal sealed record CreateCommentReplyInput(CommentContentInput content, string threadId, string projectId);
+internal record CreateCommentReplyInput(CommentContentInput content, string threadId, string projectId);
 
-public sealed record MarkCommentViewedInput(string commentId, string projectId);
+public record MarkCommentViewedInput(string commentId, string projectId);
 
-public sealed record ArchiveCommentInput(string commentId, string projectId, bool archived = true);
+public record ArchiveCommentInput(string commentId, string projectId, bool archived = true);

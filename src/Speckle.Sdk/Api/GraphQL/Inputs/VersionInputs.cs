@@ -1,12 +1,12 @@
 ﻿namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
-public sealed record UpdateVersionInput(string versionId, string projectId, string? message);
+public record UpdateVersionInput(string versionId, string projectId, string? message);
 
-public sealed record MoveVersionsInput(string projectId, string targetModelName, IReadOnlyList<string> versionIds);
+public record MoveVersionsInput(string projectId, string targetModelName, IReadOnlyList<string> versionIds);
 
-public sealed record DeleteVersionsInput(IReadOnlyList<string> versionIds, string projectId);
+public record DeleteVersionsInput(IReadOnlyList<string> versionIds, string projectId);
 
-public sealed record CreateVersionInput(
+public record CreateVersionInput(
   string objectId,
   string modelId,
   string projectId,
@@ -16,7 +16,7 @@ public sealed record CreateVersionInput(
   IReadOnlyList<string>? parents = null
 );
 
-public sealed record MarkReceivedVersionInput(
+public record MarkReceivedVersionInput(
   string versionId,
   string projectId,
   string sourceApplication,

@@ -32,6 +32,7 @@ internal static class GraphQLErrorHandler
         "STREAM_NOT_FOUND" => new SpeckleGraphQLStreamNotFoundException(message),
         "BAD_USER_INPUT" => new SpeckleGraphQLBadInputException(message),
         "INTERNAL_SERVER_ERROR" => new SpeckleGraphQLInternalErrorException(message),
+        "WORKSPACES_MODULE_DISABLED_ERROR" => new SpeckleGraphQLWorkspaceNotEnabledException(message),
         _ => new SpeckleGraphQLException(message),
       };
       exceptions.Add(ex);

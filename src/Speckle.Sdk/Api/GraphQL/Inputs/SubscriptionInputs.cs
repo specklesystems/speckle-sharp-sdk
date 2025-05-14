@@ -1,7 +1,3 @@
 ﻿namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
-public sealed record ViewerUpdateTrackingTarget(
-  string projectId,
-  string resourceIdString,
-  bool? loadedVersionsOnly = null
-);
+public record ViewerUpdateTrackingTarget(string projectId, string resourceIdString, bool? loadedVersionsOnly = null);

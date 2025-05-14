@@ -16,6 +16,11 @@ public class GraphQLErrorHandlerTests
     yield return [typeof(SpeckleGraphQLBadInputException), new Map { { "code", "BAD_USER_INPUT" } }];
     yield return [typeof(SpeckleGraphQLInvalidQueryException), new Map { { "code", "GRAPHQL_PARSE_FAILED" } }];
     yield return [typeof(SpeckleGraphQLInvalidQueryException), new Map { { "code", "GRAPHQL_VALIDATION_FAILED" } }];
+    yield return
+    [
+      typeof(SpeckleGraphQLWorkspaceNotEnabledException),
+      new Map { { "code", "WORKSPACES_MODULE_DISABLED_ERROR" } },
+    ];
     yield return [typeof(SpeckleGraphQLException), new Map { { "foo", "bar" } }];
     yield return [typeof(SpeckleGraphQLException), new Map { { "code", "CUSTOM_THING" } }];
   }
