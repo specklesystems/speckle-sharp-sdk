@@ -396,7 +396,6 @@
         "type": "Project",
         "dependencies": {
           "GraphQL.Client": "[6.0.0, )",
-          "Microsoft.CSharp": "[4.7.0, )",
           "Microsoft.Data.Sqlite": "[7.0.5, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
           "Microsoft.Extensions.Logging": "[2.2.0, )",
