@@ -29,7 +29,7 @@ public class ProjectResourceTests
 
   [Theory]
   [InlineData("Very private project", "My secret project", ProjectVisibility.Private)]
-  [InlineData("Very unlisted project", null, ProjectVisibility.Unlisted)]
+  [InlineData("Very unlisted project", null, ProjectVisibility.Public)]
   public async Task ProjectCreate_Should_CreateProjectSuccessfully(
     string name,
     string? description,
@@ -70,7 +70,7 @@ public class ProjectResourceTests
     // Arrange
     const string NEW_NAME = "MY new name";
     const string NEW_DESCRIPTION = "MY new desc";
-    const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Unlisted;
+    const ProjectVisibility NEW_VISIBILITY = ProjectVisibility.Public;
 
     // Act
     var newProject = await Sut.Update(

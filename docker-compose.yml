@@ -100,6 +100,8 @@ services:
       POSTGRES_PASSWORD: "speckle"
       POSTGRES_DB: "speckle"
       ENABLE_MP: "false"
+      
+      LOG_PRETTY: "true"
 
 networks:
   default:
