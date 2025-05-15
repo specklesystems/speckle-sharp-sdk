@@ -328,7 +328,7 @@ public sealed class AccountManager(
   /// <returns>Un-enumerated enumerable of accounts</returns>
   public IEnumerable<Account> GetAccounts()
   {
-    static bool IsInvalid(Account ac) => ac.userInfo == null || ac.serverInfo == null;
+    static bool IsInvalid(Account? ac) => ac?.userInfo == null || ac.serverInfo == null;
 
     var sqlAccounts = _accountStorage.GetAllObjects().Select(x => JsonConvert.DeserializeObject<Account>(x.Json));
     var localAccounts = GetLocalAccounts();
