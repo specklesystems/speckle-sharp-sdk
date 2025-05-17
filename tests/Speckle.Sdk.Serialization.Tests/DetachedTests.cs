@@ -155,8 +155,8 @@ public class DetachedTests
         "dynamicProp" : 123,
         "id" : "efeadaca70a85ae6d3acfc93a8b380db",
         "__closure" : {
-          "0e61e61edee00404ec6e0f9f594bce24" : 100,
-          "f70738e3e3e593ac11099a6ed6b71154" : 100
+          "0e61e61edee00404ec6e0f9f594bce24" : 1,
+          "f70738e3e3e593ac11099a6ed6b71154" : 1
         }
       }
       """;

@@ -161,13 +161,11 @@ public sealed class ObjectSerializer : IObjectSerializer
           ["referencedId"] = r.referencedId,
           ["__closure"] = r.closure,
         };
-        //references can be externally provided and need to know the ids in the closure and reference here
-        //AddClosure can take the same value twice
-        foreach (var kvp in r.closure.Empty())
-        {
-          AddClosure(new(kvp.Key));
-        }
-        AddClosure(new(r.referencedId));
+        _currentClosures.AddOne(new(r.referencedId));
+        
+          //references can be externally provided and need to know the ids in the closure and reference here
+          _currentClosures.MergeClosures(r.closure.Empty().Select(x => new KeyValuePair<Id, int>(new Id(x.Key), x.Value)));
+        
         SerializeProperty(ret, writer, default);
         break;
       case Base b:
@@ -285,7 +283,7 @@ public sealed class ObjectSerializer : IObjectSerializer
         id = new Id(baseObj.id);
         childClosures = info.GetClosures(_cancellationToken);
         json = info.Json;
-        MergeClosures(_currentClosures, childClosures);
+        _currentClosures.MergeClosures(childClosures);
       }
       else
       {
@@ -305,7 +303,7 @@ public sealed class ObjectSerializer : IObjectSerializer
         Pools.StringBuilders.Return(sb);
       }
       var json2 = ReferenceGenerator.CreateReference(id);
-      AddClosure(id);
+      _currentClosures.SetOne(id);
       // add to obj refs to return
       if (baseObj.applicationId != null) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
       {
@@ -424,13 +422,4 @@ public sealed class ObjectSerializer : IObjectSerializer
     SerializeProperty(baseValue, jsonWriter, propertyAttributeInfo);
   }
 
-  private static void MergeClosures(Dictionary<Id, int> current, Closures child)
-  {
-    foreach (var closure in child)
-    {
-      current[closure.Key] = 100;
-    }
-  }
-
-  private void AddClosure(Id id) => _currentClosures[id] = 100;
 }

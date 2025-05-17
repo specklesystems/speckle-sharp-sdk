@@ -1,8 +1,8 @@
 ﻿{
   "050585d98934e7a4d199e07bd92598a5": {
     "__closure": {
-      "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
-      "cfaf7ae0dfc5a7cf3343bb6db46ed238": 100
+      "8d27f5c7fac36d985d89bb6d6d8acddc": 1,
+      "cfaf7ae0dfc5a7cf3343bb6db46ed238": 1
     },
     "applicationId": null,
     "area": 0.0,
@@ -52,9 +52,9 @@
   },
   "4314c177603b00228261d6f0f4686395": {
     "__closure": {
-      "050585d98934e7a4d199e07bd92598a5": 100,
-      "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
-      "cfaf7ae0dfc5a7cf3343bb6db46ed238": 100
+      "050585d98934e7a4d199e07bd92598a5": 1,
+      "8d27f5c7fac36d985d89bb6d6d8acddc": 1,
+      "cfaf7ae0dfc5a7cf3343bb6db46ed238": 1
     },
     "@profile": {
       "__closure": null,
@@ -76,7 +76,7 @@
   },
   "cfaf7ae0dfc5a7cf3343bb6db46ed238": {
     "__closure": {
-      "8d27f5c7fac36d985d89bb6d6d8acddc": 100
+      "8d27f5c7fac36d985d89bb6d6d8acddc": 1
     },
     "applicationId": null,
     "area": 0.0,
