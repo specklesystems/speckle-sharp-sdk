@@ -28,7 +28,7 @@ public static class ClosureMath
       current[id] = 1;
     }
   }
-  
+
   public static bool SetOne(this Dictionary<Id, int> current, Id id)
   {
     if (!current.TryGetValue(id, out _))

@@ -162,10 +162,12 @@ public sealed class ObjectSerializer : IObjectSerializer
           ["__closure"] = r.closure,
         };
         _currentClosures.AddOne(new(r.referencedId));
-        
-          //references can be externally provided and need to know the ids in the closure and reference here
-          _currentClosures.MergeClosures(r.closure.Empty().Select(x => new KeyValuePair<Id, int>(new Id(x.Key), x.Value)));
-        
+
+        //references can be externally provided and need to know the ids in the closure and reference here
+        _currentClosures.MergeClosures(
+          r.closure.Empty().Select(x => new KeyValuePair<Id, int>(new Id(x.Key), x.Value))
+        );
+
         SerializeProperty(ret, writer, default);
         break;
       case Base b:
@@ -421,5 +423,4 @@ public sealed class ObjectSerializer : IObjectSerializer
 
     SerializeProperty(baseValue, jsonWriter, propertyAttributeInfo);
   }
-
 }
