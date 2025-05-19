@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
+using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Common;
@@ -18,7 +19,7 @@ public class ProjectInviteResourceTests : IAsyncLifetime
   {
     _inviter = await Fixtures.SeedUserWithClient();
     _invitee = await Fixtures.SeedUserWithClient();
-    _project = await _inviter.Project.Create(new("test", null, null));
+    _project = await _inviter.Project.Create(new("test", null, ProjectVisibility.Public));
     _createdInvite = await SeedInvite();
   }
 

@@ -90,7 +90,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
       _ = await _unauthedUser.Project.CreateInWorkspace(
-        new(_testProject.id, "My new name", ProjectVisibility.Unlisted, "NonExistentWorkspace")
+        new(_testProject.id, "My new name", ProjectVisibility.Public, "NonExistentWorkspace")
       )
     );
     ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLException>();

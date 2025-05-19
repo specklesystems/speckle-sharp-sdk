@@ -57,7 +57,7 @@ public class GeneralSendTest
     client = TestDataHelper.ServiceProvider.GetRequiredService<IClientFactory>().Create(acc);
 
     _project = await client.Project.Create(
-      new($"General Send Test run {Guid.NewGuid()}", null, ProjectVisibility.Unlisted)
+      new($"General Send Test run {Guid.NewGuid()}", null, ProjectVisibility.Public)
     );
     _remote = TestDataHelper.ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(acc, _project.id);
   }
