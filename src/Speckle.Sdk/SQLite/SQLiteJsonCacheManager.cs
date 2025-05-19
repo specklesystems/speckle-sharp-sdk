@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.Data.Sqlite;
 using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
 
 namespace Speckle.Sdk.SQLite;
@@ -120,7 +121,10 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
     );
 
   //This does an insert or ignores if already exists
-  public void SaveObject(string id, string json) =>
+  public void SaveObject(string id, string json)
+  {
+    id.ValidateNullOrWhiteSpace();
+    json.ValidateNullOrWhiteSpace();
     _pool.Use(
       CacheOperation.InsertOrIgnore,
       command =>
@@ -130,6 +134,7 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
         command.ExecuteNonQuery();
       }
     );
+  }
 
   //This does an insert or replaces if already exists
   public void UpdateObject(string id, string json) =>
@@ -148,29 +153,45 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
       CacheOperation.BulkInsertOrIgnore,
       cmd =>
       {
-        CreateBulkInsert(cmd, items);
-        return cmd.ExecuteNonQuery();
+        if (CreateBulkInsert(cmd, items))
+        {
+          cmd.ExecuteNonQuery();
+        }
       }
     );
 
-  private void CreateBulkInsert(SqliteCommand cmd, IEnumerable<(string id, string json)> items)
+  private bool CreateBulkInsert(SqliteCommand cmd, IEnumerable<(string id, string json)> items)
   {
     StringBuilder sb = Pools.StringBuilders.Get();
-    sb.AppendLine(CacheDbCommands.Commands[(int)CacheOperation.BulkInsertOrIgnore]);
-    int i = 0;
-    foreach (var (id, json) in items)
+    try
     {
-      sb.Append($"(@key{i}, @value{i}),");
-      cmd.Parameters.AddWithValue($"@key{i}", id);
-      cmd.Parameters.AddWithValue($"@value{i}", json);
-      i++;
-    }
-    sb.Remove(sb.Length - 1, 1);
-    sb.Append(';');
+      sb.AppendLine(CacheDbCommands.Commands[(int)CacheOperation.BulkInsertOrIgnore]);
+      int i = 0;
+      foreach (var (id, json) in items)
+      {
+        sb.Append($"(@key{i}, @value{i}),");
+        cmd.Parameters.AddWithValue($"@key{i}", id);
+        cmd.Parameters.AddWithValue($"@value{i}", json);
+        i++;
+      }
+
+      if (i == 0)
+      {
+        return false;
+      }
+
+      sb.Remove(sb.Length - 1, 1);
+      sb.Append(';');
 #pragma warning disable CA2100
-    cmd.CommandText = sb.ToString();
+      cmd.CommandText = sb.ToString();
 #pragma warning restore CA2100
-    Pools.StringBuilders.Return(sb);
+    }
+    finally
+    {
+      Pools.StringBuilders.Return(sb);
+    }
+
+    return true;
   }
 
   public bool HasObject(string objectId) =>

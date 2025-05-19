@@ -140,11 +140,9 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   {
     using var manager = new SqLiteJsonCacheManager(_basePath, 2);
     // Empty id
-    manager.SaveObject("", "emptyid");
-    manager.GetObject("").Should().Be("emptyid");
+    Assert.Throws<ArgumentException>(() => manager.SaveObject("", "emptyid"));
     // Empty json
-    manager.SaveObject("eid", "");
-    manager.GetObject("eid").Should().Be("");
+    Assert.Throws<ArgumentException>(() => manager.SaveObject("eid", ""));
     // Null id/json (should throw)
     Assert.Throws<ArgumentNullException>(() => manager.SaveObject(null!, "json"));
     Assert.Throws<ArgumentNullException>(() => manager.SaveObject("nid", null!));
