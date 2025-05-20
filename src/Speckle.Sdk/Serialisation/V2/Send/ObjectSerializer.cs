@@ -114,7 +114,12 @@ public sealed class ObjectSerializer : IObjectSerializer
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
-  private void SerializeProperty(object? obj, JsonWriter writer, Closures closures, PropertyAttributeInfo propertyAttributeInfo)
+  private void SerializeProperty(
+    object? obj,
+    JsonWriter writer,
+    Closures closures,
+    PropertyAttributeInfo propertyAttributeInfo
+  )
   {
     _cancellationToken.ThrowIfCancellationRequested();
 
@@ -164,9 +169,7 @@ public sealed class ObjectSerializer : IObjectSerializer
         closures.AddOne(new(r.referencedId));
 
         //references can be externally provided and need to know the ids in the closure and reference here
-        closures.IncrementClosures(
-          r.closure.Empty().Select(x => new KeyValuePair<Id, int>(new Id(x.Key), x.Value))
-        );
+        closures.IncrementClosures(r.closure.Empty().Select(x => new KeyValuePair<Id, int>(new Id(x.Key), x.Value)));
 
         SerializeProperty(ret, writer, closures, default);
         break;
@@ -196,7 +199,7 @@ public sealed class ObjectSerializer : IObjectSerializer
             }
 
             writer.WritePropertyName(key);
-            SerializeProperty(kvp.Value, writer, closures,propertyAttributeInfo);
+            SerializeProperty(kvp.Value, writer, closures, propertyAttributeInfo);
           }
           writer.WriteEndObject();
         }
@@ -206,7 +209,7 @@ public sealed class ObjectSerializer : IObjectSerializer
           writer.WriteStartArray();
           foreach (object? element in e)
           {
-            SerializeProperty(element, writer,closures, propertyAttributeInfo);
+            SerializeProperty(element, writer, closures, propertyAttributeInfo);
           }
           writer.WriteEndArray();
         }
@@ -253,7 +256,12 @@ public sealed class ObjectSerializer : IObjectSerializer
     }
   }
 
-  private (Id, Json)? SerializeBase(Base baseObj, bool isRoot, Closures closures, PropertyAttributeInfo inheritedDetachInfo)
+  private (Id, Json)? SerializeBase(
+    Base baseObj,
+    bool isRoot,
+    Closures closures,
+    PropertyAttributeInfo inheritedDetachInfo
+  )
   {
     // handle circular references
     bool alreadySerialized = !_parentObjects.Add(baseObj);
@@ -271,10 +279,10 @@ public sealed class ObjectSerializer : IObjectSerializer
       UpdateParentClosures($"blob:{id}");
       return new(json, id);*/
     }
-    
+
     if (inheritedDetachInfo.IsDetachable)
     {
-     return SerializeDetachedBase(baseObj, closures);
+      return SerializeDetachedBase(baseObj, closures);
     }
 
     //do attached
@@ -290,8 +298,8 @@ public sealed class ObjectSerializer : IObjectSerializer
     return new(id, json);
   }
 
-  private (Id, Json)? SerializeDetachedBase(Base baseObj,  Closures closures)
-  { 
+  private (Id, Json)? SerializeDetachedBase(Base baseObj, Closures closures)
+  {
     Closures childClosures;
     Id id;
     Json json;
@@ -420,6 +428,6 @@ public sealed class ObjectSerializer : IObjectSerializer
       return;
     }
 
-    SerializeProperty(baseValue, jsonWriter, closures ,propertyAttributeInfo);
+    SerializeProperty(baseValue, jsonWriter, closures, propertyAttributeInfo);
   }
 }

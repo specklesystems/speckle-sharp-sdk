@@ -16,7 +16,7 @@ public static class ClosureMath
       }
     }
   }
-  
+
   public static void MergeClosures(this Dictionary<Id, int> current, IEnumerable<KeyValuePair<Id, int>> child)
   {
     foreach (var closure in child)

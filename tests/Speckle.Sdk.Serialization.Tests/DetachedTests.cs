@@ -123,18 +123,13 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true)
-      {
-        MaxParallelism = 1,
-        MaxHttpSendSize = 1
-      }
+      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
   }
-  
-  
+
   [Fact]
   public async Task CanSerialize_Attached()
   {
@@ -155,28 +150,20 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true)
-      {
-        MaxParallelism = 1,
-        MaxHttpSendSize = 1
-      }
+      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
   }
-  
+
   [Fact]
   public async Task CanSerialize_Attached_2()
   {
     var @base = new SampleObjectBase2();
     @base["dynamicProp"] = 123;
     @base.applicationId = "1";
-    @base.attachedProp = new SamplePropBase2()
-    {
-      name = "attachedProp",
-      applicationId = "4"
-    };
+    @base.attachedProp = new SamplePropBase2() { name = "attachedProp", applicationId = "4" };
 
     var objects = new ConcurrentDictionary<string, string>();
 
@@ -185,17 +172,12 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true)
-      {
-        MaxParallelism = 1,
-        MaxHttpSendSize = 1
-      }
+      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
   }
-
 
   [Fact]
   public async Task CanSerialize_New_Detached_With_DataChunks()
