@@ -166,8 +166,7 @@ public sealed class ObjectSerializer : IObjectSerializer
           ["referencedId"] = r.referencedId,
           ["__closure"] = r.closure,
         };
-        closures.AddOne(new(r.referencedId));
-
+        closures.IncrementClosure(new(r.referencedId));
         //references can be externally provided and need to know the ids in the closure and reference here
         closures.IncrementClosures(r.closure.Empty().Select(x => new KeyValuePair<Id, int>(new Id(x.Key), x.Value)));
 
@@ -258,7 +257,7 @@ public sealed class ObjectSerializer : IObjectSerializer
 
   private (Id, Json)? SerializeBase(
     Base baseObj,
-    bool isRoot,
+    bool isRequestedObject,
     Closures closures,
     PropertyAttributeInfo inheritedDetachInfo
   )
@@ -290,7 +289,7 @@ public sealed class ObjectSerializer : IObjectSerializer
     var sb = Pools.StringBuilders.Get();
     using var writer = new StringWriter(sb);
     using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-    var id = SerializeBaseWithClosures(baseObj, jsonWriter, childClosures, isRoot);
+    var id = SerializeBaseWithClosures(baseObj, jsonWriter, childClosures, isRequestedObject);
     //don't increment attached objects
     closures.MergeClosures(childClosures);
     var json = new Json(writer.ToString());
@@ -323,7 +322,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       Pools.StringBuilders.Return(sb);
     }
     var json2 = ReferenceGenerator.CreateReference(id);
-    closures.SetOne(id);
+    closures.MergeClosure(id);
     // add to obj refs to return
     if (baseObj.applicationId != null) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
     {

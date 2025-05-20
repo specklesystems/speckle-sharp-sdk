@@ -32,7 +32,7 @@ public static class ClosureMath
     }
   }
 
-  public static void AddOne(this Dictionary<Id, int> current, Id id)
+  public static void IncrementClosure(this Dictionary<Id, int> current, Id id)
   {
     if (current.TryGetValue(id, out var count))
     {
@@ -44,14 +44,15 @@ public static class ClosureMath
     }
   }
 
-  public static bool SetOne(this Dictionary<Id, int> current, Id id)
+  public static void MergeClosure(this Dictionary<Id, int> current, Id id)
   {
-    if (!current.TryGetValue(id, out _))
+    if (current.TryGetValue(id, out var count))
+    {
+      current[id] = count;
+    }
+    else
     {
       current[id] = 1;
-      return true;
     }
-
-    return false;
   }
 }
