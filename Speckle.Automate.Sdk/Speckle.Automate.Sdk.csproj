@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Label="Compiler Properties">
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <PropertyGroup Label="Nugetspec Package Properties">
+    <PackageId>Speckle.Automate.Sdk</PackageId>
+    <Description>Speckle Automate SDK</Description>
+    <PackageTags>$(PackageTags) speckle automation</PackageTags>
+  </PropertyGroup>
+  <PropertyGroup Label="Nuget Package Properties">
+    <IsPackable>true</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+  <ItemGroup Label="Expose internals to test projects">
+    <InternalsVisibleTo Include="Speckle.Automate.Sdk.Tests.Integration" />
+  </ItemGroup>
+  <ItemGroup Label="Package References">
+    <PackageReference Include="Newtonsoft.Json.Schema" />
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+  <ItemGroup Label="Project References">
+    <ProjectReference Include="..\src\Speckle.Sdk\Speckle.Sdk.csproj" />
+  </ItemGroup>
+</Project>
