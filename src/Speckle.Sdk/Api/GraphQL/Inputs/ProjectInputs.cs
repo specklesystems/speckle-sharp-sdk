@@ -2,22 +2,22 @@
 
 namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
-public sealed record ProjectCommentsFilter(bool? includeArchived, bool? loadedVersionsOnly, string? resourceIdString);
+public record ProjectCommentsFilter(bool? includeArchived, bool? loadedVersionsOnly, string? resourceIdString);
 
-public sealed record ProjectCreateInput(string? name, string? description, ProjectVisibility? visibility);
+public record ProjectCreateInput(string? name, string? description, ProjectVisibility? visibility);
 
-public sealed record WorkspaceProjectCreateInput(
+public record WorkspaceProjectCreateInput(
   string? name,
   string? description,
   ProjectVisibility? visibility,
   string workspaceId
 );
 
-public sealed record ProjectInviteCreateInput(string? email, string? role, string? serverRole, string? userId);
+public record ProjectInviteCreateInput(string? email, string? role, string? serverRole, string? userId);
 
-public sealed record ProjectInviteUseInput(bool accept, string projectId, string token);
+public record ProjectInviteUseInput(bool accept, string projectId, string token);
 
-public sealed record ProjectModelsFilter(
+public record ProjectModelsFilter(
   IReadOnlyList<string>? contributors = null,
   IReadOnlyList<string>? excludeIds = null,
   IReadOnlyList<string>? ids = null,
@@ -26,7 +26,7 @@ public sealed record ProjectModelsFilter(
   IReadOnlyList<string>? sourceApps = null
 );
 
-public sealed record ProjectUpdateInput(
+public record ProjectUpdateInput(
   string id,
   string? name = null,
   string? description = null,
@@ -34,6 +34,6 @@ public sealed record ProjectUpdateInput(
   ProjectVisibility? visibility = null
 );
 
-public sealed record ProjectUpdateRoleInput(string userId, string projectId, string? role);
+public record ProjectUpdateRoleInput(string userId, string projectId, string? role);
 
-public sealed record WorkspaceProjectsFilter(string? search, bool? withProjectRoleOnly);
+public record WorkspaceProjectsFilter(string? search, bool? withProjectRoleOnly);
