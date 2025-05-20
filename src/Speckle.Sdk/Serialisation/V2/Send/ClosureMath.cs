@@ -2,7 +2,7 @@
 
 public static class ClosureMath
 {
-  public static void MergeClosures(this Dictionary<Id, int> current, IEnumerable<KeyValuePair<Id, int>> child)
+  public static void IncrementClosures(this Dictionary<Id, int> current, IEnumerable<KeyValuePair<Id, int>> child)
   {
     foreach (var closure in child)
     {
@@ -13,6 +13,21 @@ public static class ClosureMath
       else
       {
         current[closure.Key] = closure.Value + 1;
+      }
+    }
+  }
+  
+  public static void MergeClosures(this Dictionary<Id, int> current, IEnumerable<KeyValuePair<Id, int>> child)
+  {
+    foreach (var closure in child)
+    {
+      if (current.TryGetValue(closure.Key, out var count))
+      {
+        current[closure.Key] = Math.Max(closure.Value, count);
+      }
+      else
+      {
+        current[closure.Key] = closure.Value;
       }
     }
   }

@@ -164,7 +164,7 @@ public sealed class ObjectSerializer : IObjectSerializer
         closures.AddOne(new(r.referencedId));
 
         //references can be externally provided and need to know the ids in the closure and reference here
-        closures.MergeClosures(
+        closures.IncrementClosures(
           r.closure.Empty().Select(x => new KeyValuePair<Id, int>(new Id(x.Key), x.Value))
         );
 
@@ -271,26 +271,28 @@ public sealed class ObjectSerializer : IObjectSerializer
       UpdateParentClosures($"blob:{id}");
       return new(json, id);*/
     }
+    
     if (inheritedDetachInfo.IsDetachable)
     {
      return SerializeDetachedBase(baseObj, closures);
     }
-    else //do attached
-    {
-      var childClosures = isRoot ? closures : [];
-      var sb = Pools.StringBuilders.Get();
-      using var writer = new StringWriter(sb);
-      using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-      var id = SerializeBaseWithClosures(baseObj, jsonWriter, childClosures, isRoot);
-      closures.MergeClosures(childClosures);
-      var json = new Json(writer.ToString());
-      Pools.StringBuilders.Return(sb);
-      return new(id, json);
-    }
+
+    //do attached
+    Closures childClosures = [];
+    var sb = Pools.StringBuilders.Get();
+    using var writer = new StringWriter(sb);
+    using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
+    var id = SerializeBaseWithClosures(baseObj, jsonWriter, childClosures, isRoot);
+    //don't increment attached objects
+    closures.MergeClosures(childClosures);
+    var json = new Json(writer.ToString());
+    Pools.StringBuilders.Return(sb);
+    return new(id, json);
   }
 
   private (Id, Json)? SerializeDetachedBase(Base baseObj,  Closures closures)
-  { Closures childClosures;
+  { 
+    Closures childClosures;
     Id id;
     Json json;
     //avoid multiple serialization to get closures
@@ -299,7 +301,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       id = new Id(baseObj.id);
       childClosures = info.GetClosures(_cancellationToken);
       json = info.Json;
-      closures.MergeClosures(childClosures);
+      closures.IncrementClosures(childClosures);
     }
     else
     {
@@ -308,6 +310,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       using var writer = new StringWriter(sb);
       using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
       id = SerializeBaseWithClosures(baseObj, jsonWriter, childClosures, true);
+      closures.IncrementClosures(childClosures);
       json = new Json(writer.ToString());
       Pools.StringBuilders.Return(sb);
     }

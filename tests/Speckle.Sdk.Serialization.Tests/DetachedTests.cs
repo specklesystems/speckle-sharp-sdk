@@ -165,6 +165,37 @@ public class DetachedTests
 
     await VerifyJsonDictionary(objects);
   }
+  
+  [Fact]
+  public async Task CanSerialize_Attached_2()
+  {
+    var @base = new SampleObjectBase2();
+    @base["dynamicProp"] = 123;
+    @base.applicationId = "1";
+    @base.attachedProp = new SamplePropBase2()
+    {
+      name = "attachedProp",
+      applicationId = "4"
+    };
+
+    var objects = new ConcurrentDictionary<string, string>();
+
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      objects,
+      null,
+      default,
+      new SerializeProcessOptions(false, false, true, true)
+      {
+        MaxParallelism = 1,
+        MaxHttpSendSize = 1
+      }
+    );
+    var results = await serializeProcess.Serialize(@base);
+
+    await VerifyJsonDictionary(objects);
+  }
+
 
   [Fact]
   public async Task CanSerialize_New_Detached_With_DataChunks()
