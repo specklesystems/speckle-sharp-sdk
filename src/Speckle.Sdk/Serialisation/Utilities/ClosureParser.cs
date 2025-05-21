@@ -5,7 +5,8 @@ namespace Speckle.Sdk.Serialisation.Utilities;
 
 public static class ClosureParser
 {
-  public static IReadOnlyList<(string, int)> GetClosures(string json, CancellationToken cancellationToken) => GetClosuresPrivate(json, cancellationToken);
+  public static IReadOnlyList<(string, int)> GetClosures(string json, CancellationToken cancellationToken) =>
+    GetClosuresPrivate(json, cancellationToken);
 
   public static List<(string, int)> GetClosuresPrivate(string json, CancellationToken cancellationToken)
   {
