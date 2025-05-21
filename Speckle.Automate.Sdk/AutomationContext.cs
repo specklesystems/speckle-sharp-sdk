@@ -92,11 +92,6 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
     // Confirm target branch is not the same as source branch
     foreach (var trigger in AutomationRunData.Triggers)
     {
-      if (trigger == null)
-      {
-        continue;
-      }
-
       if (trigger.Payload.ModelId == model.id)
       {
         throw new SpeckleException(
@@ -149,7 +144,7 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
         {
           case VersionCreationTrigger versionCreationTrigger:
           {
-            linkResources.Add($@"{versionCreationTrigger.Payload.ModelId}@{versionCreationTrigger.Payload.VersionId}");
+            linkResources.Add($"{versionCreationTrigger.Payload.ModelId}@{versionCreationTrigger.Payload.VersionId}");
             break;
           }
           default:
@@ -187,28 +182,18 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
         },
       };
     }
+
+    //language=graphql
+    const string QUERY = """
+      mutation AutomateFunctionRunStatusReport($projectId: String!, $functionRunId: String!, $status: AutomateRunStatus!, $statusMessage: String, $results: JSONObject, $contextView: String) {
+        automateFunctionRunStatusReport(
+          input: {projectId: $projectId, functionRunId: $functionRunId, status: $status, statusMessage: $statusMessage, contextView: $contextView, results: $results}
+        )
+      }
+      """;
     GraphQLRequest request = new()
     {
-      Query =
-        @"
-            mutation AutomateFunctionRunStatusReport(
-                $projectId: String!
-                $functionRunId: String!
-                $status: AutomateRunStatus!
-                $statusMessage: String
-                $results: JSONObject
-                $contextView: String
-            ){
-                automateFunctionRunStatusReport(input: {
-                    projectId: $projectId
-                    functionRunId: $functionRunId
-                    status: $status
-                    statusMessage: $statusMessage
-                    contextView: $contextView
-                    results: $results
-                })
-            }
-        ",
+      Query = QUERY,
       Variables = new
       {
         projectId = AutomationRunData.ProjectId,
@@ -239,14 +224,14 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
     FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read);
     using StreamContent streamContent = new(fileStream);
     formData.Add(streamContent, "files", Path.GetFileName(filePath));
-    HttpResponseMessage? request = await SpeckleClient
+    HttpResponseMessage request = await SpeckleClient
       .GQLClient.HttpClient.PostAsync(
-        new Uri($"{AutomationRunData.SpeckleServerUrl}api/stream/{AutomationRunData.ProjectId}/blob"),
+        new Uri(AutomationRunData.SpeckleServerUrl, $"api/stream/{AutomationRunData.ProjectId}/blob"),
         formData
       )
       .ConfigureAwait(false);
     request.EnsureSuccessStatusCode();
-    string? responseString = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
+    string responseString = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
     Console.WriteLine("RESPONSE - " + responseString);
     BlobUploadResponse uploadResponse = JsonConvert.DeserializeObject<BlobUploadResponse>(responseString);
     if (uploadResponse.UploadResults.Count != 1)
