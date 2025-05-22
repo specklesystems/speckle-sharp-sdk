@@ -1,5 +1,4 @@
-﻿using System.Runtime.Serialization;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace Speckle.Automate.Sdk.Schema;
 
@@ -21,7 +20,7 @@ public static class FunctionRunDataParser
 
     if (functionRunData is null)
     {
-      throw new SerializationException($"Function run data couldn't deserialized at {inputLocation}");
+      throw new JsonException($"Function run data couldn't deserialized at {inputLocation}");
     }
 
     return functionRunData;
