@@ -97,7 +97,7 @@ public static class NotNullExtensions
   }
 
   public static string NotNullOrWhiteSpace(
-    this string? value,
+    [NotNull] this string? value,
     [CallerArgumentExpression(nameof(value))] string? paramName = null
   )
   {
