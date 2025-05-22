@@ -1,9 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="Compiler Properties">
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <IsPackable>true</IsPackable>
   </PropertyGroup>
   <PropertyGroup Label="Nugetspec Package Properties">
     <PackageId>Speckle.Automate.Sdk</PackageId>
@@ -22,7 +19,10 @@
     <PackageReference Include="Newtonsoft.Json.Schema" />
     <PackageReference Include="System.CommandLine" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
   <ItemGroup Label="Project References">
-    <ProjectReference Include="..\src\Speckle.Objects\Speckle.Objects.csproj" />
+    <ProjectReference Include="..\Speckle.Objects\Speckle.Objects.csproj" />
   </ItemGroup>
 </Project>
