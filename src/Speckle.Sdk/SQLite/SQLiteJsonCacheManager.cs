@@ -123,8 +123,8 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
   //This does an insert or ignores if already exists
   public void SaveObject(string id, string json)
   {
-    id.ValidateNullOrWhiteSpace();
-    json.ValidateNullOrWhiteSpace();
+    id.NotNullOrWhiteSpace();
+    json.NotNullOrWhiteSpace();
     _pool.Use(
       CacheOperation.InsertOrIgnore,
       command =>
