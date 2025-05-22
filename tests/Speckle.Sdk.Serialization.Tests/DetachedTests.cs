@@ -123,7 +123,56 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true)
+      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendSize = 1 }
+    );
+    var results = await serializeProcess.Serialize(@base);
+
+    await VerifyJsonDictionary(objects);
+  }
+
+  [Fact]
+  public async Task CanSerialize_Attached()
+  {
+    var @base = new SampleObjectBase2();
+    @base["dynamicProp"] = 123;
+    @base.applicationId = "1";
+    @base.attachedProp = new SamplePropBase2()
+    {
+      name = "attachedProp",
+      applicationId = "4",
+      line = new Polyline() { units = "test", value = [3.0, 4.0] },
+    };
+
+    var objects = new ConcurrentDictionary<string, string>();
+
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      objects,
+      null,
+      default,
+      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendSize = 1 }
+    );
+    var results = await serializeProcess.Serialize(@base);
+
+    await VerifyJsonDictionary(objects);
+  }
+
+  [Fact]
+  public async Task CanSerialize_Attached_2()
+  {
+    var @base = new SampleObjectBase2();
+    @base["dynamicProp"] = 123;
+    @base.applicationId = "1";
+    @base.attachedProp = new SamplePropBase2() { name = "attachedProp", applicationId = "4" };
+
+    var objects = new ConcurrentDictionary<string, string>();
+
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ConcurrentDictionary<Id, Json>(),
+      objects,
+      null,
+      default,
+      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
@@ -155,8 +204,8 @@ public class DetachedTests
         "dynamicProp" : 123,
         "id" : "efeadaca70a85ae6d3acfc93a8b380db",
         "__closure" : {
-          "0e61e61edee00404ec6e0f9f594bce24" : 100,
-          "f70738e3e3e593ac11099a6ed6b71154" : 100
+          "0e61e61edee00404ec6e0f9f594bce24" : 1,
+          "f70738e3e3e593ac11099a6ed6b71154" : 1
         }
       }
       """;

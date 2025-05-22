@@ -1,0 +1,15 @@
+﻿{
+  "CancellationToken": {
+    "IsCancellationRequested": true,
+    "CanBeCanceled": true,
+    "WaitHandle": {
+      "SafeWaitHandle": {
+        "IsClosed": false,
+        "IsInvalid": false
+      }
+    }
+  },
+  "Data": {},
+  "Message": "The operation was canceled.",
+  "Type": "OperationCanceledException"
+}
