@@ -1,17 +1,20 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Speckle.Objects.Geometry;
+using Speckle.Sdk;
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk;
-
-public record Application(string Name, string Slug);
+namespace Speckle.Automate.Sdk;
 
 public static class ServiceRegistration
 {
-  private static string GetAssemblyVersion() =>
-    Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "Unknown";
-
+  
+  /// <summary>
+  /// Sets-up the serviceCollection with all the services in Speckle.Automate.Sdk and Speckle.Sdk 
+  /// </summary>
+  /// <param name="serviceCollection"></param>
+  /// <returns></returns>
   public static IServiceCollection AddAutomateSdk(this IServiceCollection serviceCollection)
   {
     var executingAssembly = Assembly.GetExecutingAssembly().GetName();
@@ -22,7 +25,7 @@ public static class ServiceRegistration
         new(executingAssembly.FullName, "automatefunction"),
         executingAssembly.Version?.ToString() ?? "Unknown",
         speckleAssembly.Version?.ToString(),
-        [typeof(Base).Assembly, typeof().Assembly]
+        [typeof(Base).Assembly, typeof(Point).Assembly]
       )
     );
 
@@ -35,6 +38,14 @@ public static class ServiceRegistration
   )
   {
     serviceCollection.AddSpeckleSdk(speckleSdkOptions);
+
+    AddMatchingInterfacesAsTransient(
+      serviceCollection,
+      typeof(ServiceRegistration).Assembly,
+      [typeof(AutomationContext)]
+    );
+
+    return serviceCollection;
   }
 
   public static IServiceCollection AddMatchingInterfacesAsTransient(

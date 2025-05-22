@@ -23,6 +23,6 @@
     <PackageReference Include="System.CommandLine" />
   </ItemGroup>
   <ItemGroup Label="Project References">
-    <ProjectReference Include="..\src\Speckle.Sdk\Speckle.Sdk.csproj" />
+    <ProjectReference Include="..\src\Speckle.Objects\Speckle.Objects.csproj" />
   </ItemGroup>
 </Project>

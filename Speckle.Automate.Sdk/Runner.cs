@@ -6,6 +6,7 @@ using Newtonsoft.Json.Schema.Generation;
 using Newtonsoft.Json.Serialization;
 using Speckle.Automate.Sdk.DataAnnotations;
 using Speckle.Automate.Sdk.Schema;
+using Speckle.InterfaceGenerator;
 using Speckle.Sdk;
 
 namespace Speckle.Automate.Sdk;
@@ -13,7 +14,8 @@ namespace Speckle.Automate.Sdk;
 /// <summary>
 /// Provides mechanisms to execute any function that conforms to the AutomateFunction "interface"
 /// </summary>
-public class AutomationRunner(IAutomateContextFactory contextFactory)
+[GenerateAutoInterface(VisibilityModifier = "public")]
+internal class AutomationRunner(IAutomateContextFactory contextFactory) : IAutomationRunner
 {
   [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
   public async Task<IAutomationContext> RunFunction<TInput>(

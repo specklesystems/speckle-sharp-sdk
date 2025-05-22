@@ -1,5 +1,5 @@
 ﻿using System.Runtime.Serialization;
-using Speckle.Newtonsoft.Json;
+using System.Text.Json;
 
 namespace Speckle.Automate.Sdk.Schema;
 
@@ -10,13 +10,14 @@ public static class FunctionRunDataParser
   /// </summary>
   /// <param name="inputLocation"> Path to retrieve function run data.</param>
   /// <typeparam name="T"> Type for function inputs.</typeparam>
-  /// <returns>The data to be able run function.</returns>
-  /// <exception cref="SerializationException"> Throws if deserialized object is null.</exception>
+  /// <returns>The data to be able to run function.</returns>
+  /// <exception cref="JsonException">Json was not valid</exception>
   /// <exception cref="FileNotFoundException"> Throws unless file exists.</exception>
   public static FunctionRunData<T> FromPath<T>(string inputLocation)
   {
     string inputJsonString = ReadInputData(inputLocation);
-    FunctionRunData<T>? functionRunData = JsonConvert.DeserializeObject<FunctionRunData<T>>(inputJsonString);
+    //It's important to use System.Text.Json here. The template FunctionInputs are decorated with STJ attributes
+    FunctionRunData<T>? functionRunData = JsonSerializer.Deserialize<FunctionRunData<T>>(inputJsonString);
 
     if (functionRunData is null)
     {
