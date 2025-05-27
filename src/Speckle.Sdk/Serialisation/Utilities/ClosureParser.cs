@@ -5,7 +5,10 @@ namespace Speckle.Sdk.Serialisation.Utilities;
 
 public static class ClosureParser
 {
-  public static IReadOnlyList<(string, int)> GetClosures(string json, CancellationToken cancellationToken)
+  public static IReadOnlyList<(string, int)> GetClosures(string json, CancellationToken cancellationToken) =>
+    GetClosuresPrivate(json, cancellationToken);
+
+  private static List<(string, int)> GetClosuresPrivate(string json, CancellationToken cancellationToken)
   {
     try
     {
@@ -31,10 +34,17 @@ public static class ClosureParser
     return [];
   }
 
+  public static IReadOnlyList<(string, int)> GetClosuresSorted(string json, CancellationToken cancellationToken)
+  {
+    var closures = GetClosuresPrivate(json, cancellationToken);
+    closures.Sort((a, b) => b.Item2.CompareTo(a.Item2));
+    return closures;
+  }
+
   public static IEnumerable<string> GetChildrenIds(string json, CancellationToken cancellationToken) =>
     GetClosures(json, cancellationToken).Select(x => x.Item1);
 
-  private static IReadOnlyList<(string, int)> ReadObject(JsonTextReader reader, CancellationToken cancellationToken)
+  private static List<(string, int)> ReadObject(JsonTextReader reader, CancellationToken cancellationToken)
   {
     reader.Read();
     while (reader.TokenType != JsonToken.EndObject)
