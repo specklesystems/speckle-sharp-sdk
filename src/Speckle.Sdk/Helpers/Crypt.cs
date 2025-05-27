@@ -67,30 +67,4 @@ public static class Crypt
 
     return sb.ToString(0, length);
   }
-
-  /// <inheritdoc cref="Sha256(string, string?, int)"/>
-  /// <remarks>MD5 is a broken cryptographic algorithm and should be used subject to review see CA5351</remarks>
-  [Pure]
-  [SuppressMessage("Security", "CA5351:Do Not Use Broken Cryptographic Algorithms")]
-  public static string Md5(
-    string input,
-    [StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format = "x2",
-    int length = 32
-  )
-  {
-    byte[] inputBytes = Encoding.ASCII.GetBytes(input.ToLowerInvariant());
-#if NETSTANDARD2_0
-    using MD5 md5 = MD5.Create();
-    byte[] hashBytes = md5.ComputeHash(inputBytes);
-#else
-    byte[] hashBytes = MD5.HashData(inputBytes);
-#endif
-    StringBuilder sb = new(32);
-    for (int i = 0; i < hashBytes.Length; i++)
-    {
-      sb.Append(hashBytes[i].ToString(format));
-    }
-
-    return sb.ToString(0, length);
-  }
 }

@@ -45,9 +45,6 @@ public sealed class HashUtilityTests
     }
   }
 
-  public static IEnumerable<object[]> SmallTestCasesMd5() =>
-    SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(0, 32));
-
   public static IEnumerable<object[]> SmallTestCasesSha256() =>
     SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(2, 64));
 
@@ -67,18 +64,6 @@ public sealed class HashUtilityTests
       new string(Enumerable.Range(0, 10_000_000).Select(_ => (char)random.Next(32, 127)).ToArray()),
       "f2e83101c3066c8a2983acdb92df53504ec00ac1e5afb71b7c3798cb4daf6162",
     ];
-  }
-
-  [Theory]
-  [MemberData(nameof(SmallTestCasesMd5))]
-  public void Md5(string input, string _, string expected, int length)
-  {
-    var resultLower = Crypt.Md5(input, "x2", length);
-    var resultUpper = Crypt.Md5(input, "X2", length);
-
-    resultLower.Should().Be(new string(expected.ToLower()[..length]));
-
-    resultUpper.Should().Be(new string(expected.ToUpper()[..length]));
   }
 
   [Theory]

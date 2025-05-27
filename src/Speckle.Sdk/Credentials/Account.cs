@@ -25,7 +25,7 @@ public class Account : IEquatable<Account>
           throw new InvalidOperationException("Incomplete account info: cannot generate id.");
         }
 
-        _id = Crypt.Md5(userInfo.email + serverInfo.url, "X2");
+        _id = Crypt.Sha256(userInfo.email + serverInfo.url, "X2");
       }
       return _id;
     }
@@ -62,13 +62,13 @@ public class Account : IEquatable<Account>
   public string GetHashedEmail()
   {
     string email = userInfo?.email ?? "unknown";
-    return "@" + Crypt.Md5(email, "X2");
+    return "@" + Crypt.Sha256(email, "X2");
   }
 
   public string GetHashedServer()
   {
     string url = serverInfo?.url ?? AccountManager.DEFAULT_SERVER_URL;
-    return Crypt.Md5(CleanURL(url), "X2");
+    return Crypt.Sha256(CleanURL(url), "X2");
   }
 
   public override string ToString()
