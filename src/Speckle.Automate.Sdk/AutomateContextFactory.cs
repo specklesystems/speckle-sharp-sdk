@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using GraphQL;
+using GraphQL.Client.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Speckle.Automate.Sdk.Schema;
@@ -15,6 +17,7 @@ internal sealed class AutomationContextFactory(
   IOperations operations
 ) : IAutomationContextFactory
 {
+  /// <inheritdoc cref="Initialize(AutomationRunData, string)"/>
   public async Task<IAutomationContext> Initialize(string automationRunData, string speckleToken)
   {
     var runData = JsonConvert.DeserializeObject<AutomationRunData>(
@@ -24,6 +27,9 @@ internal sealed class AutomationContextFactory(
     return await Initialize(runData, speckleToken).ConfigureAwait(false);
   }
 
+  /// <inheritdoc cref="Initialize(AutomationRunData, Account)"/>
+  /// <exception cref="GraphQLHttpRequestException">Request failed on the HTTP layer (received a non-successful response code)</exception>
+  /// <exception cref="AggregateException"><inheritdoc cref="Speckle.Sdk.Api.GraphQL.GraphQLErrorHandler.EnsureGraphQLSuccess(IGraphQLResponse)"/></exception>
   public async Task<IAutomationContext> Initialize(AutomationRunData automationRunData, string speckleToken)
   {
     Account account = new()
@@ -37,11 +43,13 @@ internal sealed class AutomationContextFactory(
     return Initialize(automationRunData, account);
   }
 
+  /// <summary>
+  /// Creates an <see cref="AutomationContext"/> from the provided data
+  /// </summary>
   public IAutomationContext Initialize(AutomationRunData automationRunData, Account account)
   {
     IClient client = clientFactory.Create(account);
-    Stopwatch initTime = new();
-    initTime.Start();
+    Stopwatch initTime = Stopwatch.StartNew();
 
     return new AutomationContext(operations)
     {
