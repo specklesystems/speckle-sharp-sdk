@@ -90,4 +90,44 @@ public class NotNullTests
       .Invoking(async () => await ValueTask.FromResult((int?)null).NotNull())
       .Should()
       .ThrowAsync<ArgumentNullException>();
+
+  [Theory]
+  [InlineData("hello")]
+  [InlineData("  world  ")]
+  public void NotNullOrWhiteSpace_Valid(string input)
+  {
+    var result = input.NotNullOrWhiteSpace();
+    result.Should().Be(input);
+  }
+
+  [Theory]
+  [InlineData(null)]
+  [InlineData("")]
+  [InlineData("   ")]
+  public void NotNullOrWhiteSpace_Invalid(string? input)
+  {
+    Action act = () => input.NotNullOrWhiteSpace();
+    if (input is null)
+    {
+      act.Should().Throw<ArgumentNullException>();
+    }
+    else
+    {
+      act.Should().Throw<ArgumentException>();
+    }
+  }
+
+  [Theory]
+  [InlineData("foo")]
+  [InlineData("bar baz")]
+  public void ValidateNullOrWhiteSpace_Valid(string input) => input.NotNullOrWhiteSpace(); // Should not throw
+
+  [Theory]
+  [InlineData("")]
+  [InlineData("   ")]
+  public void ValidateNullOrWhiteSpace_Invalid(string input)
+  {
+    Action act = () => input.NotNullOrWhiteSpace();
+    act.Should().Throw<ArgumentException>();
+  }
 }

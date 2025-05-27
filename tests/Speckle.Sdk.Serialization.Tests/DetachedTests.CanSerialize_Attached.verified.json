@@ -1,0 +1,65 @@
+﻿{
+  "027a7c5ffcf8d8efe432899c729a954c": {
+    "__closure": {
+      "5b86b66b61c556ead500915b05852875": 1
+    },
+    "applicationId": null,
+    "area": 0.0,
+    "bbox": null,
+    "closed": false,
+    "domain": {
+      "applicationId": null,
+      "end": 1.0,
+      "id": "4d47df83148d8bad7bd2657bd9158b4c",
+      "speckle_type": "Objects.Primitive.Interval",
+      "start": 0.0
+    },
+    "id": "027a7c5ffcf8d8efe432899c729a954c",
+    "length": 0.0,
+    "speckle_type": "Objects.Geometry.Polyline",
+    "units": "test",
+    "value": [
+      {
+        "__closure": null,
+        "referencedId": "5b86b66b61c556ead500915b05852875",
+        "speckle_type": "reference"
+      }
+    ]
+  },
+  "5b86b66b61c556ead500915b05852875": {
+    "applicationId": null,
+    "data": [
+      3.0,
+      4.0
+    ],
+    "id": "5b86b66b61c556ead500915b05852875",
+    "speckle_type": "Speckle.Core.Models.DataChunk"
+  },
+  "d71fd05503f7ec3346f9a8e1e28f55cf": {
+    "__closure": {
+	  "027a7c5ffcf8d8efe432899c729a954c": 1,
+      "5b86b66b61c556ead500915b05852875": 2
+    },
+    "applicationId": "1",
+    "arr": null,
+    "attachedProp": {
+      "applicationId": "4",
+      "id": "c5dd540ee1299c0349829d045c04ef2d",
+      "line": {
+        "__closure": null,
+        "referencedId": "027a7c5ffcf8d8efe432899c729a954c",
+        "speckle_type": "reference"
+      },
+      "name": "attachedProp",
+      "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase2"
+    },
+    "crazyProp": null,
+    "detachedProp": null,
+    "detachedProp2": null,
+    "dynamicProp": 123,
+    "id": "d71fd05503f7ec3346f9a8e1e28f55cf",
+    "list": [],
+    "list2": null,
+    "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2"
+  }
+}

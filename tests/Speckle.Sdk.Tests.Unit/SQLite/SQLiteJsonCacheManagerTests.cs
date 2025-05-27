@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Speckle.Sdk.SQLite;
 
 namespace Speckle.Sdk.Tests.Unit.SQLite;
@@ -78,5 +78,73 @@ public class SQLiteJsonCacheManagerTests : IDisposable
     json2 = manager.GetObject(id2);
     json2.Should().BeNull();
     manager.HasObject(id2).Should().BeFalse();
+  }
+
+  [Fact]
+  public void TestLargeJsonPayload()
+  {
+    var largeJson = new string('a', 100_000);
+    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    manager.SaveObject("large", largeJson);
+    var result = manager.GetObject("large");
+    result.Should().Be(largeJson);
+  }
+
+  [Fact]
+  public void TestSpecialCharactersInIdAndJson()
+  {
+    var id = "spécial_字符_!@#$%^&*()";
+    var json = /*lang=json,strict*/
+      "{\"value\": \"特殊字符!@#$%^&*()\"}";
+    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    manager.SaveObject(id, json);
+    var result = manager.GetObject(id);
+    result.Should().Be(json);
+    manager.HasObject(id).Should().BeTrue();
+    manager.DeleteObject(id);
+    manager.HasObject(id).Should().BeFalse();
+  }
+
+  [Fact]
+  public void TestBulkInsertEmptyCollection()
+  {
+    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    manager.SaveObjects(new List<(string, string)>());
+    manager.GetAllObjects().Count.Should().Be(0);
+  }
+
+  [Fact]
+  public void TestRepeatedUpdateAndDelete()
+  {
+    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    manager.SaveObject("id", "1");
+    manager.UpdateObject("id", "2");
+    manager.UpdateObject("id", "3");
+    manager.GetObject("id").Should().Be("3");
+    manager.DeleteObject("id");
+    manager.DeleteObject("id"); // Should not throw
+    manager.GetObject("id").Should().BeNull();
+  }
+
+  [Fact]
+  public void TestGetAndDeleteNonExistentId()
+  {
+    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    manager.GetObject("doesnotexist").Should().BeNull();
+    manager.HasObject("doesnotexist").Should().BeFalse();
+    manager.DeleteObject("doesnotexist"); // Should not throw
+  }
+
+  [Fact]
+  public void TestNullOrEmptyInput()
+  {
+    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    // Empty id
+    Assert.Throws<ArgumentException>(() => manager.SaveObject("", "emptyid"));
+    // Empty json
+    Assert.Throws<ArgumentException>(() => manager.SaveObject("eid", ""));
+    // Null id/json (should throw)
+    Assert.Throws<ArgumentNullException>(() => manager.SaveObject(null!, "json"));
+    Assert.Throws<ArgumentNullException>(() => manager.SaveObject("nid", null!));
   }
 }

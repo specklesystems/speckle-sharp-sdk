@@ -1,13 +1,7 @@
 ﻿{
   "027a7c5ffcf8d8efe432899c729a954c": {
     "__closure": {
-      "045cbee36837d589b17f9d8483c90763": 100,
-      "1afc694774efa5913d0077302cd37888": 100,
-      "32a385e7ddeda810e037b21ab26381b7": 100,
-      "4ba53b5e84e956fb076bc8b0a03ca879": 100,
-      "5b86b66b61c556ead500915b05852875": 100,
-      "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
-      "c3858f47dd3e7a308a1b465375f1645f": 100
+      "5b86b66b61c556ead500915b05852875": 1
     },
     "applicationId": null,
     "area": 0.0,
@@ -34,7 +28,7 @@
   },
   "045cbee36837d589b17f9d8483c90763": {
     "__closure": {
-      "1afc694774efa5913d0077302cd37888": 100
+      "1afc694774efa5913d0077302cd37888": 1
     },
     "applicationId": null,
     "area": 0.0,
@@ -70,14 +64,14 @@
   },
   "2ebfd4f317754fce14cadd001151441e": {
     "__closure": {
-      "027a7c5ffcf8d8efe432899c729a954c": 100,
-      "045cbee36837d589b17f9d8483c90763": 100,
-      "1afc694774efa5913d0077302cd37888": 100,
-      "32a385e7ddeda810e037b21ab26381b7": 100,
-      "4ba53b5e84e956fb076bc8b0a03ca879": 100,
-      "5b86b66b61c556ead500915b05852875": 100,
-      "8d27f5c7fac36d985d89bb6d6d8acddc": 100,
-      "c3858f47dd3e7a308a1b465375f1645f": 100
+      "027a7c5ffcf8d8efe432899c729a954c": 1,
+      "045cbee36837d589b17f9d8483c90763": 2,
+      "1afc694774efa5913d0077302cd37888": 3,
+      "32a385e7ddeda810e037b21ab26381b7": 1,
+      "4ba53b5e84e956fb076bc8b0a03ca879": 2,
+      "5b86b66b61c556ead500915b05852875": 2,
+      "8d27f5c7fac36d985d89bb6d6d8acddc": 3,
+      "c3858f47dd3e7a308a1b465375f1645f": 1
     },
     "applicationId": "1",
     "arr": null,
@@ -111,8 +105,8 @@
   },
   "32a385e7ddeda810e037b21ab26381b7": {
     "__closure": {
-      "4ba53b5e84e956fb076bc8b0a03ca879": 100,
-      "8d27f5c7fac36d985d89bb6d6d8acddc": 100
+      "4ba53b5e84e956fb076bc8b0a03ca879": 1,
+      "8d27f5c7fac36d985d89bb6d6d8acddc": 2
     },
     "applicationId": "2",
     "id": "32a385e7ddeda810e037b21ab26381b7",
@@ -126,7 +120,7 @@
   },
   "4ba53b5e84e956fb076bc8b0a03ca879": {
     "__closure": {
-      "8d27f5c7fac36d985d89bb6d6d8acddc": 100
+      "8d27f5c7fac36d985d89bb6d6d8acddc": 1
     },
     "applicationId": null,
     "area": 0.0,
@@ -171,8 +165,8 @@
   },
   "c3858f47dd3e7a308a1b465375f1645f": {
     "__closure": {
-      "045cbee36837d589b17f9d8483c90763": 100,
-      "1afc694774efa5913d0077302cd37888": 100
+      "045cbee36837d589b17f9d8483c90763": 1,
+      "1afc694774efa5913d0077302cd37888": 2
     },
     "applicationId": "3",
     "id": "c3858f47dd3e7a308a1b465375f1645f",
