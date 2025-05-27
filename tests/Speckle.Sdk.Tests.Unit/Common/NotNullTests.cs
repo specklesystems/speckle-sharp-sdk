@@ -120,17 +120,14 @@ public class NotNullTests
   [Theory]
   [InlineData("foo")]
   [InlineData("bar baz")]
-  public void ValidateNullOrWhiteSpace_Valid(string input)
-  {
-    input.ValidateNullOrWhiteSpace(); // Should not throw
-  }
+  public void ValidateNullOrWhiteSpace_Valid(string input) => input.NotNullOrWhiteSpace(); // Should not throw
 
   [Theory]
   [InlineData("")]
   [InlineData("   ")]
   public void ValidateNullOrWhiteSpace_Invalid(string input)
   {
-    Action act = () => input.ValidateNullOrWhiteSpace();
+    Action act = () => input.NotNullOrWhiteSpace();
     act.Should().Throw<ArgumentException>();
   }
 }

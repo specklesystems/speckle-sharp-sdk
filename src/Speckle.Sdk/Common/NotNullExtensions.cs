@@ -97,7 +97,7 @@ public static class NotNullExtensions
   }
 
   public static string NotNullOrWhiteSpace(
-    this string? value,
+    [NotNull] this string? value,
     [CallerArgumentExpression(nameof(value))] string? paramName = null
   )
   {
@@ -112,20 +112,5 @@ public static class NotNullExtensions
     }
 
     return value;
-  }
-
-  public static void ValidateNullOrWhiteSpace(
-    this string value,
-    [CallerArgumentExpression(nameof(value))] string? paramName = null
-  )
-  {
-    if (value is null)
-    {
-      throw new ArgumentNullException(paramName ?? "Value is null");
-    }
-    if (string.IsNullOrWhiteSpace(value))
-    {
-      throw new ArgumentException("Value cannot be empty or whitespace.", paramName);
-    }
   }
 }
