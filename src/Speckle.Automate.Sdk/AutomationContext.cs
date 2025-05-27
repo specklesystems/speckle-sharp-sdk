@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using GraphQL;
 using Speckle.Automate.Sdk.Schema;
 using Speckle.Automate.Sdk.Schema.Triggers;
@@ -17,7 +18,11 @@ namespace Speckle.Automate.Sdk;
 internal sealed class AutomationContext(IOperations operations) : IAutomationContext
 {
   public AutomationRunData AutomationRunData { get; set; }
-  public string? ContextView => AutomationResult.ResultView;
+  public string? ContextView
+  {
+    get => AutomationResult.ResultView;
+    private set => AutomationResult.ResultView = value;
+  }
   public required IClient SpeckleClient { get; init; }
 
   public required string _speckleToken { get; init; }
@@ -133,7 +138,9 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
   /// <param name="resourceIds"> Resource contexts to bind into view.</param>
   /// <param name="includeSourceModelVersion"> Whether bind source version into result view or not.</param>
   /// <exception cref="SpeckleException"> Throws if there is no context to create result view.</exception>
-  public void SetContextView(List<string>? resourceIds = null, bool includeSourceModelVersion = true)
+  [MemberNotNull(nameof(ContextView))]
+  [AutoInterfaceIgnore] //Ignore so we can explicitly add the MemberNotNull attibute to the interface method
+  public void SetContextView(IReadOnlyCollection<string>? resourceIds = null, bool includeSourceModelVersion = true)
   {
     List<string> linkResources = new();
     if (includeSourceModelVersion)
@@ -165,7 +172,7 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
       throw new SpeckleException("We do not have enough resource ids to compose a context view");
     }
 
-    AutomationResult.ResultView = $"/projects/{AutomationRunData.ProjectId}/models/{string.Join(",", linkResources)}";
+    ContextView = $"/projects/{AutomationRunData.ProjectId}/models/{string.Join(",", linkResources)}";
   }
 
   public async Task ReportRunStatus()
@@ -363,4 +370,10 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
 
     AutomationResult.ObjectResults.Add(resultCase);
   }
+}
+
+public partial interface IAutomationContext
+{
+  [MemberNotNull(nameof(ContextView))]
+  public void SetContextView(IReadOnlyCollection<string>? resourceIds = null, bool includeSourceModelVersion = true);
 }

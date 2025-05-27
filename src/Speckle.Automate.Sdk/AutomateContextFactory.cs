@@ -9,11 +9,11 @@ using Speckle.Sdk.Credentials;
 namespace Speckle.Automate.Sdk;
 
 [GenerateAutoInterface(VisibilityModifier = "public")]
-internal sealed class AutomateContextFactory(
+internal sealed class AutomationContextFactory(
   IClientFactory clientFactory,
   IAccountManager accountManager,
   IOperations operations
-) : IAutomateContextFactory
+) : IAutomationContextFactory
 {
   public async Task<IAutomationContext> Initialize(string automationRunData, string speckleToken)
   {

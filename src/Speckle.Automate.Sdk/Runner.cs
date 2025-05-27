@@ -15,7 +15,7 @@ namespace Speckle.Automate.Sdk;
 /// Provides mechanisms to execute any function that conforms to the AutomateFunction "interface"
 /// </summary>
 [GenerateAutoInterface(VisibilityModifier = "public")]
-internal class AutomationRunner(IAutomateContextFactory contextFactory) : IAutomationRunner
+internal class AutomationRunner(IAutomationContextFactory contextFactory) : IAutomationRunner
 {
   [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
   public async Task<IAutomationContext> RunFunction<TInput>(

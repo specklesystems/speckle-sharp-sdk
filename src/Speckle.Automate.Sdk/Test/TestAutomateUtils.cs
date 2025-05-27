@@ -16,7 +16,7 @@ internal class TestAutomationRun
   public required string FunctionRunId { get; init; }
 
   [JsonRequired]
-  public required List<TestAutomationRunTrigger> Triggers { get; init; }
+  public required IReadOnlyList<TestAutomationRunTrigger> Triggers { get; init; }
 }
 
 internal class TestAutomationRunTrigger : AutomationRunTriggerBase
@@ -82,7 +82,7 @@ public static class TestAutomateUtils
       AutomationId = TestAutomateEnvironment.GetSpeckleAutomationId(),
       AutomationRunId = runData.AutomationRunId,
       FunctionRunId = runData.FunctionRunId,
-      Triggers = new List<VersionCreationTrigger> { new(modelId: modelId, versionId: versionId) },
+      Triggers = [new(modelId: modelId, versionId: versionId)],
     };
 
     return data;
