@@ -9,6 +9,7 @@ using Speckle.Sdk;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
@@ -182,6 +183,7 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
     {
       objectResults = new ObjectResults
       {
+        Version = 2,
         Values = new ObjectResultValues
         {
           BlobIds = AutomationResult.Blobs,
@@ -274,87 +276,81 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
 
   /// <summary>
   /// Add a new error case to the run results.
-  /// If the error cause has already created an error case,
-  /// the case will be extended with a new case referring to the causing objects.
   /// </summary>
   /// <param name="category">A short tag for the error type.</param>
-  /// <param name="objectIds">A list of objectId's that are causing the error.</param>
+  /// <param name="affectedObjects">A list of objects that are causing the result.</param>
   /// <param name="message">Optional error message.</param>
   /// <param name="metadata">User provided metadata key value pairs.</param>
   /// <param name="visualOverrides">Case specific 3D visual overrides.</param>
-  /// <exception cref="ArgumentException">Throws if the provided <paramref name="objectIds"/> input is empty.</exception>
+  /// <exception cref="ArgumentException">Throws if the provided <paramref name="affectedObjects"/> input is empty.</exception>
   public void AttachErrorToObjects(
     string category,
-    IEnumerable<string> objectIds,
+    IReadOnlyCollection<Base> affectedObjects,
     string? message = null,
     Dictionary<string, object>? metadata = null,
     Dictionary<string, object>? visualOverrides = null
-  ) => AttachResultToObjects(ObjectResultLevel.Error, category, objectIds, message, metadata, visualOverrides);
+  ) => AttachResultToObjects(ObjectResultLevel.Error, category, affectedObjects, message, metadata, visualOverrides);
 
   /// <summary>
   /// Add a new warning case to the run results.
-  /// If the warning cause has already created a warning case,
-  /// the case will be extended with a new case referring to the causing objects.
   /// </summary>
   /// <inheritdoc cref="AttachErrorToObjects"/>
   public void AttachWarningToObjects(
     string category,
-    IEnumerable<string> objectIds,
+    IReadOnlyCollection<Base> affectedObjects,
     string? message = null,
     Dictionary<string, object>? metadata = null,
     Dictionary<string, object>? visualOverrides = null
-  ) => AttachResultToObjects(ObjectResultLevel.Warning, category, objectIds, message, metadata, visualOverrides);
+  ) => AttachResultToObjects(ObjectResultLevel.Warning, category, affectedObjects, message, metadata, visualOverrides);
 
   /// <summary>
   /// Add a new info case to the run results.
-  /// If the info cause has already created an info case,
-  /// the case will be extended with a new case referring to the causing objects.
   /// </summary>
   /// <inheritdoc cref="AttachErrorToObjects"/>
   public void AttachInfoToObjects(
     string category,
-    IEnumerable<string> objectIds,
+    IReadOnlyCollection<Base> affectedObjects,
     string? message = null,
     Dictionary<string, object>? metadata = null,
     Dictionary<string, object>? visualOverrides = null
-  ) => AttachResultToObjects(ObjectResultLevel.Info, category, objectIds, message, metadata, visualOverrides);
+  ) => AttachResultToObjects(ObjectResultLevel.Info, category, affectedObjects, message, metadata, visualOverrides);
 
   /// <summary>
   /// Add a new success case to the run results.
-  /// If the success cause has already created a success case,
-  /// the case will be extended with a new case referring to the causing objects.
   /// </summary>
   /// <inheritdoc cref="AttachErrorToObjects"/>
   public void AttachSuccessToObjects(
     string category,
-    IEnumerable<string> objectIds,
+    IReadOnlyCollection<Base> affectedObjects,
     string? message = null,
     Dictionary<string, object>? metadata = null,
     Dictionary<string, object>? visualOverrides = null
-  ) => AttachResultToObjects(ObjectResultLevel.Success, category, objectIds, message, metadata, visualOverrides);
+  ) => AttachResultToObjects(ObjectResultLevel.Success, category, affectedObjects, message, metadata, visualOverrides);
 
   /// <summary>
   /// Add a new case to the run results.
-  /// If the cause has already created an case with equal level,
-  /// the case will be extended with a new case referring to the causing objects.
   /// </summary>
   /// <param name="level">The level assigned to this result.</param>
   /// <inheritdoc cref="AttachErrorToObjects"/>
   public void AttachResultToObjects(
     ObjectResultLevel level,
     string category,
-    IEnumerable<string> objectIds,
+    IReadOnlyCollection<Base> affectedObjects,
     string? message = null,
     Dictionary<string, object>? metadata = null,
     Dictionary<string, object>? visualOverrides = null
   )
   {
-    string levelString = ObjectResultLevelMapping.Get(level);
-    List<string> objectIdList = objectIds.ToList();
-    if (objectIdList.Count == 0)
+    if (affectedObjects.Count == 0)
     {
-      throw new ArgumentException($"Need at least one object_id to report a(n) {level}");
+      throw new ArgumentException($"Need at least one affected object to report a(n) {level}");
     }
+
+    string levelString = ObjectResultLevelMapping.Get(level);
+    Dictionary<string, string?> objectIdList = affectedObjects.ToDictionary(
+      x => x.id.NotNull($"You can only attach {level} results to objects with an id"),
+      x => x.applicationId
+    );
 
     Console.WriteLine($"Created new {levelString.ToUpper()} category: {category} caused by: {message}");
 
@@ -362,7 +358,7 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
     {
       Category = category,
       Level = levelString,
-      ObjectIds = objectIdList,
+      ObjectAppIds = objectIdList,
       Message = message,
       Metadata = metadata,
       VisualOverrides = visualOverrides,

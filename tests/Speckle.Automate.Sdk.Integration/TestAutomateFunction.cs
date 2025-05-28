@@ -25,7 +25,7 @@ public static class TestAutomateFunction
 
       automateContext.AttachErrorToObjects(
         "",
-        new[] { versionRootObject.id },
+        new[] { versionRootObject },
         $"This project should not contain the type: {testFunctionInputs.ForbiddenSpeckleType} "
       );
       count += 1;
