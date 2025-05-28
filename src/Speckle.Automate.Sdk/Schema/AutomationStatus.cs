@@ -9,5 +9,5 @@ public enum AutomationStatus
   Running,
   Failed,
   Succeeded,
-  Exception
+  Exception,
 }

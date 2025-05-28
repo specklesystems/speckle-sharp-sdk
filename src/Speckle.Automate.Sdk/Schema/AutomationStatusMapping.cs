@@ -16,6 +16,6 @@ public abstract class AutomationStatusMapping
       AutomationStatus.Succeeded => SUCCEEDED,
       AutomationStatus.Initializing => INITIALIZING,
       AutomationStatus.Exception => EXCEPTION,
-      _ => throw new ArgumentOutOfRangeException($"Not valid value for enum {status}")
+      _ => throw new ArgumentOutOfRangeException($"Not valid value for enum {status}"),
     };
 }

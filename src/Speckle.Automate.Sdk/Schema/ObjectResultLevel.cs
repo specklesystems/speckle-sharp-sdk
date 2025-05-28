@@ -5,5 +5,5 @@ public enum ObjectResultLevel
   Success,
   Info,
   Warning,
-  Error
+  Error,
 }

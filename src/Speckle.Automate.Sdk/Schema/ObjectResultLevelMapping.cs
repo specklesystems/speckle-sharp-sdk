@@ -14,6 +14,6 @@ public abstract class ObjectResultLevelMapping
       ObjectResultLevel.Warning => WARNING,
       ObjectResultLevel.Info => INFO,
       ObjectResultLevel.Success => SUCCESS,
-      _ => throw new ArgumentOutOfRangeException($"Not valid value for enum {level}")
+      _ => throw new ArgumentOutOfRangeException($"Not valid value for enum {level}"),
     };
 }
