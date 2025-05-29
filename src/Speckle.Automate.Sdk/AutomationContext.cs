@@ -347,7 +347,7 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
     }
 
     string levelString = ObjectResultLevelMapping.Get(level);
-    Dictionary<string, string?> objectIdList = affectedObjects.ToDictionary(
+    Dictionary<string, string?> ids = affectedObjects.ToDictionary(
       x => x.id.NotNull($"You can only attach {level} results to objects with an id"),
       x => x.applicationId
     );
@@ -358,7 +358,7 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
     {
       Category = category,
       Level = levelString,
-      ObjectAppIds = objectIdList,
+      ObjectAppIds = ids,
       Message = message,
       Metadata = metadata,
       VisualOverrides = visualOverrides,
