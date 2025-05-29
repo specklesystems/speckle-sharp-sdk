@@ -1,13 +1,8 @@
 ﻿namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
-public sealed record UserUpdateInput(
-  string? avatar = null,
-  string? bio = null,
-  string? company = null,
-  string? name = null
-);
+public record UserUpdateInput(string? avatar = null, string? bio = null, string? company = null, string? name = null);
 
-public sealed record UserProjectsFilter(
+public record UserProjectsFilter(
   string? search = null,
   IReadOnlyList<string>? onlyWithRoles = null,
   string? workspaceId = null,
@@ -15,4 +10,4 @@ public sealed record UserProjectsFilter(
   bool? includeImplicitAccess = null
 );
 
-public sealed record UserWorkspacesFilter(string? search);
+public record UserWorkspacesFilter(string? search);

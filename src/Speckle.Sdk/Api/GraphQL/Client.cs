@@ -37,6 +37,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   public CommentResource Comment { get; }
   public SubscriptionResource Subscription { get; }
   public WorkspaceResource Workspace { get; }
+  public ServerResource Server { get; }
 
   public Uri ServerUrl => new(Account.serverInfo.url);
 
@@ -71,6 +72,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     Comment = new(this);
     Subscription = new(this);
     Workspace = new(this);
+    Server = new(this);
 
     HttpClient = CreateHttpClient(application, speckleHttp, account);
 
@@ -209,11 +211,8 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
         {
           ContractResolver = new CamelCasePropertyNamesContractResolver { IgnoreIsSpecifiedMembers = true }, //(Default)
           MissingMemberHandling = MissingMemberHandling.Error, //(not default) If you query for a member that doesn't exist, this will throw (except websocket responses see https://github.com/graphql-dotnet/graphql-client/issues/660)
-          Converters =
-          {
-            new ConstantCaseEnumConverter(),
-          } //(Default) enums will be serialized using the GraphQL const case standard
-          ,
+          NullValueHandling = NullValueHandling.Ignore, //(not default) We won't serialize nulls, as can open more opportunity for conflicting with servers that are old and don't have the latest schema
+          Converters = { new ConstantCaseEnumConverter() }, //(Default) enums will be serialized using the GraphQL const case standard
         }
       ),
       httpClient
