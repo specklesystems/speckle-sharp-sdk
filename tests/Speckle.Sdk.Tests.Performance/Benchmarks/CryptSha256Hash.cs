@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
-using Speckle.Sdk.Helpers;
 
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 
@@ -20,12 +19,12 @@ public class CryptSha256Hash
   [Benchmark]
   public string Sha256()
   {
-    return Crypt.Sha256(testData);
+    return Speckle.Sdk.Common.Sha256.GetString(testData);
   }
 
   [Benchmark]
   public string Sha256_Span()
   {
-    return Crypt.Sha256(testData.AsSpan());
+    return Speckle.Sdk.Common.Sha256.GetString(testData.AsSpan());
   }
 }

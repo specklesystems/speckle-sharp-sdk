@@ -1,4 +1,4 @@
-﻿using Speckle.Sdk.Common;
+﻿using FluentAssertions;
 
 namespace Speckle.Sdk.Tests.Unit.Common;
 
@@ -11,10 +11,13 @@ public class Md5Tests
   [InlineData("message digest", "f96b697d7cb7938d525a2f31aaf161d0")]
   [InlineData("abcdefghijklmnopqrstuvwxyz", "c3fcd3d76192e4007dfb496cca67e13b")]
   [InlineData("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", "d174ab98d277d9f5a5611c2c9f419d9f")]
-  [InlineData("12345678901234567890123456789012345678901234567890123456789012345678901234567890", "57edf4a22be3c955ac49da2e2107b67a")]
+  [InlineData(
+    "12345678901234567890123456789012345678901234567890123456789012345678901234567890",
+    "57edf4a22be3c955ac49da2e2107b67a"
+  )]
   public void Md5_Hash_Is_Correct(string input, string expectedHex)
   {
-    string actual = Md5.GetMd5String(input);
-    Assert.Equal(expectedHex, actual);
+    string actual = Speckle.Sdk.Common.Md5.GetString(input);
+    expectedHex.Should().Be(actual);
   }
 }
