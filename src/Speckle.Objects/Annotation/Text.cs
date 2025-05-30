@@ -29,7 +29,7 @@ public class Text : Base
   /// <summary>
   /// If true, the text is oriented to face the screen (camera-aligned).
   /// </summary>
-  public required bool screenAligned { get; set; }
+  public required bool screenOriented { get; set; }
 
   /// <summary>
   /// Horizontal alignment: Left, Center or Right
@@ -44,7 +44,7 @@ public class Text : Base
   /// <summary>
   /// Plane will be null if the text object orientation follows camera view
   /// </summary>
-  public required Plane? plane { get; set; }
+  public required Plane plane { get; set; }
 
   /// <summary>
   /// Maximum width of the text field (in 'units').
