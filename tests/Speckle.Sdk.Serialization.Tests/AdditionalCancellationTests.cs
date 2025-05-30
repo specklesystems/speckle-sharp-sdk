@@ -36,7 +36,7 @@ public class AdditionalCancellationTests
     );
 
     var task = serializeProcess.Serialize(testClass);
-    cancellationSource.Cancel();
+    await cancellationSource.CancelAsync();
 
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () => await task);
     await Verify(ex);
@@ -64,7 +64,7 @@ public class AdditionalCancellationTests
       tasks.Add(serializeProcess.Serialize(i % 2 == 0 ? testClass1 : testClass2));
     }
 
-    cancellationSource.Cancel();
+    await cancellationSource.CancelAsync();
 
     while (tasks.Count != 0)
     {
@@ -94,7 +94,7 @@ public class AdditionalCancellationTests
     );
 
     await serializeProcess.Serialize(testClass);
-    cancellationSource.Cancel(); // Cancel after completion
+    await cancellationSource.CancelAsync();
 
     cancellationSource.IsCancellationRequested.Should().BeTrue();
   }
