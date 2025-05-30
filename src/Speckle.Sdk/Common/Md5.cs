@@ -160,6 +160,6 @@ public static class Md5
   public static string GetString(string input)
   {
     var hash = ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
-    return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+    return BitConverter.ToString(hash).Replace("-", "");
   }
 }

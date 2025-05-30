@@ -25,7 +25,7 @@ public class Account : IEquatable<Account>
           throw new InvalidOperationException("Incomplete account info: cannot generate id.");
         }
 
-        _id = Md5.GetString(userInfo.email + serverInfo.url);
+        _id = Md5.GetString(userInfo.email + serverInfo.url).ToUpperInvariant();
       }
       return _id;
     }
@@ -62,13 +62,13 @@ public class Account : IEquatable<Account>
   public string GetHashedEmail()
   {
     string email = userInfo?.email ?? "unknown";
-    return "@" + Md5.GetString(email);
+    return "@" + Md5.GetString(email).ToUpperInvariant();
   }
 
   public string GetHashedServer()
   {
     string url = serverInfo?.url ?? AccountManager.DEFAULT_SERVER_URL;
-    return Md5.GetString(CleanURL(url));
+    return Md5.GetString(CleanURL(url)).ToUpperInvariant();
   }
 
   public override string ToString()
