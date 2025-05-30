@@ -2,17 +2,19 @@
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Serialisation.V2.Receive;
-using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
-/// <seealso cref="DeserializeProcessFactoryNoCache"/>
+/// <summary>
+/// A version of <seealso cref="DeserializeProcessFactory"/> but without any SQLite usage.
+/// This class doesn't have a matching <seealso cref="GenerateAutoInterfaceAttribute"/>, so will not be registered by <seealso cref="ServiceRegistration"/> automatically
+/// Instead consumers can register this to override the default <seealso cref="DeserializeProcessFactory"/>
+/// </summary>
+/// <seealso cref="DeserializeProcessFactory"/>
 /// <seealso cref="DeserializeProcess"/>
-[GenerateAutoInterface]
-public class DeserializeProcessFactory(
+public sealed class DeserializeProcessFactoryNoCache(
   IBaseDeserializer baseDeserializer,
-  ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory,
   IServerObjectManagerFactory serverObjectManagerFactory,
   ILoggerFactory loggerFactory
 ) : IDeserializeProcessFactory
@@ -26,7 +28,7 @@ public class DeserializeProcessFactory(
     DeserializeProcessOptions? options = null
   )
   {
-    var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
+    var sqLiteJsonCacheManager = new MemoryJsonCacheManager(new());
     var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
     return new DeserializeProcess(
       sqLiteJsonCacheManager,

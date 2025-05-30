@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.V2;
 
 namespace Speckle.Automate.Sdk;
 
@@ -36,6 +37,11 @@ public static class ServiceRegistration
   )
   {
     serviceCollection.AddSpeckleSdk(speckleSdkOptions);
+
+    //Overwrite the SDK's default IDeserializeProcessFactory to ensure SQLite is not used to cache objects
+    serviceCollection.AddTransient<IDeserializeProcessFactory, DeserializeProcessFactoryNoCache>();
+
+    //Add automate assembly services
     serviceCollection.AddTransient<IAutomationContextFactory, AutomationContextFactory>();
     serviceCollection.AddTransient<IAutomationRunner, AutomationRunner>();
 
