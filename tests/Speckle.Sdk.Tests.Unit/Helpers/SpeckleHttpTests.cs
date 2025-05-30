@@ -36,7 +36,8 @@ public class SpeckleHttpTests : MoqTest
 
     var uri = new Uri("https://speckle.xyz");
     mockHttp.When(uri.AbsoluteUri).Respond(HttpStatusCode.Unauthorized);
-    await Assert.ThrowsAsync<HttpRequestException>(async () => await speckleHttp.HttpPing(uri, mockHttp.ToHttpClient())
+    await Assert.ThrowsAsync<HttpRequestException>(async () =>
+      await speckleHttp.HttpPing(uri, mockHttp.ToHttpClient())
     );
   }
 
