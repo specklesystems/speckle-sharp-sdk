@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using Speckle.Sdk.Api.GraphQL.Models;
-using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Credentials;
 
@@ -25,7 +25,7 @@ public class Account : IEquatable<Account>
           throw new InvalidOperationException("Incomplete account info: cannot generate id.");
         }
 
-        _id = Crypt.Md5(userInfo.email + serverInfo.url, "X2");
+        _id = Md5.GetString(userInfo.email + serverInfo.url).ToUpperInvariant();
       }
       return _id;
     }
@@ -62,13 +62,13 @@ public class Account : IEquatable<Account>
   public string GetHashedEmail()
   {
     string email = userInfo?.email ?? "unknown";
-    return "@" + Crypt.Md5(email, "X2");
+    return "@" + Md5.GetString(email).ToUpperInvariant();
   }
 
   public string GetHashedServer()
   {
     string url = serverInfo?.url ?? AccountManager.DEFAULT_SERVER_URL;
-    return Crypt.Md5(CleanURL(url), "X2");
+    return Md5.GetString(CleanURL(url)).ToUpperInvariant();
   }
 
   public override string ToString()
