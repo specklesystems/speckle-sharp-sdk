@@ -1,6 +1,5 @@
 using Speckle.Objects.Geometry;
 using Speckle.Sdk.Models;
-using Point = Speckle.Objects.Geometry.Point;
 
 namespace Speckle.Objects.Annotation;
 
@@ -15,10 +14,6 @@ public class Text : Base
   /// </summary>
   public required string value { get; set; }
 
-  /// <summary>
-  /// Origin point, relation to the text is defined by AlignmentHorizontal and AlignmentVertical
-  /// </summary>
-  public required Point origin { get; set; }
 
   /// <summary>
   /// Height in linear units or pixels (if Units.None)
@@ -30,6 +25,11 @@ public class Text : Base
   /// independently of zooming the model). Default height in pixels is 17px (used for Viewer measurements)
   /// </summary>
   public required string units { get; set; }
+
+  /// <summary>
+  /// If true, the text is oriented to face the screen (camera-aligned).
+  /// </summary>
+  public required bool screenAligned { get; set; }
 
   /// <summary>
   /// Horizontal alignment: Left, Center or Right
@@ -44,7 +44,7 @@ public class Text : Base
   /// <summary>
   /// Plane will be null if the text object orientation follows camera view
   /// </summary>
-  public Plane? plane { get; set; }
+  public required Plane? plane { get; set; }
 
   /// <summary>
   /// Maximum width of the text field (in 'units').
