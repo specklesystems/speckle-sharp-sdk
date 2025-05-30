@@ -14,7 +14,6 @@ public class Text : Base
   /// </summary>
   public required string value { get; set; }
 
-
   /// <summary>
   /// Height in linear units or pixels (if Units.None)
   /// </summary>
