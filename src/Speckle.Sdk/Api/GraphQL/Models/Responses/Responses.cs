@@ -9,10 +9,10 @@ namespace Speckle.Sdk.Api.GraphQL.Models.Responses;
 /// </summary>
 /// <param name="data"></param>
 /// <typeparam name="T"></typeparam>
-internal record RequiredResponse<T>([property: JsonProperty(Required = Required.Always)] T data);
+public record RequiredResponse<T>([property: JsonProperty(Required = Required.Always)] T data);
 
 /// <inheritdoc cref="RequiredResponse{T}"/>
-internal record NullableResponse<T>([property: JsonProperty(Required = Required.AllowNull)] T? data);
+public record NullableResponse<T>([property: JsonProperty(Required = Required.AllowNull)] T? data);
 
 //TODO: replace with RequiredResponse{T}
 internal record ServerInfoResponse([property: JsonProperty(Required = Required.Always)] ServerInfo serverInfo);
