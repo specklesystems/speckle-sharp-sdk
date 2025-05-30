@@ -66,9 +66,14 @@ public class AdditionalCancellationTests
 
     cancellationSource.Cancel();
 
-    foreach (var task in tasks)
+    while (tasks.Count != 0)
     {
-      await Assert.ThrowsAsync<OperationCanceledException>(async () => await task);
+      await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+      {
+        var t = await Task.WhenAny(tasks);
+        tasks.Remove(t);
+        await t;
+      });
     }
     cancellationSource.IsCancellationRequested.Should().BeTrue();
   }
