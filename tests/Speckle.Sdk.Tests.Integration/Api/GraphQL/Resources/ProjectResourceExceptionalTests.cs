@@ -118,7 +118,8 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
   {
     ProjectUpdateRoleInput input = new(_secondUser.Account.id.NotNull(), "NonExistentProject", newRole);
 
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await _unauthedUser.Project.UpdateRole(input)
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      _ = await _unauthedUser.Project.UpdateRole(input)
     );
     ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }

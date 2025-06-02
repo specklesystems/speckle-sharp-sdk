@@ -1,6 +1,5 @@
 ﻿using FluentAssertions;
 using Speckle.Sdk.Dependencies;
-using Speckle.Sdk.Helpers;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
@@ -45,9 +44,6 @@ public sealed class HashUtilityTests
     }
   }
 
-  public static IEnumerable<object[]> SmallTestCasesMd5() =>
-    SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(0, 32));
-
   public static IEnumerable<object[]> SmallTestCasesSha256() =>
     SmallTestCases(SmallTestCases(), EnumerableExtensions.RangeFrom(2, 64));
 
@@ -70,23 +66,11 @@ public sealed class HashUtilityTests
   }
 
   [Theory]
-  [MemberData(nameof(SmallTestCasesMd5))]
-  public void Md5(string input, string _, string expected, int length)
-  {
-    var resultLower = Crypt.Md5(input, "x2", length);
-    var resultUpper = Crypt.Md5(input, "X2", length);
-
-    resultLower.Should().Be(new string(expected.ToLower()[..length]));
-
-    resultUpper.Should().Be(new string(expected.ToUpper()[..length]));
-  }
-
-  [Theory]
   [MemberData(nameof(SmallTestCasesSha256))]
   public void Sha256(string input, string expected, string _, int length)
   {
-    var resultLower = Crypt.Sha256(input, "x2", length);
-    var resultUpper = Crypt.Sha256(input, "X2", length);
+    var resultLower = Speckle.Sdk.Common.Sha256.GetString(input, "x2", length);
+    var resultUpper = Speckle.Sdk.Common.Sha256.GetString(input, "X2", length);
 
     resultLower.Should().Be(new string(expected.ToLower()[..length]));
 
@@ -102,8 +86,8 @@ public sealed class HashUtilityTests
     int length //Span version of the function must have multiple of 2
   )
   {
-    var resultLowerSpan = Crypt.Sha256(input.AsSpan(), "x2", length);
-    var resultUpperSpan = Crypt.Sha256(input.AsSpan(), "X2", length);
+    var resultLowerSpan = Speckle.Sdk.Common.Sha256.GetString(input.AsSpan(), "x2", length);
+    var resultUpperSpan = Speckle.Sdk.Common.Sha256.GetString(input.AsSpan(), "X2", length);
 
     resultLowerSpan.Should().Be(new string(expected.ToLower()[..length]));
 
@@ -114,7 +98,7 @@ public sealed class HashUtilityTests
   [MemberData(nameof(LargeTestCases))]
   public void Sha256_LargeDataTests(string input, string expected)
   {
-    var computedHash = Crypt.Sha256(input.AsSpan());
+    var computedHash = Speckle.Sdk.Common.Sha256.GetString(input.AsSpan());
     computedHash.Should().Be(expected);
   }
 }

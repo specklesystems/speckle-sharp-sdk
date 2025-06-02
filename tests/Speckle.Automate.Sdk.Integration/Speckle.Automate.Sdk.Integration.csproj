@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Speckle.Sdk.Testing\Speckle.Sdk.Testing.csproj" />
+    <ProjectReference Include="..\..\src\Speckle.Automate.Sdk\Speckle.Automate.Sdk.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk.Tests.Integration\Speckle.Sdk.Tests.Integration.csproj" />
+  </ItemGroup>
+</Project>
