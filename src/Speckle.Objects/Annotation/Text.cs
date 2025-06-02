@@ -41,7 +41,6 @@ public class Text : Base
   public AlignmentVertical alignmentV { get; set; }
 
   /// <summary>
-  /// Plane will be null if the text object orientation follows camera view
   /// Plane axis vectors will be ignored if screenOriented is true
   /// </summary>
   public required Plane plane { get; set; }
