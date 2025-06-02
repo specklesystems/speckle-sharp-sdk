@@ -31,6 +31,7 @@ public sealed class AccountManager(
   ISpeckleApplication application,
   ILogger<AccountManager> logger,
   ISpeckleHttp speckleHttp,
+  IAccountFactory accountFactory,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory
 ) : IAccountManager
 {
@@ -98,7 +99,6 @@ public sealed class AccountManager(
 
     ServerInfo serverInfo = response.Data.serverInfo;
     serverInfo.url = server.ToString().TrimEnd('/');
-    serverInfo.frontend2 = await IsFrontend2Server(server).ConfigureAwait(false);
 
     return response.Data.serverInfo;
   }
@@ -140,59 +140,6 @@ public sealed class AccountManager(
     response.EnsureGraphQLSuccess();
 
     return response.Data.data;
-  }
-
-  /// <summary>
-  /// Gets basic user and server information given a token and a server.
-  /// </summary>
-  /// <param name="token"></param>
-  /// <param name="server">Server URL</param>
-  /// <returns></returns>
-  internal async Task<ActiveUserServerInfoResponse> GetUserServerInfo(
-    string token,
-    Uri server,
-    CancellationToken ct = default
-  )
-  {
-    using var httpClient = speckleHttp.CreateHttpClient(authorizationToken: token);
-
-    using var client = new GraphQLHttpClient(
-      new GraphQLHttpClientOptions { EndPoint = new Uri(server, "/graphql") },
-      new NewtonsoftJsonSerializer(),
-      httpClient
-    );
-
-    System.Version version = await client.GetServerVersion(ct).ConfigureAwait(false);
-
-    // serverMigration property was added in 2.18.5, so only query for it
-    // if the server has been updated past that version
-    System.Version serverMigrationVersion = new(2, 18, 5);
-
-    string queryString;
-    if (version >= serverMigrationVersion)
-    {
-      //language=graphql
-      queryString =
-        "query { activeUser { id name email company avatar streams { totalCount } commits { totalCount } } serverInfo { name company adminContact description version migration { movedFrom movedTo } } }";
-    }
-    else
-    {
-      //language=graphql
-      queryString =
-        "query { activeUser { id name email company avatar streams { totalCount } commits { totalCount } } serverInfo { name company adminContact description version } }";
-    }
-
-    var request = new GraphQLRequest { Query = queryString };
-
-    var response = await client.SendQueryAsync<ActiveUserServerInfoResponse>(request, ct).ConfigureAwait(false);
-
-    response.EnsureGraphQLSuccess();
-
-    ServerInfo serverInfo = response.Data.serverInfo;
-    serverInfo.url = server.ToString().TrimEnd('/');
-    serverInfo.frontend2 = await IsFrontend2Server(server).ConfigureAwait(false);
-
-    return response.Data;
   }
 
   /// <summary>
@@ -254,7 +201,6 @@ public sealed class AccountManager(
     account.serverInfo.migration.movedTo = null;
     account.serverInfo.migration.movedFrom = new Uri(account.serverInfo.url);
     account.serverInfo.url = upgradeUri.ToString().TrimEnd('/');
-    account.serverInfo.frontend2 = true;
 
     // setting the id to null will force it to be recreated
     account.id = null!; //TODO this is gross so remove when id is nullable
@@ -410,11 +356,11 @@ public sealed class AccountManager(
       try
       {
         Uri url = new(account.serverInfo.url);
-        var userServerInfo = await GetUserServerInfo(account.token, url, ct).ConfigureAwait(false);
+        var userServerInfo = await accountFactory.GetUserServerInfo(url, account.token, ct).ConfigureAwait(false);
 
         //the token has expired
         //TODO: once we get a token expired exception from the server use that instead
-        if (userServerInfo?.activeUser == null || userServerInfo.serverInfo == null)
+        if (userServerInfo.activeUser == null || userServerInfo.serverInfo == null)
         {
           // We were initially was handling refresh token here bc quite a while ago server was returning null
           // for activeUser and serverInfo instead of throwing exception. In short, our logic moved into catch block to cover both.
@@ -635,16 +581,13 @@ public sealed class AccountManager(
     try
     {
       var tokenResponse = await GetToken(accessCode, challenge, server).ConfigureAwait(false);
-      var userResponse = await GetUserServerInfo(tokenResponse.token, server).ConfigureAwait(false);
 
-      var account = new Account
-      {
-        token = tokenResponse.token,
-        refreshToken = tokenResponse.refreshToken,
-        isDefault = !GetAccounts().Any(),
-        serverInfo = userResponse.serverInfo,
-        userInfo = userResponse.activeUser,
-      };
+      var account = await accountFactory
+        .CreateAccount(server, tokenResponse.token, tokenResponse.refreshToken)
+        .ConfigureAwait(false);
+
+      account.isDefault = !GetAccounts().Any();
+
       logger.LogInformation("Successfully created account for {serverUrl}", server);
 
       return account;
@@ -781,7 +724,7 @@ public sealed class AccountManager(
     }
   }
 
-  private async Task<TokenExchangeResponse> GetRefreshedToken(string refreshToken, Uri server, string app = "sca")
+  private async Task<TokenExchangeResponse> GetRefreshedToken(string? refreshToken, Uri server, string app = "sca")
   {
     try
     {
@@ -806,38 +749,6 @@ public sealed class AccountManager(
     {
       throw new SpeckleException($"Failed to get refreshed token from {server}", ex);
     }
-  }
-
-  /// <summary>
-  /// Sends a simple get request to the <paramref name="server"/>, and checks the response headers for a <c>"x-speckle-frontend-2"</c> <see cref="Boolean"/> value
-  /// </summary>
-  /// <param name="server">Server endpoint to get header</param>
-  /// <returns><see langword="true"/> if response contains FE2 header and the value was <see langword="true"/></returns>
-  /// <exception cref="SpeckleException">response contained FE2 header, but the value was <see langword="null"/>, empty, or not parseable to a <see cref="Boolean"/></exception>
-  /// <exception cref="System.Net.Http.HttpRequestException">Request to <paramref name="server"/> failed to send or response was not successful</exception>
-  private async Task<bool> IsFrontend2Server(Uri server)
-  {
-    using var httpClient = speckleHttp.CreateHttpClient();
-
-    var response = await speckleHttp.HttpPing(server).ConfigureAwait(false);
-
-    var headers = response.Headers;
-    const string HEADER = "x-speckle-frontend-2";
-    if (!headers.TryGetValues(HEADER, out IEnumerable<string>? values))
-    {
-      return false;
-    }
-
-    string? headerValue = values.FirstOrDefault();
-
-    if (!bool.TryParse(headerValue, out bool value))
-    {
-      throw new SpeckleException(
-        $"Headers contained {HEADER} header, but value {headerValue} could not be parsed to a bool"
-      );
-    }
-
-    return value;
   }
 
   private static string GenerateChallenge()
