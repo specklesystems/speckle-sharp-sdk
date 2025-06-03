@@ -26,9 +26,11 @@ public readonly record struct SerializeProcessResults(
   IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
 );
 
-public partial interface ISerializeProcess : IAsyncDisposable;
+public interface ISerializeProcess : IAsyncDisposable
+{
+  Task<SerializeProcessResults> Serialize(Base root);
+}
 
-[GenerateAutoInterface]
 public sealed class SerializeProcess(
   IProgress<ProgressArgs>? progress,
   IObjectSaver objectSaver,
@@ -288,8 +290,21 @@ public sealed class SerializeProcess(
     }
   }
 
-  private void RecordException(Exception e)
+  public void RecordException(Exception e)
   {
+    if (e is OperationCanceledException)
+    {
+      return;
+    }
+
+    if (
+      e is AggregateException ae
+      && ae.InnerExceptions.Count == 1
+      && ae.InnerExceptions[0] is OperationCanceledException
+    )
+    {
+      return;
+    }
     //order here matters
     _logger.LogError(e, "Error in SDK");
     objectSaver.Exception = e;
