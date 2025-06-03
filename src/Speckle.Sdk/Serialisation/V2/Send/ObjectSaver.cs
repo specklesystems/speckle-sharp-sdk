@@ -34,7 +34,7 @@ public sealed class ObjectSaver(
 
   private readonly SerializeProcessOptions _options = options ?? new();
 
-  private long _uploaded;
+  private long _uploading;
   private long _cached;
 
   private long _objectsSerialized;
@@ -56,13 +56,12 @@ public sealed class ObjectSaver(
         objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
         if (objectBatch.Count != 0)
         {
+          Interlocked.Add(ref _uploading, batch.Items.Count);
+          progress?.Report(new(ProgressEvent.UploadingObjects, _uploading, null));
           await serverObjectManager
             .UploadObjects(objectBatch, true, progress, _cancellationTokenSource.Token)
             .ConfigureAwait(false);
-          Interlocked.Add(ref _uploaded, batch.Items.Count);
         }
-
-        progress?.Report(new(ProgressEvent.UploadedObjects, _uploaded, null));
       }
     }
     catch (OperationCanceledException)
