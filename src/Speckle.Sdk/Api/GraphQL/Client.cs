@@ -91,9 +91,10 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
               ex,
               "The previous attempt at executing function to get {resultType} failed with {exceptionMessage}. Retrying after {timeout}",
               typeof(T).Name,
-              ex.Message,
+              ex?.Message,
               timeout
             );
+            return Task.CompletedTask;
           }
         )
       )
