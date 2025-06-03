@@ -28,25 +28,6 @@ public class UserServerInfoTests : IAsyncLifetime
     result.frontend2.Should().BeTrue();
   }
 
-  /// <remarks>
-  /// We get ServerInfo from "http://localhost:3000/graphql",
-  /// Then we mutate the `frontend2` property of ServerInfo by trying to fetch header from "http://localhost:3000/",
-  /// This is not doable in local server because there is no end-point on this to ping.
-  /// This is a bad sign for mutation.
-  /// </remarks>
-  [Fact]
-  public async Task GetServerInfo_ExpectFail_CantPing()
-  {
-    Uri serverUrl = new(_acc.serverInfo.url);
-
-    await FluentActions
-      .Invoking(async () =>
-        await Fixtures.ServiceProvider.GetRequiredService<IAccountManager>().GetServerInfo(serverUrl)
-      )
-      .Should()
-      .ThrowAsync<HttpRequestException>();
-  }
-
   [Fact]
   public async Task GetServerInfo_ExpectFail_NoServer()
   {

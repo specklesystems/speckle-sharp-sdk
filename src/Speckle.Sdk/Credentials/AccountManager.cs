@@ -12,7 +12,6 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
-using Speckle.Sdk.Api.GraphQL.Serializer;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
@@ -30,6 +29,7 @@ public partial interface IAccountManager : IDisposable;
 public sealed class AccountManager(
   ISpeckleApplication application,
   ILogger<AccountManager> logger,
+  IGraphQLClientFactory graphQLClientFactory,
   ISpeckleHttp speckleHttp,
   IAccountFactory accountFactory,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory
@@ -59,39 +59,12 @@ public sealed class AccountManager(
   /// <exception cref="AggregateException"><inheritdoc cref="GraphQLErrorHandler.EnsureGraphQLSuccess(IGraphQLResponse)"/></exception>
   public async Task<ServerInfo> GetServerInfo(Uri server, CancellationToken cancellationToken = default)
   {
-    using var httpClient = speckleHttp.CreateHttpClient();
+    using var gqlClient = graphQLClientFactory.CreateGraphQLClient(server, null);
 
-    using var gqlClient = new GraphQLHttpClient(
-      new GraphQLHttpClientOptions
-      {
-        EndPoint = new Uri(server, "/graphql"),
-        UseWebSocketForQueriesAndMutations = false,
-      },
-      new NewtonsoftJsonSerializer(),
-      httpClient
-    );
+    //lang=graphql
+    const string QUERY_STRING = "query { serverInfo { name company migration { movedFrom movedTo } } }";
 
-    System.Version version = await gqlClient
-      .GetServerVersion(cancellationToken: cancellationToken)
-      .ConfigureAwait(false);
-
-    // serverMigration property was added in 2.18.5, so only query for it
-    // if the server has been updated past that version
-    System.Version serverMigrationVersion = new(2, 18, 5);
-
-    string queryString;
-    if (version >= serverMigrationVersion)
-    {
-      //language=graphql
-      queryString = "query { serverInfo { name company migration { movedFrom movedTo } } }";
-    }
-    else
-    {
-      //language=graphql
-      queryString = "query { serverInfo { name company } }";
-    }
-
-    var request = new GraphQLRequest { Query = queryString };
+    var request = new GraphQLRequest { Query = QUERY_STRING };
 
     var response = await gqlClient.SendQueryAsync<ServerInfoResponse>(request, cancellationToken).ConfigureAwait(false);
 
@@ -113,13 +86,8 @@ public sealed class AccountManager(
   /// <exception cref="AggregateException"><inheritdoc cref="GraphQLErrorHandler.EnsureGraphQLSuccess(IGraphQLResponse)"/></exception>
   public async Task<UserInfo> GetUserInfo(string token, Uri server, CancellationToken cancellationToken = default)
   {
-    using var httpClient = speckleHttp.CreateHttpClient(authorizationToken: token);
+    using var gqlClient = graphQLClientFactory.CreateGraphQLClient(server, token);
 
-    using var gqlClient = new GraphQLHttpClient(
-      new GraphQLHttpClientOptions { EndPoint = new Uri(server, "/graphql") },
-      new NewtonsoftJsonSerializer(),
-      httpClient
-    );
     //language=graphql
     const string QUERY = """
       query { 

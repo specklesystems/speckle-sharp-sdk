@@ -1,6 +1,7 @@
 ﻿using System.Net.WebSockets;
 using System.Reflection;
 using GraphQL.Client.Http;
+using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Serialization;
@@ -10,14 +11,29 @@ using Speckle.Sdk.Helpers;
 namespace Speckle.Sdk.Credentials;
 
 [GenerateAutoInterface]
-public class GraphQLClientFactory(ISpeckleApplication application, ISpeckleHttp speckleHttp) : IGraphQLClientFactory
+public class GraphQLClientFactory(
+  ISpeckleApplication application,
+  ISpeckleHttp speckleHttp,
+  ILogger<GraphQLClientFactory> logger
+) : IGraphQLClientFactory
 {
+  /// <summary>
+  /// <inheritdoc cref="CreateGraphQLClient(Uri, string)"/>
+  /// </summary>
+  /// <param name="account">The account to use for authentication</param>
+  /// <returns></returns>
   public GraphQLHttpClient CreateGraphQLClient(Account account)
   {
     return CreateGraphQLClient(new(account.serverInfo.url), account.token);
   }
 
-  public GraphQLHttpClient CreateGraphQLClient(Uri serverUrl, string authToken)
+  /// <summary>
+  /// Creates a <see cref="GraphQLHttpClient"/> configured for communication with a Speckle server
+  /// </summary>
+  /// <param name="serverUrl">The base url of the speckle server to communicate with</param>
+  /// <param name="authToken">If provided, all requests will be authenticated</param>
+  /// <returns></returns>
+  public GraphQLHttpClient CreateGraphQLClient(Uri serverUrl, string? authToken)
   {
     var gQLClient = new GraphQLHttpClient(
       new GraphQLHttpClientOptions
@@ -42,23 +58,26 @@ public class GraphQLClientFactory(ISpeckleApplication application, ISpeckleHttp 
       CreateHttpClient(authToken)
     );
 
-    gQLClient.WebSocketReceiveErrors.Subscribe(e =>
+    gQLClient.WebSocketReceiveErrors.Subscribe(ex =>
     {
-      if (e is WebSocketException we)
+      if (ex is WebSocketException we)
       {
-        Console.WriteLine(
-          $"WebSocketException: {we.Message} (WebSocketError {we.WebSocketErrorCode}, ErrorCode {we.ErrorCode}, NativeErrorCode {we.NativeErrorCode}"
+        logger.LogError(
+          we,
+          "GraphQL Websocket received an {WebSocketErrorCode} ({NativeErrorCode}) error that has been swallowed",
+          we.WebSocketErrorCode,
+          we.ErrorCode
         );
       }
       else
       {
-        Console.WriteLine($"Exception in websocket receive stream: {e}");
+        logger.LogError(ex, "GraphQL Websocket received an error that has been swallowed");
       }
     });
     return gQLClient;
   }
 
-  private HttpClient CreateHttpClient(string token)
+  private HttpClient CreateHttpClient(string? token)
   {
     var httpClient = speckleHttp.CreateHttpClient(timeoutSeconds: 30, authorizationToken: token);
 
