@@ -41,7 +41,13 @@ public sealed class DeserializeProcess(
     :
 #pragma warning disable CA2000
   this(
-      new ObjectLoader(sqLiteJsonCacheManager, serverObjectManager, progress, cancellationToken),
+      new ObjectLoader(
+        sqLiteJsonCacheManager,
+        serverObjectManager,
+        progress,
+        loggerFactory.CreateLogger<ObjectLoader>(),
+        cancellationToken
+      ),
       progress,
       baseDeserializer,
       loggerFactory,
