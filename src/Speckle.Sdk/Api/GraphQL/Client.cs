@@ -99,7 +99,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
       )
       .ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}" />
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
     using var activity = _activityFactory.Start();

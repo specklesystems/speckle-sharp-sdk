@@ -20,7 +20,7 @@ public class UserServerInfoTests : IAsyncLifetime
   [Fact]
   public async Task IsFrontEnd2True()
   {
-    ServerInfo? result = await Fixtures
+    ServerInfo result = await Fixtures
       .ServiceProvider.GetRequiredService<IAccountManager>()
       .GetServerInfo(new("https://app.speckle.systems/"));
 

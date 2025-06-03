@@ -7,28 +7,32 @@ namespace Speckle.Sdk.Credentials;
 
 public partial interface IAccountFactory
 {
-  internal Task<ActiveUserServerInfoResponse> GetUserServerInfo(Uri serverUrl, string authToken, CancellationToken ct);
+  internal Task<ActiveUserServerInfoResponse> GetUserServerInfo(Uri serverUrl, string? authToken, CancellationToken ct);
 }
 
 [GenerateAutoInterface]
 public sealed class AccountFactory(IGraphQLClientFactory graphQLClientFactory) : IAccountFactory
 {
   /// <summary>
-  /// Gets basic user and server information given a token and a server.
+  /// Gets the User and Server info required for <see cref="Account"/> object creation
   /// </summary>
   /// <param name="serverUrl"></param>
-  /// <param name="authToken"></param>
+  /// <param name="authToken">If <see lang="null"/>, the server will respond with a <see lang="null"/> <see cref="UserInfo"/></param>
+  /// <param name="cancellationToken"></param>
   /// <returns></returns>
+  /// <inheritdoc cref="GetUserServerInfoInternal"/>
   async Task<ActiveUserServerInfoResponse> IAccountFactory.GetUserServerInfo(
     Uri serverUrl,
-    string authToken,
-    CancellationToken ct
-  ) => await GetUserServerInfoInternal(serverUrl, authToken, ct).ConfigureAwait(false);
+    string? authToken,
+    CancellationToken cancellationToken
+  ) => await GetUserServerInfoInternal(serverUrl, authToken, cancellationToken).ConfigureAwait(false);
 
+  /// <exception cref="SpeckleException">Server could not find user info given the speckleToken, suggests expired or non-existent user</exception>
+  /// <inheritdoc cref="Speckle.Sdk.Api.GraphQL.GraphQLErrorHandler.EnsureGraphQLSuccess(IReadOnlyCollection{GraphQLError}?)"/>
   private async Task<ActiveUserServerInfoResponse> GetUserServerInfoInternal(
     Uri serverUrl,
-    string authToken,
-    CancellationToken ct
+    string? authToken,
+    CancellationToken cancellationToken
   )
   {
     using var client = graphQLClientFactory.CreateGraphQLClient(serverUrl, authToken);
@@ -46,7 +50,6 @@ public sealed class AccountFactory(IGraphQLClientFactory graphQLClientFactory) :
         serverInfo {
           name
           company
-          adminContact
           description
           version
           migration {
@@ -59,7 +62,9 @@ public sealed class AccountFactory(IGraphQLClientFactory graphQLClientFactory) :
 
     var request = new GraphQLRequest { Query = QUERY_STRING };
 
-    var response = await client.SendQueryAsync<ActiveUserServerInfoResponse>(request, ct).ConfigureAwait(false);
+    var response = await client
+      .SendQueryAsync<ActiveUserServerInfoResponse>(request, cancellationToken)
+      .ConfigureAwait(false);
 
     response.EnsureGraphQLSuccess();
 
