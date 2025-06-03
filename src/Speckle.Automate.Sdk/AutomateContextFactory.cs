@@ -13,7 +13,7 @@ namespace Speckle.Automate.Sdk;
 [GenerateAutoInterface(VisibilityModifier = "public")]
 internal sealed class AutomationContextFactory(
   IClientFactory clientFactory,
-  IAccountManager accountManager,
+  IAccountFactory accountFactory,
   IOperations operations
 ) : IAutomationContextFactory
 {
@@ -32,14 +32,10 @@ internal sealed class AutomationContextFactory(
   /// <exception cref="AggregateException"><inheritdoc cref="Speckle.Sdk.Api.GraphQL.GraphQLErrorHandler.EnsureGraphQLSuccess(IGraphQLResponse)"/></exception>
   public async Task<IAutomationContext> Initialize(AutomationRunData automationRunData, string speckleToken)
   {
-    Account account = new()
-    {
-      token = speckleToken,
-      serverInfo = await accountManager.GetServerInfo(automationRunData.SpeckleServerUrl).ConfigureAwait(false),
-      userInfo = await accountManager
-        .GetUserInfo(speckleToken, automationRunData.SpeckleServerUrl)
-        .ConfigureAwait(false),
-    };
+    Account account = await accountFactory
+      .CreateAccount(automationRunData.SpeckleServerUrl, speckleToken)
+      .ConfigureAwait(false);
+
     return Initialize(automationRunData, account);
   }
 
