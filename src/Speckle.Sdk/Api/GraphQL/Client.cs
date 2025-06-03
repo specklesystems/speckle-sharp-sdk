@@ -1,18 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Net.WebSockets;
-using System.Reflection;
 using GraphQL;
 using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
-using Speckle.Newtonsoft.Json.Serialization;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Speckle.Sdk.Api.GraphQL.Serializer;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Dependencies;
-using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Api;
@@ -44,8 +39,6 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   [JsonIgnore]
   public Account Account { get; }
 
-  private HttpClient HttpClient { get; }
-
   [AutoInterfaceIgnore]
   public GraphQLHttpClient GQLClient { get; }
 
@@ -54,8 +47,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   public Client(
     ILogger<Client> logger,
     ISdkActivityFactory activityFactory,
-    ISpeckleApplication application,
-    ISpeckleHttp speckleHttp,
+    IGraphQLClientFactory graphqlClientFactory,
     Account account
   )
   {
@@ -74,9 +66,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     Workspace = new(this);
     Server = new(this);
 
-    HttpClient = CreateHttpClient(application, speckleHttp, account);
-
-    GQLClient = CreateGraphQLClient(account, HttpClient);
+    GQLClient = graphqlClientFactory.CreateGraphQLClient(account);
   }
 
   [AutoInterfaceIgnore]
@@ -109,7 +99,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
       )
       .ConfigureAwait(false);
 
-  /// <inheritdoc/>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}" />
   public async Task<T> ExecuteGraphQLRequest<T>(GraphQLRequest request, CancellationToken cancellationToken = default)
   {
     using var activity = _activityFactory.Start();
@@ -189,60 +179,5 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     {
       throw new SpeckleGraphQLException($"Subscription for {typeof(T)} failed to start", ex);
     }
-  }
-
-  private static GraphQLHttpClient CreateGraphQLClient(Account account, HttpClient httpClient)
-  {
-    var gQLClient = new GraphQLHttpClient(
-      new GraphQLHttpClientOptions
-      {
-        EndPoint = new Uri(new Uri(account.serverInfo.url), "/graphql"),
-        UseWebSocketForQueriesAndMutations = false,
-        WebSocketProtocol = "graphql-ws",
-        ConfigureWebSocketConnectionInitPayload = _ =>
-        {
-          return SpeckleHttp.CanAddAuth(account.token, out string? authValue)
-            ? new { Authorization = authValue }
-            : null;
-        },
-      },
-      new NewtonsoftJsonSerializer(
-        new JsonSerializerSettings()
-        {
-          ContractResolver = new CamelCasePropertyNamesContractResolver { IgnoreIsSpecifiedMembers = true }, //(Default)
-          MissingMemberHandling = MissingMemberHandling.Error, //(not default) If you query for a member that doesn't exist, this will throw (except websocket responses see https://github.com/graphql-dotnet/graphql-client/issues/660)
-          NullValueHandling = NullValueHandling.Ignore, //(not default) We won't serialize nulls, as can open more opportunity for conflicting with servers that are old and don't have the latest schema
-          Converters = { new ConstantCaseEnumConverter() }, //(Default) enums will be serialized using the GraphQL const case standard
-        }
-      ),
-      httpClient
-    );
-
-    gQLClient.WebSocketReceiveErrors.Subscribe(e =>
-    {
-      if (e is WebSocketException we)
-      {
-        Console.WriteLine(
-          $"WebSocketException: {we.Message} (WebSocketError {we.WebSocketErrorCode}, ErrorCode {we.ErrorCode}, NativeErrorCode {we.NativeErrorCode}"
-        );
-      }
-      else
-      {
-        Console.WriteLine($"Exception in websocket receive stream: {e}");
-      }
-    });
-    return gQLClient;
-  }
-
-  private static HttpClient CreateHttpClient(ISpeckleApplication application, ISpeckleHttp speckleHttp, Account account)
-  {
-    var httpClient = speckleHttp.CreateHttpClient(timeoutSeconds: 30, authorizationToken: account.token);
-
-    httpClient.DefaultRequestHeaders.Add("apollographql-client-name", application.ApplicationAndVersion);
-    httpClient.DefaultRequestHeaders.Add(
-      "apollographql-client-version",
-      Assembly.GetExecutingAssembly().GetName().Version?.ToString()
-    );
-    return httpClient;
   }
 }
