@@ -1,4 +1,5 @@
-﻿using GraphQL;
+﻿using System.Diagnostics;
+using GraphQL;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -21,6 +22,7 @@ public sealed class AccountFactory(IGraphQLClientFactory graphQLClientFactory) :
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="GetUserServerInfoInternal"/>
+  [DebuggerStepThrough]
   async Task<ActiveUserServerInfoResponse> IAccountFactory.GetUserServerInfo(
     Uri serverUrl,
     string? authToken,

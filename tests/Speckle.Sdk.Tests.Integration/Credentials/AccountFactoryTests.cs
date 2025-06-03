@@ -54,4 +54,42 @@ public class AccountFactoryTests : IAsyncLifetime
     result.serverInfo.url.Should().Be(Fixtures.Server.url);
     result.activeUser.Should().BeNull();
   }
+
+  [Fact]
+  public async Task CreateAccount()
+  {
+    var expectedServerInfo = _client.Account.serverInfo;
+    var expectedUserInfo = _client.Account.userInfo;
+    var result = await _sut.CreateAccount(_client.ServerUrl, _client.Account.token);
+
+    result.serverInfo.url.Should().Be(expectedServerInfo.url).And.NotBeNull();
+    result.serverInfo.name.Should().Be(expectedServerInfo.name).And.NotBeNull();
+    result.serverInfo.company.Should().Be(expectedServerInfo.company);
+    result.serverInfo.description.Should().Be(expectedServerInfo.description);
+
+    result.userInfo.name.Should().Be(expectedUserInfo.name).And.NotBeNull();
+    result.userInfo.id.Should().Be(expectedUserInfo.id).And.NotBeNull();
+    result.userInfo.email.Should().Be(expectedUserInfo.email).And.NotBeNull();
+    result.userInfo.avatar.Should().Be(expectedUserInfo.avatar);
+  }
+
+  [Fact]
+  public async Task CreateAccount_ExpectFail_NoUser()
+  {
+    var res = await Assert.ThrowsAsync<SpeckleException>(async () =>
+      _ = await _sut.CreateAccount(_client.ServerUrl, null!)
+    );
+
+    await Verify(res);
+  }
+
+  [Fact]
+  public async Task CreateAccount_ExpectFail_NoServer()
+  {
+    Uri server = new("https://non-existing-server.local");
+    await Assert.ThrowsAsync<HttpRequestException>(async () =>
+    {
+      _ = await _sut.CreateAccount(server, "ASDFASDF");
+    });
+  }
 }
