@@ -10,8 +10,6 @@ public class Account : IEquatable<Account>
 {
   private string _id;
 
-  public Account() { }
-
   /// <remarks>
   /// The account id is unique to user and server url.
   /// </remarks>
