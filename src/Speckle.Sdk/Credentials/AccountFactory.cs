@@ -74,6 +74,13 @@ public sealed class AccountFactory(IGraphQLClientFactory graphQLClientFactory) :
     return response.Data;
   }
 
+  /// <summary>
+  /// Creates a new <see cref="Account"/> object by fetching the required server/user information from the specified server
+  /// </summary>
+  /// <remarks>
+  /// This does not create a new account on the server, nor does it read/write from the SQLite DB. For that see <see cref="AccountManager"/>.
+  /// This is just a Factory pattern around an <see cref="Account"/> object
+  /// </remarks>
   /// <exception cref="SpeckleException">Server could not find user info given the speckleToken, suggests expired or non-existent user</exception>
   /// <inheritdoc cref="Speckle.Sdk.Api.GraphQL.GraphQLErrorHandler.EnsureGraphQLSuccess(IReadOnlyCollection{GraphQLError}?)"/>
   public async Task<Account> CreateAccount(
