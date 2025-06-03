@@ -100,23 +100,9 @@ public static class Fixtures
       await tokenResponse.Content.ReadAsStringAsync()
     );
 
-    var acc = new Account
-    {
-      token = deserialised.NotNull()["token"].NotNull(),
-      userInfo = new UserInfo
-      {
-        id = user["name"],
-        email = user["email"],
-        name = user["name"],
-      },
-      serverInfo = Server,
-    };
+    var token = deserialised.NotNull()["token"].NotNull();
 
-    var user1 = await ServiceProvider
-      .GetRequiredService<IAccountManager>()
-      .GetUserInfo(acc.token, new(acc.serverInfo.url));
-    acc.userInfo = user1;
-    return acc;
+    return await ServiceProvider.GetRequiredService<IAccountFactory>().CreateAccount(new(Server.url), token);
   }
 
   public static Base GenerateSimpleObject()
