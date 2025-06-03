@@ -299,8 +299,7 @@ public sealed class SerializeProcess(
 
     if (
       e is AggregateException ae
-      && ae.InnerExceptions.Count == 1
-      && ae.InnerExceptions[0] is OperationCanceledException
+      && ae.InnerExceptions.Count == ae.InnerExceptions.OfType<OperationCanceledException>().Count()
     )
     {
       return;
