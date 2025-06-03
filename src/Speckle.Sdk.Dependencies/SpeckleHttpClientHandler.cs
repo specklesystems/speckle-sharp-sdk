@@ -18,7 +18,6 @@ internal sealed class SpeckleHttpClientHandler : DelegatingHandler
     _activityFactory = activityFactory;
     _resiliencePolicy = resiliencePolicy;
   }
-  
 
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <exception cref="HttpRequestException">Send request failed</exception>
@@ -41,24 +40,26 @@ internal sealed class SpeckleHttpClientHandler : DelegatingHandler
       request.Headers.Add("x-request-id", context.OperationKey);
       activity?.InjectHeaders((k, v) => request.Headers.TryAddWithoutValidation(k, v));
 
-      var policyResult = await _resiliencePolicy.ExecuteOutcomeAsync<HttpResponseMessage, string>(
-        async (ctx, _) =>
-        {
-          try
+      var policyResult = await _resiliencePolicy
+        .ExecuteOutcomeAsync<HttpResponseMessage, string>(
+          async (ctx, _) =>
           {
-            var message = await base.SendAsync(request, ctx.CancellationToken).ConfigureAwait(false);
-            return Outcome.FromResult(message);
-          }
+            try
+            {
+              var message = await base.SendAsync(request, ctx.CancellationToken).ConfigureAwait(false);
+              return Outcome.FromResult(message);
+            }
 #pragma warning disable CA1031
-          catch (Exception e)
+            catch (Exception e)
 #pragma warning restore CA1031
-          {
-            return Outcome.FromException<HttpResponseMessage>(e);
-          }
-        },
-        context,
-        "state"
-      ).ConfigureAwait(false);
+            {
+              return Outcome.FromException<HttpResponseMessage>(e);
+            }
+          },
+          context,
+          "state"
+        )
+        .ConfigureAwait(false);
       context.Properties.TryGetValue(new ResiliencePropertyKey<int>("retryCount"), out var retryCount);
       activity?.SetTag("retryCount", retryCount);
 

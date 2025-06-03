@@ -15,7 +15,7 @@ public static class GraphQLRetry
     {
       ShouldHandle = new PredicateBuilder<T>().Handle<TInnerException>(),
       BackoffType = DelayBackoffType.Exponential,
-      UseJitter = true,  // Adds a random factor to the delay
+      UseJitter = true, // Adds a random factor to the delay
       MaxRetryAttempts = 5,
       Delay = TimeSpan.FromSeconds(1),
     };
@@ -28,6 +28,6 @@ public static class GraphQLRetry
       .AddTimeout(TimeSpan.FromSeconds(10)) // Add 10 seconds timeout
       .Build(); // Builds the resilience pipeline
 
-    return await pipeline.ExecuteAsync( _ => new ValueTask<T>(func())).ConfigureAwait(false);
+    return await pipeline.ExecuteAsync(_ => new ValueTask<T>(func())).ConfigureAwait(false);
   }
 }
