@@ -34,7 +34,7 @@ public class Account : IEquatable<Account>
 
   public string token { get; set; }
 
-  public string refreshToken { get; set; }
+  public string? refreshToken { get; set; }
 
   public bool isDefault { get; set; }
   public bool isOnline { get; set; } = true;

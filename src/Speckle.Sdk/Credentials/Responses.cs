@@ -1,10 +1,14 @@
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL.Models;
 
 namespace Speckle.Sdk.Credentials;
 
 internal sealed class ActiveUserServerInfoResponse
 {
-  public UserInfo activeUser { get; init; }
+  [property: JsonProperty(Required = Required.AllowNull)]
+  public UserInfo? activeUser { get; init; }
+
+  [property: JsonProperty(Required = Required.Always)]
   public ServerInfo serverInfo { get; init; }
 }
 
