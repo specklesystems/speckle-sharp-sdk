@@ -73,6 +73,13 @@ public sealed class ObjectSaver(
 #pragma warning restore CA1031
     {
       RecordException(e);
+      logger.LogError(
+        "Error while sending objects to server, some stats of the payload: {Count} objects, {Serialized} serialized, {Cached} cached, {BatchByteSize} batch bytes",
+        batch.Items.Count,
+        _objectsSerialized,
+        _cached,
+        batch.BatchByteSize
+      );
     }
   }
 
@@ -106,6 +113,13 @@ public sealed class ObjectSaver(
 #pragma warning restore CA1031
     {
       RecordException(e);
+      logger.LogError(
+        "Error while saving to cache, some stats of the payload: {Count} objects, {Serialized} serialized, {Cached} cached, {BatchByteSize} batch bytes",
+        batch.Count,
+        _objectsSerialized,
+        _cached,
+        batch.Sum(x => x.ByteSize)
+      );
     }
   }
 
