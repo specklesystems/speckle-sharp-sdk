@@ -45,7 +45,10 @@ public sealed class ObjectLoader(
         if (rootJson != null)
         {
           //assume everything exists as the root is there.
-          var allChildren = ClosureParser.GetChildrenIds(rootJson, cancellationToken).Select(x => new Id(x)).ToList();
+          var allChildren = ClosureParser
+            .GetClosuresSorted(rootJson, cancellationToken)
+            .Select(x => new Id(x.Item1))
+            .ToList();
           //this probably yields away from the Main thread to let host apps update progress
           //in any case, this fixes a Revit only issue for this situation
           await Task.Yield();
