@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace Speckle.Automate.Sdk.Schema.Triggers;
 
@@ -8,6 +9,8 @@ namespace Speckle.Automate.Sdk.Schema.Triggers;
 public sealed class VersionCreationTrigger : AutomationRunTriggerBase
 {
   public const string VERSION_CREATION_TRIGGER_TYPE = "versionCreation";
+
+  [JsonRequired]
   public required VersionCreationTriggerPayload Payload { get; init; }
 
   public VersionCreationTrigger() { }
@@ -25,6 +28,9 @@ public sealed class VersionCreationTrigger : AutomationRunTriggerBase
 /// </summary>
 public sealed record VersionCreationTriggerPayload
 {
+  [JsonRequired]
   public required string ModelId { get; init; }
+
+  [JsonRequired]
   public required string VersionId { get; init; }
 }
