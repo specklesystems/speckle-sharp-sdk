@@ -4,7 +4,7 @@ namespace Speckle.Automate.Sdk.Schema;
 
 public static class FunctionRunDataParser
 {
-  private static JsonSerializerOptions jsonSerializerSettings = new()
+  private static readonly JsonSerializerOptions jsonSerializerSettings = new()
   {
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
   };
