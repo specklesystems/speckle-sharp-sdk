@@ -196,6 +196,7 @@ public class SerializationTests
         new DummySqLiteReceiveManager(closures),
         new DummyReceiveServerObjectManager(closures),
         null,
+        new NullLogger<ObjectLoader>(),
         default
       )
     )
