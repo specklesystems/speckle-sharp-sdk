@@ -35,8 +35,8 @@ public class AdditionalCancellationTests
       new SerializeProcessOptions(true, true, false, true)
     );
 
+    await cancellationSource.CancelAsync();
     var task = serializeProcess.Serialize(testClass);
-    cancellationSource.Cancel();
 
     var ex = await Assert.ThrowsAsync<OperationCanceledException>(async () => await task);
     await Verify(ex);
@@ -51,6 +51,7 @@ public class AdditionalCancellationTests
 
     using var cancellationSource = new CancellationTokenSource();
 
+    await cancellationSource.CancelAsync();
     var tasks = new List<Task>();
     for (int i = 0; i < 2; i++)
     {
@@ -64,11 +65,14 @@ public class AdditionalCancellationTests
       tasks.Add(serializeProcess.Serialize(i % 2 == 0 ? testClass1 : testClass2));
     }
 
-    cancellationSource.Cancel();
-
-    foreach (var task in tasks)
+    while (tasks.Count != 0)
     {
-      await Assert.ThrowsAsync<OperationCanceledException>(async () => await task);
+      await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+      {
+        var t = await Task.WhenAny(tasks);
+        tasks.Remove(t);
+        await t;
+      });
     }
     cancellationSource.IsCancellationRequested.Should().BeTrue();
   }
@@ -89,7 +93,7 @@ public class AdditionalCancellationTests
     );
 
     await serializeProcess.Serialize(testClass);
-    cancellationSource.Cancel(); // Cancel after completion
+    await cancellationSource.CancelAsync();
 
     cancellationSource.IsCancellationRequested.Should().BeTrue();
   }
