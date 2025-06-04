@@ -4,7 +4,7 @@ namespace Speckle.Automate.Sdk.Schema;
 
 public static class FunctionRunDataParser
 {
-  private static readonly JsonSerializerOptions jsonSerializerSettings = new()
+  private static readonly JsonSerializerOptions s_jsonSerializerSettings = new()
   {
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
   };
@@ -23,7 +23,7 @@ public static class FunctionRunDataParser
     //It's important to use System.Text.Json here. The template FunctionInputs are decorated with STJ attributes
     FunctionRunData<T>? functionRunData = JsonSerializer.Deserialize<FunctionRunData<T>>(
       inputJsonString,
-      jsonSerializerSettings
+      s_jsonSerializerSettings
     );
 
     if (functionRunData is null)
