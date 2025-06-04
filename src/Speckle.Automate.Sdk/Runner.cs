@@ -106,17 +106,28 @@ internal class AutomationRunner(IAutomationContextFactory contextFactory) : IAut
     rootCommand.SetHandler(
       async inputPath =>
       {
-        FunctionRunData<TInput> data = FunctionRunDataParser.FromPath<TInput>(inputPath);
+        try
+        {
+          FunctionRunData<TInput> data = FunctionRunDataParser.FromPath<TInput>(inputPath);
 
-        var context = await RunFunction(
-            automateFunction,
-            data.AutomationRunData,
-            data.SpeckleToken,
-            data.FunctionInputs
-          )
-          .ConfigureAwait(false);
+          var context = await RunFunction(
+              automateFunction,
+              data.AutomationRunData,
+              data.SpeckleToken,
+              data.FunctionInputs
+            )
+            .ConfigureAwait(false);
 
-        exitCode = context.RunStatus == "EXCEPTION" ? 1 : 0;
+          if (context.RunStatus is "EXCEPTION")
+          {
+            exitCode = 1;
+          }
+        }
+        catch (Exception)
+        {
+          exitCode = 1;
+          throw;
+        }
       },
       pathArg
     );
@@ -131,11 +142,19 @@ internal class AutomationRunner(IAutomationContextFactory contextFactory) : IAut
     generateSchemaCommand.SetHandler(
       schemaFilePath =>
       {
-        JSchemaGenerator generator = new() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
-        generator.GenerationProviders.Add(new SpeckleSecretProvider());
-        JSchema schema = generator.Generate(typeof(TInput));
-        schema.ToString(SchemaVersion.Draft2019_09);
-        File.WriteAllText(schemaFilePath, schema.ToString());
+        try
+        {
+          JSchemaGenerator generator = new() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+          generator.GenerationProviders.Add(new SpeckleSecretProvider());
+          JSchema schema = generator.Generate(typeof(TInput));
+          schema.ToString(SchemaVersion.Draft2019_09);
+          File.WriteAllText(schemaFilePath, schema.ToString());
+        }
+        catch (Exception)
+        {
+          exitCode = 1;
+          throw;
+        }
       },
       schemaFilePathArg
     );

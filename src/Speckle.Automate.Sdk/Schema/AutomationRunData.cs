@@ -1,5 +1,5 @@
+using System.Text.Json.Serialization;
 using Speckle.Automate.Sdk.Schema.Triggers;
-using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Automate.Sdk.Schema;
 

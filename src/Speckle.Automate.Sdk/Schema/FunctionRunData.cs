@@ -1,4 +1,4 @@
-﻿using Speckle.Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Speckle.Automate.Sdk.Schema;
 
