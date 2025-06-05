@@ -126,7 +126,7 @@ public sealed class ObjectSaver(
   private void RecordException(Exception e)
   {
     //order here matters
-    logger.LogError(e, "Error in SDK");
+    logger.LogError(e, "Error in SDK: {message}", e.Message);
     Exception = e;
     _cancellationTokenSource.Cancel();
   }

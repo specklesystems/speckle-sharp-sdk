@@ -305,7 +305,7 @@ public sealed class SerializeProcess(
       return;
     }
     //order here matters
-    _logger.LogError(e, "Error in SDK");
+    _logger.LogError(e, "Error in SDK: {message}", e.Message);
     objectSaver.Exception = e;
     _processSource.Cancel();
   }
