@@ -1,8 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Text.Json;
 using GraphQL;
 using GraphQL.Client.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Speckle.Automate.Sdk.Schema;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Api;
@@ -17,13 +16,16 @@ internal sealed class AutomationContextFactory(
   IOperations operations
 ) : IAutomationContextFactory
 {
+  private static readonly JsonSerializerOptions s_jsonSerializerSettings = new()
+  {
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+  };
+
   /// <inheritdoc cref="Initialize(AutomationRunData, string)"/>
   public async Task<IAutomationContext> Initialize(string automationRunData, string speckleToken)
   {
-    var runData = JsonConvert.DeserializeObject<AutomationRunData>(
-      automationRunData,
-      new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() }
-    );
+    var runData = JsonSerializer.Deserialize<AutomationRunData>(automationRunData, s_jsonSerializerSettings);
+
     return await Initialize(runData, speckleToken).ConfigureAwait(false);
   }
 
