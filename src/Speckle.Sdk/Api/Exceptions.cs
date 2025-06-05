@@ -98,6 +98,23 @@ public sealed class SpeckleGraphQLInvalidQueryException : SpeckleGraphQLExceptio
     : base(message, innerException) { }
 }
 
+/// <summary>
+/// Represents a <c>WORKSPACES_MODULE_DISABLED_ERROR</c> GraphQL error as an exception
+/// </summary>
+/// <remarks>
+/// A GraphQL request for workspace resources was made to a server that does not have the <c>FF_WORKSPACES_MODULE_ENABLED</c> feature flag enabled
+/// </remarks>
+public sealed class SpeckleGraphQLWorkspaceNotEnabledException : SpeckleGraphQLException
+{
+  public SpeckleGraphQLWorkspaceNotEnabledException() { }
+
+  public SpeckleGraphQLWorkspaceNotEnabledException(string? message)
+    : base(message) { }
+
+  public SpeckleGraphQLWorkspaceNotEnabledException(string? message, Exception? innerException)
+    : base(message, innerException) { }
+}
+
 /// <seealso cref="PermissionCheckResult"/>
 public sealed class WorkspacePermissionException : SpeckleGraphQLException
 {

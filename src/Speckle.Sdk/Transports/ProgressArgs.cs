@@ -9,7 +9,7 @@ public enum ProgressEvent
   FromCacheOrSerialized,
   FindingChildren,
   UploadBytes,
-  UploadedObjects,
+  UploadingObjects,
 
   CacheCheck,
   DownloadBytes,

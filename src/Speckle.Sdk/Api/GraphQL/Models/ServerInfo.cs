@@ -16,12 +16,8 @@ public sealed class ServerInfo
   public string? version { get; init; }
   public string? description { get; init; }
 
-  /// <remarks>
-  /// This field is not returned from the GQL API,
-  /// it should be populated after construction from the response headers.
-  /// see <see cref="Speckle.Sdk.Credentials.AccountManager"/>
-  /// </remarks>
-  public bool frontend2 { get; set; }
+  [Obsolete("Don't use")]
+  public bool frontend2 { get; set; } = true;
 
   /// <remarks>
   /// This field is not returned from the GQL API,
