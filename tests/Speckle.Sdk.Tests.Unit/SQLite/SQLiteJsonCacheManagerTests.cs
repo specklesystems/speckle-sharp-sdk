@@ -22,7 +22,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   public void TestGetAll()
   {
     var data = new List<(string id, string json)>() { ("id1", "1"), ("id2", "2") };
-    using var manager =  SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
+    using var manager = SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
     manager.SaveObjects(data);
     var items = manager.GetAllObjects();
     items.Count.Should().Be(data.Count);

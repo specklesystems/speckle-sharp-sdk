@@ -64,6 +64,12 @@ public class SerializeProcessFactory(
 #pragma warning disable CA2000
     var memoryJsonCacheManager = new MemoryJsonCacheManager(jsonCache);
 #pragma warning restore CA2000
-    return CreateSerializeProcess(memoryJsonCacheManager,new MemoryServerObjectManager(objects),  progress, cancellationToken, options);
+    return CreateSerializeProcess(
+      memoryJsonCacheManager,
+      new MemoryServerObjectManager(objects),
+      progress,
+      cancellationToken,
+      options
+    );
   }
 }

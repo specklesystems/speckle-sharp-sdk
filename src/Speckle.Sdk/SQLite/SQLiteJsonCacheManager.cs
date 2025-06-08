@@ -12,23 +12,26 @@ public partial interface ISqLiteJsonCacheManager : IDisposable;
 public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {
   private readonly CacheDbCommandPool _pool;
-  
+
   public static ISqLiteJsonCacheManager FromMemory(int concurrency) => new SqLiteJsonCacheManager(concurrency);
-  
-  private SqLiteJsonCacheManager( int concurrency)
+
+  private SqLiteJsonCacheManager(int concurrency)
   {
     //disable pooling as we pool ourselves
-    var  builder = new SqliteConnectionStringBuilder
+    var builder = new SqliteConnectionStringBuilder
     {
-      Pooling = false, DataSource = ":memory:",Cache = SqliteCacheMode.Shared, Mode = SqliteOpenMode.Memory
+      Pooling = false,
+      DataSource = ":memory:",
+      Cache = SqliteCacheMode.Shared,
+      Mode = SqliteOpenMode.Memory,
     };
     _pool = new CacheDbCommandPool(builder.ToString(), concurrency);
     Initialize();
   }
-  
-  
-  public static ISqLiteJsonCacheManager FromFilePath(string path, int concurrency) => new SqLiteJsonCacheManager(path, concurrency);
-  
+
+  public static ISqLiteJsonCacheManager FromFilePath(string path, int concurrency) =>
+    new SqLiteJsonCacheManager(path, concurrency);
+
   private SqLiteJsonCacheManager(string path, int concurrency)
   {
     //disable pooling as we pool ourselves
@@ -63,7 +66,6 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
         command.ExecuteNonQuery();
       }
 
-  
       using (SqliteCommand cmd1 = new("PRAGMA count_changes=OFF;", c))
       {
         cmd1.ExecuteNonQuery();
@@ -88,11 +90,11 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
       {
         cmd5.ExecuteNonQuery();
       }
-        //do this to wait 5 seconds to avoid db lock exceptions, this is 0 by default
-        using (SqliteCommand cmd6 = new("PRAGMA busy_timeout=5000;", c))
-        {
-          cmd6.ExecuteNonQuery();
-        }
+      //do this to wait 5 seconds to avoid db lock exceptions, this is 0 by default
+      using (SqliteCommand cmd6 = new("PRAGMA busy_timeout=5000;", c))
+      {
+        cmd6.ExecuteNonQuery();
+      }
     });
   }
 

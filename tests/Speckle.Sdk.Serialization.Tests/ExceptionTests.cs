@@ -63,7 +63,7 @@ public class ExceptionTests
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
     await Verify(ex);
   }
-  
+
   [Fact]
   public async Task Test_Exceptions_Cache2()
   {
@@ -89,9 +89,8 @@ public class ExceptionTests
       line = new Polyline() { units = "test", value = [3.0, 4.0] },
     };
 
-
     await using var serializeProcess = _factory.CreateSerializeProcess(
-       SqLiteJsonCacheManager.FromMemory( 1),
+      SqLiteJsonCacheManager.FromMemory(1),
       new MemoryServerObjectManager(new()),
       null,
       default,
@@ -101,7 +100,6 @@ public class ExceptionTests
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(@base));
     await Verify(ex);
   }
-
 
   [Fact]
   public async Task Test_Exceptions_Cache_ExceptionsAfter_10()
