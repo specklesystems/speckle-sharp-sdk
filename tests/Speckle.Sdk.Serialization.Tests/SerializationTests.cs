@@ -232,7 +232,7 @@ public class SerializationTests
         default,
       new SerializeProcessOptions(false, false, false, true)
       {
-        MaxCacheBatchSize = 5,
+        MaxCacheBatchSize = 1,
         MaxParallelism = concurrency
       }
     )
