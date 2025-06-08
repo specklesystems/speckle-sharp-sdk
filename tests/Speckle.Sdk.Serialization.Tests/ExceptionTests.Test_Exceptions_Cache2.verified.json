@@ -1,0 +1,21 @@
+﻿{
+  "Data": {},
+  "InnerException": {
+    "$type": "SqLiteJsonCacheException",
+    "Data": {},
+    "InnerException": {
+      "$type": "SqliteException",
+      "Data": {},
+      "ErrorCode": -2147467259,
+      "IsTransient": false,
+      "Message": "SQLite Error 1: 'no such table: objects'.",
+      "SqliteErrorCode": 1,
+      "SqliteExtendedErrorCode": 1,
+      "Type": "SqliteException"
+    },
+    "Message": "An error occured with the SQLite cache: SQLite Error 1: 'no such table: objects'.\nGeneric error\nDetail: 1",
+    "Type": "SqLiteJsonCacheException"
+  },
+  "Message": "Error while sending",
+  "Type": "SpeckleException"
+}
