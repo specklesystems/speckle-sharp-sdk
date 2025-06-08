@@ -45,7 +45,7 @@ public abstract class ChannelSaver<T>
         cancellationToken
       )
       .Join()
-      .Batch(cacheBatchSize ?? MAX_CACHE_BATCH)
+      .Batch(cacheBatchSize ?? MAX_CACHE_BATCH, singleReader: ((maxParallelism ?? MAX_CACHE_WRITE_PARALLELISM) == 1)) 
       .WithTimeout(HTTP_BATCH_TIMEOUT)
       .ReadAllConcurrently(maxParallelism ?? MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
       .ContinueWith(
