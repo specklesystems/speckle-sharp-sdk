@@ -91,7 +91,7 @@ public class ExceptionTests
 
 
     await using var serializeProcess = _factory.CreateSerializeProcess(
-      new SqLiteJsonCacheManager(":memory:", 1),
+       SqLiteJsonCacheManager.FromMemory( 1),
       new MemoryServerObjectManager(new()),
       null,
       default,

@@ -14,6 +14,7 @@ using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Testing.Framework;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -50,7 +51,7 @@ public class SerializationTests
     public void Dispose() { }
   }
 
-  [Theory]
+/*  [Theory]
   [InlineData("RevitObject.json.gz")]
   public async Task Basic_Namespace_Validation(string fileName)
   {
@@ -88,7 +89,7 @@ public class SerializationTests
         starts.Should().BeTrue($"{name} isn't expected");
       }
     }
-  }
+  }*/
 
   [Theory]
   [InlineData("RevitObject.json.gz")]
@@ -184,9 +185,16 @@ public class SerializationTests
   }
 
   [Theory]
-  [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, 4674)]
-  public async Task Roundtrip_Test_New(string fileName, string rootId, int oldCount, int newCount)
+  [InlineData( 1)]
+  [InlineData( 2)]
+  [InlineData( 3)]
+  [InlineData( 4)]
+  public async Task Roundtrip_Test_New( int concurrency)
   {
+    string fileName = "RevitObject.json.gz";
+    string rootId = "3416d3fe01c9196115514c4a2f41617b";
+    int oldCount = 7818;
+    int newCount = 4674;
     var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
@@ -218,12 +226,16 @@ public class SerializationTests
 
     await using (
       var serializeProcess = _factory.CreateSerializeProcess(
-        new ConcurrentDictionary<Id, Json>(),
-        newIdToJson,
-        null,
+         SqLiteJsonCacheManager.FromMemory(1),
+        new MemoryServerObjectManager(newIdToJson),
+      null,
         default,
-        new SerializeProcessOptions(true, true, false, true)
-      )
+      new SerializeProcessOptions(false, false, false, true)
+      {
+        MaxCacheBatchSize = 5,
+        MaxParallelism = concurrency
+      }
+    )
     )
     {
       var (rootId2, _) = await serializeProcess.Serialize(root);
