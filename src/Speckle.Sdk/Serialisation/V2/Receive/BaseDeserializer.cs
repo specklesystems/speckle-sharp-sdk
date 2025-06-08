@@ -11,7 +11,6 @@ public class BaseDeserializer(IObjectDeserializerFactory objectDeserializerFacto
     ConcurrentDictionary<Id, Base> baseCache,
     Id id,
     Json json,
-    IReadOnlyCollection<Id> closures,
     CancellationToken cancellationToken
   )
   {
@@ -20,7 +19,7 @@ public class BaseDeserializer(IObjectDeserializerFactory objectDeserializerFacto
       return baseObject;
     }
 
-    var deserializer = objectDeserializerFactory.Create(id, closures, baseCache);
+    var deserializer = objectDeserializerFactory.Create(id, baseCache);
     return deserializer.Deserialize(json, cancellationToken);
   }
 }

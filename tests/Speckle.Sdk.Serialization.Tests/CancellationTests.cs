@@ -178,7 +178,6 @@ public class CancellationBaseDeserializer(CancellationTokenSource cancellationTo
     ConcurrentDictionary<Id, Base> baseCache,
     Id id,
     Json json,
-    IReadOnlyCollection<Id> closures,
     CancellationToken cancellationToken
   )
   {

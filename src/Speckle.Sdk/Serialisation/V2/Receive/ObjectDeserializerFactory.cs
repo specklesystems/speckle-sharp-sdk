@@ -8,8 +8,7 @@ public class ObjectDeserializerFactory : IObjectDeserializerFactory
 {
   public IObjectDeserializer Create(
     Id currentId,
-    IReadOnlyCollection<Id> currentClosures,
     IReadOnlyDictionary<Id, Base> references,
     DeserializeProcessOptions? options = null
-  ) => new ObjectDeserializer(currentId, currentClosures, references, SpeckleObjectSerializerPool.Instance, options);
+  ) => new ObjectDeserializer(currentId, references, SpeckleObjectSerializerPool.Instance, options);
 }

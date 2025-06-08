@@ -187,8 +187,8 @@ public sealed class DeserializeProcess(
     {
       return;
     }
-    (Json json, IReadOnlyCollection<Id> closures) = GetClosures(id);
-    var @base = baseDeserializer.Deserialise(_baseCache, id, json, closures, cancellationToken);
+    (Json json, IReadOnlyCollection<Id> _) = GetClosures(id);
+    var @base = baseDeserializer.Deserialise(_baseCache, id, json, cancellationToken);
     _baseCache.TryAdd(id, @base);
     //remove from JSON cache because we've finally made the Base
     _closures.TryRemove(id, out _);
