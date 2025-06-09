@@ -2,14 +2,17 @@ using Microsoft.Data.Sqlite;
 using Speckle.InterfaceGenerator;
 
 namespace Speckle.Sdk.SQLite;
+
 public partial interface ISqliteJsonCachePool : IDisposable
 {
   T Use<T>(CacheOperation type, Func<SqliteCommand, T> handler);
 }
+
 [GenerateAutoInterface]
 public sealed class SqliteJsonCachePool : ISqliteJsonCachePool
 {
   private readonly CacheDbCommandPool _pool;
+
   public SqliteJsonCachePool(string path, int concurrency)
   {
     Path = path;
@@ -19,11 +22,10 @@ public sealed class SqliteJsonCachePool : ISqliteJsonCachePool
     _pool = new CacheDbCommandPool(builder.ToString(), concurrency);
     Initialize();
   }
-  
+
   public string Path { get; }
   public int Concurrency { get; }
-  
-  
+
   private void Initialize()
   {
     // NOTE: used for creating partioned object tables.
@@ -84,12 +86,11 @@ public sealed class SqliteJsonCachePool : ISqliteJsonCachePool
       }
     });
   }
-  
+
   public void Use(Action<SqliteConnection> handler) => _pool.Use(handler);
-  
-  
+
   public void Use(CacheOperation type, Action<SqliteCommand> handler) => _pool.Use(type, handler);
-  
+
   [AutoInterfaceIgnore]
   public T Use<T>(CacheOperation type, Func<SqliteCommand, T> handler) => _pool.Use(type, handler);
 

@@ -28,12 +28,13 @@ public sealed class SqLiteJsonCacheManagerFactory : ISqLiteJsonCacheManagerFacto
   private ISqliteJsonCachePool Create(string path, int concurrency) => new SqliteJsonCachePool(path, concurrency);
 
   public ISqLiteJsonCacheManager CreateForUser(string scope) =>
-    new SqLiteJsonCacheManager( 
+    new SqLiteJsonCacheManager(
 #pragma warning disable CA2000
       //this is fine because we told SqLiteJsonCacheManager to dispose this
       Create(Path.Combine(SpecklePathProvider.UserApplicationDataPath(), "Speckle", $"{scope}.db"), 1),
 #pragma warning restore CA2000
-      true);
+      true
+    );
 
   public ISqLiteJsonCacheManager CreateFromStream(string streamId)
   {
