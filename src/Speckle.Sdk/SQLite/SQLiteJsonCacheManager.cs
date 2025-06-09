@@ -9,7 +9,7 @@ public partial interface ISqLiteJsonCacheManager : IDisposable;
 [GenerateAutoInterface]
 public sealed class SqLiteJsonCacheManager(ISqliteJsonCachePool pool, bool dispose) : ISqLiteJsonCacheManager
 {
-  
+  public ISqliteJsonCachePool Pool => pool;
   public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() =>
     pool.Use(
       CacheOperation.GetAll,

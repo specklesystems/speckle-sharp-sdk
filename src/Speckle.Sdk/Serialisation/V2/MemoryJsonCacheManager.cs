@@ -8,8 +8,7 @@ public class MemoryJsonCacheManager(ConcurrentDictionary<Id, Json> jsonCache) : 
 #pragma warning restore CA1063
 {
 #pragma warning disable CA1065
-  public string Path => throw new NotImplementedException();
-  public int Concurrency => throw new NotImplementedException();
+  public ISqliteJsonCachePool Pool => throw new NotImplementedException();
 #pragma warning restore CA1065
   public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() =>
     jsonCache.Select(x => (x.Key.Value, x.Value.Value)).ToList();

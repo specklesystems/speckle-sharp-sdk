@@ -21,6 +21,8 @@ public sealed class SqLiteJsonCacheManagerFactory : ISqLiteJsonCacheManagerFacto
     {
       pool.Value.Dispose();
     }
+
+    _pools.Clear();
   }
 
   private ISqliteJsonCachePool Create(string path, int concurrency) => new SqliteJsonCachePool(path, concurrency);

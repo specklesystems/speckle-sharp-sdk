@@ -374,8 +374,7 @@ public class DummyServerObjectManager : IServerObjectManager
 public class DummySendCacheManager(Dictionary<string, string> objects) : ISqLiteJsonCacheManager
 {
 #pragma warning disable CA1065
-  public string Path => throw new NotImplementedException();
-  public int Concurrency => throw new NotImplementedException();
+  public ISqliteJsonCachePool Pool => throw new NotImplementedException();
 #pragma warning restore CA1065
   public void Dispose() { }
 

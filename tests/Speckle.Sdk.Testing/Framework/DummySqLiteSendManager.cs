@@ -5,8 +5,7 @@ namespace Speckle.Sdk.Testing.Framework;
 public class DummySqLiteSendManager : ISqLiteJsonCacheManager
 {
 #pragma warning disable CA1065
-  public string Path => throw new NotImplementedException();
-  public int Concurrency => throw new NotImplementedException();
+  public ISqliteJsonCachePool Pool => throw new NotImplementedException();
 #pragma warning restore CA1065
   public string? GetObject(string id) => throw new NotImplementedException();
 

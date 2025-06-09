@@ -94,7 +94,8 @@ public static class ServiceRegistration
       typeof(DeserializeProcess),
       typeof(ObjectLoader),
       typeof(TraversalRule),
-      typeof(Client)
+      typeof(Client),
+      typeof(SqliteJsonCachePool)
     );
     serviceCollection.AddMatchingInterfacesAsTransient(typeof(GraphQLRetry).Assembly);
     //we want to make sqlite pools be singletons per stream so needs a singleton factory

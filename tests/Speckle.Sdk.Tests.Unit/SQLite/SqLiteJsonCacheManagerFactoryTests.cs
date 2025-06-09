@@ -11,17 +11,19 @@ public class SqLiteJsonCacheManagerFactoryTests
   public void CreateForUser_ShouldReturnManagerWithCorrectPathAndConcurrency()
   {
     // Arrange
-    var factory = new SqLiteJsonCacheManagerFactory();
     var scope = "testuser";
     var expectedPath = Path.Combine(SpecklePathProvider.UserApplicationDataPath(), "Speckle", $"{scope}.db");
 
     // Act
-    using (var manager = factory.CreateForUser(scope))
+    using (var factory = new SqLiteJsonCacheManagerFactory())
     {
-      // Assert
-      manager.Should().NotBeNull();
-      manager.Path.Should().Be(expectedPath);
-      manager.Concurrency.Should().Be(1);
+      using (var manager = factory.CreateForUser(scope))
+      {
+        // Assert
+        manager.Should().NotBeNull();
+        manager.Pool.Path.Should().Be(expectedPath);
+        manager.Pool.Concurrency.Should().Be(1);
+      }
     }
 
     // Cleanup
@@ -35,17 +37,18 @@ public class SqLiteJsonCacheManagerFactoryTests
   public void CreateFromStream_ShouldReturnManagerWithCorrectPathAndConcurrency_AndCleanup()
   {
     // Arrange
-    var factory = new SqLiteJsonCacheManagerFactory();
     var streamId = "stream123";
     var expectedPath = SqlitePaths.GetDBPath(streamId);
-
-    // Act
-    using (var manager = factory.CreateFromStream(streamId))
+    using (var factory = new SqLiteJsonCacheManagerFactory())
     {
-      // Assert
-      manager.Should().NotBeNull();
-      manager.Path.Should().Be(expectedPath);
-      manager.Concurrency.Should().Be(SqLiteJsonCacheManagerFactory.INITIAL_CONCURRENCY);
+      // Act
+      using (var manager = factory.CreateFromStream(streamId))
+      {
+        // Assert
+        manager.Should().NotBeNull();
+        manager.Pool.Path.Should().Be(expectedPath);
+        manager.Pool.Concurrency.Should().Be(SqLiteJsonCacheManagerFactory.INITIAL_CONCURRENCY);
+      }
     }
 
     // Cleanup
@@ -58,18 +61,20 @@ public class SqLiteJsonCacheManagerFactoryTests
   [Fact]
   public void CreateFromStream_ShouldReturnCachedManagerForSameStreamId_AndCleanup()
   {
-    // Arrange
-    var factory = new SqLiteJsonCacheManagerFactory();
     var streamId = "stream123";
     var expectedPath = SqlitePaths.GetDBPath(streamId);
-
-    // Act
-    using (var manager1 = factory.CreateFromStream(streamId))
+    // Arrange
+    using (var factory = new SqLiteJsonCacheManagerFactory())
     {
-      using var manager2 = factory.CreateFromStream(streamId);
+      // Act
+      using (var manager1 = factory.CreateFromStream(streamId))
+      {
+        using var manager2 = factory.CreateFromStream(streamId);
 
-      // Assert
-      manager1.Should().BeSameAs(manager2);
+        // Assert
+        manager1.Should().NotBeSameAs(manager2);
+        manager1.Pool.Should().BeSameAs(manager2.Pool);
+      }
     }
 
     // Cleanup
