@@ -22,7 +22,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   public void TestGetAll()
   {
     var data = new List<(string id, string json)>() { ("id1", "1"), ("id2", "2") };
-    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    using var manager = SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
     manager.SaveObjects(data);
     var items = manager.GetAllObjects();
     items.Count.Should().Be(data.Count);
@@ -38,7 +38,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   public void TestGet()
   {
     var data = new List<(string id, string json)>() { ("id1", "1"), ("id2", "2") };
-    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    using var manager = SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
     foreach (var d in data)
     {
       manager.SaveObject(d.id, d.json);
@@ -84,7 +84,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   public void TestLargeJsonPayload()
   {
     var largeJson = new string('a', 100_000);
-    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    using var manager = SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
     manager.SaveObject("large", largeJson);
     var result = manager.GetObject("large");
     result.Should().Be(largeJson);
@@ -96,7 +96,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
     var id = "spécial_字符_!@#$%^&*()";
     var json = /*lang=json,strict*/
       "{\"value\": \"特殊字符!@#$%^&*()\"}";
-    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    using var manager = SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
     manager.SaveObject(id, json);
     var result = manager.GetObject(id);
     result.Should().Be(json);
@@ -108,7 +108,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   [Fact]
   public void TestBulkInsertEmptyCollection()
   {
-    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    using var manager = SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
     manager.SaveObjects(new List<(string, string)>());
     manager.GetAllObjects().Count.Should().Be(0);
   }
@@ -116,7 +116,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   [Fact]
   public void TestRepeatedUpdateAndDelete()
   {
-    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    using var manager = SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
     manager.SaveObject("id", "1");
     manager.UpdateObject("id", "2");
     manager.UpdateObject("id", "3");
@@ -129,7 +129,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   [Fact]
   public void TestGetAndDeleteNonExistentId()
   {
-    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    using var manager = SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
     manager.GetObject("doesnotexist").Should().BeNull();
     manager.HasObject("doesnotexist").Should().BeFalse();
     manager.DeleteObject("doesnotexist"); // Should not throw
@@ -138,7 +138,7 @@ public class SQLiteJsonCacheManagerTests : IDisposable
   [Fact]
   public void TestNullOrEmptyInput()
   {
-    using var manager = new SqLiteJsonCacheManager(_basePath, 2);
+    using var manager = SqLiteJsonCacheManager.FromFilePath(_basePath, 2);
     // Empty id
     Assert.Throws<ArgumentException>(() => manager.SaveObject("", "emptyid"));
     // Empty json
