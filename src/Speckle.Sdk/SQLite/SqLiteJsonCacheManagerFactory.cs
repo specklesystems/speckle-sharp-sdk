@@ -9,7 +9,7 @@ namespace Speckle.Sdk.SQLite;
 public class SqLiteJsonCacheManagerFactory : ISqLiteJsonCacheManagerFactory
 {
   public const int INITIAL_CONCURRENCY = 4;
-  
+
   private readonly ConcurrentDictionary<string, ISqLiteJsonCacheManager> _cachedManagers = new();
 
   private ISqLiteJsonCacheManager Create(string path, int concurrency) => new SqLiteJsonCacheManager(path, concurrency);
