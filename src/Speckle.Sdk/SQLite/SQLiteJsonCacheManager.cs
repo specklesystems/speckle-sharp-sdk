@@ -15,11 +15,16 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
   public SqLiteJsonCacheManager(string path, int concurrency)
   {
+    Path = path;
+    Concurrency = concurrency;
     //disable pooling as we pool ourselves
     var builder = new SqliteConnectionStringBuilder { Pooling = false, DataSource = path };
     _pool = new CacheDbCommandPool(builder.ToString(), concurrency);
     Initialize();
   }
+  
+  public string Path { get; }
+  public int Concurrency { get; }
 
   [AutoInterfaceIgnore]
   public void Dispose() => _pool.Dispose();

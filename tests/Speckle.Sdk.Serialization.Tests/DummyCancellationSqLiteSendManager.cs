@@ -4,6 +4,10 @@ namespace Speckle.Sdk.Serialization.Tests;
 
 public class DummyCancellationSqLiteSendManager : ISqLiteJsonCacheManager
 {
+#pragma warning disable CA1065
+  public string Path => throw new NotImplementedException();
+  public int Concurrency => throw new NotImplementedException();
+#pragma warning restore CA1065
   public string? GetObject(string id) => null;
 
   public void SaveObject(string id, string json) => throw new NotImplementedException();
