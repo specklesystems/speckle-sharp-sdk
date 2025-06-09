@@ -2,6 +2,7 @@
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Resources;
+using Speckle.Sdk.Api.GraphQL.Serializer;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -67,6 +68,19 @@ public class ActiveUserResourceTests : IAsyncLifetime
   }
 
   [Fact]
+  public async Task ActiveUserGetProjectsWithPermissions()
+  {
+    var p1 = await _testUser.Project.Create(new("Project 3", null, null));
+    var p2 = await _testUser.Project.Create(new("Project 4", null, null));
+
+    var res = await Sut.GetProjectsWithPermissions();
+
+    res.items.Should().Contain(x => x.id == p1.id);
+    res.items.Should().Contain(x => x.id == p2.id);
+    res.items.Count.Should().Be(2);
+  }
+
+  [Fact]
   public async Task ActiveUserGetProjects_NoAuth()
   {
     await FluentActions
@@ -124,4 +138,32 @@ public class ActiveUserResourceTests : IAsyncLifetime
       .Should()
       .ThrowAsync<SpeckleException>();
   }
+
+  /// <summary>
+  /// Frequently, When the server makes a change in the graphql schema to add a new property to an input
+  /// object like <see cref="UserProjectsFilter"/>, we would like to implement that change in the SDK
+  /// in a way that is non-breaking with older servers... Apollo will respond with a BAD_USER_INPUT otherwise
+  ///
+  /// To do that, the <see cref="Client"/> overrides the <see cref="NewtonsoftJsonSerializer"/>
+  /// to ensure that `null` values are not serialized
+  /// Since Apollo also treats a <c>null</c> value the same as no value at all, the server does not complain.
+  ///
+  /// This test emulates there being a property on an input that the server doesn't understand.
+  /// And we expect it to not complain when the value is <see langword="null"/>
+  /// </summary>
+  [Fact]
+  public async Task RequestWithNewerInput()
+  {
+    var filterNull = new FakeProjectInput(null);
+    _ = await Sut.GetProjects(filter: filterNull);
+
+    var filterNotNull = new FakeProjectInput("fake value");
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+    {
+      _ = await Sut.GetProjects(filter: filterNotNull);
+    });
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLBadInputException>();
+  }
+
+  public record FakeProjectInput(string? fakeProperty) : UserProjectsFilter { }
 }

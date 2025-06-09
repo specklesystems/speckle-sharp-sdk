@@ -1,12 +1,13 @@
 ﻿using FluentAssertions;
 using GraphQL;
+using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using RichardSzalay.MockHttp;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Api.GraphQL.Serializer;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Testing;
 
@@ -23,23 +24,28 @@ public class ClientTests : MoqTest
     var httpClient = mockHandler.ToHttpClient();
     var token = "token";
     var uri = new Uri("https://speckle.xyz");
+    var account = new Account()
+    {
+      token = token,
+      serverInfo = new ServerInfo() { url = uri.AbsoluteUri },
+    };
 
-    var speckleHttp = Create<ISpeckleHttp>();
-    speckleHttp.Setup(x => x.CreateHttpClient(null, 30, token)).Returns(httpClient);
-
-    var application = Create<ISpeckleApplication>();
-    application.Setup(x => x.ApplicationAndVersion).Returns("test");
+    var graphqlClientFactory = Create<IGraphQLClientFactory>();
+    graphqlClientFactory
+      .Setup(x => x.CreateGraphQLClient(account))
+      .Returns(
+        new GraphQLHttpClient(
+          new GraphQLHttpClientOptions() { EndPoint = new(uri, "/graphql") },
+          new NewtonsoftJsonSerializer(),
+          httpClient
+        )
+      );
 
     using var client = new Client(
       Create<ILogger<Client>>(MockBehavior.Loose).Object,
       Create<ISdkActivityFactory>(MockBehavior.Loose).Object,
-      application.Object,
-      speckleHttp.Object,
-      new Account()
-      {
-        token = token,
-        serverInfo = new ServerInfo() { url = uri.AbsoluteUri },
-      }
+      graphqlClientFactory.Object,
+      account
     );
 
     var x = await client.ExecuteGraphQLRequest<string>(new GraphQLRequest(), CancellationToken.None);

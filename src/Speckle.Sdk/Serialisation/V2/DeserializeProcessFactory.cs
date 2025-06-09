@@ -7,6 +7,8 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
+/// <seealso cref="DeserializeProcessFactoryNoCache"/>
+/// <seealso cref="DeserializeProcess"/>
 [GenerateAutoInterface]
 public class DeserializeProcessFactory(
   IBaseDeserializer baseDeserializer,

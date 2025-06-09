@@ -18,8 +18,9 @@ Speckle | Sharp | SDK
 This repo is the home of our next-generation Speckle .NET SDK. It uses .NET Standard 2.0 and has been tested on Windows and MacOS.
 
 - **SDK**
-  - [`Speckle.Sdk`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Sdk): Transports, serialization, API wrappers, and logging.
+  - [`Speckle.Sdk`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Sdk): Send/Receive operations, Serialization, API wrappers, and more!.
   - [`Speckle.Sdk.Dependencies`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Sdk.Dependencies): Dependencies and code that shouldn't cause conflicts in Host Apps.  This uses [IL Repack](https://github.com/gluck/il-repack) to merge together and interalized only to be used by Speckle.
+  - [`Speckle.Automate.Sdk`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Automate.Sdk): .NET SDK for [Speckle Automate](https://www.speckle.systems/product/automate)
 - **Speckle Objects**
   - [`Speckle.Objects`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Objects): The Speckle Objects classes used for conversions.
 - **Tests**

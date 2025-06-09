@@ -26,9 +26,11 @@ public partial class Operations
   )
   {
     using var receiveActivity = activityFactory.Start("Operations.Receive");
+    receiveActivity?.SetTag("speckle.url", url);
+    receiveActivity?.SetTag("speckle.projectId", streamId);
+    receiveActivity?.SetTag("speckle.objectId", objectId);
     metricsFactory.CreateCounter<long>("Receive").Add(1);
 
-    receiveActivity?.SetTag("objectId", objectId);
     var process = deserializeProcessFactory.CreateDeserializeProcess(
       url,
       streamId,

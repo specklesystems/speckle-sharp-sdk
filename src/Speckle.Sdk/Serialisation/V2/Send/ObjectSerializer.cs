@@ -25,7 +25,6 @@ public partial interface IObjectSerializer : IDisposable;
 public sealed class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
-  private readonly Dictionary<Id, int> _currentClosures = new();
 
   private readonly IReadOnlyDictionary<Id, NodeInfo> _childCache;
 
@@ -92,15 +91,16 @@ public sealed class ObjectSerializer : IObjectSerializer
     try
     {
       (Id, Json) item;
+      Closures closures = [];
       try
       {
-        item = SerializeBase(baseObj, true, default).NotNull();
+        item = SerializeBase(baseObj, true, closures, default).NotNull();
       }
       catch (Exception ex) when (!ex.IsFatal() && ex is not OperationCanceledException)
       {
         throw new SpeckleSerializeException($"Failed to extract (pre-serialize) properties from the {baseObj}", ex);
       }
-      yield return (item.Item1, item.Item2, _currentClosures);
+      yield return (item.Item1, item.Item2, closures);
       foreach (var chunk in _chunks)
       {
         yield return chunk;
@@ -114,7 +114,12 @@ public sealed class ObjectSerializer : IObjectSerializer
 
   // `Preserialize` means transforming all objects into the final form that will appear in json, with basic .net objects
   // (primitives, lists and dictionaries with string keys)
-  private void SerializeProperty(object? obj, JsonWriter writer, PropertyAttributeInfo propertyAttributeInfo)
+  private void SerializeProperty(
+    object? obj,
+    JsonWriter writer,
+    Closures closures,
+    PropertyAttributeInfo propertyAttributeInfo
+  )
   {
     _cancellationToken.ThrowIfCancellationRequested();
 
@@ -161,17 +166,14 @@ public sealed class ObjectSerializer : IObjectSerializer
           ["referencedId"] = r.referencedId,
           ["__closure"] = r.closure,
         };
+        closures.IncrementClosure(new(r.referencedId));
         //references can be externally provided and need to know the ids in the closure and reference here
-        //AddClosure can take the same value twice
-        foreach (var kvp in r.closure.Empty())
-        {
-          AddClosure(new(kvp.Key));
-        }
-        AddClosure(new(r.referencedId));
-        SerializeProperty(ret, writer, default);
+        closures.IncrementClosures(r.closure.Empty().Select(x => new KeyValuePair<Id, int>(new Id(x.Key), x.Value)));
+
+        SerializeProperty(ret, writer, closures, default);
         break;
       case Base b:
-        var result = SerializeBase(b, false, propertyAttributeInfo);
+        var result = SerializeBase(b, false, closures, propertyAttributeInfo);
         if (result is not null)
         {
           writer.WriteRawValue(result.Value.Item2.Value);
@@ -196,7 +198,7 @@ public sealed class ObjectSerializer : IObjectSerializer
             }
 
             writer.WritePropertyName(key);
-            SerializeProperty(kvp.Value, writer, propertyAttributeInfo);
+            SerializeProperty(kvp.Value, writer, closures, propertyAttributeInfo);
           }
           writer.WriteEndObject();
         }
@@ -206,7 +208,7 @@ public sealed class ObjectSerializer : IObjectSerializer
           writer.WriteStartArray();
           foreach (object? element in e)
           {
-            SerializeProperty(element, writer, propertyAttributeInfo);
+            SerializeProperty(element, writer, closures, propertyAttributeInfo);
           }
           writer.WriteEndArray();
         }
@@ -253,7 +255,12 @@ public sealed class ObjectSerializer : IObjectSerializer
     }
   }
 
-  private (Id, Json)? SerializeBase(Base baseObj, bool isRoot, PropertyAttributeInfo inheritedDetachInfo)
+  private (Id, Json)? SerializeBase(
+    Base baseObj,
+    bool isRequestedObject,
+    Closures closures,
+    PropertyAttributeInfo inheritedDetachInfo
+  )
   {
     // handle circular references
     bool alreadySerialized = !_parentObjects.Add(baseObj);
@@ -272,67 +279,65 @@ public sealed class ObjectSerializer : IObjectSerializer
       return new(json, id);*/
     }
 
-    var isDataChunk = baseObj is DataChunk;
-
     if (inheritedDetachInfo.IsDetachable)
     {
-      Closures childClosures;
-      Id id;
-      Json json;
-      //avoid multiple serialization to get closures
-      if (baseObj.id != null && _childCache.TryGetValue(new(baseObj.id), out var info))
-      {
-        id = new Id(baseObj.id);
-        childClosures = info.GetClosures(_cancellationToken);
-        json = info.Json;
-        MergeClosures(_currentClosures, childClosures);
-      }
-      else
-      {
-        if (isDataChunk) //datachunks never have child closures
-        {
-          childClosures = [];
-        }
-        else
-        {
-          childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
-        }
-        var sb = Pools.StringBuilders.Get();
-        using var writer = new StringWriter(sb);
-        using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-        id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
-        json = new Json(writer.ToString());
-        Pools.StringBuilders.Return(sb);
-      }
-      var json2 = ReferenceGenerator.CreateReference(id);
-      AddClosure(id);
-      // add to obj refs to return
-      if (baseObj.applicationId != null) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
-      {
-        ObjectReferences[new(baseObj.applicationId)] = new ObjectReference()
-        {
-          referencedId = id.Value,
-          applicationId = baseObj.applicationId,
-          closure = childClosures.ToDictionary(x => x.Key.Value, x => x.Value),
-        };
-      }
-      _chunks.Add(new(id, json, []));
-      return new(id, json2);
+      return SerializeDetachedBase(baseObj, closures);
+    }
+
+    //do attached
+    Closures childClosures = [];
+    var sb = Pools.StringBuilders.Get();
+    using var writer = new StringWriter(sb);
+    using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
+    var id = SerializeBaseWithClosures(baseObj, jsonWriter, childClosures, isRequestedObject);
+    //don't increment attached objects
+    closures.MergeClosures(childClosures);
+    var json = new Json(writer.ToString());
+    Pools.StringBuilders.Return(sb);
+    return new(id, json);
+  }
+
+  private (Id, Json)? SerializeDetachedBase(Base baseObj, Closures closures)
+  {
+    Closures childClosures;
+    Id id;
+    Json json;
+    //avoid multiple serialization to get closures
+    if (baseObj.id != null && _childCache.TryGetValue(new(baseObj.id), out var info))
+    {
+      id = new Id(baseObj.id);
+      childClosures = info.GetClosures(_cancellationToken);
+      json = info.Json;
+      closures.IncrementClosures(childClosures);
     }
     else
     {
-      var childClosures = isRoot || inheritedDetachInfo.IsDetachable ? _currentClosures : [];
+      childClosures = [];
       var sb = Pools.StringBuilders.Get();
       using var writer = new StringWriter(sb);
       using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-      var id = SerializeBaseObject(baseObj, jsonWriter, childClosures);
-      var json = new Json(writer.ToString());
+      id = SerializeBaseWithClosures(baseObj, jsonWriter, childClosures, true);
+      closures.IncrementClosures(childClosures);
+      json = new Json(writer.ToString());
       Pools.StringBuilders.Return(sb);
-      return new(id, json);
     }
+    var json2 = ReferenceGenerator.CreateReference(id);
+    closures.MergeClosure(id);
+    // add to obj refs to return
+    if (baseObj.applicationId != null) // && baseObj is not DataChunk && baseObj is not Abstract) // not needed, as data chunks will never have application ids, and abstract objs are not really used.
+    {
+      ObjectReferences[new(baseObj.applicationId)] = new ObjectReference()
+      {
+        referencedId = id.Value,
+        applicationId = baseObj.applicationId,
+        closure = childClosures.ToDictionary(x => x.Key.Value, x => x.Value),
+      };
+    }
+    _chunks.Add(new(id, json, []));
+    return new(id, json2);
   }
 
-  private Id SerializeBaseObject(Base baseObj, JsonWriter writer, Closures closure)
+  private Id SerializeBaseWithClosures(Base baseObj, JsonWriter writer, Closures closures, bool writeClosures)
   {
     if (baseObj is not Blob)
     {
@@ -349,7 +354,7 @@ public sealed class ObjectSerializer : IObjectSerializer
       }
 
       writer.WritePropertyName(prop.Name);
-      SerializeOrChunkProperty(prop.Value, writer, prop.PropertyAttributeInfo);
+      SerializeOrChunkProperty(prop.Value, writer, closures, prop.PropertyAttributeInfo);
     }
 
     Id id;
@@ -366,11 +371,11 @@ public sealed class ObjectSerializer : IObjectSerializer
     writer.WriteValue(id.Value);
     baseObj.id = id.Value;
 
-    if (closure.Count > 0)
+    if (writeClosures && closures.Count > 0)
     {
       writer.WritePropertyName("__closure");
       writer.WriteStartObject();
-      foreach (var c in closure)
+      foreach (var c in closures)
       {
         writer.WritePropertyName(c.Key.Value);
         writer.WriteValue(c.Value);
@@ -392,6 +397,7 @@ public sealed class ObjectSerializer : IObjectSerializer
   private void SerializeOrChunkProperty(
     object? baseValue,
     JsonWriter jsonWriter,
+    Closures closures,
     PropertyAttributeInfo propertyAttributeInfo
   )
   {
@@ -417,20 +423,10 @@ public sealed class ObjectSerializer : IObjectSerializer
         chunks.Add(crtChunk);
       }
 
-      SerializeProperty(chunks, jsonWriter, new PropertyAttributeInfo(true, false, 0, null));
+      SerializeProperty(chunks, jsonWriter, closures, new PropertyAttributeInfo(true, false, 0, null));
       return;
     }
 
-    SerializeProperty(baseValue, jsonWriter, propertyAttributeInfo);
+    SerializeProperty(baseValue, jsonWriter, closures, propertyAttributeInfo);
   }
-
-  private static void MergeClosures(Dictionary<Id, int> current, Closures child)
-  {
-    foreach (var closure in child)
-    {
-      current[closure.Key] = 100;
-    }
-  }
-
-  private void AddClosure(Id id) => _currentClosures[id] = 100;
 }

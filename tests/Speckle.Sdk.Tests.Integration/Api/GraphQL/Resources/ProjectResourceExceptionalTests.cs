@@ -90,7 +90,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
       _ = await _unauthedUser.Project.CreateInWorkspace(
-        new(_testProject.id, "My new name", ProjectVisibility.Unlisted, "NonExistentWorkspace")
+        new(_testProject.id, "My new name", ProjectVisibility.Public, "NonExistentWorkspace")
       )
     );
     ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLException>();
@@ -118,7 +118,8 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
   {
     ProjectUpdateRoleInput input = new(_secondUser.Account.id.NotNull(), "NonExistentProject", newRole);
 
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await _unauthedUser.Project.UpdateRole(input)
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      _ = await _unauthedUser.Project.UpdateRole(input)
     );
     ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }

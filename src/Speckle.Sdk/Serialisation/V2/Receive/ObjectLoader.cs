@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
@@ -16,6 +17,7 @@ public sealed class ObjectLoader(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   IProgress<ProgressArgs>? progress,
+  ILogger<ObjectLoader> logger,
   CancellationToken cancellationToken
 #pragma warning disable CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.
 ) : ChannelLoader<BaseItem>(cancellationToken), IObjectLoader
@@ -43,7 +45,10 @@ public sealed class ObjectLoader(
         if (rootJson != null)
         {
           //assume everything exists as the root is there.
-          var allChildren = ClosureParser.GetChildrenIds(rootJson, cancellationToken).Select(x => new Id(x)).ToList();
+          var allChildren = ClosureParser
+            .GetClosuresSorted(rootJson, cancellationToken)
+            .Select(x => new Id(x.Item1))
+            .ToList();
           //this probably yields away from the Main thread to let host apps update progress
           //in any case, this fixes a Revit only issue for this situation
           await Task.Yield();
@@ -129,12 +134,32 @@ public sealed class ObjectLoader(
   [AutoInterfaceIgnore]
   protected override void SaveToCacheInternal(List<BaseItem> batch)
   {
-    if (!_options.SkipCache)
+    try
     {
-      cancellationToken.ThrowIfCancellationRequested();
-      sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
-      Interlocked.Exchange(ref _cached, _cached + batch.Count);
-      progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _allChildrenCount));
+      if (!_options.SkipCache)
+      {
+        cancellationToken.ThrowIfCancellationRequested();
+        sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
+        Interlocked.Exchange(ref _cached, _cached + batch.Count);
+        progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _allChildrenCount));
+      }
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+#pragma warning disable CA1031
+    catch (Exception)
+#pragma warning restore CA1031
+    {
+      logger.LogError(
+        "Error while saving to cache, some stats of the payload: {Count} objects, {Serialized} serialized, {Cached} cached, {BatchByteSize} batch bytes",
+        batch.Count,
+        _allChildrenCount,
+        _cached,
+        batch.Sum(x => x.ByteSize)
+      );
+      throw;
     }
   }
 
