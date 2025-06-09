@@ -11,6 +11,9 @@ public partial interface ISqLiteJsonCacheManager : IDisposable;
 [GenerateAutoInterface]
 public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {
+#pragma warning disable CA2211
+  public static TimeSpan? SqliteWaitTimeout;
+#pragma warning restore CA2211
   private readonly CacheDbCommandPool _pool;
 
   public static ISqLiteJsonCacheManager FromMemory(int concurrency) => new SqLiteJsonCacheManager(concurrency);
@@ -91,7 +94,14 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
         cmd5.ExecuteNonQuery();
       }
       //do this to wait 5 seconds to avoid db lock exceptions, this is 0 by default
-      using (SqliteCommand cmd6 = new("PRAGMA busy_timeout=5000;", c))
+#pragma warning disable CA2100
+      using (
+        SqliteCommand cmd6 = new(
+          $"PRAGMA busy_timeout={(SqliteWaitTimeout ?? TimeSpan.FromSeconds(5)).Milliseconds};",
+          c
+        )
+      )
+#pragma warning restore CA2100
       {
         cmd6.ExecuteNonQuery();
       }

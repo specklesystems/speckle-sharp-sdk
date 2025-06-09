@@ -14,8 +14,21 @@ using Speckle.Sdk.Testing.Framework;
 
 namespace Speckle.Sdk.Serialization.Tests;
 
-public class ExceptionTests
+public class ExceptionTests : IDisposable
 {
+  private readonly string _basePath = $"{Guid.NewGuid()}.db";
+
+  public void Dispose()
+  {
+    if (File.Exists(_basePath))
+    {
+      //don't disable the pool because we should be disabling it in the manager
+      GC.Collect();
+      GC.WaitForPendingFinalizers();
+      File.Delete(_basePath);
+    }
+  }
+
   private readonly ISerializeProcessFactory _factory;
 
   public ExceptionTests()
@@ -64,8 +77,10 @@ public class ExceptionTests
     await Verify(ex);
   }
 
-  [Fact]
-  public async Task Test_Exceptions_Cache2()
+  [Theory]
+  [InlineData(2000, 0, true)]
+  [InlineData(0, 5000, false)]
+  public async Task Test_Database_Locked(int delayMilliseconds, int timeoutMilliseconds, bool throws)
   {
     var @base = new SampleObjectBase2();
     @base["dynamicProp"] = 123;
@@ -89,16 +104,53 @@ public class ExceptionTests
       line = new Polyline() { units = "test", value = [3.0, 4.0] },
     };
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(
-      SqLiteJsonCacheManager.FromMemory(1),
-      new MemoryServerObjectManager(new()),
-      null,
-      default,
-      new SerializeProcessOptions(false, false, false, true)
-    );
+    CacheDbCommandPool.UseDelayTimeSpan = TimeSpan.FromMilliseconds(delayMilliseconds);
+    CacheDbCommandPool.ExceptionOccurred = ex => throw ex;
+    SqLiteJsonCacheManager.SqliteWaitTimeout = TimeSpan.FromMilliseconds(timeoutMilliseconds);
 
-    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(@base));
-    await Verify(ex);
+    if (throws)
+    {
+      SpeckleException? ex = null;
+      for (int i = 0; i < 10; i++)
+      {
+        Console.WriteLine("Times " + i);
+        try
+        {
+          await using var serializeProcess = _factory.CreateSerializeProcess(
+            SqLiteJsonCacheManager.FromFilePath(_basePath, SqLiteJsonCacheManagerFactory.INITIAL_CONCURRENCY),
+            new MemoryServerObjectManager(new()),
+            null,
+            default,
+            new SerializeProcessOptions(false, false, false, true) { MaxCacheBatchSize = 1 }
+          );
+          await serializeProcess.Serialize(@base);
+        }
+        catch (SpeckleException se)
+        {
+          ex = se;
+        }
+
+        if (ex is null)
+        {
+          continue;
+        }
+
+        await Verify(ex);
+        break;
+      }
+    }
+    else
+    {
+      await using var serializeProcess = _factory.CreateSerializeProcess(
+        SqLiteJsonCacheManager.FromFilePath(_basePath, SqLiteJsonCacheManagerFactory.INITIAL_CONCURRENCY),
+        new MemoryServerObjectManager(new()),
+        null,
+        default,
+        new SerializeProcessOptions(false, false, false, true) { MaxCacheBatchSize = 1 }
+      );
+      var results = await serializeProcess.Serialize(@base);
+      results.RootId.Should().Be(@base.id);
+    }
   }
 
   [Fact]

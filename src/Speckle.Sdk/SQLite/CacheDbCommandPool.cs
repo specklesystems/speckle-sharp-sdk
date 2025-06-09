@@ -1,11 +1,18 @@
 using System.Collections.Concurrent;
 using Microsoft.Data.Sqlite;
+using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.SQLite;
 
 //inspired by https://github.com/neosmart/SqliteCache/blob/master/SqliteCache/DbCommandPool.cs
 public sealed class CacheDbCommandPool : IDisposable
 {
+  //this isn't great but it's a stop gap to test sqlite with delays without refactoring to async/await
+#pragma warning disable CA2211
+  public static TimeSpan? UseDelayTimeSpan;
+  public static Action<Exception>? ExceptionOccurred;
+#pragma warning restore CA2211
+
   private readonly ConcurrentBag<SqliteCommand>[] _commands = new ConcurrentBag<SqliteCommand>[CacheDbCommands.Count];
   private readonly ConcurrentBag<SqliteConnection> _connections = new();
   private readonly string _connectionString;
@@ -64,7 +71,17 @@ public sealed class CacheDbCommandPool : IDisposable
     }
   }
 
-  public T Use<T>(CacheOperation type, Func<SqliteCommand, T> handler) =>
+  public T Use<T>(CacheOperation type, Func<SqliteCommand, T> handler)
+  {
+    if (UseDelayTimeSpan == null)
+    {
+      return UseNoDelay(type, handler);
+    }
+
+    return UseDelay(type, handler);
+  }
+
+  private T UseNoDelay<T>(CacheOperation type, Func<SqliteCommand, T> handler) =>
     Use(conn =>
     {
       var pool = _commands[(int)type];
@@ -82,6 +99,41 @@ public sealed class CacheDbCommandPool : IDisposable
       }
       catch (SqliteException se)
       {
+        ExceptionOccurred?.Invoke(se);
+        throw SqLiteJsonCacheException.Create(se);
+      }
+      finally
+      {
+        command.Connection = null;
+        command.Parameters.Clear();
+        pool.Add(command);
+      }
+    });
+
+  private T UseDelay<T>(CacheOperation type, Func<SqliteCommand, T> handler) =>
+    Use(conn =>
+    {
+      var pool = _commands[(int)type];
+      if (!pool.TryTake(out var command))
+      {
+#pragma warning disable CA2100
+        command = new SqliteCommand(CacheDbCommands.Commands[(int)type], conn);
+#pragma warning restore CA2100
+      }
+
+      using var transaction = conn.BeginTransaction();
+      try
+      {
+        command.Connection = conn;
+        command.Transaction = transaction;
+        Thread.Sleep(UseDelayTimeSpan.NotNull());
+        var ret = handler(command);
+        transaction.Commit();
+        return ret;
+      }
+      catch (SqliteException se)
+      {
+        ExceptionOccurred?.Invoke(se);
         throw SqLiteJsonCacheException.Create(se);
       }
       finally
