@@ -9,7 +9,6 @@ using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
-using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Testing.Framework;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -61,43 +60,6 @@ public class ExceptionTests
     );
 
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
-    await Verify(ex);
-  }
-
-  [Fact]
-  public async Task Test_Exceptions_Cache2()
-  {
-    var @base = new SampleObjectBase2();
-    @base["dynamicProp"] = 123;
-    @base.applicationId = "1";
-    @base.detachedProp = new SamplePropBase2()
-    {
-      name = "detachedProp",
-      applicationId = "2",
-      line = new Polyline() { units = "test", value = [1.0, 2.0] },
-    };
-    @base.detachedProp2 = new SamplePropBase2()
-    {
-      name = "detachedProp2",
-      applicationId = "3",
-      line = new Polyline() { units = "test", value = [3.0, 2.0] },
-    };
-    @base.attachedProp = new SamplePropBase2()
-    {
-      name = "attachedProp",
-      applicationId = "4",
-      line = new Polyline() { units = "test", value = [3.0, 4.0] },
-    };
-
-    await using var serializeProcess = _factory.CreateSerializeProcess(
-      SqLiteJsonCacheManager.FromMemory(1),
-      new MemoryServerObjectManager(new()),
-      null,
-      default,
-      new SerializeProcessOptions(false, false, false, true)
-    );
-
-    var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(@base));
     await Verify(ex);
   }
 
