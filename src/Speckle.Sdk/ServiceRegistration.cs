@@ -99,7 +99,7 @@ public static class ServiceRegistration
     );
     serviceCollection.AddMatchingInterfacesAsTransient(typeof(GraphQLRetry).Assembly);
     //we want to make sqlite pools be singletons per stream so needs a singleton factory
-    serviceCollection.TryAddSingleton<ISqLiteJsonCacheManagerFactory, SqLiteJsonCacheManagerFactory>();
+    serviceCollection.AddSingleton<ISqLiteJsonCacheManagerFactory, SqLiteJsonCacheManagerFactory>();
     return serviceCollection;
   }
 
