@@ -5,25 +5,42 @@ using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.SQLite;
 
+public partial interface ISqLiteJsonCacheManagerFactory : IDisposable;
+
 [GenerateAutoInterface]
-public class SqLiteJsonCacheManagerFactory : ISqLiteJsonCacheManagerFactory
+public sealed class SqLiteJsonCacheManagerFactory : ISqLiteJsonCacheManagerFactory
 {
   public const int INITIAL_CONCURRENCY = 4;
 
-  private readonly ConcurrentDictionary<string, ISqLiteJsonCacheManager> _cachedManagers = new();
+  private readonly ConcurrentDictionary<string, ISqliteJsonCachePool> _pools = new();
 
-  private ISqLiteJsonCacheManager Create(string path, int concurrency) => new SqLiteJsonCacheManager(path, concurrency);
+  [AutoInterfaceIgnore]
+  public void Dispose()
+  {
+    foreach (var pool in _pools)
+    {
+      pool.Value.Dispose();
+    }
+  }
+
+  private ISqliteJsonCachePool Create(string path, int concurrency) => new SqliteJsonCachePool(path, concurrency);
 
   public ISqLiteJsonCacheManager CreateForUser(string scope) =>
-    Create(Path.Combine(SpecklePathProvider.UserApplicationDataPath(), "Speckle", $"{scope}.db"), 1);
+    new SqLiteJsonCacheManager( 
+#pragma warning disable CA2000
+      //this is fine because we told SqLiteJsonCacheManager to dispose this
+      Create(Path.Combine(SpecklePathProvider.UserApplicationDataPath(), "Speckle", $"{scope}.db"), 1),
+#pragma warning restore CA2000
+      true);
 
   public ISqLiteJsonCacheManager CreateFromStream(string streamId)
   {
-    if (!_cachedManagers.TryGetValue(streamId, out var manager))
+    if (!_pools.TryGetValue(streamId, out var pool))
     {
-      manager = Create(SqlitePaths.GetDBPath(streamId), INITIAL_CONCURRENCY);
-      _cachedManagers.TryAdd(streamId, manager);
+      pool = Create(SqlitePaths.GetDBPath(streamId), INITIAL_CONCURRENCY);
+      _pools.TryAdd(streamId, pool);
     }
-    return manager;
+    //never dispose pools for streams
+    return new SqLiteJsonCacheManager(pool, false);
   }
 }
