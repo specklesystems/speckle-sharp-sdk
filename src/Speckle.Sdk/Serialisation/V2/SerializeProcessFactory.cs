@@ -40,7 +40,7 @@ public class SerializeProcessFactory(
   ) =>
     new SerializeProcess(
       progress,
-      objectSaverFactory.Create(sqLiteJsonCacheManager, progress, cancellationToken, options),
+      objectSaverFactory.Create(serverObjectManager, sqLiteJsonCacheManager, progress, cancellationToken, options),
       baseChildFinder,
       new BaseSerializer(sqLiteJsonCacheManager, objectSerializerFactory),
       loggerFactory,

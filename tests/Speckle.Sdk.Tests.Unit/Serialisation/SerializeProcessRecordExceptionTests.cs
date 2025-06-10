@@ -21,7 +21,6 @@ public class SerializeProcessRecordExceptionTests : MoqTest
       .Setup(f => f.CreateLogger("Speckle.Sdk.Serialisation.V2.PriorityScheduler"))
       .Returns(Create<ILogger<PriorityScheduler>>().Object);
     var objectSaverMock = Create<IObjectSaver>();
-    objectSaverMock.Setup(x => x.Dispose());
     var baseChildFinderMock = Create<IBaseChildFinder>();
     var baseSerializerMock = Create<IBaseSerializer>();
     using var cts = new CancellationTokenSource();
@@ -57,7 +56,6 @@ public class SerializeProcessRecordExceptionTests : MoqTest
       .Setup(f => f.CreateLogger("Speckle.Sdk.Serialisation.V2.PriorityScheduler"))
       .Returns(Create<ILogger<PriorityScheduler>>().Object);
     var objectSaverMock = Create<IObjectSaver>();
-    objectSaverMock.Setup(x => x.Dispose());
     var baseChildFinderMock = Create<IBaseChildFinder>();
     var baseSerializerMock = Create<IBaseSerializer>();
     using var cts = new CancellationTokenSource();
@@ -88,7 +86,6 @@ public class SerializeProcessRecordExceptionTests : MoqTest
       .Setup(f => f.CreateLogger("Speckle.Sdk.Serialisation.V2.PriorityScheduler"))
       .Returns(Create<ILogger<PriorityScheduler>>().Object);
     var objectSaverMock = Create<IObjectSaver>();
-    objectSaverMock.Setup(x => x.Dispose());
     var baseChildFinderMock = Create<IBaseChildFinder>();
     var baseSerializerMock = Create<IBaseSerializer>();
     using var cts = new CancellationTokenSource();

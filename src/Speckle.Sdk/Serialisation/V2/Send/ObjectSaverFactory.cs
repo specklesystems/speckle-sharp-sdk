@@ -9,12 +9,12 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 public partial interface IObjectSaverFactory : IDisposable;
 
 [GenerateAutoInterface]
-public sealed class ObjectSaverFactory(IServerObjectManager serverObjectManager, ILoggerFactory loggerFactory)
-  : IObjectSaverFactory
+public sealed class ObjectSaverFactory(ILoggerFactory loggerFactory) : IObjectSaverFactory
 {
   private readonly ConcurrentDictionary<string, IObjectSaver> _savers = new();
 
   public IObjectSaver Create(
+    IServerObjectManager serverObjectManager,
     ISqLiteJsonCacheManager sqLiteJsonCacheManager,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,

@@ -8,17 +8,15 @@ namespace Speckle.Sdk.Serialisation.V2.Send.Tests;
 
 public class ObjectSaverFactoryTests : MoqTest
 {
-  private readonly Mock<IServerObjectManager> _serverObjectManagerMock;
   private readonly Mock<ILoggerFactory> _loggerFactoryMock;
   private readonly Mock<ILogger<ObjectSaver>> _loggerMock;
   private readonly ObjectSaverFactory _factory;
 
   public ObjectSaverFactoryTests()
   {
-    _serverObjectManagerMock = Create<IServerObjectManager>();
     _loggerFactoryMock = Create<ILoggerFactory>();
     _loggerMock = Create<ILogger<ObjectSaver>>();
-    _factory = new ObjectSaverFactory(_serverObjectManagerMock.Object, _loggerFactoryMock.Object);
+    _factory = new ObjectSaverFactory(_loggerFactoryMock.Object);
   }
 
   public override void Dispose()
@@ -35,7 +33,12 @@ public class ObjectSaverFactoryTests : MoqTest
     cacheManagerMock.Setup(x => x.Dispose());
     cacheManagerMock.SetupGet(c => c.Path).Returns("/tmp/test1.db");
 
-    var saver = _factory.Create(cacheManagerMock.Object, null, CancellationToken.None);
+    var saver = _factory.Create(
+      Create<IServerObjectManager>().Object,
+      cacheManagerMock.Object,
+      null,
+      CancellationToken.None
+    );
 
     saver.Should().NotBeNull();
   }
@@ -48,8 +51,18 @@ public class ObjectSaverFactoryTests : MoqTest
     cacheManagerMock.Setup(x => x.Dispose());
     cacheManagerMock.SetupGet(c => c.Path).Returns("/tmp/test2.db");
 
-    var saver1 = _factory.Create(cacheManagerMock.Object, null, CancellationToken.None);
-    var saver2 = _factory.Create(cacheManagerMock.Object, null, CancellationToken.None);
+    var saver1 = _factory.Create(
+      Create<IServerObjectManager>().Object,
+      cacheManagerMock.Object,
+      null,
+      CancellationToken.None
+    );
+    var saver2 = _factory.Create(
+      Create<IServerObjectManager>().Object,
+      cacheManagerMock.Object,
+      null,
+      CancellationToken.None
+    );
 
     saver1.Should().BeSameAs(saver2);
   }
