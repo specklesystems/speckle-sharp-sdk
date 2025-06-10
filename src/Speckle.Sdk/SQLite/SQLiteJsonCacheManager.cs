@@ -12,14 +12,14 @@ public partial interface ISqLiteJsonCacheManager : IDisposable;
 public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {
   private readonly CacheDbCommandPool _pool;
-  
-  public string Path {get;}
+
+  public string Path { get; }
 
   public static ISqLiteJsonCacheManager FromMemory(int concurrency) => new SqLiteJsonCacheManager(concurrency);
 
   private SqLiteJsonCacheManager(int concurrency)
   {
-    Path =  ":memory:";
+    Path = ":memory:";
     //disable pooling as we pool ourselves
     var builder = new SqliteConnectionStringBuilder
     {

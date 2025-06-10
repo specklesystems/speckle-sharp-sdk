@@ -28,7 +28,7 @@ public class SerializeProcessFactory(
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
     var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
-    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager,  progress, cancellationToken, options);
+    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager, progress, cancellationToken, options);
   }
 
   public ISerializeProcess CreateSerializeProcess(
