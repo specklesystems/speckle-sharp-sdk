@@ -97,6 +97,8 @@ public static class ServiceRegistration
       typeof(Client)
     );
     serviceCollection.AddMatchingInterfacesAsTransient(typeof(GraphQLRetry).Assembly);
+    //we want to make object savers be singletons per stream so needs a singleton factory
+    serviceCollection.AddSingleton<IObjectSaverFactory, ObjectSaverFactory>();
     return serviceCollection;
   }
 

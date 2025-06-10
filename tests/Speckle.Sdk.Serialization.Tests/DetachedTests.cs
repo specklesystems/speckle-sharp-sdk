@@ -373,6 +373,9 @@ public class DummyServerObjectManager : IServerObjectManager
 
 public class DummySendCacheManager(Dictionary<string, string> objects) : ISqLiteJsonCacheManager
 {
+#pragma warning disable CA1065
+  public string Path => throw new NotImplementedException();
+#pragma warning restore CA1065
   public void Dispose() { }
 
   public IReadOnlyCollection<(string, string)> GetAllObjects() => throw new NotImplementedException();

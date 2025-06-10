@@ -86,7 +86,6 @@ public sealed class SerializeProcess(
     await WaitForSchedulerCompletion().ConfigureAwait(false);
     await _highest.DisposeAsync().ConfigureAwait(false);
     await _belowNormal.DisposeAsync().ConfigureAwait(false);
-    objectSaver.Dispose();
     _processSource.Dispose();
   }
 

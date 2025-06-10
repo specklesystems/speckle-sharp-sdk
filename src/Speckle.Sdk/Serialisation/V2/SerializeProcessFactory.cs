@@ -13,6 +13,7 @@ public class SerializeProcessFactory(
   IObjectSerializerFactory objectSerializerFactory,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory,
   IServerObjectManagerFactory serverObjectManagerFactory,
+  IObjectSaverFactory objectSaverFactory,
   ILoggerFactory loggerFactory
 ) : ISerializeProcessFactory
 {
@@ -27,7 +28,7 @@ public class SerializeProcessFactory(
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
     var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
-    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager, progress, cancellationToken, options);
+    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager,  progress, cancellationToken, options);
   }
 
   public ISerializeProcess CreateSerializeProcess(
@@ -39,13 +40,7 @@ public class SerializeProcessFactory(
   ) =>
     new SerializeProcess(
       progress,
-      new ObjectSaver(
-        progress,
-        sqLiteJsonCacheManager,
-        serverObjectManager,
-        loggerFactory.CreateLogger<ObjectSaver>(),
-        cancellationToken
-      ),
+      objectSaverFactory.Create(sqLiteJsonCacheManager, progress, cancellationToken, options),
       baseChildFinder,
       new BaseSerializer(sqLiteJsonCacheManager, objectSerializerFactory),
       loggerFactory,

@@ -12,16 +12,19 @@ public partial interface ISqLiteJsonCacheManager : IDisposable;
 public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {
   private readonly CacheDbCommandPool _pool;
+  
+  public string Path {get;}
 
   public static ISqLiteJsonCacheManager FromMemory(int concurrency) => new SqLiteJsonCacheManager(concurrency);
 
   private SqLiteJsonCacheManager(int concurrency)
   {
+    Path =  ":memory:";
     //disable pooling as we pool ourselves
     var builder = new SqliteConnectionStringBuilder
     {
       Pooling = false,
-      DataSource = ":memory:",
+      DataSource = Path,
       Cache = SqliteCacheMode.Shared,
       Mode = SqliteOpenMode.Memory,
     };
@@ -34,8 +37,9 @@ public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 
   private SqLiteJsonCacheManager(string path, int concurrency)
   {
+    Path = path;
     //disable pooling as we pool ourselves
-    var builder = new SqliteConnectionStringBuilder { Pooling = false, DataSource = path };
+    var builder = new SqliteConnectionStringBuilder { Pooling = false, DataSource = Path };
     _pool = new CacheDbCommandPool(builder.ToString(), concurrency);
     Initialize();
   }
