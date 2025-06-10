@@ -8,7 +8,7 @@ public class MemoryJsonCacheManager(ConcurrentDictionary<Id, Json> jsonCache) : 
 #pragma warning restore CA1063
 {
 #pragma warning disable CA1065
-  public string Path => throw new NotImplementedException();
+  public string Path => "MemoryJsonCacheManager";
 #pragma warning restore CA1065
 
   public IReadOnlyCollection<(string Id, string Json)> GetAllObjects() =>
