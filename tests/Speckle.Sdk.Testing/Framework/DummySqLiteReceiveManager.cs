@@ -5,6 +5,9 @@ namespace Speckle.Sdk.Testing.Framework;
 public sealed class DummySqLiteReceiveManager(IReadOnlyDictionary<string, string> savedObjects)
   : ISqLiteJsonCacheManager
 {
+#pragma warning disable CA1065
+  public string Path => throw new NotImplementedException();
+#pragma warning restore CA1065
   public void Dispose() { }
 
   public IReadOnlyCollection<(string, string)> GetAllObjects() => throw new NotImplementedException();
