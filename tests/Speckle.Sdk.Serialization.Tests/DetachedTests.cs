@@ -41,7 +41,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, false, true)
+      new SerializeProcessOptions(false, false, true, true)
     );
     await serializeProcess.Serialize(@base);
 
@@ -123,7 +123,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
+      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
@@ -150,7 +150,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
+      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
@@ -172,7 +172,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
+      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
@@ -239,7 +239,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, false, true)
+      new SerializeProcessOptions(false, false, true, true)
     );
 
     var results = await serializeProcess.Serialize(@base);
@@ -272,7 +272,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, false, true)
+      new SerializeProcessOptions(false, false, true, true)
     );
     var results = await serializeProcess.Serialize(@base);
     await VerifyJsonDictionary(objects);
@@ -373,9 +373,6 @@ public class DummyServerObjectManager : IServerObjectManager
 
 public class DummySendCacheManager(Dictionary<string, string> objects) : ISqLiteJsonCacheManager
 {
-#pragma warning disable CA1065
-  public string Path => throw new NotImplementedException();
-#pragma warning restore CA1065
   public void Dispose() { }
 
   public IReadOnlyCollection<(string, string)> GetAllObjects() => throw new NotImplementedException();

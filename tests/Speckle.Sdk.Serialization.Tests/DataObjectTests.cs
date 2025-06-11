@@ -41,7 +41,7 @@ public class DataObjectTests
       new DummyServerObjectManager(),
       null,
       default,
-      new SerializeProcessOptions(false, false, false, true)
+      new SerializeProcessOptions(true, true, false, true)
     );
     await serializeProcess.Serialize(x);
     await VerifyJson(json.Single().Value.Value).UseParameters(type);
