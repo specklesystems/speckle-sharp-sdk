@@ -13,8 +13,8 @@ public abstract class ChannelSaver<T>
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
   private const int MAX_PARALLELISM_HTTP = 4;
   private const int HTTP_CAPACITY = 500;
-  private const int MAX_CACHE_WRITE_PARALLELISM = 4;
-  private const int MAX_CACHE_BATCH = 500;
+  private const int MAX_CACHE_WRITE_PARALLELISM = 1;
+  private const int MAX_CACHE_BATCH = 1000;
 
   private readonly Channel<T> _checkCacheChannel = Channel.CreateBounded<T>(
     new BoundedChannelOptions(SEND_CAPACITY)
@@ -45,9 +45,9 @@ public abstract class ChannelSaver<T>
         cancellationToken
       )
       .Join()
-      .Batch(cacheBatchSize ?? MAX_CACHE_BATCH)
+      .Batch(cacheBatchSize ?? MAX_CACHE_BATCH, singleReader: true)
       .WithTimeout(HTTP_BATCH_TIMEOUT)
-      .ReadAllConcurrently(maxParallelism ?? MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
+      .ReadAllConcurrently(MAX_CACHE_WRITE_PARALLELISM, SaveToCache, cancellationToken)
       .ContinueWith(
         t =>
         {

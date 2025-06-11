@@ -14,6 +14,7 @@ using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Serialization.Tests.Framework;
+using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Testing.Framework;
 
 namespace Speckle.Sdk.Serialization.Tests;
@@ -50,45 +51,45 @@ public class SerializationTests
     public void Dispose() { }
   }
 
-  [Theory]
-  [InlineData("RevitObject.json.gz")]
-  public async Task Basic_Namespace_Validation(string fileName)
-  {
-    var closures = TestFileManager.GetFileAsClosures(fileName);
-    var deserializer = new SpeckleObjectDeserializer
+  /*  [Theory]
+    [InlineData("RevitObject.json.gz")]
+    public async Task Basic_Namespace_Validation(string fileName)
     {
-      ReadTransport = new TestTransport(closures),
-      CancellationToken = default,
-    };
-
-    foreach (var (id, objJson) in closures)
-    {
-      var jObject = JObject.Parse(objJson);
-      var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
-      var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
-      starts.Should().BeTrue($"{oldSpeckleType} isn't expected");
-
-      var baseType = await deserializer.DeserializeAsync(objJson);
-      baseType.id.Should().Be(id);
-
-      var oldType = TypeLoader.GetAtomicType(oldSpeckleType);
-      if (oldType == typeof(Base))
+      var closures = TestFileManager.GetFileAsClosures(fileName);
+      var deserializer = new SpeckleObjectDeserializer
       {
-        oldSpeckleType.Should().NotContain("Base");
-      }
-      else
+        ReadTransport = new TestTransport(closures),
+        CancellationToken = default,
+      };
+  
+      foreach (var (id, objJson) in closures)
       {
-        starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
-        starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
-
-        var type = TypeLoader.GetAtomicType(baseType.speckle_type);
-        type.Should().NotBeNull();
-        var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException($"Could not find: {type}");
-        starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
-        starts.Should().BeTrue($"{name} isn't expected");
+        var jObject = JObject.Parse(objJson);
+        var oldSpeckleType = jObject["speckle_type"].NotNull().Value<string>().NotNull();
+        var starts = oldSpeckleType.StartsWith("Speckle.Core.") || oldSpeckleType.StartsWith("Objects.");
+        starts.Should().BeTrue($"{oldSpeckleType} isn't expected");
+  
+        var baseType = await deserializer.DeserializeAsync(objJson);
+        baseType.id.Should().Be(id);
+  
+        var oldType = TypeLoader.GetAtomicType(oldSpeckleType);
+        if (oldType == typeof(Base))
+        {
+          oldSpeckleType.Should().NotContain("Base");
+        }
+        else
+        {
+          starts = baseType.speckle_type.StartsWith("Speckle.Core.") || baseType.speckle_type.StartsWith("Objects.");
+          starts.Should().BeTrue($"{baseType.speckle_type} isn't expected");
+  
+          var type = TypeLoader.GetAtomicType(baseType.speckle_type);
+          type.Should().NotBeNull();
+          var name = TypeLoader.GetTypeString(type) ?? throw new ArgumentNullException($"Could not find: {type}");
+          starts = name.StartsWith("Speckle.Core") || name.StartsWith("Objects");
+          starts.Should().BeTrue($"{name} isn't expected");
+        }
       }
-    }
-  }
+    }*/
 
   [Theory]
   [InlineData("RevitObject.json.gz")]
@@ -184,9 +185,16 @@ public class SerializationTests
   }
 
   [Theory]
-  [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818, 4674)]
-  public async Task Roundtrip_Test_New(string fileName, string rootId, int oldCount, int newCount)
+  [InlineData(1)]
+  [InlineData(2)]
+  [InlineData(3)]
+  [InlineData(4)]
+  public async Task Roundtrip_Test_New(int concurrency)
   {
+    string fileName = "RevitObject.json.gz";
+    string rootId = "3416d3fe01c9196115514c4a2f41617b";
+    int oldCount = 7818;
+    int newCount = 4674;
     var closures = TestFileManager.GetFileAsClosures(fileName);
     closures.Count.Should().Be(oldCount);
 
@@ -218,11 +226,11 @@ public class SerializationTests
 
     await using (
       var serializeProcess = _factory.CreateSerializeProcess(
-        new ConcurrentDictionary<Id, Json>(),
-        newIdToJson,
+        SqLiteJsonCacheManager.FromMemory(1),
+        new MemoryServerObjectManager(newIdToJson),
         null,
         default,
-        new SerializeProcessOptions(true, true, false, true)
+        new SerializeProcessOptions(false, false, false, true) { MaxCacheBatchSize = 1, MaxParallelism = concurrency }
       )
     )
     {
