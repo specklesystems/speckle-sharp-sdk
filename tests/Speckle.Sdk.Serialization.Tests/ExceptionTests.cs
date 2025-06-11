@@ -95,8 +95,8 @@ public class ExceptionTests
       default,
       new SerializeProcessOptions(false, false, false, true)
       {
-        MaxHttpSendSize = 1,
-        MaxCacheSize = 1,
+        MaxHttpSendBatchSize = 1,
+        MaxCacheBatchSize = 1,
         MaxParallelism = 1,
       }
     );

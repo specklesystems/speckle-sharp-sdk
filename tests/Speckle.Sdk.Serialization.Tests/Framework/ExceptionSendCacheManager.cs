@@ -4,6 +4,7 @@ namespace Speckle.Sdk.Serialization.Tests.Framework;
 
 public class ExceptionSendCacheManager(bool? hasObject = null, int? exceptionsAfter = null) : ISqLiteJsonCacheManager
 {
+  public string Path => "ExceptionSendCacheManager";
   private readonly object _lock = new();
   private int _count;
 

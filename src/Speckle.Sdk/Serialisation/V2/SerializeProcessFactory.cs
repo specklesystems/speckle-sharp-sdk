@@ -13,6 +13,7 @@ public class SerializeProcessFactory(
   IObjectSerializerFactory objectSerializerFactory,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory,
   IServerObjectManagerFactory serverObjectManagerFactory,
+  IObjectSaverFactory objectSaverFactory,
   ILoggerFactory loggerFactory
 ) : ISerializeProcessFactory
 {
@@ -39,13 +40,7 @@ public class SerializeProcessFactory(
   ) =>
     new SerializeProcess(
       progress,
-      new ObjectSaver(
-        progress,
-        sqLiteJsonCacheManager,
-        serverObjectManager,
-        loggerFactory.CreateLogger<ObjectSaver>(),
-        cancellationToken
-      ),
+      objectSaverFactory.Create(serverObjectManager, sqLiteJsonCacheManager, progress, cancellationToken, options),
       baseChildFinder,
       new BaseSerializer(sqLiteJsonCacheManager, objectSerializerFactory),
       loggerFactory,
@@ -64,18 +59,10 @@ public class SerializeProcessFactory(
 #pragma warning disable CA2000
     var memoryJsonCacheManager = new MemoryJsonCacheManager(jsonCache);
 #pragma warning restore CA2000
-    return new SerializeProcess(
+    return CreateSerializeProcess(
+      memoryJsonCacheManager,
+      new MemoryServerObjectManager(objects),
       progress,
-      new ObjectSaver(
-        progress,
-        memoryJsonCacheManager,
-        new MemoryServerObjectManager(objects),
-        loggerFactory.CreateLogger<ObjectSaver>(),
-        cancellationToken
-      ),
-      baseChildFinder,
-      new BaseSerializer(memoryJsonCacheManager, objectSerializerFactory),
-      loggerFactory,
       cancellationToken,
       options
     );

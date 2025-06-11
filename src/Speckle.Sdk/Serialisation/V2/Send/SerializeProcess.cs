@@ -16,8 +16,8 @@ public record SerializeProcessOptions(
   bool SkipFindTotalObjects = false
 )
 {
-  public int? MaxHttpSendSize { get; set; }
-  public int? MaxCacheSize { get; set; }
+  public int? MaxHttpSendBatchSize { get; set; }
+  public int? MaxCacheBatchSize { get; set; }
   public int? MaxParallelism { get; set; }
 }
 
@@ -86,7 +86,6 @@ public sealed class SerializeProcess(
     await WaitForSchedulerCompletion().ConfigureAwait(false);
     await _highest.DisposeAsync().ConfigureAwait(false);
     await _belowNormal.DisposeAsync().ConfigureAwait(false);
-    objectSaver.Dispose();
     _processSource.Dispose();
   }
 
@@ -112,8 +111,8 @@ public sealed class SerializeProcess(
     {
       var channelTask = objectSaver.Start(
         options?.MaxParallelism,
-        options?.MaxHttpSendSize,
-        options?.MaxCacheSize,
+        options?.MaxHttpSendBatchSize,
+        options?.MaxCacheBatchSize,
         _processSource.Token
       );
       var findTotalObjectsTask = Task.CompletedTask;
