@@ -191,6 +191,11 @@
           "System.Runtime.CompilerServices.Unsafe": "4.5.1"
         }
       },
+      "Microsoft.IO.RecyclableMemoryStream": {
+        "type": "Transitive",
+        "resolved": "3.0.1",
+        "contentHash": "s/s20YTVY9r9TPfTrN5g8zPF1YhwxyqO6PxUkrYTGI2B+OGPe9AdajWZrLhFqXIvqIW23fnUE4+ztrUWNU1+9g=="
+      },
       "Microsoft.SourceLink.Common": {
         "type": "Transitive",
         "resolved": "8.0.0",
@@ -261,6 +266,11 @@
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.4"
         }
+      },
+      "System.Buffers": {
+        "type": "Transitive",
+        "resolved": "4.6.0",
+        "contentHash": "lN6tZi7Q46zFzAbRYXTIvfXcyvQQgxnY7Xm6C6xQ9784dEL1amjM6S6Iw4ZpsvesAKnRVsM4scrDQaDqSClkjA=="
       },
       "System.CodeDom": {
         "type": "Transitive",
@@ -361,6 +371,12 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "speckle.objects": {
+        "type": "Project",
+        "dependencies": {
+          "Speckle.Sdk": "[1.0.0, )"
+        }
+      },
       "speckle.sdk": {
         "type": "Project",
         "dependencies": {
@@ -375,6 +391,22 @@
       },
       "speckle.sdk.dependencies": {
         "type": "Project"
+      },
+      "speckle.sdk.serialization.tests": {
+        "type": "Project",
+        "dependencies": {
+          "AwesomeAssertions": "[8.1.0, )",
+          "HttpMultipartParser": "[9.0.0, )",
+          "Microsoft.Extensions.DependencyInjection": "[2.2.0, )",
+          "Microsoft.NET.Test.Sdk": "[17.13.0, )",
+          "Moq": "[4.20.72, )",
+          "RichardSzalay.MockHttp": "[7.0.0, )",
+          "Speckle.Objects": "[1.0.0, )",
+          "Speckle.Sdk.Testing": "[1.0.0, )",
+          "altcover": "[9.0.1, )",
+          "xunit.assert": "[2.9.3, )",
+          "xunit.runner.visualstudio": "[3.0.2, )"
+        }
       },
       "speckle.sdk.testing": {
         "type": "Project",
@@ -395,6 +427,23 @@
           "GraphQL.Client.Abstractions.Websocket": "6.0.0",
           "System.Reactive": "5.0.0"
         }
+      },
+      "HttpMultipartParser": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.0, )",
+        "resolved": "9.0.0",
+        "contentHash": "WeGKDK62waagwo9nokRY62DrLukwVCNXOPVjrzi/qSS73D+B6zPOBkImsFqzhvRNweIobR74js9M2HTV+PTeIg==",
+        "dependencies": {
+          "Microsoft.CSharp": "4.7.0",
+          "Microsoft.IO.RecyclableMemoryStream": "3.0.1",
+          "System.Buffers": "4.6.0"
+        }
+      },
+      "Microsoft.CSharp": {
+        "type": "CentralTransitive",
+        "requested": "[4.7.0, )",
+        "resolved": "4.7.0",
+        "contentHash": "pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA=="
       },
       "Microsoft.Data.Sqlite": {
         "type": "CentralTransitive",
@@ -432,6 +481,12 @@
         "dependencies": {
           "Castle.Core": "5.1.1"
         }
+      },
+      "RichardSzalay.MockHttp": {
+        "type": "CentralTransitive",
+        "requested": "[7.0.0, )",
+        "resolved": "7.0.0",
+        "contentHash": "QwnauYiaywp65QKFnP+wvgiQ2D8Pv888qB2dyfd7MSVDF06sIvxqASenk+RxsWybyyt+Hu1Y251wQxpHTv3UYg=="
       },
       "Speckle.DoubleNumerics": {
         "type": "CentralTransitive",
