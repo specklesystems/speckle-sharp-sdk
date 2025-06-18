@@ -228,6 +228,10 @@ public sealed class SerializeProcess(
       {
         foreach (var kvp in childClosure)
         {
+          if (kvp.Key.Value is null)
+          {
+            throw new InvalidOperationException("A key has a null value, this shouldn't happen");
+          }
           childClosures[kvp.Key] = kvp.Value;
         }
 
