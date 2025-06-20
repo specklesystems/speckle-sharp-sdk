@@ -33,6 +33,7 @@ internal static class GraphQLErrorHandler
         "BAD_USER_INPUT" => new SpeckleGraphQLBadInputException(message),
         "INTERNAL_SERVER_ERROR" => new SpeckleGraphQLInternalErrorException(message),
         "WORKSPACES_MODULE_DISABLED_ERROR" => new SpeckleGraphQLWorkspaceNotEnabledException(message),
+        "COMMIT_CREATE_ERROR" => new CannotCreateCommitException(message),
         _ => new SpeckleGraphQLException(message),
       };
       exceptions.Add(ex);
