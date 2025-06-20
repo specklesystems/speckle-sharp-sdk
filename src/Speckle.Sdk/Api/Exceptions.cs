@@ -126,3 +126,14 @@ public sealed class WorkspacePermissionException : SpeckleGraphQLException
   public WorkspacePermissionException(string? message, Exception? innerException)
     : base(message, innerException) { }
 }
+
+public sealed class CannotCreateCommitException : SpeckleGraphQLException
+{
+  public CannotCreateCommitException() { }
+
+  public CannotCreateCommitException(string? message)
+    : base(message) { }
+
+  public CannotCreateCommitException(string? message, Exception? innerException)
+    : base(message, innerException) { }
+}
