@@ -15,6 +15,6 @@ public class LevelProxy : Base, IProxyCollection
   /// The list of application ids of objects that use this level
   /// </summary>
   public required List<string> objects { get; set; }
-  
+
   public required DataObject value { get; set; }
 }
