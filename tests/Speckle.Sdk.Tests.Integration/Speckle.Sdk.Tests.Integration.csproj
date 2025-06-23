@@ -15,5 +15,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Speckle.Sdk\Speckle.Sdk.csproj" />
     <ProjectReference Include="..\Speckle.Sdk.Testing\Speckle.Sdk.Testing.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk.Serialization.Tests\Speckle.Sdk.Serialization.Tests.csproj" />
   </ItemGroup>
 </Project>
