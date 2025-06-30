@@ -312,6 +312,11 @@ public sealed class SerializeProcess(
     {
       return;
     }
+    if (_processSource.IsCancellationRequested)
+    {
+      //if we are already cancelled, don't log or save the exceptions
+      return;
+    }
     //order here matters
     _logger.LogError(e, "Error in SDK: {message}", e.Message);
     objectSaver.Exception = e;
