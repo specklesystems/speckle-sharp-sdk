@@ -47,6 +47,10 @@ public partial class Operations
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return results;
     }
+    catch (OperationCanceledException)
+    {
+      //this is handled by the caller
+    }
     catch (Exception ex)
     {
       receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
