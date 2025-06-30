@@ -8,7 +8,7 @@ namespace Speckle.Sdk.Dependencies.Serialization;
 public abstract class ChannelSaver<T>
   where T : IHasByteSize
 {
-  private const int SEND_CAPACITY = 1000;
+  private const int SEND_CAPACITY = 10000;
   private const int HTTP_SEND_CHUNK_SIZE = 25_000_000; //bytes
   private static readonly TimeSpan HTTP_BATCH_TIMEOUT = TimeSpan.FromSeconds(2);
   private const int MAX_PARALLELISM_HTTP = 4;

@@ -226,9 +226,17 @@ public sealed class SerializeProcess(
       var childClosures = _childClosurePool.Get();
       foreach (var childClosure in taskClosures)
       {
+        if (_processSource.Token.IsCancellationRequested)
+        {
+          return EMPTY_CLOSURES;
+        }
         foreach (var kvp in childClosure)
         {
           childClosures[kvp.Key] = kvp.Value;
+          if (_processSource.Token.IsCancellationRequested)
+          {
+            return EMPTY_CLOSURES;
+          }
         }
 
         _currentClosurePool.Return(childClosure);
@@ -253,13 +261,13 @@ public sealed class SerializeProcess(
         progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound)));
         foreach (var item in items)
         {
+          if (_processSource.Token.IsCancellationRequested)
+          {
+            return EMPTY_CLOSURES;
+          }
+
           if (item.NeedsStorage)
           {
-            if (_processSource.Token.IsCancellationRequested)
-            {
-              return EMPTY_CLOSURES;
-            }
-
             Interlocked.Increment(ref _objectsSerialized);
             await objectSaver.SaveAsync(item).ConfigureAwait(false);
           }
