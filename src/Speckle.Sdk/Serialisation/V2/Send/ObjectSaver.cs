@@ -124,7 +124,7 @@ public sealed class ObjectSaver(
     }
   }
 
-  private bool IsCancelled() => _cancellationTokenSource.IsCancellationRequested || _disposed;
+  private bool IsCancelled() => _disposed || _cancellationTokenSource.IsCancellationRequested;
 
   private void CancelSaving()
   {

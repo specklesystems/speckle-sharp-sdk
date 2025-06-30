@@ -47,6 +47,7 @@ public sealed class SerializeProcess(
     cancellationToken
   );
   private readonly ILogger<SerializeProcess> _logger = loggerFactory.CreateLogger<SerializeProcess>();
+  private bool _disposed;
 
   //async dispose
   [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed")]
@@ -83,6 +84,7 @@ public sealed class SerializeProcess(
   [AutoInterfaceIgnore]
   public async ValueTask DisposeAsync()
   {
+    _disposed = true;
     await WaitForSchedulerCompletion().ConfigureAwait(false);
     await _highest.DisposeAsync().ConfigureAwait(false);
     await _belowNormal.DisposeAsync().ConfigureAwait(false);
@@ -148,7 +150,7 @@ public sealed class SerializeProcess(
 
   private void TraverseTotal(Base obj)
   {
-    if (_processSource.Token.IsCancellationRequested)
+    if (IsCancelled())
     {
       return;
     }
@@ -162,7 +164,7 @@ public sealed class SerializeProcess(
 
   private async Task<Dictionary<Id, NodeInfo>> Traverse(Base obj)
   {
-    if (_processSource.Token.IsCancellationRequested)
+    if (IsCancelled())
     {
       return EMPTY_CLOSURES;
     }
@@ -174,7 +176,7 @@ public sealed class SerializeProcess(
       {
         // tmp is necessary because of the way closures close over loop variables
         var tmp = child;
-        if (_processSource.Token.IsCancellationRequested)
+        if (IsCancelled())
         {
           return EMPTY_CLOSURES;
         }
@@ -191,7 +193,7 @@ public sealed class SerializeProcess(
         tasks.Add(t);
       }
 
-      if (_processSource.Token.IsCancellationRequested)
+      if (IsCancelled())
       {
         return EMPTY_CLOSURES;
       }
@@ -218,7 +220,7 @@ public sealed class SerializeProcess(
       }
       _taskResultPool.Return(tasks);
 
-      if (_processSource.Token.IsCancellationRequested)
+      if (IsCancelled())
       {
         return EMPTY_CLOSURES;
       }
@@ -226,14 +228,14 @@ public sealed class SerializeProcess(
       var childClosures = _childClosurePool.Get();
       foreach (var childClosure in taskClosures)
       {
-        if (_processSource.Token.IsCancellationRequested)
+        if (IsCancelled())
         {
           return EMPTY_CLOSURES;
         }
         foreach (var kvp in childClosure)
         {
           childClosures[kvp.Key] = kvp.Value;
-          if (_processSource.Token.IsCancellationRequested)
+          if (IsCancelled())
           {
             return EMPTY_CLOSURES;
           }
@@ -242,14 +244,14 @@ public sealed class SerializeProcess(
         _currentClosurePool.Return(childClosure);
       }
 
-      if (_processSource.Token.IsCancellationRequested)
+      if (IsCancelled())
       {
         return EMPTY_CLOSURES;
       }
 
       var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, _processSource.Token);
 
-      if (_processSource.Token.IsCancellationRequested)
+      if (IsCancelled())
       {
         return EMPTY_CLOSURES;
       }
@@ -261,7 +263,7 @@ public sealed class SerializeProcess(
         progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound)));
         foreach (var item in items)
         {
-          if (_processSource.Token.IsCancellationRequested)
+          if (IsCancelled())
           {
             return EMPTY_CLOSURES;
           }
@@ -298,6 +300,8 @@ public sealed class SerializeProcess(
     }
   }
 
+  public bool IsCancelled() => _disposed || _processSource.IsCancellationRequested;
+
   public void RecordException(Exception e)
   {
     if (e is OperationCanceledException)
@@ -312,7 +316,7 @@ public sealed class SerializeProcess(
     {
       return;
     }
-    if (_processSource.IsCancellationRequested)
+    if (IsCancelled())
     {
       //if we are already cancelled, don't log or save the exceptions
       return;
