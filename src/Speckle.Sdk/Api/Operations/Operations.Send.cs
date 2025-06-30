@@ -50,6 +50,7 @@ public partial class Operations
     catch (OperationCanceledException)
     {
       //this is handled by the caller
+      throw;
     }
     catch (Exception ex)
     {
