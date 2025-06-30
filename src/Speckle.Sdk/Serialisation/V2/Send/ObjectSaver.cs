@@ -38,10 +38,11 @@ public sealed class ObjectSaver(
   private long _cached;
 
   private long _objectsSerialized;
+  private bool _disposed;
 
   protected override async Task SendToServerInternal(Batch<BaseItem> batch)
   {
-    if (_cancellationTokenSource.IsCancellationRequested)
+    if (IsCancelled())
     {
       return;
     }
@@ -66,7 +67,7 @@ public sealed class ObjectSaver(
     }
     catch (OperationCanceledException)
     {
-      _cancellationTokenSource.Cancel();
+      CancelSaving();
     }
 #pragma warning disable CA1031
     catch (Exception e)
@@ -91,7 +92,7 @@ public sealed class ObjectSaver(
 
   public override void SaveToCache(List<BaseItem> batch)
   {
-    if (_cancellationTokenSource.IsCancellationRequested)
+    if (IsCancelled())
     {
       return;
     }
@@ -106,7 +107,7 @@ public sealed class ObjectSaver(
     }
     catch (OperationCanceledException)
     {
-      _cancellationTokenSource.Cancel();
+      CancelSaving();
     }
 #pragma warning disable CA1031
     catch (Exception e)
@@ -123,8 +124,23 @@ public sealed class ObjectSaver(
     }
   }
 
+  private bool IsCancelled() => _cancellationTokenSource.IsCancellationRequested || _disposed;
+
+  private void CancelSaving()
+  {
+    if (IsCancelled())
+    {
+      return;
+    }
+    _cancellationTokenSource.Cancel();
+  }
+
   private void RecordException(Exception e)
   {
+    if (IsCancelled())
+    {
+      return;
+    }
     //order here matters
     logger.LogError(e, "Error in SDK: {message}", e.Message);
     Exception = e;
@@ -133,6 +149,7 @@ public sealed class ObjectSaver(
 
   public void Dispose()
   {
+    _disposed = true;
     _cancellationTokenSource.Dispose();
     sqLiteJsonCacheManager.Dispose();
   }
