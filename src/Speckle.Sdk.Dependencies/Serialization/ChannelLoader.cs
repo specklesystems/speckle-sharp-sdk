@@ -109,6 +109,9 @@ public abstract class ChannelLoader<T>(CancellationToken cancellationToken)
     Exception = ex;
     _channel.Writer.TryComplete(ex);
     //cancel everything!
-    _cts.Cancel();
+    if (!_cts.IsCancellationRequested)
+    {
+      _cts.Cancel();
+    }
   }
 }
