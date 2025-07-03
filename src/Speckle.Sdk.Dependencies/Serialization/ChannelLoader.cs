@@ -5,7 +5,7 @@ namespace Speckle.Sdk.Dependencies.Serialization;
 
 public abstract class ChannelLoader<T>(CancellationToken cancellationToken)
 {
-  private const int RECEIVE_CAPACITY = 5000;
+  private const int RECEIVE_CAPACITY = 10000;
 
   private const int HTTP_GET_CHUNK_SIZE = 500;
   private const int MAX_PARALLELISM_HTTP = 4;
@@ -109,6 +109,9 @@ public abstract class ChannelLoader<T>(CancellationToken cancellationToken)
     Exception = ex;
     _channel.Writer.TryComplete(ex);
     //cancel everything!
-    _cts.Cancel();
+    if (!_cts.IsCancellationRequested)
+    {
+      _cts.Cancel();
+    }
   }
 }

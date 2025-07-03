@@ -23,6 +23,7 @@ public class GraphQLErrorHandlerTests
     ];
     yield return [typeof(SpeckleGraphQLException), new Map { { "foo", "bar" } }];
     yield return [typeof(SpeckleGraphQLException), new Map { { "code", "CUSTOM_THING" } }];
+    yield return [typeof(CannotCreateCommitException), new Map { { "code", "COMMIT_CREATE_ERROR" } }];
   }
 
   [Theory]
