@@ -97,7 +97,7 @@ public sealed class SerializeProcess(
     //order here matters...null with cancellation means a user did it, otherwise it's a real Exception
     if (objectSaver.Exception is not null)
     {
-      throw new SpeckleException("Error while sending", objectSaver.Exception);
+      throw new SpeckleException($"Error while sending: {objectSaver.Exception.Message}", objectSaver.Exception);
     }
     _processSource.Token.ThrowIfCancellationRequested();
   }
