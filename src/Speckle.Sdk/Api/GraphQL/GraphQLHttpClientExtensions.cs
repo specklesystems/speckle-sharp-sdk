@@ -40,7 +40,8 @@ public static class GraphQLHttpClientExtensions
     response.EnsureGraphQLSuccess();
 
     string versionString = response.Data.data.data;
-    if (versionString == "dev")
+    //Local server builds will have a non-numerical version string
+    if (versionString == "dev" || versionString == "custom")
     {
       return new Version(999, 999, 999);
     }
