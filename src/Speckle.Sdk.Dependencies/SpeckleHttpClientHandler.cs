@@ -42,10 +42,7 @@ internal sealed class SpeckleHttpClientHandler : DelegatingHandler
 
       var policyResult = await _resiliencePolicy
         .ExecuteAndCaptureAsync(
-          ctx =>
-          {
-            return base.SendAsync(request, cancellationToken);
-          },
+          ctx => base.SendAsync(request, cancellationToken),
           context
         )
         .ConfigureAwait(false);
