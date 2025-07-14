@@ -41,13 +41,7 @@ internal sealed class SpeckleHttpClientHandler : DelegatingHandler
       activity?.InjectHeaders((k, v) => request.Headers.TryAddWithoutValidation(k, v));
 
       var policyResult = await _resiliencePolicy
-        .ExecuteAndCaptureAsync(
-          ctx =>
-          {
-            return base.SendAsync(request, cancellationToken);
-          },
-          context
-        )
+        .ExecuteAndCaptureAsync(ctx => base.SendAsync(request, cancellationToken), context)
         .ConfigureAwait(false);
       context.TryGetValue("retryCount", out var retryCount);
       activity?.SetTag("retryCount", retryCount);
