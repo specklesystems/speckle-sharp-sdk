@@ -6,6 +6,6 @@
     "Message": "The method or operation is not implemented.",
     "Type": "NotImplementedException"
   },
-  "Message": "Error while sending",
+  "Message": "Error while sending: The method or operation is not implemented.",
   "Type": "SpeckleException"
 }

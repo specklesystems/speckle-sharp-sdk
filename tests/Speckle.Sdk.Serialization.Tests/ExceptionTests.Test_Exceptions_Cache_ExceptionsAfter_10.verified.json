@@ -6,6 +6,6 @@
     "Message": "Count exceeded",
     "Type": "Exception"
   },
-  "Message": "Error while sending",
+  "Message": "Error while sending: Count exceeded",
   "Type": "SpeckleException"
 }
