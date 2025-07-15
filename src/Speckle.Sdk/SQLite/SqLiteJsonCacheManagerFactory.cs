@@ -1,4 +1,5 @@
 ﻿using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Caching;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.SQLite;

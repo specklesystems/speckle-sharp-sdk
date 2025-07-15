@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
+using Speckle.Sdk.Caching;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 
