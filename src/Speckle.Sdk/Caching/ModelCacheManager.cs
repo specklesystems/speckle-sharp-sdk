@@ -52,7 +52,7 @@ public class ModelCacheManager(ILogger<ModelCacheManager> logger, IFileSystem fi
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
         {
-          logger.LogWarning(ex, "Failed to delete cache file {a}", db);
+          logger.LogWarning(ex, "Failed to delete cache file {filePath}", db);
         }
       }
     }
