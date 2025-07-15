@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Transports;
@@ -13,7 +12,7 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
   private SQLiteTransport2? _sqlite;
 
   private static readonly string s_name = $"test-{Guid.NewGuid()}";
-  private static readonly string s_basePath = SqlitePaths.GetDBPath(s_name);
+  private static readonly string s_basePath = ModelCacheManager.GetDBPath(s_name);
 
   public SQLiteTransport2Tests()
   {
