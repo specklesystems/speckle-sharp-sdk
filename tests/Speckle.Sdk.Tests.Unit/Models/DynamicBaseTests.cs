@@ -109,10 +109,11 @@ public class DynamicBaseTests
     // Arrange
     dynamic dynamicBase = new DynamicBase();
 
-
     // Act
-    // Act
-    Action act = () => { var result = dynamicBase.nonExistingProp; };
+    Action act = () =>
+    {
+      var result = dynamicBase.nonExistingProp;
+    };
 
     // Assert
     act.Should().Throw<RuntimeBinderException>();
