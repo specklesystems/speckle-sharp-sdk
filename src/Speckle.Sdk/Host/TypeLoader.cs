@@ -15,9 +15,13 @@ internal static class TypeLoader
   private static ConcurrentDictionary<string, Type> s_cachedTypes = new();
   private static ConcurrentDictionary<Type, string> s_fullTypeStrings = new();
   private static ConcurrentDictionary<PropertyInfo, JsonPropertyAttribute?> s_jsonPropertyAttribute = new();
+  private static readonly ConcurrentDictionary<PropertyInfo, bool> s_obsolete = new();
   private static ConcurrentDictionary<Type, IReadOnlyList<PropertyInfo>> s_propInfoCache = new();
 
   public static IEnumerable<LoadedType> Types => s_availableTypes;
+
+  public static bool IsObsolete(PropertyInfo property) =>
+    s_obsolete.GetOrAdd(property, p => p.IsDefined(typeof(ObsoleteAttribute), true));
 
   public static JsonPropertyAttribute? GetJsonPropertyAttribute(PropertyInfo property) =>
     s_jsonPropertyAttribute.GetOrAdd(property, p => p.GetCustomAttribute<JsonPropertyAttribute>(true));

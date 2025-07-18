@@ -91,8 +91,7 @@ public class Base : DynamicBase, ISpeckleObject
     var typedProps = @base.GetInstanceMembers();
     foreach (var prop in typedProps.Where(p => p.CanRead))
     {
-      bool isIgnored =
-        prop.IsDefined(typeof(ObsoleteAttribute), true) || prop.IsDefined(typeof(JsonIgnoreAttribute), true);
+      bool isIgnored = TypeLoader.IsObsolete(prop) || prop.IsDefined(typeof(JsonIgnoreAttribute), true);
       if (isIgnored)
       {
         continue;

@@ -103,13 +103,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
       myDuplicate._properties.Add(kvp.Key, kvp.Value);
     }
 
-    var pinfos = TypeLoader
-      .GetBaseProperties(type)
-      .Where(x =>
-      {
-        var hasObsolete = x.IsDefined(typeof(ObsoleteAttribute), true);
-        return !(hasObsolete);
-      });
+    var pinfos = TypeLoader.GetBaseProperties(type).Where(x => !TypeLoader.IsObsolete(x));
     foreach (var pi in pinfos)
     {
       if (pi.CanWrite)
@@ -276,7 +270,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         .GetBaseProperties(GetType())
         .Where(x =>
         {
-          var hasObsolete = x.IsDefined(typeof(ObsoleteAttribute), true);
+          var hasObsolete = TypeLoader.IsObsolete(x);
 
           // If obsolete is false and prop has obsolete attr
           // OR
