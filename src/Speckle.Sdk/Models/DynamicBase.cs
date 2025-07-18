@@ -7,7 +7,7 @@ namespace Speckle.Sdk.Models;
 
 /// <summary>
 /// Base class implementing a bunch of nice dynamic object methods, like adding and removing props dynamically. Makes c# feel like json.
-/// <para>Orginally adapted from Rick Strahl 🤘</para>
+/// <para>Originally adapted from Rick Strahl 🤘</para>
 /// <para>https://weblog.west-wind.com/posts/2012/feb/08/creating-a-dynamic-extensible-c-expando-object</para>
 /// </summary>
 public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
@@ -82,6 +82,50 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
         throw new SpeckleException($"Failed to set value for {GetType().Name}.{prop.Name}", ex);
       }
     }
+  }
+
+  /// <summary>
+  /// Creates a shallow copy of the current base object.
+  /// This operation does NOT copy/duplicate the data inside each prop.
+  /// The new object's property values will be pointers to the original object's property value.
+  /// </summary>
+  /// <returns>A shallow copy of the original object.</returns>
+  public DynamicBase ShallowCopy()
+  {
+    Type type = GetType();
+    DynamicBase myDuplicate = (DynamicBase)(
+      Activator.CreateInstance(type) ?? throw new SpeckleException($"Failed to create instance of {type.Name}")
+    );
+
+    // Add dynamic members
+    foreach (var kvp in _properties)
+    {
+      myDuplicate._properties.Add(kvp.Key, kvp.Value);
+    }
+
+    var pinfos = TypeLoader
+      .GetBaseProperties(type)
+      .Where(x =>
+      {
+        var hasObsolete = x.IsDefined(typeof(ObsoleteAttribute), true);
+        return !(hasObsolete);
+      });
+    foreach (var pi in pinfos)
+    {
+      if (pi.CanWrite)
+      {
+        try
+        {
+          pi.SetValue(myDuplicate, pi.GetValue(this));
+        }
+        catch (Exception ex) when (!ex.IsFatal())
+        {
+          throw new SpeckleException($"Failed to set value for {type.Name}.{pi.Name}", ex);
+        }
+      }
+    }
+
+    return myDuplicate;
   }
 
   /// <inheritdoc />

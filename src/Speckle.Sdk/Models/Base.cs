@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Serialisation;
@@ -192,31 +191,5 @@ public class Base : DynamicBase, ISpeckleObject
       default:
         return count;
     }
-  }
-
-  /// <summary>
-  /// Creates a shallow copy of the current base object.
-  /// This operation does NOT copy/duplicate the data inside each prop.
-  /// The new object's property values will be pointers to the original object's property value.
-  /// </summary>
-  /// <returns>A shallow copy of the original object.</returns>
-  public Base ShallowCopy()
-  {
-    Type type = GetType();
-    Base myDuplicate = (Base)Activator.CreateInstance(type).NotNull();
-    myDuplicate.id = id;
-    myDuplicate.applicationId = applicationId;
-
-    foreach (var kvp in GetMembers())
-    {
-      var propertyInfo = type.GetProperty(kvp.Key);
-      if (propertyInfo is not null && !propertyInfo.CanWrite)
-      {
-        continue;
-      }
-      myDuplicate[kvp.Key] = kvp.Value;
-    }
-
-    return myDuplicate;
   }
 }
