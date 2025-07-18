@@ -111,12 +111,11 @@ public class DynamicBaseTests
 
 
     // Act
-    var exception = Assert.Throws<RuntimeBinderException>(() =>
-    {
-      var result = dynamicBase.nonExistingProp;
-    });
+    // Act
+    Action act = () => { var result = dynamicBase.nonExistingProp; };
+
     // Assert
-    exception.Should().NotBeNull();
+    act.Should().Throw<RuntimeBinderException>();
   }
 
   [Fact]
