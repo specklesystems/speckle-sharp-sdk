@@ -109,8 +109,8 @@ public class DynamicBaseTests
     // Arrange
     dynamic dynamicBase = new DynamicBase();
 
-    // Act
 
+    // Act
     var exception = Assert.Throws<RuntimeBinderException>(() =>
     {
       var result = dynamicBase.nonExistingProp;
