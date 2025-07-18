@@ -213,7 +213,9 @@ public class BaseTests
   [Fact]
   public void CanShallowCopy()
   {
-    var sample = new SampleObject();
+    var sample = new SampleObject { id = "sampleId" };
+    dynamic x = sample;
+    x.test = "test";
     var copy = sample.ShallowCopy();
 
     var selectedMembers = DynamicBaseMemberType.Dynamic | DynamicBaseMemberType.Instance;
