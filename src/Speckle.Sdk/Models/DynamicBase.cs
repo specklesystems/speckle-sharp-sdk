@@ -100,7 +100,7 @@ public class DynamicBase : DynamicObject, IDynamicMetaObjectProvider
     // Add dynamic members
     foreach (var kvp in _properties)
     {
-      myDuplicate._properties.Add(kvp.Key, kvp.Value);
+      myDuplicate._properties[kvp.Key] = kvp.Value;
     }
 
     var pinfos = TypeLoader.GetBaseProperties(type).Where(x => !TypeLoader.IsObsolete(x));
