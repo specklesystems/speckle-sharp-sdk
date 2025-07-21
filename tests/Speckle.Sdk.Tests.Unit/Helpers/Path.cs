@@ -18,7 +18,7 @@ public class SpecklePathTests
     }
     else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
     {
-      pattern = @"\/Users\/.*\/\.config";
+      pattern = @"\/Users\/.*\/Library\/Application Support";
     }
     else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
     {
@@ -57,7 +57,7 @@ public class SpecklePathTests
     }
     else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
     {
-      pattern = @"\/Users\/.*\/\.config";
+      pattern = @"\/Users\/.*\/Library\/Application Support";
     }
     else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
     {
