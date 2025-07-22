@@ -1,6 +1,7 @@
 using Speckle.InterfaceGenerator;
 
 namespace Speckle.Sdk.Caching;
+
 /// <summary>
 /// This mocks away the file system operations for testing purposes.
 /// </summary>
