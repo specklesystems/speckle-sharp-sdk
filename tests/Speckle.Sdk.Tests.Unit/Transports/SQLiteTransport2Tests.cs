@@ -13,7 +13,7 @@ public sealed class SQLiteTransport2Tests : TransportTests, IDisposable
   private SQLiteTransport2? _sqlite;
 
   private static readonly string s_name = $"test-{Guid.NewGuid()}";
-  private static readonly string s_basePath = ModelCacheManager.GetDBPath(s_name);
+  private static readonly string s_basePath = ModelCacheManager.GetDbPath(s_name);
 
   public SQLiteTransport2Tests()
   {

@@ -28,7 +28,7 @@ public sealed class SQLiteTransport2 : IDisposable, ICloneable, ITransport, IBlo
   {
     _streamId = streamId;
 
-    _rootPath = ModelCacheManager.GetDBPath(streamId);
+    _rootPath = ModelCacheManager.GetDbPath(streamId);
 
     _connectionString = $"Data Source={_rootPath};";
 
@@ -50,7 +50,7 @@ public sealed class SQLiteTransport2 : IDisposable, ICloneable, ITransport, IBlo
   private SqliteConnection Connection { get; set; }
   private readonly SemaphoreSlim _connectionLock = new(1, 1);
 
-  public string BlobStorageFolder => ModelCacheManager.BlobStorageFolder;
+  public string BlobStorageFolder => SpecklePathProvider.UserSpeckleFolderPath;
 
   public void SaveBlob(Blob obj)
   {

@@ -8,24 +8,19 @@ namespace Speckle.Sdk.Caching;
 [GenerateAutoInterface]
 public class ModelCacheManager(ILogger<ModelCacheManager> logger, IFileSystem fileSystem) : IModelCacheManager
 {
-  private const string APPLICATION_NAME = "Speckle";
   private const string DATA_FOLDER = "Projects";
-  private static readonly string basePath = SpecklePathProvider.UserApplicationDataPath();
+  private static readonly string s_basePath = SpecklePathProvider.UserSpeckleFolderPath;
 
-  public static string BlobStorageFolder =>
-    SpecklePathProvider.BlobStoragePath(Path.Combine(basePath, APPLICATION_NAME));
+  private static string CacheFolder => Path.Combine(s_basePath, DATA_FOLDER);
 
-  public static string CacheFolder => Path.Combine(basePath, APPLICATION_NAME, DATA_FOLDER);
+  public string GetStreamPath(string streamId) => GetDbPath(streamId);
 
-  public string GetStreamPath(string streamId) => GetDBPath(streamId);
-
-  public static string GetDBPath(string streamId)
+  public static string GetDbPath(string streamId)
   {
-    var dir = Path.Combine(basePath, APPLICATION_NAME, DATA_FOLDER);
-    var db = Path.Combine(dir, $"{streamId}.db");
+    var db = Path.Combine(CacheFolder, $"{streamId}.db");
     try
     {
-      Directory.CreateDirectory(dir); //ensure dir is there
+      Directory.CreateDirectory(CacheFolder); //ensure dir is there
       return db;
     }
     catch (Exception ex)
