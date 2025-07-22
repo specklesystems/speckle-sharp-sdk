@@ -8,8 +8,6 @@ namespace Speckle.Sdk.Caching;
 /// <summary>
 /// This class manages the cache for model data, providing methods to get stream paths, clear the cache, and calculate cache size.
 /// </summary>
-/// <param name="logger"></param>
-/// <param name="fileSystem"></param>
 [GenerateAutoInterface]
 public class ModelCacheManager(ILogger<ModelCacheManager> logger, IFileSystem fileSystem) : IModelCacheManager
 {
