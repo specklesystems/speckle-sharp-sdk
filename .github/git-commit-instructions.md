@@ -13,7 +13,7 @@ To ensure high-quality and consistent commits, please follow these guidelines:
 3. **Test your changes**
     - Run all unit tests before committing.
     - Add or update xUnit tests as needed.
-    - Use FluentAssertions for assertions and Moq for mocking in tests.
+    - Use AwesomeAssertions for assertions and Moq for mocking in tests.
 
 4. **Review your changes**
     - Double-check for accidental debug code or commented-out code.
