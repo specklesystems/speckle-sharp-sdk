@@ -1,11 +1,11 @@
 ﻿using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Caching;
 using Speckle.Sdk.Logging;
-using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.SQLite;
 
 [GenerateAutoInterface]
-public class SqLiteJsonCacheManagerFactory : ISqLiteJsonCacheManagerFactory
+public class SqLiteJsonCacheManagerFactory(IModelCacheManager modelCacheManager) : ISqLiteJsonCacheManagerFactory
 {
   public const int INITIAL_CONCURRENCY = 4;
 
@@ -16,5 +16,5 @@ public class SqLiteJsonCacheManagerFactory : ISqLiteJsonCacheManagerFactory
     Create(Path.Combine(SpecklePathProvider.UserApplicationDataPath(), "Speckle", $"{scope}.db"), 1);
 
   public ISqLiteJsonCacheManager CreateFromStream(string streamId) =>
-    Create(SqlitePaths.GetDBPath(streamId), INITIAL_CONCURRENCY);
+    Create(modelCacheManager.GetStreamPath(streamId), INITIAL_CONCURRENCY);
 }
