@@ -174,7 +174,7 @@ public sealed class AccountManager(
     account.id = null!; //TODO this is gross so remove when id is nullable
 
     RemoveAccount(id);
-    _accountStorage.SaveObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
+    _accountStorage.UpdateObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
   }
 
   public IEnumerable<Account> GetAccounts(string serverUrl)
@@ -407,7 +407,7 @@ public sealed class AccountManager(
       {
         account.isDefault = true;
       }
-      _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
+      _accountStorage.UpdateObject(account.id, JsonConvert.SerializeObject(account));
     }
   }
 
