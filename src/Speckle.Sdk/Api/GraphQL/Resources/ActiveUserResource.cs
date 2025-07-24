@@ -313,10 +313,11 @@ public sealed class ActiveUserResource
   }
 
   /// <param name="cancellationToken"></param>
-  /// <returns></returns>
+  /// <returns>The active (last selected) workspace</returns>
+  /// <remarks>note this returns a <see cref="LimitedWorkspace"/>, because it may be a workspace the user is not a member of</remarks>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
   /// <exception cref="SpeckleException">The ActiveUser could not be found (e.g. the client is not authenticated)</exception>
-  public async Task<Workspace?> GetActiveWorkspace(CancellationToken cancellationToken = default)
+  public async Task<LimitedWorkspace?> GetActiveWorkspace(CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
@@ -328,21 +329,7 @@ public sealed class ActiveUserResource
             role
             slug
             logo
-            createdAt
-            updatedAt
-            readOnly
             description
-            creationState
-            {
-              completed
-            }
-            permissions {
-              canCreateProject {
-                authorized
-                code
-                message
-              }
-            }
           }
         }
       }
@@ -351,7 +338,7 @@ public sealed class ActiveUserResource
     var request = new GraphQLRequest { Query = QUERY };
 
     var response = await _client
-      .ExecuteGraphQLRequest<NullableResponse<NullableResponse<Workspace?>?>>(request, cancellationToken)
+      .ExecuteGraphQLRequest<NullableResponse<NullableResponse<LimitedWorkspace?>?>>(request, cancellationToken)
       .ConfigureAwait(false);
 
     if (response.data is null)
