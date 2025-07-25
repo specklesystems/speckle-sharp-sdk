@@ -21,7 +21,7 @@ public sealed class DeserializeProcessFactoryNoCache(
 {
   public IDeserializeProcess CreateDeserializeProcess(
     Uri url,
-    string streamId,
+    string projectId,
     string? authorizationToken,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,
@@ -29,7 +29,7 @@ public sealed class DeserializeProcessFactoryNoCache(
   )
   {
     var sqLiteJsonCacheManager = new MemoryJsonCacheManager(new());
-    var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
+    var serverObjectManager = serverObjectManagerFactory.Create(url, projectId, authorizationToken);
     return new DeserializeProcess(
       sqLiteJsonCacheManager,
       serverObjectManager,

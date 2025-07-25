@@ -8,12 +8,12 @@ namespace Speckle.Sdk.Serialisation.V2;
 public class ServerObjectManagerFactory(ISpeckleHttp speckleHttp, ISdkActivityFactory activityFactory)
   : IServerObjectManagerFactory
 {
-  public IServerObjectManager Create(Uri url, string streamId, string? authorizationToken, TimeSpan? timeout = null) =>
+  public IServerObjectManager Create(Uri url, string projectId, string? authorizationToken, TimeSpan? timeout = null) =>
     new ServerObjectManager(
       speckleHttp,
       activityFactory,
       url,
-      streamId,
+      projectId,
       authorizationToken,
       new ServerObjectManagerOptions(timeout: timeout)
     );

@@ -19,15 +19,15 @@ public class DeserializeProcessFactory(
 {
   public IDeserializeProcess CreateDeserializeProcess(
     Uri url,
-    string streamId,
+    string projectId,
     string? authorizationToken,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,
     DeserializeProcessOptions? options = null
   )
   {
-    var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
-    var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
+    var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(projectId);
+    var serverObjectManager = serverObjectManagerFactory.Create(url, projectId, authorizationToken);
     return new DeserializeProcess(
       sqLiteJsonCacheManager,
       serverObjectManager,

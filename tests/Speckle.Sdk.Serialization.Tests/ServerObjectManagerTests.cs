@@ -213,4 +213,40 @@ public class ServerObjectManagerTests : MoqTest
 
     return new HttpResponseMessage(HttpStatusCode.OK);
   }
+
+  [Fact]
+  public async Task HasBlobs()
+  {
+    var id = Guid.Parse("6f422a35-6183-48b9-8021-d22ec97e8674").ToString();
+    var id2 = Guid.Parse("ef2f7ea0-495a-46af-a9ad-f18a8a298597").ToString();
+    const string TOKEN = "token";
+    const int TIMEOUT = 2;
+    var uri = new Uri("http://localhost");
+    const string PROJECT_ID = "streamId";
+    var mockHttp = new MockHttpMessageHandler();
+
+    string serializedPayload = JsonConvert.SerializeObject(new List<string> { id, id2 });
+    mockHttp
+      .When(HttpMethod.Post, $"http://localhost/api/stream/{PROJECT_ID}/blob/diff")
+      .WithContent(serializedPayload)
+      .Respond("application/json", serializedPayload);
+    var httpClient = mockHttp.ToHttpClient();
+    var http = Create<ISpeckleHttp>();
+    http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), TIMEOUT, TOKEN)).Returns(httpClient);
+
+    var activityFactory = Create<ISdkActivityFactory>();
+    activityFactory.Setup(x => x.Start(null, "HasBlobs")).Returns((ISdkActivity?)null);
+
+    var serverObjectManager = new ServerObjectManager(
+      http.Object,
+      activityFactory.Object,
+      uri,
+      PROJECT_ID,
+      TOKEN,
+      new(timeout: TimeSpan.FromSeconds(TIMEOUT))
+    );
+    var results = await serverObjectManager.HasBlobs([id, id2], CancellationToken.None);
+
+    await Verify(results);
+  }
 }

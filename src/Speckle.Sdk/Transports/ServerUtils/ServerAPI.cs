@@ -7,9 +7,13 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation.V2;
 
 namespace Speckle.Sdk.Transports.ServerUtils;
 
+/// <summary>
+/// <seealso cref="ServerObjectManager"/>
+/// </summary>
 public sealed class ServerApi : IDisposable, IServerApi
 {
   private readonly ISdkActivityFactory _activityFactory;
