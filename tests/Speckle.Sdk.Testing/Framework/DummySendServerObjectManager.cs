@@ -37,4 +37,19 @@ public class DummySendServerObjectManager(ConcurrentDictionary<string, string> s
     }
     return Task.CompletedTask;
   }
+
+  public Task<string> DownloadBlob(
+    string blobId,
+    IProgress<ProgressArgs>? progress,
+    CancellationToken cancellationToken
+  ) => throw new NotImplementedException();
+
+  public Task<List<string>> HasBlobs(IReadOnlyCollection<string> blobIds, CancellationToken cancellationToken) =>
+    Task.FromResult(blobIds.ToList());
+
+  public Task UploadBlobs(
+    IReadOnlyCollection<(string id, string filePath)> blobPaths,
+    IProgress<ProgressArgs>? progress,
+    CancellationToken cancellationToken
+  ) => throw new NotImplementedException();
 }

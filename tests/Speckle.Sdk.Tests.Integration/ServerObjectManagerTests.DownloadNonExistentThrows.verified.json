@@ -1,0 +1,6 @@
+﻿{
+  "Data": {},
+  "Message": "Response status code does not indicate success: 404 (Not Found).",
+  "StatusCode": "NotFound",
+  "Type": "HttpRequestException"
+}

@@ -18,15 +18,15 @@ public class SerializeProcessFactory(
 {
   public ISerializeProcess CreateSerializeProcess(
     Uri url,
-    string streamId,
+    string projectId,
     string? authorizationToken,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
   )
   {
-    var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
-    var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
+    var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(projectId);
+    var serverObjectManager = serverObjectManagerFactory.Create(url, projectId, authorizationToken);
     return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager, progress, cancellationToken, options);
   }
 
