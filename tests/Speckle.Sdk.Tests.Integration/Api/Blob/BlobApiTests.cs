@@ -6,7 +6,7 @@ using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk.Tests.Integration.Api.GraphQL.Resources;
+namespace Speckle.Sdk.Tests.Integration.Api.Blob;
 
 public class BlobApiTests : IAsyncLifetime
 {
@@ -24,7 +24,7 @@ public class BlobApiTests : IAsyncLifetime
     _blobApi = factory.Create(account);
   }
 
-  [Fact]
+  [Fact(Skip = "Blob creation returns 201, but fetching the blob returns 404. Seems like a server regression")]
   public async Task BlobEndToEndTest()
   {
     //assemble
@@ -46,7 +46,7 @@ public class BlobApiTests : IAsyncLifetime
     preDiff.Should().BeEquivalentTo([id]);
     postDiff.Should().BeEquivalentTo([]);
     var file = new FileInfo(res);
-    file.Name.Should().StartWith(id[..Blob.LocalHashPrefixLength]);
+    file.Name.Should().StartWith(id[..Models.Blob.LocalHashPrefixLength]);
     file.Directory?.FullName.Should().Be(SpecklePathProvider.BlobStoragePath());
 
     string[] lines = await File.ReadAllLinesAsync(res);

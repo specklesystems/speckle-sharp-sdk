@@ -11,7 +11,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 public class CommentResourceTests : IAsyncLifetime
 {
   public const string SERVER_SKIP_MESSAGE =
-    "Comment creation started failing, server responds with 'Attempting to attach invalid blobs to comment', I cba to troubleshoot right now";
+    "comment creation started failing, server responds with 'Attempting to attach invalid blobs to comment', I cba to troubleshoot right now";
   private IClient _testUser;
   private CommentResource Sut;
   private Project _project;
