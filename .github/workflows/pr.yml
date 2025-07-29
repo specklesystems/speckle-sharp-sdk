@@ -32,8 +32,12 @@ jobs:
         
         echo $SEMVER
         echo $FILE_VERSION
+        
     - name: 🔫 Build All
       run: ./build.sh
+      env:
+        SEMVER: ${{ steps.set-version.outputs.SEMVER }}
+        FILE_VERSION: ${{ steps.set-version.outputs.FILE_VERSION }}
       
     - name: Upload coverage reports to Codecov with GitHub Action
       uses: codecov/codecov-action@v5
