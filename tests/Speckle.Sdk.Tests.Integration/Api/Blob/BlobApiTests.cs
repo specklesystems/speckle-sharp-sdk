@@ -35,11 +35,10 @@ public class BlobApiTests : IAsyncLifetime
       await writer.WriteLineAsync(PAYLOAD);
     }
     string id = HashUtility.HashFile(filePath);
-    string prefixedId = $"blob:{id}";
 
     //act
     var preDiff = await _blobApi.HasBlobs(_project.id, [id], CancellationToken.None);
-    await _blobApi.UploadBlobs(_project.id, [(prefixedId, filePath)], null, CancellationToken.None);
+    await _blobApi.UploadBlobs(_project.id, [(id, filePath)], null, CancellationToken.None);
     var postDiff = await _blobApi.HasBlobs(_project.id, [id], CancellationToken.None);
     var res = await _blobApi.DownloadBlob(_project.id, id);
 

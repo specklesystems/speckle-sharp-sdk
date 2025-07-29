@@ -245,11 +245,10 @@ public sealed class BlobApi : IBlobApi
     foreach (var (id, filePath) in blobPaths)
     {
       var fileName = Path.GetFileName(filePath);
-      var hash = id.Split(':')[1];
 
       var stream = File.OpenRead(filePath);
       var fsc = new StreamContent(stream);
-      multipartFormDataContent.Add(fsc, $"hash:{hash}", fileName);
+      multipartFormDataContent.Add(fsc, $"hash:{id}", fileName);
     }
 
     using HttpContent content = progress is null

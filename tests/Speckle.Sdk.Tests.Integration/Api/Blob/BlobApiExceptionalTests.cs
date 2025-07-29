@@ -2,6 +2,7 @@
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.Blob;
 using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Integration.Api.GraphQL.Resources;
 
@@ -45,7 +46,7 @@ public class BlobApiExceptionalTests : IAsyncLifetime
     using var cancellationTokenSource = new CancellationTokenSource();
     cancellationTokenSource.Cancel();
 
-    await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
       await _sut.DownloadBlob(_project.id, "non-existent-id", cancellationToken: cancellationTokenSource.Token)
     );
   }
@@ -53,8 +54,15 @@ public class BlobApiExceptionalTests : IAsyncLifetime
   [Fact]
   public async Task UploadBlobs_Throws_NonExistentProject()
   {
+    const string PAYLOAD = "Hello World!";
+    string filePath = Path.GetTempFileName();
+    await using (var writer = File.CreateText(filePath))
+    {
+      await writer.WriteLineAsync(PAYLOAD);
+    }
+    string id = HashUtility.HashFile(filePath);
     var ex = await Assert.ThrowsAsync<HttpRequestException>(async () =>
-      await _sut.UploadBlobs("non-existent-project", [("id", "path")], null, CancellationToken.None)
+      await _sut.UploadBlobs("non-existent-project", [(id, filePath)], null, CancellationToken.None)
     );
     await Verify(ex);
   }
