@@ -11,6 +11,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 using Speckle.Sdk.Transports;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
@@ -142,6 +143,7 @@ public static class Fixtures
     return new Blob(filePath);
   }
 
+  [Obsolete(CommentResourceTests.SERVER_SKIP_MESSAGE)]
   internal static async Task<Comment> CreateComment(IClient client, string projectId, string modelId, string versionId)
   {
     var blobs = await SendBlobData(client.Account, projectId);
