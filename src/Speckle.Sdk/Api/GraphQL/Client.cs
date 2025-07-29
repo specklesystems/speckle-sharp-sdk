@@ -4,6 +4,7 @@ using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Api.Blob;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Credentials;
@@ -33,6 +34,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   public SubscriptionResource Subscription { get; }
   public WorkspaceResource Workspace { get; }
   public ServerResource Server { get; }
+  public FileImportResource FileImport { get; }
 
   public Uri ServerUrl => new(Account.serverInfo.url);
 
@@ -48,12 +50,15 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     ILogger<Client> logger,
     ISdkActivityFactory activityFactory,
     IGraphQLClientFactory graphqlClientFactory,
-    Account account
+    IBlobApiFactory blobApiFactory,
+    [NotNull] Account? account
   )
   {
     _logger = logger;
     _activityFactory = activityFactory;
+
     Account = account ?? throw new ArgumentException("Provided account is null.");
+    GQLClient = graphqlClientFactory.CreateGraphQLClient(account);
 
     Project = new(this);
     Model = new(this);
@@ -65,8 +70,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     Subscription = new(this);
     Workspace = new(this);
     Server = new(this);
-
-    GQLClient = graphqlClientFactory.CreateGraphQLClient(account);
+    FileImport = new(this, blobApiFactory.Create(account));
   }
 
   [AutoInterfaceIgnore]
@@ -74,6 +78,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   {
     try
     {
+      FileImport.Dispose();
       Subscription.Dispose();
       GQLClient.Dispose();
     }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Api.Blob;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Host;
@@ -86,6 +87,7 @@ public static class ServiceRegistration
       typeof(ServerApi),
       typeof(SqLiteJsonCacheManager),
       typeof(ServerObjectManager),
+      typeof(BlobApi),
       typeof(BaseSerializer),
       typeof(SerializeProcess),
       typeof(ObjectSaver),
