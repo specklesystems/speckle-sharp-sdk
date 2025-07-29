@@ -102,9 +102,9 @@ services:
       
       LOG_PRETTY: "true"
       
-      FF_NEXT_GEN_FILE_IMPORTER_ENABLED: 'true'
-      FF_LARGE_FILE_IMPORTS_ENABLED: 'true'
-      FF_BACKGROUND_JOBS_ENABLED: "true"
+      FF_NEXT_GEN_FILE_IMPORTER_ENABLED: "true"
+      FF_LARGE_FILE_IMPORTS_ENABLED: "true"
+      
 
 networks:
   default:
