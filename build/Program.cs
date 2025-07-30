@@ -1,4 +1,3 @@
-using System.Text.Json;
 using GlobExpressions;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
@@ -16,14 +15,13 @@ const string CLEAN_LOCKS = "clean-locks";
 const string PERF = "perf";
 const string DEEP_CLEAN = "deep-clean";
 
-static async Task<(string, string)> GetVersions()
+static (string semver, string fileVerison) GetVersions()
 {
-  var (output, _) = await ReadAsync("dotnet", "dotnet-gitversion /output json").ConfigureAwait(false);
-  output = output.Trim();
-  var jDoc = JsonDocument.Parse(output);
-  var version = jDoc.RootElement.GetProperty("FullSemVer").GetString() ?? "3.0.0-localBuild";
-  var fileVersion = jDoc.RootElement.GetProperty("AssemblySemFileVer").GetString() ?? "3.0.0.0";
-  return (version, fileVersion);
+  string semver =
+    Environment.GetEnvironmentVariable("SEMVER") ?? throw new ArgumentException("Expected SEMVER env var");
+  string fileVersion =
+    Environment.GetEnvironmentVariable("FILE_VERSION") ?? throw new ArgumentException("Expected FILE_VERSION env var");
+  return (semver, fileVersion);
 }
 
 Target(
@@ -77,7 +75,7 @@ Target(
   dependsOn: [RESTORE],
   async () =>
   {
-    var (version, fileVersion) = await GetVersions().ConfigureAwait(false);
+    var (version, fileVersion) = GetVersions();
     Console.WriteLine($"Version: {version} & {fileVersion}");
     await RunAsync(
         "dotnet",
@@ -174,7 +172,7 @@ Target(
   async () =>
   {
     {
-      var (version, fileVersion) = await GetVersions().ConfigureAwait(false);
+      var (version, fileVersion) = GetVersions();
       Console.WriteLine($"Version: {version} & {fileVersion}");
       await RunAsync("dotnet", $"pack Speckle.Sdk.sln -c Release -o output --no-build -p:Version={version}")
         .ConfigureAwait(false);
