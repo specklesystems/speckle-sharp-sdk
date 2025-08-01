@@ -9,9 +9,12 @@ Speckle | Sharp | SDK
 ### .NET SDK, Tests, and Objects
 
 [![codecov](https://codecov.io/gh/specklesystems/speckle-sharp-sdk/branch/dev/graph/badge.svg?token=TTM5OGr38m)](https://codecov.io/gh/specklesystems/speckle-sharp-sdk)
+<a href="https://www.nuget.org/packages/Speckle.Sdk/"><img alt="NuGet Version" src="https://img.shields.io/nuget/v/Speckle.Sdk?label=Speckle.Sdk"></a>
+<a href="https://www.nuget.org/packages/Speckle.Objects/"><img alt="NuGet Version" src="https://img.shields.io/nuget/v/Speckle.Sdk?label=Speckle.Objects"></a>
+<a href="https://www.nuget.org/packages/Speckle.Automate.Sdk/"><img alt="NuGet Version" src="https://img.shields.io/nuget/v/Speckle.Sdk?label=Speckle.Automate.Sdk"></a>
 
 > [!WARNING]
-> This is an early beta release, not meant for use in production! We're working to stabilise the 3.0 API, and until then there will be breaking changes. You have been warned!
+> Releases Speckle.Sdk and Speckle.Objects are reliable for production use, but the APIs may not be wholly stable, and there may be breaking changes between releases, with little documentation.
 
 # Repo structure
 
@@ -28,11 +31,13 @@ This repo is the home of our next-generation Speckle .NET SDK. It uses .NET Stan
 
 ### Other repos
 
-Make sure to also check and ⭐️ these other Speckle next generation repositories:
+Make sure to also check and ⭐️ these other  repositories:
 
-- [`speckle-sharp-connectors`](https://github.com/specklesystems/speckle-sharp-connectors): our csharp repo of next gen connectors
-- [`speckle-sketchup`](https://github.com/specklesystems/speckle-sketchup): Sketchup connector
-- [`speckle-powerbi`](https://github.com/specklesystems/speckle-powerbi): PowerBi connector
+- [`speckle-sharp-connectors`](https://github.com/specklesystems/speckle-sharp-connectors): our csharp repo of next gen connectors.
+- [`speckle-server`](https://github.com/specklesystems/speckle-server): the speckle server.
+- [`speckle-sketchup`](https://github.com/specklesystems/speckle-blender): Blender connector.
+- [`speckle-sketchup`](https://github.com/specklesystems/speckle-sketchup): Sketchup connector.
+- [`speckle-powerbi`](https://github.com/specklesystems/speckle-powerbi): PowerBi connector.
 - and more [connectors & tooling](https://github.com/specklesystems/)!
 
 ## Documentation
@@ -45,18 +50,24 @@ Comprehensive developer and user documentation can be found in our:
 
 ### Building
 
-Make sure you clone this repository together with its submodules: `git clone https://github.com/specklesystems/speckle-sharp-sdk.git -recursive`.
-Afterwards, just restore all the NuGet packages and hit Build!
+Ensure you're using a [8.0.4xx](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) .NET SDK. 
+After cloning this repository, just restore all the NuGet packages and hit Build!
 
 ### Developing
 
-This project is evolving fast, to better understand how to use Core we suggest checking out the Unit and Integration tests. Running the integration tests locally requires a local server running on your computer.
+It is highly recommended you use
+ - Either Jetbrains Rider or Visual Studio 2022
+ - Ensure your IDE is set to use [the correct .NET SDK version](https://github.com/specklesystems/speckle-sharp-sdk/blob/main/global.json) (newer major versions may work, but may incorrectly run analysers we haven't configured)
+ - You should install the cshapier plugin ([Rider](https://plugins.jetbrains.com/plugin/18243-csharpier), [VS](https://marketplace.visualstudio.com/items?itemName=csharpier.CSharpier)) and configure it to run on save
 
-We'll be also adding [preliminary documentation on our forum](https://discourse.speckle.works/c/speckle-insider/10).
+Docs are a bit patchy [https://docs.speckle.systems/developers/looking-for-developer-docs](https://docs.speckle.systems/developers/looking-for-developer-docs)
 
 ### Tests
 
-There are two test projects, one for unit tests and one for integration tests. The latter needs a server running locally in order to run.
+There are several test projects. It is a requirement that all tests pass for PRs to be merged.
+The Integration test projects require a local server to be running.
+
+You must have docker installed. Then you can run `docker compose up --wait` from the root of the repo to start the required containers.
 
 ## Contributing
 

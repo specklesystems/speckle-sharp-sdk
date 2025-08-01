@@ -1,4 +1,3 @@
-version: "3.9"
 name: "speckle-server"
 
 services:
@@ -22,7 +21,7 @@ services:
       retries: 30
 
   redis:
-    image: "redis:6.0-alpine"
+    image: "valkey/valkey:8.1-alpine@sha256:0d27f0bca0249f61d060029a6aaf2e16b2c417d68d02a508e1dfb763fa2948b4"
     restart: always
     volumes:
       - redis-data:/data
@@ -38,6 +37,9 @@ services:
     restart: always
     volumes:
       - minio-data:/data
+    ports:
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
     healthcheck:
       test:
         [
@@ -53,11 +55,11 @@ services:
     image: speckle/speckle-server:latest
     restart: always
     healthcheck:
-      test:
+      test: 
         - CMD
         - /nodejs/bin/node
         - -e
-        - "try { require('node:http').request({headers: {'Content-Type': 'application/json'}, port:3000, hostname:'127.0.0.1', path:'/readiness', method: 'GET', timeout: 2000 }, (res) => { body = ''; res.on('data', (chunk) => {body += chunk;}); res.on('end', () => {process.exit(res.statusCode != 200 || body.toLowerCase().includes('error'));}); }).end(); } catch { process.exit(1); }"
+        - "try { require('node:http').request({headers: {'Content-Type': 'application/json'}, port:3000, hostname:'127.0.0.1', path:'/readiness', method: 'GET', timeout: 2000 }, (res) => { body = ''; res.on('data', (chunk) => {body += chunk;}); res.on('end', () => {process.exit(Number(res.statusCode != 200 || body.toLowerCase().includes('error')));}); }).end(); } catch { process.exit(1); }"
       interval: 10s
       timeout: 10s
       retries: 3
@@ -79,8 +81,9 @@ services:
 
       # TODO: Change thvolumes:
       REDIS_URL: "redis://redis"
-
+      
       S3_ENDPOINT: "http://minio:9000"
+      S3_PUBLIC_ENDPOINT: 'http://127.0.0.1:9000'
       S3_ACCESS_KEY: "minioadmin"
       S3_SECRET_KEY: "minioadmin"
       S3_BUCKET: "speckle-server"
@@ -102,6 +105,10 @@ services:
       ENABLE_MP: "false"
       
       LOG_PRETTY: "true"
+      
+      FF_NEXT_GEN_FILE_IMPORTER_ENABLED: "true"
+      FF_LARGE_FILE_IMPORTS_ENABLED: "true"
+      
 
 networks:
   default:

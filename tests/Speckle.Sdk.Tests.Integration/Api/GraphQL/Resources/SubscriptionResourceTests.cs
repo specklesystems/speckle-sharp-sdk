@@ -114,7 +114,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     subscriptionMessage.version.Should().NotBeNull();
   }
 
-  [Fact]
+  [Fact(Skip = CommentResourceTests.SERVER_SKIP_MESSAGE)]
   public async Task ProjectCommentsUpdated_SubscriptionIsCalled()
   {
     string resourceIdString = $"{_testProject.id},{_testModel.id},{_testVersion}";

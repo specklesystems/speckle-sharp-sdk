@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using RichardSzalay.MockHttp;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Api.Blob;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Serializer;
 using Speckle.Sdk.Credentials;
@@ -45,6 +46,7 @@ public class ClientTests : MoqTest
       Create<ILogger<Client>>(MockBehavior.Loose).Object,
       Create<ISdkActivityFactory>(MockBehavior.Loose).Object,
       graphqlClientFactory.Object,
+      Create<IBlobApiFactory>(MockBehavior.Loose).Object,
       account
     );
 
