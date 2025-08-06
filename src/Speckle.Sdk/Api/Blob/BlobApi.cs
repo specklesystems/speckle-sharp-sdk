@@ -265,7 +265,6 @@ public sealed class BlobApi : IBlobApi
   [AutoInterfaceIgnore]
   public void Dispose()
   {
-    _activityFactory.Dispose();
     _authedClient.Dispose();
     _unauthedClient.Dispose();
   }
