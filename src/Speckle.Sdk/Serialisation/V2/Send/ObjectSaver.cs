@@ -100,9 +100,9 @@ public sealed class ObjectSaver(
     {
       if (!_options.SkipCacheWrite && batch.Count != 0)
       {
-        sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
         Interlocked.Add(ref _cached, batch.Count);
         progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _objectsSerialized));
+        sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
       }
     }
     catch (OperationCanceledException)

@@ -20,7 +20,7 @@ internal sealed class ProgressStream(
   {
     int n = _stream.Read(buffer, offset, count);
     _position += n;
-    progress?.Report(new(ProgressEvent.DownloadBytes, _position, streamLength));
+    progress?.Report(new(ProgressEvent.DownloadBytes, n, streamLength));
     return n;
   }
 
@@ -28,7 +28,7 @@ internal sealed class ProgressStream(
   {
     _stream.Write(buffer, offset, count);
     _position += count;
-    progress?.Report(new(ProgressEvent.UploadBytes, _position, streamLength));
+    progress?.Report(new(ProgressEvent.UploadBytes, count, streamLength));
   }
 
   public override bool CanRead => true;
