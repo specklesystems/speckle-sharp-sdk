@@ -169,8 +169,7 @@ public class Base : DynamicBase, ISpeckleObject
 
         return count;
       }
-      case IEnumerable e
-      and not string:
+      case IEnumerable e and not string:
       {
         foreach (var arrValue in e)
         {

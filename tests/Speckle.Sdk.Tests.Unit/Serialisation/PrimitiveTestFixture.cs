@@ -39,7 +39,7 @@ public abstract class PrimitiveTestFixture
     }.Select(x => new object[] { x });
 
   public static Half[] Float16TestCases { get; } =
-    [default, Half.Epsilon, Half.MaxValue, Half.MinValue, Half.PositiveInfinity, Half.NegativeInfinity, Half.NaN];
+  [default, Half.Epsilon, Half.MaxValue, Half.MinValue, Half.PositiveInfinity, Half.NegativeInfinity, Half.NaN];
 
   public static float[] FloatIntegralTestCases { get; } = [0, 1, int.MaxValue, int.MinValue];
 
