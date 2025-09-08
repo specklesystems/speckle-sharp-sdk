@@ -70,12 +70,14 @@ public abstract class GraphTraversal<T>
   /// <returns>Lazily returns <see cref="Base"/> objects found during traversal (including <paramref name="root"/>), wrapped within a <see cref="TraversalContext"/></returns>
   public IEnumerable<T> Traverse(Base root)
   {
-    var stack = new Queue<T>();
-    stack.Enqueue(NewContext(root, null, default));
+    var stack = new List<T>();
+    stack.Add(NewContext(root, null, default));
 
     while (stack.Count > 0)
     {
-      T head = stack.Dequeue();
+      int headIndex = stack.Count - 1;
+      T head = stack[headIndex];
+      stack.RemoveAt(headIndex);
 
       Base current = head.Current;
       var activeRule = GetActiveRuleOrDefault(current);
@@ -92,19 +94,24 @@ public abstract class GraphTraversal<T>
     }
   }
 
-  private void TraverseMemberToStack(Queue<T> stack, object? value, string? memberName = null, T? parent = default)
+  private void TraverseMemberToStack(
+    ICollection<T> stack,
+    object? value,
+    string? memberName = null,
+    T? parent = default
+  )
   {
     //test
     switch (value)
     {
       case Base o:
-        stack.Enqueue(NewContext(o, memberName, parent));
+        stack.Add(NewContext(o, memberName, parent));
         break;
       case IList list:
       {
-        foreach (object? obj in list)
+        for (int i = list.Count - 1; i >= 0; i--)
         {
-          TraverseMemberToStack(stack, obj, memberName, parent);
+          TraverseMemberToStack(stack, list[i], memberName, parent);
         }
 
         break;
