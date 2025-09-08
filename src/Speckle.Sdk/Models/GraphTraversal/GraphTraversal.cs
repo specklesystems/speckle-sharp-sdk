@@ -109,9 +109,9 @@ public abstract class GraphTraversal<T>
         break;
       case IList list:
       {
-        foreach (object? obj in list)
+        for (int i = list.Count - 1; i >= 0; i--)
         {
-          TraverseMemberToStack(stack, obj, memberName, parent);
+          TraverseMemberToStack(stack, list[i], memberName, parent);
         }
 
         break;
