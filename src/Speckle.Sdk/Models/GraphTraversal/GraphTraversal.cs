@@ -92,12 +92,7 @@ public abstract class GraphTraversal<T>
     }
   }
 
-  private void TraverseMemberToStack(
-    Queue<T> stack,
-    object? value,
-    string? memberName = null,
-    T? parent = default
-  )
+  private void TraverseMemberToStack(Queue<T> stack, object? value, string? memberName = null, T? parent = default)
   {
     //test
     switch (value)
