@@ -19,6 +19,9 @@ public sealed class ServerInfo
   [Obsolete("Don't use")]
   public bool frontend2 { get; set; } = true;
 
+  /// <summary>
+  /// The URL that should be used to talk with the server
+  /// </summary>
   /// <remarks>
   /// This field is not returned from the GQL API,
   /// it should be populated after construction.
