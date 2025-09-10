@@ -19,7 +19,6 @@ public sealed class ObjectsSerializationTest
   private static IReadOnlyList<(Id, Json, Dictionary<Id, int>)> Serialize(Base data)
   {
     using var serializer = new ObjectSerializerFactory(new BasePropertyGatherer()).Create(
-      new Dictionary<Id, NodeInfo>(),
       default
     );
     return serializer.Serialize(data).ToList();

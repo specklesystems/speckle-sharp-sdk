@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation.V2;
@@ -12,7 +11,6 @@ namespace Speckle.Sdk.Api;
 /// </summary>
 [GenerateAutoInterface]
 public partial class Operations(
-  ILogger<Operations> logger,
   ISdkActivityFactory activityFactory,
   ISdkMetricsFactory metricsFactory,
   ISerializeProcessFactory serializeProcessFactory,

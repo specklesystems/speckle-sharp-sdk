@@ -2,11 +2,8 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Speckle.Newtonsoft.Json;
-using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Host;
-using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Models;
 
@@ -25,7 +22,7 @@ public class Base : DynamicBase, ISpeckleObject
   private string? _type;
 
   /// <summary>
-  /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. Use the <see cref="GetId"/> function to get it.</b>
+  /// A speckle object's id is an unique hash based on its properties. <b>NOTE: this field will be null unless the object was deserialised from a source. </b>
   /// </summary>
   public virtual string? id { get; set; }
 
@@ -48,26 +45,6 @@ public class Base : DynamicBase, ISpeckleObject
       }
       return _type;
     }
-  }
-
-  /// <summary>
-  /// Calculates the id (a unique hash) of this object.
-  /// </summary>
-  /// <remarks>
-  /// This method fully serialize the object and any referenced objects. This has a tangible cost and should be avoided.<br/>
-  /// Objects retrieved from a <see cref="ITransport"/> already have a <see cref="id"/> property populated<br/>
-  /// The hash of a decomposed object differs from the hash of a non-decomposed object.
-  /// </remarks>
-  /// <param name="decompose">If <see langword="true"/>, will decompose the object in the process of hashing.</param>
-  /// <returns>the resulting id (hash)</returns>
-  public string GetId(bool decompose = false)
-  {
-    //TODO remove me
-    var transports = decompose ? [new MemoryTransport()] : Array.Empty<ITransport>();
-    var serializer = new SpeckleObjectSerializer(transports);
-
-    string obj = serializer.Serialize(this);
-    return JObject.Parse(obj).GetValue(nameof(id))?.ToString() ?? string.Empty;
   }
 
   /// <summary>
