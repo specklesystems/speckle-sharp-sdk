@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
@@ -67,10 +66,6 @@ public sealed class SerializeProcess(
   private readonly SerializeProcessOptions _options = options ?? new();
 
   private readonly Pool<Dictionary<Id, NodeInfo>> _currentClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
-  private readonly Pool<ConcurrentDictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateConcurrentDictionaryPool<
-    Id,
-    NodeInfo
-  >();
 
   private readonly Pool<List<Task<Dictionary<Id, NodeInfo>>>> _taskResultPool = Pools.CreateListPool<
     Task<Dictionary<Id, NodeInfo>>
@@ -225,7 +220,6 @@ public sealed class SerializeProcess(
         return EMPTY_CLOSURES;
       }
 
-      var childClosures = _childClosurePool.Get();
       foreach (var childClosure in taskClosures)
       {
         if (IsCancelled())
@@ -234,7 +228,6 @@ public sealed class SerializeProcess(
         }
         foreach (var kvp in childClosure)
         {
-          childClosures[kvp.Key] = kvp.Value;
           if (IsCancelled())
           {
             return EMPTY_CLOSURES;
@@ -249,7 +242,7 @@ public sealed class SerializeProcess(
         return EMPTY_CLOSURES;
       }
 
-      var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, _processSource.Token);
+      var items = baseSerializer.Serialise(obj, _options.SkipCacheRead, _processSource.Token);
 
       if (IsCancelled())
       {
@@ -257,32 +250,26 @@ public sealed class SerializeProcess(
       }
 
       var currentClosures = _currentClosurePool.Get();
-      try
+
+      Interlocked.Increment(ref _objectCount);
+      progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound)));
+      foreach (var item in items)
       {
-        Interlocked.Increment(ref _objectCount);
-        progress?.Report(new(ProgressEvent.FromCacheOrSerialized, _objectCount, Math.Max(_objectCount, _objectsFound)));
-        foreach (var item in items)
+        if (IsCancelled())
         {
-          if (IsCancelled())
-          {
-            return EMPTY_CLOSURES;
-          }
-
-          if (item.NeedsStorage)
-          {
-            Interlocked.Increment(ref _objectsSerialized);
-            await objectSaver.SaveAsync(item).ConfigureAwait(false);
-          }
-
-          if (!currentClosures.ContainsKey(item.Id))
-          {
-            currentClosures.Add(item.Id, new NodeInfo(item.Json, item.Closures));
-          }
+          return EMPTY_CLOSURES;
         }
-      }
-      finally
-      {
-        _childClosurePool.Return(childClosures);
+
+        if (item.NeedsStorage)
+        {
+          Interlocked.Increment(ref _objectsSerialized);
+          await objectSaver.SaveAsync(item).ConfigureAwait(false);
+        }
+
+        if (!currentClosures.ContainsKey(item.Id))
+        {
+          currentClosures.Add(item.Id, new NodeInfo(item.Json, item.Closures));
+        }
       }
 
       return currentClosures;
