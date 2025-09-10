@@ -68,7 +68,6 @@ public class Account : IEquatable<Account>
     return "@" + Md5.GetString(email).ToUpperInvariant();
   }
 
-  /// <returns>Returns the MD5 hash of the</returns>
   /// <remarks>The logic is aligned with <c>server</c> mixpanel property</remarks>
   /// <exception cref="ArgumentNullException">Thrown if <see name="serverInfo.url"/> was <see langword="null"/></exception>
   public string GetHashedServer()
