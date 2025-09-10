@@ -97,6 +97,8 @@ public class Account : IEquatable<Account>
 
   #endregion
 
+  internal const string LOCAL_IDENTIFIER_DEPRECATION_MESSAGE = "Local identifiers no longer nesseary";
+
   /// <summary>
   /// Retrieves the local identifier for the current user.
   /// </summary>
@@ -121,5 +123,6 @@ public class Account : IEquatable<Account>
   ///     https://speckle.xyz?id=123
   ///   </code>
   /// </example>
+  [Obsolete(LOCAL_IDENTIFIER_DEPRECATION_MESSAGE)]
   internal Uri GetLocalIdentifier() => new($"{serverInfo.url}?id={userInfo.id}");
 }
