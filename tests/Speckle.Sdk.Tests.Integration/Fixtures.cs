@@ -12,7 +12,6 @@ using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
-using Speckle.Sdk.Transports;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Integration;
@@ -42,10 +41,9 @@ public static class Fixtures
 
   public static async Task<Version> CreateVersion(IClient client, string projectId, string modelId)
   {
-    using var remote = ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(client.Account, projectId);
     var (objectId, _) = await ServiceProvider
       .GetRequiredService<IOperations>()
-      .Send(new() { applicationId = "ASDF" }, remote, false);
+      .Send2(client.ServerUrl, modelId, client.Account.token, new() { applicationId = "ASDF" }, null, default);
     CreateVersionInput input = new(objectId, modelId, projectId);
     return await client.Version.Create(input);
   }
@@ -146,18 +144,18 @@ public static class Fixtures
   [Obsolete(CommentResourceTests.SERVER_SKIP_MESSAGE)]
   internal static async Task<Comment> CreateComment(IClient client, string projectId, string modelId, string versionId)
   {
-    var blobs = await SendBlobData(client.Account, projectId);
+    var blobs = await SendBlobData(client, modelId);
     var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
     CreateCommentInput input = new(new(blobIds, null), projectId, $"{projectId},{modelId},{versionId}", null, null);
     return await client.Comment.Create(input);
   }
 
-  internal static async Task<Blob[]> SendBlobData(Account account, string projectId)
+  internal static async Task<Blob[]> SendBlobData(IClient client,  string modelId)
   {
-    using var remote = ServiceProvider.GetRequiredService<IServerTransportFactory>().Create(account, projectId);
     var blobs = Fixtures.GenerateThreeBlobs();
     Base myObject = new() { ["blobs"] = blobs };
-    await ServiceProvider.GetRequiredService<IOperations>().Send(myObject, remote, false);
+    await ServiceProvider.GetRequiredService<IOperations>().Send2(client.ServerUrl, modelId, client.Account.token,
+       myObject, null, default);
     return blobs;
   }
 }

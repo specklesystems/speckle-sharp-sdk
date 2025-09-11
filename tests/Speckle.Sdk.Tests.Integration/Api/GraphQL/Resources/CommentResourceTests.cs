@@ -91,7 +91,7 @@ public class CommentResourceTests : IAsyncLifetime
   [Fact(Skip = SERVER_SKIP_MESSAGE)]
   public async Task Edit()
   {
-    var blobs = await Fixtures.SendBlobData(_testUser.Account, _project.id);
+    var blobs = await Fixtures.SendBlobData(_testUser, _model.id);
     var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
     var input = new EditCommentInput(new(blobIds, null), _comment.id, _project.id);
 
@@ -107,7 +107,7 @@ public class CommentResourceTests : IAsyncLifetime
   [Fact(Skip = SERVER_SKIP_MESSAGE)]
   public async Task Reply()
   {
-    var blobs = await Fixtures.SendBlobData(_testUser.Account, _project.id);
+    var blobs = await Fixtures.SendBlobData(_testUser, _model.id);
     var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
     var input = new CreateCommentReplyInput(new(blobIds, null), _comment.id, _project.id);
 

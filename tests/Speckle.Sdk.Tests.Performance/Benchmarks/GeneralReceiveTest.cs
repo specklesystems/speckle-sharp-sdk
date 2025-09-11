@@ -44,13 +44,6 @@ public class GeneralReceiveTest : IDisposable
       .ServiceProvider.GetRequiredService<IServerTransportFactory>()
       .Create(acc, streamId);
   }
-
-  [Benchmark]
-  public async Task<Base> RunTest_Receive()
-  {
-    return await _operations.Receive(rootId, remoteTransport, _dataSource.Transport);
-  }
-
   [Benchmark]
   public async Task<Base> RunTest_Receive2()
   {

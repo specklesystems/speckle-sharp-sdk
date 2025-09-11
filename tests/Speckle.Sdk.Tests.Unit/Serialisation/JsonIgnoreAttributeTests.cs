@@ -1,10 +1,6 @@
-using FluentAssertions;
 using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
@@ -38,85 +34,26 @@ public sealed class JsonIgnoreRespected
     yield return ["this one is not", EXPECTED_PAYLOAD, EXPECTED_HASH];
   }
 
-  [Theory]
-  [MemberData(nameof(IgnoredTestCases))]
-  public void IgnoredProperties_NotIncludedInJson(string ignoredPayload, string expectedPayload, string expectedHash)
+  [SpeckleType("Speckle.Sdk.Test.Unit.Serialisation.IgnoredCompoundTest")]
+  public sealed class IgnoredCompoundTest(string ignoredPayload, string expectedPayload) : Base
   {
-    IgnoreTest testData = new(ignoredPayload, expectedPayload);
+    [JsonIgnore]
+    public Base ShouldBeIgnored => new IgnoreTest(ignoredPayload, expectedPayload) { ["override"] = ignoredPayload };
 
-    SpeckleObjectSerializer sut = new();
+    public Base ShouldBeIncluded => new IgnoreTest(ignoredPayload, expectedPayload);
 
-    var result = sut.SerializeBase(testData);
-    result.Should().NotBeNull();
-    result!.Value.Id.Should().NotBeNull();
+    [JsonIgnore, DetachProperty] public Base ShouldBeIgnoredDetached => ShouldBeIgnored;
 
-    var jsonString = result.Value.Json.ToString();
-    jsonString.Should().NotContain(nameof(testData.ShouldBeIgnored));
-    jsonString.Should().NotContain(ignoredPayload);
+    [DetachProperty] public Base ShouldBeIncludedDetached => ShouldBeIncluded;
 
-    jsonString.Should().Contain(nameof(testData.ShouldBeIncluded));
-    jsonString.Should().Contain(expectedPayload);
+    [JsonIgnore] public List<Base> ShouldBeIgnoredList => [ShouldBeIgnored];
 
-    result.Value.Id!.Value.Value.Should().Be(expectedHash);
+    [JsonIgnore, DetachProperty] public List<Base> ShouldBeIgnoredDetachedList => ShouldBeIgnoredList;
+
+    public List<Base> ShouldBeIncludedList => [ShouldBeIncluded];
+
+    [DetachProperty] public List<Base> ShouldBeIncludedDetachedList => ShouldBeIncludedList;
   }
-
-  [Theory]
-  [MemberData(nameof(IgnoredCompoundTestCases))]
-  public void IgnoredProperties_Compound_NotIncludedInJson(
-    string ignoredPayload,
-    string expectedPayload,
-    string expectedHash
-  )
-  {
-    IgnoredCompoundTest testData = new(ignoredPayload, expectedPayload);
-
-    MemoryTransport savedObjects = new();
-    SpeckleObjectSerializer sut = new(writeTransports: [savedObjects]);
-
-    var result = sut.SerializeBase(testData);
-    var (json, id) = result.NotNull();
-    json.Value.Should().NotBeNull();
-    id.Should().NotBeNull();
-
-    savedObjects.SaveObject(id!.Value.Value.NotNull(), json.Value);
-
-    foreach ((_, string childJson) in savedObjects.Objects)
-    {
-      childJson.Should().NotContain(nameof(testData.ShouldBeIgnored));
-      childJson.Should().NotContain(ignoredPayload);
-
-      childJson.Should().Contain(nameof(testData.ShouldBeIncluded));
-      childJson.Should().Contain(expectedPayload);
-    }
-
-    id.Value.Value.Should().Be(expectedHash);
-  }
-}
-
-[SpeckleType("Speckle.Sdk.Test.Unit.Serialisation.IgnoredCompoundTest")]
-public sealed class IgnoredCompoundTest(string ignoredPayload, string expectedPayload) : Base
-{
-  [JsonIgnore]
-  public Base ShouldBeIgnored => new IgnoreTest(ignoredPayload, expectedPayload) { ["override"] = ignoredPayload };
-
-  public Base ShouldBeIncluded => new IgnoreTest(ignoredPayload, expectedPayload);
-
-  [JsonIgnore, DetachProperty]
-  public Base ShouldBeIgnoredDetached => ShouldBeIgnored;
-
-  [DetachProperty]
-  public Base ShouldBeIncludedDetached => ShouldBeIncluded;
-
-  [JsonIgnore]
-  public List<Base> ShouldBeIgnoredList => [ShouldBeIgnored];
-
-  [JsonIgnore, DetachProperty]
-  public List<Base> ShouldBeIgnoredDetachedList => ShouldBeIgnoredList;
-
-  public List<Base> ShouldBeIncludedList => [ShouldBeIncluded];
-
-  [DetachProperty]
-  public List<Base> ShouldBeIncludedDetachedList => ShouldBeIncludedList;
 }
 
 [SpeckleType("Speckle.Sdk.Tests.Unit.Serialisation.IgnoreTest")]

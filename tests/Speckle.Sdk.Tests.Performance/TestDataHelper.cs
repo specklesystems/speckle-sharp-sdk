@@ -1,8 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
-using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Performance;
@@ -51,14 +49,6 @@ public sealed class TestDataHelper : IDisposable
     }
 
     return objectId;
-  }
-
-  public async Task<Base> DeserializeBase()
-  {
-    return await ServiceProvider
-      .GetRequiredService<IOperations>()
-      .Receive(ObjectId, null, Transport)
-      .ConfigureAwait(false);
   }
 
   public void Dispose()

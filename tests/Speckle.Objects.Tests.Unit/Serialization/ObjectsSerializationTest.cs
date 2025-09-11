@@ -1,4 +1,5 @@
-﻿using Speckle.Sdk.Models;
+﻿using System.Collections.Concurrent;
+using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Testing;
@@ -18,7 +19,7 @@ public sealed class ObjectsSerializationTest
 
   private static IReadOnlyList<(Id, Json, Dictionary<Id, int>)> Serialize(Base data)
   {
-    using var serializer = new ObjectSerializerFactory(new BasePropertyGatherer()).Create(
+    using var serializer = new ObjectSerializerFactory(new BasePropertyGatherer()).Create(new ConcurrentDictionary<Id, NodeInfo>(),
       default
     );
     return serializer.Serialize(data).ToList();
