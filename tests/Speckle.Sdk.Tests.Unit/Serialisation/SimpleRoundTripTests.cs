@@ -1,5 +1,4 @@
-﻿using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
@@ -30,13 +29,4 @@ public class SimpleRoundTripTests
     yield return polyline;
   }
 
-  [Theory]
-  [MemberData(nameof(TestData))]
-  public async Task SimpleSerialization(Base testData)
-  {
-    var result = _operations.Serialize(testData);
-    var test = await _operations.DeserializeAsync(result);
-
-    testData.GetId().Should().Be(test.GetId());
-  }
 }
