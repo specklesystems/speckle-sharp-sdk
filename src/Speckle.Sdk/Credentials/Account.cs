@@ -59,15 +59,20 @@ public class Account : IEquatable<Account>
 
   #region public methods
 
+
+  /// <remarks>The logic is aligned with <c>distinct_id</c> mixpanel property</remarks>
+  /// <exception cref="ArgumentNullException">Thrown if <see name="userInfo.email"/> was <see langword="null"/></exception>
   public string GetHashedEmail()
   {
-    string email = userInfo?.email ?? "unknown";
+    string email = userInfo.email.NotNull();
     return "@" + Md5.GetString(email).ToUpperInvariant();
   }
 
+  /// <remarks>The logic is aligned with <c>server</c> mixpanel property</remarks>
+  /// <exception cref="ArgumentNullException">Thrown if <see name="serverInfo.url"/> was <see langword="null"/></exception>
   public string GetHashedServer()
   {
-    string url = serverInfo?.url ?? AccountManager.DEFAULT_SERVER_URL;
+    string url = serverInfo.url.NotNull();
     return Md5.GetString(CleanURL(url)).ToUpperInvariant();
   }
 
@@ -97,6 +102,8 @@ public class Account : IEquatable<Account>
 
   #endregion
 
+  internal const string LOCAL_IDENTIFIER_DEPRECATION_MESSAGE = "Local identifiers no longer nesseary";
+
   /// <summary>
   /// Retrieves the local identifier for the current user.
   /// </summary>
@@ -121,5 +128,6 @@ public class Account : IEquatable<Account>
   ///     https://speckle.xyz?id=123
   ///   </code>
   /// </example>
+  [Obsolete(LOCAL_IDENTIFIER_DEPRECATION_MESSAGE)]
   internal Uri GetLocalIdentifier() => new($"{serverInfo.url}?id={userInfo.id}");
 }

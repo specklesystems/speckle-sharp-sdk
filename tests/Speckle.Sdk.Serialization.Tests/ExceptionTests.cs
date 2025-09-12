@@ -203,7 +203,7 @@ public class ExceptionTests
   public void Test_SpeckleSerializerException()
   {
     var factory = new ObjectSerializerFactory(new BasePropertyGatherer());
-    var serializer = factory.Create(new Dictionary<Id, NodeInfo>(), default);
+    var serializer = factory.Create(default);
     Assert.Throws<SpeckleSerializeException>(() =>
     {
       var _ = serializer.Serialize(new BadBase()).ToList();

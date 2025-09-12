@@ -419,6 +419,7 @@ public sealed class AccountManager(
   /// <remarks>
   /// <inheritdoc cref="Account.GetLocalIdentifier"/>
   /// </remarks>
+  [Obsolete(Account.LOCAL_IDENTIFIER_DEPRECATION_MESSAGE)]
   public Uri? GetLocalIdentifierForAccount(Account account)
   {
     var identifier = account.GetLocalIdentifier();
@@ -440,6 +441,7 @@ public sealed class AccountManager(
   /// </summary>
   /// <param name="localIdentifier">The local identifier of the account.</param>
   /// <returns>The account that matches the local identifier, or null if no match is found.</returns>
+  [Obsolete(Account.LOCAL_IDENTIFIER_DEPRECATION_MESSAGE)]
   public Account? GetAccountForLocalIdentifier(Uri localIdentifier)
   {
     var searchResult = GetAccounts()
