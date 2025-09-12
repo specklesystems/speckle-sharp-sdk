@@ -37,8 +37,8 @@ public sealed class SerializeProcess(
   IBaseChildFinder baseChildFinder,
   IBaseSerializer baseSerializer,
   ILoggerFactory loggerFactory,
-  CancellationToken cancellationToken,
-  SerializeProcessOptions? options = null
+  SerializeProcessOptions options,
+  CancellationToken cancellationToken
 ) : ISerializeProcess
 {
   private static readonly Dictionary<Id, NodeInfo> EMPTY_CLOSURES = new();
@@ -64,7 +64,6 @@ public sealed class SerializeProcess(
     ThreadPriority.BelowNormal,
     Environment.ProcessorCount * 2
   );
-  private readonly SerializeProcessOptions _options = options ?? new();
 
   private readonly Pool<Dictionary<Id, NodeInfo>> _currentClosurePool = Pools.CreateDictionaryPool<Id, NodeInfo>();
   private readonly Pool<ConcurrentDictionary<Id, NodeInfo>> _childClosurePool = Pools.CreateConcurrentDictionaryPool<
@@ -113,13 +112,13 @@ public sealed class SerializeProcess(
     try
     {
       var channelTask = objectSaver.Start(
-        options?.MaxParallelism,
-        options?.MaxHttpSendBatchSize,
-        options?.MaxCacheBatchSize,
+        options.MaxParallelism,
+        options.MaxHttpSendBatchSize,
+        options.MaxCacheBatchSize,
         _processSource.Token
       );
       var findTotalObjectsTask = Task.CompletedTask;
-      if (!_options.SkipFindTotalObjects)
+      if (!options.SkipFindTotalObjects)
       {
         ThrowIfFailed();
         findTotalObjectsTask = Task.Factory.StartNew(
@@ -249,7 +248,7 @@ public sealed class SerializeProcess(
         return EMPTY_CLOSURES;
       }
 
-      var items = baseSerializer.Serialise(obj, childClosures, _options.SkipCacheRead, _processSource.Token);
+      var items = baseSerializer.Serialise(obj, childClosures, options.SkipCacheRead, _processSource.Token);
 
       if (IsCancelled())
       {
