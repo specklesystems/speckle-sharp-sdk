@@ -31,7 +31,7 @@ public class SerializeProcessRecordExceptionTests : MoqTest
       baseChildFinderMock.Object,
       baseSerializerMock.Object,
       loggerFactoryMock.Object,
-      new (),
+      new(),
       cts.Token
     );
     var ex = new Exception("Test error");
@@ -68,7 +68,7 @@ public class SerializeProcessRecordExceptionTests : MoqTest
       baseChildFinderMock.Object,
       baseSerializerMock.Object,
       loggerFactoryMock.Object,
-      new (),
+      new(),
       cts.Token
     );
     var ex = new OperationCanceledException();
@@ -100,7 +100,7 @@ public class SerializeProcessRecordExceptionTests : MoqTest
       baseChildFinderMock.Object,
       baseSerializerMock.Object,
       loggerFactoryMock.Object,
-      new (),
+      new(),
       cts.Token
     );
     var ex = new AggregateException(new OperationCanceledException());
