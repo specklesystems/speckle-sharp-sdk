@@ -44,13 +44,14 @@ public class SerializeProcessFactory(
         sqLiteJsonCacheManager,
         serverObjectManager,
         loggerFactory.CreateLogger<ObjectSaver>(),
+        options ?? new SerializeProcessOptions(),
         cancellationToken
       ),
       baseChildFinder,
       new BaseSerializer(sqLiteJsonCacheManager, objectSerializerFactory),
       loggerFactory,
-      cancellationToken,
-      options
+      options ?? new SerializeProcessOptions(),
+      cancellationToken
     );
 
   public ISerializeProcess CreateSerializeProcess(
