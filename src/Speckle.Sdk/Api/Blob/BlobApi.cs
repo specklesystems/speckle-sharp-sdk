@@ -19,7 +19,6 @@ public partial interface IBlobApi : IDisposable;
 /// Low level access to the blob API
 /// </summary>
 /// <seealso cref="FileImportResource"/>
-/// <seealso cref="ServerApi"/>
 [GenerateAutoInterface]
 public sealed class BlobApi : IBlobApi
 {

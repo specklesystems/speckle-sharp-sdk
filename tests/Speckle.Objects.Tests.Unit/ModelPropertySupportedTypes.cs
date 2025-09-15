@@ -4,7 +4,6 @@ using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Objects.Tests.Unit;
 
@@ -28,7 +27,6 @@ public class ModelPropertySupportedTypes
   /// <remarks>
   /// If you're tempted to add to this list, please ensure both our serializer and deserializer support properties of this type
   /// Check the <see cref="Speckle.Sdk.Serialisation.Utilities.ValueConverter"/>
-  /// Check the <see cref="SpeckleObjectSerializer"/>
   /// (or is an interface where all concrete types are supported)
   /// You should also consider adding a test in SerializerNonBreakingChanges
   /// </remarks>

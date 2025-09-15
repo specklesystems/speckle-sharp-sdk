@@ -49,21 +49,6 @@ public class DetachedTests
   }
 
   [Fact]
-  public async Task CanSerialize_Old_Detached()
-  {
-    var @base = new SampleObjectBase();
-    @base["dynamicProp"] = 123;
-    @base.detachedProp = new SamplePropBase() { name = "detachedProp" };
-    @base.attachedProp = new SamplePropBase() { name = "attachedProp" };
-
-    var objects = new ConcurrentDictionary<string, string>();
-    var serializer = new SpeckleObjectSerializer(new[] { new MemoryTransport(objects) });
-    serializer.Serialize(@base);
-
-    await VerifyJsonDictionary(objects);
-  }
-
-  [Fact]
   public async Task GetPropertiesExpected_Detached()
   {
     var @base = new SampleObjectBase();

@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Logging;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Caching;
 
@@ -29,7 +28,7 @@ public class ModelCacheManager(ILogger<ModelCacheManager> logger, IFileSystem fi
     catch (Exception ex)
       when (ex is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
     {
-      throw new TransportException($"Path was invalid or could not be created {db}", ex);
+      throw new ModelManagerException($"Path was invalid or could not be created {db}", ex);
     }
   }
 
@@ -57,7 +56,7 @@ public class ModelCacheManager(ILogger<ModelCacheManager> logger, IFileSystem fi
     catch (Exception ex)
       when (ex is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
     {
-      throw new TransportException($"Cache folder could not be cleared: {CacheFolder}", ex);
+      throw new ModelManagerException($"Cache folder could not be cleared: {CacheFolder}", ex);
     }
   }
 
@@ -87,7 +86,7 @@ public class ModelCacheManager(ILogger<ModelCacheManager> logger, IFileSystem fi
     catch (Exception ex)
       when (ex is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
     {
-      throw new TransportException($"Cache folder size could not be determined: {CacheFolder}", ex);
+      throw new ModelManagerException($"Cache folder size could not be determined: {CacheFolder}", ex);
     }
   }
 }

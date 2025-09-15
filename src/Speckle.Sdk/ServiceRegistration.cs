@@ -12,8 +12,6 @@ using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.SQLite;
-using Speckle.Sdk.Transports;
-using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk;
 
@@ -82,9 +80,7 @@ public static class ServiceRegistration
     serviceCollection.TryAddSingleton<ISdkMetricsFactory, NullSdkMetricsFactory>();
     serviceCollection.AddMatchingInterfacesAsTransient(
       Assembly.GetExecutingAssembly(),
-      typeof(ServerTransport),
       typeof(Account),
-      typeof(ServerApi),
       typeof(SqLiteJsonCacheManager),
       typeof(ServerObjectManager),
       typeof(BlobApi),
