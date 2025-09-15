@@ -1,6 +1,8 @@
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation.V2;
+using Speckle.Sdk.Serialisation.V2.Receive;
+using Speckle.Sdk.Serialisation.V2.Send;
 
 namespace Speckle.Sdk.Api;
 
@@ -13,6 +15,8 @@ namespace Speckle.Sdk.Api;
 public partial class Operations(
   ISdkActivityFactory activityFactory,
   ISdkMetricsFactory metricsFactory,
+  IObjectSerializerFactory objectSerializerFactory,
+  IObjectDeserializerFactory objectDeserializerFactory,
   ISerializeProcessFactory serializeProcessFactory,
   IDeserializeProcessFactory deserializeProcessFactory
 ) : IOperations;
