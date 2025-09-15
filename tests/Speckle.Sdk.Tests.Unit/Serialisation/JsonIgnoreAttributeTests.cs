@@ -42,17 +42,22 @@ public sealed class JsonIgnoreRespected
 
     public Base ShouldBeIncluded => new IgnoreTest(ignoredPayload, expectedPayload);
 
-    [JsonIgnore, DetachProperty] public Base ShouldBeIgnoredDetached => ShouldBeIgnored;
+    [JsonIgnore, DetachProperty]
+    public Base ShouldBeIgnoredDetached => ShouldBeIgnored;
 
-    [DetachProperty] public Base ShouldBeIncludedDetached => ShouldBeIncluded;
+    [DetachProperty]
+    public Base ShouldBeIncludedDetached => ShouldBeIncluded;
 
-    [JsonIgnore] public List<Base> ShouldBeIgnoredList => [ShouldBeIgnored];
+    [JsonIgnore]
+    public List<Base> ShouldBeIgnoredList => [ShouldBeIgnored];
 
-    [JsonIgnore, DetachProperty] public List<Base> ShouldBeIgnoredDetachedList => ShouldBeIgnoredList;
+    [JsonIgnore, DetachProperty]
+    public List<Base> ShouldBeIgnoredDetachedList => ShouldBeIgnoredList;
 
     public List<Base> ShouldBeIncludedList => [ShouldBeIncluded];
 
-    [DetachProperty] public List<Base> ShouldBeIncludedDetachedList => ShouldBeIncludedList;
+    [DetachProperty]
+    public List<Base> ShouldBeIncludedDetachedList => ShouldBeIncludedList;
   }
 }
 

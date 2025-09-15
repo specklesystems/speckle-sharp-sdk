@@ -150,12 +150,13 @@ public static class Fixtures
     return await client.Comment.Create(input);
   }
 
-  internal static async Task<Blob[]> SendBlobData(IClient client,  string modelId)
+  internal static async Task<Blob[]> SendBlobData(IClient client, string modelId)
   {
     var blobs = Fixtures.GenerateThreeBlobs();
     Base myObject = new() { ["blobs"] = blobs };
-    await ServiceProvider.GetRequiredService<IOperations>().Send2(client.ServerUrl, modelId, client.Account.token,
-       myObject, null, default);
+    await ServiceProvider
+      .GetRequiredService<IOperations>()
+      .Send2(client.ServerUrl, modelId, client.Account.token, myObject, null, default);
     return blobs;
   }
 }

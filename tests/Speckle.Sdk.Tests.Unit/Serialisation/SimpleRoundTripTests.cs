@@ -28,5 +28,4 @@ public class SimpleRoundTripTests
     }
     yield return polyline;
   }
-
 }
