@@ -21,12 +21,7 @@ public class BaseSerializer(
   public IReadOnlyDictionary<Id, ObjectReference> ObjectReferences => _objectReferences;
 
   //leave this sync
-  public IEnumerable<BaseItem> Serialise(
-    Base obj,
-    IReadOnlyDictionary<Id, NodeInfo> childInfo,
-    bool skipCacheRead,
-    CancellationToken cancellationToken
-  )
+  public IEnumerable<BaseItem> Serialise(Base obj, bool skipCacheRead, CancellationToken cancellationToken)
   {
     if (!skipCacheRead && obj.id != null)
     {
@@ -38,7 +33,7 @@ public class BaseSerializer(
       }
     }
 
-    using var serializer2 = objectSerializerFactory.Create(childInfo, cancellationToken);
+    using var serializer2 = objectSerializerFactory.Create(cancellationToken);
     var items = _pool.Get();
     try
     {

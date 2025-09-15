@@ -41,7 +41,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true)
+      new SerializeProcessOptions(true, true, false, true)
     );
     await serializeProcess.Serialize(@base);
 
@@ -108,7 +108,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
+      new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
@@ -135,7 +135,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
+      new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
@@ -157,7 +157,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
+      new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
 
@@ -224,7 +224,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true)
+      new SerializeProcessOptions(true, true, false, true)
     );
 
     var results = await serializeProcess.Serialize(@base);
@@ -257,7 +257,7 @@ public class DetachedTests
       objects,
       null,
       default,
-      new SerializeProcessOptions(false, false, true, true)
+      new SerializeProcessOptions(true, true, false, true)
     );
     var results = await serializeProcess.Serialize(@base);
     await VerifyJsonDictionary(objects);

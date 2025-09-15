@@ -26,8 +26,6 @@ public sealed class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();
 
-  private readonly IReadOnlyDictionary<Id, NodeInfo> _childCache;
-
   private readonly IBasePropertyGatherer _propertyGatherer;
   private readonly CancellationToken _cancellationToken;
 
@@ -52,7 +50,6 @@ public sealed class ObjectSerializer : IObjectSerializer
   /// <param name="cancellationToken"></param>
   public ObjectSerializer(
     IBasePropertyGatherer propertyGatherer,
-    IReadOnlyDictionary<Id, NodeInfo> childCache,
     Pool<List<(Id, Json, Closures)>> chunksPool,
     Pool<List<DataChunk>> chunks2Pool,
     Pool<List<object?>> chunks3Pool,
@@ -60,7 +57,6 @@ public sealed class ObjectSerializer : IObjectSerializer
   )
   {
     _propertyGatherer = propertyGatherer;
-    _childCache = childCache;
     _chunksPool = chunksPool;
     _chunks2Pool = chunks2Pool;
     _chunks3Pool = chunks3Pool;
@@ -299,28 +295,14 @@ public sealed class ObjectSerializer : IObjectSerializer
 
   private (Id, Json)? SerializeDetachedBase(Base baseObj, Closures closures)
   {
-    Closures childClosures;
-    Id id;
-    Json json;
-    //avoid multiple serialization to get closures
-    if (baseObj.id != null && _childCache.TryGetValue(new(baseObj.id), out var info))
-    {
-      id = new Id(baseObj.id);
-      childClosures = info.GetClosures(_cancellationToken);
-      json = info.Json;
-      closures.IncrementClosures(childClosures);
-    }
-    else
-    {
-      childClosures = [];
-      var sb = Pools.StringBuilders.Get();
-      using var writer = new StringWriter(sb);
-      using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
-      id = SerializeBaseWithClosures(baseObj, jsonWriter, childClosures, true);
-      closures.IncrementClosures(childClosures);
-      json = new Json(writer.ToString());
-      Pools.StringBuilders.Return(sb);
-    }
+    Closures childClosures = [];
+    var sb = Pools.StringBuilders.Get();
+    using var writer = new StringWriter(sb);
+    using var jsonWriter = SpeckleObjectSerializerPool.Instance.GetJsonTextWriter(writer);
+    var id = SerializeBaseWithClosures(baseObj, jsonWriter, childClosures, true);
+    var json = new Json(writer.ToString());
+    Pools.StringBuilders.Return(sb);
+    closures.IncrementClosures(childClosures);
     var json2 = ReferenceGenerator.CreateReference(id);
     closures.MergeClosure(id);
     // add to obj refs to return

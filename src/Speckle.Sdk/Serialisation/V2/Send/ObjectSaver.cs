@@ -20,10 +20,10 @@ public sealed class ObjectSaver(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
   ILogger<ObjectSaver> logger,
-  CancellationToken cancellationToken,
+  SerializeProcessOptions options,
+  CancellationToken cancellationToken
 #pragma warning disable CS9107
 #pragma warning disable CA2254
-  SerializeProcessOptions? options = null
 ) : ChannelSaver<BaseItem>, IObjectSaver
 #pragma warning restore CA2254
 #pragma warning restore CS9107
