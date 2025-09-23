@@ -10,6 +10,7 @@ public class DummyReceiveServerObjectManager(IReadOnlyDictionary<string, string>
 {
   public async IAsyncEnumerable<(string, string)> DownloadObjects(
     IReadOnlyCollection<string> objectIds,
+    string? attributeMask,
     IProgress<ProgressArgs>? progress,
     [EnumeratorCancellation] CancellationToken cancellationToken
   )

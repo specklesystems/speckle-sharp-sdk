@@ -16,6 +16,7 @@ public partial interface IObjectLoader : IDisposable;
 public sealed class ObjectLoader(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
+  string? attributeMask,
   IProgress<ProgressArgs>? progress,
   ILogger<ObjectLoader> logger,
   CancellationToken cancellationToken
@@ -111,6 +112,7 @@ public sealed class ObjectLoader(
     await foreach (
       var (id, json) in serverObjectManager.DownloadObjects(
         ids.Select(x => x.NotNull()).ToList(),
+        attributeMask,
         progress,
         cancellationToken
       )

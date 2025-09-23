@@ -14,7 +14,8 @@ public record DeserializeProcessOptions(
   bool ThrowOnMissingReferences = true,
   bool SkipInvalidConverts = false,
   int? MaxParallelism = null,
-  bool SkipServer = false
+  bool SkipServer = false,
+  string? AttributeMask = null
 );
 
 public partial interface IDeserializeProcess : IAsyncDisposable;
@@ -44,6 +45,7 @@ public sealed class DeserializeProcess(
       new ObjectLoader(
         sqLiteJsonCacheManager,
         serverObjectManager,
+        options?.AttributeMask,
         progress,
         loggerFactory.CreateLogger<ObjectLoader>(),
         cancellationToken
