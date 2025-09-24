@@ -33,12 +33,12 @@ public class ServerObjectManagerTests : MoqTest
     var mockHttp = new MockHttpMessageHandler();
     Dictionary<string, string> postParameters = new()
     {
-      { "objects", JsonConvert.SerializeObject(new List<string> { id, id2 }) },
+      { "objectIds", JsonConvert.SerializeObject(new List<string> { id, id2 }) },
     };
 
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
     mockHttp
-      .When(HttpMethod.Post, $"http://localhost/api/getobjects/{streamId}")
+      .When(HttpMethod.Post, $"http://localhost/api/v2/projects/{streamId}/object-stream/")
       .WithContent(serializedPayload)
       .Respond(
         "application/json",
