@@ -8,6 +8,7 @@ public class ExceptionServerObjectManager : IServerObjectManager
 {
   public IAsyncEnumerable<(string, string)> DownloadObjects(
     IReadOnlyCollection<string> objectIds,
+    string? attributeMask,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
   ) => throw new NotImplementedException();

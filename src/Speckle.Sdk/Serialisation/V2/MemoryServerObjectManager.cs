@@ -9,6 +9,7 @@ public class MemoryServerObjectManager(ConcurrentDictionary<string, string> obje
 {
   public virtual async IAsyncEnumerable<(string, string)> DownloadObjects(
     IReadOnlyCollection<string> objectIds,
+    string? attributeMask,
     IProgress<ProgressArgs>? progress,
     [EnumeratorCancellation] CancellationToken cancellationToken
   )

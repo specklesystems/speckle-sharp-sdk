@@ -112,6 +112,7 @@ public class ExceptionTests
       new DummySqLiteReceiveManager(new Dictionary<string, string>()),
       new ExceptionServerObjectManager(),
       null,
+      null,
       new NullLogger<ObjectLoader>(),
       default
     );

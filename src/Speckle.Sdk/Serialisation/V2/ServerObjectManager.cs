@@ -51,6 +51,7 @@ public class ServerObjectManager : IServerObjectManager
 
   public async IAsyncEnumerable<(string, string)> DownloadObjects(
     IReadOnlyCollection<string> objectIds,
+    string? attributeMask,
     IProgress<ProgressArgs>? progress,
     [EnumeratorCancellation] CancellationToken cancellationToken
   )
@@ -59,10 +60,14 @@ public class ServerObjectManager : IServerObjectManager
     cancellationToken.ThrowIfCancellationRequested();
 
     using var childrenHttpMessage = new HttpRequestMessage();
-    childrenHttpMessage.RequestUri = new Uri($"/api/getobjects/{_streamId}", UriKind.Relative);
+    childrenHttpMessage.RequestUri = new Uri($"/api/v2/projects/{_streamId}/object-stream/", UriKind.Relative);
     childrenHttpMessage.Method = HttpMethod.Post;
 
-    Dictionary<string, string> postParameters = new() { { "objects", JsonConvert.SerializeObject(objectIds) } };
+    Dictionary<string, string> postParameters = new() { { "objectIds", JsonConvert.SerializeObject(objectIds) } };
+    if (!string.IsNullOrWhiteSpace(attributeMask))
+    {
+      postParameters.Add("attributeMask", attributeMask.NotNull());
+    }
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
     childrenHttpMessage.Content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
     childrenHttpMessage.Headers.Add("Accept", "text/plain");
