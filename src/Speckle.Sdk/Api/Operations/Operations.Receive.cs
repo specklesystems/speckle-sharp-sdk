@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Api;
@@ -22,7 +23,8 @@ public partial class Operations
     string objectId,
     string? authorizationToken,
     IProgress<ProgressArgs>? onProgressAction,
-    CancellationToken cancellationToken
+    CancellationToken cancellationToken,
+    DeserializeProcessOptions? options = null
   )
   {
     using var receiveActivity = activityFactory.Start("Operations.Receive");
@@ -36,7 +38,8 @@ public partial class Operations
       streamId,
       authorizationToken,
       onProgressAction,
-      cancellationToken
+      cancellationToken,
+      options
     );
     try
     {

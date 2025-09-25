@@ -25,7 +25,8 @@ public partial class Operations
     string? authorizationToken,
     Base value,
     IProgress<ProgressArgs>? onProgressAction,
-    CancellationToken cancellationToken
+    CancellationToken cancellationToken,
+    SerializeProcessOptions? options = null
   )
   {
     using var receiveActivity = activityFactory.Start("Operations.Send");
@@ -38,7 +39,8 @@ public partial class Operations
       streamId,
       authorizationToken,
       onProgressAction,
-      cancellationToken
+      cancellationToken,
+      options
     );
     try
     {
