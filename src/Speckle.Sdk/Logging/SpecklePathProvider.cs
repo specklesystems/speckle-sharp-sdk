@@ -61,15 +61,14 @@ public static class SpecklePathProvider
     {
       return Environment.GetFolderPath(
         Environment.SpecialFolder.ApplicationData,
-        // It's not a given that the folder is already there...
+        // It's not a given that the folder is already there on all OS-es, so we'll create it
         Environment.SpecialFolderOption.Create
       );
     }
     catch (PlatformNotSupportedException)
     {
-      // on server linux, there might not be a user setup, things can run under root
-      // in that case, the appdata variable is most probably not set up
-      // we fall back to the value of the home folder
+      // We might not have write access to the disk to create the folder,
+      // so we'll fall back to the user profile
       return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     }
   }
