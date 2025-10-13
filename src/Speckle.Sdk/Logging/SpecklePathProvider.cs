@@ -43,7 +43,7 @@ public static class SpecklePathProvider
   /// <see cref="Environment.SpecialFolder.ApplicationData"/> path usually maps to
   /// <ul>
   ///   <li>win: <c>%appdata%/</c></li>
-  ///   <li>MacOS: <c>~/.config/</c></li>
+  ///   <li>MacOS: <c>~/Library/Application Support</c></li>
   ///   <li>Linux: <c>~/.config/</c></li>
   /// </ul>
   /// </remarks>
@@ -57,29 +57,18 @@ public static class SpecklePathProvider
       return pathOverride;
     }
 
-    // on desktop linux and macos we use the appdata.
-    // but we might not have write access to the disk
-    // so the catch falls back to the user profile
     try
     {
       return Environment.GetFolderPath(
         Environment.SpecialFolder.ApplicationData,
-        // if the folder doesn't exist, we get back an empty string on OSX,
-        // which in turn, breaks other stuff down the line.
-        // passing in the Create option ensures that this directory exists,
-        // which is not a given on all OS-es.
+        // It's not a given that the folder is already there on all OS-es, so we'll create it
         Environment.SpecialFolderOption.Create
       );
     }
-    catch (SystemException ex) when (ex is PlatformNotSupportedException or ArgumentException)
+    catch (PlatformNotSupportedException)
     {
-      //Adding this log just so we confidently know which Exception type to catch here.
-      // TODO: Must re-add log call when (and if) this get's made as a service
-      //SpeckleLog.Logger.Warning(ex, "Falling back to user profile path");
-
-      // on server linux, there might not be a user setup, things can run under root
-      // in that case, the appdata variable is most probably not set up
-      // we fall back to the value of the home folder
+      // We might not have write access to the disk to create the folder,
+      // so we'll fall back to the user profile
       return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     }
   }
