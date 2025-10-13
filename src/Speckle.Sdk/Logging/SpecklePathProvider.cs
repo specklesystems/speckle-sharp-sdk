@@ -9,6 +9,8 @@ public static class SpecklePathProvider
 {
   private const string APPLICATION_NAME = "Speckle";
 
+  private const string LOG_FOLDER_NAME = "Logs";
+
   private const string BLOB_FOLDER_NAME = "Blobs";
 
   private const string ACCOUNTS_FOLDER_NAME = "Accounts";
@@ -85,4 +87,7 @@ public static class SpecklePathProvider
     Directory.CreateDirectory(path);
     return path;
   }
+
+  public static string LogFolderPath(string applicationAndVersion) =>
+    EnsureFolderExists(UserSpeckleFolderPath, LOG_FOLDER_NAME, applicationAndVersion);
 }
