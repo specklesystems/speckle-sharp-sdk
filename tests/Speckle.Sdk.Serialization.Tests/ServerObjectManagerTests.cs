@@ -33,7 +33,10 @@ public class ServerObjectManagerTests : MoqTest
     var mockHttp = new MockHttpMessageHandler();
     Dictionary<string, object> postParameters = new()
     {
-      { "objectIds", new List<string> { id, id2 } },
+      {
+        "objectIds",
+        new List<string> { id, id2 }
+      },
     };
 
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
@@ -67,7 +70,7 @@ public class ServerObjectManagerTests : MoqTest
     }
 
     await VerifyJson(objects.ToString(Formatting.Indented));
-  }   
+  }
 
   [Fact]
   public async Task DownloadSingleObject()
