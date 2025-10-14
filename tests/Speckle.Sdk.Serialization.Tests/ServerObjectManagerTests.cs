@@ -67,7 +67,7 @@ public class ServerObjectManagerTests : MoqTest
     }
 
     await VerifyJson(objects.ToString(Formatting.Indented));
-  }
+  }   
 
   [Fact]
   public async Task DownloadSingleObject()
