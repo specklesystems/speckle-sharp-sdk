@@ -104,7 +104,7 @@ Target(
   dependsOn: [BUILD],
   async () =>
   {
-    await RunAsync("docker", "compose -f docker-compose.yml up --wait").ConfigureAwait(false);
+    await RunAsync("docker", "compose -f docker-compose-internal.yml up --wait").ConfigureAwait(false);
     foreach (var test in Glob.Files(".", "**/*.Tests.Integration.csproj"))
     {
       await RunAsync(
