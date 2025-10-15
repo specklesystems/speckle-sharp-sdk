@@ -63,7 +63,7 @@ public class ServerObjectManager : IServerObjectManager
     childrenHttpMessage.RequestUri = new Uri($"/api/v2/projects/{_streamId}/object-stream/", UriKind.Relative);
     childrenHttpMessage.Method = HttpMethod.Post;
 
-    Dictionary<string, string> postParameters = new() { { "objectIds", JsonConvert.SerializeObject(objectIds) } };
+    Dictionary<string, object> postParameters = new() { { "objectIds", objectIds } };
     if (!string.IsNullOrWhiteSpace(attributeMask))
     {
       postParameters.Add("attributeMask", attributeMask.NotNull());

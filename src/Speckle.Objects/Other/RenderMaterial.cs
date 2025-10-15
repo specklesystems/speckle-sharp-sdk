@@ -35,6 +35,6 @@ public class RenderMaterial : Base
   public Color emissiveColor
   {
     get => Color.FromArgb(emissive);
-    set => diffuse = value.ToArgb();
+    set => emissive = value.ToArgb();
   }
 }

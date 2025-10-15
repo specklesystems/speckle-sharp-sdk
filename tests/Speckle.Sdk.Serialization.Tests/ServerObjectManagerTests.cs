@@ -31,9 +31,12 @@ public class ServerObjectManagerTests : MoqTest
     var jObject = new JObject { { "id", id }, { "value", true } };
     var jObject2 = new JObject { { "id", id2 }, { "value", true } };
     var mockHttp = new MockHttpMessageHandler();
-    Dictionary<string, string> postParameters = new()
+    Dictionary<string, object> postParameters = new()
     {
-      { "objectIds", JsonConvert.SerializeObject(new List<string> { id, id2 }) },
+      {
+        "objectIds",
+        new List<string> { id, id2 }
+      },
     };
 
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
