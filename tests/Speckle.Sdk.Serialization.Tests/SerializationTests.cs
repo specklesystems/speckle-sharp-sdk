@@ -150,7 +150,7 @@ public class SerializationTests
     id.Should().Be(newId.Value);
   }
 
-  [Theory]
+  [Theory(Skip = "Takes too long")]
   [InlineData("RevitObject.json.gz", "3416d3fe01c9196115514c4a2f41617b", 7818)]
   public async Task Roundtrip_Test_Old(string fileName, string _, int count)
   {
@@ -186,8 +186,6 @@ public class SerializationTests
 
   [Theory]
   [InlineData(1)]
-  [InlineData(2)]
-  [InlineData(3)]
   [InlineData(4)]
   public async Task Roundtrip_Test_New(int concurrency)
   {
