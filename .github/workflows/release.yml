@@ -2,15 +2,20 @@ name: .NET Build and Publish
 
 on:
   push:
-    tags: ["3.*"]
+    tags: ["3.*.*"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: 'nuget.org'
+    permissions:
+      id-token: write  # enable GitHub OIDC token issuance for this job
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-        
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -20,7 +25,7 @@ jobs:
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          
+
       - id: set-version
         name: Set version to output
         run: |
@@ -37,18 +42,24 @@ jobs:
 
           echo $SEMVER
           echo $FILE_VERSION
-              
+
       - name: 🔫 Build and Pack
         run: ./build.sh pack
         env:
           SEMVER: ${{ steps.set-version.outputs.SEMVER }}
           FILE_VERSION: ${{ steps.set-version.outputs.FILE_VERSION }}
-          
+
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v5
         with:
           files: tests/**/coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
 
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Push to nuget.org
-        run: dotnet nuget push output/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${{secrets.CONNECTORS_NUGET_TOKEN }} --skip-duplicate
+        run: dotnet nuget push output/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${{steps.login.outputs.NUGET_API_KEY}}
