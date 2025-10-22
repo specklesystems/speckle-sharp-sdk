@@ -18,7 +18,7 @@ public class ViewProxy : Base, IProxyCollection
   /// <summary>
   /// The camera used for this view
   /// </summary>
-  public required Camera camera { get; set; }
+  public required Camera value { get; set; }
 
   /// <summary>
   /// The name of this view
