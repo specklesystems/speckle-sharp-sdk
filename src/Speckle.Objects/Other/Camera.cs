@@ -4,12 +4,17 @@ using Speckle.Sdk.Models;
 namespace Speckle.Objects.Other;
 
 /// <summary>
-/// Camera class to represent a camera for a 3D view.
+/// Camera class to represent a perspective camera for a 3D view.
 /// </summary>
 /// <remarks>Assumes a Z-up, right-handed convention for orientation vectors</remarks>
 [SpeckleType("Objects.Other.Camera")]
 public class Camera : Base
 {
+  /// <summary>
+  /// The name of the view that is created by this camera
+  /// </summary>
+  public required string name { get; set; }
+
   /// <summary>
   /// The location of the camera
   /// </summary>
@@ -24,9 +29,4 @@ public class Camera : Base
   /// The unit forward vector of the camera
   /// </summary>
   public required Vector forward { get; set; }
-
-  /// <summary>
-  /// Indicates whether or not the camera is using orthographic projection. By default, the projection should be perspective.
-  /// </summary>
-  public bool isOrthographic { get; set; }
 }
