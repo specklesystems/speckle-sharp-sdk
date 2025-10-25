@@ -8,6 +8,11 @@ namespace Speckle.Sdk.Models.Collections;
 public class RootCollection : Collection
 {
   /// <summary>
+  /// Parameterless constructor for deserialization.
+  /// </summary>
+  public RootCollection() { }
+  
+  /// <summary>
   /// Constructor for a root collection.
   /// </summary>
   /// <param name="name">The human-readable name of this root collection</param>
