@@ -19,7 +19,7 @@ public class RootCollection : Collection
   /// <remarks>
   /// These are intended for model-level metadata such as total area, project information, or analysis results.
   /// </remarks>
-  public Dictionary<string, object?>? properties
+  public Dictionary<string, object?>? rootProperties
   {
     get => this["properties"] as Dictionary<string, object?>;
     set => this["properties"] = value;
