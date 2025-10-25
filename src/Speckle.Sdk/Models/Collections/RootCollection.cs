@@ -11,12 +11,13 @@ public class RootCollection : Collection
   /// Parameterless constructor for deserialization.
   /// </summary>
   public RootCollection() { }
-  
+
   /// <summary>
   /// Constructor for a root collection.
   /// </summary>
   /// <param name="name">The human-readable name of this root collection</param>
-  public RootCollection(string name) : base(name) { }
+  public RootCollection(string name)
+    : base(name) { }
 
   /// <summary>
   /// Model-wide properties that apply to the entire model.
