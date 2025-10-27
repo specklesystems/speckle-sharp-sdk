@@ -1,4 +1,4 @@
-name: .NET CI Build
+name: Integration Test
 
 on:
   workflow_call:

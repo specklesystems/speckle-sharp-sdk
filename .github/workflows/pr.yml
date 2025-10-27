@@ -1,4 +1,4 @@
-name: .NET CI Build
+name: PR Build and Test
 
 on:
   pull_request:
@@ -21,6 +21,9 @@ jobs:
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+
+      - name: 📦 Tool Restore
+        run: dotnet tool restore
 
       - name: 📄 Format
         run: dotnet csharpier check .
