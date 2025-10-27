@@ -14,6 +14,7 @@ jobs:
   integration-test:
     env:
       Solution: "Speckle.Sdk.sln"
+      DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,7 +43,7 @@ jobs:
 
       - name: 🏗️ Build
         run: dotnet build ${{ env.Solution }} --configuration Release --no-restore -warnaserror
-        
+
       - name: 🔨 Integration Tests
         run: dotnet test ${{ env.Solution }} --filter "Category=Integration" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
 
