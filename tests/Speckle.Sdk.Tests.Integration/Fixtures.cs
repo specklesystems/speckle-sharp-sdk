@@ -15,6 +15,8 @@ using Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 using Speckle.Sdk.Transports;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
+[assembly: AssemblyTrait("category", "Integration")]
+
 namespace Speckle.Sdk.Tests.Integration;
 
 public static class Fixtures

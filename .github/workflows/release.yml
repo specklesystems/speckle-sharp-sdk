@@ -8,9 +8,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment:
-      name: 'nuget.org'
+      name: "nuget.org"
     permissions:
-      id-token: write  # enable GitHub OIDC token issuance for this job
+      id-token: write # enable GitHub OIDC token issuance for this job
 
     steps:
       - name: Checkout
