@@ -11,7 +11,7 @@ on:
         type: boolean
 
 jobs:
-  build:
+  integration-test:
     env:
       Solution: "Speckle.Sdk.sln"
     runs-on: ubuntu-latest
