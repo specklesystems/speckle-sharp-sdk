@@ -9,9 +9,6 @@ on:
       use-github-container-registry:
         default: false
         type: boolean
-    secrets:
-      username:
-      password:
 
 jobs:
   build:
@@ -27,14 +24,15 @@ jobs:
         with:
           dotnet-version: 8.x.x
           cache: true
-          cache-dependency-path: '**/packages.lock.json'
-          
+          cache-dependency-path: "**/packages.lock.json"
+
       - name: 🔐 Login to Github Container Registry
+        if: ${{ inputs.use-github-container-registry }}
         uses: docker/login-action@v3
         with:
           registry: "ghcr.io"
-          username: ${{ secrets.username }}
-          password: ${{ secrets.token }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
 
       - name: ⚙️ Spin up Server
         run: docker compose -f ${{ inputs.docker-compose-file }} up --wait

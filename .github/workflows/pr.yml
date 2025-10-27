@@ -47,9 +47,6 @@ jobs:
     with:
       docker-compose-file: "docker-compose-internal.yml"
       use-github-container-registry: true
-    secrets:
-      username: ${{ github.actor }}
-      password: ${{ github.token }}
 
   integration-test-public:
     uses: "./.github/workflows/integration-test.yml"
