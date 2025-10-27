@@ -11,6 +11,7 @@ public class GraphQLErrorHandlerTests
   {
     yield return [typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "FORBIDDEN" } }];
     yield return [typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "UNAUTHENTICATED" } }];
+    yield return [typeof(SpeckleGraphQLForbiddenException), new Map { { "code", "UNAUTHORIZED_ACCESS_ERROR" } }];
     yield return [typeof(SpeckleGraphQLInternalErrorException), new Map { { "code", "INTERNAL_SERVER_ERROR" } }];
     yield return [typeof(SpeckleGraphQLStreamNotFoundException), new Map { { "code", "STREAM_NOT_FOUND" } }];
     yield return [typeof(SpeckleGraphQLBadInputException), new Map { { "code", "BAD_USER_INPUT" } }];
