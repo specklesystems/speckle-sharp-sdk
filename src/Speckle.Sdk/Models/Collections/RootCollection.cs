@@ -7,15 +7,8 @@ namespace Speckle.Sdk.Models.Collections;
 [SpeckleType("Speckle.Core.Models.Collections.RootCollection")]
 public class RootCollection : Collection
 {
-  /// <summary>
-  /// Parameterless constructor for deserialization.
-  /// </summary>
   public RootCollection() { }
 
-  /// <summary>
-  /// Constructor for a root collection.
-  /// </summary>
-  /// <param name="name">The human-readable name of this root collection</param>
   public RootCollection(string name)
     : base(name) { }
 
@@ -25,5 +18,5 @@ public class RootCollection : Collection
   /// <remarks>
   /// These are intended for model-level metadata such as total area, project information, or analysis results.
   /// </remarks>
-  public Dictionary<string, object?>? rootProperties { get; set; }
+  public Dictionary<string, object?>? properties { get; set; }
 }
