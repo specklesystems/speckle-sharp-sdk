@@ -38,12 +38,7 @@ jobs:
         run: docker compose -f ${{ inputs.docker-compose-file }} up --wait
 
       - name: 🔨 Integration Tests
-        run: dotnet test ${{ env.Solution }} \
-          --filter TraitName=Integration \
-          --configuration Release \
-          --verbosity=normal \
-          /p:AltCover=true \
-          /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
+        run: dotnet test ${{ env.Solution }} --filter TraitName=Integration --configuration Release --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v5
