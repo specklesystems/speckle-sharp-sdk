@@ -13,7 +13,7 @@ on:
 jobs:
   build:
     env:
-      Solution: "Speckle.Sdk.slnx"
+      Solution: "Speckle.Sdk.sln"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
