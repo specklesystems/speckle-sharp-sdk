@@ -1,4 +1,4 @@
-name: PR Build and Run Unit Test
+name: PR Test
 
 on:
   pull_request:

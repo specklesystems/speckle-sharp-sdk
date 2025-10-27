@@ -37,8 +37,14 @@ jobs:
       - name: ⚙️ Spin up Server
         run: docker compose -f ${{ inputs.docker-compose-file }} up --wait
 
+      - name: 📦 Restore
+        run: dotnet restore ${{ env.Solution }} --locked-mode
+
+      - name: 🏗️ Build
+        run: dotnet build ${{ env.Solution }} --configuration Release --no-restore -warnaserror
+        
       - name: 🔨 Integration Tests
-        run: dotnet test ${{ env.Solution }} --filter "Category=Integration" --configuration Release --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
+        run: dotnet test ${{ env.Solution }} --filter "Category=Integration" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v5
