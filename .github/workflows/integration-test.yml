@@ -39,7 +39,7 @@ jobs:
 
       - name: 🔨 Integration Tests
         run: dotnet test ${{ env.Solution }} \
-          --filter TraitName="Category=Integration" \
+          --filter "Category=Integration" \
           --configuration Release \
           --verbosity=normal \
           /p:AltCover=true \
