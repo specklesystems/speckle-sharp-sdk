@@ -12,7 +12,7 @@ services:
       POSTGRES_USER: speckle
       POSTGRES_PASSWORD: speckle
     volumes:
-      - postgres-data:/var/lib/postgresql/data/
+      - ./.volumes/postgres-data:/var/lib/postgresql/data/
     healthcheck:
       # the -U user has to match the POSTGRES_USER value
       test: ["CMD-SHELL", "pg_isready -U speckle"]
@@ -24,7 +24,7 @@ services:
     image: "valkey/valkey:8.1-alpine@sha256:0d27f0bca0249f61d060029a6aaf2e16b2c417d68d02a508e1dfb763fa2948b4"
     restart: always
     volumes:
-      - redis-data:/data
+      - ./.volumes/redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 5s
@@ -36,7 +36,7 @@ services:
     command: server /data --console-address ":9001"
     restart: always
     volumes:
-      - minio-data:/data
+      - ./.volumes/minio-data:/data
     ports:
       - '127.0.0.1:9000:9000'
       - '127.0.0.1:9001:9001'
@@ -55,7 +55,7 @@ services:
     image: speckle/speckle-server:latest
     restart: always
     healthcheck:
-      test: 
+      test:
         - CMD
         - /nodejs/bin/node
         - -e
@@ -81,9 +81,9 @@ services:
 
       # TODO: Change thvolumes:
       REDIS_URL: "redis://redis"
-      
+
       S3_ENDPOINT: "http://minio:9000"
-      S3_PUBLIC_ENDPOINT: 'http://127.0.0.1:9000'
+      S3_PUBLIC_ENDPOINT: "http://127.0.0.1:9000"
       S3_ACCESS_KEY: "minioadmin"
       S3_SECRET_KEY: "minioadmin"
       S3_BUCKET: "speckle-server"
@@ -103,12 +103,11 @@ services:
       POSTGRES_PASSWORD: "speckle"
       POSTGRES_DB: "speckle"
       ENABLE_MP: "false"
-      
+
       LOG_PRETTY: "true"
-      
+
       FF_NEXT_GEN_FILE_IMPORTER_ENABLED: "true"
       FF_LARGE_FILE_IMPORTS_ENABLED: "true"
-      
 
 networks:
   default:

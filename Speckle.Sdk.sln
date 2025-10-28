@@ -27,6 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "config", "config", "{DA2AED
 		CodeMetricsConfig.txt = CodeMetricsConfig.txt
 		Directory.Build.Targets = Directory.Build.Targets
 		.config\dotnet-tools.json = .config\dotnet-tools.json
+		docker-compose-internal.yml = docker-compose-internal.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{58D37DA9-F948-48CA-9A73-F5BBBD533DBF}"
@@ -41,7 +42,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\pr.yml = .github\workflows\pr.yml
 		.github\workflows\release.yml = .github\workflows\release.yml
-		.github\workflows\integration-test.yml = .github\workflows\integration-test.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speckle.Sdk.Tests.Performance", "tests\Speckle.Sdk.Tests.Performance\Speckle.Sdk.Tests.Performance.csproj", "{870E3396-E6F7-43AE-B120-E651FA4F46BD}"
