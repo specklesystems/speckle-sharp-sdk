@@ -1,5 +1,5 @@
 <Project>
-  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true' or '$(TestProjectAnalyserRules)' == 'true' ">
     <NoWarn>
       <!-- Things we need to test -->
       CS0618;CA1034;CA2201;CA1051;CA1040;CA1724;

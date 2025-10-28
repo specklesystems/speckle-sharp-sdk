@@ -9,7 +9,7 @@ using Speckle.Sdk.Testing;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
-public class AccountManagerTests : MoqTest
+public sealed class AccountManagerTests : MoqTest
 {
   private class TestAccountFactory : IAccountFactory
   {
@@ -63,6 +63,12 @@ public class AccountManagerTests : MoqTest
       _mockAccountFactory,
       _mockSqLiteJsonCacheManagerFactory.Object
     );
+  }
+
+  protected override void Dispose(bool isDisposing)
+  {
+    base.Dispose(isDisposing);
+    _accountManager.Dispose();
   }
 
   [Fact]

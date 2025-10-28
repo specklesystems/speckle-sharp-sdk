@@ -14,7 +14,6 @@ jobs:
   integration-test:
     env:
       Solution: "Speckle.Sdk.sln"
-      DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION: true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

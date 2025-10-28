@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <IsTestProject>true</IsTestProject>
+    <TestProjectAnalyserRules>true</TestProjectAnalyserRules>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Moq" />

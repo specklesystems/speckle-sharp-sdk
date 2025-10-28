@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <IsTestProject>true</IsTestProject>
+    <TestProjectAnalyserRules>true</TestProjectAnalyserRules>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Speckle.Sdk\Speckle.Sdk.csproj" />
