@@ -36,7 +36,9 @@ public sealed class AccountManagerTests : MoqTest
   private readonly Mock<ISqLiteJsonCacheManager> _mockAccountStorage;
   private readonly Mock<ISqLiteJsonCacheManager> _mockAccountAddLockStorage;
 
+#pragma warning disable CA2213
   private readonly AccountManager _accountManager;
+#pragma warning restore CA2213
 
   public AccountManagerTests()
   {
@@ -63,12 +65,6 @@ public sealed class AccountManagerTests : MoqTest
       _mockAccountFactory,
       _mockSqLiteJsonCacheManagerFactory.Object
     );
-  }
-
-  protected override void Dispose(bool isDisposing)
-  {
-    base.Dispose(isDisposing);
-    _accountManager.Dispose();
   }
 
   [Fact]
