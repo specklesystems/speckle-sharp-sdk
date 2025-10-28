@@ -112,16 +112,15 @@ public class ExceptionTests
       new DummySqLiteReceiveManager(new Dictionary<string, string>()),
       new ExceptionServerObjectManager(),
       null,
-      null,
       new NullLogger<ObjectLoader>(),
-      default
+      CancellationToken.None
     );
     await using var process = new DeserializeProcess(
       o,
       null,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
-      default,
+      CancellationToken.None,
       new(SkipCache: true, MaxParallelism: 1, SkipServer: true)
     );
 
@@ -145,7 +144,7 @@ public class ExceptionTests
       null,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
-      default,
+      CancellationToken.None,
       new(true, MaxParallelism: 1)
     );
 
@@ -170,7 +169,7 @@ public class ExceptionTests
       null,
       new BaseDeserializer(new ObjectDeserializerFactory()),
       new NullLoggerFactory(),
-      default,
+      CancellationToken.None,
       new(MaxParallelism: 1)
     );
 
@@ -195,9 +194,7 @@ public class ExceptionTests
   [SpeckleType("Objects.Geometry.BadBase")]
   public class BadBase : Base
   {
-#pragma warning disable CA1065
     public string BadProp => throw new NotImplementedException();
-#pragma warning restore CA1065
   }
 
   [Fact]
