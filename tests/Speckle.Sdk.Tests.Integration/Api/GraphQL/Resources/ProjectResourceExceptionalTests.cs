@@ -93,7 +93,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
         new(_testProject.id, "My new name", ProjectVisibility.Public, "NonExistentWorkspace")
       )
     );
-    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLException>();
+    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Theory]

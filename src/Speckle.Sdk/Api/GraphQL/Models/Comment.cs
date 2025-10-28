@@ -14,7 +14,7 @@ public sealed class Comment
   public string rawText { get; init; }
   public ResourceCollection<Comment> replies { get; init; }
   public CommentReplyAuthorCollection replyAuthors { get; init; }
-  public List<ResourceIdentifier> resources { get; init; }
+  public List<ResourceIdentifier> resources { get; init; } //todo: add resourceIds/baseResourceIds
   public string? screenshot { get; init; }
   public DateTime updatedAt { get; init; }
   public DateTime? viewedAt { get; init; }

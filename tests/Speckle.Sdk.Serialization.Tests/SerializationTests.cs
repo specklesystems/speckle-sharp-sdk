@@ -202,9 +202,8 @@ public class SerializationTests
         new DummySqLiteReceiveManager(closures),
         new DummyReceiveServerObjectManager(closures),
         null,
-        null,
         new NullLogger<ObjectLoader>(),
-        default
+        CancellationToken.None
       )
     )
     {
