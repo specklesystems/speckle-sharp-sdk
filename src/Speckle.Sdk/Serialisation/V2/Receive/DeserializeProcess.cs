@@ -10,7 +10,7 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 public record DeserializeProcessOptions(
-  bool SkipCache = false,
+  bool SkipCache = false, //TODO: This appears to be bugged when set to `true`, `LoadId` depends on sqlite
   bool ThrowOnMissingReferences = true,
   bool SkipInvalidConverts = false,
   int? MaxParallelism = null,

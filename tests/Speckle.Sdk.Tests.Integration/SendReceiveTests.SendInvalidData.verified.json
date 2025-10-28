@@ -1,0 +1,18 @@
+﻿{
+  "Data": {},
+  "InnerException": {
+    "$type": "SpeckleSerializeException",
+    "Data": {},
+    "InnerException": {
+      "$type": "ArgumentException",
+      "Data": {},
+      "Message": "Unsupported value in serialization: System.Text.StringBuilder",
+      "ParamName": "obj",
+      "Type": "ArgumentException"
+    },
+    "Message": "Failed to extract (pre-serialize) properties from the Speckle.Sdk.Models.Base",
+    "Type": "SpeckleSerializeException"
+  },
+  "Message": "Error while sending: Failed to extract (pre-serialize) properties from the Speckle.Sdk.Models.Base",
+  "Type": "SpeckleException"
+}
