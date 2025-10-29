@@ -25,7 +25,9 @@ public sealed class AutomationContextTest : IAsyncLifetime
 
   public async Task InitializeAsync()
   {
-    var serviceProvider = TestServiceSetup.GetServiceProvider();
+    var serviceCollection = new ServiceCollection();
+    serviceCollection.AddAutomateSdk();
+    var serviceProvider = serviceCollection.BuildServiceProvider();
     _account = await Fixtures.SeedUser().ConfigureAwait(false);
     _client = serviceProvider.GetRequiredService<IClientFactory>().Create(_account);
     _runner = serviceProvider.GetRequiredService<IAutomationRunner>();
@@ -42,7 +44,7 @@ public sealed class AutomationContextTest : IAsyncLifetime
   private async Task<AutomationRunData> AutomationRunData(Base testObject)
   {
     Project project = await _client.Project.Create(new("Automate function e2e test", null, ProjectVisibility.Public));
-    const string BRANCH_NAME = "main";
+    const string BRANCH_NAME = "Trigger";
 
     var model = await _client.Model.Create(new(BRANCH_NAME, null, project.id));
     string modelId = model.id;
