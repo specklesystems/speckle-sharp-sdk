@@ -1,3 +1,5 @@
+using Speckle.Sdk.Models.Proxies;
+
 namespace Speckle.Sdk.Models.Collections;
 
 /// <summary>
@@ -5,7 +7,7 @@ namespace Speckle.Sdk.Models.Collections;
 /// Extends Collection to include model-wide properties that apply to the entire model.
 /// </summary>
 [SpeckleType("Speckle.Core.Models.Collections.RootCollection")]
-public class RootCollection : Collection
+public class RootCollection : Collection, IProperties
 {
   public RootCollection() { }
 
@@ -15,8 +17,5 @@ public class RootCollection : Collection
   /// <summary>
   /// Model-wide properties that apply to the entire model.
   /// </summary>
-  /// <remarks>
-  /// These are intended for model-level metadata such as total area, project information, or analysis results.
-  /// </remarks>
-  public Dictionary<string, object?>? properties { get; set; }
+  public Dictionary<string, object?> properties { get; set; } = new();
 }
