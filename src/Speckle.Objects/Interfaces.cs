@@ -2,6 +2,7 @@ using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.Proxies;
 
 namespace Speckle.Objects;
 
@@ -110,15 +111,7 @@ public interface IDisplayValue<out T> : ISpeckleObject
 
 #region Data objects
 
-/// <summary>
-/// Specifies properties on objects to be used for data-based workflows
-/// </summary>
-public interface IProperties : ISpeckleObject
-{
-  Dictionary<string, object?> properties { get; }
-}
-
-public interface IDataObject : IProperties, IDisplayValue<IReadOnlyList<Base>>
+public interface IDataObject : IProperties, IDisplayValue<IReadOnlyList<Base>>, ISpeckleObject
 {
   /// <summary>
   /// The name of the object, primarily used to decorate the object for consumption in frontend and other apps
