@@ -9,7 +9,7 @@ using Speckle.Sdk.Testing;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
-public class AccountManagerTests : MoqTest
+public sealed class AccountManagerTests : MoqTest
 {
   private class TestAccountFactory : IAccountFactory
   {
@@ -36,7 +36,9 @@ public class AccountManagerTests : MoqTest
   private readonly Mock<ISqLiteJsonCacheManager> _mockAccountStorage;
   private readonly Mock<ISqLiteJsonCacheManager> _mockAccountAddLockStorage;
 
+#pragma warning disable CA2213
   private readonly AccountManager _accountManager;
+#pragma warning restore CA2213
 
   public AccountManagerTests()
   {

@@ -15,8 +15,8 @@ public static class SpecklePathProvider
 
   private const string ACCOUNTS_FOLDER_NAME = "Accounts";
 
-  private static string UserDataPathEnvVar => "SPECKLE_USERDATA_PATH";
-  private static string? Path => Environment.GetEnvironmentVariable(UserDataPathEnvVar);
+  public const string USER_DATA_PATH_ENV_VAR = "SPECKLE_USERDATA_PATH";
+  private static string? Path => Environment.GetEnvironmentVariable(USER_DATA_PATH_ENV_VAR);
 
   /// <summary>
   /// Get the installation path.

@@ -8,9 +8,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment:
-      name: 'nuget.org'
+      name: "nuget.org"
     permissions:
-      id-token: write  # enable GitHub OIDC token issuance for this job
+      id-token: write # enable GitHub OIDC token issuance for this job
 
     steps:
       - name: Checkout
@@ -20,11 +20,8 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.x.x
-
-      - uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
 
       - id: set-version
         name: Set version to output
