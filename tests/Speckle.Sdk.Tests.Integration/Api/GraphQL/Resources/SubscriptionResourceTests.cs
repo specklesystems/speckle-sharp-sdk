@@ -10,7 +10,12 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
 public class SubscriptionResourceTests : IAsyncLifetime
 {
-  private const int WAIT_PERIOD = 300;
+#if DEBUG
+  private const int WAIT_PERIOD = 3000; // WSL is slow AF, so for local runs, we're being extra generous
+#else
+  private const int WAIT_PERIOD = 400; // For CI runs, a much smaller wait time is acceptable
+#endif
+  private const int TIMEOUT = WAIT_PERIOD + WAIT_PERIOD + 400;
   private IClient _testUser;
   private Project _testProject;
   private Model _testModel;
@@ -32,105 +37,101 @@ public class SubscriptionResourceTests : IAsyncLifetime
     _testVersion = await Fixtures.CreateVersion(_testUser, _testProject.id, _testModel.id);
   }
 
-  [Fact]
+  [Fact(Timeout = TIMEOUT)]
   public async Task UserProjectsUpdated_SubscriptionIsCalled()
   {
-    UserProjectsUpdatedMessage? subscriptionMessage = null;
-
+    TaskCompletionSource<UserProjectsUpdatedMessage> tcs = new();
     using var sub = Sut.CreateUserProjectsUpdatedSubscription();
-    sub.Listeners += (_, message) => subscriptionMessage = message;
+    sub.Listeners += (_, message) => tcs.SetResult(message);
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
     var created = await _testUser.Project.Create(new(null, null, null));
 
-    await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
+    var subscriptionMessage = await tcs.Task;
 
     subscriptionMessage.Should().NotBeNull();
-    subscriptionMessage!.id.Should().Be(created.id);
+    subscriptionMessage.id.Should().Be(created.id);
     subscriptionMessage.type.Should().Be(UserProjectsUpdatedMessageType.ADDED);
     subscriptionMessage.project.Should().NotBeNull();
   }
 
-  [Fact]
+  [Fact(Timeout = TIMEOUT)]
   public async Task ProjectModelsUpdated_SubscriptionIsCalled()
   {
-    ProjectModelsUpdatedMessage? subscriptionMessage = null;
-
+    TaskCompletionSource<ProjectModelsUpdatedMessage> tcs = new();
     using var sub = Sut.CreateProjectModelsUpdatedSubscription(_testProject.id);
-    sub.Listeners += (_, message) => subscriptionMessage = message;
+    sub.Listeners += (_, message) => tcs.SetResult(message);
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
     CreateModelInput input = new("my model", "myDescription", _testProject.id);
     var created = await _testUser.Model.Create(input);
 
-    await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
+    var subscriptionMessage = await tcs.Task;
 
     subscriptionMessage.Should().NotBeNull();
-    subscriptionMessage!.id.Should().Be(created.id);
+    subscriptionMessage.id.Should().Be(created.id);
     subscriptionMessage.type.Should().Be(ProjectModelsUpdatedMessageType.CREATED);
     subscriptionMessage.model.Should().NotBeNull();
   }
 
-  [Fact]
+  [Fact(Timeout = TIMEOUT)]
   public async Task ProjectUpdated_SubscriptionIsCalled()
   {
-    ProjectUpdatedMessage? subscriptionMessage = null;
-
+    TaskCompletionSource<ProjectUpdatedMessage> tcs = new();
     using var sub = Sut.CreateProjectUpdatedSubscription(_testProject.id);
-    sub.Listeners += (_, message) => subscriptionMessage = message;
+    sub.Listeners += (_, message) => tcs.SetResult(message);
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
     var input = new ProjectUpdateInput(_testProject.id, "This is my new name");
     var created = await _testUser.Project.Update(input);
 
-    await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
+    var subscriptionMessage = await tcs.Task;
 
     subscriptionMessage.Should().NotBeNull();
-    subscriptionMessage!.id.Should().Be(created.id);
+    subscriptionMessage.id.Should().Be(created.id);
     subscriptionMessage.type.Should().Be(ProjectUpdatedMessageType.UPDATED);
     subscriptionMessage.project.Should().NotBeNull();
   }
 
-  [Fact]
+  [Fact(Timeout = TIMEOUT)]
   public async Task ProjectVersionsUpdated_SubscriptionIsCalled()
   {
-    ProjectVersionsUpdatedMessage? subscriptionMessage = null;
-
+    TaskCompletionSource<ProjectVersionsUpdatedMessage> tcs = new();
     using var sub = Sut.CreateProjectVersionsUpdatedSubscription(_testProject.id);
-    sub.Listeners += (_, message) => subscriptionMessage = message;
+    sub.Listeners += (_, message) => tcs.SetResult(message);
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
     var created = await Fixtures.CreateVersion(_testUser, _testProject.id, _testModel.id);
 
-    await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
+    var subscriptionMessage = await tcs.Task;
 
     subscriptionMessage.Should().NotBeNull();
-    subscriptionMessage!.id.Should().Be(created.id);
+    subscriptionMessage.id.Should().Be(created.id);
     subscriptionMessage.type.Should().Be(ProjectVersionsUpdatedMessageType.CREATED);
     subscriptionMessage.version.Should().NotBeNull();
   }
 
-  [Fact(Skip = CommentResourceTests.SERVER_SKIP_MESSAGE)]
+  [Fact(Skip = CommentResourceTests.SERVER_SKIP_MESSAGE, Timeout = TIMEOUT)]
   public async Task ProjectCommentsUpdated_SubscriptionIsCalled()
   {
     string resourceIdString = $"{_testProject.id},{_testModel.id},{_testVersion}";
-    ProjectCommentsUpdatedMessage? subscriptionMessage = null;
 
+    TaskCompletionSource<ProjectCommentsUpdatedMessage> tcs = new();
     using var sub = Sut.CreateProjectCommentsUpdatedSubscription(new(_testProject.id, resourceIdString));
-    sub.Listeners += (_, message) => subscriptionMessage = message;
+    sub.Listeners += (_, message) => tcs.SetResult(message);
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
     var created = await Fixtures.CreateComment(_testUser, _testProject.id, _testModel.id, _testVersion.id);
 
-    await Task.Delay(WAIT_PERIOD); // Give time for subscription to be triggered
+    var subscriptionMessage = await tcs.Task;
 
     subscriptionMessage.Should().NotBeNull();
-    subscriptionMessage!.id.Should().Be(created.id);
+    subscriptionMessage.id.Should().Be(created.id);
     subscriptionMessage.type.Should().Be(ProjectCommentsUpdatedMessageType.CREATED);
     subscriptionMessage.comment.Should().NotBeNull();
   }
