@@ -28,9 +28,8 @@ internal static class GraphQLErrorHandler
       var ex = code switch
       {
         "GRAPHQL_PARSE_FAILED" or "GRAPHQL_VALIDATION_FAILED" => new SpeckleGraphQLInvalidQueryException(message),
-        "FORBIDDEN" or "UNAUTHENTICATED" or "UNAUTHORIZED_ACCESS_ERROR" => new SpeckleGraphQLForbiddenException(
-          message
-        ),
+        "FORBIDDEN" or "UNAUTHENTICATED" or "UNAUTHORIZED" or "UNAUTHORIZED_ACCESS_ERROR" =>
+          new SpeckleGraphQLForbiddenException(message),
         "STREAM_NOT_FOUND" => new SpeckleGraphQLStreamNotFoundException(message),
         "BAD_USER_INPUT" => new SpeckleGraphQLBadInputException(message),
         "INTERNAL_SERVER_ERROR" => new SpeckleGraphQLInternalErrorException(message),

@@ -8,7 +8,19 @@ public abstract class MoqTest : IDisposable
 {
   protected MoqTest() => Repository = new(MockBehavior.Strict);
 
-  public void Dispose() => Repository.VerifyAll();
+  protected virtual void Dispose(bool isDisposing)
+  {
+    if (isDisposing)
+    {
+      Repository.VerifyAll();
+    }
+  }
+
+  public void Dispose()
+  {
+    Dispose(true);
+    GC.SuppressFinalize(this);
+  }
 
   protected MockRepository Repository { get; private set; } = new(MockBehavior.Strict);
 
