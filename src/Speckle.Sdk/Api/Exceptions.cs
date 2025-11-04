@@ -23,10 +23,15 @@ public class SpeckleGraphQLException : SpeckleException
 }
 
 /// <summary>
-/// Represents a "FORBIDDEN" or "UNAUTHORIZED" GraphQL error as an exception.
+/// Represents a "FORBIDDEN" or "UNAUTHENTICATED" or "UNAUTHORIZED" or "UNAUTHORIZED_ACCESS_ERROR" GraphQL error as an exception.
 /// https://www.apollographql.com/docs/apollo-server/v2/data/errors/#unauthenticated
 /// https://www.apollographql.com/docs/apollo-server/v2/data/errors/#forbidden
+/// https://github.com/specklesystems/speckle-server/blob/v2.23.18/packages/server/modules/shared/errors/index.ts#L34
 /// </summary>
+/// <remarks>
+/// Server is a bit inconsistent with these error codes, hence there's 4 different codes that mean "auth no work"
+/// Apollo no longer considers "FORBIDDEN" or "UNAUTHENTICATED" as built in error codes, so everything is custom anyway.
+/// </remarks>
 public sealed class SpeckleGraphQLForbiddenException : SpeckleGraphQLException
 {
   public SpeckleGraphQLForbiddenException() { }

@@ -65,10 +65,12 @@ Docs are a bit patchy [https://docs.speckle.systems/developers/looking-for-devel
 ### Tests
 
 There are several test projects. It is a requirement that all tests pass for PRs to be merged.
+
 The Integration test projects require a local server to be running.
+You must have docker installed. Then you can run `docker compose up` from the root of the repo to start the required containers.
 
-You must have docker installed. Then you can run `docker compose up --wait` from the root of the repo to start the required containers.
-
+In CI, they will be run against both the public and private versions of the server.
+It is important that we remain compatible with both server versions.
 ## Contributing
 
 Before embarking on submitting a patch, please make sure you read:

@@ -16,6 +16,7 @@ public partial class Operations
   /// <exception cref="ArgumentException">No transports were specified</exception>
   /// <exception cref="ArgumentNullException">The <paramref name="objectId"/> was <see langword="null"/></exception>
   /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
+  /// <exception cref="HttpRequestException">HTTP layer errors</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
   public async Task<Base> Receive2(
     Uri url,

@@ -16,13 +16,10 @@ public partial interface IObjectLoader : IDisposable;
 public sealed class ObjectLoader(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
-  string? attributeMask,
   IProgress<ProgressArgs>? progress,
   ILogger<ObjectLoader> logger,
   CancellationToken cancellationToken
-#pragma warning disable CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.
 ) : ChannelLoader<BaseItem>(cancellationToken), IObjectLoader
-#pragma warning restore CS9107 // Parameter is captured into the state of the enclosing type and its value is also passed to the base constructor. The value might be captured by the base class as well.
 {
   private int? _allChildrenCount;
   private long _checkCache;
@@ -30,6 +27,7 @@ public sealed class ObjectLoader(
   private long _downloaded;
   private long _totalToDownload;
   private DeserializeProcessOptions _options = new();
+  private readonly CancellationToken _cancellationToken = cancellationToken;
 
   [AutoInterfaceIgnore]
   public void Dispose() => sqLiteJsonCacheManager.Dispose();
@@ -47,7 +45,7 @@ public sealed class ObjectLoader(
         {
           //assume everything exists as the root is there.
           var allChildren = ClosureParser
-            .GetClosuresSorted(rootJson, cancellationToken)
+            .GetClosuresSorted(rootJson, _cancellationToken)
             .Select(x => new Id(x.Item1))
             .ToList();
           //this probably yields away from the Main thread to let host apps update progress
@@ -60,11 +58,11 @@ public sealed class ObjectLoader(
       if (!options.SkipServer)
       {
         rootJson = await serverObjectManager
-          .DownloadSingleObject(rootId, progress, cancellationToken)
+          .DownloadSingleObject(rootId, progress, _cancellationToken)
           .NotNull()
           .ConfigureAwait(false);
         IReadOnlyCollection<Id> allChildrenIds = ClosureParser
-          .GetClosures(rootJson, cancellationToken)
+          .GetClosures(rootJson, _cancellationToken)
           .OrderByDescending(x => x.Item2)
           .Select(x => new Id(x.Item1))
           .Where(x => !x.Value.StartsWith("blob", StringComparison.Ordinal))
@@ -112,13 +110,13 @@ public sealed class ObjectLoader(
     await foreach (
       var (id, json) in serverObjectManager.DownloadObjects(
         ids.Select(x => x.NotNull()).ToList(),
-        attributeMask,
+        null, //TODO: Implement attribute masking in a safe way that will not poison SQLite DB.
         progress,
-        cancellationToken
+        _cancellationToken
       )
     )
     {
-      cancellationToken.ThrowIfCancellationRequested();
+      _cancellationToken.ThrowIfCancellationRequested();
       Interlocked.Increment(ref _downloaded);
       progress?.Report(new(ProgressEvent.DownloadObjects, _downloaded, _totalToDownload));
       toCache.Add(new(new(id), new(json), true, null));
@@ -140,7 +138,7 @@ public sealed class ObjectLoader(
     {
       if (!_options.SkipCache)
       {
-        cancellationToken.ThrowIfCancellationRequested();
+        _cancellationToken.ThrowIfCancellationRequested();
         sqLiteJsonCacheManager.SaveObjects(batch.Select(x => (x.Id.Value, x.Json.Value)));
         Interlocked.Exchange(ref _cached, _cached + batch.Count);
         progress?.Report(new(ProgressEvent.CachedToLocal, _cached, _allChildrenCount));
@@ -170,7 +168,7 @@ public sealed class ObjectLoader(
   private void ThrowIfFailed()
   {
     //always check for cancellation first
-    cancellationToken.ThrowIfCancellationRequested();
+    _cancellationToken.ThrowIfCancellationRequested();
     if (Exception is not null)
     {
       throw new SpeckleException($"Error while loading: {Exception.Message}", Exception);
