@@ -1,46 +1,52 @@
-name: .NET CI Build
+name: PR Test
 
 on:
   pull_request:
 
 jobs:
   build:
+    env:
+      Solution: "Speckle.Sdk.sln"
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v5
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: 8.x.x
-        
-    - uses: actions/cache@v4
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-        
-    - id: set-version
-      name: Set version to output
-      run: |
-        SEMVER="3.0.99.${{ github.run_number }}"
-        FILE_VERSION=$(echo "$SEMVER" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
-        FILE_VERSION="$FILE_VERSION.${{ github.run_number }}"
-        
-        echo "semver=$SEMVER" >> "$GITHUB_OUTPUT"
-        echo "fileVersion=$FILE_VERSION" >> "$GITHUB_OUTPUT"
-        
-        echo $SEMVER
-        echo $FILE_VERSION
-        
-    - name: 🔫 Build All
-      run: ./build.sh
-      env:
-        SEMVER: ${{ steps.set-version.outputs.SEMVER }}
-        FILE_VERSION: ${{ steps.set-version.outputs.FILE_VERSION }}
-      
-    - name: Upload coverage reports to Codecov with GitHub Action
-      uses: codecov/codecov-action@v5
-      with:
-        files: tests/**/coverage.xml
-        token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.x.x
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: 📦 Tool Restore
+        run: dotnet tool restore
+
+      - name: 📄 Format
+        run: dotnet csharpier check .
+
+      - name: 📦 Restore
+        run: dotnet restore ${{ env.Solution }} --locked-mode
+
+      - name: 🏗️ Build
+        run: dotnet build ${{ env.Solution }} --configuration Release --no-restore -warnaserror
+
+      - name: 🔨 Unit Tests
+        run: dotnet test ${{ env.Solution }} --configuration Release --filter "Category!=Integration" --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
+
+      - name: Upload coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v5
+        with:
+          files: tests/**/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  integration-test-internal:
+    uses: "./.github/workflows/integration-test.yml"
+    with:
+      docker-compose-file: "docker-compose-internal.yml"
+      use-github-container-registry: true
+
+  integration-test-public:
+    uses: "./.github/workflows/integration-test.yml"
+    with:
+      docker-compose-file: "docker-compose.yml"
