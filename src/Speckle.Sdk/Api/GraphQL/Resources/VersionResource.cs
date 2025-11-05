@@ -94,7 +94,6 @@ public sealed class VersionResource
                 }
               }
               cursor
-              totalCount
             }
           }
         }

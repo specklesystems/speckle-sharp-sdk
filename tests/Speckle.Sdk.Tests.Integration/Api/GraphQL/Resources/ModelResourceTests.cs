@@ -67,7 +67,6 @@ public class ModelResourceTests : IAsyncLifetime
 
     // Assert
     result.items.Count.Should().Be(1);
-    result.totalCount.Should().Be(1);
     result.items[0].id.Should().Be(_model.id);
   }
 
@@ -80,7 +79,6 @@ public class ModelResourceTests : IAsyncLifetime
     // Assert
     result.id.Should().Be(_project.id);
     result.models.items.Count.Should().Be(1);
-    result.models.totalCount.Should().Be(1);
     result.models.items[0].id.Should().Be(_model.id);
   }
 

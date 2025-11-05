@@ -90,7 +90,6 @@ public sealed class WorkspaceResource
               visibility
               workspaceId
             }
-            totalCount
           }
         }
       }

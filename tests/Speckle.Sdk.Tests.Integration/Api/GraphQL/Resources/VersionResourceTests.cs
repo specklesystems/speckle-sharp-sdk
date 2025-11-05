@@ -43,7 +43,6 @@ public class VersionResourceTests : IAsyncLifetime
     ResourceCollection<Version> result = await Sut.GetVersions(_model1.id, _project.id);
 
     result.items.Count.Should().Be(1);
-    result.totalCount.Should().Be(1);
     result.items[0].id.Should().Be(_version.id);
   }
 
@@ -61,7 +60,6 @@ public class VersionResourceTests : IAsyncLifetime
 
     result.id.Should().Be(_model1.id);
     result.versions.items.Count.Should().Be(1);
-    result.versions.totalCount.Should().Be(1);
     result.versions.items[0].id.Should().Be(_version.id);
   }
 

@@ -54,7 +54,6 @@ public class CommentResourceTests : IAsyncLifetime
 
     comments.Should().NotBeNull();
     comments.items.Count.Should().Be(1);
-    comments.totalCount.Should().Be(1);
 
     Comment comment = comments.items[0];
     comment.Should().NotBeNull();

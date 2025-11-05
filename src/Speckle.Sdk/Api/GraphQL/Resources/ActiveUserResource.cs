@@ -98,7 +98,6 @@ public sealed class ActiveUserResource
        query User($limit : Int!, $cursor: String, $filter: UserProjectsFilter) {
         data:activeUser {
           data:projects(limit: $limit, cursor: $cursor, filter: $filter) {
-             totalCount
              cursor
              items {
                 id
@@ -258,7 +257,6 @@ public sealed class ActiveUserResource
         data:activeUser {
           data:workspaces(limit: $limit, cursor: $cursor, filter: $filter) {
             cursor
-            totalCount
             items {
               id
               name
@@ -368,7 +366,6 @@ public sealed class ActiveUserResource
       query User($limit: Int!, $cursor: String, $filter: UserProjectsFilter) {
         data: activeUser {
           data: projects(limit: $limit, cursor: $cursor, filter: $filter) {
-            totalCount
             cursor
             items {
               id

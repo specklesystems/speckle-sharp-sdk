@@ -101,7 +101,6 @@ public sealed class ModelResource
                   role
                 }
               }
-              totalCount
               cursor
             }
             description
@@ -179,7 +178,6 @@ public sealed class ModelResource
                 verified
               }
             }
-            totalCount
             cursor
           }
         }

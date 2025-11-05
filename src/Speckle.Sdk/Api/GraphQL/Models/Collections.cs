@@ -5,9 +5,6 @@ namespace Speckle.Sdk.Api.GraphQL.Models;
 public class ResourceCollection<T>
 {
   [property: JsonProperty(Required = Required.Always)]
-  public int totalCount { get; init; }
-
-  [property: JsonProperty(Required = Required.Always)]
   public List<T> items { get; init; }
 
   [property: JsonProperty(Required = Required.AllowNull)]

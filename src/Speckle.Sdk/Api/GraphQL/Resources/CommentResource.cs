@@ -52,7 +52,6 @@ public sealed class CommentResource
                   updatedAt
                   viewedAt
                 }
-                totalCount
               }
               resources {
                 resourceId
@@ -116,7 +115,6 @@ public sealed class CommentResource
           data:commentThreads(cursor: $cursor, limit: $limit, filter: $filter) {
             cursor
             totalArchivedCount
-            totalCount
             items {
               archived
               authorId
@@ -136,7 +134,6 @@ public sealed class CommentResource
                   updatedAt
                   viewedAt
                 }
-                totalCount
               }
               resources {
                 resourceId

@@ -135,7 +135,6 @@ public sealed class ProjectResource
               createdAt
             }
             cursor
-            totalCount
           }
         }
       }

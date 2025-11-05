@@ -169,7 +169,6 @@ public sealed class FileImportResource : IDisposable
         data:project(id: $projectId) {
           data:model(id: $modelId) {
               data:uploads(input: $input) {
-                  totalCount
                   cursor
                   items {
                       id
