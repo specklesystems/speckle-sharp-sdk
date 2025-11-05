@@ -2,6 +2,7 @@ using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Models.Data;
 using Speckle.Sdk.Models.Proxies;
 
 namespace Speckle.Objects;

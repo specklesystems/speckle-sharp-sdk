@@ -1,4 +1,4 @@
-namespace Speckle.Sdk.Models.Proxies;
+namespace Speckle.Sdk.Models.Data;
 
 /// <summary>
 /// Specifies properties on objects to be used for data-based workflows.
