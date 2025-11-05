@@ -1,5 +1,4 @@
 using Speckle.Sdk.Models.Data;
-using Speckle.Sdk.Models.Proxies;
 
 namespace Speckle.Sdk.Models.Collections;
 
