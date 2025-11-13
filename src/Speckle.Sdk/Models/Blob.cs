@@ -1,38 +1,42 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Models;
 
 [SpeckleType("Speckle.Core.Models.Blob")]
-public class Blob : Base
+public sealed class Blob : Base
 {
   [JsonIgnore]
   public static int LocalHashPrefixLength => 20;
 
   private string _filePath;
-  private string _hash;
+  private string? _hash;
   private bool _isHashExpired = true;
 
   public Blob() { }
 
+  [SetsRequiredMembers]
   public Blob(string filePath)
   {
     this.filePath = filePath;
+    this.originalPath = filePath;
   }
 
-  public string filePath
+  public required string filePath
   {
     get => _filePath;
     set
     {
-      originalPath ??= value;
-
       _filePath = value;
       _isHashExpired = true;
     }
   }
 
-  public string originalPath { get; set; }
+  public required string originalPath { get; set; }
+
+  [JsonIgnore]
+  public FileInfo FileInfo => new(filePath);
 
   /// <summary>
   /// For blobs, the id is the same as the file hash. Please note, when deserialising, the id will be set from the original hash generated on sending.
@@ -45,7 +49,7 @@ public class Blob : Base
 
   public string? GetFileHash()
   {
-    if ((_isHashExpired || _hash == null) && filePath != null)
+    if ((_isHashExpired || _hash == null))
     {
       _hash = HashUtility.HashFile(filePath);
     }

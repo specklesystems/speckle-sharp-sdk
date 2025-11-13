@@ -9,7 +9,13 @@ namespace Speckle.Sdk.Serialisation.V2.Send;
 public interface IObjectSaver : IDisposable
 {
   Exception? Exception { get; set; }
-  Task Start(int? maxParallelism, int? httpBatchSize, int? cacheBatchSize, CancellationToken cancellationToken);
+  Task Start(
+    int? maxParallelism,
+    int? httpBatchSize,
+    int? blobBatchSize,
+    int? cacheBatchSize,
+    CancellationToken cancellationToken
+  );
   void DoneTraversing();
   Task DoneSaving();
   Task SaveAsync(BaseItem item);
@@ -19,14 +25,11 @@ public sealed class ObjectSaver(
   IProgress<ProgressArgs>? progress,
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
+  IServerBlobManager serverBlobManager,
   ILogger<ObjectSaver> logger,
   SerializeProcessOptions options,
   CancellationToken cancellationToken
-#pragma warning disable CS9107
-#pragma warning disable CA2254
-) : ChannelSaver<BaseItem>, IObjectSaver
-#pragma warning restore CA2254
-#pragma warning restore CS9107
+) : ChannelSaver<BaseItem, BlobItem>, IObjectSaver
 {
   private readonly CancellationTokenSource _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(
     cancellationToken
@@ -39,6 +42,23 @@ public sealed class ObjectSaver(
 
   private long _objectsSerialized;
   private bool _disposed;
+
+  protected override async Task SendBlobToServerInternal(Batch<BlobItem> batch)
+  {
+    var objectBatch = batch.Items.Distinct().Select(x => x.Blob).ToList();
+    // var hasObjects = await serverBlobManager
+    //   .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), _cancellationTokenSource.Token)
+    //   .ConfigureAwait(false);
+    // objectBatch = batch.Items.Where(x => !hasObjects[x.Id.Value]).ToList();
+    if (objectBatch.Count != 0)
+    {
+      // Interlocked.Add(ref _uploading, batch.Items.Count);
+      // progress?.Report(new(ProgressEvent.UploadingObjects, _uploading, null));
+      await serverBlobManager
+        .UploadBlobs(objectBatch, true, progress, _cancellationTokenSource.Token)
+        .ConfigureAwait(false);
+    }
+  }
 
   protected override async Task SendToServerInternal(Batch<BaseItem> batch)
   {

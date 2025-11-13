@@ -13,26 +13,29 @@ public class SerializeProcessFactory(
   IObjectSerializerFactory objectSerializerFactory,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory,
   IServerObjectManagerFactory serverObjectManagerFactory,
+  IServerBlobManagerFactory serverBlobManagerFactory,
   ILoggerFactory loggerFactory
 ) : ISerializeProcessFactory
 {
   public ISerializeProcess CreateSerializeProcess(
     Uri url,
-    string streamId,
+    string projectId,
     string? authorizationToken,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
   )
   {
-    var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
-    var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
-    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager, progress, cancellationToken, options);
+    var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(projectId);
+    var serverObjectManager = serverObjectManagerFactory.Create(url, projectId, authorizationToken);
+    var serverBlobManager = serverBlobManagerFactory.Create(url, projectId, authorizationToken);
+    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager, serverBlobManager, progress, cancellationToken, options);
   }
 
   public ISerializeProcess CreateSerializeProcess(
     ISqLiteJsonCacheManager sqLiteJsonCacheManager,
     IServerObjectManager serverObjectManager,
+    IServerBlobManager serverBlobManager,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null
@@ -43,6 +46,7 @@ public class SerializeProcessFactory(
         progress,
         sqLiteJsonCacheManager,
         serverObjectManager,
+        serverBlobManager,
         loggerFactory.CreateLogger<ObjectSaver>(),
         options ?? new SerializeProcessOptions(),
         cancellationToken
@@ -68,6 +72,7 @@ public class SerializeProcessFactory(
     return CreateSerializeProcess(
       memoryJsonCacheManager,
       new MemoryServerObjectManager(objects),
+      null!, //this would need a better solution
       progress,
       cancellationToken,
       options

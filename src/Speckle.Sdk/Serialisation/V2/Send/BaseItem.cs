@@ -1,12 +1,13 @@
 using System.Text;
+using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public sealed record BaseItem(Id Id, Json Json, bool NeedsStorage, Dictionary<Id, int>? Closures) : IHasByteSize
+public record BaseItem(Id Id, Json Json, bool NeedsStorage, Dictionary<Id, int>? Closures) : IHasByteSize
 {
-  public int ByteSize { get; } = Encoding.UTF8.GetByteCount(Json.Value);
+  public virtual int ByteSize { get; } = Encoding.UTF8.GetByteCount(Json.Value);
 
-  public bool Equals(BaseItem? other)
+  public virtual bool Equals(BaseItem? other)
   {
     if (other is null)
     {
@@ -16,4 +17,11 @@ public sealed record BaseItem(Id Id, Json Json, bool NeedsStorage, Dictionary<Id
   }
 
   public override int GetHashCode() => Id.GetHashCode();
+}
+
+public sealed record BlobItem(Id Id, Json Json, bool NeedsStorage, Dictionary<Id, int>? Closures, Blob Blob)
+  : BaseItem(Id, Json, NeedsStorage, Closures)
+{
+  public Blob Blob { get; } = Blob;
+  public override int ByteSize { get; } = (int)Blob.FileInfo.Length;
 }

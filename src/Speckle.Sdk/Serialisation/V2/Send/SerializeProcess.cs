@@ -17,6 +17,7 @@ public record SerializeProcessOptions(
 {
   public int? MaxHttpSendBatchSize { get; set; }
   public int? MaxCacheBatchSize { get; set; }
+  public int? MaxBlobBatchSize { get; set; }
   public int? MaxParallelism { get; set; }
 }
 
@@ -109,6 +110,7 @@ public sealed class SerializeProcess(
       var channelTask = objectSaver.Start(
         options.MaxParallelism,
         options.MaxHttpSendBatchSize,
+        options.MaxBlobBatchSize,
         options.MaxCacheBatchSize,
         _processSource.Token
       );
