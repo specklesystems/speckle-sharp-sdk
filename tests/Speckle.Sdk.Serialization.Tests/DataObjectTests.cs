@@ -40,6 +40,7 @@ public class DataObjectTests
       new MemoryJsonCacheManager(json),
       new DummyServerObjectManager(),
       null,
+      null,
       default,
       new SerializeProcessOptions(false, false, true, true)
     );

@@ -29,13 +29,20 @@ public class SerializeProcessFactory(
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(projectId);
     var serverObjectManager = serverObjectManagerFactory.Create(url, projectId, authorizationToken);
     var serverBlobManager = serverBlobManagerFactory.Create(url, projectId, authorizationToken);
-    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager, serverBlobManager, progress, cancellationToken, options);
+    return CreateSerializeProcess(
+      sqLiteJsonCacheManager,
+      serverObjectManager,
+      serverBlobManager,
+      progress,
+      cancellationToken,
+      options
+    );
   }
 
   public ISerializeProcess CreateSerializeProcess(
     ISqLiteJsonCacheManager sqLiteJsonCacheManager,
     IServerObjectManager serverObjectManager,
-    IServerBlobManager serverBlobManager,
+    IServerBlobManager? serverBlobManager,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,
     SerializeProcessOptions? options = null

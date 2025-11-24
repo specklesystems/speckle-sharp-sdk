@@ -1,26 +1,39 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
+using System.Diagnostics.Contracts;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Models;
 
+/// <summary>
+/// Helper functions for calculating hash based Ids for Speckle core concepts
+/// </summary>
 public static class HashUtility
 {
-  public enum HashingFunctions
+  public const int HASH_LENGTH_CHARS = 32;
+
+  [Pure]
+  public static Id ComputeObjectId(Json serialized)
   {
-    SHA256,
-    MD5,
+#if NET6_0_OR_GREATER
+    Span<char> hash = stackalloc char[HASH_LENGTH_CHARS];
+    Sha256.Hash(serialized.Value.AsSpan(), false, hash);
+    return new Id(new string(hash));
+#else
+    string hash = Sha256.Hash(serialized.Value, outputLengthChars: HashUtility.HASH_LENGTH_CHARS);
+    return new Id(hash);
+#endif
   }
 
-  public const int HASH_LENGTH = 32;
-
-  [SuppressMessage("Security", "CA5351:Do Not Use Broken Cryptographic Algorithms")]
-  public static string HashFile(string filePath, HashingFunctions func = HashingFunctions.SHA256)
+  [Pure]
+  public static string CalculateBlobHash(string filePath)
   {
-    using HashAlgorithm hashAlgorithm = func == HashingFunctions.MD5 ? MD5.Create() : SHA256.Create();
-
     using var stream = File.OpenRead(filePath);
-
-    var hash = hashAlgorithm.ComputeHash(stream);
-    return BitConverter.ToString(hash, 0, HASH_LENGTH).Replace("-", "").ToLowerInvariant();
+#if NET6_0_OR_GREATER
+    Span<char> hash = stackalloc char[HASH_LENGTH_CHARS];
+    Sha256.Hash(stream, false, hash);
+    return new(hash);
+#else
+    return Sha256.Hash(stream, "x2", HASH_LENGTH_CHARS);
+#endif
   }
 }

@@ -146,7 +146,7 @@ public class SerializationTests
     jObject.Remove("id");
     jObject.Remove("__closure");
     var jsonWithoutId = jObject.ToString(Formatting.None);
-    var newId = IdGenerator.ComputeId(new Json(jsonWithoutId));
+    var newId = HashUtility.ComputeObjectId(new Json(jsonWithoutId));
     id.Should().Be(newId.Value);
   }
 
@@ -226,6 +226,7 @@ public class SerializationTests
       var serializeProcess = _factory.CreateSerializeProcess(
         SqLiteJsonCacheManager.FromMemory(1),
         new MemoryServerObjectManager(newIdToJson),
+        null,
         null,
         default,
         new SerializeProcessOptions(false, false, false, true) { MaxCacheBatchSize = 1, MaxParallelism = concurrency }

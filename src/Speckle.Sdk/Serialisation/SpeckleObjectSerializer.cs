@@ -358,7 +358,7 @@ public class SpeckleObjectSerializer
     if (writer is SerializerIdWriter serializerIdWriter)
     {
       (var json, writer) = serializerIdWriter.FinishIdWriter();
-      id = IdGenerator.ComputeId(json);
+      id = HashUtility.ComputeObjectId(json);
     }
     else
     {

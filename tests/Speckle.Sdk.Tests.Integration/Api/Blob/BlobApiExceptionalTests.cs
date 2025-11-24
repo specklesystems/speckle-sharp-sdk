@@ -60,7 +60,7 @@ public class BlobApiExceptionalTests : IAsyncLifetime
     {
       await writer.WriteLineAsync(PAYLOAD);
     }
-    string id = HashUtility.HashFile(filePath);
+    string id = HashUtility.CalculateBlobHash(filePath);
     var ex = await Assert.ThrowsAsync<HttpRequestException>(async () =>
       await _sut.UploadBlobs("non-existent-project", [(id, filePath)], null, CancellationToken.None)
     );

@@ -1,12 +1,10 @@
 ﻿using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Helpers;
-using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
 [GenerateAutoInterface]
-public class ServerBlobManagerFactory(ISpeckleHttp speckleHttp, ISdkActivityFactory activityFactory)
-  : IServerBlobManagerFactory
+public sealed class ServerBlobManagerFactory(ISpeckleHttp speckleHttp) : IServerBlobManagerFactory
 {
   public IServerBlobManager Create(
     Uri serverUrl,
@@ -17,6 +15,6 @@ public class ServerBlobManagerFactory(ISpeckleHttp speckleHttp, ISdkActivityFact
   {
     var client = speckleHttp.CreateHttpClient(authorizationToken: authorizationToken);
     client.BaseAddress = serverUrl;
-    return new ServerBlobManager(client);
+    return new ServerBlobManager(client, projectId);
   }
 }

@@ -19,12 +19,14 @@ public class CryptSha256Hash
   [Benchmark]
   public string Sha256()
   {
-    return Speckle.Sdk.Common.Sha256.GetString(testData);
+    return Speckle.Sdk.Common.Sha256.Hash(testData);
   }
 
   [Benchmark]
   public string Sha256_Span()
   {
-    return Speckle.Sdk.Common.Sha256.GetString(testData.AsSpan());
+    Span<char> resultLowerSpan = stackalloc char[Speckle.Sdk.Common.Sha256.HASH_SIZE_CHARS];
+    Speckle.Sdk.Common.Sha256.Hash(testData.AsSpan(), false, resultLowerSpan);
+    return new string(resultLowerSpan);
   }
 }

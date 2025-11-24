@@ -69,8 +69,8 @@ public sealed class HashUtilityTests
   [MemberData(nameof(SmallTestCasesSha256))]
   public void Sha256(string input, string expected, string _, int length)
   {
-    var resultLower = Speckle.Sdk.Common.Sha256.GetString(input, "x2", length);
-    var resultUpper = Speckle.Sdk.Common.Sha256.GetString(input, "X2", length);
+    var resultLower = Speckle.Sdk.Common.Sha256.Hash(input, "x2", length);
+    var resultUpper = Speckle.Sdk.Common.Sha256.Hash(input, "X2", length);
 
     resultLower.Should().Be(new string(expected.ToLower()[..length]));
 
@@ -86,19 +86,22 @@ public sealed class HashUtilityTests
     int length //Span version of the function must have multiple of 2
   )
   {
-    var resultLowerSpan = Speckle.Sdk.Common.Sha256.GetString(input.AsSpan(), "x2", length);
-    var resultUpperSpan = Speckle.Sdk.Common.Sha256.GetString(input.AsSpan(), "X2", length);
+    Span<char> resultLowerSpan = stackalloc char[length];
+    Speckle.Sdk.Common.Sha256.Hash(input.AsSpan(), false, resultLowerSpan);
+    Span<char> resultUpperSpan = stackalloc char[length];
+    Speckle.Sdk.Common.Sha256.Hash(input.AsSpan(), true, resultUpperSpan);
 
-    resultLowerSpan.Should().Be(new string(expected.ToLower()[..length]));
+    new string(resultLowerSpan).Should().Be(new string(expected.ToLower()[..length]));
 
-    resultUpperSpan.Should().Be(new string(expected.ToUpper()[..length]));
+    new string(resultUpperSpan).Should().Be(new string(expected.ToUpper()[..length]));
   }
 
   [Theory]
   [MemberData(nameof(LargeTestCases))]
-  public void Sha256_LargeDataTests(string input, string expected)
+  public void Sha256_Span_LargeDataTests(string input, string expected)
   {
-    var computedHash = Speckle.Sdk.Common.Sha256.GetString(input.AsSpan());
-    computedHash.Should().Be(expected);
+    Span<char> output = stackalloc char[Speckle.Sdk.Common.Sha256.HASH_SIZE_CHARS];
+    Speckle.Sdk.Common.Sha256.Hash(input.AsSpan(), false, output);
+    new string(output).Should().Be(expected);
   }
 }

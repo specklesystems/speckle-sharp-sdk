@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Dependencies.Serialization;
 using Speckle.Sdk.SQLite;
@@ -25,7 +26,7 @@ public sealed class ObjectSaver(
   IProgress<ProgressArgs>? progress,
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,
-  IServerBlobManager serverBlobManager,
+  IServerBlobManager? serverBlobManager,
   ILogger<ObjectSaver> logger,
   SerializeProcessOptions options,
   CancellationToken cancellationToken
@@ -45,7 +46,10 @@ public sealed class ObjectSaver(
 
   protected override async Task SendBlobToServerInternal(Batch<BlobItem> batch)
   {
-    var objectBatch = batch.Items.Distinct().Select(x => x.Blob).ToList();
+    // Callers should either setup a blob manager, or not try and send blobs
+    serverBlobManager.NotNull("No blob manager was setup to handle sending blobs");
+
+    var objectBatch = batch.Items.Distinct().Select(x => (x.Blob.id.NotNull(), x.Blob.filePath)).ToList();
     // var hasObjects = await serverBlobManager
     //   .HasObjects(objectBatch.Select(x => x.Id.Value).Freeze(), _cancellationTokenSource.Token)
     //   .ConfigureAwait(false);
@@ -54,9 +58,7 @@ public sealed class ObjectSaver(
     {
       // Interlocked.Add(ref _uploading, batch.Items.Count);
       // progress?.Report(new(ProgressEvent.UploadingObjects, _uploading, null));
-      await serverBlobManager
-        .UploadBlobs(objectBatch, true, progress, _cancellationTokenSource.Token)
-        .ConfigureAwait(false);
+      await serverBlobManager.UploadBlobs(objectBatch, progress, _cancellationTokenSource.Token).ConfigureAwait(false);
     }
   }
 

@@ -14,8 +14,6 @@ public sealed class Blob : Base
   private string? _hash;
   private bool _isHashExpired = true;
 
-  public Blob() { }
-
   [SetsRequiredMembers]
   public Blob(string filePath)
   {
@@ -32,7 +30,6 @@ public sealed class Blob : Base
       _isHashExpired = true;
     }
   }
-
   public required string originalPath { get; set; }
 
   [JsonIgnore]
@@ -51,7 +48,7 @@ public sealed class Blob : Base
   {
     if ((_isHashExpired || _hash == null))
     {
-      _hash = HashUtility.HashFile(filePath);
+      _hash = HashUtility.CalculateBlobHash(filePath);
     }
 
     return _hash;

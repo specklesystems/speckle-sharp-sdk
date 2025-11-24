@@ -1,22 +1,13 @@
 using Speckle.InterfaceGenerator;
-using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Transports;
 using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
 [GenerateAutoInterface(VisibilityModifier = "public")]
-internal sealed class ServerBlobManager : IServerBlobManager
+internal sealed class ServerBlobManager(HttpClient authorizedClient, string projectId) : IServerBlobManager
 {
-  private readonly HttpClient _authorizedClient;
-
-  public ServerBlobManager(HttpClient authorizedClient)
-  {
-    _authorizedClient = authorizedClient;
-  }
-
   public async Task UploadBlobs(
-    string projectId,
     IReadOnlyCollection<(string blobId, string filePath)> objects,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken
@@ -33,9 +24,8 @@ internal sealed class ServerBlobManager : IServerBlobManager
       var fileName = Path.GetFileName(filePath);
       var stream = File.OpenRead(filePath);
       StreamContent fsc = new(stream);
-      var hash = id.Split(':')[1];
 
-      multipartFormDataContent.Add(fsc, $"hash:{hash}", fileName);
+      multipartFormDataContent.Add(fsc, $"hash:{id}", fileName);
       cancellationToken.ThrowIfCancellationRequested();
     }
 
@@ -44,7 +34,7 @@ internal sealed class ServerBlobManager : IServerBlobManager
     message.Method = HttpMethod.Post;
     message.Content = new ProgressContent(multipartFormDataContent, progress);
 
-    using var response = await _authorizedClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
+    using var response = await authorizedClient.SendAsync(message, cancellationToken).ConfigureAwait(false);
 
     response.EnsureSuccessStatusCode();
   }

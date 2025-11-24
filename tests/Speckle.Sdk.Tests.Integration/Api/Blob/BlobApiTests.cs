@@ -34,7 +34,7 @@ public class BlobApiTests : IAsyncLifetime
     {
       await writer.WriteLineAsync(PAYLOAD);
     }
-    string id = HashUtility.HashFile(filePath);
+    string id = HashUtility.CalculateBlobHash(filePath);
 
     //act
     var preDiff = await _blobApi.HasBlobs(_project.id, [id], CancellationToken.None);

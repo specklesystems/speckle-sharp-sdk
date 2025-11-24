@@ -37,6 +37,7 @@ public class ExceptionTests
       new MemoryJsonCacheManager(objects),
       new ExceptionServerObjectManager(),
       null,
+      null,
       default,
       new SerializeProcessOptions(false, false, false, true)
     );
@@ -54,6 +55,7 @@ public class ExceptionTests
     await using var serializeProcess = _factory.CreateSerializeProcess(
       new ExceptionSendCacheManager(),
       new MemoryServerObjectManager(new()),
+      null,
       null,
       default,
       new SerializeProcessOptions(false, false, false, true)
@@ -91,6 +93,7 @@ public class ExceptionTests
     await using var serializeProcess = _factory.CreateSerializeProcess(
       new ExceptionSendCacheManager(exceptionsAfter: 10),
       new MemoryServerObjectManager(new()),
+      null,
       null,
       default,
       new SerializeProcessOptions(false, false, false, true)

@@ -59,6 +59,7 @@ public class CancellationTests
       new DummySqLiteSendManager(),
       new CancellationServerObjectManager(cancellationSource),
       null,
+      null,
       cancellationSource.Token,
       new SerializeProcessOptions(true, true, false, true)
     );
@@ -78,6 +79,7 @@ public class CancellationTests
     await using var serializeProcess = _factory.CreateSerializeProcess(
       new DummySqLiteSendManager(),
       new CancellationServerObjectManager(cancellationSource),
+      null,
       null,
       cancellationSource.Token,
       new SerializeProcessOptions(true, true, false, true)
