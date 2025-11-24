@@ -1,5 +1,4 @@
-﻿
-namespace Speckle.Sdk.Api.GraphQL.Inputs;
+﻿namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
 public record IngestCreateInput(
   string fileName,
@@ -8,7 +7,8 @@ public record IngestCreateInput(
   string projectId,
   string sourceApplication,
   string sourceApplicationVersion,
-  IReadOnlyDictionary<string, object?> sourceFileData);
+  IReadOnlyDictionary<string, object?> sourceFileData
+);
 
 public record IngestFinishInput(string id, string? message, string objectId, string projectId);
 
