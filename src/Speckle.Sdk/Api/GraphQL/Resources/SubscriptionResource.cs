@@ -212,6 +212,34 @@ public sealed class SubscriptionResource : IDisposable
     return subscription;
   }
 
+  /// <summary>Subscribe to a cancellation request being made for a Model Ingestion</summary>
+  /// <remarks><inheritdoc cref="CreateUserProjectsUpdatedSubscription"/></remarks>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.SubscribeTo{T}"/>
+  public Subscription<ProjectModelIngestionCancellationRequestedMessage> CreateProjectModelIngestionCancellationRequestedSubscription(
+    string ingestionId,
+    string projectId
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      subscription IngestionCancellationRequested($projectId: ID!, $ingestionId: ID!){
+        data:projectModelIngestionCancellationRequested(projectId: $projectId, ingestionId: $ingestionId) {
+          modelIngestion
+          {
+            id
+            createdAt
+            updatedAt
+          }
+        }
+      }
+      """;
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, ingestionId } };
+
+    Subscription<ProjectModelIngestionCancellationRequestedMessage> subscription = new(_client, request);
+    _subscriptions.Add(subscription);
+    return subscription;
+  }
+
   public void Dispose()
   {
     foreach (var subscription in _subscriptions)

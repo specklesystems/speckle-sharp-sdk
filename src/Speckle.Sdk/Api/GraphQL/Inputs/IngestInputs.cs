@@ -1,19 +1,34 @@
 ﻿namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
-public record IngestCreateInput(
-  string fileName,
-  int? maxIdleTimeoutMinutes,
-  string modelId,
-  string projectId,
-  string sourceApplication,
+public record SourceDataInput(
+  string sourceApplicationSlug,
   string sourceApplicationVersion,
-  IReadOnlyDictionary<string, object?> sourceFileData
+  string? fileName,
+  long? fileSizeBytes
 );
 
-public record IngestFinishInput(string id, string? message, string objectId, string projectId);
+public record ModelIngestionCreateInput(
+  string modelId,
+  string projectId,
+  string progressMessage,
+  SourceDataInput sourceData
+);
 
-public record IngestErrorInput(string errorReason, string errorStacktrace, string id, string projectId);
+public record ModelIngestionUpdateInput(string ingestionId, string projectId, string progressMessage, double? progress);
 
-public record CancelRequestInput(string id, string projectId);
+public record ModelIngestionSuccessInput(string ingestionId, string projectId, string rootObjectId);
 
-public record IngestUpdateInput(string id, double? progress, string? progressMessage, string projectId);
+public record ModelIngestionFailedInput(
+  string ingestionId,
+  string projectId,
+  string errorReason,
+  string? errorStacktrace
+)
+{
+  public static ModelIngestionFailedInput FromException(string ingestionId, string projectId, Exception ex)
+  {
+    return new ModelIngestionFailedInput(ingestionId, projectId, ex.Message, ex.ToString());
+  }
+}
+
+public record ModelIngestionCancelledInput(string ingestionId, string projectId, string cancellationMessage);

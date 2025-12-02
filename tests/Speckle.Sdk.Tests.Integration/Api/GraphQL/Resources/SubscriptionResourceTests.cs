@@ -80,15 +80,15 @@ public class SubscriptionResourceTests : IAsyncLifetime
   public async Task ProjectUpdated_SubscriptionIsCalled()
   {
     TaskCompletionSource<ProjectUpdatedMessage> tcs = new();
-    using var sub = Sut.CreateProjectUpdatedSubscription(_testProject.id);
+    using Subscription<ProjectUpdatedMessage> sub = Sut.CreateProjectUpdatedSubscription(_testProject.id);
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
-    var input = new ProjectUpdateInput(_testProject.id, "This is my new name");
-    var created = await _testUser.Project.Update(input);
+    ProjectUpdateInput input = new(_testProject.id, "This is my new name");
+    Project created = await _testUser.Project.Update(input);
 
-    var subscriptionMessage = await tcs.Task;
+    ProjectUpdatedMessage subscriptionMessage = await tcs.Task;
 
     subscriptionMessage.Should().NotBeNull();
     subscriptionMessage.id.Should().Be(created.id);
