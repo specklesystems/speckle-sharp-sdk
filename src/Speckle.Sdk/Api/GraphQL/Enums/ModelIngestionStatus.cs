@@ -4,10 +4,11 @@ namespace Speckle.Sdk.Api.GraphQL.Enums;
 /// <remarks>
 /// string based enum
 /// </remarks>
-public enum ResourceType
+public enum ModelIngestionStatus
 {
-  commit,
-  stream,
-  @object,
-  comment,
+  cancelled,
+  failed,
+  processing,
+  queued,
+  success,
 }

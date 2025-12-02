@@ -21,7 +21,7 @@ namespace Speckle.Sdk.Tests.Integration;
 
 public static class Fixtures
 {
-  public static readonly ServerInfo Server = new() { url = "http://localhost:3000", name = "Docker Server" };
+  public static readonly ServerInfo Server = new() { url = "http://localhost", name = "Docker Server" };
 
   public static IServiceProvider ServiceProvider { get; set; }
 

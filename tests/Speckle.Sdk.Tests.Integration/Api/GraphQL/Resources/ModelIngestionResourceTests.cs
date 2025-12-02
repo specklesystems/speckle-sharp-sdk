@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
@@ -47,6 +48,34 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
     var errorInput = new ModelIngestionFailedInput(ingest.id, _project.id, "A bad thing happened", "Over hear!");
     var res = await Sut.FailWithError(errorInput);
     Assert.Equal(ingest.id, res.id);
+  }
+
+  [Fact]
+  public async Task CreateAndUpdate()
+  {
+    var createInput = new ModelIngestionCreateInput(
+      _model.id,
+      _project.id,
+      "Starting processing",
+      new(".NET test runner", "0.0.0", null, null)
+    );
+    ModelIngestion ingest = await Sut.Create(createInput);
+
+    await Update(null, "None");
+    await Update(0.1, "0.1");
+    await Update(0.5, "Whoa-oh! We're half way there!");
+    await Update(1, "Finished");
+    await Update(0.2, "Back to processing again");
+
+    async Task Update(double? progress, string message)
+    {
+      var updateInput = new ModelIngestionUpdateInput(ingest.id, _project.id, message, progress);
+      var res = await Sut.UpdateProgress(updateInput);
+
+      Assert.Equal(message, res.statusData.progressMessage);
+      Assert.False(res.cancellationRequested);
+      Assert.Equal(ModelIngestionStatus.processing, res.statusData.status);
+    }
   }
 
   [Fact]
@@ -103,7 +132,7 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
     ModelIngestionSuccessInput finish = new(ingest.id, _project.id, sendResult.RootId);
     string versionId = await Sut.Complete(finish);
     Version version = await _testUser.Version.Get(versionId, _project.id);
-    Assert.Equal(versionId, version.id);
+    Assert.Equal(version.id, versionId);
     Assert.Equal(sendResult.RootId, version.referencedObject);
   }
 }

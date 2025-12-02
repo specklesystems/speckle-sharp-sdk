@@ -135,4 +135,24 @@ public class SubscriptionResourceTests : IAsyncLifetime
     subscriptionMessage.type.Should().Be(ProjectCommentsUpdatedMessageType.CREATED);
     subscriptionMessage.comment.Should().NotBeNull();
   }
+
+  [Fact(Timeout = TIMEOUT)]
+  public async Task ProjectModelIngestionCancellationRequested_SubscriptionIsCalled()
+  {
+    ModelIngestion ingestion = await _testUser.Ingestion.Create(
+      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
+    );
+    TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
+    using var sub = Sut.CreateProjectModelIngestionCancellationRequestedSubscription(_testProject.id, ingestion.id);
+    sub.Listeners += (_, message) => tcs.SetResult(message);
+
+    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+
+    await _testUser.Ingestion.RequestCancellation(new(ingestion.id, _testProject.id, "please cancel"));
+
+    var subscriptionMessage = await tcs.Task;
+
+    subscriptionMessage.Should().NotBeNull();
+    subscriptionMessage.modelIngestion.id.Should().Be(ingestion.id);
+  }
 }

@@ -4,12 +4,10 @@ namespace Speckle.Sdk.Api.GraphQL.Enums;
 /// <remarks>
 /// string based enum
 /// </remarks>
-public enum ProjectVisibility
+public enum ProjectModelIngestionUpdatedMessageType
 {
-  Private,
-  Public,
-
-  [Obsolete("Use Public instead")]
-  Unlisted,
-  Workspace,
+  cancellationRequested,
+  created,
+  deleted,
+  updated,
 }

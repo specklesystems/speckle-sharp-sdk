@@ -83,8 +83,11 @@ public sealed class ProjectVersionsUpdatedMessage : EventArgs
   public Version? version { get; init; }
 }
 
-public sealed class ProjectModelIngestionCancellationRequestedMessage : EventArgs
+public sealed class ProjectModelIngestionUpdatedMessage : EventArgs
 {
   [JsonRequired]
-  public required ModelIngestion? modelIngestion { get; init; }
+  public required ModelIngestion modelIngestion { get; init; }
+
+  [JsonRequired]
+  public required ProjectModelIngestionUpdatedMessageType type { get; init; }
 }

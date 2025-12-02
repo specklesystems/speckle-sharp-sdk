@@ -1,4 +1,6 @@
-﻿namespace Speckle.Sdk.Api.GraphQL.Inputs;
+﻿using Speckle.Sdk.Api.GraphQL.Enums;
+
+namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
 public record SourceDataInput(
   string sourceApplicationSlug,
@@ -32,3 +34,16 @@ public record ModelIngestionFailedInput(
 }
 
 public record ModelIngestionCancelledInput(string ingestionId, string projectId, string cancellationMessage);
+
+public record ProjectModelIngestionSubscriptionInput(
+  string projectId,
+  ModelIngestionReference ingestionReference,
+  ProjectModelIngestionUpdatedMessageType messageType
+);
+
+/// <remarks>
+/// <c>@oneOf</c> i.e. server expects <b>either</b> <paramref name="ingestionId"/> or <paramref name="modelId"/>, but not both.
+/// </remarks>
+/// <param name="ingestionId"></param>
+/// <param name="modelId"></param>
+public record ModelIngestionReference(string? ingestionId, string? modelId);
