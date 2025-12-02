@@ -1,4 +1,5 @@
-﻿using Speckle.Sdk.Api.GraphQL.Enums;
+﻿using Speckle.Newtonsoft.Json;
+using Speckle.Sdk.Api.GraphQL.Enums;
 
 namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
@@ -38,8 +39,14 @@ public record ModelIngestionCancelledInput(string ingestionId, string projectId,
 public record ProjectModelIngestionSubscriptionInput(
   string projectId,
   ModelIngestionReference ingestionReference,
-  ProjectModelIngestionUpdatedMessageType messageType
-);
+  [property: JsonIgnore] ProjectModelIngestionUpdatedMessageType messageType
+)
+{
+  // The Newtonsoft serializer is setup to handle SCREAMING_CASE enums.
+  // But the API requires the enum to look exactly like they are
+  [JsonProperty(nameof(messageType))]
+  public string serializedType => messageType.ToString();
+}
 
 /// <remarks>
 /// <c>@oneOf</c> i.e. server expects <b>either</b> <paramref name="ingestionId"/> or <paramref name="modelId"/>, but not both.

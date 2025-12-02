@@ -11,7 +11,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 public class SubscriptionResourceTests : IAsyncLifetime
 {
 #if DEBUG
-  private const int WAIT_PERIOD = 3000; // WSL is slow AF, so for local runs, we're being extra generous
+  private const int WAIT_PERIOD = 4000; // WSL is slow AF, so for local runs, we're being extra generous
 #else
   private const int WAIT_PERIOD = 400; // For CI runs, a much smaller wait time is acceptable
 #endif
@@ -143,7 +143,8 @@ public class SubscriptionResourceTests : IAsyncLifetime
       new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
     );
     TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
-    using var sub = Sut.CreateProjectModelIngestionCancellationRequestedSubscription(_testProject.id, ingestion.id);
+
+    using var sub = Sut.CreateProjectModelIngestionCancellationRequestedSubscription(ingestion.id, _testProject.id);
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
@@ -153,6 +154,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     var subscriptionMessage = await tcs.Task;
 
     subscriptionMessage.Should().NotBeNull();
+    subscriptionMessage.type.Should().Be(ProjectModelIngestionUpdatedMessageType.cancellationRequested);
     subscriptionMessage.modelIngestion.id.Should().Be(ingestion.id);
   }
 }

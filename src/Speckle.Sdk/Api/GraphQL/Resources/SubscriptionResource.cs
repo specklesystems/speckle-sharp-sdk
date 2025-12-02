@@ -222,14 +222,22 @@ public sealed class SubscriptionResource : IDisposable
   {
     //language=graphql
     const string QUERY = """
-      subscription IngestionUpdated(
-        $input: ProjectModelIngestionSubscriptionInput!
-      ) {
+      subscription IngestionUpdated($input: ProjectModelIngestionSubscriptionInput!) {
         data: projectModelIngestionUpdated(input: $input) {
           modelIngestion {
             id
             createdAt
             updatedAt
+            modelId
+            cancellationRequested
+            statusData {
+              ... on HasModelIngestionStatus {
+                status
+              }
+              ... on HasProgressMessage {
+                progressMessage
+              }
+            }
           }
           type
         }
