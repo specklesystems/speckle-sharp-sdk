@@ -157,4 +157,52 @@ public class SubscriptionResourceTests : IAsyncLifetime
     subscriptionMessage.type.Should().Be(ProjectModelIngestionUpdatedMessageType.cancellationRequested);
     subscriptionMessage.modelIngestion.id.Should().Be(ingestion.id);
   }
+
+  [Fact(Timeout = TIMEOUT)]
+  public async Task ProjectModelIngestionUpdate_UpdateSubscriptionIs()
+  {
+    ModelIngestion ingestion = await _testUser.Ingestion.Create(
+      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
+    );
+    TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
+
+    using var sub = Sut.CreateProjectModelIngestionUpdatedSubscription(
+      new(
+        _testProject.id,
+        new ModelIngestionReference(ingestion.id, null),
+        ProjectModelIngestionUpdatedMessageType.updated
+      )
+    );
+    sub.Listeners += (_, message) => tcs.SetResult(message);
+
+    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+
+    await _testUser.Ingestion.UpdateProgress(new(ingestion.id, _testProject.id, "Here's an update", 0.314));
+
+    var subscriptionMessage = await tcs.Task;
+
+    subscriptionMessage.Should().NotBeNull();
+    subscriptionMessage.type.Should().Be(ProjectModelIngestionUpdatedMessageType.cancellationRequested);
+    subscriptionMessage.modelIngestion.id.Should().Be(ingestion.id);
+  }
+
+  [Fact(Timeout = TIMEOUT)]
+  public async Task ProjectModelIngestionUpdate_CancelSubscriptionIsNotCalled()
+  {
+    ModelIngestion ingestion = await _testUser.Ingestion.Create(
+      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
+    );
+    TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
+
+    using var sub = Sut.CreateProjectModelIngestionCancellationRequestedSubscription(ingestion.id, _testProject.id);
+    sub.Listeners += (_, message) => tcs.SetResult(message);
+
+    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+
+    await _testUser.Ingestion.UpdateProgress(new(ingestion.id, _testProject.id, "this shouldn't cancel", null));
+
+    await Task.Delay(WAIT_PERIOD); // Give time to subscription to maybe fire
+
+    tcs.Task.IsCompleted.Should().BeFalse();
+  }
 }
