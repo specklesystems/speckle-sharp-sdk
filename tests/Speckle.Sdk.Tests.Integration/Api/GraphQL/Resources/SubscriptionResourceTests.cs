@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
@@ -182,7 +182,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     var subscriptionMessage = await tcs.Task;
 
     subscriptionMessage.Should().NotBeNull();
-    subscriptionMessage.type.Should().Be(ProjectModelIngestionUpdatedMessageType.cancellationRequested);
+    subscriptionMessage.type.Should().Be(ProjectModelIngestionUpdatedMessageType.updated);
     subscriptionMessage.modelIngestion.id.Should().Be(ingestion.id);
   }
 
