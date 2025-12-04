@@ -32,7 +32,7 @@ jobs:
         run: dotnet build ${{ env.Solution }} --configuration Release --no-restore -warnaserror
 
       - name: 🔨 Unit Tests
-        run: dotnet test ${{ env.Solution }} --configuration Release --filter "Category!=Integration*" --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
+        run: dotnet test ${{ env.Solution }} --configuration Release --filter "Category!=Integration" --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
  
       - name: 🎁 Pack
         run: dotnet pack ${{ env.Solution }} --configuration Release --no-build 

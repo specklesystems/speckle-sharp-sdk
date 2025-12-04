@@ -8,7 +8,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
-[Trait("Category", "Integration-Internal")]
+[Trait("Server", "Internal")]
 public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
 {
   private IClient _testUser;
