@@ -5,6 +5,9 @@ using Speckle.Sdk.Api.GraphQL.Models.Responses;
 
 namespace Speckle.Sdk.Api.GraphQL.Resources;
 
+/// <remarks>
+/// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+/// </remarks>
 public sealed class ModelIngestionResource
 {
   private readonly ISpeckleGraphQLClient _client;
@@ -14,6 +17,14 @@ public sealed class ModelIngestionResource
     _client = client;
   }
 
+  /// <summary>
+  /// Create a new model ingestion
+  /// </summary>
+  /// <remarks>
+  /// The model ingestion created will have a <c>processing</c> state (not <c>queued</c>). This mutation is designed to be used
+  /// by client/connectors that are immediately processing
+  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// </remarks>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
@@ -60,6 +71,113 @@ public sealed class ModelIngestionResource
     return res.data.data.data;
   }
 
+  /// <summary>
+  /// For File Import / Cloud integrations only
+  /// </summary>
+  /// <remarks>
+  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// </remarks>
+  /// <param name="input"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<ModelIngestion> StartProcessing(
+    ModelIngestionStartProcessingInput input,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      mutation IngestionStartProcessing($input: ModelIngestionStartProcessingInput!) {
+        data: projectMutations {
+          data: modelIngestionMutations {
+            data: startProcessing(input: $input) {
+              id
+              createdAt
+              updatedAt
+              modelId
+              cancellationRequested
+              statusData {
+                ... on HasModelIngestionStatus {
+                  status
+                }
+                ... on HasProgressMessage {
+                  progressMessage
+                }
+              }
+            }
+          }
+        }
+      }
+      """;
+
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
+
+    var res = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ModelIngestion>>>>(
+        request,
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+
+    return res.data.data.data;
+  }
+
+  /// <summary>
+  /// For File Import / Cloud integrations only
+  /// </summary>
+  /// <remarks>
+  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// </remarks>
+  /// <param name="input"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<ModelIngestion> Requeue(
+    ModelIngestionRequeueInput input,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      mutation IngestionStartProcessing($input: ModelIngestionRequeueInput!) {
+        data: projectMutations {
+          data: modelIngestionMutations {
+            data: requeue(input: $input) {
+              id
+              createdAt
+              updatedAt
+              modelId
+              cancellationRequested
+              statusData {
+                ... on HasModelIngestionStatus {
+                  status
+                }
+                ... on HasProgressMessage {
+                  progressMessage
+                }
+              }
+            }
+          }
+        }
+      }
+      """;
+
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
+
+    var res = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ModelIngestion>>>>(
+        request,
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+
+    return res.data.data.data;
+  }
+
+  /// <remarks>
+  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// </remarks>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
@@ -112,6 +230,9 @@ public sealed class ModelIngestionResource
   /// Request that the server completes the ingestion by creating a version
   /// If successful, the job will be in a terminal "successful" state.
   /// </summary>
+  /// <remarks>
+  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// </remarks>
   /// <seealso cref="FailWithError"/>
   /// <seealso cref="FailWithCancel"/>
   /// <param name="input"></param>
@@ -152,7 +273,8 @@ public sealed class ModelIngestionResource
   /// Fail the job with an error.
   /// </summary>
   /// <remarks>
-  /// For requested user cancellation, use <see cref="FailWithCancel"/> instead
+  /// For requested user cancellation, use <see cref="FailWithCancel"/> instead<br/>
+  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
   /// </remarks>
   /// <seealso cref="FailWithCancel"/>
   /// <seealso cref="Complete"/>
@@ -206,7 +328,8 @@ public sealed class ModelIngestionResource
   /// Fail the ingestion with a <c>canceled</c> status.
   /// This should only be done if the user has explicitly requested cancellation
   /// Other forms of cancellation use <see cref="FailWithError"/>.
-  /// The ingestion should then enter a terminal "canceled" state
+  /// The ingestion should then enter a terminal "canceled" state.<br/>
+  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
   /// </summary>
   /// <seealso cref="FailWithError"/>
   /// <seealso cref="Complete"/>
@@ -264,7 +387,8 @@ public sealed class ModelIngestionResource
   /// It's up to the client to observe this cancellation request
   /// via <see cref="SubscriptionResource.CreateProjectModelIngestionCancellationRequestedSubscription"/>
   /// and report it as canceled via  <see cref="ModelIngestionResource.FailWithCancel"/>
-  /// See "cooperative cancellation pattern"
+  /// See "cooperative cancellation pattern"<br/>
+  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
   /// </remarks>
   /// <seealso cref="FailWithError"/>
   /// <seealso cref="Complete"/>

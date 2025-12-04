@@ -36,6 +36,15 @@ public record ModelIngestionFailedInput(
 
 public record ModelIngestionCancelledInput(string ingestionId, string projectId, string cancellationMessage);
 
+public record ModelIngestionStartProcessingInput(
+  string ingestionId,
+  string projectId,
+  string progressMessage,
+  SourceDataInput sourceData
+);
+
+public record ModelIngestionRequeueInput(string ingestionId, string projectId);
+
 public record ProjectModelIngestionSubscriptionInput(
   string projectId,
   ModelIngestionReference ingestionReference,
