@@ -136,7 +136,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     subscriptionMessage.comment.Should().NotBeNull();
   }
 
-  [Fact(Timeout = TIMEOUT)]
+  [Fact(Timeout = TIMEOUT), Trait("Category", "Integration-Internal")]
   public async Task ProjectModelIngestionCancellationRequested_SubscriptionIsCalled()
   {
     ModelIngestion ingestion = await _testUser.Ingestion.Create(
@@ -158,7 +158,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     subscriptionMessage.modelIngestion.id.Should().Be(ingestion.id);
   }
 
-  [Fact(Timeout = TIMEOUT)]
+  [Fact(Timeout = TIMEOUT), Trait("Category", "Integration-Internal")]
   public async Task ProjectModelIngestionUpdate_UpdateSubscriptionIs()
   {
     ModelIngestion ingestion = await _testUser.Ingestion.Create(
@@ -186,7 +186,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     subscriptionMessage.modelIngestion.id.Should().Be(ingestion.id);
   }
 
-  [Fact(Timeout = TIMEOUT)]
+  [Fact(Timeout = TIMEOUT), Trait("Category", "Integration-Internal")]
   public async Task ProjectModelIngestionUpdate_CancelSubscriptionIsNotCalled()
   {
     ModelIngestion ingestion = await _testUser.Ingestion.Create(

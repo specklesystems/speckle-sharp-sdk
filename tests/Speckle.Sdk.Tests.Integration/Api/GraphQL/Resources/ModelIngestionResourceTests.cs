@@ -12,6 +12,7 @@ using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
+[Trait("Category", "Integration-Internal")]
 public sealed class ModelIngestionResourceTests : IAsyncLifetime
 {
   private IClient _testUser;
