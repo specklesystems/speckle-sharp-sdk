@@ -20,4 +20,6 @@ public class RawEncoding : Base // note: at this stage, since we're using this f
 public static class RawEncodingFormats
 {
   public const string RHINO_3DM = "3dm";
+  public const string ACAD_DWG = "dwg";
+  public const string ACAD_SAT = "sat";
 }
