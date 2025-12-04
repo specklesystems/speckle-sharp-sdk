@@ -9,8 +9,8 @@ on:
       use-internal-image:
         default: false
         type: boolean
-    secrets: 
-      CODE_COV_TOKEN:
+    secrets:
+      CODECOV_TOKEN:
         required: true
 jobs:
   integration-test:
