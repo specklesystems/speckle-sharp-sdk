@@ -63,7 +63,7 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
       );
     }
 
-    Base? rootObject = await operations
+    Base rootObject = await operations
       .Receive2(
         SpeckleClient.ServerUrl,
         AutomationRunData.ProjectId,
@@ -72,6 +72,10 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
         null,
         cancellationToken
       )
+      .ConfigureAwait(false);
+
+    await SpeckleClient
+      .Version.Received(new(version.id, AutomationRunData.ProjectId, "automate_function"), cancellationToken)
       .ConfigureAwait(false);
 
     Console.WriteLine($"It took {Elapsed.TotalSeconds} seconds to receive the speckle version {versionId}");
