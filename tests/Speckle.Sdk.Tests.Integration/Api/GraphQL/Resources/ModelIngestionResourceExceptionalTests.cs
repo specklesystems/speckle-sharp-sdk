@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
