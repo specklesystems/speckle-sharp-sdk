@@ -180,6 +180,6 @@ Target(
   }
 );
 
-Target("default", dependsOn: [FORMAT, TEST], () => Console.WriteLine("Done!"));
+Target("default", dependsOn: [FORMAT, TEST, INTEGRATION], () => Console.WriteLine("Done!"));
 
 await RunTargetsAndExitAsync(args).ConfigureAwait(true);
