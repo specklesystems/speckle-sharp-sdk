@@ -136,4 +136,42 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
     Assert.Equal(version.id, versionId);
     Assert.Equal(sendResult.RootId, version.referencedObject);
   }
+
+  [Fact]
+  public async Task TestRequeue()
+  {
+    //Not sure if is desirable that ingestions created by the modelIngestionMutations.create mutation can be re-queued
+    //But the server allows it, so we test it
+    var createInput = new ModelIngestionCreateInput(
+      _model.id,
+      _project.id,
+      "Starting processing",
+      new(".NET test runner", "0.0.0", null, null)
+    );
+    var ingestion = await Sut.Create(createInput);
+    var res = await Sut.Requeue(new(ingestion.id, _project.id, "we'll try and requeue this ingestion"));
+
+    Assert.Equal(ingestion.id, res.id);
+    Assert.Equal(ModelIngestionStatus.queued, res.statusData.status);
+  }
+
+  [Fact]
+  public async Task TestStartProcessing()
+  {
+    //Not sure if is desirable that StartProcessing can be used by ingestions created by the modelIngestionMutations.create mutation
+    //But the server allows it, so we test it
+    var createInput = new ModelIngestionCreateInput(
+      _model.id,
+      _project.id,
+      "Starting processing",
+      new(".NET test runner", "0.0.0", null, null)
+    );
+    var ingestion = await Sut.Create(createInput);
+    var res = await Sut.StartProcessing(
+      new(ingestion.id, _project.id, "", new SourceDataInput("what", "happens", "now", 0))
+    );
+
+    Assert.Equal(ingestion.id, res.id);
+    Assert.Equal(ModelIngestionStatus.processing, res.statusData.status);
+  }
 }

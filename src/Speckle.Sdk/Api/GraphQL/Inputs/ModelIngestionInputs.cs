@@ -43,7 +43,7 @@ public record ModelIngestionStartProcessingInput(
   SourceDataInput sourceData
 );
 
-public record ModelIngestionRequeueInput(string ingestionId, string projectId);
+public record ModelIngestionRequeueInput(string ingestionId, string projectId, string progressMessage);
 
 public record ProjectModelIngestionSubscriptionInput(
   string projectId,
