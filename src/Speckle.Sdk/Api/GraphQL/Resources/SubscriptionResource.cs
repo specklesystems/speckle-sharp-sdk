@@ -1,4 +1,5 @@
 using GraphQL;
+using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
@@ -210,6 +211,60 @@ public sealed class SubscriptionResource : IDisposable
     Subscription<ProjectVersionsUpdatedMessage> subscription = new(_client, request);
     _subscriptions.Add(subscription);
     return subscription;
+  }
+
+  /// <summary>Subscribe to a cancellation request being made for a Model Ingestion</summary>
+  /// <remarks><inheritdoc cref="CreateUserProjectsUpdatedSubscription"/></remarks>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.SubscribeTo{T}"/>
+  public Subscription<ProjectModelIngestionUpdatedMessage> CreateProjectModelIngestionUpdatedSubscription(
+    ProjectModelIngestionSubscriptionInput input
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      subscription IngestionUpdated($input: ProjectModelIngestionSubscriptionInput!) {
+        data: projectModelIngestionUpdated(input: $input) {
+          modelIngestion {
+            id
+            createdAt
+            updatedAt
+            modelId
+            cancellationRequested
+            statusData {
+              ... on HasModelIngestionStatus {
+                status
+              }
+              ... on HasProgressMessage {
+                progressMessage
+              }
+            }
+          }
+          type
+        }
+      }
+      """;
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
+
+    Subscription<ProjectModelIngestionUpdatedMessage> subscription = new(_client, request);
+    _subscriptions.Add(subscription);
+    return subscription;
+  }
+
+  /// <summary>Subscribe to a cancellation request being made for a Model Ingestion</summary>
+  /// <remarks><inheritdoc cref="CreateUserProjectsUpdatedSubscription"/></remarks>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.SubscribeTo{T}"/>
+  public Subscription<ProjectModelIngestionUpdatedMessage> CreateProjectModelIngestionCancellationRequestedSubscription(
+    string ingestionId,
+    string projectId
+  )
+  {
+    return CreateProjectModelIngestionUpdatedSubscription(
+      new ProjectModelIngestionSubscriptionInput(
+        projectId,
+        new(ingestionId, null),
+        ProjectModelIngestionUpdatedMessageType.cancellationRequested
+      )
+    );
   }
 
   public void Dispose()

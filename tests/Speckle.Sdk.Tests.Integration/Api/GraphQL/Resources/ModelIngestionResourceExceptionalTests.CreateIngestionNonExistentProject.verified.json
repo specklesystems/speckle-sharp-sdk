@@ -1,0 +1,8 @@
+﻿{
+  "Type": "AggregateException",
+  "InnerException": {
+    "Data": {},
+    "Message": "STREAM_NOT_FOUND: Project not found",
+    "Type": "SpeckleGraphQLStreamNotFoundException"
+  }
+}

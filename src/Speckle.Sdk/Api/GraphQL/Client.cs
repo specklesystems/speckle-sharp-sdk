@@ -35,6 +35,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   public WorkspaceResource Workspace { get; }
   public ServerResource Server { get; }
   public FileImportResource FileImport { get; }
+  public ModelIngestionResource Ingestion { get; }
 
   public Uri ServerUrl => new(Account.serverInfo.url);
 
@@ -71,6 +72,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     Workspace = new(this);
     Server = new(this);
     FileImport = new(this, blobApiFactory.Create(account));
+    Ingestion = new(this);
   }
 
   [AutoInterfaceIgnore]
