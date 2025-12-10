@@ -138,6 +138,22 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
   }
 
   [Fact]
+  public async Task CreateAndGet()
+  {
+    var createInput = new ModelIngestionCreateInput(
+      _model.id,
+      _project.id,
+      "Starting processing",
+      new(".NET test runner", "0.0.0", null, null)
+    );
+    ModelIngestion ingest = await Sut.Create(createInput);
+
+    ModelIngestion res = await Sut.Get(ingest.id, _project.id);
+    Assert.Equal(ingest.id, res.id);
+    Assert.Equal(ingest.statusData.status, res.statusData.status);
+  }
+
+  [Fact]
   public async Task TestRequeue()
   {
     //Not sure if is desirable that ingestions created by the modelIngestionMutations.create mutation can be re-queued
