@@ -6,10 +6,12 @@ on:
       docker-compose-file:
         required: true
         type: string
-      use-github-container-registry:
+      use-internal-image:
         default: false
         type: boolean
-
+    secrets:
+      CODECOV_TOKEN:
+        required: true
 jobs:
   integration-test:
     env:
@@ -27,7 +29,7 @@ jobs:
           cache-dependency-path: "**/packages.lock.json"
 
       - name: 🔐 Login to Github Container Registry
-        if: ${{ inputs.use-github-container-registry }}
+        if: ${{ inputs.use-internal-image }}
         uses: docker/login-action@v3
         with:
           registry: "ghcr.io"
@@ -43,11 +45,18 @@ jobs:
       - name: 🏗️ Build
         run: dotnet build ${{ env.Solution }} --configuration Release --no-restore -warnaserror
 
-      - name: 🔨 Integration Tests
+      - name: 🔨 Integration Tests against Public Server
+        if: ${{ !inputs.use-internal-image }}
+        run: dotnet test ${{ env.Solution }} --filter "(Category=Integration)&(Server!=Internal)" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
+
+      - name: 🔨 Integration Tests against Internal Server
+        if: ${{ inputs.use-internal-image }}
         run: dotnet test ${{ env.Solution }} --filter "Category=Integration" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v5
+        continue-on-error: true
         with:
+          fail_ci_if_error: true
           files: tests/**/coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}

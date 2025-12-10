@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
@@ -11,7 +11,7 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 public class SubscriptionResourceTests : IAsyncLifetime
 {
 #if DEBUG
-  private const int WAIT_PERIOD = 3000; // WSL is slow AF, so for local runs, we're being extra generous
+  private const int WAIT_PERIOD = 4000; // WSL is slow AF, so for local runs, we're being extra generous
 #else
   private const int WAIT_PERIOD = 400; // For CI runs, a much smaller wait time is acceptable
 #endif
@@ -80,15 +80,15 @@ public class SubscriptionResourceTests : IAsyncLifetime
   public async Task ProjectUpdated_SubscriptionIsCalled()
   {
     TaskCompletionSource<ProjectUpdatedMessage> tcs = new();
-    using var sub = Sut.CreateProjectUpdatedSubscription(_testProject.id);
+    using Subscription<ProjectUpdatedMessage> sub = Sut.CreateProjectUpdatedSubscription(_testProject.id);
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
-    var input = new ProjectUpdateInput(_testProject.id, "This is my new name");
-    var created = await _testUser.Project.Update(input);
+    ProjectUpdateInput input = new(_testProject.id, "This is my new name");
+    Project created = await _testUser.Project.Update(input);
 
-    var subscriptionMessage = await tcs.Task;
+    ProjectUpdatedMessage subscriptionMessage = await tcs.Task;
 
     subscriptionMessage.Should().NotBeNull();
     subscriptionMessage.id.Should().Be(created.id);
@@ -134,5 +134,75 @@ public class SubscriptionResourceTests : IAsyncLifetime
     subscriptionMessage.id.Should().Be(created.id);
     subscriptionMessage.type.Should().Be(ProjectCommentsUpdatedMessageType.CREATED);
     subscriptionMessage.comment.Should().NotBeNull();
+  }
+
+  [Fact(Timeout = TIMEOUT), Trait("Server", "Internal")]
+  public async Task ProjectModelIngestionCancellationRequested_SubscriptionIsCalled()
+  {
+    ModelIngestion ingestion = await _testUser.Ingestion.Create(
+      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
+    );
+    TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
+
+    using var sub = Sut.CreateProjectModelIngestionCancellationRequestedSubscription(ingestion.id, _testProject.id);
+    sub.Listeners += (_, message) => tcs.SetResult(message);
+
+    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+
+    await _testUser.Ingestion.RequestCancellation(new(ingestion.id, _testProject.id, "please cancel"));
+
+    var subscriptionMessage = await tcs.Task;
+
+    subscriptionMessage.Should().NotBeNull();
+    subscriptionMessage.type.Should().Be(ProjectModelIngestionUpdatedMessageType.cancellationRequested);
+    subscriptionMessage.modelIngestion.id.Should().Be(ingestion.id);
+  }
+
+  [Fact(Timeout = TIMEOUT), Trait("Server", "Internal")]
+  public async Task ProjectModelIngestionUpdate_UpdateSubscriptionIs()
+  {
+    ModelIngestion ingestion = await _testUser.Ingestion.Create(
+      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
+    );
+    TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
+
+    using var sub = Sut.CreateProjectModelIngestionUpdatedSubscription(
+      new(
+        _testProject.id,
+        new ModelIngestionReference(ingestion.id, null),
+        ProjectModelIngestionUpdatedMessageType.updated
+      )
+    );
+    sub.Listeners += (_, message) => tcs.SetResult(message);
+
+    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+
+    await _testUser.Ingestion.UpdateProgress(new(ingestion.id, _testProject.id, "Here's an update", 0.314));
+
+    var subscriptionMessage = await tcs.Task;
+
+    subscriptionMessage.Should().NotBeNull();
+    subscriptionMessage.type.Should().Be(ProjectModelIngestionUpdatedMessageType.updated);
+    subscriptionMessage.modelIngestion.id.Should().Be(ingestion.id);
+  }
+
+  [Fact(Timeout = TIMEOUT), Trait("Server", "Internal")]
+  public async Task ProjectModelIngestionUpdate_CancelSubscriptionIsNotCalled()
+  {
+    ModelIngestion ingestion = await _testUser.Ingestion.Create(
+      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
+    );
+    TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
+
+    using var sub = Sut.CreateProjectModelIngestionCancellationRequestedSubscription(ingestion.id, _testProject.id);
+    sub.Listeners += (_, message) => tcs.SetResult(message);
+
+    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+
+    await _testUser.Ingestion.UpdateProgress(new(ingestion.id, _testProject.id, "this shouldn't cancel", null));
+
+    await Task.Delay(WAIT_PERIOD); // Give time to subscription to maybe fire
+
+    tcs.Task.IsCompleted.Should().BeFalse();
   }
 }
