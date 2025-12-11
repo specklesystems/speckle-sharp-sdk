@@ -71,6 +71,52 @@ public sealed class ModelIngestionResource
     return res.data.data.data;
   }
 
+  /// <remarks>
+  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// </remarks>
+  /// <param name="modelIngestionId"></param>
+  /// <param name="projectId"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<ModelIngestion> Get(
+    string modelIngestionId,
+    string projectId,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      query Query($projectId: String!, $modelIngestionId: ID!) {
+        data:project(id: $projectId) {
+          data:ingestion(id: $modelIngestionId) {
+            id
+            createdAt
+            updatedAt
+            modelId
+            cancellationRequested
+            statusData {
+              ... on HasModelIngestionStatus {
+                status
+              }
+              ... on HasProgressMessage {
+                progressMessage
+              }
+            }
+          }
+        }
+      }
+      """;
+
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, modelIngestionId } };
+
+    var res = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<ModelIngestion>>>(request, cancellationToken)
+      .ConfigureAwait(false);
+
+    return res.data.data;
+  }
+
   /// <summary>
   /// For File Import / Cloud integrations only
   /// </summary>
