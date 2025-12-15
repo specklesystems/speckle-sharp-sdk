@@ -35,7 +35,14 @@ public static class Fixtures
   public static IClient Unauthed =>
     ServiceProvider
       .GetRequiredService<IClientFactory>()
-      .Create(new Account { serverInfo = Server, userInfo = new UserInfo() });
+      .Create(
+        new Account
+        {
+          token = null,
+          serverInfo = Server,
+          userInfo = new UserInfo(),
+        }
+      );
 
   public static async Task<IClient> SeedUserWithClient()
   {

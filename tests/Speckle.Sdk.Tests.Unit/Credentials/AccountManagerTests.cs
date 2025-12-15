@@ -222,7 +222,13 @@ public sealed class AccountManagerTests : MoqTest
     var validAccount = CreateTestAccount("valid-account");
     validAccount.isDefault = true;
 
-    var invalidAccount = new Account { id = "invalid-account" };
+    var invalidAccount = new Account
+    {
+      token = null,
+      id = "invalid-account",
+      serverInfo = null!,
+      userInfo = null!,
+    }; // intentional use of null-forgiving operator since we're testing json account validation logic
 
     var deleteCalled = false;
 

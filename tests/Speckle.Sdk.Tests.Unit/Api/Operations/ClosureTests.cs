@@ -1,6 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Host;

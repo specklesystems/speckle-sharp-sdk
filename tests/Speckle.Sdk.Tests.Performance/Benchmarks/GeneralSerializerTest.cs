@@ -28,7 +28,9 @@ public class GeneralSerializerTest
       .SeedTransport(
         new Account()
         {
+          token = null,
           serverInfo = new() { url = "https://latest.speckle.systems/projects/2099ac4b5f/models/da511c4d1e" },
+          userInfo = new(),
         },
         "2099ac4b5f",
         "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6",

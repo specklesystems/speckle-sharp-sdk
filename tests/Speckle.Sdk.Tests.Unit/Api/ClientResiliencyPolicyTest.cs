@@ -21,7 +21,8 @@ public sealed class GraphQLClientTests : IDisposable
           new Account
           {
             token = "this is a scam",
-            serverInfo = new ServerInfo { url = "http://goto.testing" },
+            serverInfo = new ServerInfo { url = "http://example.com" },
+            userInfo = new(),
           }
         );
   }

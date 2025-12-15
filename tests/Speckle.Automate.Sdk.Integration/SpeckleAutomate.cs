@@ -7,6 +7,7 @@ using Speckle.Sdk;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Integration;
@@ -99,7 +100,7 @@ public sealed class AutomationContextTest : IAsyncLifetime
     IAutomationContext automationContext = await _runner.RunFunction(
       TestAutomateFunction.Run,
       automationRunData,
-      _account.token,
+      _account.token.NotNull(),
       new TestFunctionInputs { ForbiddenSpeckleType = "Base" }
     );
 
@@ -141,7 +142,10 @@ public sealed class AutomationContextTest : IAsyncLifetime
   public async Task TestFileUploads()
   {
     AutomationRunData automationRunData = await AutomationRunData(Utils.TestObject());
-    IAutomationContext automationContext = await _contextFactory.Initialize(automationRunData, _account.token);
+    IAutomationContext automationContext = await _contextFactory.Initialize(
+      automationRunData,
+      _account.token.NotNull()
+    );
 
     string filePath = $"./{Utils.RandomString(10)}";
     await File.WriteAllTextAsync(filePath, "foobar");
@@ -156,7 +160,10 @@ public sealed class AutomationContextTest : IAsyncLifetime
   public async Task TestCreateVersionInProject()
   {
     AutomationRunData automationRunData = await AutomationRunData(Utils.TestObject());
-    IAutomationContext automationContext = await _contextFactory.Initialize(automationRunData, _account.token);
+    IAutomationContext automationContext = await _contextFactory.Initialize(
+      automationRunData,
+      _account.token.NotNull()
+    );
 
     const string BRANCH_NAME = "test-branch";
     const string COMMIT_MSG = "automation test";
@@ -179,7 +186,10 @@ public sealed class AutomationContextTest : IAsyncLifetime
   public async Task TestCreateVersionInProject_ThrowsErrorForSameModel()
   {
     AutomationRunData automationRunData = await AutomationRunData(Utils.TestObject());
-    IAutomationContext automationContext = await _contextFactory.Initialize(automationRunData, _account.token);
+    IAutomationContext automationContext = await _contextFactory.Initialize(
+      automationRunData,
+      _account.token.NotNull()
+    );
 
     var trigger = GetVersionCreationTrigger(automationRunData.Triggers);
 
@@ -197,7 +207,10 @@ public sealed class AutomationContextTest : IAsyncLifetime
   public async Task TestSetContextView()
   {
     AutomationRunData automationRunData = await AutomationRunData(Utils.TestObject());
-    IAutomationContext automationContext = await _contextFactory.Initialize(automationRunData, _account.token);
+    IAutomationContext automationContext = await _contextFactory.Initialize(
+      automationRunData,
+      _account.token.NotNull()
+    );
 
     automationContext.SetContextView();
 
@@ -242,7 +255,10 @@ public sealed class AutomationContextTest : IAsyncLifetime
   public async Task TestReportRunStatus_Succeeded()
   {
     AutomationRunData automationRunData = await AutomationRunData(Utils.TestObject());
-    IAutomationContext automationContext = await _contextFactory.Initialize(automationRunData, _account.token);
+    IAutomationContext automationContext = await _contextFactory.Initialize(
+      automationRunData,
+      _account.token.NotNull()
+    );
 
     automationContext.RunStatus.Should().Be(AutomationStatusMapping.Get(Schema.AutomationStatus.Running));
 
@@ -255,7 +271,10 @@ public sealed class AutomationContextTest : IAsyncLifetime
   public async Task TestReportRunStatus_Failed()
   {
     AutomationRunData automationRunData = await AutomationRunData(Utils.TestObject());
-    IAutomationContext automationContext = await _contextFactory.Initialize(automationRunData, _account.token);
+    IAutomationContext automationContext = await _contextFactory.Initialize(
+      automationRunData,
+      _account.token.NotNull()
+    );
 
     automationContext.RunStatus.Should().Be(AutomationStatusMapping.Get(Schema.AutomationStatus.Running));
 

@@ -40,8 +40,8 @@ public class BaseExtensionsTests
   [Fact]
   public void TraverseWithPath()
   {
-    var collection = new Collection() { name = "collection" };
-    var subCollection = new Collection { name = "subCollection" };
+    var collection = new Collection("collection");
+    var subCollection = new Collection("subCollection");
     collection.elements.Add(subCollection);
     var data1 = new Base();
     subCollection.elements.Add(data1);

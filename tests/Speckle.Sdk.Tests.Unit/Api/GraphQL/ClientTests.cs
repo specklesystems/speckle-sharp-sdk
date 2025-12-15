@@ -29,6 +29,7 @@ public class ClientTests : MoqTest
     {
       token = token,
       serverInfo = new ServerInfo() { url = uri.AbsoluteUri },
+      userInfo = new(),
     };
 
     var graphqlClientFactory = Create<IGraphQLClientFactory>();

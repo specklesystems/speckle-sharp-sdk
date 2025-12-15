@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 
 namespace Speckle.Sdk.Tests.Integration.Credentials;
@@ -60,7 +61,8 @@ public class AccountFactoryTests : IAsyncLifetime
   {
     var expectedServerInfo = _client.Account.serverInfo;
     var expectedUserInfo = _client.Account.userInfo;
-    var result = await _sut.CreateAccount(_client.ServerUrl, _client.Account.token);
+
+    var result = await _sut.CreateAccount(_client.ServerUrl, _client.Account.token.NotNull());
 
     result.serverInfo.url.Should().Be(expectedServerInfo.url).And.NotBeNull();
     result.serverInfo.name.Should().Be(expectedServerInfo.name).And.NotBeNull();

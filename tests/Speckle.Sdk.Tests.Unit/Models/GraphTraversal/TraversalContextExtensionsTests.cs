@@ -58,7 +58,7 @@ public class TraversalContextExtensionsTests
   [MemberData(nameof(GetTestDepths))]
   public void GetAscendantOfType_EveryOtherIsCollection(int depth)
   {
-    var testData = CreateLinkedList(depth, i => i % 2 == 0 ? new Base() : new Collection()).NotNull();
+    var testData = CreateLinkedList(depth, i => i % 2 == 0 ? new Base() : new Collection("asdfasfd")).NotNull();
 
     var all = testData.GetAscendantOfType<Collection>().ToArray();
 

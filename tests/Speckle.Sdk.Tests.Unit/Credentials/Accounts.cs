@@ -110,12 +110,14 @@ public class CredentialInfrastructure : IDisposable
     string id = "12345";
     var acc1 = new Account
     {
+      token = null,
       serverInfo = new ServerInfo { url = "https://speckle.xyz" },
       userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
 
     var acc2 = new Account
     {
+      token = null,
       serverInfo = new ServerInfo { url = "https://app.speckle.systems" },
       userInfo = new UserInfo { id = id },
     }.GetLocalIdentifier();
