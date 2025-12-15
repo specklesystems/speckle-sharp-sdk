@@ -108,12 +108,14 @@ public sealed class ObjectLoader(
   {
     var toCache = new List<BaseItem>();
     await foreach (
+#pragma warning disable CA2007 //Do not directly await a Task
       var (id, json) in serverObjectManager.DownloadObjects(
         ids.Select(x => x.NotNull()).ToList(),
         null, //TODO: Implement attribute masking in a safe way that will not poison SQLite DB.
         progress,
         _cancellationToken
       )
+#pragma warning restore CA2007
     )
     {
       _cancellationToken.ThrowIfCancellationRequested();

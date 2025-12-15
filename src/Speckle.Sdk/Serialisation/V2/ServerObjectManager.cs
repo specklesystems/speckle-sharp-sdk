@@ -76,7 +76,9 @@ public class ServerObjectManager : IServerObjectManager
       .SendAsync(childrenHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)
       .ConfigureAwait(false);
 
+#pragma warning disable CA2007 //Do not directly await a Task
     await foreach (var (id, json) in ResponseProgress(childrenHttpResponse, progress, false, cancellationToken))
+#pragma warning restore CA2007
     {
       if (id is not null)
       {

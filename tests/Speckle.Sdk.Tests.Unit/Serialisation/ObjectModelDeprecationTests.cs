@@ -30,12 +30,12 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation
       string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
 
       var result = TypeLoader.GetAtomicType(destinationType);
-      result.Should().Be(typeof(MySpeckleBase)); // Shouldly assertion replaces Assert.That
+      result.Should().Be<MySpeckleBase>(); // Shouldly assertion replaces Assert.That
 
       destinationType = $"Speckle.Core.Serialisation.Deprecated.{nameof(MySpeckleBase)}";
 
       result = TypeLoader.GetAtomicType(destinationType);
-      result.Should().Be(typeof(MySpeckleBase)); // Shouldly assertion replaces Assert.That
+      result.Should().Be<MySpeckleBase>(); // Shouldly assertion replaces Assert.That
     }
   }
 }

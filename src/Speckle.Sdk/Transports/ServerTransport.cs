@@ -145,7 +145,7 @@ public sealed class ServerTransport : IServerTransport
     var allIds = ClosureParser.GetChildrenIds(rootObjectJson.NotNull(), CancellationToken).ToList();
 
     var childrenIds = allIds.Where(x => !x.Contains("blob:"));
-    var blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x.Remove(0, 5));
+    var blobIds = allIds.Where(x => x.Contains("blob:")).Select(x => x[5..]);
 
     //
     // Objects download
@@ -153,7 +153,7 @@ public sealed class ServerTransport : IServerTransport
 
     // Check which children are not already in the local transport
     var childrenFoundMap = await targetTransport.HasObjects(childrenIds.ToList()).ConfigureAwait(false);
-    List<string> newChildrenIds = new(from objId in childrenFoundMap.Keys where !childrenFoundMap[objId] select objId);
+    List<string> newChildrenIds = childrenFoundMap.Keys.Where(objId => !childrenFoundMap[objId]).ToList();
 
     targetTransport.BeginWrite();
 
