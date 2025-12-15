@@ -14,6 +14,7 @@ const string PACK = "pack";
 const string CLEAN_LOCKS = "clean-locks";
 const string PERF = "perf";
 const string DEEP_CLEAN = "deep-clean";
+const string SOLUTION = "Speckle.Sdk.slnx";
 
 static (string semver, string fileVerison) GetVersions()
 {
@@ -34,7 +35,7 @@ Target(
       File.Delete(f);
     }
     Console.WriteLine("Running restore now.");
-    Run("dotnet", "restore .\\Speckle.Sdk.sln");
+    Run("dotnet", $@"restore .\{SOLUTION}");
   }
 );
 
@@ -68,7 +69,7 @@ Target(RESTORE_TOOLS, () => RunAsync("dotnet", "tool restore"));
 
 Target(FORMAT, dependsOn: [RESTORE_TOOLS], () => RunAsync("dotnet", "csharpier check ."));
 
-Target(RESTORE, dependsOn: [FORMAT], () => RunAsync("dotnet", "restore Speckle.Sdk.sln --locked-mode"));
+Target(RESTORE, dependsOn: [FORMAT], () => RunAsync("dotnet", $"restore {SOLUTION} --locked-mode"));
 
 Target(
   BUILD,
@@ -162,7 +163,7 @@ Target(
       Directory.Delete(f, true);
     }
     Console.WriteLine("Running restore now.");
-    Run("dotnet", "restore .\\Speckle.Sdk.sln --no-cache");
+    Run("dotnet", $@"restore .\{SOLUTION} --no-cache");
   }
 );
 
@@ -174,7 +175,10 @@ Target(
     {
       var (version, fileVersion) = GetVersions();
       Console.WriteLine($"Version: {version} & {fileVersion}");
-      await RunAsync("dotnet", $"pack Speckle.Sdk.sln -c Release -o output --no-build -p:Version={version}")
+      await RunAsync(
+          "dotnet",
+          $"pack {SOLUTION} --configuration Release --output output --no-build -p:Version={version}"
+        )
         .ConfigureAwait(false);
     }
   }
