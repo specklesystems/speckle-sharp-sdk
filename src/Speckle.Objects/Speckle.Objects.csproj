@@ -18,7 +18,7 @@
   <PropertyGroup Label="Analyers">
     <NoWarn>
       $(NoWarn);
-      CA1819;CA1008;CA2225;
+      CA2225;
     </NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Expose internals to test projects">
