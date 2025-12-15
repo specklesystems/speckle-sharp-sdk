@@ -51,14 +51,10 @@
       <!-- Naming things is hard enough -->
       CA1710;CA1711;CA1720;CA1724;
       <!-- Aspirational -->
-      CA1502;CA1716;NETSDK1206;
+      CA1716;NETSDK1206;
       $(NoWarn)
     </NoWarn
     >
-  </PropertyGroup>
-  <PropertyGroup>
-    <!-- Expose the repository root to all projects -->
-    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
@@ -67,6 +63,6 @@
   <ItemGroup>
     <!-- This file contains the configuration for some analyzer warnings, such as cyclomatic
 complexity threshold -->
-    <AdditionalFiles Include="$(RepositoryRoot)CodeMetricsConfig.txt" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)CodeMetricsConfig.txt" />
   </ItemGroup>
 </Project>
