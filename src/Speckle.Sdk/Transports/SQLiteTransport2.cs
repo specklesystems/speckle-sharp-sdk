@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Timers;
 using Microsoft.Data.Sqlite;
@@ -139,6 +140,7 @@ public sealed class SQLiteTransport2 : IDisposable, ICloneable, ITransport, IBlo
   }
 
   /// <exception cref="SqliteException">Failed to initialize connection to the SQLite DB</exception>
+  [MemberNotNull(nameof(Connection))]
   private void Initialize()
   {
     // NOTE: used for creating partioned object tables.

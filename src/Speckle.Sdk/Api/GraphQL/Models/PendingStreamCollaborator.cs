@@ -2,15 +2,13 @@
 
 public sealed class PendingStreamCollaborator
 {
-  public string id { get; init; }
-  public string inviteId { get; init; }
-
-  public string projectId { get; init; }
-
-  public string projectName { get; init; }
-  public string title { get; init; }
-  public string role { get; init; }
-  public LimitedUser invitedBy { get; init; }
-  public LimitedUser? user { get; init; }
-  public string? token { get; init; }
+  public required string id { get; init; }
+  public required string inviteId { get; init; }
+  public required string projectId { get; init; }
+  public required string projectName { get; init; }
+  public required string title { get; init; }
+  public required string role { get; init; }
+  public required LimitedUser invitedBy { get; init; }
+  public required LimitedUser? user { get; init; }
+  public required string? token { get; init; }
 }

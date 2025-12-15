@@ -64,7 +64,7 @@ public sealed class ServerTransport : IServerTransport
   public string StreamId { get; internal set; }
 
   public int TimeoutSeconds { get; set; }
-  private string AuthorizationToken { get; }
+  private string? AuthorizationToken { get; }
 
   internal ParallelServerApi Api { get; private set; }
 

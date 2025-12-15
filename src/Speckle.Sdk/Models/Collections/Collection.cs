@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Speckle.Sdk.Models.Collections;
 
 /// <summary>
@@ -20,16 +22,18 @@ public class Collection : Base
   /// Constructor for a basic collection.
   /// </summary>
   /// <param name="name">The human-readable name of this collection</param>
+  [SetsRequiredMembers] //need to be careful when making changes to this class that this constructor does actually set all required members, there's no analyser to double check
   public Collection(string name)
   {
     this.name = name;
+    elements = new();
   }
 
   /// <summary>
   /// The human-readable name of the <see cref="Collection"/>.
   /// </summary>
   /// <remarks>This name is not necessarily unique within a commit. Set the applicationId for a unique identifier.</remarks>
-  public string name { get; set; }
+  public required string name { get; set; }
 
   /// <summary>
   /// The type of this collection. Note: Claire and Dim would propose we deprecate this prop. Do not use, please!
@@ -37,7 +41,7 @@ public class Collection : Base
   [Obsolete(
     "Note: Claire and Dim would propose we deprecate this prop. Do not use, please! Let's have a discussion about subclassing for your needs if nothing exists already."
   )]
-  public string collectionType { get; set; }
+  public string? collectionType { get; set; }
 
   /// <summary>
   /// The elements contained in this <see cref="Collection"/>.
@@ -46,5 +50,5 @@ public class Collection : Base
   /// This can include additional nested <see cref="Collection"/>s.
   /// </remarks>
   [DetachProperty]
-  public List<Base> elements { get; set; } = new();
+  public required List<Base> elements { get; set; }
 }

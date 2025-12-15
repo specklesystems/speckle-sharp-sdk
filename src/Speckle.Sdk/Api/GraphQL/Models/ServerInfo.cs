@@ -1,17 +1,12 @@
-﻿namespace Speckle.Sdk.Api.GraphQL.Models;
+﻿using System.Diagnostics.CodeAnalysis;
 
-public sealed class AuthStrategy
-{
-  public string? color { get; init; }
-  public string icon { get; init; }
-  public string id { get; init; }
-  public string name { get; init; }
-  public string url { get; init; }
-}
+namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public sealed class ServerInfo
 {
+#nullable disable  //Not nullable in the schema, but we frequently abuse ServerInfo, creating instances with incomplete data
   public string name { get; init; }
+#nullable enable
   public string? company { get; init; }
   public string? version { get; init; }
   public string? description { get; init; }
@@ -27,7 +22,8 @@ public sealed class ServerInfo
   /// it should be populated after construction.
   /// see <see cref="Speckle.Sdk.Credentials.AccountManager"/>
   /// </remarks>
-  public string url { get; set; }
+  [StringSyntax(StringSyntaxAttribute.Uri)]
+  public required string url { get; set; }
 
   public ServerMigration? migration { get; init; }
 }

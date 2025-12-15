@@ -5,6 +5,7 @@ using GraphQL.Client.Http;
 using Speckle.Automate.Sdk.Schema;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 
 namespace Speckle.Automate.Sdk;
@@ -53,7 +54,7 @@ internal sealed class AutomationContextFactory(
     {
       AutomationRunData = automationRunData,
       SpeckleClient = client,
-      _speckleToken = account.token,
+      _speckleToken = account.token.NotNull("Speckle token was null"),
       _initTime = initTime,
       AutomationResult = new AutomationResult(),
     };

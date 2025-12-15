@@ -433,7 +433,7 @@ public sealed class AccountManager(
   public async Task<UserInfo> Validate(Account account)
   {
     Uri server = new(account.serverInfo.url);
-    return await GetUserInfo(account.token, server).ConfigureAwait(false);
+    return await GetUserInfo(account.token.NotNull(), server).ConfigureAwait(false);
   }
 
   /// <summary>

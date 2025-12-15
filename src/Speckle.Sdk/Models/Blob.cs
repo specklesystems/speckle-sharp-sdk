@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Models;
@@ -10,19 +11,22 @@ public class Blob : Base
   public static int LocalHashPrefixLength => 20;
 
   private string _filePath;
-  private string _hash;
+  private string? _hash;
   private bool _isHashExpired = true;
 
   public Blob() { }
 
+  [SetsRequiredMembers]
   public Blob(string filePath)
   {
     this.filePath = filePath;
   }
 
-  public string filePath
+  public required string filePath
   {
     get => _filePath;
+    [MemberNotNull(nameof(originalPath))]
+    [MemberNotNull(nameof(_filePath))]
     set
     {
       originalPath ??= value;
@@ -43,9 +47,9 @@ public class Blob : Base
     set => base.id = value;
   }
 
-  public string? GetFileHash()
+  public string GetFileHash()
   {
-    if ((_isHashExpired || _hash == null) && filePath != null)
+    if ((_isHashExpired || _hash == null))
     {
       _hash = HashUtility.HashFile(filePath);
     }

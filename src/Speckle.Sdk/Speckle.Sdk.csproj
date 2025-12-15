@@ -9,7 +9,6 @@
     <PackageId>Speckle.Sdk</PackageId>
     <Description>The .NET SDK for Speckle</Description>
     <PackageTags>$(PackageTags) core sdk</PackageTags>
-    <NoWarn>$(NoWarn);CS8618</NoWarn>
   </PropertyGroup>
   <PropertyGroup Label="Nuget Package Properties">
     <IsPackable>true</IsPackable>

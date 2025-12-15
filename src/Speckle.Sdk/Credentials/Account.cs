@@ -8,7 +8,7 @@ namespace Speckle.Sdk.Credentials;
 [ComVisible(true)]
 public class Account : IEquatable<Account>
 {
-  private string _id;
+  private string? _id;
 
   /// <remarks>
   /// The account id is unique to user and server url.
@@ -32,16 +32,20 @@ public class Account : IEquatable<Account>
     set => _id = value;
   }
 
-  public string token { get; set; }
+  /// <remarks>
+  /// We often use <see langword="null"/> token to represent an unauthed account for testing purposes.
+  /// However, for most other cases, you should specify a token
+  /// </remarks>>
+  public required string? token { get; set; }
 
   public string? refreshToken { get; set; }
 
   public bool isDefault { get; set; }
   public bool isOnline { get; set; } = true;
 
-  public ServerInfo serverInfo { get; set; }
+  public required ServerInfo serverInfo { get; set; }
 
-  public UserInfo userInfo { get; set; }
+  public required UserInfo userInfo { get; set; }
 
   #region private methods
 

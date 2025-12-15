@@ -4,6 +4,6 @@ namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public sealed class ResourceIdentifier
 {
-  public string resourceId { get; init; }
-  public ResourceType resourceType { get; init; }
+  public required string resourceId { get; init; }
+  public required ResourceType resourceType { get; init; }
 }

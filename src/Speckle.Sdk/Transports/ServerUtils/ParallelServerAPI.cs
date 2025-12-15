@@ -21,7 +21,7 @@ internal enum ServerApiOperation
 
 internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>, IServerApi
 {
-  private readonly string _authToken;
+  private readonly string? _authToken;
 
   private readonly ISpeckleHttp _http;
   private readonly ISdkActivityFactory _activityFactory;
@@ -33,7 +33,7 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
     ISpeckleHttp http,
     ISdkActivityFactory activityFactory,
     Uri baseUri,
-    string authorizationToken,
+    string? authorizationToken,
     string blobStorageFolder,
     int timeoutSeconds,
     int numThreads = 4,
