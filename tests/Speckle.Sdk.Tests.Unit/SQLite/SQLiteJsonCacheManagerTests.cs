@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.Sdk.SQLite;
 
 namespace Speckle.Sdk.Tests.Unit.SQLite;

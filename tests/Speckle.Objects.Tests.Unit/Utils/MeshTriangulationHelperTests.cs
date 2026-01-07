@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Common;

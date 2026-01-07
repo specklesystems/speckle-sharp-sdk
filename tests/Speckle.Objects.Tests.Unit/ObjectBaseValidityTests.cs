@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Geometry.Autocad;
 using Speckle.Sdk.Host;

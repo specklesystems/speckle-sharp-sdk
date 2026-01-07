@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;

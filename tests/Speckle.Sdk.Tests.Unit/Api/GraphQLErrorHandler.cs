@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using GraphQL;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
