@@ -26,12 +26,7 @@ jobs:
       - name: 🏗️ Build
         run: dotnet build ${{ env.Solution }} --configuration Release --no-restore -warnaserror
 
-      - name: 🔨 Integration Tests against Public Server
-        if: ${{ !inputs.use-internal-image }}
-        run: dotnet test ${{ env.Solution }} --filter "Category!=Integration" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
-
-      - name: 🔨 Integration Tests against Internal Server
-        if: ${{ inputs.use-internal-image }}
+      - name: 🔨 Unit test
         run: dotnet test ${{ env.Solution }} --filter "Category!=Integration" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
 
       - name: Upload coverage reports to Codecov with GitHub Action
