@@ -51,7 +51,7 @@
       <!-- Naming things is hard enough -->
       CA1710;CA1711;CA1720;CA1724;
       <!-- Aspirational -->
-      CA1716;NETSDK1206;
+      CA1716;
       $(NoWarn)
     </NoWarn
     >

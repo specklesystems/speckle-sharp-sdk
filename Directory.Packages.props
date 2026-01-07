@@ -4,15 +4,15 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.3.0" />
     <PackageVersion Include="AwesomeAssertions.Analyzers" Version="9.0.8" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
-    <PackageVersion Include="Bullseye" Version="6.0.0" />
+    <PackageVersion Include="Bullseye" Version="6.1.0" />
     <PackageVersion Include="GraphQL.Client" Version="6.1.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
-    <PackageVersion Include="HttpMultipartParser" Version="9.0.0" />
+    <PackageVersion Include="HttpMultipartParser" Version="9.2.0" />
     <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <!-- Keep at exactly 7.0.5 for side by side with V2 -->
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="[7.0.5,)" />
-    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="[10.0.1,)" />
+    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="10.0.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="[2.2.0,)" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.2.0,)" />
@@ -20,7 +20,7 @@
     <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[5.0.0,)" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
-    <PackageVersion Include="Open.ChannelExtensions" Version="9.1.0" />
+    <PackageVersion Include="Open.ChannelExtensions" Version="9.1.1" />
     <PackageVersion Include="Polly" Version="7.2.3" />
     <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
@@ -29,7 +29,7 @@
     <PackageVersion Include="Speckle.DoubleNumerics" Version="4.1.0" />
     <PackageVersion Include="SimpleExec" Version="12.0.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    <PackageVersion Include="System.Threading.Channels" Version="9.0.4" />
+    <PackageVersion Include="System.Threading.Channels" Version="10.0.1" />
     <PackageVersion Include="Verify.Quibble" Version="2.1.1" />
     <PackageVersion Include="Verify.Xunit" Version="31.9.3" />
     <PackageVersion Include="System.Text.Json" Version="10.0.1" />
