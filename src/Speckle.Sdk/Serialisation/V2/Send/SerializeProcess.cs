@@ -115,6 +115,10 @@ public sealed class SerializeProcess(
       var findTotalObjectsTask = Task.CompletedTask;
       if (!options.SkipFindTotalObjects)
       {
+        // Total object count is needed for displaying progress total
+        // _higest priority means this Task will be given more CPU time than the serialize process
+        // but they both occur concurrently, so progress may start reporting before this the total count is fully known
+        // hence it's reported as total "found"
         ThrowIfFailed();
         findTotalObjectsTask = Task.Factory.StartNew(
           () => TraverseTotal(root),

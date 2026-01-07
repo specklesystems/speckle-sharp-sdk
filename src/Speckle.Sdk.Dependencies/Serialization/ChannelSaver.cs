@@ -28,6 +28,20 @@ public abstract class ChannelSaver<T>
     _ => throw new NotImplementedException("Dropping items not supported.")
   );
 
+  /// <summary>
+  /// Creates the readers to handle serialized objects
+  /// </summary>
+  /// <remarks>
+  /// Why do we SendToServer then join and re-batch for sqlite?
+  /// We have to consider exceptional cases where sending fails.
+  /// We never want to leave the sqlite db in a state where it has an object, but not all it's children
+  /// (note: is this still the case? the receiving functions used to require this, but I'm not certain they do now...)
+  /// </remarks>
+  /// <param name="maxParallelism"></param>
+  /// <param name="httpBatchSize"></param>
+  /// <param name="cacheBatchSize"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
   public Task Start(
     int? maxParallelism,
     int? httpBatchSize,
