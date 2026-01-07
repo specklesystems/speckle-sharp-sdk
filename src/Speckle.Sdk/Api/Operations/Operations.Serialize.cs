@@ -40,7 +40,11 @@ public partial class Operations
   /// <exception cref="Speckle.Sdk.Transports.TransportException"><paramref name="value"/> contains closure references (see Remarks)</exception>
   public async Task<Base> DeserializeAsync(string value, CancellationToken cancellationToken = default)
   {
-    var deserializer = new SpeckleObjectDeserializer { CancellationToken = cancellationToken };
+    var deserializer = new SpeckleObjectDeserializer
+    {
+      CancellationToken = cancellationToken,
+      ReadTransport = new MemoryTransport(),
+    };
     return await DeserializeActivity(value, deserializer).ConfigureAwait(false);
   }
 

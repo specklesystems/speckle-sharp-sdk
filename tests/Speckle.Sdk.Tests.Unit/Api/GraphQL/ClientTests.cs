@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using GraphQL;
 using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
@@ -29,6 +29,7 @@ public class ClientTests : MoqTest
     {
       token = token,
       serverInfo = new ServerInfo() { url = uri.AbsoluteUri },
+      userInfo = new(),
     };
 
     var graphqlClientFactory = Create<IGraphQLClientFactory>();

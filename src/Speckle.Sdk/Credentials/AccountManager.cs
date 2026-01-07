@@ -433,7 +433,7 @@ public sealed class AccountManager(
   public async Task<UserInfo> Validate(Account account)
   {
     Uri server = new(account.serverInfo.url);
-    return await GetUserInfo(account.token, server).ConfigureAwait(false);
+    return await GetUserInfo(account.token.NotNull(), server).ConfigureAwait(false);
   }
 
   /// <summary>
@@ -723,7 +723,7 @@ public sealed class AccountManager(
 
   private static string GenerateChallenge()
   {
-#if NET8_0
+#if NET8_0_OR_GREATER
     byte[] challengeData = RandomNumberGenerator.GetBytes(32);
 #else
     using RNGCryptoServiceProvider rng = new();

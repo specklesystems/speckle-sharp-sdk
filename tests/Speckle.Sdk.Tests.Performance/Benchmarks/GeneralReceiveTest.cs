@@ -35,7 +35,12 @@ public class GeneralReceiveTest : IDisposable
   {
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     _dataSource = new TestDataHelper();
-    var acc = new Account() { serverInfo = new() { url = url } };
+    var acc = new Account()
+    {
+      token = null,
+      serverInfo = new() { url = url },
+      userInfo = new(),
+    };
     await _dataSource.SeedTransport(acc, streamId, rootId, true).ConfigureAwait(false);
     _operations = TestDataHelper.ServiceProvider.GetRequiredService<IOperations>();
     // await _operations.Receive2(_baseUrl, streamId, rootId, null);

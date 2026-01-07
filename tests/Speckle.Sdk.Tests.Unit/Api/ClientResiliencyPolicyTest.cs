@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Models;
@@ -21,7 +21,8 @@ public sealed class GraphQLClientTests : IDisposable
           new Account
           {
             token = "this is a scam",
-            serverInfo = new ServerInfo { url = "http://goto.testing" },
+            serverInfo = new ServerInfo { url = "http://example.com" },
+            userInfo = new(),
           }
         );
   }

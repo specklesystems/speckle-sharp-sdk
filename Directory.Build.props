@@ -21,8 +21,8 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
   <PropertyGroup Label="Nuget Package Properties">
+    <!--IsPackable can be set to true in inheriting .props/.csproj files for projects that should be packed-->
     <IsPackable>false</IsPackable>
-    <!--Can be set to true in inheriting .props/.csproj files for projects that should be packed-->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
@@ -52,22 +52,18 @@
       <!-- Naming things is hard enough -->
       CA1710;CA1711;CA1720;CA1724;
       <!-- Aspirational -->
-      CA1502;CA1716;NETSDK1206;
+      CA1716;
       $(NoWarn)
     </NoWarn
     >
   </PropertyGroup>
-  <PropertyGroup>
-    <!-- Expose the repository root to all projects -->
-    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
-  </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-    <None Condition="'$(IsPackable)' == 'true'" Include="..\..\logo.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Condition="'$(IsPackable)' == 'true'" Include="$(MSBuildThisFileDirectory)\logo.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
   <ItemGroup>
     <!-- This file contains the configuration for some analyzer warnings, such as cyclomatic
 complexity threshold -->
-    <AdditionalFiles Include="$(RepositoryRoot)CodeMetricsConfig.txt" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)CodeMetricsConfig.txt" />
   </ItemGroup>
 </Project>

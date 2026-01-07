@@ -2,17 +2,17 @@
 
 public class Model
 {
-  public LimitedUser? author { get; init; }
-  public DateTime createdAt { get; init; }
-  public string? description { get; init; }
-  public string displayName { get; init; }
-  public string id { get; init; }
-  public string name { get; init; }
-  public Uri? previewUrl { get; init; }
-  public DateTime updatedAt { get; init; }
+  public required LimitedUser? author { get; init; }
+  public required DateTime createdAt { get; init; }
+  public required string? description { get; init; }
+  public required string displayName { get; init; }
+  public required string id { get; init; }
+  public required string name { get; init; }
+  public required Uri? previewUrl { get; init; }
+  public required DateTime updatedAt { get; init; }
 }
 
 public sealed class ModelWithVersions : Model
 {
-  public ResourceCollection<Version> versions { get; init; }
+  public required ResourceCollection<Version> versions { get; init; }
 }

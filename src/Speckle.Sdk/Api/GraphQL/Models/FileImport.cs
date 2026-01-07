@@ -2,12 +2,12 @@
 
 public sealed class FileImport
 {
-  public string id { get; init; }
-  public string projectId { get; init; }
-  public string? convertedVersionId { get; init; }
-  public string userId { get; init; }
-  public int convertedStatus { get; init; }
-  public string? convertedMessage { get; init; }
-  public string? modelId { get; init; }
-  public DateTime updatedAt { get; init; }
+  public required string id { get; init; }
+  public required string projectId { get; init; }
+  public required string? convertedVersionId { get; init; }
+  public required string userId { get; init; }
+  public required int convertedStatus { get; init; }
+  public required string? convertedMessage { get; init; }
+  public required string? modelId { get; init; }
+  public required DateTime updatedAt { get; init; }
 }

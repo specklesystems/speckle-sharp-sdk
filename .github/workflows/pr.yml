@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     env:
-      Solution: "Speckle.Sdk.sln"
+      Solution: "Speckle.Sdk.slnx"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -15,7 +15,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 8.x.x
+          dotnet-version: 10.x.x
           cache: true
           cache-dependency-path: "**/packages.lock.json"
 

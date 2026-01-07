@@ -38,7 +38,17 @@ public class GeneralDeserializer : IDisposable
     TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
     _dataSource = new TestDataHelper();
     await _dataSource
-      .SeedTransport(new Account() { serverInfo = new() { url = url } }, streamId, rootId, skipCache)
+      .SeedTransport(
+        new Account()
+        {
+          token = null,
+          serverInfo = new() { url = url },
+          userInfo = new(),
+        },
+        streamId,
+        rootId,
+        skipCache
+      )
       .ConfigureAwait(false);
   }
 

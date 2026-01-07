@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;

@@ -48,7 +48,9 @@ public static class Units
   /// <exception cref="ArgumentOutOfRangeException">A <inheritdoc cref="GetUnitsFromString"/></exception>
   /// <returns>The scaling factor to convert from the <paramref name="from"/> units to the <paramref name="to"/> units, or 1 if either unit param is null or none</returns>
   [Pure]
+#pragma warning disable CA1502 //Avoid excessive complexity
   public static double GetConversionFactor(string? from, string? to)
+#pragma warning restore CA1502
   {
     string? fromUnits = GetUnitsFromString(from);
     string? toUnits = GetUnitsFromString(to);

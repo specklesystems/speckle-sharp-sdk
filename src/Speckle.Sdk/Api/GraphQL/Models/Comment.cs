@@ -4,22 +4,22 @@ namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public sealed class Comment
 {
-  public bool archived { get; init; }
-  public LimitedUser author { get; init; }
-  public string authorId { get; init; }
-  public DateTime createdAt { get; init; }
-  public bool hasParent { get; init; }
-  public string id { get; init; }
-  public Comment? parent { get; init; }
-  public string rawText { get; init; }
-  public ResourceCollection<Comment> replies { get; init; }
-  public CommentReplyAuthorCollection replyAuthors { get; init; }
-  public List<ResourceIdentifier> resources { get; init; } //todo: add resourceIds/baseResourceIds
-  public string? screenshot { get; init; }
-  public DateTime updatedAt { get; init; }
-  public DateTime? viewedAt { get; init; }
-  public List<ViewerResourceItem> viewerResources { get; init; }
-  public SerializedViewerState viewerState { get; init; }
+  public required bool archived { get; init; }
+  public required LimitedUser author { get; init; }
+  public required string authorId { get; init; }
+  public required DateTime createdAt { get; init; }
+  public required bool hasParent { get; init; }
+  public required string id { get; init; }
+  public required Comment? parent { get; init; }
+  public required string rawText { get; init; }
+  public required ResourceCollection<Comment> replies { get; init; }
+  public required CommentReplyAuthorCollection replyAuthors { get; init; }
+  public required List<ResourceIdentifier> resources { get; init; } //todo: add resourceIds/baseResourceIds
+  public required string? screenshot { get; init; }
+  public required DateTime updatedAt { get; init; }
+  public required DateTime? viewedAt { get; init; }
+  public required List<ViewerResourceItem> viewerResources { get; init; }
+  public required SerializedViewerState viewerState { get; init; }
 }
 
 /// <summary>
@@ -32,20 +32,20 @@ public sealed class Comment
 [JsonObject(MissingMemberHandling = MissingMemberHandling.Ignore)]
 public sealed class SerializedViewerState
 {
-  public ViewerStateUI ui { get; init; }
+  public required ViewerStateUI ui { get; init; }
 }
 
 [JsonObject(MissingMemberHandling = MissingMemberHandling.Ignore)]
 public sealed class ViewerStateUI
 {
-  public ViewerStateCamera camera { get; init; }
+  public required ViewerStateCamera camera { get; init; }
 }
 
 [JsonObject(MissingMemberHandling = MissingMemberHandling.Ignore)]
 public sealed class ViewerStateCamera
 {
-  public List<double> position { get; init; }
-  public List<double> target { get; init; }
-  public bool isOrthoProjection { get; init; }
-  public double zoom { get; init; }
+  public required List<double> position { get; init; }
+  public required List<double> target { get; init; }
+  public required bool isOrthoProjection { get; init; }
+  public required double zoom { get; init; }
 }

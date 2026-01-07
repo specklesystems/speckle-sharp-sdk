@@ -2,6 +2,6 @@
 
 public sealed class FileUploadUrl
 {
-  public Uri url { get; init; }
-  public string fileId { get; init; }
+  public required Uri url { get; init; }
+  public required string fileId { get; init; }
 }

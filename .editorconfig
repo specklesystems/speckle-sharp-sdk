@@ -71,7 +71,7 @@ dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
 dotnet_style_prefer_auto_properties = true:warning
 dotnet_style_prefer_conditional_expression_over_assignment = true:silent
 dotnet_style_prefer_conditional_expression_over_return = true:silent
-
+dotnet_style_prefer_collection_expression = false
 
 # CSharp code style settings:
 [*.cs]

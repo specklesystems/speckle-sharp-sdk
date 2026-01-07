@@ -19,7 +19,12 @@ public record ModelIngestionCreateInput(
 
 public record ModelIngestionUpdateInput(string ingestionId, string projectId, string progressMessage, double? progress);
 
-public record ModelIngestionSuccessInput(string ingestionId, string projectId, string rootObjectId);
+public record ModelIngestionSuccessInput(
+  string ingestionId,
+  string projectId,
+  string rootObjectId,
+  string? versionMessage
+);
 
 public record ModelIngestionFailedInput(
   string ingestionId,

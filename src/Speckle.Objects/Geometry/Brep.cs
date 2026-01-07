@@ -11,6 +11,7 @@ namespace Speckle.Objects.Geometry;
 /// Represents a "Boundary Representation" Solid
 /// </summary>
 [SpeckleType("Objects.Geometry.Brep")]
+[Obsolete($"Breps have been replaced with {nameof(BrepX)}")]
 public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<Brep>, IDisplayValue<List<Mesh>>
 {
   /// <summary>

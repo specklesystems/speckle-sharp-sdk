@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel;
-using FluentAssertions;
+using AwesomeAssertions;
 using GraphQL;
 using GraphQL.Client.Http;
 using Speckle.Newtonsoft.Json;

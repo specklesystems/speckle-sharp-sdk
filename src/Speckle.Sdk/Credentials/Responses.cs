@@ -6,23 +6,25 @@ namespace Speckle.Sdk.Credentials;
 internal sealed class ActiveUserServerInfoResponse
 {
   [property: JsonProperty(Required = Required.AllowNull)]
-  public UserInfo? activeUser { get; init; }
+  public required UserInfo? activeUser { get; init; }
 
   [property: JsonProperty(Required = Required.Always)]
-  public ServerInfo serverInfo { get; init; }
+  public required ServerInfo serverInfo { get; init; }
 }
 
 internal sealed class TokenExchangeResponse
 {
-  public string token { get; init; }
-  public string refreshToken { get; init; }
+  public required string token { get; init; }
+  public required string refreshToken { get; init; }
 }
 
 public sealed class UserInfo
 {
+#nullable disable // Non-nullable in the schema, but we frequently abuse UserInfo with incomplete data
   public string id { get; init; }
   public string name { get; init; }
   public string email { get; init; }
+#nullable enable
   public string? company { get; init; }
   public string? avatar { get; init; }
 }

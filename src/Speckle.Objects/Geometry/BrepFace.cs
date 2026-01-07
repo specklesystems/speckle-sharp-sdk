@@ -7,6 +7,7 @@ namespace Speckle.Objects.Geometry;
 /// Represents a face on a <see cref="Brep"/>
 /// </summary>
 [SpeckleType("Objects.Geometry.BrepFace")]
+[Obsolete($"Breps have been replaced with {nameof(BrepX)}")]
 public class BrepFace : Base
 {
   [JsonIgnore]

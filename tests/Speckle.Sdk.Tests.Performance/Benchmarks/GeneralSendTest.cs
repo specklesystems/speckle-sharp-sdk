@@ -37,7 +37,12 @@ public class GeneralSendTest
     using var dataSource = new TestDataHelper();
     await dataSource
       .SeedTransport(
-        new Account() { serverInfo = new() { url = "https://latest.speckle.systems/" } },
+        new Account()
+        {
+          token = null,
+          serverInfo = new() { url = "https://latest.speckle.systems/" },
+          userInfo = new(),
+        },
         "2099ac4b5f",
         "30fb4cbe6eb2202b9e7b4a4fcc3dd2b6",
         false

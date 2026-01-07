@@ -130,7 +130,7 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
       new(true, true)
     );
 
-    ModelIngestionSuccessInput finish = new(ingest.id, _project.id, sendResult.RootId);
+    ModelIngestionSuccessInput finish = new(ingest.id, _project.id, sendResult.RootId, "yay!");
     string versionId = await Sut.Complete(finish);
     Version version = await _testUser.Version.Get(versionId, _project.id);
     Assert.Equal(version.id, versionId);

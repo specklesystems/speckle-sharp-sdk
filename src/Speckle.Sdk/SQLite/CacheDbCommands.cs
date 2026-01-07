@@ -14,8 +14,11 @@ public enum CacheOperation
 public static class CacheDbCommands
 {
   public static readonly string[] Commands;
+#if NET8_0_OR_GREATER
+  public static readonly int Count = Enum.GetValues<CacheOperation>().Length;
+#else
   public static readonly int Count = Enum.GetValues(typeof(CacheOperation)).Length;
-
+#endif
 #pragma warning disable CA1810
   static CacheDbCommands()
 #pragma warning restore CA1810
