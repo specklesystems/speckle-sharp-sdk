@@ -80,7 +80,7 @@ Target(
     Console.WriteLine($"Version: {version} & {fileVersion}");
     await RunAsync(
         "dotnet",
-        $"build Speckle.Sdk.sln -c Release --no-restore -warnaserror -p:Version={version} -p:FileVersion={fileVersion}"
+        $"build {SOLUTION} -c Release --no-restore -warnaserror -p:Version={version} -p:FileVersion={fileVersion}"
       )
       .ConfigureAwait(false);
   }
