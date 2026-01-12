@@ -27,7 +27,15 @@ public class SerializeProcessFactory(
   {
     var sqLiteJsonCacheManager = sqLiteJsonCacheManagerFactory.CreateFromStream(streamId);
     var serverObjectManager = serverObjectManagerFactory.Create(url, streamId, authorizationToken);
-    return CreateSerializeProcess(sqLiteJsonCacheManager, serverObjectManager, progress, cancellationToken, options);
+    var objectFlopper = new ObjectFlopper(url, streamId, authorizationToken);
+    return CreateSerializeProcess(
+      sqLiteJsonCacheManager,
+      serverObjectManager,
+      progress,
+      cancellationToken,
+      options,
+      objectFlopper
+    );
   }
 
   public ISerializeProcess CreateSerializeProcess(
@@ -35,7 +43,8 @@ public class SerializeProcessFactory(
     IServerObjectManager serverObjectManager,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,
-    SerializeProcessOptions? options = null
+    SerializeProcessOptions? options = null,
+    ObjectFlopper? objectFlopper = null
   ) =>
     new SerializeProcess(
       progress,
@@ -51,7 +60,8 @@ public class SerializeProcessFactory(
       new BaseSerializer(sqLiteJsonCacheManager, objectSerializerFactory),
       loggerFactory,
       options ?? new SerializeProcessOptions(),
-      cancellationToken
+      cancellationToken,
+      objectFlopper
     );
 
   public ISerializeProcess CreateSerializeProcess(

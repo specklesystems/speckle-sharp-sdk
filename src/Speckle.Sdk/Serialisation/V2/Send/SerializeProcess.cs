@@ -37,7 +37,8 @@ public sealed class SerializeProcess(
   IBaseSerializer baseSerializer,
   ILoggerFactory loggerFactory,
   SerializeProcessOptions options,
-  CancellationToken cancellationToken
+  CancellationToken cancellationToken,
+  ObjectFlopper? objectFlopper = null
 ) : ISerializeProcess
 {
   private static readonly Dictionary<Id, NodeInfo> EMPTY_CLOSURES = new();
@@ -83,6 +84,7 @@ public sealed class SerializeProcess(
     await _highest.DisposeAsync().ConfigureAwait(false);
     await _belowNormal.DisposeAsync().ConfigureAwait(false);
     objectSaver.Dispose();
+    objectFlopper?.Dispose();
     _processSource.Dispose();
   }
 
@@ -133,6 +135,12 @@ public sealed class SerializeProcess(
       ThrowIfFailed();
       await WaitForSchedulerCompletion().ConfigureAwait(false);
       ThrowIfFailed();
+
+      if (objectFlopper is not null)
+      {
+        await objectFlopper.CompleteAsync().ConfigureAwait(false);
+      }
+
       return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
     }
     catch (OperationCanceledException)
@@ -262,7 +270,11 @@ public sealed class SerializeProcess(
         if (item.NeedsStorage)
         {
           Interlocked.Increment(ref _objectsSerialized);
-          await objectSaver.SaveAsync(item).ConfigureAwait(false);
+          if (objectFlopper is not null)
+          {
+            await objectFlopper.PushAsync(item, cancellationToken).ConfigureAwait(false);
+          }
+          // await objectSaver.SaveAsync(item).ConfigureAwait(false);
         }
 
         if (!currentClosures.ContainsKey(item.Id))
