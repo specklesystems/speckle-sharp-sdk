@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Reflection;
+using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
@@ -17,7 +18,9 @@ public class Serializer
     // Special case: if root is already an ObjectReference, serialize it verbatim
     if (root is ObjectReference existingRef)
     {
-      //TODO
+      var uploadItem = ReferenceToUploadItem(existingRef);
+      yield return uploadItem;
+      yield break;
     }
 
     var detachedObjects = new List<(Id, Json, Dictionary<string, int>, Base, string)>();
@@ -189,6 +192,27 @@ public class Serializer
       case DateTime dt:
         writer.WriteValue(dt.ToString("o"));
         return;
+
+      case Matrix4x4 md:
+        writer.WriteStartArray();
+        writer.WriteValue(md.M11);
+        writer.WriteValue(md.M12);
+        writer.WriteValue(md.M13);
+        writer.WriteValue(md.M14);
+        writer.WriteValue(md.M21);
+        writer.WriteValue(md.M22);
+        writer.WriteValue(md.M23);
+        writer.WriteValue(md.M24);
+        writer.WriteValue(md.M31);
+        writer.WriteValue(md.M32);
+        writer.WriteValue(md.M33);
+        writer.WriteValue(md.M34);
+        writer.WriteValue(md.M41);
+        writer.WriteValue(md.M42);
+        writer.WriteValue(md.M43);
+        writer.WriteValue(md.M44);
+        writer.WriteEndArray();
+        return;
     }
 
     // Handle ObjectReference before Base (since ObjectReference extends Base)
@@ -290,5 +314,53 @@ public class Serializer
     }
 
     writer.WriteValue(value.ToString());
+  }
+
+  private UploadItem ReferenceToUploadItem(ObjectReference existingRef)
+  {
+    var sb = Pools.StringBuilders.Get();
+    try
+    {
+      using var stringWriter = new StringWriter(sb);
+      using var jsonWriter = new JsonTextWriter(stringWriter);
+
+      jsonWriter.WriteStartObject();
+      jsonWriter.WritePropertyName("speckle_type");
+      jsonWriter.WriteValue("reference");
+      jsonWriter.WritePropertyName("referencedId");
+      jsonWriter.WriteValue(existingRef.referencedId);
+      jsonWriter.WritePropertyName("__closure");
+
+      if (existingRef.closure != null && existingRef.closure.Count > 0)
+      {
+        jsonWriter.WriteStartObject();
+        foreach (var kvp in existingRef.closure)
+        {
+          jsonWriter.WritePropertyName(kvp.Key);
+          jsonWriter.WriteValue(kvp.Value);
+        }
+        jsonWriter.WriteEndObject();
+      }
+      else
+      {
+        jsonWriter.WriteNull();
+      }
+
+      jsonWriter.WriteEndObject();
+      jsonWriter.Flush();
+
+      var refJson = new Json(stringWriter.ToString());
+
+      return new UploadItem(
+        existingRef.referencedId,
+        refJson,
+        existingRef.speckle_type,
+        existingRef // Pass through the original ObjectReference
+      );
+    }
+    finally
+    {
+      Pools.StringBuilders.Return(sb);
+    }
   }
 }

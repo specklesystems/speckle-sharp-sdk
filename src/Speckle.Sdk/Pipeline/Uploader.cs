@@ -19,7 +19,8 @@ public sealed class Uploader : IDisposable
 
     Uri apiBaseUrl = !string.IsNullOrEmpty(apiEndpoint)
       ? new Uri(apiEndpoint)
-      : new Uri("http://zog.local:3000/api/v1/");
+      : new Uri("http://dimitries-macbook-pro.mermaid-emperor.ts.net/api/v1/");
+    // : new Uri("http://zog.local:3000/api/v1/");
     _client = new HttpClient { BaseAddress = apiBaseUrl, Timeout = TimeSpan.FromMinutes(10) };
 
     if (authToken != null)
@@ -28,7 +29,7 @@ public sealed class Uploader : IDisposable
     }
 
     _channel = Channel.CreateBounded<UploadItem>(
-      new BoundedChannelOptions(1000) { FullMode = BoundedChannelFullMode.Wait }
+      new BoundedChannelOptions(1000) { FullMode = BoundedChannelFullMode.Wait } // if we're not able to write fast enough, we'll block writes
     );
 
     _sendTask = SendLoopAsync(projectId, "test");
@@ -48,12 +49,13 @@ public sealed class Uploader : IDisposable
       async (stream, _, _) =>
       {
         var gzip = new GZipStream(stream, CompressionLevel.Optimal);
-        var writer = new StreamWriter(gzip); //new StreamWriter(gzip, System.Text.Encoding.UTF8, 20 * 1024 * 1024);
+        var writer = new StreamWriter(gzip); // new StreamWriter(gzip, System.Text.Encoding.UTF8, 20 * 1024 * 1024); // potential lever for controlling memory pressure
         try
         {
+          // extra levers for memory pressure in here: we can manually flush every x items or every x bytes
           await foreach (var item in _channel.Reader.ReadAllAsync().ConfigureAwait(false))
           {
-            await writer.WriteLineAsync($"{item.Id}\t{item.Json}").ConfigureAwait(false);
+            await writer.WriteLineAsync($"{item.Id}\t{item.Json}\t{item.SpeckleType}").ConfigureAwait(false);
           }
         }
         finally
