@@ -29,8 +29,10 @@ public sealed class FileImportResource : IDisposable
   /// <remarks>
   /// Only use this if you are writing a file importer, that is responsible for
   /// processing file import jobs.
-  /// Only works on servers version >=2.25.8
+  /// Only works on servers version >=2.25.8 but from 3.0.7 onwards has been deprecated and replaced by model ingestion api
+  /// see <see cref="ModelIngestionResource.Complete"/>
   /// </remarks>
+  [Obsolete(FileImportInputBase.FILE_IMPORT_DEPRECATION_MESSAGE)]
   public async Task<bool> FinishFileImportJob(FileImportInputBase input, CancellationToken cancellationToken)
   {
     //language=graphql
@@ -57,7 +59,11 @@ public sealed class FileImportResource : IDisposable
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  /// <remarks>Only works on servers version >=2.25.8</remarks>
+  /// <remarks>
+  /// Only works on servers version >=2.25.8 but from 3.0.7 onwards has been deprecated and replaced by model ingestion api
+  /// see <see cref="ModelIngestionResource.StartProcessing"/>
+  /// </remarks>
+  [Obsolete(FileImportInputBase.FILE_IMPORT_DEPRECATION_MESSAGE)]
   public async Task<FileImport> StartFileImportJob(
     StartFileImportInput input,
     CancellationToken cancellationToken = default
