@@ -9,14 +9,14 @@ using Matrix4x4 = Speckle.DoubleNumerics.Matrix4x4;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public class SerializerNonBreakingChanges : PrimitiveTestFixture
 {
   private readonly IOperations _operations;
 
   public SerializerNonBreakingChanges()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(StringValueMock).Assembly);
+    TypeLoader.ReInitialize(typeof(StringValueMock).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

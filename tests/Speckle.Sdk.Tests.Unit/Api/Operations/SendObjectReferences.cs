@@ -7,14 +7,14 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public class SendObjectReferences
 {
   private readonly IOperations _operations;
 
   public SendObjectReferences()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
+    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

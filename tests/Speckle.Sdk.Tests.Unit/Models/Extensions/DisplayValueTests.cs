@@ -5,6 +5,7 @@ using Speckle.Sdk.Models.Extensions;
 
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
 
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public class DisplayValueTests
 {
   private const string PAYLOAD = "This is my payload";
@@ -17,8 +18,7 @@ public class DisplayValueTests
 
   private static void Reset()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly);
+    TypeLoader.ReInitialize(typeof(Base).Assembly);
   }
 
   [Fact]

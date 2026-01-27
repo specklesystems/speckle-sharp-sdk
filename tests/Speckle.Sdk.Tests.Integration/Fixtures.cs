@@ -17,6 +17,11 @@ using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 [assembly: AssemblyTrait("Category", "Integration")]
 
+#if DEBUG
+[assembly: CollectionBehavior(MaxParallelThreads = 8)]
+
+#endif
+
 namespace Speckle.Sdk.Tests.Integration;
 
 public static class Fixtures

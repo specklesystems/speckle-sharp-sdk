@@ -5,12 +5,12 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public class DynamicBaseTests
 {
   public DynamicBaseTests()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(BaseTests).Assembly);
+    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(BaseTests).Assembly);
   }
 
   [Fact]

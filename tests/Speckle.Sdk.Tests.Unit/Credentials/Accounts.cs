@@ -5,6 +5,7 @@ using Speckle.Sdk.Credentials;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
+[Collection(nameof(RequiresSqLiteAccountDb))]
 public class CredentialInfrastructure : IDisposable
 {
   private readonly IAccountManager _accountManager;

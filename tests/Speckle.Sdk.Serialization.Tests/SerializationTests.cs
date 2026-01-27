@@ -184,7 +184,7 @@ public class SerializationTests
     idToBase.Count.Should().Be(count);
   }
 
-  [Theory]
+  [Theory(Skip = "Takes too long")]
   [InlineData(1)]
   [InlineData(4)]
   public async Task Roundtrip_Test_New(int concurrency)

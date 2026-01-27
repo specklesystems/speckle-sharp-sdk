@@ -1,8 +1,0 @@
-﻿{
-  "Type": "AggregateException",
-  "InnerException": {
-    "Data": {},
-    "Message": "NOT_FOUND_ERROR: Model ingestion not found",
-    "Type": "SpeckleGraphQLException"
-  }
-}

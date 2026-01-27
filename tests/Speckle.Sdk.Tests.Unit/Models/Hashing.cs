@@ -6,13 +6,12 @@ using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
-// Removed [TestFixture] and [TestOf] annotations as they are NUnit specific
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public class Hashing
 {
   public Hashing()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(DiningTable).Assembly);
+    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(DiningTable).Assembly);
   }
 
   [Fact(DisplayName = "Checks that hashing (as represented by object IDs) actually works.")]

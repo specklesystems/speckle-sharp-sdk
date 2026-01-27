@@ -6,12 +6,12 @@ using Speckle.Sdk.Models.Extensions;
 
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
 
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public class BaseExtensionsTests
 {
   public BaseExtensionsTests()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TestBase).Assembly);
+    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(TestBase).Assembly);
   }
 
   [Theory]

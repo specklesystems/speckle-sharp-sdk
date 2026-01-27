@@ -5,13 +5,13 @@ using Speckle.Sdk.Tests.Unit.Models.TestModels;
 
 namespace Speckle.Sdk.Tests.Unit.Models
 {
+  [Collection(nameof(RequiresTypeLoaderCollection))]
   public class SpeckleTypeTests
   {
     public SpeckleTypeTests()
     {
       // Setup logic during test class initialization
-      TypeLoader.Reset();
-      TypeLoader.Initialize(typeof(Base).Assembly, typeof(Foo).Assembly);
+      TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(Foo).Assembly);
     }
 
     [Theory]
