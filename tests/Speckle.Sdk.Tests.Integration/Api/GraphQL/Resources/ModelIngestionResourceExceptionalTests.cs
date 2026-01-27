@@ -42,7 +42,8 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
     {
       _ = await Sut.Create(createInput);
     });
-    await Verify(ex);
+    Assert.Single(ex.InnerExceptions);
+    Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLStreamNotFoundException>(item));
   }
 
   [Fact]
@@ -54,7 +55,8 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
     {
       _ = await Sut.UpdateProgress(updateInput);
     });
-    await Verify(ex);
+    Assert.Single(ex.InnerExceptions);
+    Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLException>(item));
   }
 
   [Fact]
@@ -69,6 +71,7 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
     {
       _ = await Sut.FailWithCancel(input);
     });
-    await Verify(ex);
+    Assert.Single(ex.InnerExceptions);
+    Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLException>(item));
   }
 }
