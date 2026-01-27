@@ -9,6 +9,7 @@ using Speckle.Sdk.Testing;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
+[Collection(nameof(RequiresSqLiteAccountDb))]
 public sealed class AccountManagerTests : MoqTest
 {
   private class TestAccountFactory : IAccountFactory

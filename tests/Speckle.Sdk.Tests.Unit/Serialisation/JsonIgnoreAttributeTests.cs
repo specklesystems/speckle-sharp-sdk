@@ -12,12 +12,12 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 /// Tests that the <see cref="JsonIgnoreAttribute"/> leads to properties being ignored both from the final JSON output,
 /// But also from the id calculation
 /// </summary>
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public sealed class JsonIgnoreRespected
 {
   public JsonIgnoreRespected()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
+    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
   }
 
   public static IEnumerable<object[]> IgnoredTestCases()

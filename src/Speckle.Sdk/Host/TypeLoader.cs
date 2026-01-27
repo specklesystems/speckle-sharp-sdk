@@ -140,7 +140,22 @@ internal static class TypeLoader
     return typeof(Base);
   }
 
-  //Don't use unless you're testing
+  /// <summary>
+  /// For testing purposes only
+  /// </summary>
+  internal static void ReInitialize(params Assembly[] assemblies)
+  {
+    lock (s_availableTypes)
+    {
+      Reset();
+      Load(assemblies);
+      s_initialized = true;
+    }
+  }
+
+  /// <summary>
+  /// For testing purposes only
+  /// </summary>
   public static void Reset()
   {
     s_availableTypes = new();

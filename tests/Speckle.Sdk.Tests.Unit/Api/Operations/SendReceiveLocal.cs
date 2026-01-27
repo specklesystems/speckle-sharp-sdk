@@ -9,14 +9,14 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public sealed class SendReceiveLocal : IDisposable
 {
   private readonly IOperations _operations;
 
   public SendReceiveLocal()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(Point).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

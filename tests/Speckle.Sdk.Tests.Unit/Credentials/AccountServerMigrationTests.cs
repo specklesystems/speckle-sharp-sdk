@@ -5,6 +5,7 @@ using Speckle.Sdk.Credentials;
 
 namespace Speckle.Sdk.Tests.Unit.Credentials;
 
+[Collection(nameof(RequiresSqLiteAccountDb))]
 public class AccountServerMigrationTests : IDisposable
 {
   private readonly List<Account> _accountsToCleanUp = [];

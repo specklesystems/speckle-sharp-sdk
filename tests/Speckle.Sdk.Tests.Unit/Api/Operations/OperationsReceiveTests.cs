@@ -7,6 +7,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public sealed partial class OperationsReceiveTests : IDisposable
 {
   private static readonly Base[] s_testObjects;
@@ -44,8 +45,7 @@ public sealed partial class OperationsReceiveTests : IDisposable
 
   private static void Reset()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
+    TypeLoader.ReInitialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
 
   public static IEnumerable<object[]> TestCases()
