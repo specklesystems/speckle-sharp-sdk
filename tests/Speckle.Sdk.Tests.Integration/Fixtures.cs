@@ -16,17 +16,13 @@ using Speckle.Sdk.Transports;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 [assembly: AssemblyTrait("Category", "Integration")]
-
-#if DEBUG
-[assembly: CollectionBehavior(MaxParallelThreads = 6)]
-
-#endif
+[assembly: CollectionBehavior(MaxParallelThreads = 8)]
 
 namespace Speckle.Sdk.Tests.Integration;
 
 public static class Fixtures
 {
-  public static readonly ServerInfo Server = new() { url = "http://localhost", name = "Docker Server" };
+  public static readonly ServerInfo Server = new() { url = "http://localhost:3000", name = "Docker Server" };
 
   public static IServiceProvider ServiceProvider { get; set; }
 
