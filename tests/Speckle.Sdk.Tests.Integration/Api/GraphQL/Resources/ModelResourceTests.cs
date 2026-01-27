@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
@@ -17,7 +18,7 @@ public class ModelResourceTests : IAsyncLifetime
   {
     // Runs instead of [SetUp] in NUnit
     _testUser = await Fixtures.SeedUserWithClient();
-    _project = await _testUser.Project.Create(new("Test project", "", null));
+    _project = await _testUser.Project.Create(new("Test project", "", ProjectVisibility.Public));
     _model = await _testUser.Model.Create(new("Test Model", "", _project.id));
   }
 

@@ -103,7 +103,20 @@ public class ProjectResourceTests
   [Fact]
   public async Task TestUserHasProjectPermissions()
   {
-    var res = await Sut.GetPermissions(_testProject.id);
+    var privateProject = await _testUser.Project.Create(
+      new ProjectCreateInput("asdfasdf", "desc", ProjectVisibility.Private)
+    );
+
+    var resp = await Sut.GetPermissions(privateProject.id);
+    resp.canCreateModel.authorized.Should().Be(true);
+    resp.canDelete.authorized.Should().Be(true);
+    resp.canLoad.authorized.Should().Be(true);
+
+    var publicProject = await _testUser.Project.Create(
+      new ProjectCreateInput("asdfasdf", "desc", ProjectVisibility.Public)
+    );
+
+    var res = await Sut.GetPermissions(publicProject.id);
     res.canCreateModel.authorized.Should().Be(true);
     res.canDelete.authorized.Should().Be(true);
     res.canLoad.authorized.Should().Be(true);
@@ -111,9 +124,9 @@ public class ProjectResourceTests
     // Test with another user
     var guest = await Fixtures.SeedUserWithClient();
 
-    var guestResult = await guest.Project.GetPermissions(_testProject.id);
-    guestResult.canCreateModel.authorized.Should().Be(true);
-    guestResult.canDelete.authorized.Should().Be(true);
-    guestResult.canLoad.authorized.Should().Be(true);
+    var guestResult = await guest.Project.GetPermissions(publicProject.id);
+    guestResult.canCreateModel.authorized.Should().Be(false);
+    guestResult.canDelete.authorized.Should().Be(false);
+    guestResult.canLoad.authorized.Should().Be(false);
   }
 }
