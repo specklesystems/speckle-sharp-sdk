@@ -397,11 +397,6 @@ public sealed class ActiveUserResource
                   authorized
                   message
                 }
-                canPublish {
-                  code
-                  authorized
-                  message
-                }
               }
             }
           }

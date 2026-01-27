@@ -312,4 +312,51 @@ public sealed class ModelResource
 
     return res.data.data;
   }
+
+  /// <param name="projectId"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<ModelPermissionChecks> GetPermissions(
+    string projectId,
+    string modelId,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      query ModelPermissions($projectId: String!, $modelId: String!) {
+        data:project(id: $projectId) {
+          data:model(id: $modelId) {
+            data:permissions {
+              canUpdate {
+                authorized
+                code
+                message
+              }
+              canDelete {
+                authorized
+                code
+                message
+              }
+              canCreateVersion {
+                authorized
+                code
+                message
+              }
+            }
+          }
+        }
+      }
+      """;
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, modelId } };
+
+    var response = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ModelPermissionChecks>>>>(
+        request,
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+    return response.data.data.data;
+  }
 }

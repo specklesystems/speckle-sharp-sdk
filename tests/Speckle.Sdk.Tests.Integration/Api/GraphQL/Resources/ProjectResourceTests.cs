@@ -106,5 +106,14 @@ public class ProjectResourceTests
     var res = await Sut.GetPermissions(_testProject.id);
     res.canCreateModel.authorized.Should().Be(true);
     res.canDelete.authorized.Should().Be(true);
+    res.canLoad.authorized.Should().Be(true);
+
+    // Test with another user
+    var guest = await Fixtures.SeedUserWithClient();
+
+    var guestResult = await guest.Project.GetPermissions(_testProject.id);
+    guestResult.canCreateModel.authorized.Should().Be(true);
+    guestResult.canDelete.authorized.Should().Be(true);
+    guestResult.canLoad.authorized.Should().Be(true);
   }
 }

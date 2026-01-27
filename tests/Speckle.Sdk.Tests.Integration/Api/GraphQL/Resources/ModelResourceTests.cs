@@ -123,4 +123,21 @@ public class ModelResourceTests : IAsyncLifetime
     var delEx = await FluentActions.Invoking(() => Sut.Delete(input)).Should().ThrowAsync<AggregateException>();
     getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
+
+  [Fact]
+  public async Task TestUserHasModelPermissions()
+  {
+    var ownerResult = await Sut.GetPermissions(_project.id, _model.id);
+    ownerResult.canUpdate.authorized.Should().Be(true);
+    ownerResult.canCreateVersion.authorized.Should().Be(true);
+    ownerResult.canDelete.authorized.Should().Be(true);
+
+    // Test with another user
+    var guest = await Fixtures.SeedUserWithClient();
+
+    var guestResult = await guest.Model.GetPermissions(_project.id, _model.id);
+    guestResult.canUpdate.authorized.Should().Be(false);
+    guestResult.canCreateVersion.authorized.Should().Be(false);
+    guestResult.canDelete.authorized.Should().Be(false);
+  }
 }
