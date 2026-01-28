@@ -19,8 +19,8 @@ public sealed class Uploader : IDisposable
 
     Uri apiBaseUrl = !string.IsNullOrEmpty(apiEndpoint)
       ? new Uri(apiEndpoint)
-      : new Uri("http://dimitries-macbook-pro.mermaid-emperor.ts.net/api/v1/");
-    // : new Uri("http://zog.local:3000/api/v1/");
+      // : new Uri("http://dimitries-macbook-pro.mermaid-emperor.ts.net/api/v1/");
+    : new Uri("http://zog.local:3000/api/v1/");
     _client = new HttpClient { BaseAddress = apiBaseUrl, Timeout = TimeSpan.FromMinutes(10) };
 
     if (authToken != null)
