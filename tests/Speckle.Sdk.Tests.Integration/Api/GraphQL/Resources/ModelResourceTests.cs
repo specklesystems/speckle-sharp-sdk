@@ -158,6 +158,6 @@ public class ModelResourceTests : IAsyncLifetime
       await Sut.CanCreateModelIngestion(_project.id, _model.id)
     );
     ex.InnerExceptions.Should().HaveCount(1);
-    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLBadInputException>();
+    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLInvalidQueryException>();
   }
 }
