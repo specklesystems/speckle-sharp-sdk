@@ -359,4 +359,41 @@ public sealed class ModelResource
       .ConfigureAwait(false);
     return response.data.data.data;
   }
+
+  /// <param name="projectId"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <exception cref="SpeckleGraphQLBadInputException">server versions &lt;3.0.11 do not have <c>canCreateIngestion</c> and will throw this exception</exception>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<PermissionCheckResult> CanCreateModelIngestion(
+    string projectId,
+    string modelId,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      query ModelPermissions($projectId: String!, $modelId: String!) {
+        data:project(id: $projectId) {
+          data:model(id: $modelId) {
+            data:permissions {
+              data:canCreateIngestion {
+                authorized
+                code
+                message
+              }
+            }
+          }
+        }
+      }
+      """;
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { projectId, modelId } };
+
+    var response = await _client
+      .ExecuteGraphQLRequest<
+        RequiredResponse<RequiredResponse<RequiredResponse<RequiredResponse<PermissionCheckResult>>>>
+      >(request, cancellationToken)
+      .ConfigureAwait(false);
+    return response.data.data.data.data;
+  }
 }
