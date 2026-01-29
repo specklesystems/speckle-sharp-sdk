@@ -6,7 +6,7 @@ using Speckle.Sdk.Api.GraphQL.Models.Responses;
 namespace Speckle.Sdk.Api.GraphQL.Resources;
 
 /// <remarks>
-/// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+/// Model Ingestion API is available for server versions <c>3.0.3</c> and above
 /// </remarks>
 public sealed class ModelIngestionResource
 {
@@ -23,7 +23,7 @@ public sealed class ModelIngestionResource
   /// <remarks>
   /// The model ingestion created will have a <c>processing</c> state (not <c>queued</c>). This mutation is designed to be used
   /// by client/connectors that are immediately processing
-  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
@@ -72,7 +72,7 @@ public sealed class ModelIngestionResource
   }
 
   /// <remarks>
-  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <param name="modelIngestionId"></param>
   /// <param name="projectId"></param>
@@ -121,7 +121,7 @@ public sealed class ModelIngestionResource
   /// For File Import / Cloud integrations only
   /// </summary>
   /// <remarks>
-  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
@@ -173,7 +173,7 @@ public sealed class ModelIngestionResource
   /// For File Import / Cloud integrations only
   /// </summary>
   /// <remarks>
-  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
@@ -222,7 +222,7 @@ public sealed class ModelIngestionResource
   }
 
   /// <remarks>
-  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
@@ -277,7 +277,7 @@ public sealed class ModelIngestionResource
   /// If successful, the job will be in a terminal "successful" state.
   /// </summary>
   /// <remarks>
-  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <seealso cref="FailWithError"/>
   /// <seealso cref="FailWithCancel"/>
@@ -320,7 +320,7 @@ public sealed class ModelIngestionResource
   /// </summary>
   /// <remarks>
   /// For requested user cancellation, use <see cref="FailWithCancel"/> instead<br/>
-  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <seealso cref="FailWithCancel"/>
   /// <seealso cref="Complete"/>
@@ -375,7 +375,7 @@ public sealed class ModelIngestionResource
   /// This should only be done if the user has explicitly requested cancellation
   /// Other forms of cancellation use <see cref="FailWithError"/>.
   /// The ingestion should then enter a terminal "canceled" state.<br/>
-  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </summary>
   /// <seealso cref="FailWithError"/>
   /// <seealso cref="Complete"/>
@@ -434,7 +434,7 @@ public sealed class ModelIngestionResource
   /// via <see cref="SubscriptionResource.CreateProjectModelIngestionCancellationRequestedSubscription"/>
   /// and report it as canceled via  <see cref="ModelIngestionResource.FailWithCancel"/>
   /// See "cooperative cancellation pattern"<br/>
-  /// Model Ingestion API is available for server versions <c>3.0.3-alpha.583</c> and above
+  /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <seealso cref="FailWithError"/>
   /// <seealso cref="Complete"/>
