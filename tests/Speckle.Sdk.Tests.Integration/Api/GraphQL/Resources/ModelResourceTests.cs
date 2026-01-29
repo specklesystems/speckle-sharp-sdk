@@ -154,8 +154,10 @@ public class ModelResourceTests : IAsyncLifetime
   [Trait("Server", "Public")]
   public async Task TestCanCreateModelIngestion_PublicServer_Throws()
   {
-    await Assert.ThrowsAsync<SpeckleGraphQLBadInputException>(async () =>
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
       await Sut.CanCreateModelIngestion(_project.id, _model.id)
     );
+    ex.InnerExceptions.Should().HaveCount(1);
+    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLBadInputException>();
   }
 }
