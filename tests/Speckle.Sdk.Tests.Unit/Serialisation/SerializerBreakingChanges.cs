@@ -14,6 +14,7 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 /// This doesn't guarantee things work this way for SpecklePy
 /// Nor does it encompass other tricks (like deserialize callback, or computed json ignored properties)
 /// </summary>
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public class SerializerBreakingChanges : PrimitiveTestFixture
 {
   private readonly IOperations _operations;
@@ -21,8 +22,7 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   // xUnit does not support a Setup method; instead, you can use the constructor for initialization.
   public SerializerBreakingChanges()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(Point).Assembly);
+    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(Point).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

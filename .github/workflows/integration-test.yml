@@ -51,7 +51,7 @@ jobs:
 
       - name: 🔨 Integration Tests against Internal Server
         if: ${{ inputs.use-internal-image }}
-        run: dotnet test ${{ env.Solution }} --filter "Category=Integration" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
+        run: dotnet test ${{ env.Solution }} --filter "(Category=Integration)&(Server!=Public)" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v5

@@ -10,14 +10,14 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public class Closures
 {
   private readonly IOperations _operations;
 
   public Closures()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);
+    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

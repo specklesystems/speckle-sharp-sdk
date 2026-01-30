@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
@@ -17,7 +18,7 @@ public class ModelResourceTests : IAsyncLifetime
   {
     // Runs instead of [SetUp] in NUnit
     _testUser = await Fixtures.SeedUserWithClient();
-    _project = await _testUser.Project.Create(new("Test project", "", null));
+    _project = await _testUser.Project.Create(new("Test project", "", ProjectVisibility.Public));
     _model = await _testUser.Model.Create(new("Test Model", "", _project.id));
   }
 
@@ -122,5 +123,41 @@ public class ModelResourceTests : IAsyncLifetime
     // Assert: Ensure deleting the non-existing model again throws an exception
     var delEx = await FluentActions.Invoking(() => Sut.Delete(input)).Should().ThrowAsync<AggregateException>();
     getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
+  }
+
+  [Fact]
+  public async Task TestUserHasModelPermissions()
+  {
+    var ownerResult = await Sut.GetPermissions(_project.id, _model.id);
+    ownerResult.canUpdate.authorized.Should().Be(true);
+    ownerResult.canCreateVersion.authorized.Should().Be(true);
+    ownerResult.canDelete.authorized.Should().Be(true);
+
+    // Test with another user
+    var guest = await Fixtures.SeedUserWithClient();
+
+    var guestResult = await guest.Model.GetPermissions(_project.id, _model.id);
+    guestResult.canUpdate.authorized.Should().Be(false);
+    guestResult.canCreateVersion.authorized.Should().Be(false);
+    guestResult.canDelete.authorized.Should().Be(false);
+  }
+
+  [Fact]
+  [Trait("Server", "Internal")]
+  public async Task TestCanCreateModelIngestion_InternalServer()
+  {
+    var ownerResult = await Sut.CanCreateModelIngestion(_project.id, _model.id);
+    ownerResult.authorized.Should().Be(true);
+  }
+
+  [Fact]
+  [Trait("Server", "Public")]
+  public async Task TestCanCreateModelIngestion_PublicServer_Throws()
+  {
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      await Sut.CanCreateModelIngestion(_project.id, _model.id)
+    );
+    ex.InnerExceptions.Should().HaveCount(1);
+    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLInvalidQueryException>();
   }
 }

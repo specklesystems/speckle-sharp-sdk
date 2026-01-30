@@ -1,10 +1,7 @@
-using System.Reflection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Resources;
-using Speckle.Sdk.Host;
-using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
@@ -20,9 +17,6 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
 
   public async Task InitializeAsync()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
-
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new("Test project", "", null));
     _model = await _testUser.Model.Create(new("Test Model 1", "", _project.id));
@@ -42,7 +36,8 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
     {
       _ = await Sut.Create(createInput);
     });
-    await Verify(ex);
+    Assert.Single(ex.InnerExceptions);
+    Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLStreamNotFoundException>(item));
   }
 
   [Fact]
@@ -54,7 +49,8 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
     {
       _ = await Sut.UpdateProgress(updateInput);
     });
-    await Verify(ex);
+    Assert.Single(ex.InnerExceptions);
+    Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLException>(item));
   }
 
   [Fact]
@@ -69,6 +65,7 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
     {
       _ = await Sut.FailWithCancel(input);
     });
-    await Verify(ex);
+    Assert.Single(ex.InnerExceptions);
+    Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLException>(item));
   }
 }

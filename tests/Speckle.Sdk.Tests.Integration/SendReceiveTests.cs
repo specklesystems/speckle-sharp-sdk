@@ -1,11 +1,8 @@
-﻿using System.Reflection;
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Models;
-using Speckle.Sdk.Host;
-using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Integration;
 
@@ -19,8 +16,6 @@ public sealed class SendReceiveTests : IAsyncLifetime
 
   public async Task InitializeAsync()
   {
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
     ClearCache();

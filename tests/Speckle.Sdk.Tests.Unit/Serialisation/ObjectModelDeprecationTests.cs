@@ -5,13 +5,13 @@ using Speckle.Sdk.Serialisation.Deprecated;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation
 {
+  [Collection(nameof(RequiresTypeLoaderCollection))]
   public class TypeLoaderTests
   {
     // Constructor replaces the [SetUp] functionality in NUnit
     public TypeLoaderTests()
     {
-      TypeLoader.Reset();
-      TypeLoader.Initialize(typeof(Base).Assembly, typeof(MySpeckleBase).Assembly);
+      TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(MySpeckleBase).Assembly);
     }
 
     [Fact] // Replaces [Test]

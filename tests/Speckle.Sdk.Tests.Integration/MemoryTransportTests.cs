@@ -1,8 +1,6 @@
-﻿using System.Reflection;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
@@ -16,8 +14,7 @@ public class MemoryTransportTests : IDisposable
   public MemoryTransportTests()
   {
     CleanData();
-    TypeLoader.Reset();
-    TypeLoader.Initialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
+
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

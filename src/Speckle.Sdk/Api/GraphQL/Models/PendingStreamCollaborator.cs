@@ -10,7 +10,7 @@ public sealed class PendingStreamCollaborator
   public string projectName { get; init; }
   public string title { get; init; }
   public string role { get; init; }
-  public LimitedUser invitedBy { get; init; }
+  public LimitedUser? invitedBy { get; init; }
   public LimitedUser? user { get; init; }
   public string? token { get; init; }
 }
