@@ -36,6 +36,7 @@ public sealed class AccountManager(
 ) : IAccountManager
 {
   public const string DEFAULT_SERVER_URL = "https://app.speckle.systems";
+  public const string DEFAULT_AUTH_APP = "sca";
 
   private readonly ISqLiteJsonCacheManager _accountStorage = sqLiteJsonCacheManagerFactory.CreateForUser("Accounts");
   private static volatile bool s_isAddingAccount;
@@ -311,44 +312,100 @@ public sealed class AccountManager(
   }
 
   /// <summary>
-  /// Refetches user and server info for each account
+  /// Refetches the <paramref name="account"/> information, including <see cref="ServerInfo"/> and <see cref="UserInfo"/>
+  /// If the <see cref="Account.token"/> looks to be expired, this function will also attempt to use the <see cref="Account.refreshToken"/> to refresh it.
+  /// Will write the changes to the local accounts db
   /// </summary>
-  /// <param name="app"> It is defaultAppId in the server. By default it is "sca" to not break existing parts that this function involves.</param>
-  /// <returns></returns>
-  public async Task UpdateAccounts(CancellationToken ct = default, string app = "sca")
+  /// <param name="account"></param>
+  /// <param name="app"></param>
+  /// <param name="cancellationToken"></param>
+  public async Task UpdateAccount(
+    Account account,
+    string app = DEFAULT_AUTH_APP,
+    CancellationToken cancellationToken = default
+  )
+  {
+    await UpdateAccountInMemory(account, app, cancellationToken).ConfigureAwait(false);
+    _accountStorage.UpdateObject(account.id, JsonConvert.SerializeObject(account));
+  }
+
+  /// <summary>
+  /// Refetches the <paramref name="account"/> information, including <see cref="ServerInfo"/> and <see cref="UserInfo"/>
+  /// If the <see cref="Account.token"/> looks to be expired, this function will also attempt to use the <see cref="Account.refreshToken"/> to refresh it.
+  ///
+  /// Will only mutate <paramref name="account"/> in memory only, and only if successful.
+  /// </summary>
+  /// <seealso cref="UpdateAccount"/>
+  /// <seealso cref="UpdateAccounts"/>
+  /// <param name="account"></param>
+  /// <param name="app">It is defaultAppId in the server. By default it is "sca" to not break existing parts that this function involves.</param>
+  /// <param name="cancellationToken"></param>
+  /// <exception cref="AggregateException">Thrown if</exception>
+  public async Task UpdateAccountInMemory(
+    Account account,
+    string app = DEFAULT_AUTH_APP,
+    CancellationToken cancellationToken = default
+  )
+  {
+    Uri url = new(account.serverInfo.url);
+    ActiveUserServerInfoResponse userServerInfo;
+    try
+    {
+      userServerInfo = await accountFactory
+        .GetUserServerInfo(url, account.token, cancellationToken)
+        .ConfigureAwait(false);
+    }
+    catch (GraphQLHttpRequestException ex)
+    {
+      // Failed to fetch info, perhaps the token is expired?
+      // Attempt to refresh it
+      TokenExchangeResponse refreshTokenResponse;
+      try
+      {
+        refreshTokenResponse = await GetRefreshedToken(
+            account.refreshToken.NotNull("No refresh token provided"),
+            url,
+            app
+          )
+          .ConfigureAwait(false);
+
+        userServerInfo = await accountFactory
+          .GetUserServerInfo(url, refreshTokenResponse.token, cancellationToken)
+          .ConfigureAwait(false);
+      }
+      catch (Exception ex2)
+      {
+        throw new AggregateException("Failed to update account information", ex, ex2);
+      }
+
+      account.token = refreshTokenResponse.token;
+      account.refreshToken = refreshTokenResponse.refreshToken;
+      logger.LogInformation(ex, "Account token has been refreshed");
+    }
+    account.userInfo = userServerInfo.activeUser.NotNull();
+    account.serverInfo = userServerInfo.serverInfo;
+  }
+
+  /// <summary>
+  /// Refetches all local accounts (in local db), including <see cref="ServerInfo"/> and <see cref="UserInfo"/>.
+  /// If the <see cref="Account.token"/> looks to be expired, this function will also attempt to use the <see cref="Account.refreshToken"/> to refresh it.
+  /// Will write the changes to the local accounts db
+  /// </summary>
+  /// <seealso cref="UpdateAccount"/>
+  /// <seealso cref="UpdateAccounts"/>
+  /// <param name="app">It is defaultAppId in the server. By default it is "sca" to not break existing parts that this function involves.</param>
+  /// <param name="cancellationToken"></param>
+  /// <exception cref="AggregateException"></exception>
+  public async Task UpdateAccounts(string app = DEFAULT_AUTH_APP, CancellationToken cancellationToken = default)
   {
     // need to ToList() the GetAccounts call or the UpdateObject call at the end of this method
     // will not work because sqlite does not support concurrent db calls
-    foreach (var account in GetAccounts().ToList())
+    IReadOnlyList<Account> accounts = GetAccounts().ToList();
+    await Task.WhenAll(accounts.Select(a => UpdateAccountInMemory(a, app, cancellationToken))).ConfigureAwait(false);
+
+    foreach (var account in accounts)
     {
-      try
-      {
-        Uri url = new(account.serverInfo.url);
-        var userServerInfo = await accountFactory.GetUserServerInfo(url, account.token, ct).ConfigureAwait(false);
-
-        //the token has expired
-        //TODO: once we get a token expired exception from the server use that instead
-        if (userServerInfo.activeUser == null || userServerInfo.serverInfo == null)
-        {
-          // We were initially was handling refresh token here bc quite a while ago server was returning null
-          // for activeUser and serverInfo instead of throwing exception. In short, our logic moved into catch block to cover both.
-          throw new SpeckleException("Token is expired");
-        }
-
-        account.isOnline = true;
-        account.userInfo = userServerInfo.activeUser;
-        account.serverInfo = userServerInfo.serverInfo;
-      }
-      catch (OperationCanceledException)
-      {
-        throw;
-      }
-      catch (Exception ex) when (!ex.IsFatal())
-      {
-        await RefreshAndSetAccountToken(account, app).ConfigureAwait(false);
-      }
-
-      ct.ThrowIfCancellationRequested();
+      //would be nice to replace this with a bulk insert operation...
       _accountStorage.UpdateObject(account.id, JsonConvert.SerializeObject(account));
     }
   }
@@ -360,18 +417,10 @@ public sealed class AccountManager(
   /// <param name="app"></param>
   private async Task RefreshAndSetAccountToken(Account account, string app)
   {
-    try
-    {
-      Uri url = new(account.serverInfo.url);
-      var tokenResponse = await GetRefreshedToken(account.refreshToken, url, app).ConfigureAwait(false);
-      account.token = tokenResponse.token;
-      account.refreshToken = tokenResponse.refreshToken;
-      account.isOnline = true;
-    }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-      account.isOnline = false;
-    }
+    Uri url = new(account.serverInfo.url);
+    var tokenResponse = await GetRefreshedToken(account.refreshToken, url, app).ConfigureAwait(false);
+    account.token = tokenResponse.token;
+    account.refreshToken = tokenResponse.refreshToken;
   }
 
   /// <summary>
@@ -694,31 +743,24 @@ public sealed class AccountManager(
     }
   }
 
-  private async Task<TokenExchangeResponse> GetRefreshedToken(string? refreshToken, Uri server, string app = "sca")
+  private async Task<TokenExchangeResponse> GetRefreshedToken(string? refreshToken, Uri server, string app)
   {
-    try
+    using var client = speckleHttp.CreateHttpClient();
+
+    var body = new
     {
-      using var client = speckleHttp.CreateHttpClient();
+      appId = app,
+      appSecret = app,
+      refreshToken,
+    };
 
-      var body = new
-      {
-        appId = app,
-        appSecret = app,
-        refreshToken,
-      };
+    using var content = new StringContent(JsonConvert.SerializeObject(body));
+    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+    var response = await client.PostAsync(new Uri(server, "/auth/token"), content).ConfigureAwait(false);
 
-      using var content = new StringContent(JsonConvert.SerializeObject(body));
-      content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-      var response = await client.PostAsync(new Uri(server, "/auth/token"), content).ConfigureAwait(false);
-
-      return JsonConvert
-        .DeserializeObject<TokenExchangeResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false))
-        .NotNull();
-    }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-      throw new SpeckleException($"Failed to get refreshed token from {server}", ex);
-    }
+    return JsonConvert
+      .DeserializeObject<TokenExchangeResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false))
+      .NotNull();
   }
 
   private static string GenerateChallenge()

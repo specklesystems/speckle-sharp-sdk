@@ -37,6 +37,8 @@ public class Account : IEquatable<Account>
   public string? refreshToken { get; set; }
 
   public bool isDefault { get; set; }
+
+  [Obsolete("Not used in v3")]
   public bool isOnline { get; set; } = true;
 
   public ServerInfo serverInfo { get; set; }
