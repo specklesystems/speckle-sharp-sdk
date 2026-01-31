@@ -28,6 +28,7 @@
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
     <PackageReference Include="System.IO.Pipelines" />
+    <PackageReference Include="System.Net.Http.Json" />
     <PackageReference Include="System.Threading.Channels" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0'">

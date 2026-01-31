@@ -229,6 +229,16 @@
           "System.Runtime": "4.3.0"
         }
       },
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "10.0.1",
+        "contentHash": "cVAka0o1rJJ5/De0pjNs7jcaZk5hUGf1HGzUyVmE2MEB1Vf0h/8qsWxImk1zjitCbeD2Avaq2P2+usdvqgbeVQ==",
+        "dependencies": {
+          "System.Buffers": "4.6.1",
+          "System.Memory": "4.6.3",
+          "System.Runtime.CompilerServices.Unsafe": "6.1.2"
+        }
+      },
       "System.Threading.Tasks.Extensions": {
         "type": "Transitive",
         "resolved": "4.6.3",
@@ -251,6 +261,7 @@
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
           "Speckle.Sdk.Dependencies": "[1.0.0, )",
           "System.IO.Pipelines": "[10.0.1, )",
+          "System.Net.Http.Json": "[10.0.1, )",
           "System.Threading.Channels": "[10.0.1, )"
         }
       },
@@ -343,6 +354,33 @@
         "dependencies": {
           "System.Buffers": "4.6.1",
           "System.Memory": "4.6.3",
+          "System.Threading.Tasks.Extensions": "4.6.3"
+        }
+      },
+      "System.Net.Http.Json": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.1, )",
+        "resolved": "10.0.1",
+        "contentHash": "XGOWt78ccgO9esyNlCemlS2b8JZPrH85pk/MvdHJxp6KwwUY/GnDaw2fPpJa7lgotiTkWnXnhip+ULNKaP7a8A==",
+        "dependencies": {
+          "System.Buffers": "4.6.1",
+          "System.Memory": "4.6.3",
+          "System.Text.Json": "10.0.1",
+          "System.Threading.Tasks.Extensions": "4.6.3"
+        }
+      },
+      "System.Text.Json": {
+        "type": "CentralTransitive",
+        "requested": "[8.0.5, )",
+        "resolved": "10.0.1",
+        "contentHash": "EsgwDgU1PFqhrFA9l5n+RBu76wFhNGCEwu8ITrBNhjPP3MxLyklroU5GIF8o6JYpYg6T4KD/VICfMdgPAvNp5g==",
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "10.0.1",
+          "System.Buffers": "4.6.1",
+          "System.IO.Pipelines": "10.0.1",
+          "System.Memory": "4.6.3",
+          "System.Runtime.CompilerServices.Unsafe": "6.1.2",
+          "System.Text.Encodings.Web": "10.0.1",
           "System.Threading.Tasks.Extensions": "4.6.3"
         }
       },
@@ -530,6 +568,11 @@
         "resolved": "4.5.1",
         "contentHash": "Zh8t8oqolRaFa9vmOZfdQm/qKejdqz0J9kr7o2Fu0vPeoH3BL1EOXipKWwkWtLT1JPzjByrF19fGuFlNbmPpiw=="
       },
+      "System.Text.Encodings.Web": {
+        "type": "Transitive",
+        "resolved": "10.0.1",
+        "contentHash": "cVAka0o1rJJ5/De0pjNs7jcaZk5hUGf1HGzUyVmE2MEB1Vf0h/8qsWxImk1zjitCbeD2Avaq2P2+usdvqgbeVQ=="
+      },
       "System.Threading.Tasks.Extensions": {
         "type": "Transitive",
         "resolved": "4.5.4",
@@ -547,6 +590,7 @@
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
           "Speckle.Sdk.Dependencies": "[1.0.0, )",
           "System.IO.Pipelines": "[10.0.1, )",
+          "System.Net.Http.Json": "[10.0.1, )",
           "System.Threading.Channels": "[10.0.1, )"
         }
       },
@@ -621,6 +665,25 @@
         "requested": "[10.0.1, )",
         "resolved": "10.0.1",
         "contentHash": "26LbFXHKd7PmRnWlkjnYgmjd5B6HYVG+1MpTO25BdxTJnx6D0O16JPAC/S4YBqjtt4YpfGj1QO/Ss6SPMGEGQw=="
+      },
+      "System.Net.Http.Json": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.1, )",
+        "resolved": "10.0.1",
+        "contentHash": "XGOWt78ccgO9esyNlCemlS2b8JZPrH85pk/MvdHJxp6KwwUY/GnDaw2fPpJa7lgotiTkWnXnhip+ULNKaP7a8A==",
+        "dependencies": {
+          "System.Text.Json": "10.0.1"
+        }
+      },
+      "System.Text.Json": {
+        "type": "CentralTransitive",
+        "requested": "[8.0.5, )",
+        "resolved": "10.0.1",
+        "contentHash": "EsgwDgU1PFqhrFA9l5n+RBu76wFhNGCEwu8ITrBNhjPP3MxLyklroU5GIF8o6JYpYg6T4KD/VICfMdgPAvNp5g==",
+        "dependencies": {
+          "System.IO.Pipelines": "10.0.1",
+          "System.Text.Encodings.Web": "10.0.1"
+        }
       },
       "System.Threading.Channels": {
         "type": "CentralTransitive",
