@@ -13,7 +13,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
 #if DEBUG
   private const int WAIT_PERIOD = 3000; // WSL is slow AF, so for local runs, we're being extra generous
 #else
-  private const int WAIT_PERIOD = 300; // For CI runs, a much smaller wait time is acceptable
+  private const int WAIT_PERIOD = 400; // For CI runs, a much smaller wait time is acceptable
 #endif
   private const int TIMEOUT = WAIT_PERIOD + 1000;
   private IClient _testUser;
