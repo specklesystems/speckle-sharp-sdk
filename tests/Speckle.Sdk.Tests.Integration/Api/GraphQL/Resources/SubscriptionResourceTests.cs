@@ -11,11 +11,11 @@ namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 public class SubscriptionResourceTests : IAsyncLifetime
 {
 #if DEBUG
-  private const int WAIT_PERIOD = 4000; // WSL is slow AF, so for local runs, we're being extra generous
+  private const int WAIT_PERIOD = 3000; // WSL is slow AF, so for local runs, we're being extra generous
 #else
-  private const int WAIT_PERIOD = 500; // For CI runs, a much smaller wait time is acceptable
+  private const int WAIT_PERIOD = 400; // For CI runs, a much smaller wait time is acceptable
 #endif
-  private const int TIMEOUT = WAIT_PERIOD + WAIT_PERIOD + 500;
+  private const int TIMEOUT = WAIT_PERIOD + 1000;
   private IClient _testUser;
   private Project _testProject;
   private Model _testModel;
@@ -32,6 +32,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
   public async Task InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
+    await _testUser.InitializeWebsocket();
     _testProject = await _testUser.Project.Create(new("test project123", "desc", null));
     _testModel = await _testUser.Model.Create(new("test model", "desc", _testProject.id));
     _testVersion = await Fixtures.CreateVersion(_testUser, _testProject.id, _testModel.id);

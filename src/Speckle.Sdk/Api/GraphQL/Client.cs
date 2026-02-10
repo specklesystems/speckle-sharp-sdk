@@ -87,6 +87,26 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
     catch (Exception ex) when (!ex.IsFatal()) { }
   }
 
+  /// <summary>
+  /// Ensure the <see cref="GQLClient"/>'s websocket is fully initialized.
+  /// <br/>
+  /// You don't <i>need</i> to call this function, if you don't, then it will be setup for you when you call <see cref="SubscribeTo"/> (e.g. when you create a <see cref="Subscription"/>),
+  /// but due to <see cref="GraphQL"/>'s WebSocket implementation, it's not awaited (deferred) thus the subscription make take a while to actually be setup.
+  /// </summary>
+  /// <remarks>
+  /// We only use websockets for GraphQL subscriptions, so if you're not using subscriptions, don't call this
+  ///
+  /// Note. due to other sources (potentially on the GraphQL side) you still need a ~100ms delay between setting up the subscription, and being able to relaibly trigger it
+  /// This should only really negatively affect test projects.
+  /// </remarks>
+  public async Task InitializeWebsocket()
+  {
+    if (GQLClient.WebSocketSubProtocol is null)
+    {
+      await GQLClient.InitializeWebsocketConnection().ConfigureAwait(false);
+    }
+  }
+
   internal async Task<T> ExecuteWithResiliencePolicies<T>(Func<Task<T>> func) =>
     await GraphQLRetry
       .ExecuteAsync<T, SpeckleGraphQLInternalErrorException>(
