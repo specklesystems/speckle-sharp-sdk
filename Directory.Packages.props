@@ -8,8 +8,6 @@
     <PackageVersion Include="Glob" Version="1.1.9" />
     <PackageVersion Include="HttpMultipartParser" Version="9.0.0" />
     <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />
-    <PackageVersion Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.1" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
     <!-- Keep at exactly 7.0.5 for side by side with V2 -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="[7.0.5,)" />
@@ -18,6 +16,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="[2.2.0,)" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.2.0,)" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="[2.2.0,)" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[5.0.0,)" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
     <PackageVersion Include="Open.ChannelExtensions" Version="9.1.0" />

@@ -228,7 +228,7 @@
         "type": "Project",
         "dependencies": {
           "GraphQL.Client": "[6.0.0, )",
-          "Microsoft.Bcl.AsyncInterfaces": "[10.0.1, )",
+          "Microsoft.Bcl.AsyncInterfaces": "[5.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
           "Microsoft.Data.Sqlite": "[7.0.5, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[2.2.0, )",
@@ -255,11 +255,11 @@
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "CentralTransitive",
-        "requested": "[10.0.1, )",
-        "resolved": "10.0.1",
-        "contentHash": "E1HSLkPHXEO30JEij2pWbOuzz1Z5ND4a5l7IP1T2RgQuE0a0NzEIvtO64RNy3Otn6PFezbT80cfm3M/Cgt70PA==",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "W8DPQjkMScOMTtJbPwmPyj9c3zYSFGawDW3jwlBOOsnY+EzZFLgNQ/UMkK35JmkNOVPdCyPr2Tw7Vv9N+KA3ZQ==",
         "dependencies": {
-          "System.Threading.Tasks.Extensions": "4.6.3"
+          "System.Threading.Tasks.Extensions": "4.5.4"
         }
       },
       "Microsoft.CSharp": {
