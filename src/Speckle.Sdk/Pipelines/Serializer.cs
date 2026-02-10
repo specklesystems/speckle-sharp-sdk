@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Drawing;
+using System.Globalization;
 using System.Reflection;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
@@ -163,42 +165,20 @@ public class Serializer
     List<(Id, Json, Dictionary<string, int>, Base, string)> detachedObjects
   )
   {
-    if (value == null)
-    {
-      writer.WriteNull();
-      return;
-    }
-
     switch (value)
     {
-      case string s:
-        writer.WriteValue(s);
-        return;
-      case int i:
-        writer.WriteValue(i);
-        return;
-      case long l:
-        writer.WriteValue(l);
-        return;
-      case double d:
-        writer.WriteValue(d);
-        return;
-      case float f:
-        writer.WriteValue(f);
-        return;
-      case bool b:
-        writer.WriteValue(b);
-        return;
-      case Enum e:
-        writer.WriteValue((int)(object)e);
+      case Enum:
+        writer.WriteValue((int)value);
         return;
       case Guid g:
         writer.WriteValue(g.ToString());
         return;
-      case DateTime dt:
-        writer.WriteValue(dt.ToString("o"));
+      case Color c:
+        writer.WriteValue(c.ToArgb());
         return;
-
+      case DateTime dt:
+        writer.WriteValue(dt.ToString("o", CultureInfo.InvariantCulture));
+        return;
       case Matrix4x4 md:
         writer.WriteStartArray();
         writer.WriteValue(md.M11);
@@ -219,107 +199,106 @@ public class Serializer
         writer.WriteValue(md.M44);
         writer.WriteEndArray();
         return;
-    }
-
-    // Handle ObjectReference before Base (since ObjectReference extends Base)
-    // This prevents double-serialization and properly propagates closures
-    if (value is ObjectReference objRef)
-    {
-      writer.WriteStartObject();
-      writer.WritePropertyName("speckle_type");
-      writer.WriteValue("reference");
-      writer.WritePropertyName("referencedId");
-      writer.WriteValue(objRef.referencedId);
-      writer.WriteEndObject();
-
-      // Propagate closure: add the referenced ID
-      closures[objRef.referencedId] = closures.TryGetValue(objRef.referencedId, out var existing) ? existing + 1 : 1;
-
-      // Propagate nested closures from the ObjectReference.closure dictionary
-      if (objRef.closure != null)
+      // Handle ObjectReference before Base (since ObjectReference extends Base)
+      // This prevents double-serialization and properly propagates closures
+      case ObjectReference objRef:
       {
-        foreach (var kvp in objRef.closure)
-        {
-          closures[kvp.Key] = closures.TryGetValue(kvp.Key, out var existingDepth)
-            ? existingDepth + kvp.Value
-            : kvp.Value;
-        }
-      }
-
-      return;
-    }
-
-    if (value is Base baseObj)
-    {
-      if (isDetachable)
-      {
-        var childClosures = new Dictionary<string, int>();
-        var (childId, childJson) = SerializeBase(baseObj, true, childClosures, detachedObjects);
-
-        detachedObjects.Add((childId, childJson, childClosures, baseObj, baseObj.speckle_type));
-
         writer.WriteStartObject();
         writer.WritePropertyName("speckle_type");
         writer.WriteValue("reference");
         writer.WritePropertyName("referencedId");
-        writer.WriteValue(childId.Value);
+        writer.WriteValue(objRef.referencedId);
         writer.WriteEndObject();
 
-        closures[childId.Value] = closures.TryGetValue(childId.Value, out var existing) ? existing + 1 : 1;
+        // Propagate closure: add the referenced ID
+        closures[objRef.referencedId] = closures.TryGetValue(objRef.referencedId, out var existing) ? existing + 1 : 1;
 
-        foreach (var kvp in childClosures)
+        // Propagate nested closures from the ObjectReference.closure dictionary
+        if (objRef.closure != null)
         {
-          closures[kvp.Key] = closures.TryGetValue(kvp.Key, out var existingDepth)
-            ? existingDepth + kvp.Value
-            : kvp.Value;
-        }
-      }
-      else
-      {
-        var inlineClosures = new Dictionary<string, int>();
-        var (_, inlineJson) = SerializeBase(baseObj, false, inlineClosures, detachedObjects);
-
-        writer.WriteRawValue(inlineJson.Value);
-
-        foreach (var kvp in inlineClosures)
-        {
-          closures[kvp.Key] = closures.TryGetValue(kvp.Key, out var existingDepth)
-            ? existingDepth + kvp.Value
-            : kvp.Value;
-        }
-      }
-      return;
-    }
-
-    if (value is IDictionary dict)
-    {
-      writer.WriteStartObject();
-      foreach (DictionaryEntry kvp in dict)
-      {
-        if (kvp.Key is not string key)
-        {
-          throw new ArgumentException("Dictionary keys must be strings");
+          foreach (var kvp in objRef.closure)
+          {
+            closures[kvp.Key] = closures.TryGetValue(kvp.Key, out var existingDepth)
+              ? existingDepth + kvp.Value
+              : kvp.Value;
+          }
         }
 
-        writer.WritePropertyName(key);
-        SerializeValue(kvp.Value, writer, false, closures, detachedObjects);
+        return;
       }
-      writer.WriteEndObject();
-      return;
-    }
-
-    if (value is IEnumerable enumerable and not string)
-    {
-      writer.WriteStartArray();
-      foreach (var item in enumerable)
+      case Base baseObj:
       {
-        SerializeValue(item, writer, isDetachable, closures, detachedObjects);
-      }
-      writer.WriteEndArray();
-      return;
-    }
+        if (isDetachable)
+        {
+          var childClosures = new Dictionary<string, int>();
+          var (childId, childJson) = SerializeBase(baseObj, true, childClosures, detachedObjects);
 
-    writer.WriteValue(value.ToString());
+          detachedObjects.Add((childId, childJson, childClosures, baseObj, baseObj.speckle_type));
+
+          writer.WriteStartObject();
+          writer.WritePropertyName("speckle_type");
+          writer.WriteValue("reference");
+          writer.WritePropertyName("referencedId");
+          writer.WriteValue(childId.Value);
+          writer.WriteEndObject();
+
+          closures[childId.Value] = closures.TryGetValue(childId.Value, out var existing) ? existing + 1 : 1;
+
+          foreach (var kvp in childClosures)
+          {
+            closures[kvp.Key] = closures.TryGetValue(kvp.Key, out var existingDepth)
+              ? existingDepth + kvp.Value
+              : kvp.Value;
+          }
+        }
+        else
+        {
+          var inlineClosures = new Dictionary<string, int>();
+          var (_, inlineJson) = SerializeBase(baseObj, false, inlineClosures, detachedObjects);
+
+          writer.WriteRawValue(inlineJson.Value);
+
+          foreach (var kvp in inlineClosures)
+          {
+            closures[kvp.Key] = closures.TryGetValue(kvp.Key, out var existingDepth)
+              ? existingDepth + kvp.Value
+              : kvp.Value;
+          }
+        }
+        return;
+      }
+      case IDictionary dict:
+      {
+        writer.WriteStartObject();
+        foreach (DictionaryEntry kvp in dict)
+        {
+          if (kvp.Key is not string key)
+          {
+            throw new ArgumentException("Dictionary keys must be strings", nameof(value));
+          }
+
+          writer.WritePropertyName(key);
+          SerializeValue(kvp.Value, writer, false, closures, detachedObjects);
+        }
+        writer.WriteEndObject();
+        return;
+      }
+      case ICollection collection:
+      {
+        writer.WriteStartArray();
+        foreach (var item in collection)
+        {
+          SerializeValue(item, writer, isDetachable, closures, detachedObjects);
+        }
+        writer.WriteEndArray();
+        return;
+      }
+      default:
+        // This case will handle primitives and `null`
+        // Will throw JsonWriterException if not supported
+        writer.WriteValue(value);
+        return;
+    }
   }
 
   private UploadItem ReferenceToUploadItem(ObjectReference existingRef)
