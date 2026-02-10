@@ -2,7 +2,13 @@ using System.Text;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
-public sealed record BaseItem(Id Id, Json Json, bool NeedsStorage, Dictionary<Id, int>? Closures) : IHasByteSize
+public sealed record BaseItem(
+  Id Id,
+  Json Json,
+  bool NeedsStorage,
+  Dictionary<Id, int>? Closures,
+  bool? IsReference = false
+) : IHasByteSize
 {
   public int ByteSize { get; } = Encoding.UTF8.GetByteCount(Json.Value);
 
