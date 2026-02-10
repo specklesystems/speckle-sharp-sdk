@@ -1,7 +1,8 @@
 using System.IO.Compression;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Text;
 using System.Threading.Channels;
+using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Pipelines;
 
@@ -19,7 +20,7 @@ public sealed class Uploader : IDisposable
     string projectId,
     string modelId,
     string ingestionId,
-    string apiEndpoint,
+    Uri serverUrl,
     string authToken,
     CancellationToken cancellationToken
   )
@@ -28,14 +29,14 @@ public sealed class Uploader : IDisposable
     _modelId = modelId;
     _ingestionId = ingestionId;
     _cancellationToken = cancellationToken;
+    Uri apiBaseUrl = new(serverUrl, "/api/v1/");
 
-    Uri apiBaseUrl = new(new(apiEndpoint), "/api/v1/");
     _client = new HttpClient { BaseAddress = apiBaseUrl, Timeout = TimeSpan.FromMinutes(30) };
 
     _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
 
     _channel = Channel.CreateBounded<UploadItem>(
-      new BoundedChannelOptions(1000) { FullMode = BoundedChannelFullMode.Wait }
+      new BoundedChannelOptions(1000) { FullMode = BoundedChannelFullMode.Wait, SingleReader = true }
     );
 
     _sendTask = SendLoopAsync();
@@ -66,9 +67,11 @@ public sealed class Uploader : IDisposable
         {
           await writer.WriteLineAsync($"{item.Id}\t{item.Json}\t{item.SpeckleType}").ConfigureAwait(false);
         }
-
+#if NET8_0_OR_GREATER
+        await writer.FlushAsync(_cancellationToken).ConfigureAwait(false);
+#else
         await writer.FlushAsync().ConfigureAwait(false);
-        await gzip.FlushAsync(_cancellationToken).ConfigureAwait(false);
+#endif
       }
       // fileStream.Flush();
       // fileStream.Close();
@@ -77,13 +80,18 @@ public sealed class Uploader : IDisposable
       // 2. Request presigned URL
       var signUri = new Uri($"projects/{_projectId}/models/{_modelId}/uploads/sign", UriKind.Relative);
 
-      var signResponse = await HttpClientExtensions
-        .PostAsJsonAsync(_client, signUri, _cancellationToken)
-        .ConfigureAwait(false);
+      using var signResponse = await _client.PostAsync(signUri, null, _cancellationToken).ConfigureAwait(false);
       signResponse.EnsureSuccessStatusCode();
 
-      var presignedUpload =
-        await signResponse.Content.ReadFromJsonAsync<PresignedUploadResponse>(_cancellationToken).ConfigureAwait(false)
+#if NET5_0_OR_GREATER
+      string signResponseString = await signResponse
+        .Content.ReadAsStringAsync(_cancellationToken)
+        .ConfigureAwait(false);
+#else
+      string signResponseString = await signResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
+      PresignedUploadResponse presignedUpload =
+        JsonConvert.DeserializeObject<PresignedUploadResponse>(signResponseString)
         ?? throw new InvalidOperationException("Failed to get presigned upload URL");
 
       // 3. Upload to S3
@@ -109,25 +117,24 @@ public sealed class Uploader : IDisposable
       var processUri = new Uri($"projects/{_projectId}/models/{_modelId}/uploads/process", UriKind.Relative);
       var processRequest = new ProcessUploadRequest { key = presignedUpload.Key, ingestionId = _ingestionId };
 
-      var processResponse = await HttpClientExtensions
-        .PostAsJsonAsync(_client, processUri, processRequest, _cancellationToken)
-        .ConfigureAwait(false);
+      using StringContent content = new(JsonConvert.SerializeObject(processRequest), Encoding.UTF8, "application/json");
+      var processResponse = await _client.PostAsync(processUri, content, _cancellationToken).ConfigureAwait(false);
+
       processResponse.EnsureSuccessStatusCode();
 
-      var processResult = await processResponse
-        .Content.ReadFromJsonAsync<ProcessUploadResponse>(_cancellationToken)
-        .ConfigureAwait(false);
+#if NET5_0_OR_GREATER
+      string processResult = await processResponse.Content.ReadAsStringAsync(_cancellationToken).ConfigureAwait(false);
+#else
+      string processResult = await processResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
+      var json = JsonConvert.DeserializeObject<ProcessUploadResponse>(processResult);
 
-      if (processResult == null)
+      if (json is null)
       {
         throw new InvalidOperationException("Failed to trigger upload processing");
       }
 
-      return new UploadResult { IngestionId = processResult.ingestionId };
-    }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-      throw;
+      return new UploadResult { IngestionId = json.ingestionId };
     }
     finally
     {

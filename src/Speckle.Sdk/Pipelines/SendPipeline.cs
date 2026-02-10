@@ -21,7 +21,14 @@ public sealed class SendPipeline : IDisposable
   )
   {
     _cancellationToken = cancellationToken;
-    _uploader = new Uploader(projectId, modelId, ingestionId, account.serverInfo.url, account.token, cancellationToken);
+    _uploader = new Uploader(
+      projectId,
+      modelId,
+      ingestionId,
+      new(account.serverInfo.url),
+      account.token,
+      cancellationToken
+    );
   }
 
   private UploadItem _lastItem;

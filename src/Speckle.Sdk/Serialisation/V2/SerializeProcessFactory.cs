@@ -35,8 +35,7 @@ public class SerializeProcessFactory(
     IServerObjectManager serverObjectManager,
     IProgress<ProgressArgs>? progress,
     CancellationToken cancellationToken,
-    SerializeProcessOptions? options = null,
-    ObjectFlopper? objectFlopper = null
+    SerializeProcessOptions? options = null
   ) =>
     new SerializeProcess(
       progress,
