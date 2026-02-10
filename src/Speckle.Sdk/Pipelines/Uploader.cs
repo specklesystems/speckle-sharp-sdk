@@ -80,7 +80,7 @@ public sealed class Uploader : IDisposable
       // 2. Request presigned URL
       var signUri = new Uri($"projects/{_projectId}/models/{_modelId}/uploads/sign", UriKind.Relative);
 
-      var signResponse = await _client.GetAsync(signUri, _cancellationToken).ConfigureAwait(false);
+      using var signResponse = await _client.PostAsync(signUri, null, _cancellationToken).ConfigureAwait(false);
       signResponse.EnsureSuccessStatusCode();
 
 #if NET5_0_OR_GREATER
