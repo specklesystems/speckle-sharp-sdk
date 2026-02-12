@@ -18,6 +18,7 @@
     <File Path=".github\git-commit-instructions.md" />
   </Folder>
   <Folder Name="/config/workflows/">
+    <File Path=".github/workflows/integration-test-callable-from-server-repo.yml" />
     <File Path=".github/workflows/integration-test.yml" />
     <File Path=".github/workflows/pr.yml" />
     <File Path=".github/workflows/release.yml" />
