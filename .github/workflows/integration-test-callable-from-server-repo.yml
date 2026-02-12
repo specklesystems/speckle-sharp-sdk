@@ -3,12 +3,9 @@ name: Integration Test
 on:
   workflow_call:
     inputs:
-      speckle-server-internal-ref:
+      speckle-sharp-sdk-ref:
         required: true
         type: string
-    secrets: 
-      speckle-server-internal-token:
-        required: true
         
 jobs:
   integration-test:
@@ -22,21 +19,21 @@ jobs:
         uses: actions/checkout@v6
         with:
           path: ${{ env.CLIENT_DIR }}
+          repository: specklesystems/speckle-sharp-sdk
+          ref: ${{ inputs.speckle-sharp-sdk-ref }}
           
       - name: Checkout
         uses: actions/checkout@v6
         with:
           repository: specklesystems/speckle-server-internal
-          ref: ${{ inputs.speckle-server-internal-ref }}
-          token: ${{ secrets.speckle-server-internal-token }}
           path: ${{ env.SERVER_DIR }}
           
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.x.x
-          cache: true
-          cache-dependency-path: "**/packages.lock.json"
+#          cache: true
+#          cache-dependency-path: "**/packages.lock.json"
 
       - name: ⚙️ Spin up Server
         run: docker compose --file "${{ env.CLIENT_DIR }}/.github/workflows/integration-test.yml" up --wait
