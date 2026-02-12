@@ -14,7 +14,7 @@ jobs:
       CLIENT_REPO: "specklesystems/speckle-sharp-sdk"
       SERVER_DIR: "./server"
       SERVER_REPO: "specklesystems/speckle-server-internal"
-      SOLUTION: "/Speckle.Sdk.sln"
+      SOLUTION: "Speckle.Sdk.sln"
       SPECKLE_SERVER_IMAGE: "speckle-server:local"
     runs-on: ubuntu-latest
     steps:
