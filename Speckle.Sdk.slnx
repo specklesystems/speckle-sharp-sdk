@@ -21,6 +21,7 @@
     <File Path=".github/workflows/integration-test.yml" />
     <File Path=".github/workflows/pr.yml" />
     <File Path=".github/workflows/release.yml" />
+    <File Path=".github/workflows/speckle-sharp-sdk-integration.yml" />
   </Folder>
   <Folder Name="/performance/">
     <Project Path="tests/Speckle.Sdk.Serialization.Testing/Speckle.Sdk.Serialization.Testing.csproj" />

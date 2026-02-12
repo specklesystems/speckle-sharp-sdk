@@ -1,0 +1,54 @@
+name: Integration Test
+
+on:
+  workflow_call:
+    inputs:
+      speckle-server-internal-ref:
+        required: true
+        type: string
+    secrets: 
+      speckle-server-internal-token:
+        required: true
+        
+jobs:
+  integration-test:
+    env:
+      CLIENT_DIR: "./client"
+      SERVER_DIR: "./server"
+      SOLUTION: "./client/Speckle.Sdk.sln"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          path: ${{ env.CLIENT_DIR }}
+          
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          repository: specklesystems/speckle-server-internal
+          ref: ${{ inputs.speckle-server-internal-ref }}
+          token: ${{ secrets.speckle-server-internal-token }}
+          path: ${{ env.SERVER_DIR }}
+          
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.x.x
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: ⚙️ Spin up Server
+        run: docker compose --file "${{ env.CLIENT_DIR }}/.github/workflows/integration-test.yml" up --wait
+        working-directory: ${{ env.SERVER_DIR }}
+        env:
+          SPECKLE_SERVER_VERSION: "local"
+          
+      - name: 📦 Restore
+        run: dotnet restore ${{ env.SOLUTION }} --locked-mode
+
+      - name: 🏗️ Build
+        run: dotnet build ${{ env.SOLUTION }} --configuration Release --no-restore -warnaserror
+
+      - name: 🔨 Integration Tests against local Server
+        run: dotnet test ${{ env.SOLUTION }} --filter "(Category=Integration)&(Server!=Public)" --configuration Release --no-build --no-restore --verbosity=normal

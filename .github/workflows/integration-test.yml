@@ -37,7 +37,7 @@ jobs:
           password: ${{ github.token }}
 
       - name: ⚙️ Spin up Server
-        run: docker compose -f ${{ inputs.docker-compose-file }} up --wait
+        run: docker compose --file ${{ inputs.docker-compose-file }} up --wait
 
       - name: 📦 Restore
         run: dotnet restore ${{ env.Solution }} --locked-mode
