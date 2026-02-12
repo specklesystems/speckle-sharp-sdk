@@ -39,7 +39,7 @@ jobs:
       #          cache-dependency-path: "**/packages.lock.json"
 
       - name: 🏗️ Build ${{ env.SPECKLE_SERVER_IMAGE }}
-        run: docker build --file "/packages/server/Dockerfile" --tag ${{ env.SPECKLE_SERVER_IMAGE }} .
+        run: docker build --file "./packages/server/Dockerfile" --tag ${{ env.SPECKLE_SERVER_IMAGE }} .
         working-directory: ${{ env.SERVER_DIR }}
           
       - name: ⚙️ Spin up ${{ env.SPECKLE_SERVER_IMAGE }}
