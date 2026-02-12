@@ -36,7 +36,7 @@ jobs:
       #          cache-dependency-path: "**/packages.lock.json"
 
       - name: ⚙️ Spin up Server
-        run: docker compose --file "../${{ env.CLIENT_DIR }}/.github/workflows/docker-compose-internal.yml" up --wait
+        run: docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" up --wait
         working-directory: ${{ env.SERVER_DIR }}
         env:
           SPECKLE_SERVER_VERSION: "local"
