@@ -11,41 +11,48 @@ jobs:
   integration-test:
     env:
       CLIENT_DIR: "./client"
+      CLIENT_REPO: "specklesystems/speckle-sharp-sdk"
       SERVER_DIR: "./server"
+      SERVER_REPO: "specklesystems/speckle-server-internal"
       SOLUTION: "./client/Speckle.Sdk.sln"
+      SPECKLE_SERVER_IMAGE: "speckle-server:local"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout ${{ env.CLIENT_REPO }}
         uses: actions/checkout@v6
         with:
           path: ${{ env.CLIENT_DIR }}
-          repository: specklesystems/speckle-sharp-sdk
+          repository: ${{ env.CLIENT_REPO }}
           ref: ${{ inputs.speckle-sharp-sdk-ref }}
 
-      - name: Checkout
+      - name: Checkout ${{ env.SERVER_REPO }}
         uses: actions/checkout@v6
         with:
-          repository: specklesystems/speckle-server-internal
+          repository: ${{ env.SERVER_REPO }}
           path: ${{ env.SERVER_DIR }}
 
-      - name: Setup .NET
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.x.x
       #          cache: true
       #          cache-dependency-path: "**/packages.lock.json"
 
-      - name: ⚙️ Spin up Server
+      - name: 🏗️ Build ${{ env.SPECKLE_SERVER_IMAGE }}
+        run: docker build --file "/packages/server/Dockerfile" ${{ env.SPECKLE_SERVER_IMAGE }} .
+        working-directory: ${{ env.SERVER_DIR }}
+          
+      - name: ⚙️ Spin up ${{ env.SPECKLE_SERVER_IMAGE }}
         run: docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" up --wait
         working-directory: ${{ env.SERVER_DIR }}
         env:
-          SPECKLE_SERVER_VERSION: "local"
+          SPECKLE_SERVER_IMAGE: ${{ env.SPECKLE_SERVER_IMAGE }}
 
-      - name: 📦 Restore
+      - name: 📦 Restore .NET Solution
         run: dotnet restore ${{ env.SOLUTION }} --locked-mode
 
-      - name: 🏗️ Build
+      - name: 🏗️ Build .NET Solution
         run: dotnet build ${{ env.SOLUTION }} --configuration Release --no-restore -warnaserror
 
-      - name: 🔨 Integration Tests against local Server
+      - name: 🔨 Run .NET Integration Tests 
         run: dotnet test ${{ env.SOLUTION }} --filter "(Category=Integration)&(Server!=Public)" --configuration Release --no-build --no-restore --verbosity=normal
