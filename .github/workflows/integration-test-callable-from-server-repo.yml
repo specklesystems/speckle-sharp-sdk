@@ -6,7 +6,7 @@ on:
       speckle-sharp-sdk-ref:
         required: true
         type: string
-        
+
 jobs:
   integration-test:
     env:
@@ -21,26 +21,26 @@ jobs:
           path: ${{ env.CLIENT_DIR }}
           repository: specklesystems/speckle-sharp-sdk
           ref: ${{ inputs.speckle-sharp-sdk-ref }}
-          
+
       - name: Checkout
         uses: actions/checkout@v6
         with:
           repository: specklesystems/speckle-server-internal
           path: ${{ env.SERVER_DIR }}
-          
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.x.x
-#          cache: true
-#          cache-dependency-path: "**/packages.lock.json"
+      #          cache: true
+      #          cache-dependency-path: "**/packages.lock.json"
 
       - name: ⚙️ Spin up Server
-        run: docker compose --file "../${{ env.CLIENT_DIR }}/.github/workflows/integration-test.yml" up --wait
+        run: docker compose --file "../${{ env.CLIENT_DIR }}/.github/workflows/docker-compose-internal.yml" up --wait
         working-directory: ${{ env.SERVER_DIR }}
         env:
           SPECKLE_SERVER_VERSION: "local"
-          
+
       - name: 📦 Restore
         run: dotnet restore ${{ env.SOLUTION }} --locked-mode
 
