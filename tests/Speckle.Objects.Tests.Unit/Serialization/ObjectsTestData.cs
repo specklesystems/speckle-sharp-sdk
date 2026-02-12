@@ -42,5 +42,5 @@ public static class ObjectsTestData
     };
   }
 
-  public static TheoryData<Base> TheoryData => new(Data());
+  public static TheoryData<Base> TheoryData => [.. Data()];
 }

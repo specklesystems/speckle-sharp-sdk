@@ -44,5 +44,5 @@ public abstract class PrimitiveTestFixture
   public static float[] FloatIntegralTestCases { get; } = [0, 1, int.MaxValue, int.MinValue];
 
   public static IEnumerable<object[]> MyEnums { get; } =
-    Enum.GetValues(typeof(MyEnum)).Cast<object>().Select(x => new[] { x });
+    Enum.GetValues<MyEnum>().Cast<object>().Select(x => new[] { x });
 }
