@@ -14,7 +14,7 @@ jobs:
       CLIENT_REPO: "specklesystems/speckle-sharp-sdk"
       SERVER_DIR: "./server"
       SERVER_REPO: "specklesystems/speckle-server-internal"
-      SOLUTION: "./client/Speckle.Sdk.sln"
+      SOLUTION: "/Speckle.Sdk.sln"
       SPECKLE_SERVER_IMAGE: "speckle-server:local"
     runs-on: ubuntu-latest
     steps:
@@ -38,11 +38,11 @@ jobs:
       #          cache: true
       #          cache-dependency-path: "**/packages.lock.json"
 
-      - name: 🏗️ Build ${{ env.SPECKLE_SERVER_IMAGE }}
+      - name: 🏗️ Build Server
         run: docker build --file "./packages/server/Dockerfile" --tag ${{ env.SPECKLE_SERVER_IMAGE }} .
         working-directory: ${{ env.SERVER_DIR }}
           
-      - name: ⚙️ Spin up ${{ env.SPECKLE_SERVER_IMAGE }}
+      - name: ⚙️ Spin up Server
         run: docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" up --wait
         working-directory: ${{ env.SERVER_DIR }}
         env:
@@ -50,9 +50,12 @@ jobs:
 
       - name: 📦 Restore .NET Solution
         run: dotnet restore ${{ env.SOLUTION }} --locked-mode
-
+        working-directory: ${{ env.CLIENT_DIR }}
+        
       - name: 🏗️ Build .NET Solution
         run: dotnet build ${{ env.SOLUTION }} --configuration Release --no-restore -warnaserror
-
+        working-directory: ${{ env.CLIENT_DIR }}
+        
       - name: 🔨 Run .NET Integration Tests 
         run: dotnet test ${{ env.SOLUTION }} --filter "(Category=Integration)&(Server!=Public)" --configuration Release --no-build --no-restore --verbosity=normal
+        working-directory: ${{ env.CLIENT_DIR }}
