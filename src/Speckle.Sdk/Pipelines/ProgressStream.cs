@@ -80,10 +80,7 @@ public sealed class ProgressStream : Stream
 
   protected override void Dispose(bool disposing)
   {
-    if (disposing)
-    {
-      _innerStream.Dispose();
-    }
+    _innerStream.Dispose();
     base.Dispose(disposing);
   }
 
