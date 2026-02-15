@@ -1,34 +1,33 @@
+using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
 
-namespace Speckle.Sdk.Pipelines;
+namespace Speckle.Sdk.Pipelines.Send;
 
-public record UploadItem(string Id, Json Json, string SpeckleType, ObjectReference Reference);
-
-public sealed class SendPipeline : IDisposable
+[GenerateAutoInterface]
+public sealed class SendPipelineFactory(UploaderFactory uploaderFactory) : ISendPipelineFactory
 {
-  private readonly CancellationToken _cancellationToken;
-  private readonly Serializer _serializer = new();
-  private readonly Uploader _uploader;
-
-  public SendPipeline(
-    Account account,
+  public SendPipeline CreateInstance(
     string projectId,
     string modelId,
     string ingestionId,
+    Account account,
     CancellationToken cancellationToken
   )
   {
-    _cancellationToken = cancellationToken;
-    _uploader = new Uploader(
-      projectId,
-      modelId,
-      ingestionId,
-      new(account.serverInfo.url),
-      account.token,
-      cancellationToken
-    );
+    var uploader = uploaderFactory.CreateInstance(projectId, modelId, ingestionId, account, cancellationToken);
+    return new SendPipeline(uploader);
+  }
+}
+
+public sealed class SendPipeline : IDisposable
+{
+  private readonly Serializer _serializer = new();
+  private readonly Uploader _uploader;
+
+  internal SendPipeline(Uploader uploader)
+  {
+    _uploader = uploader;
   }
 
   private UploadItem _lastItem;

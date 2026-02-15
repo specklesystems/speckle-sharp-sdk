@@ -9,7 +9,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 
-namespace Speckle.Sdk.Pipelines;
+namespace Speckle.Sdk.Pipelines.Send;
 
 [GenerateAutoInterface]
 public sealed class UploaderFactory(ISpeckleHttp httpClientFactory, ILogger<Uploader> logger) : IUploaderFactory
@@ -20,10 +20,7 @@ public sealed class UploaderFactory(ISpeckleHttp httpClientFactory, ILogger<Uplo
     string ingestionId,
     Account account,
     CancellationToken cancellationToken
-  )
-  {
-    return new Uploader(projectId, modelId, ingestionId, logger, httpClientFactory, account, cancellationToken);
-  }
+  ) => new(projectId, modelId, ingestionId, logger, httpClientFactory, account, cancellationToken);
 }
 
 public sealed class Uploader : IDisposable
@@ -90,33 +87,15 @@ public sealed class Uploader : IDisposable
     return await TriggerProcessing(processRequest).ConfigureAwait(false);
   }
 
-  private async Task<UploadResult> TriggerProcessing(ProcessUploadRequest processRequest)
-  {
-    Uri processUri = new($"projects/{_projectId}/models/{_modelId}/uploads/process", UriKind.Relative);
-
-    using StringContent content = new(JsonConvert.SerializeObject(processRequest), Encoding.UTF8, "application/json");
-    using HttpResponseMessage processResponse = await _speckleClient
-      .PostAsync(processUri, content, _cancellationToken)
-      .ConfigureAwait(false);
-
-    processResponse.EnsureSuccessStatusCode();
-
-#if NET5_0_OR_GREATER
-    string processResult = await processResponse.Content.ReadAsStringAsync(_cancellationToken).ConfigureAwait(false);
-#else
-    string processResult = await processResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-#endif
-    var json = JsonConvert
-      .DeserializeObject<ProcessUploadResponse>(processResult)
-      .NotNull("Trigger upload processing yielded an response that failed to deserialize");
-
-    return new UploadResult { IngestionId = json.ingestionId };
-  }
-
+  /// <summary>
+  /// Reads from the Channel and streams the <see cref="UploadItem"/>s to a temporary file on disk.
+  /// Will keep reading until <see cref="CompleteAsync"/> is called.
+  /// </summary>
+  /// <returns>the file that was written</returns>
   private async Task<DisposableFile> WriteFile()
   {
     string tempFilePath = Path.GetTempFileName();
-    _logger.LogInformation("Writing temp file to {tempFilePath}", tempFilePath);
+    _logger.LogInformation("Writing temp file to {TempFilePath}", tempFilePath);
 
     using var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
     using var gzip = new GZipStream(fileStream, CompressionLevel.Optimal);
@@ -171,32 +150,32 @@ public sealed class Uploader : IDisposable
     uploadResponse.EnsureSuccessStatusCode();
   }
 
+  private async Task<UploadResult> TriggerProcessing(ProcessUploadRequest processRequest)
+  {
+    Uri processUri = new($"projects/{_projectId}/models/{_modelId}/uploads/process", UriKind.Relative);
+
+    using StringContent content = new(JsonConvert.SerializeObject(processRequest), Encoding.UTF8, "application/json");
+    using HttpResponseMessage processResponse = await _speckleClient
+      .PostAsync(processUri, content, _cancellationToken)
+      .ConfigureAwait(false);
+
+    processResponse.EnsureSuccessStatusCode();
+
+#if NET5_0_OR_GREATER
+    string processResult = await processResponse.Content.ReadAsStringAsync(_cancellationToken).ConfigureAwait(false);
+#else
+    string processResult = await processResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
+    var json = JsonConvert
+      .DeserializeObject<ProcessUploadResponse>(processResult)
+      .NotNull("Trigger upload processing yielded an response that failed to deserialize");
+
+    return new UploadResult { IngestionId = json.ingestionId };
+  }
+
   public void Dispose()
   {
     _speckleClient.Dispose();
     _s3Client.Dispose();
   }
-}
-
-// DTOs
-internal record PresignedUploadResponse
-{
-  public required Uri Url { get; init; }
-  public required string Key { get; init; }
-}
-
-internal record ProcessUploadRequest
-{
-  public required string key { get; init; }
-  public required string ingestionId { get; init; }
-}
-
-internal record ProcessUploadResponse
-{
-  public required string ingestionId { get; init; }
-}
-
-internal record UploadResult
-{
-  public required string IngestionId { get; init; }
 }
