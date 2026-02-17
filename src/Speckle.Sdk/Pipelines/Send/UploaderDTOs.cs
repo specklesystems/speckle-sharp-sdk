@@ -11,12 +11,6 @@ internal record PresignedUploadResponse
   public required string Key { get; init; }
 }
 
-internal record ProcessUploadRequest
-{
-  public required string key { get; init; }
-  public required string ingestionId { get; init; }
-}
-
 internal record ProcessUploadResponse
 {
   public required string ingestionId { get; init; }

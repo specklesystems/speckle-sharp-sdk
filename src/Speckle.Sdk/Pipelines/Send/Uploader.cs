@@ -1,11 +1,9 @@
 using System.IO.Compression;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 
@@ -16,17 +14,15 @@ public sealed class UploaderFactory(ISpeckleHttp httpClientFactory, ILogger<Uplo
 {
   public Uploader CreateInstance(
     string projectId,
-    string modelId,
     string ingestionId,
     Account account,
     CancellationToken cancellationToken
-  ) => new(projectId, modelId, ingestionId, logger, httpClientFactory, account, cancellationToken);
+  ) => new(projectId, ingestionId, logger, httpClientFactory, account, cancellationToken);
 }
 
 public sealed class Uploader : IDisposable
 {
   private readonly string _projectId;
-  private readonly string _modelId;
   private readonly string _ingestionId;
   private readonly CancellationToken _cancellationToken;
   private readonly HttpClient _speckleClient;
@@ -37,7 +33,6 @@ public sealed class Uploader : IDisposable
 
   internal Uploader(
     string projectId,
-    string modelId,
     string ingestionId,
     ILogger<Uploader> logger,
     ISpeckleHttp httpClientFactory,
@@ -46,7 +41,6 @@ public sealed class Uploader : IDisposable
   )
   {
     _projectId = projectId;
-    _modelId = modelId;
     _ingestionId = ingestionId;
     _logger = logger;
     _cancellationToken = cancellationToken;
@@ -83,8 +77,7 @@ public sealed class Uploader : IDisposable
     PresignedUploadResponse presignedUpload = await GetPresignedUrl().ConfigureAwait(false);
     await UploadToS3(tempFile.FileInfo, presignedUpload.Url).ConfigureAwait(false);
 
-    ProcessUploadRequest processRequest = new() { key = presignedUpload.Key, ingestionId = _ingestionId };
-    return await TriggerProcessing(processRequest).ConfigureAwait(false);
+    return await TriggerProcessing().ConfigureAwait(false);
   }
 
   /// <summary>
@@ -114,7 +107,7 @@ public sealed class Uploader : IDisposable
 
   private async Task<PresignedUploadResponse> GetPresignedUrl()
   {
-    var signUri = new Uri($"projects/{_projectId}/models/{_modelId}/uploads/sign", UriKind.Relative);
+    var signUri = new Uri($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/sign", UriKind.Relative);
 
     using var signResponse = await _speckleClient.PostAsync(signUri, null, _cancellationToken).ConfigureAwait(false);
     signResponse.EnsureSuccessStatusCode();
@@ -150,27 +143,17 @@ public sealed class Uploader : IDisposable
     uploadResponse.EnsureSuccessStatusCode();
   }
 
-  private async Task<UploadResult> TriggerProcessing(ProcessUploadRequest processRequest)
+  private async Task<UploadResult> TriggerProcessing()
   {
-    Uri processUri = new($"projects/{_projectId}/models/{_modelId}/uploads/process", UriKind.Relative);
+    Uri processUri = new($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/process", UriKind.Relative);
 
-    using StringContent content = new(JsonConvert.SerializeObject(processRequest), Encoding.UTF8, "application/json");
     using HttpResponseMessage processResponse = await _speckleClient
-      .PostAsync(processUri, content, _cancellationToken)
+      .PostAsync(processUri, null, _cancellationToken)
       .ConfigureAwait(false);
 
     processResponse.EnsureSuccessStatusCode();
 
-#if NET5_0_OR_GREATER
-    string processResult = await processResponse.Content.ReadAsStringAsync(_cancellationToken).ConfigureAwait(false);
-#else
-    string processResult = await processResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-#endif
-    var json = JsonConvert
-      .DeserializeObject<ProcessUploadResponse>(processResult)
-      .NotNull("Trigger upload processing yielded an response that failed to deserialize");
-
-    return new UploadResult { IngestionId = json.ingestionId };
+    return new UploadResult { IngestionId = _ingestionId };
   }
 
   public void Dispose()

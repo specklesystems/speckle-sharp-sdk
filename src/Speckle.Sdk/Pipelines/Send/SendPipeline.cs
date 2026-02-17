@@ -5,17 +5,16 @@ using Speckle.Sdk.Models;
 namespace Speckle.Sdk.Pipelines.Send;
 
 [GenerateAutoInterface]
-public sealed class SendPipelineFactory(UploaderFactory uploaderFactory) : ISendPipelineFactory
+public sealed class SendPipelineFactory(IUploaderFactory uploaderFactory) : ISendPipelineFactory
 {
   public SendPipeline CreateInstance(
     string projectId,
-    string modelId,
     string ingestionId,
     Account account,
     CancellationToken cancellationToken
   )
   {
-    var uploader = uploaderFactory.CreateInstance(projectId, modelId, ingestionId, account, cancellationToken);
+    var uploader = uploaderFactory.CreateInstance(projectId, ingestionId, account, cancellationToken);
     return new SendPipeline(uploader);
   }
 }
