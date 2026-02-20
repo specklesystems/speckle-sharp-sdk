@@ -15,7 +15,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
 #else
   private const int WAIT_PERIOD = 400; // For CI runs, a much smaller wait time is acceptable
 #endif
-  private const int TIMEOUT = WAIT_PERIOD + 1000;
+  private const int TIMEOUT = WAIT_PERIOD + WAIT_PERIOD + 600;
   private IClient _testUser;
   private Project _testProject;
   private Model _testModel;
