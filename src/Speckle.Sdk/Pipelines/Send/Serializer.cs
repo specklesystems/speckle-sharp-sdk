@@ -9,7 +9,7 @@ using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 
-namespace Speckle.Sdk.Pipelines;
+namespace Speckle.Sdk.Pipelines.Send;
 
 /// <summary>
 /// Another serializer, cleaner and meaner. Provides methods for serializing Speckle objects into a format suitable for upload or storage.
@@ -17,7 +17,7 @@ namespace Speckle.Sdk.Pipelines;
 /// into serialized JSON structures along with associated metadata, closures, and references.
 /// <para>Any reference objects coming through are being "passed through" serialized - they do not get double encoded.</para>
 /// </summary>
-public class Serializer
+internal sealed class Serializer
 {
   private readonly record struct PropertyInfo(string Name, object? Value, bool IsDetachable);
 
