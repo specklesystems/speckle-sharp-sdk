@@ -76,7 +76,9 @@ public class ServerObjectManager : IServerObjectManager
       .SendAsync(childrenHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)
       .ConfigureAwait(false);
 
-    await foreach (var (id, json) in ResponseProgress(childrenHttpResponse, progress, false, cancellationToken))
+    await foreach (
+      var (id, json) in ResponseProgress(childrenHttpResponse, progress, false, cancellationToken).ConfigureAwait(false)
+    )
     {
       if (id is not null)
       {

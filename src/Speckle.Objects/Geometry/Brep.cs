@@ -481,7 +481,7 @@ public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<
       displayValue = displayValues,
       Surfaces = surfaces,
       Curve3D = transformedCurve3D,
-      Curve2D = new List<ICurve>(Curve2D),
+      Curve2D = [.. Curve2D],
       Vertices = transformedVertices,
       Edges = new List<BrepEdge>(Edges.Count),
       Loops = new List<BrepLoop>(Loops.Count),
