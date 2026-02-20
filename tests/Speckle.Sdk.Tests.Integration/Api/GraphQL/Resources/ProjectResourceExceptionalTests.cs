@@ -106,7 +106,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     ProjectUpdateRoleInput input = new(_secondUser.Account.id.NotNull(), "NonExistentProject", newRole);
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.UpdateRole(input));
-    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions.Single().Should().BeAssignableTo<SpeckleGraphQLException>(); //v3 server responds with SpeckleGraphQLStreamNotFoundException exception, v2 reponds with SpeckleGraphQLForbiddenException
   }
 
   [Theory]
