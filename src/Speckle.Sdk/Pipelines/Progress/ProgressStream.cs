@@ -1,17 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace Speckle.Sdk.Pipelines;
+namespace Speckle.Sdk.Pipelines.Progress;
 
 public readonly record struct StreamProgressArgs(long BytesStreamed, long ExpectedTotalBytes);
 
 /// <summary>
 /// Wraps a stream to report upload progress as bytes are read.
 /// </summary>
-public sealed class ProgressStream(
-  Stream innerStream,
-  long expectedTotalBytesStreamed,
-  IProgress<StreamProgressArgs>? progress = null
-) : Stream
+internal sealed class ProgressStream(Stream innerStream, IProgress<StreamProgressArgs>? progress = null) : Stream
 {
   private long _bytesStreamed;
 
@@ -57,7 +53,7 @@ public sealed class ProgressStream(
   private void ReportProgress(int newBytesProcessed)
   {
     _bytesStreamed += newBytesProcessed;
-    progress?.Report(new(_bytesStreamed, expectedTotalBytesStreamed));
+    progress?.Report(new(_bytesStreamed, Length));
   }
 
   public override void Flush() => innerStream.Flush();
