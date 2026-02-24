@@ -9,6 +9,7 @@ internal record PresignedUploadResponse
 {
   public required Uri Url { get; init; }
   public required string Key { get; init; }
+  public Dictionary<string, string> AdditionalRequestHeaders { get; init; } = new();
 }
 
 internal record ProcessUploadResponse

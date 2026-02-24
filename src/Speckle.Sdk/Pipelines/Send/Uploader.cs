@@ -53,8 +53,8 @@ public sealed class Uploader : IDisposable
 
   public async Task Send(Stream fileStream)
   {
-    PresignedUploadResponse presignedUpload = await GetPresignedUrl().ConfigureAwait(false);
-    await UploadToS3(fileStream, presignedUpload.Url).ConfigureAwait(false);
+    PresignedUploadResponse presignedUploadResponse = await GetPresignedUrl().ConfigureAwait(false);
+    await UploadToS3(fileStream, presignedUploadResponse).ConfigureAwait(false);
 
     await TriggerProcessing().ConfigureAwait(false);
   }
@@ -77,7 +77,7 @@ public sealed class Uploader : IDisposable
     return presignedUpload;
   }
 
-  private async Task UploadToS3(Stream fileStream, Uri s3Url)
+  private async Task UploadToS3(Stream fileStream, PresignedUploadResponse presignedUploadResponse)
   {
     _logger.LogInformation("Uploading file to pre-signed url");
 
@@ -87,7 +87,12 @@ public sealed class Uploader : IDisposable
     streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
     streamContent.Headers.ContentLength = fileStream.Length;
 
-    using var uploadRequest = new HttpRequestMessage(HttpMethod.Put, s3Url);
+    using var uploadRequest = new HttpRequestMessage(HttpMethod.Put, presignedUploadResponse.Url);
+    foreach (var kvp in presignedUploadResponse.AdditionalRequestHeaders)
+    {
+      uploadRequest.Headers.Add(kvp.Key, kvp.Value);
+    }
+
     uploadRequest.Content = streamContent;
 
     using var uploadResponse = await _s3Client
