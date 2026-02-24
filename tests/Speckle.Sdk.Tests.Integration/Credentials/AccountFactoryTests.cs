@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using GraphQL.Client.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
@@ -37,7 +38,7 @@ public class AccountFactoryTests : IAsyncLifetime
   }
 
   [Fact]
-  public async Task GetUserInfo_ExpectFail_NoServer()
+  public async Task GetUserInfo_ExpectException_NoServer()
   {
     Uri server = new("https://non-existing-server.local");
     await Assert.ThrowsAsync<HttpRequestException>(async () =>
@@ -47,12 +48,21 @@ public class AccountFactoryTests : IAsyncLifetime
   }
 
   [Fact]
-  public async Task GetUserInfo_NoUser()
+  public async Task GetUserInfo_NoToken()
   {
     var result = await _sut.GetUserServerInfo(_client.ServerUrl, null, CancellationToken.None);
 
     result.serverInfo.url.Should().Be(Fixtures.Server.url);
     result.activeUser.Should().BeNull();
+  }
+
+  [Fact]
+  public async Task GetUserInfo_ExpectException_ExpiredAuthToken()
+  {
+    await Assert.ThrowsAsync<GraphQLHttpRequestException>(async () =>
+    {
+      _ = await _sut.GetUserServerInfo(_client.ServerUrl, "notarealauthtoken", CancellationToken.None);
+    });
   }
 
   [Fact]
