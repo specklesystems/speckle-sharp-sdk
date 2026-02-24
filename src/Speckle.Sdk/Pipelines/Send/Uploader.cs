@@ -74,8 +74,8 @@ public sealed class Uploader : IDisposable
   {
     using DisposableFile tempFile = await WriteFile().ConfigureAwait(false);
 
-    PresignedUploadResponse presignedUpload = await GetPresignedUrl().ConfigureAwait(false);
-    await UploadToS3(tempFile.FileInfo, presignedUpload.Url).ConfigureAwait(false);
+    PresignedUploadResponse presignedUploadResponse = await GetPresignedUrl().ConfigureAwait(false);
+    await UploadToS3(tempFile.FileInfo, presignedUploadResponse).ConfigureAwait(false);
 
     return await TriggerProcessing().ConfigureAwait(false);
   }
@@ -123,7 +123,7 @@ public sealed class Uploader : IDisposable
     return presignedUpload;
   }
 
-  private async Task UploadToS3(FileInfo file, Uri s3Url)
+  private async Task UploadToS3(FileInfo file, PresignedUploadResponse presignedUploadResponse)
   {
     using var fileStreamUpload = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
 
@@ -133,7 +133,12 @@ public sealed class Uploader : IDisposable
     streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
     streamContent.Headers.ContentLength = file.Length;
 
-    using var uploadRequest = new HttpRequestMessage(HttpMethod.Put, s3Url);
+    using var uploadRequest = new HttpRequestMessage(HttpMethod.Put, presignedUploadResponse.Url);
+    foreach (var kvp in presignedUploadResponse.AdditionalRequestHeaders)
+    {
+      uploadRequest.Headers.Add(kvp.Key, kvp.Value);
+    }
+
     uploadRequest.Content = streamContent;
 
     using var uploadResponse = await _s3Client
