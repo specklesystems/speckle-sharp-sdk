@@ -81,7 +81,7 @@ public sealed class Uploader : IDisposable
   {
     _logger.LogInformation("Uploading file to pre-signed url");
 
-    Stream progressStream = new ProgressStream(fileStream, _progress); // TODO: wrap with progress stream
+    Stream progressStream = new ProgressStream(fileStream, _progress);
 
     using var streamContent = new StreamContent(progressStream);
     streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");

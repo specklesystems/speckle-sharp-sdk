@@ -7,7 +7,7 @@ using Speckle.Sdk.Pipelines.Progress;
 namespace Speckle.Sdk.Pipelines.Send;
 
 [GenerateAutoInterface]
-public sealed class SendPipelineFactory(IUploaderFactory uploaderFactory, IDiskStoreFactory diskStoreFactory, )
+public sealed class SendPipelineFactory(IUploaderFactory uploaderFactory, IDiskStoreFactory diskStoreFactory)
   : ISendPipelineFactory
 {
   public SendPipeline CreateInstance(

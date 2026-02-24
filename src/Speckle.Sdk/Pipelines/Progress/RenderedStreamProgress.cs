@@ -1,26 +1,19 @@
 namespace Speckle.Sdk.Pipelines.Progress;
 
-internal class PipelineProgress(IProgress<CardProgress> progress)
-  : IProgress<StreamProgressArgs>,
-    IProgress<ConversionProgressArgs>
+/// <summary>
+/// Renders "low level" data stream updates
+/// into "high level" <see cref="CardProgress"/> that is expected by Ingestion progress and DUI3
+/// </summary>
+/// <param name="progress"></param>
+public sealed class RenderedStreamProgress(IProgress<CardProgress> progress) : IProgress<StreamProgressArgs>
 {
   public void Report(StreamProgressArgs value)
   {
     var (suffix, scaleFactor) = GetFileSizeRendering(value.ExpectedTotalBytes);
     progress.Report(
       new(
-        $"Streaming data ({value.BytesStreamed * scaleFactor}{suffix}/{value.ExpectedTotalBytes * scaleFactor}{suffix})",
+        $"Streaming data ({value.BytesStreamed * scaleFactor:F2}{suffix}/{value.ExpectedTotalBytes * scaleFactor:F2}{suffix})",
         (double)value.BytesStreamed / value.ExpectedTotalBytes
-      )
-    );
-  }
-
-  public void Report(ConversionProgressArgs value)
-  {
-    progress.Report(
-      new(
-        $"Converting Objects {value.ObjectsConverted}/{value.TotalObjectsToConvert}",
-        (double)value.ObjectsConverted / value.TotalObjectsToConvert
       )
     );
   }

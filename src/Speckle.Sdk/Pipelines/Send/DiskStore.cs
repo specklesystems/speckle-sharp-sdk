@@ -46,21 +46,32 @@ public sealed class DiskStore
   private async Task<DisposableFile> WriteFile()
   {
     string tempFilePath = Path.GetTempFileName();
+    var tempFile = new DisposableFile(new FileInfo(tempFilePath), _logger);
     _logger.LogInformation("Writing temp file to {TempFilePath}", tempFilePath);
 
-    using var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
-    using var gzip = new GZipStream(fileStream, CompressionLevel.Optimal);
-    using var writer = new StreamWriter(gzip);
-
-    await foreach (var item in _channel.Reader.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
+    try
     {
-      await writer.WriteLineAsync($"{item.Id}\t{item.Json}\t{item.SpeckleType}").ConfigureAwait(false);
-    }
+      using var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
+      using var gzip = new GZipStream(fileStream, CompressionLevel.Optimal);
+      using var writer = new StreamWriter(gzip);
+
+      await foreach (var item in _channel.Reader.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
+      {
+        await writer.WriteLineAsync($"{item.Id}\t{item.Json}\t{item.SpeckleType}").ConfigureAwait(false);
+      }
 #if NET8_0_OR_GREATER
-    await writer.FlushAsync(_cancellationToken).ConfigureAwait(false);
+      await writer.FlushAsync(_cancellationToken).ConfigureAwait(false);
 #else
-    await writer.FlushAsync().ConfigureAwait(false);
+      await writer.FlushAsync().ConfigureAwait(false);
 #endif
-    return new DisposableFile(new FileInfo(tempFilePath), _logger);
+      tempFile.FileInfo.Refresh();
+
+      return tempFile;
+    }
+    catch
+    {
+      tempFile.Dispose();
+      throw;
+    }
   }
 }
