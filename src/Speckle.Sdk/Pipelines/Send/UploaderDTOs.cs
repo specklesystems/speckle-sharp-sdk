@@ -15,8 +15,3 @@ internal record ProcessUploadResponse
 {
   public required string ingestionId { get; init; }
 }
-
-internal record UploadResult
-{
-  public required string IngestionId { get; init; }
-}
