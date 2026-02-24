@@ -12,13 +12,13 @@ public sealed class RenderedStreamProgress(IProgress<CardProgress> progress) : I
     var (suffix, scaleFactor) = GetFileSizeRendering(value.ExpectedTotalBytes);
     progress.Report(
       new(
-        $"Streaming data ({value.BytesStreamed * scaleFactor:F2}{suffix}/{value.ExpectedTotalBytes * scaleFactor:F2}{suffix})",
+        $"Streaming data ({value.BytesStreamed * scaleFactor:F1}/{value.ExpectedTotalBytes * scaleFactor:F1} {suffix})",
         (double)value.BytesStreamed / value.ExpectedTotalBytes
       )
     );
   }
 
-  private static readonly string[] s_suffixes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  private static readonly string[] s_suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
   private static (string suffix, double scaleFactor) GetFileSizeRendering(long value)
   {
