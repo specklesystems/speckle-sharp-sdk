@@ -24,7 +24,7 @@ public sealed class RenderedStreamProgress(IProgress<CardProgress> progress) : I
   {
     if (value <= 0)
     {
-      return ("Bytes", 1d);
+      return (s_suffixes[0], 1d);
     }
 
     for (int i = 0; i < s_suffixes.Length; i++)
@@ -35,6 +35,6 @@ public sealed class RenderedStreamProgress(IProgress<CardProgress> progress) : I
       }
     }
 
-    throw new InvalidOperationException("value is too large to convert to a file size");
+    throw new ArgumentOutOfRangeException(nameof(value), "Value is too large to convert to a file size");
   }
 }
