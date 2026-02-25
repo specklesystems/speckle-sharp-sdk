@@ -12,7 +12,7 @@ public sealed class RenderedStreamProgress(IProgress<CardProgress> progress) : I
     var (suffix, scaleFactor) = GetFileSizeRendering(value.ExpectedTotalBytes);
     progress.Report(
       new(
-        $"Streaming data ({value.BytesStreamed * scaleFactor:F1}/{value.ExpectedTotalBytes * scaleFactor:F1} {suffix})",
+        $"Uploading data... ({value.BytesStreamed * scaleFactor:F1}/{value.ExpectedTotalBytes * scaleFactor:F1} {suffix})",
         (double)value.BytesStreamed / value.ExpectedTotalBytes
       )
     );
