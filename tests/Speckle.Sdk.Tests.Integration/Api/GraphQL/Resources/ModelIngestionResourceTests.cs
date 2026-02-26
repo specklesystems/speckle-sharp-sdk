@@ -151,6 +151,9 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
     Assert.Equal(ingest.statusData.status, res.statusData.status);
     Assert.Equal(ingest.statusData.versionId, res.statusData.versionId);
     Assert.Null(res.statusData.versionId);
+    Assert.Equal(_model.id, res.modelId);
+    Assert.Equal(_project.id, res.projectId);
+    Assert.Equal(_testUser.Account.userInfo.id, res.userId);
   }
 
   [Fact]
