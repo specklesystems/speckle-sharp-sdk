@@ -1,3 +1,4 @@
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 
@@ -12,7 +13,8 @@ internal record PresignedUploadResponse
   public Dictionary<string, string> AdditionalRequestHeaders { get; init; } = new();
 }
 
-internal record ProcessUploadResponse
+internal readonly struct TriggerUploadRequest
 {
-  public required string ingestionId { get; init; }
+  [JsonProperty("etag")]
+  public required string Etag { get; init; }
 }
