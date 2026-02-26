@@ -2,6 +2,19 @@
 
 namespace Speckle.Sdk.Dependencies;
 
+/// <summary>
+/// For various reasons related to our use of ILRepack.FullAuto,
+/// we cannot use Channels from the SDK project.
+/// We have to keep usage of it inside the Sdk.Dependencies project.
+///
+/// For the sake of quick development, I've wrapped the <see cref="Channel"/> class here in a type
+/// that is safe to use from the SDK project.
+///
+/// As and when we need more functions, we can add them here.
+///
+/// And yes... I'm not very happy about the way we've set this up
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public sealed class RepackedChannel<T>
 {
   private readonly Channel<T> _channel;
@@ -25,12 +38,4 @@ public sealed class RepackedChannel<T>
 
   public IAsyncEnumerable<T> ReadAllAsync(CancellationToken cancellationToken) =>
     _channel.Reader.ReadAllAsync(cancellationToken);
-
-  public async Task ReadAllAsync(Func<T, Task> callback, CancellationToken cancellationToken)
-  {
-    await foreach (var item in _channel.Reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
-    {
-      await callback(item).ConfigureAwait(false);
-    }
-  }
 }
