@@ -44,6 +44,8 @@ public sealed class ModelIngestionResource
               createdAt
               updatedAt
               modelId
+              projectId
+              userId
               cancellationRequested
               statusData {
                 ... on HasModelIngestionStatus {
@@ -94,6 +96,8 @@ public sealed class ModelIngestionResource
             createdAt
             updatedAt
             modelId
+            projectId
+            userId
             cancellationRequested
             statusData {
               ... on HasModelIngestionStatus {
@@ -146,6 +150,8 @@ public sealed class ModelIngestionResource
               createdAt
               updatedAt
               modelId
+              projectId
+              userId
               cancellationRequested
               statusData {
                 ... on HasModelIngestionStatus {
@@ -198,6 +204,8 @@ public sealed class ModelIngestionResource
               createdAt
               updatedAt
               modelId
+              projectId
+              userId
               cancellationRequested
               statusData {
                 ... on HasModelIngestionStatus {
@@ -249,6 +257,8 @@ public sealed class ModelIngestionResource
               createdAt
               updatedAt
               modelId
+              projectId
+              userId
               cancellationRequested
               statusData {
                 ... on HasModelIngestionStatus {
@@ -347,6 +357,8 @@ public sealed class ModelIngestionResource
               createdAt
               updatedAt
               modelId
+              projectId
+              userId
               cancellationRequested
               statusData {
                 ... on HasModelIngestionStatus {
@@ -402,6 +414,8 @@ public sealed class ModelIngestionResource
               createdAt
               updatedAt
               modelId
+              projectId
+              userId
               cancellationRequested
               statusData {
                 ... on HasModelIngestionStatus {
@@ -461,6 +475,8 @@ public sealed class ModelIngestionResource
               createdAt
               updatedAt
               modelId
+              projectId
+              userId
               cancellationRequested
               statusData {
                 ... on HasModelIngestionStatus {
