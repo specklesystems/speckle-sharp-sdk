@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
@@ -54,9 +55,9 @@ public sealed class Uploader : IDisposable
   public async Task Send(Stream fileStream)
   {
     PresignedUploadResponse presignedUploadResponse = await GetPresignedUrl().ConfigureAwait(false);
-    await UploadToS3(fileStream, presignedUploadResponse).ConfigureAwait(false);
+    var etag = await UploadToS3(fileStream, presignedUploadResponse).ConfigureAwait(false);
 
-    await TriggerProcessing().ConfigureAwait(false);
+    await TriggerProcessing(new() { Etag = etag }).ConfigureAwait(false);
   }
 
   private async Task<PresignedUploadResponse> GetPresignedUrl()
@@ -77,7 +78,7 @@ public sealed class Uploader : IDisposable
     return presignedUpload;
   }
 
-  private async Task UploadToS3(Stream fileStream, PresignedUploadResponse presignedUploadResponse)
+  private async Task<string> UploadToS3(Stream fileStream, PresignedUploadResponse presignedUploadResponse)
   {
     _logger.LogInformation("Uploading file to pre-signed url");
 
@@ -100,16 +101,21 @@ public sealed class Uploader : IDisposable
       .ConfigureAwait(false);
 
     uploadResponse.EnsureSuccessStatusCode();
+
+    return BlobApiHelpers.ParseEtagHeader(uploadResponse.Headers);
   }
 
-  private async Task TriggerProcessing()
+  private async Task TriggerProcessing(TriggerUploadRequest request)
   {
     Uri processUri = new($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/process", UriKind.Relative);
+    string requestBody = JsonConvert.SerializeObject(request);
+    using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
     using HttpResponseMessage processResponse = await _speckleClient
-      .PostAsync(processUri, null, _cancellationToken)
+      .PostAsync(processUri, content, _cancellationToken)
       .ConfigureAwait(false);
 
+    string body = await processResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
     processResponse.EnsureSuccessStatusCode();
   }
 
