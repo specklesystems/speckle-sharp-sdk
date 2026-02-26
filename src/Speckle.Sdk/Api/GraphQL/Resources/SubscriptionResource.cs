@@ -237,6 +237,10 @@ public sealed class SubscriptionResource : IDisposable
               ... on HasProgressMessage {
                 progressMessage
               }
+              ... on ModelIngestionSuccessStatus
+              {
+                versionId
+              }
             }
           }
           type
