@@ -1,11 +1,10 @@
-using System.IO.Compression;
 using System.Net.Http.Headers;
-using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Pipelines.Progress;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
@@ -16,8 +15,9 @@ public sealed class UploaderFactory(ISpeckleHttp httpClientFactory, ILogger<Uplo
     string projectId,
     string ingestionId,
     Account account,
+    IProgress<StreamProgressArgs> progress,
     CancellationToken cancellationToken
-  ) => new(projectId, ingestionId, logger, httpClientFactory, account, cancellationToken);
+  ) => new(projectId, ingestionId, logger, httpClientFactory, account, progress, cancellationToken);
 }
 
 public sealed class Uploader : IDisposable
@@ -27,9 +27,8 @@ public sealed class Uploader : IDisposable
   private readonly CancellationToken _cancellationToken;
   private readonly HttpClient _speckleClient;
   private readonly HttpClient _s3Client;
-  private readonly Channel<UploadItem> _channel;
-  private readonly Task<UploadResult> _sendTask;
   private readonly ILogger<Uploader> _logger;
+  private readonly IProgress<StreamProgressArgs> _progress;
 
   internal Uploader(
     string projectId,
@@ -37,6 +36,7 @@ public sealed class Uploader : IDisposable
     ILogger<Uploader> logger,
     ISpeckleHttp httpClientFactory,
     Account speckleAccount,
+    IProgress<StreamProgressArgs> progress,
     CancellationToken cancellationToken
   )
   {
@@ -44,65 +44,19 @@ public sealed class Uploader : IDisposable
     _ingestionId = ingestionId;
     _logger = logger;
     _cancellationToken = cancellationToken;
-
-    _speckleClient = httpClientFactory.CreateHttpClient(
-      null,
-      (int)TimeSpan.FromMinutes(30).TotalSeconds,
-      speckleAccount.token
-    );
+    _progress = progress;
+    _speckleClient = httpClientFactory.CreateHttpClient(authorizationToken: speckleAccount.token);
     _speckleClient.BaseAddress = new(new(speckleAccount.serverInfo.url), "/api/v1/");
 
     _s3Client = httpClientFactory.CreateHttpClient();
-
-    _channel = Channel.CreateBounded<UploadItem>(
-      new BoundedChannelOptions(1000) { FullMode = BoundedChannelFullMode.Wait, SingleReader = true }
-    );
-
-    _sendTask = Task.Run(SendLoopAsync, cancellationToken);
   }
 
-  public ValueTask PushAsync(UploadItem item) => _channel.Writer.WriteAsync(item, _cancellationToken);
-
-  public async Task<string> CompleteAsync()
+  public async Task Send(Stream fileStream)
   {
-    _channel.Writer.Complete();
-    var result = await _sendTask.ConfigureAwait(false);
-    return result.IngestionId;
-  }
-
-  private async Task<UploadResult> SendLoopAsync()
-  {
-    using DisposableFile tempFile = await WriteFile().ConfigureAwait(false);
-
     PresignedUploadResponse presignedUploadResponse = await GetPresignedUrl().ConfigureAwait(false);
-    await UploadToS3(tempFile.FileInfo, presignedUploadResponse).ConfigureAwait(false);
+    await UploadToS3(fileStream, presignedUploadResponse).ConfigureAwait(false);
 
-    return await TriggerProcessing().ConfigureAwait(false);
-  }
-
-  /// <summary>
-  /// Reads from the Channel and streams the <see cref="UploadItem"/>s to a temporary file on disk.
-  /// Will keep reading until <see cref="CompleteAsync"/> is called.
-  /// </summary>
-  /// <returns>the file that was written</returns>
-  private async Task<DisposableFile> WriteFile()
-  {
-    string tempFilePath = Path.GetTempFileName();
-    _logger.LogInformation("Writing temp file to {TempFilePath}", tempFilePath);
-
-    using var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
-    using var gzip = new GZipStream(fileStream, CompressionLevel.Optimal);
-    using var writer = new StreamWriter(gzip);
-    await foreach (var item in _channel.Reader.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
-    {
-      await writer.WriteLineAsync($"{item.Id}\t{item.Json}\t{item.SpeckleType}").ConfigureAwait(false);
-    }
-#if NET8_0_OR_GREATER
-    await writer.FlushAsync(_cancellationToken).ConfigureAwait(false);
-#else
-    await writer.FlushAsync().ConfigureAwait(false);
-#endif
-    return new DisposableFile(new FileInfo(tempFilePath), _logger);
+    await TriggerProcessing().ConfigureAwait(false);
   }
 
   private async Task<PresignedUploadResponse> GetPresignedUrl()
@@ -123,15 +77,15 @@ public sealed class Uploader : IDisposable
     return presignedUpload;
   }
 
-  private async Task UploadToS3(FileInfo file, PresignedUploadResponse presignedUploadResponse)
+  private async Task UploadToS3(Stream fileStream, PresignedUploadResponse presignedUploadResponse)
   {
-    using var fileStreamUpload = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
+    _logger.LogInformation("Uploading file to pre-signed url");
 
-    Stream progressStream = fileStreamUpload; // TODO: wrap with progress stream
+    Stream progressStream = new ProgressStream(fileStream, _progress);
 
     using var streamContent = new StreamContent(progressStream);
     streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-    streamContent.Headers.ContentLength = file.Length;
+    streamContent.Headers.ContentLength = fileStream.Length;
 
     using var uploadRequest = new HttpRequestMessage(HttpMethod.Put, presignedUploadResponse.Url);
     foreach (var kvp in presignedUploadResponse.AdditionalRequestHeaders)
@@ -148,7 +102,7 @@ public sealed class Uploader : IDisposable
     uploadResponse.EnsureSuccessStatusCode();
   }
 
-  private async Task<UploadResult> TriggerProcessing()
+  private async Task TriggerProcessing()
   {
     Uri processUri = new($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/process", UriKind.Relative);
 
@@ -157,8 +111,6 @@ public sealed class Uploader : IDisposable
       .ConfigureAwait(false);
 
     processResponse.EnsureSuccessStatusCode();
-
-    return new UploadResult { IngestionId = _ingestionId };
   }
 
   public void Dispose()

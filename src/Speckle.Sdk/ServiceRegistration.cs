@@ -8,6 +8,7 @@ using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models.GraphTraversal;
+using Speckle.Sdk.Pipelines.Progress;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Serialisation.V2.Send;
@@ -96,7 +97,8 @@ public static class ServiceRegistration
       typeof(DeserializeProcess),
       typeof(ObjectLoader),
       typeof(TraversalRule),
-      typeof(Client)
+      typeof(Client),
+      typeof(IngestionProgressManager)
     );
     serviceCollection.AddMatchingInterfacesAsTransient(typeof(GraphQLRetry).Assembly);
     return serviceCollection;
