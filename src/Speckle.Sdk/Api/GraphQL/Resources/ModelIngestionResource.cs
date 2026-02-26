@@ -102,6 +102,10 @@ public sealed class ModelIngestionResource
               ... on HasProgressMessage {
                 progressMessage
               }
+              ... on ModelIngestionSuccessStatus
+              {
+                versionId
+              }
             }
           }
         }
