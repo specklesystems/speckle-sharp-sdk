@@ -229,6 +229,8 @@ public sealed class SubscriptionResource : IDisposable
             createdAt
             updatedAt
             modelId
+            projectId
+            userId
             cancellationRequested
             statusData {
               ... on HasModelIngestionStatus {
@@ -236,6 +238,10 @@ public sealed class SubscriptionResource : IDisposable
               }
               ... on HasProgressMessage {
                 progressMessage
+              }
+              ... on ModelIngestionSuccessStatus
+              {
+                versionId
               }
             }
           }
