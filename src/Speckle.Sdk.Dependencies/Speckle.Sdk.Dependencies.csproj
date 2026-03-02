@@ -53,7 +53,7 @@
       <_ILRepackExcludeAssemblies_Items Include="$(OutputPath)*.dll" Exclude="@(_ILRepackIncludeAssemblies_Items)" />
     </ItemGroup>
     <Message
-      Text="These are the packages we are NOT ilrepacking '$(_ILRepackExcludeAssemblies_Items)'"
+      Text="These are the packages we are NOT ilrepacking '@(_ILRepackExcludeAssemblies_Items)'"
       Importance="high"
     />
     <PropertyGroup>
