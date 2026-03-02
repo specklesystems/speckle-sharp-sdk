@@ -38,7 +38,7 @@
       Avoiding repacling `Microsoft.Bcl.AsyncInterfaces.dll` because we need types like `ValueTask` and `IAsyncEnumerable` to be external
       
       Yes, this does beg the question, why are we using `IlRepack.FullAuto` instead of raw ILRepack. Well the truth is, I'd like to move away from FullAuto
-      since it's unmaintaned and lagging behind
+      since it's unmaintaned and is lagging behind ILRepack version.
       -->
       <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Numerics.Vectors.dll" />
       <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" />
