@@ -56,7 +56,7 @@ public sealed class DiskStore
 
       await foreach (var item in _channel.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
       {
-        await writer.WriteLineAsync($"{item.Id}\t{item.Json}\t{item.SpeckleType}").ConfigureAwait(false);
+        await writer.WriteLineAsync($"{item.Id}\t{item.SpeckleType}\t{item.Json}").ConfigureAwait(false);
       }
 #if NET8_0_OR_GREATER
       await writer.FlushAsync(_cancellationToken).ConfigureAwait(false);
