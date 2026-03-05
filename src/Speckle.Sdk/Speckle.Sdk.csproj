@@ -35,7 +35,6 @@
     <PackageReference Include="Microsoft.CSharp" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
-    <PackageReference Include="System.Threading.Channels" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />
