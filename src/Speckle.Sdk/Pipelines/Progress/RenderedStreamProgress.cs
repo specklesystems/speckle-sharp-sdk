@@ -18,9 +18,9 @@ public sealed class RenderedStreamProgress(IProgress<CardProgress> progress) : I
     );
   }
 
-  private static readonly string[] s_suffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  private static readonly string[] s_suffixes = ["B", "KB", "MB", "GB", "TB", "PB"];
 
-  private static (string suffix, double scaleFactor) GetFileSizeRendering(long value)
+  internal static (string suffix, double scaleFactor) GetFileSizeRendering(long value)
   {
     if (value <= 0)
     {
