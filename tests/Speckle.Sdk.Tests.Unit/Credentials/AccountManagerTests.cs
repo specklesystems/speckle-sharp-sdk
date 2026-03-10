@@ -28,7 +28,6 @@ public sealed class AccountManagerTests : MoqTest
     ) => throw new NotImplementedException();
   }
 
-  private readonly Mock<ISpeckleApplication> _mockApplication;
   private readonly Mock<ILogger<AccountManager>> _mockLogger;
   private readonly Mock<IGraphQLClientFactory> _mockGraphQLClientFactory;
   private readonly Mock<ISpeckleHttp> _mockSpeckleHttp;
@@ -36,6 +35,7 @@ public sealed class AccountManagerTests : MoqTest
   private readonly Mock<ISqLiteJsonCacheManagerFactory> _mockSqLiteJsonCacheManagerFactory;
   private readonly Mock<ISqLiteJsonCacheManager> _mockAccountStorage;
   private readonly Mock<ISqLiteJsonCacheManager> _mockAccountAddLockStorage;
+  private readonly Mock<IAuthFlow> _mockAuthFlow;
 
 #pragma warning disable CA2213
   private readonly AccountManager _accountManager;
@@ -43,12 +43,12 @@ public sealed class AccountManagerTests : MoqTest
 
   public AccountManagerTests()
   {
-    _mockApplication = Create<ISpeckleApplication>();
     _mockLogger = Create<ILogger<AccountManager>>(MockBehavior.Loose);
     _mockGraphQLClientFactory = Create<IGraphQLClientFactory>();
     _mockSpeckleHttp = Create<ISpeckleHttp>();
     _mockAccountFactory = new TestAccountFactory();
     _mockSqLiteJsonCacheManagerFactory = Create<ISqLiteJsonCacheManagerFactory>();
+    _mockAuthFlow = Create<IAuthFlow>();
 
     _mockAccountStorage = Create<ISqLiteJsonCacheManager>();
     _mockAccountAddLockStorage = Create<ISqLiteJsonCacheManager>();
@@ -59,11 +59,11 @@ public sealed class AccountManagerTests : MoqTest
       .Returns(_mockAccountAddLockStorage.Object);
 
     _accountManager = new AccountManager(
-      _mockApplication.Object,
       _mockLogger.Object,
       _mockGraphQLClientFactory.Object,
       _mockSpeckleHttp.Object,
       _mockAccountFactory,
+      _mockAuthFlow.Object,
       _mockSqLiteJsonCacheManagerFactory.Object
     );
   }
