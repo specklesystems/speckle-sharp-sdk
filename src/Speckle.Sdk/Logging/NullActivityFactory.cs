@@ -4,5 +4,5 @@ public sealed class NullActivityFactory : ISdkActivityFactory
 {
   public void Dispose() { }
 
-  public ISdkActivity? Start(string? name = default, string source = "") => null;
+  public ISdkActivity? Start(string? name = default, string source = "", string? parentId = null) => null;
 }

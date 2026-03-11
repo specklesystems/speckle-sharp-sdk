@@ -70,11 +70,5 @@ public sealed class SendPipeline : IDisposable
     await _uploader.Send(fileStreamUpload).ConfigureAwait(false);
   }
 
-  public async Task<string> WaitForUploadAndServerProcessing()
-  {
-    // TODO: in some way, wait for the server to process the upload and return the actual new version id
-    return await Task.FromResult("todo").ConfigureAwait(false);
-  }
-
   public void Dispose() => _uploader.Dispose();
 }

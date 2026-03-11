@@ -14,20 +14,20 @@ public partial interface IIngestionProgressManager : IProgress<CardProgress>;
 /// An <see langword="IProgress{IngestionProgressEventArgs}"/> implementation for the entire client side Ingestion progress update reporting
 /// Will throttles ingestion progress messages and reports their progress
 /// </summary>
+/// <remarks>
+/// Normally we would pick quite a coarse updateInterval to try and spamming the server (1-5s)
+/// </remarks>
 [GenerateAutoInterface]
 public sealed class IngestionProgressManager(
   ILogger<IngestionProgressManager> logger,
   IClient speckleClient,
   ModelIngestion ingestion,
-  string projectId,
   TimeSpan updateInterval,
   CancellationToken cancellationToken
 ) : IIngestionProgressManager
 {
-  /// <remarks>
-  /// Normally we would pick quite a coarse throttle window to try and avoid over pressure (1-5s)
-  /// </remarks>
-  private Task? _lastUpdate;
+  public Task? LastUpdate { get; private set; }
+
   private long _lastUpdatedAt;
   private readonly object _lock = new();
 
@@ -48,15 +48,15 @@ public sealed class IngestionProgressManager(
 
       trimmedMessage = value.Status.TrimEnd('.');
 
-      _lastUpdate = speckleClient
+      LastUpdate = speckleClient
         .Ingestion.UpdateProgress(
-          new ModelIngestionUpdateInput(ingestion.id, projectId, trimmedMessage, value.Progress),
+          new ModelIngestionUpdateInput(ingestion.id, ingestion.projectId, trimmedMessage, value.Progress),
           cancellationToken
         )
         .ContinueWith(
-          HandleFaultedContinuation,
+          Continuation,
           CancellationToken.None,
-          TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+          TaskContinuationOptions.ExecuteSynchronously,
           TaskScheduler.Default
         );
     }
@@ -67,7 +67,7 @@ public sealed class IngestionProgressManager(
   /// <returns><see langword="true"/> if the update should be ignored, otherwise <see langword="false"/></returns>
   private bool ShouldIgnoreProgressUpdate()
   {
-    if (_lastUpdate is not null && !_lastUpdate.IsCompleted)
+    if (LastUpdate is not null && !LastUpdate.IsCompleted)
     {
       return true;
     }
@@ -76,7 +76,7 @@ public sealed class IngestionProgressManager(
     return msSinceLastUpdate < updateInterval;
   }
 
-  private void HandleFaultedContinuation(Task updateTask)
+  private void Continuation(Task updateTask)
   {
     // The progress report failed... could be many reasons.
     // For now, we're not letting this fail the Ingestion in any way
