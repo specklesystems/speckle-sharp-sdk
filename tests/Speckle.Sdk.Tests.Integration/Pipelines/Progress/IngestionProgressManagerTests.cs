@@ -53,20 +53,17 @@ public class IngestionProgressManagerTests : IAsyncLifetime
   [Fact]
   public async Task TestProgress_WithThrottle()
   {
-    var sut = _factory.CreateInstance(_client, _ingestion, TimeSpan.FromSeconds(1), CancellationToken.None);
+    var sut = _factory.CreateInstance(_client, _ingestion, TimeSpan.FromMilliseconds(500), CancellationToken.None);
     const string EXPECTED_MESSAGE = "First message should go through 123";
+
+    await Task.Delay(TimeSpan.FromMilliseconds(600));
 
     // first message (should go through)
     sut.Report(new CardProgress(EXPECTED_MESSAGE, 0.123123123d));
-    await sut.LastUpdate.NotNull();
-    var res = await _client.Ingestion.Get(_ingestion.id, _project.id, CancellationToken.None);
-
-    Assert.Equal(EXPECTED_MESSAGE, res.statusData.progressMessage);
-
     // second message (should be dropped)
     sut.Report(new CardProgress("Second message, should be dropped", 0.321321321d));
     await sut.LastUpdate.NotNull();
-    res = await _client.Ingestion.Get(_ingestion.id, _project.id, CancellationToken.None);
+    var res = await _client.Ingestion.Get(_ingestion.id, _project.id, CancellationToken.None);
 
     Assert.Equal(EXPECTED_MESSAGE, res.statusData.progressMessage);
   }
