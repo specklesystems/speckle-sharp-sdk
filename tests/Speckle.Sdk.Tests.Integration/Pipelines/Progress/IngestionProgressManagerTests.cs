@@ -53,7 +53,7 @@ public class IngestionProgressManagerTests : IAsyncLifetime
   [Fact]
   public async Task TestProgress_WithThrottle()
   {
-    var sut = _factory.CreateInstance(_client, _ingestion, TimeSpan.FromDays(1), CancellationToken.None);
+    var sut = _factory.CreateInstance(_client, _ingestion, TimeSpan.FromMinutes(5), CancellationToken.None);
     const string EXPECTED_MESSAGE = "First message should go through 123";
 
     // first message (should go through)
