@@ -15,7 +15,7 @@ public record ModelIngestionCreateInput(
   string projectId,
   string progressMessage,
   SourceDataInput sourceData,
-  int? maxIdleTimeoutSeconds
+  int? maxIdleTimeoutSeconds = null
 );
 
 public record ModelIngestionUpdateInput(string ingestionId, string projectId, string progressMessage, double? progress);
