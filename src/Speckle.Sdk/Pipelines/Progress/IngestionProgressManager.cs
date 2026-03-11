@@ -28,7 +28,7 @@ public sealed class IngestionProgressManager(
 {
   public Task? LastUpdate { get; private set; }
 
-  private long _lastUpdatedAt = long.MinValue;
+  private long _lastUpdatedAt;
   private readonly object _lock = new();
 
   [AutoInterfaceIgnore]
