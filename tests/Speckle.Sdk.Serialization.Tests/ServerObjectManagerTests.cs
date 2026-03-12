@@ -52,7 +52,7 @@ public class ServerObjectManagerTests : MoqTest
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
 
     var activityFactory = Create<ISdkActivityFactory>();
-    activityFactory.Setup(x => x.Start(null, "DownloadObjects", null)).Returns((ISdkActivity?)null);
+    activityFactory.Setup(x => x.Start(null, "DownloadObjects")).Returns((ISdkActivity?)null);
 
     var serverObjectManager = new ServerObjectManager(
       http.Object,
@@ -91,7 +91,7 @@ public class ServerObjectManagerTests : MoqTest
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
 
     var activityFactory = Create<ISdkActivityFactory>();
-    activityFactory.Setup(x => x.Start(null, "DownloadSingleObject", null)).Returns((ISdkActivity?)null);
+    activityFactory.Setup(x => x.Start(null, "DownloadSingleObject")).Returns((ISdkActivity?)null);
 
     var serverObjectManager = new ServerObjectManager(
       http.Object,
@@ -132,7 +132,7 @@ public class ServerObjectManagerTests : MoqTest
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
 
     var activityFactory = Create<ISdkActivityFactory>();
-    activityFactory.Setup(x => x.Start(null, "HasObjects", null)).Returns((ISdkActivity?)null);
+    activityFactory.Setup(x => x.Start(null, "HasObjects")).Returns((ISdkActivity?)null);
 
     var serverObjectManager = new ServerObjectManager(
       http.Object,
@@ -171,7 +171,7 @@ public class ServerObjectManagerTests : MoqTest
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
 
     var activityFactory = Create<ISdkActivityFactory>();
-    activityFactory.Setup(x => x.Start(null, "UploadObjects", null)).Returns((ISdkActivity?)null);
+    activityFactory.Setup(x => x.Start(null, "UploadObjects")).Returns((ISdkActivity?)null);
 
     var serverObjectManager = new ServerObjectManager(
       http.Object,
