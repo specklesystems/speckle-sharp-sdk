@@ -17,25 +17,30 @@ namespace Speckle.Sdk.Credentials;
 /// confirm permission, then an access code will be given via a <see cref="HttpListener"/> which will be exchanged
 /// for a <see cref="TokenExchangeResponse"/>
 /// </summary>
+/// <remarks>
+/// Note, this class is not coupled in any way to <see cref="Account"/>
+/// lets keep it that way...
+/// See instead <see cref="AccountManager"/>
+/// </remarks>
 [GenerateAutoInterface]
 public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp speckleHttp) : IAuthFlow
 {
   public async Task<TokenExchangeResponse> TriggerAuthFlowWithTimeout(
     Uri serverUrl,
-    string applicationSecret,
-    Uri applicationCallbackUrl,
+    AuthApp authApp,
     TimeSpan timeout,
     CancellationToken cancellationToken
   )
   {
     string challenge = GenerateChallenge();
 
-    Uri endpoint = new(serverUrl, $"/authn/verify/{applicationSecret}/{challenge}");
+    Uri endpoint = new(serverUrl, $"/authn/verify/{authApp.AppId}/{challenge}");
     _ = Process.Start(new ProcessStartInfo(endpoint.ToString()) { UseShellExecute = true });
-    string accessCode = await RunListenerWithTimeout(applicationCallbackUrl, timeout, cancellationToken)
+    string accessCode = await RunListenerWithTimeout(authApp.CallbackUrl, timeout, cancellationToken)
       .ConfigureAwait(false);
 
-    return await GetToken(accessCode, applicationSecret, challenge, serverUrl, cancellationToken).ConfigureAwait(false);
+    return await ExchangeAccessCodeForToken(accessCode, authApp, challenge, serverUrl, cancellationToken)
+      .ConfigureAwait(false);
   }
 
   internal async Task<string> RunListenerWithTimeout(
@@ -64,6 +69,36 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     {
       throw new AuthFlowException($"Auth flow was cancelled after {timeout:g} timeout", ex);
     }
+  }
+
+  public async Task<TokenExchangeResponse> GetRefreshedToken(
+    string? refreshToken,
+    Uri serverUrl,
+    AuthApp authApp,
+    CancellationToken cancellationToken
+  )
+  {
+    using var client = speckleHttp.CreateHttpClient();
+
+    var body = new
+    {
+      appId = authApp.AppId,
+      appSecret = authApp.AppSecret,
+      refreshToken = refreshToken,
+    };
+
+    using var content = new StringContent(JsonConvert.SerializeObject(body));
+    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+    var response = await client
+      .PostAsync(new Uri(serverUrl, "/auth/token"), content, cancellationToken)
+      .ConfigureAwait(false);
+
+#if NET8_0_OR_GREATER
+    string read = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#else
+    string read = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
+    return JsonConvert.DeserializeObject<TokenExchangeResponse>(read).NotNull();
   }
 
   private static async Task<HttpListenerContext> GetContext(HttpListener listener, CancellationToken cancellationToken)
@@ -114,9 +149,9 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     return accessCode ?? throw new AuthFlowException("Failed to receive access code");
   }
 
-  private async Task<TokenExchangeResponse> GetToken(
+  private async Task<TokenExchangeResponse> ExchangeAccessCodeForToken(
     string accessCode,
-    string appSecret,
+    AuthApp authApp,
     string challenge,
     Uri serverUrl,
     CancellationToken cancellationToken
@@ -126,10 +161,10 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
 
     var body = new
     {
-      appId = appSecret,
-      appSecret,
-      accessCode,
-      challenge,
+      AppId = authApp.AppId,
+      AppSecret = authApp.AppSecret,
+      accessCode = accessCode,
+      challenge = challenge,
     };
 
     using StringContent content = new(JsonConvert.SerializeObject(body));
@@ -159,6 +194,6 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
 #endif
     // Base64Url is available in .NET 9, or via the Microsoft.Bcl.Memory polyfill
     // But for simplicity r.e. dll dependencies, we're doing it the dumb way...
-    return Convert.ToBase64String(challengeData).Replace('+', '-').Replace('/', '_');
+    return Convert.ToBase64String(challengeData).Replace('+', '-').Replace('/', '_').TrimEnd('=');
   }
 }

@@ -9,7 +9,7 @@ public class AuthFlowTests
   {
     var challenge = AuthFlow.GenerateChallenge();
 
-    Assert.Equal(32, challenge.Length);
-    Assert.Matches(@"^[A-Za-z0-9\-_+=/]*$", challenge);
+    Assert.Equal(43, challenge.Length);
+    Assert.Matches(@"^[A-Za-z0-9\-_+/]*$", challenge);
   }
 }

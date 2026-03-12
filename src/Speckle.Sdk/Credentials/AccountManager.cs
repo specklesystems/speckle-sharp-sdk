@@ -1,14 +1,9 @@
-using System.Net.Http.Headers;
-using GraphQL;
 using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Models;
-using Speckle.Sdk.Api.GraphQL.Models.Responses;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.SQLite;
 
@@ -17,13 +12,11 @@ namespace Speckle.Sdk.Credentials;
 public partial interface IAccountManager : IDisposable;
 
 /// <summary>
-/// Manage accounts locally for desktop applications.
+/// Manages <see cref="Account"/> data in the local sqlite account store
 /// </summary>
 [GenerateAutoInterface]
 public sealed class AccountManager(
   ILogger<AccountManager> logger,
-  IGraphQLClientFactory graphQLClientFactory,
-  ISpeckleHttp speckleHttp,
   IAccountFactory accountFactory,
   IAuthFlow authFlow,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory
@@ -39,98 +32,6 @@ public sealed class AccountManager(
     _accountStorage.Dispose();
   }
 
-  /// <summary>
-  /// Gets the basic information about a server.
-  /// </summary>
-  /// <param name="server">Server Information</param>
-  /// <returns></returns>
-  /// <exception cref="GraphQLHttpRequestException">Request failed on the HTTP layer (received a non-successful response code)</exception>
-  /// <exception cref="AggregateException"><inheritdoc cref="GraphQLErrorHandler.EnsureGraphQLSuccess(IGraphQLResponse)"/></exception>
-  public async Task<ServerInfo> GetServerInfo(Uri server, CancellationToken cancellationToken = default)
-  {
-    using var gqlClient = graphQLClientFactory.CreateGraphQLClient(server, null);
-
-    //lang=graphql
-    const string QUERY_STRING = "query { serverInfo { name company migration { movedFrom movedTo } } }";
-
-    var request = new GraphQLRequest { Query = QUERY_STRING };
-
-    var response = await gqlClient.SendQueryAsync<ServerInfoResponse>(request, cancellationToken).ConfigureAwait(false);
-
-    response.EnsureGraphQLSuccess();
-
-    ServerInfo serverInfo = response.Data.serverInfo;
-    serverInfo.url = server.ToString().TrimEnd('/');
-
-    return response.Data.serverInfo;
-  }
-
-  /// <summary>
-  /// Gets basic user information given a token and a server.
-  /// </summary>
-  /// <param name="token"></param>
-  /// <param name="server">Server URL</param>
-  /// <returns></returns>
-  /// <exception cref="GraphQLHttpRequestException">Request failed on the HTTP layer (received a non-successful response code)</exception>
-  /// <exception cref="AggregateException"><inheritdoc cref="GraphQLErrorHandler.EnsureGraphQLSuccess(IGraphQLResponse)"/></exception>
-  public async Task<UserInfo> GetUserInfo(string token, Uri server, CancellationToken cancellationToken = default)
-  {
-    using var gqlClient = graphQLClientFactory.CreateGraphQLClient(server, token);
-
-    //language=graphql
-    const string QUERY = """
-      query { 
-        data:activeUser {
-          name 
-          email 
-          id 
-          company
-        } 
-      }
-      """;
-    var request = new GraphQLRequest { Query = QUERY };
-
-    var response = await gqlClient
-      .SendQueryAsync<RequiredResponse<UserInfo>>(request, cancellationToken)
-      .ConfigureAwait(false);
-
-    response.EnsureGraphQLSuccess();
-
-    return response.Data.data;
-  }
-
-  /// <summary>
-  /// The Default Server URL for authentication, can be overridden by placing a file with the alternatrive url in the Speckle folder or with an ENV_VAR
-  /// </summary>
-  public Uri GetDefaultServerUrl()
-  {
-    var customServerUrl = "";
-
-    // first mechanism, check for local file
-    var customServerFile = Path.Combine(SpecklePathProvider.UserSpeckleFolderPath, "server");
-    if (File.Exists(customServerFile))
-    {
-      customServerUrl = File.ReadAllText(customServerFile);
-    }
-
-    // second mechanism, check ENV VAR
-    var customServerEnvVar = Environment.GetEnvironmentVariable("SPECKLE_SERVER");
-    if (!string.IsNullOrEmpty(customServerEnvVar))
-    {
-      customServerUrl = customServerEnvVar;
-    }
-
-    if (!string.IsNullOrEmpty(customServerUrl))
-    {
-      if (Uri.TryCreate(customServerUrl, UriKind.Absolute, out Uri? url))
-      {
-        return url;
-      }
-    }
-
-    return new Uri(DEFAULT_SERVER_URL);
-  }
-
   /// <param name="id">The Id of the account to fetch</param>
   /// <returns></returns>
   /// <exception cref="SpeckleAccountManagerException">Account with <paramref name="id"/> was not found</exception>
@@ -138,37 +39,6 @@ public sealed class AccountManager(
   {
     return GetAccounts().FirstOrDefault(acc => acc.id == id)
       ?? throw new SpeckleAccountManagerException($"Account {id} not found");
-  }
-
-  /// <summary>
-  /// Upgrades an account from the account.serverInfo.movedFrom account to the account.serverInfo.movedTo account
-  /// </summary>
-  /// <param name="id">Id of the account to upgrade</param>
-  public void UpgradeAccount(string id)
-  {
-    Account account = GetAccount(id);
-
-    if (account.serverInfo.migration?.movedTo is not Uri upgradeUri)
-    {
-      throw new SpeckleAccountManagerException(
-        $"Server with url {account.serverInfo.url} does not have information about the upgraded server"
-      );
-    }
-
-    account.serverInfo.migration.movedTo = null;
-    account.serverInfo.migration.movedFrom = new Uri(account.serverInfo.url);
-    account.serverInfo.url = upgradeUri.ToString().TrimEnd('/');
-
-    // setting the id to null will force it to be recreated
-    account.id = null!; //TODO this is gross so remove when id is nullable
-
-    RemoveAccount(id);
-    _accountStorage.UpdateObject(account.id.NotNull(), JsonConvert.SerializeObject(account));
-  }
-
-  public IEnumerable<Account> GetAccounts(string serverUrl)
-  {
-    return GetAccounts(new Uri(serverUrl));
   }
 
   /// <summary>
@@ -234,7 +104,6 @@ public sealed class AccountManager(
     static bool IsInvalid(Account ac) => ac.userInfo == null || ac.serverInfo == null;
 
     var sqlAccounts = _accountStorage.GetAllObjects().Select(x => JsonConvert.DeserializeObject<Account>(x.Json));
-    var localAccounts = GetLocalAccounts();
 
     foreach (var acc in sqlAccounts)
     {
@@ -248,119 +117,89 @@ public sealed class AccountManager(
         yield return acc;
       }
     }
-
-    foreach (var acc in localAccounts)
-    {
-      yield return acc;
-    }
   }
 
   /// <summary>
-  /// Gets the local accounts
-  /// These are accounts not handled by Manager and are stored in json format in a local directory
+  /// Refetches all local accounts (in local db), including <see cref="ServerInfo"/> and <see cref="UserInfo"/>.
+  /// If the <see cref="Account.token"/> looks to be expired, this function will also attempt to use the <see cref="Account.refreshToken"/> to refresh it.
+  /// Will write the changes to the local accounts db
   /// </summary>
-  /// <returns></returns>
-  private IList<Account> GetLocalAccounts()
+  /// <seealso cref="UpdateAccount"/>
+  /// <seealso cref="UpdateAccounts"/>
+  /// <param name="cancellationToken"></param>
+  /// <exception cref="AggregateException"></exception>
+  public async Task UpdateAccount(Account account, CancellationToken cancellationToken = default)
   {
-    var accountsDir = SpecklePathProvider.AccountsFolderPath;
-    if (!Directory.Exists(accountsDir))
+    string oldAccountId = account.id;
+    await UpdateAccountInMemory(account, cancellationToken).ConfigureAwait(false);
+
+    if (oldAccountId != account.id)
     {
-      return Array.Empty<Account>();
+      // ID may have changed, e.g. users email changed, or server url migrated
+      _accountStorage.DeleteObject(oldAccountId);
     }
-
-    var accounts = new List<Account>();
-    string[] files = Directory.GetFiles(accountsDir, "*.json", SearchOption.AllDirectories);
-    foreach (var file in files)
-    {
-      try
-      {
-        var json = File.ReadAllText(file);
-        Account? account = JsonConvert.DeserializeObject<Account>(json);
-
-        if (
-          account is not null
-          && !string.IsNullOrEmpty(account.token)
-          && !string.IsNullOrEmpty(account.userInfo.id)
-          && !string.IsNullOrEmpty(account.userInfo.email)
-          && !string.IsNullOrEmpty(account.userInfo.name)
-          && !string.IsNullOrEmpty(account.serverInfo.url)
-          && !string.IsNullOrEmpty(account.serverInfo.name)
-        )
-        {
-          accounts.Add(account);
-        }
-      }
-      catch (Exception ex) when (!ex.IsFatal())
-      {
-        logger.LogWarning(ex, "Failed to load json account at {filePath}", file);
-      }
-    }
-
-    return accounts;
+    _accountStorage.UpdateObject(account.id, JsonConvert.SerializeObject(account));
   }
 
   /// <summary>
-  /// Refetches user and server info for each account
+  /// Refetches the <paramref name="account"/> information, including <see cref="ServerInfo"/> and <see cref="UserInfo"/>
+  /// If the <see cref="Account.token"/> looks to be expired, this function will also attempt to use the <see cref="Account.refreshToken"/> to refresh it.
+  ///
+  /// Will only mutate <paramref name="account"/> in memory only, and only if successful.
   /// </summary>
-  /// <param name="app"> It is defaultAppId in the server. By default it is "sca" to not break existing parts that this function involves.</param>
-  /// <returns></returns>
-  public async Task UpdateAccounts(CancellationToken ct = default, string app = "sca")
+  /// <seealso cref="UpdateAccount"/>
+  /// <param name="account"></param>
+  /// <param name="cancellationToken"></param>
+  /// <exception cref="AggregateException">Thrown if</exception>
+  public async Task UpdateAccountInMemory(Account account, CancellationToken cancellationToken = default)
   {
-    // need to ToList() the GetAccounts call or the UpdateObject call at the end of this method
-    // will not work because sqlite does not support concurrent db calls
-    foreach (var account in GetAccounts().ToList())
+    Uri url = account.serverInfo.migration?.movedTo ?? new(account.serverInfo.url);
+    ActiveUserServerInfoResponse userServerInfo;
+
+    try
     {
+      userServerInfo = await accountFactory
+        .GetUserServerInfo(url, account.token, cancellationToken)
+        .ConfigureAwait(false);
+    }
+    catch (GraphQLHttpRequestException ex)
+    {
+      // Failed to fetch info, perhaps the token is expired?
+      // Attempt to refresh it
+      TokenExchangeResponse refreshTokenResponse;
       try
       {
-        Uri url = new(account.serverInfo.url);
-        var userServerInfo = await accountFactory.GetUserServerInfo(url, account.token, ct).ConfigureAwait(false);
+        refreshTokenResponse = await authFlow
+          .GetRefreshedToken(
+            account.refreshToken.NotNull("No refresh token provided"),
+            url,
+            AuthApp.ConnectorsV3,
+            cancellationToken
+          )
+          .ConfigureAwait(false);
 
-        //the token has expired
-        //TODO: once we get a token expired exception from the server use that instead
-        if (userServerInfo.activeUser == null || userServerInfo.serverInfo == null)
-        {
-          // We were initially was handling refresh token here bc quite a while ago server was returning null
-          // for activeUser and serverInfo instead of throwing exception. In short, our logic moved into catch block to cover both.
-          throw new SpeckleException("Token is expired");
-        }
-
-        account.isOnline = true;
-        account.userInfo = userServerInfo.activeUser;
-        account.serverInfo = userServerInfo.serverInfo;
+        userServerInfo = await accountFactory
+          .GetUserServerInfo(url, refreshTokenResponse.token, cancellationToken)
+          .ConfigureAwait(false);
       }
-      catch (OperationCanceledException)
+      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
       {
         throw;
       }
-      catch (Exception ex) when (!ex.IsFatal())
+      catch (Exception ex2)
       {
-        await RefreshAndSetAccountToken(account, app).ConfigureAwait(false);
+        throw new AggregateException("Failed to update account information", ex, ex2);
       }
 
-      ct.ThrowIfCancellationRequested();
-      _accountStorage.UpdateObject(account.id, JsonConvert.SerializeObject(account));
+      account.token = refreshTokenResponse.token;
+      account.refreshToken = refreshTokenResponse.refreshToken;
+      logger.LogInformation(ex, "Account token has been refreshed");
     }
-  }
-
-  /// <summary>
-  /// Mutates the account with new tokens.
-  /// </summary>
-  /// <param name="account"></param>
-  /// <param name="app"></param>
-  private async Task RefreshAndSetAccountToken(Account account, string app)
-  {
-    try
-    {
-      Uri url = new(account.serverInfo.url);
-      var tokenResponse = await GetRefreshedToken(account.refreshToken, url, app).ConfigureAwait(false);
-      account.token = tokenResponse.token;
-      account.refreshToken = tokenResponse.refreshToken;
-      account.isOnline = true;
-    }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-      account.isOnline = false;
-    }
+    account.userInfo = userServerInfo.activeUser.NotNull();
+    account.serverInfo = userServerInfo.serverInfo;
+    //This is a bit gross, since id is not marked nullable
+    //but this will force re-generate the id (e.g. if the user's email, or  servers url has changed)
+    account.id = null!;
   }
 
   /// <summary>
@@ -401,67 +240,23 @@ public sealed class AccountManager(
   }
 
   /// <summary>
-  /// Retrieves the local identifier for the specified account.
+  /// Adds an account to local storage by prompting the user to log in via their browser.
   /// </summary>
-  /// <param name="account">The account for which to retrieve the local identifier.</param>
-  /// <returns>The local identifier for the specified account in the form of "SERVER_URL?u=USER_ID".</returns>
-  /// <remarks>
-  /// <inheritdoc cref="Account.GetLocalIdentifier"/>
-  /// </remarks>
-  [Obsolete(Account.LOCAL_IDENTIFIER_DEPRECATION_MESSAGE)]
-  public Uri? GetLocalIdentifierForAccount(Account account)
-  {
-    var identifier = account.GetLocalIdentifier();
-
-    // Validate account is stored locally
-    var searchResult = GetAccountForLocalIdentifier(identifier);
-
-    return searchResult == null ? null : identifier;
-  }
-
-  public async Task<UserInfo> Validate(Account account)
-  {
-    Uri server = new(account.serverInfo.url);
-    return await GetUserInfo(account.token, server).ConfigureAwait(false);
-  }
-
-  /// <summary>
-  /// Gets the account that corresponds to the given local identifier.
-  /// </summary>
-  /// <param name="localIdentifier">The local identifier of the account.</param>
-  /// <returns>The account that matches the local identifier, or null if no match is found.</returns>
-  [Obsolete(Account.LOCAL_IDENTIFIER_DEPRECATION_MESSAGE)]
-  public Account? GetAccountForLocalIdentifier(Uri localIdentifier)
-  {
-    var searchResult = GetAccounts()
-      .FirstOrDefault(acc =>
-      {
-        var id = acc.GetLocalIdentifier();
-        return id == localIdentifier;
-      });
-
-    return searchResult;
-  }
-
-  /// <summary>
-  /// Adds an account by propting the user to log in via a web flow
-  /// </summary>
-  /// <param name="serverUrl">Server to use to add the account, if not provied the default Server will be used</param>
+  /// <example>
+  /// <code>
+  /// Account account = await AuthenticateAccount(new Uri("https://app.speckle.systems"), TimeSpan.FromMinutes(1));
+  /// </code>
+  /// </example>
+  /// <param name="serverUrl"></param>
+  /// <param name="timeout">Timeout for user to auth with browser, recommend 1 min timeout</param>
+  /// <param name="cancellationToken"></param>
   /// <returns></returns>
-  public async Task<Account> AddAccount(
-    Uri serverUrl,
-    string appSecret = "connectorsV3",
-    int callbackPort = 29355,
-    CancellationToken cancellationToken = default
-  )
+  public async Task<Account> AuthenticateAccount(Uri serverUrl, TimeSpan timeout, CancellationToken cancellationToken)
   {
-    //These constants are defined on the server, and specify the scopes the app is requesting
-    Uri appCallbackUrl = new($"http://localhost:{callbackPort}");
-
     logger.LogDebug("Starting to add account for {ServerUrl}", serverUrl);
 
     TokenExchangeResponse tokenResponse = await authFlow
-      .TriggerAuthFlowWithTimeout(serverUrl, appSecret, appCallbackUrl, TimeSpan.FromMinutes(1), cancellationToken)
+      .TriggerAuthFlowWithTimeout(serverUrl, AuthApp.ConnectorsV3, timeout, cancellationToken)
       .ConfigureAwait(false);
 
     var account = await accountFactory
@@ -476,30 +271,51 @@ public sealed class AccountManager(
     return account;
   }
 
-  private async Task<TokenExchangeResponse> GetRefreshedToken(string? refreshToken, Uri server, string app)
+  /// <summary>
+  /// The Default Server URL for authentication, can be overridden by placing a file with the alternative url in the Speckle folder or with an ENV_VAR
+  /// </summary>
+  [Obsolete("Unused")]
+  public Uri GetDefaultServerUrl()
   {
-    try
-    {
-      using var client = speckleHttp.CreateHttpClient();
+    var customServerUrl = "";
 
-      var body = new
+    // first mechanism, check for local file
+    var customServerFile = Path.Combine(SpecklePathProvider.UserSpeckleFolderPath, "server");
+    if (File.Exists(customServerFile))
+    {
+      customServerUrl = File.ReadAllText(customServerFile);
+    }
+
+    // second mechanism, check ENV VAR
+    var customServerEnvVar = Environment.GetEnvironmentVariable("SPECKLE_SERVER");
+    if (!string.IsNullOrEmpty(customServerEnvVar))
+    {
+      customServerUrl = customServerEnvVar;
+    }
+
+    if (!string.IsNullOrEmpty(customServerUrl))
+    {
+      if (Uri.TryCreate(customServerUrl, UriKind.Absolute, out Uri? url))
       {
-        appId = app,
-        appSecret = app,
-        refreshToken,
-      };
-
-      using var content = new StringContent(JsonConvert.SerializeObject(body));
-      content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-      var response = await client.PostAsync(new Uri(server, "/auth/token"), content).ConfigureAwait(false);
-
-      return JsonConvert
-        .DeserializeObject<TokenExchangeResponse>(await response.Content.ReadAsStringAsync().ConfigureAwait(false))
-        .NotNull();
+        return url;
+      }
     }
-    catch (Exception ex) when (!ex.IsFatal())
-    {
-      throw new SpeckleException($"Failed to get refreshed token from {server}", ex);
-    }
+
+    return new Uri(DEFAULT_SERVER_URL);
   }
+
+  [Obsolete("Use Uri overload")]
+  public IEnumerable<Account> GetAccounts(string serverUrl)
+  {
+    return GetAccounts(new Uri(serverUrl));
+  }
+
+  [Obsolete("Use UpdateAccount instead for more control over error handling", true)]
+  public Task UpdateAccounts(CancellationToken ct = default, string app = "sca") => throw new NotImplementedException();
+
+  [Obsolete("Use UpdateAccount instead", true)]
+  public void UpgradeAccount(string id) => throw new NotImplementedException();
+
+  [Obsolete($"Use {nameof(AuthenticateAccount)} instead", true)]
+  public Task AddAccount(Uri? server = null) => throw new NotImplementedException();
 }
