@@ -6,7 +6,6 @@ using System.Text;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 
@@ -158,6 +157,8 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     byte[] challengeData = new byte[32];
     rng.GetBytes(challengeData);
 #endif
-    return Base64Url.EncodeToString(challengeData);
+    // Base64Url is available in .NET 9, or via the Microsoft.Bcl.Memory polyfill
+    // But for simplicity r.e. dll dependencies, we're doing it the dumb way...
+    return Convert.ToBase64String(challengeData).Replace('+', '-').Replace('/', '_');
   }
 }

@@ -28,12 +28,8 @@
     <PackageReference Include="Open.ChannelExtensions" PrivateAssets="all" />
     <PackageReference Include="System.Threading.Channels" PrivateAssets="all" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0'">
-    <PackageReference Include="Microsoft.Bcl.Memory" PrivateAssets="all" />
-  </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
-    <PackageReference Include="Microsoft.Bcl.Memory" PrivateAssets="all" />
   </ItemGroup>
   <Target Name="BeforeILRepackPrepareBuild" BeforeTargets="ILRepackPrepareBuild">
     <ItemGroup>
