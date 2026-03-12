@@ -16,4 +16,7 @@
     <ProjectReference Include="..\..\src\Speckle.Sdk\Speckle.Sdk.csproj" />
     <ProjectReference Include="..\Speckle.Sdk.Testing\Speckle.Sdk.Testing.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Pipelines\Send\" />
+  </ItemGroup>
 </Project>

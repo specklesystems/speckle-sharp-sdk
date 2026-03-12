@@ -129,8 +129,10 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
     ModelIngestionSuccessInput finish = new(ingest.id, _project.id, sendResult.RootId, "yay!");
     string versionId = await Sut.Complete(finish);
     Version version = await _testUser.Version.Get(versionId, _project.id);
+    ModelIngestion finalIngestion = await _testUser.Ingestion.Get(ingest.id, _project.id);
     Assert.Equal(version.id, versionId);
     Assert.Equal(sendResult.RootId, version.referencedObject);
+    Assert.Equal(finalIngestion.statusData.versionId, versionId);
   }
 
   [Fact]
@@ -147,6 +149,11 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
     ModelIngestion res = await Sut.Get(ingest.id, _project.id);
     Assert.Equal(ingest.id, res.id);
     Assert.Equal(ingest.statusData.status, res.statusData.status);
+    Assert.Equal(ingest.statusData.versionId, res.statusData.versionId);
+    Assert.Null(res.statusData.versionId);
+    Assert.Equal(_model.id, res.modelId);
+    Assert.Equal(_project.id, res.projectId);
+    Assert.Equal(_testUser.Account.userInfo.id, res.userId);
   }
 
   [Fact]
