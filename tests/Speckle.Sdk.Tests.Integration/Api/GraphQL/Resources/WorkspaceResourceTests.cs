@@ -1,4 +1,5 @@
-﻿using Speckle.Sdk.Api;
+﻿using FluentAssertions;
+using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Resources;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
@@ -25,13 +26,15 @@ public class WorkspaceResourceTests
   public async Task TestGetWorkspace()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get("non-existent-id"));
-    await Verify(ex);
+    ex.InnerExceptions.Should().HaveCount(1);
+    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLForbiddenException>();
   }
 
   [Fact]
   public async Task TestGetProjects()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.GetProjects("non-existent-id"));
-    await Verify(ex);
+    ex.InnerExceptions.Should().HaveCount(1);
+    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLForbiddenException>();
   }
 }
