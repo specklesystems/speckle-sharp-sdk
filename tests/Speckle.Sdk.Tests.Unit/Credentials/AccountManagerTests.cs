@@ -31,7 +31,6 @@ public sealed class AccountManagerTests : MoqTest
   private readonly IAccountFactory _mockAccountFactory;
   private readonly Mock<ISqLiteJsonCacheManagerFactory> _mockSqLiteJsonCacheManagerFactory;
   private readonly Mock<ISqLiteJsonCacheManager> _mockAccountStorage;
-  private readonly Mock<ISqLiteJsonCacheManager> _mockAccountAddLockStorage;
   private readonly Mock<IAuthFlow> _mockAuthFlow;
 
 #pragma warning disable CA2213
@@ -46,12 +45,8 @@ public sealed class AccountManagerTests : MoqTest
     _mockAuthFlow = Create<IAuthFlow>();
 
     _mockAccountStorage = Create<ISqLiteJsonCacheManager>();
-    _mockAccountAddLockStorage = Create<ISqLiteJsonCacheManager>();
 
     _mockSqLiteJsonCacheManagerFactory.Setup(f => f.CreateForUser("Accounts")).Returns(_mockAccountStorage.Object);
-    _mockSqLiteJsonCacheManagerFactory
-      .Setup(f => f.CreateForUser("AccountAddFlow"))
-      .Returns(_mockAccountAddLockStorage.Object);
 
     _accountManager = new AccountManager(
       _mockLogger.Object,
