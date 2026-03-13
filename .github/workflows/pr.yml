@@ -1,7 +1,11 @@
 name: PR Test
 
 on:
-  pull_request:
+  pull_request: {}
+  push: 
+    branches:
+      - "main" # Need to run for codecov to compare against the BASE
+
 
 jobs:
   build:

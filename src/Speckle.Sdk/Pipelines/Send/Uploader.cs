@@ -1,16 +1,17 @@
 using System.Net.Http.Headers;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Pipelines.Progress;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
 [GenerateAutoInterface]
-public sealed class UploaderFactory(ISpeckleHttp httpClientFactory, ILogger<Uploader> logger) : IUploaderFactory
+public sealed class UploaderFactory(ISpeckleHttp httpClientFactory, ISdkActivityFactory activityFactory)
+  : IUploaderFactory
 {
   public Uploader CreateInstance(
     string projectId,
@@ -18,7 +19,7 @@ public sealed class UploaderFactory(ISpeckleHttp httpClientFactory, ILogger<Uplo
     Account account,
     IProgress<StreamProgressArgs> progress,
     CancellationToken cancellationToken
-  ) => new(projectId, ingestionId, logger, httpClientFactory, account, progress, cancellationToken);
+  ) => new(projectId, ingestionId, activityFactory, httpClientFactory, account, progress, cancellationToken);
 }
 
 public sealed class Uploader : IDisposable
@@ -28,13 +29,13 @@ public sealed class Uploader : IDisposable
   private readonly CancellationToken _cancellationToken;
   private readonly HttpClient _speckleClient;
   private readonly HttpClient _s3Client;
-  private readonly ILogger<Uploader> _logger;
+  private readonly ISdkActivityFactory _activity;
   private readonly IProgress<StreamProgressArgs> _progress;
 
   internal Uploader(
     string projectId,
     string ingestionId,
-    ILogger<Uploader> logger,
+    ISdkActivityFactory activity,
     ISpeckleHttp httpClientFactory,
     Account speckleAccount,
     IProgress<StreamProgressArgs> progress,
@@ -43,7 +44,7 @@ public sealed class Uploader : IDisposable
   {
     _projectId = projectId;
     _ingestionId = ingestionId;
-    _logger = logger;
+    _activity = activity;
     _cancellationToken = cancellationToken;
     _progress = progress;
     _speckleClient = httpClientFactory.CreateHttpClient(authorizationToken: speckleAccount.token);
@@ -62,6 +63,8 @@ public sealed class Uploader : IDisposable
 
   private async Task<PresignedUploadResponse> GetPresignedUrl()
   {
+    using var a = _activity.Start("Get Presigned Url");
+
     var signUri = new Uri($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/sign", UriKind.Relative);
 
     using var signResponse = await _speckleClient.PostAsync(signUri, null, _cancellationToken).ConfigureAwait(false);
@@ -80,7 +83,7 @@ public sealed class Uploader : IDisposable
 
   private async Task<string> UploadToS3(Stream fileStream, PresignedUploadResponse presignedUploadResponse)
   {
-    _logger.LogInformation("Uploading file to pre-signed url");
+    using var a = _activity.Start("Uploading file to pre-signed url");
 
     Stream progressStream = new ProgressStream(fileStream, _progress);
 
@@ -107,6 +110,8 @@ public sealed class Uploader : IDisposable
 
   private async Task TriggerProcessing(TriggerUploadRequest request)
   {
+    using var a = _activity.Start("Triggering Processing");
+
     Uri processUri = new($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/process", UriKind.Relative);
     string requestBody = JsonConvert.SerializeObject(request);
     using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");

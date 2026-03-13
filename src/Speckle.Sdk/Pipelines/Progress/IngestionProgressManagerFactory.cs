@@ -12,11 +12,10 @@ public sealed class IngestionProgressManagerFactory(ILogger<IngestionProgressMan
   public IIngestionProgressManager CreateInstance(
     IClient speckleClient,
     ModelIngestion ingestion,
-    string projectId,
     TimeSpan updateInterval,
     CancellationToken cancellationToken
   )
   {
-    return new IngestionProgressManager(logger, speckleClient, ingestion, projectId, updateInterval, cancellationToken);
+    return new IngestionProgressManager(logger, speckleClient, ingestion, updateInterval, cancellationToken);
   }
 }

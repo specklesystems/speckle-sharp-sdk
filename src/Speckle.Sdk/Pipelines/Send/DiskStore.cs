@@ -3,13 +3,15 @@ using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
+using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
 [GenerateAutoInterface]
-public sealed class DiskStoreFactory(ILogger<DiskStore> logger) : IDiskStoreFactory
+public sealed class DiskStoreFactory(ILogger<DiskStore> logger, ISdkActivityFactory activityFactory) : IDiskStoreFactory
 {
-  public DiskStore CreateInstance(CancellationToken cancellationToken) => new(logger, cancellationToken);
+  public DiskStore CreateInstance(CancellationToken cancellationToken) =>
+    new(logger, activityFactory, cancellationToken);
 }
 
 public sealed class DiskStore
@@ -17,11 +19,17 @@ public sealed class DiskStore
   private readonly RepackedChannel<UploadItem> _channel;
   private readonly Task<DisposableFile> _writeToDiskTask;
   private readonly ILogger<DiskStore> _logger;
+  private readonly ISdkActivityFactory _activityFactory;
   private readonly CancellationToken _cancellationToken;
 
-  internal DiskStore(ILogger<DiskStore> logger, CancellationToken cancellationToken)
+  internal DiskStore(
+    ILogger<DiskStore> logger,
+    ISdkActivityFactory activityFactory,
+    CancellationToken cancellationToken
+  )
   {
     _logger = logger;
+    _activityFactory = activityFactory;
     _cancellationToken = cancellationToken;
 
     _channel = new RepackedChannel<UploadItem>(1000, true, false);
@@ -33,6 +41,7 @@ public sealed class DiskStore
 
   public async Task<DisposableFile> CompleteAsync()
   {
+    using var a = _activityFactory.Start("Waiting for DiskStore to complete");
     _channel.CompleteWriter();
     return await _writeToDiskTask.ConfigureAwait(false);
   }
