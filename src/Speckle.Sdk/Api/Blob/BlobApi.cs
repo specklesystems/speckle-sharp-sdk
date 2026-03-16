@@ -193,30 +193,7 @@ public sealed class BlobApi : IBlobApi
     using var response = await _unauthedClient.SendAsync(requestMessage, cancellationToken).ConfigureAwait(false);
     response.EnsureSuccessStatusCode();
 
-    return ParseEtagHeader(response.Headers);
-  }
-
-  private static string ParseEtagHeader(HttpResponseHeaders headers)
-  {
-    if (!headers.TryGetValues("ETag", out var etagValues))
-    {
-      throw new ArgumentException(
-        "Response does not have an ETag attached to it, cannot use this as an upload",
-        nameof(headers)
-      );
-    }
-
-    var etagValuesArray = etagValues.ToArray();
-
-    if (etagValuesArray.Length != 1)
-    {
-      throw new ArgumentException(
-        $"Expected Etag header to have a single value but got {etagValuesArray.Length}",
-        nameof(headers)
-      );
-    }
-
-    return etagValuesArray[0];
+    return BlobApiHelpers.ParseEtagHeader(response.Headers);
   }
 
   /// <summary>

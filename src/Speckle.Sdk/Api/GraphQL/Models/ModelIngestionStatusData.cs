@@ -6,4 +6,5 @@ public sealed class ModelIngestionStatusData
 {
   public required ModelIngestionStatus status { get; init; }
   public required string? progressMessage { get; init; }
+  public required string? versionId { get; init; }
 }

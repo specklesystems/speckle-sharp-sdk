@@ -17,7 +17,7 @@ public enum DynamicBaseMemberType
   Dynamic = 2,
 
   /// <summary>
-  /// The typed members flagged with <see cref="ObsoleteAttribute"/> attribute.
+  /// The typed members flagged with ObsoleteAttribute attribute.
   /// </summary>
   Obsolete = 4,
 
@@ -27,12 +27,12 @@ public enum DynamicBaseMemberType
   SchemaComputed = 16,
 
   /// <summary>
-  /// All the typed members, including ones with <see cref="ObsoleteAttribute"/>  attributes.
+  /// All the typed members, including ones with ObsoleteAttribute  attributes.
   /// </summary>
   InstanceAll = Instance + Obsolete,
 
   /// <summary>
-  /// All the members, including dynamic and instance members flagged with <see cref="ObsoleteAttribute"/> attributes
+  /// All the members, including dynamic and instance members flagged with ObsoleteAttribute attributes
   /// </summary>
   All = InstanceAll + Dynamic,
 }
