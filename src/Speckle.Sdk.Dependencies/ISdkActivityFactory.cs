@@ -1,17 +1,20 @@
 using System.Runtime.CompilerServices;
+using Speckle.Connectors.Logging;
 
 namespace Speckle.Sdk.Logging;
 
 public interface ISdkActivityFactory : IDisposable
 {
-  /// <param name="name"></param>
-  /// <param name="source"></param>
-  /// <returns></returns>
-  ISdkActivity? Start(string? name = default, [CallerMemberName] string source = "");
+  ISdkActivity? Start(
+    string? name = null,
+    SdkActivityKind kind = SdkActivityKind.Internal,
+    [CallerMemberName] string source = ""
+  );
+
   ISdkActivity? StartRemote(
-    string traceId,
-    string parentSpanId,
-    string? name = default,
+    string traceContext,
+    SdkActivityKind kind,
+    string? name = null,
     [CallerMemberName] string source = ""
   );
 }

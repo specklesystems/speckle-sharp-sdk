@@ -25,13 +25,15 @@ public class WorkspaceResourceTests
   public async Task TestGetWorkspace()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get("non-existent-id"));
-    await Verify(ex);
+    Assert.Single(ex.InnerExceptions);
+    Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLForbiddenException>(item));
   }
 
   [Fact]
   public async Task TestGetProjects()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.GetProjects("non-existent-id"));
-    await Verify(ex);
+    Assert.Single(ex.InnerExceptions);
+    Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLForbiddenException>(item));
   }
 }
