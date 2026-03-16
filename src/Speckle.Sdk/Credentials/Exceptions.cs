@@ -21,14 +21,3 @@ public class SpeckleAccountManagerException : SpeckleException
 
   public SpeckleAccountManagerException() { }
 }
-
-public class SpeckleAccountFlowLockedException : SpeckleAccountManagerException
-{
-  public SpeckleAccountFlowLockedException(string message)
-    : base(message) { }
-
-  public SpeckleAccountFlowLockedException() { }
-
-  public SpeckleAccountFlowLockedException(string message, Exception? innerException)
-    : base(message, innerException) { }
-}

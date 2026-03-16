@@ -6,8 +6,8 @@ public readonly record struct AuthApp(string AppId, string AppSecret, Uri Callba
   public static AuthApp ConnectorsV3 { get; } =
     new()
     {
-      AppId = "connectorsV3",
-      AppSecret = "connectorsV3",
+      AppId = "connectrV3",
+      AppSecret = "connectrV3",
       CallbackUrl = new Uri("http://localhost:29355"),
     };
 }

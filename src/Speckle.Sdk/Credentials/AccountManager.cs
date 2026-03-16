@@ -259,14 +259,21 @@ public sealed class AccountManager(
       .TriggerAuthFlowWithTimeout(serverUrl, AuthApp.ConnectorsV3, timeout, cancellationToken)
       .ConfigureAwait(false);
 
+    return await CreateAndAddAccount(serverUrl, tokenResponse, cancellationToken).ConfigureAwait(false);
+  }
+
+  public async Task<Account> CreateAndAddAccount(
+    Uri serverUrl,
+    TokenExchangeResponse tokenResponse,
+    CancellationToken cancellationToken
+  )
+  {
     var account = await accountFactory
       .CreateAccount(serverUrl, tokenResponse.token, tokenResponse.refreshToken, cancellationToken)
       .ConfigureAwait(false);
-
-    _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
-
     account.isDefault = !GetAccounts().Any();
 
+    _accountStorage.SaveObject(account.id, JsonConvert.SerializeObject(account));
     logger.LogInformation("Successfully authenticated account {AccountId} for {ServerUrl}", account.id, serverUrl);
     return account;
   }

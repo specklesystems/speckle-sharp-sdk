@@ -129,27 +129,69 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     using HttpListenerResponse response = context.Response;
 
     string? accessCode = request.QueryString["access_code"];
+    string? denied = request.QueryString["denied"];
+    bool isDenied = denied == "true";
 
-    string message =
-      accessCode != null
-        ?
-        //lang=html
-        "Success!<br/><br/>You can close this window now.<script>window.close();</script>"
-        //lang=html
-        : "Oups, something went wrong...!";
+    if (isDenied)
+    {
+      //lang=html
+      WriteResponse(
+        """
+        <h1>Denied!</h1>
+        <br/><br/>
+        Please close this window and return to your Speckle Connector.
+        """
+      );
+      throw new AuthFlowException("Authentication flow was denied");
+    }
+    else if (accessCode != null)
+    {
+      //lang=html
+      WriteResponse(
+        """
+        <h1>Success!</h1>
+        <br/><br/>
+        Your Speckle Connector is now authorized
+        <br/><br/>
+        You may now now close this window and return to your Speckle Connector
+        """
+      );
+      return accessCode;
+    }
+    else
+    {
+      //lang=html
+      WriteResponse(
+        """
+        <h1>Failed!</h1>
+        <br/><br/>
+        Something went wrong trying to authorize your Speckle Connector
+        <br/><br/>
+        Please close this window and try again from your Speckle Connector.
+        """
+      );
+      throw new AuthFlowException("Failed to receive access code");
+    }
 
-    //lang=html
-    string responseString =
-      $"<HTML><BODY Style='background: linear-gradient(to top right, #ffffff, #c8e8ff); font-family: Roboto, sans-serif; font-size: 2rem; font-weight: 500; text-align: center;'><br/>{message}</BODY></HTML>";
+    void WriteResponse(string message)
+    {
+      //lang=html
+      string responseString = $"""
+        <HTML>
+            <BODY Style='background: #FAFAFAFF; font-family: Inter, Roboto, sans-serif; font-size: 1rem; font-weight: 500; text-align: center;'>
+                <br/>
+                {message}
+            </BODY>
+        </HTML>
+        """;
 
-    byte[] buffer = Encoding.UTF8.GetBytes(responseString);
-    response.ContentLength64 = buffer.Length;
-    response.OutputStream.Write(buffer, 0, buffer.Length);
-
-    return accessCode ?? throw new AuthFlowException("Failed to receive access code");
+      byte[] buffer = Encoding.UTF8.GetBytes(responseString);
+      response.ContentLength64 = buffer.Length;
+      response.OutputStream.Write(buffer, 0, buffer.Length);
+    }
   }
 
-  private async Task<TokenExchangeResponse> ExchangeAccessCodeForToken(
+  public async Task<TokenExchangeResponse> ExchangeAccessCodeForToken(
     string accessCode,
     AuthApp authApp,
     string challenge,
@@ -161,8 +203,8 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
 
     var body = new
     {
-      AppId = authApp.AppId,
-      AppSecret = authApp.AppSecret,
+      appId = authApp.AppId,
+      appSecret = authApp.AppSecret,
       accessCode = accessCode,
       challenge = challenge,
     };
@@ -173,12 +215,14 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     using HttpResponseMessage response = await client
       .PostAsync(new Uri(serverUrl, "/auth/token"), content, cancellationToken)
       .ConfigureAwait(false);
+    response.EnsureSuccessStatusCode();
 
 #if NET8_0_OR_GREATER
     string read = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 #else
     string read = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 #endif
+
     return JsonConvert.DeserializeObject<TokenExchangeResponse>(read).NotNull();
   }
 
