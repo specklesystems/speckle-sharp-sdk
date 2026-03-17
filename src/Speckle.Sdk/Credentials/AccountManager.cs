@@ -723,7 +723,7 @@ public sealed class AccountManager(
 
   private static string GenerateChallenge()
   {
-#if NET8_0
+#if NET8_0_OR_GREATER
     byte[] challengeData = RandomNumberGenerator.GetBytes(32);
 #else
     using RNGCryptoServiceProvider rng = new();
