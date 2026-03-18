@@ -153,7 +153,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
         <br/><br/>
         Your Speckle Connector is now authorized
         <br/><br/>
-        You may now now close this window and return to your Speckle Connector
+        You may now close this window and return to your Speckle Connector
         """
       );
       return accessCode;
