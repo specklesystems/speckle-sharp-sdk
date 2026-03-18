@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Deprecated;

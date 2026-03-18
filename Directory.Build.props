@@ -60,6 +60,8 @@
   <PropertyGroup>
     <!-- Expose the repository root to all projects -->
     <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <!-- Since we have many projects in this repo, some ILRepacked, others not, it's hard to keep track of transient dependencies enough  -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />

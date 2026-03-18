@@ -58,7 +58,7 @@
       },
       "Polly": {
         "type": "Direct",
-        "requested": "[7.2.3, )",
+        "requested": "[7.2.3, 8.0.0]",
         "resolved": "7.2.3",
         "contentHash": "DeCY0OFbNdNxsjntr1gTXHJ5pKUwYzp04Er2LLeN3g6pWhffsGuKVfMBLe1lw7x76HrPkLxKEFxBlpRxS2nDEQ=="
       },
@@ -196,7 +196,7 @@
       },
       "Polly": {
         "type": "Direct",
-        "requested": "[7.2.3, )",
+        "requested": "[7.2.3, 8.0.0]",
         "resolved": "7.2.3",
         "contentHash": "DeCY0OFbNdNxsjntr1gTXHJ5pKUwYzp04Er2LLeN3g6pWhffsGuKVfMBLe1lw7x76HrPkLxKEFxBlpRxS2nDEQ=="
       },

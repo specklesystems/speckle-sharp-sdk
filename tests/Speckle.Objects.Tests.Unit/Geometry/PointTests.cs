@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
