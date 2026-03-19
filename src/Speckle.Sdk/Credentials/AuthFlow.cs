@@ -25,6 +25,12 @@ namespace Speckle.Sdk.Credentials;
 [GenerateAutoInterface]
 public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp speckleHttp) : IAuthFlow
 {
+  private readonly JsonSerializerSettings _serializerSettings = new()
+  {
+    MissingMemberHandling = MissingMemberHandling.Error,
+    NullValueHandling = NullValueHandling.Ignore,
+  };
+
   public async Task<TokenExchangeResponse> TriggerAuthFlowWithTimeout(
     Uri serverUrl,
     AuthApp authApp,
@@ -32,17 +38,57 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     CancellationToken cancellationToken
   )
   {
-    string challenge = GenerateChallenge();
+    using HttpClient client = speckleHttp.CreateHttpClient();
 
-    Uri endpoint = new(serverUrl, $"/authn/verify/{authApp.AppId}/{challenge}");
+    Uri tokenEndpoint = new(serverUrl, "/oauth/token");
+    string codeVerifier = GenerateCodeVerifier();
+    string challenge;
+    string codeChallengeMethod;
+    bool useLegacyEndpoint =
+      (await client.GetAsync(tokenEndpoint, cancellationToken).ConfigureAwait(false)).StatusCode
+      == HttpStatusCode.NotFound;
+
+    if (useLegacyEndpoint)
+    {
+      challenge = codeVerifier;
+      tokenEndpoint = new(serverUrl, "/auth/token");
+      codeChallengeMethod = "plain";
+    }
+    else
+    {
+      challenge = GenerateCodeChallenge(codeVerifier);
+      codeChallengeMethod = "S256";
+    }
+
+    Uri endpoint = new(
+      serverUrl,
+      $"/authn/verify/{authApp.AppId}/{challenge}?code_challenge_method={codeChallengeMethod}"
+    );
     _ = Process.Start(new ProcessStartInfo(endpoint.ToString()) { UseShellExecute = true });
     string accessCode = await RunListenerWithTimeout(authApp.CallbackUrl, timeout, cancellationToken)
       .ConfigureAwait(false);
 
-    return await ExchangeAccessCodeForToken(accessCode, authApp, challenge, serverUrl, cancellationToken)
+    return await ExchangeAccessCodeForToken(
+        client,
+        accessCode,
+        authApp,
+        useLegacyEndpoint ? challenge : null,
+        !useLegacyEndpoint ? codeVerifier : null,
+        tokenEndpoint,
+        cancellationToken
+      )
       .ConfigureAwait(false);
   }
 
+  /// <summary>
+  ///
+  /// </summary>
+  /// <param name="applicationCallbackUrl"></param>
+  /// <param name="timeout"></param>
+  /// <param name="userCancellation"></param>
+  /// <returns></returns>
+  /// <exception cref="OperationCanceledException"><paramref name="userCancellation"/> requested cancel</exception>
+  /// <exception cref="TimeoutException">timeout was reached</exception>
   public async Task<string> RunListenerWithTimeout(
     Uri applicationCallbackUrl,
     TimeSpan timeout,
@@ -67,7 +113,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     }
     catch (OperationCanceledException ex) when (cancelOnTimeout.IsCancellationRequested)
     {
-      throw new AuthFlowException($"Auth flow was cancelled after {timeout:g} timeout", ex);
+      throw new TimeoutException($"Auth flow was cancelled after {timeout:g} timeout", ex);
     }
   }
 
@@ -76,7 +122,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
   /// </summary>
   /// <param name="refreshToken"></param>
   /// <param name="serverUrl"></param>
-  /// <param name="authApp"></param>
+  /// <param name="authApp">Auth app, needs to match the app that generated the refresh token originally</param>
   /// <param name="cancellationToken"></param>
   /// <exception cref="HttpRequestException">HTTP exceptions</exception>
   /// <exception cref="JsonSerializationException">Server response was invalid or partial</exception>
@@ -104,13 +150,14 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     var response = await client
       .PostAsync(new Uri(serverUrl, "/auth/token"), content, cancellationToken)
       .ConfigureAwait(false);
+    response.EnsureSuccessStatusCode();
 
 #if NET8_0_OR_GREATER
     string read = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 #else
     string read = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 #endif
-    return JsonConvert.DeserializeObject<TokenExchangeResponse>(read).NotNull();
+    return JsonConvert.DeserializeObject<TokenExchangeResponse>(read, _serializerSettings).NotNull();
   }
 
   private static async Task<HttpListenerContext> GetContext(HttpListener listener, CancellationToken cancellationToken)
@@ -130,7 +177,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     throw new InvalidOperationException("Cancellation should have thrown, this shouldn't be possible");
   }
 
-  internal static async Task<string> RunListener(Uri localUrl, CancellationToken cancellationToken)
+  public static async Task<string> RunListener(Uri localUrl, CancellationToken cancellationToken)
   {
     using HttpListener listener = new();
     listener.Prefixes.Add(localUrl.ToString());
@@ -154,7 +201,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
         Please close this window and return to your Speckle Connector.
         """
       );
-      throw new AuthFlowException("Authentication flow was denied");
+      throw new AuthFlowException("Authentication flow was denied"); //denied presumably by the user
     }
     else if (accessCode != null)
     {
@@ -203,29 +250,30 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     }
   }
 
-  public async Task<TokenExchangeResponse> ExchangeAccessCodeForToken(
+  private async Task<TokenExchangeResponse> ExchangeAccessCodeForToken(
+    HttpClient client,
     string accessCode,
     AuthApp authApp,
-    string challenge,
-    Uri serverUrl,
+    string? challenge,
+    string? codeVerifier,
+    Uri tokenEndpoint,
     CancellationToken cancellationToken
   )
   {
-    using HttpClient client = speckleHttp.CreateHttpClient();
-
     var body = new
     {
       appId = authApp.AppId,
       appSecret = authApp.AppSecret,
       accessCode = accessCode,
       challenge = challenge,
+      codeVerifier = codeVerifier,
     };
 
-    using StringContent content = new(JsonConvert.SerializeObject(body));
+    using StringContent content = new(JsonConvert.SerializeObject(body, _serializerSettings));
     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
     using HttpResponseMessage response = await client
-      .PostAsync(new Uri(serverUrl, "/auth/token"), content, cancellationToken)
+      .PostAsync(tokenEndpoint, content, cancellationToken)
       .ConfigureAwait(false);
     response.EnsureSuccessStatusCode();
 
@@ -235,21 +283,49 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     string read = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 #endif
 
-    return JsonConvert.DeserializeObject<TokenExchangeResponse>(read).NotNull();
+    return JsonConvert.DeserializeObject<TokenExchangeResponse>(read, _serializerSettings).NotNull();
   }
 
-  public static string GenerateChallenge()
+  public static string GenerateCodeVerifier()
   {
 #if NET8_0_OR_GREATER
-    Span<byte> challengeData = stackalloc byte[32];
-    RandomNumberGenerator.Fill(challengeData);
+    Span<byte> codeVerifierData = stackalloc byte[32];
+    RandomNumberGenerator.Fill(codeVerifierData);
 #else
     using RNGCryptoServiceProvider rng = new();
-    byte[] challengeData = new byte[32];
-    rng.GetBytes(challengeData);
+    byte[] codeVerifierData = new byte[32];
+    rng.GetBytes(codeVerifierData);
 #endif
+
+    return Base64UrlEncode(codeVerifierData);
+  }
+
+  public static string GenerateCodeChallenge(string codeVerifier)
+  {
+#if NET8_0_OR_GREATER
+    int byteCount = Encoding.UTF8.GetByteCount(codeVerifier.AsSpan());
+    Span<byte> codeVerifierBytes = stackalloc byte[byteCount];
+    Encoding.UTF8.GetBytes(codeVerifier, codeVerifierBytes);
+    Span<byte> challengeData = stackalloc byte[SHA256.HashSizeInBytes];
+    SHA256.HashData(codeVerifierBytes, challengeData);
+#else
+    byte[] codeVerifierBytes = Encoding.UTF8.GetBytes(codeVerifier);
+    using SHA256 hash = SHA256.Create();
+    byte[] challengeData = hash.ComputeHash(codeVerifierBytes);
+#endif
+    return Base64UrlEncode(challengeData);
+  }
+
+  private static string Base64UrlEncode(
+#if NET8_0_OR_GREATER
+    ReadOnlySpan<byte> bytes
+#else
+    byte[] bytes
+#endif
+  )
+  {
     // Base64Url is available in .NET 9, or via the Microsoft.Bcl.Memory polyfill
     // But for simplicity r.e. dll dependencies, we're doing it the dumb way...
-    return Convert.ToBase64String(challengeData).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+    return Convert.ToBase64String(bytes).Replace('+', '-').Replace('/', '_').TrimEnd('=');
   }
 }

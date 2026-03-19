@@ -8,7 +8,7 @@ namespace Speckle.Sdk.Tests.Integration.Credentials;
 
 public class AuthFlowExceptionalTests : IAsyncLifetime
 {
-  private AuthFlow _authFlow;
+  private IAuthFlow _authFlow;
   private IClient _client;
   private readonly Uri _url = AuthApp.ConnectorsV3.CallbackUrl;
 
@@ -39,15 +39,17 @@ public class AuthFlowExceptionalTests : IAsyncLifetime
     using CancellationTokenSource ct = new();
     var task1 = AuthFlow.RunListener(_url, ct.Token);
     await Task.Delay(50, CancellationToken.None);
+
     await Assert.ThrowsAsync<HttpListenerException>(async () => await AuthFlow.RunListener(_url, ct.Token));
 
+    Assert.False(task1.IsCompleted);
     await ct.CancelAsync();
     await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await task1);
   }
 
   public async Task InitializeAsync()
   {
-    _authFlow = (AuthFlow)Fixtures.ServiceProvider.GetRequiredService<IAuthFlow>();
+    _authFlow = Fixtures.ServiceProvider.GetRequiredService<IAuthFlow>();
     _client = await Fixtures.SeedUserWithClient();
   }
 

@@ -63,7 +63,7 @@ public sealed class AuthFlowTests
   [InlineData(5)]
   public async Task RunListener_Timeout(double timeS)
   {
-    await Assert.ThrowsAsync<AuthFlowException>(async () =>
+    await Assert.ThrowsAsync<TimeoutException>(async () =>
     {
       _ = await _authFlow.RunListenerWithTimeout(_url, TimeSpan.FromSeconds(timeS), CancellationToken.None);
     });
@@ -76,7 +76,7 @@ public sealed class AuthFlowTests
     var tokenExchange = await _authFlow.GetRefreshedToken(
       user.Account.refreshToken,
       user.ServerUrl,
-      AuthApp.ConnectorsV3,
+      Fixtures.TestAuthApp,
       CancellationToken.None
     );
 
