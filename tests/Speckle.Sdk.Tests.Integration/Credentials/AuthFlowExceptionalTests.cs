@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using Microsoft.Extensions.DependencyInjection;
+using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
 
@@ -27,7 +28,7 @@ public class AuthFlowExceptionalTests : IAsyncLifetime
   [Fact]
   public async Task GetRefreshToken_NullRefreshToken()
   {
-    await Assert.ThrowsAnyAsync<HttpRequestException>(async () =>
+    await Assert.ThrowsAnyAsync<JsonSerializationException>(async () =>
       _ = await _authFlow.GetRefreshedToken(null, _client.ServerUrl, AuthApp.ConnectorsV3, CancellationToken.None)
     );
   }

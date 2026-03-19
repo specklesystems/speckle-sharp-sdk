@@ -79,8 +79,8 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
   /// <param name="authApp"></param>
   /// <param name="cancellationToken"></param>
   /// <exception cref="HttpRequestException">HTTP exceptions</exception>
-  /// <exception cref="JsonSerializationException">server response failed to deserialize</exception>
-  /// <exception cref="ArgumentOutOfRangeException  ">Invalid <paramref name="serverUrl"/> (must be absolute url)</exception>
+  /// <exception cref="JsonSerializationException">Server response was invalid or partial</exception>
+  /// <exception cref="ArgumentOutOfRangeException ">Invalid <paramref name="serverUrl"/> (must be absolute url)</exception>
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <returns></returns>
   public async Task<TokenExchangeResponse> GetRefreshedToken(
