@@ -43,7 +43,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
       .ConfigureAwait(false);
   }
 
-  internal async Task<string> RunListenerWithTimeout(
+  public async Task<string> RunListenerWithTimeout(
     Uri applicationCallbackUrl,
     TimeSpan timeout,
     CancellationToken userCancellation
@@ -71,6 +71,18 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     }
   }
 
+  /// <summary>
+  ///
+  /// </summary>
+  /// <param name="refreshToken"></param>
+  /// <param name="serverUrl"></param>
+  /// <param name="authApp"></param>
+  /// <param name="cancellationToken"></param>
+  /// <exception cref="HttpRequestException">HTTP exceptions</exception>
+  /// <exception cref="JsonSerializationException">server response failed to deserialize</exception>
+  /// <exception cref="ArgumentOutOfRangeException  ">Invalid <paramref name="serverUrl"/> (must be absolute url)</exception>
+  /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
+  /// <returns></returns>
   public async Task<TokenExchangeResponse> GetRefreshedToken(
     string? refreshToken,
     Uri serverUrl,
@@ -226,7 +238,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     return JsonConvert.DeserializeObject<TokenExchangeResponse>(read).NotNull();
   }
 
-  internal static string GenerateChallenge()
+  public static string GenerateChallenge()
   {
 #if NET8_0_OR_GREATER
     Span<byte> challengeData = stackalloc byte[32];

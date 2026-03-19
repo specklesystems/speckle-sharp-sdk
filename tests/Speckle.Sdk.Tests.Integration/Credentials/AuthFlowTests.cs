@@ -5,12 +5,12 @@ namespace Speckle.Sdk.Tests.Integration.Credentials;
 
 public sealed class AuthFlowTests
 {
-  private readonly AuthFlow _authFlow;
-  private readonly Uri _url = new("http://localhost:29355/");
+  private readonly IAuthFlow _authFlow;
+  private readonly Uri _url = AuthApp.ConnectorsV3.CallbackUrl;
 
   public AuthFlowTests()
   {
-    _authFlow = (AuthFlow)Fixtures.ServiceProvider.GetRequiredService<IAuthFlow>();
+    _authFlow = Fixtures.ServiceProvider.GetRequiredService<IAuthFlow>();
   }
 
   [Fact]
@@ -67,5 +67,27 @@ public sealed class AuthFlowTests
     {
       _ = await _authFlow.RunListenerWithTimeout(_url, TimeSpan.FromSeconds(timeS), CancellationToken.None);
     });
+  }
+
+  [Fact]
+  public async Task CanGetRefreshToken()
+  {
+    using var user = await Fixtures.SeedUserWithClient();
+    var tokenExchange = await _authFlow.GetRefreshedToken(
+      user.Account.refreshToken,
+      user.ServerUrl,
+      AuthApp.ConnectorsV3,
+      CancellationToken.None
+    );
+
+    Assert.NotNull(tokenExchange.token);
+    Assert.NotNull(tokenExchange.refreshToken);
+
+    user.Account.token = tokenExchange.token;
+    user.Account.refreshToken = tokenExchange.refreshToken;
+
+    var apiTest = await user.ActiveUser.Get();
+
+    Assert.NotNull(apiTest);
   }
 }
