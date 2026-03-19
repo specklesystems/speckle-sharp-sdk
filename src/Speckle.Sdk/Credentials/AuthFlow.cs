@@ -44,26 +44,22 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     string codeVerifier = GenerateCodeVerifier();
     string challenge;
     string codeChallengeMethod;
-    bool useLegacyEndpoint =
-      (await client.GetAsync(tokenEndpoint, cancellationToken).ConfigureAwait(false)).StatusCode
-      == HttpStatusCode.NotFound;
+    var req = await client.GetAsync(tokenEndpoint, cancellationToken).ConfigureAwait(false);
+    bool useLegacyEndpoint = req.StatusCode != HttpStatusCode.OK;
 
     if (useLegacyEndpoint)
     {
       challenge = codeVerifier;
       tokenEndpoint = new(serverUrl, "/auth/token");
-      codeChallengeMethod = "plain";
+      codeChallengeMethod = "";
     }
     else
     {
       challenge = GenerateCodeChallenge(codeVerifier);
-      codeChallengeMethod = "S256";
+      codeChallengeMethod = "?code_challenge_method=S256";
     }
 
-    Uri endpoint = new(
-      serverUrl,
-      $"/authn/verify/{authApp.AppId}/{challenge}?code_challenge_method={codeChallengeMethod}"
-    );
+    Uri endpoint = new(serverUrl, $"/authn/verify/{authApp.AppId}/{challenge}{codeChallengeMethod}");
     _ = Process.Start(new ProcessStartInfo(endpoint.ToString()) { UseShellExecute = true });
     string accessCode = await RunListenerWithTimeout(authApp.CallbackUrl, timeout, cancellationToken)
       .ConfigureAwait(false);

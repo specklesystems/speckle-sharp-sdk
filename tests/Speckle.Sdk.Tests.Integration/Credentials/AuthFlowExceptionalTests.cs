@@ -19,7 +19,26 @@ public class AuthFlowExceptionalTests : IAsyncLifetime
       _ = await _authFlow.GetRefreshedToken(
         _client.Account.refreshToken,
         _client.ServerUrl,
-        AuthApp.ConnectorsV3,
+        Fixtures.TestAuthApp,
+        new(true)
+      )
+    );
+  }
+
+  [Fact]
+  public async Task GetRefreshToken_UnknownApp()
+  {
+    //interestingly, the server responds with a 401 Unauthorized despite internally being a bad request
+    await Assert.ThrowsAnyAsync<HttpRequestException>(async () =>
+      _ = await _authFlow.GetRefreshedToken(
+        _client.Account.refreshToken,
+        _client.ServerUrl,
+        new()
+        {
+          AppId = "doesn't exist",
+          AppSecret = "doesn't exist",
+          CallbackUrl = new("invalid://localhost"),
+        },
         new(true)
       )
     );
