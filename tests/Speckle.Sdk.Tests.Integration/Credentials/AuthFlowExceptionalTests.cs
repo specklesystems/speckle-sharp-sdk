@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using Microsoft.Extensions.DependencyInjection;
-using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Credentials;
 
