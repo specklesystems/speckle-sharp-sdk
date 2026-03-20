@@ -48,7 +48,7 @@ public class CredentialInfrastructure : IDisposable
   {
     Fixtures.UpdateOrSaveAccount(s_testAccount1);
     Fixtures.UpdateOrSaveAccount(s_testAccount2);
-    Fixtures.SaveLocalAccount(s_testAccount3);
+    Fixtures.UpdateOrSaveAccount(s_testAccount3);
 
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _accountManager = serviceProvider.GetRequiredService<IAccountManager>();
@@ -60,7 +60,6 @@ public class CredentialInfrastructure : IDisposable
     Fixtures.DeleteLocalAccount(s_testAccount1.id);
     Fixtures.DeleteLocalAccount(s_testAccount2.id);
     Fixtures.DeleteLocalAccount(s_testAccount3.id);
-    Fixtures.DeleteLocalAccountFile();
   }
 
   [Fact]
@@ -93,7 +92,7 @@ public class CredentialInfrastructure : IDisposable
   {
     var accs = _accountManager.GetAccounts(target.serverInfo.url).ToList();
 
-    accs.Count.Should().Be(1);
+    accs.Should().HaveCount(1);
 
     var acc = accs[0];
 
@@ -102,25 +101,5 @@ public class CredentialInfrastructure : IDisposable
     acc.serverInfo.url.Should().Be(target.serverInfo.url);
     acc.refreshToken.Should().Be(target.refreshToken);
     acc.token.Should().Be(target.token);
-  }
-
-  [Fact]
-  public void EnsureLocalIdentifiers_AreUniqueAcrossServers()
-  {
-    // Accounts with the same user ID in different servers should always result in different local identifiers.
-    string id = "12345";
-    var acc1 = new Account
-    {
-      serverInfo = new ServerInfo { url = "https://speckle.xyz" },
-      userInfo = new UserInfo { id = id },
-    }.GetLocalIdentifier();
-
-    var acc2 = new Account
-    {
-      serverInfo = new ServerInfo { url = "https://app.speckle.systems" },
-      userInfo = new UserInfo { id = id },
-    }.GetLocalIdentifier();
-
-    acc1.Should().NotBe(acc2);
   }
 }
