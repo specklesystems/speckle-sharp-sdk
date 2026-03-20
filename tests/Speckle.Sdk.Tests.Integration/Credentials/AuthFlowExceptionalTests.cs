@@ -39,7 +39,7 @@ public class AuthFlowExceptionalTests : IAsyncLifetime
           AppSecret = "doesn't exist",
           CallbackUrl = new("invalid://localhost"),
         },
-        new(true)
+        CancellationToken.None
       )
     );
   }
@@ -47,7 +47,7 @@ public class AuthFlowExceptionalTests : IAsyncLifetime
   [Fact]
   public async Task GetRefreshToken_NullRefreshToken()
   {
-    await Assert.ThrowsAnyAsync<JsonSerializationException>(async () =>
+    await Assert.ThrowsAnyAsync<HttpRequestException>(async () =>
       _ = await _authFlow.GetRefreshedToken(null, _client.ServerUrl, AuthApp.ConnectorsV3, CancellationToken.None)
     );
   }
