@@ -125,7 +125,6 @@ public sealed class AccountManager(
   /// Will write the changes to the local accounts db
   /// </summary>
   /// <seealso cref="UpdateAccount"/>
-  /// <seealso cref="UpdateAccounts"/>
   /// <param name="cancellationToken"></param>
   /// <exception cref="AggregateException"></exception>
   public async Task UpdateAccount(Account account, CancellationToken cancellationToken = default)
@@ -325,4 +324,18 @@ public sealed class AccountManager(
 
   [Obsolete($"Use {nameof(AuthenticateAccount)} instead", true)]
   public Task AddAccount(Uri? server = null) => throw new NotImplementedException();
+
+  [Obsolete("Use serverInfo stored on a client instead", true)]
+  public Task<ServerInfo> GetServerInfo(Uri server, CancellationToken cancellationToken = default) =>
+    throw new NotImplementedException();
+
+  [Obsolete("Use userInfo stored on a client instead", true)]
+  public Task<UserInfo> GetUserInfo(string token, Uri server, CancellationToken cancellationToken = default) =>
+    throw new NotImplementedException();
+
+  [Obsolete("Accounts must now be stored in sqlite db, no more json workaround", true)]
+  public IList<Account> GetLocalAccounts() => throw new NotImplementedException();
+
+  [Obsolete("Use UpdateAccount or UpdateAccountInMemory Instead", true)]
+  public IList<Account> Validate() => throw new NotImplementedException();
 }
