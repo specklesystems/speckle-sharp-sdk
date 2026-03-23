@@ -67,7 +67,7 @@ public sealed class OtherUserResource
     //language=graphql
     const string QUERY = """
       query Users($input: UsersRetrievalInput!) {
-        users(input: $input) {
+        data:users(input: $input) {
           cursor
           items {
             id
