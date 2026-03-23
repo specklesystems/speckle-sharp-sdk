@@ -264,15 +264,11 @@ public sealed class ActiveUserResource
               name
               role
               slug
-              logo
+              logoUrl
               createdAt
               updatedAt
               readOnly
               description
-              creationState
-              {
-                completed
-              }
               permissions {
                 canCreateProject {
                   authorized
@@ -328,7 +324,7 @@ public sealed class ActiveUserResource
             name
             role
             slug
-            logo
+            logoUrl
             description
           }
         }
