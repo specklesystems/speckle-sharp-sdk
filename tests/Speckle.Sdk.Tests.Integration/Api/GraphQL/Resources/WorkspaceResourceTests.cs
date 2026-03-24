@@ -21,7 +21,7 @@ public class WorkspaceResourceTests
     return testUser;
   }
 
-  [Fact]
+  [Fact, Trait("Server", "Internal")]
   public async Task TestGetWorkspace()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get("non-existent-id"));
