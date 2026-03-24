@@ -3,6 +3,7 @@ using Speckle.Sdk.Credentials;
 
 namespace Speckle.Sdk.Tests.Integration.Credentials;
 
+[Collection(nameof(RequiresAuthFlowPort))]
 public sealed class AuthFlowTests
 {
   private readonly IAuthFlow _authFlow;

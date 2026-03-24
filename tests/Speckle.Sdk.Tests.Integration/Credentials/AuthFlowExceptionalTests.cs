@@ -5,6 +5,7 @@ using Speckle.Sdk.Credentials;
 
 namespace Speckle.Sdk.Tests.Integration.Credentials;
 
+[Collection(nameof(RequiresAuthFlowPort))]
 public class AuthFlowExceptionalTests : IAsyncLifetime
 {
   private IAuthFlow _authFlow;
