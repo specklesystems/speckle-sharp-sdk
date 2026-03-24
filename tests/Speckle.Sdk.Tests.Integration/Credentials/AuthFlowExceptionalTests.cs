@@ -60,7 +60,11 @@ public class AuthFlowExceptionalTests : IAsyncLifetime
 
     await Assert.ThrowsAsync<HttpListenerException>(async () => await AuthFlow.RunListener(_url, ct.Token));
 
-    Assert.False(task1.IsCompleted);
+    if (task1.IsCompleted)
+    {
+      throw new InvalidOperationException("Was expecting task to still be running", task1.Exception);
+    }
+
     await ct.CancelAsync();
     await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await task1);
   }

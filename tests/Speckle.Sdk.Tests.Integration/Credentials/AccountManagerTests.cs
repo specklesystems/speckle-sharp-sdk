@@ -5,6 +5,7 @@ using Speckle.Sdk.Credentials;
 
 namespace Speckle.Sdk.Tests.Integration.Credentials;
 
+[Collection(nameof(RequiresSqLiteAccountDb))]
 public class AccountManagerTests
 {
   private IAccountManager _sut;
