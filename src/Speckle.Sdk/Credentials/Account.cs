@@ -1,11 +1,8 @@
-using System.Runtime.InteropServices;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Credentials;
 
-[ClassInterface(ClassInterfaceType.AutoDual)]
-[ComVisible(true)]
 public class Account : IEquatable<Account>
 {
   private string _id;
@@ -37,6 +34,8 @@ public class Account : IEquatable<Account>
   public string? refreshToken { get; set; }
 
   public bool isDefault { get; set; }
+
+  [Obsolete("Not used in v3")]
   public bool isOnline { get; set; } = true;
 
   public ServerInfo serverInfo { get; set; }
@@ -101,33 +100,4 @@ public class Account : IEquatable<Account>
   }
 
   #endregion
-
-  internal const string LOCAL_IDENTIFIER_DEPRECATION_MESSAGE = "Local identifiers no longer nesseary";
-
-  /// <summary>
-  /// Retrieves the local identifier for the current user.
-  /// </summary>
-  /// <returns>
-  /// Returns a <see cref="Uri"/> object representing the local identifier for the current user.
-  /// The local identifier is created by appending the user ID as a query parameter to the server URL.
-  /// </returns>
-  /// <remarks>
-  /// Notice that the generated Uri is not intended to be used as a functioning Uri, but rather as a
-  /// unique identifier for a specific account in a local environment. The format of the Uri, containing a query parameter with the user ID,
-  /// serves this specific purpose. Therefore, it should not be used for forming network requests or
-  /// expecting it to lead to an actual webpage. The primary intent of this Uri is for unique identification in a Uri format.
-  /// </remarks>
-  /// <example>
-  ///   This sample shows how to call the GetLocalIdentifier method.
-  ///   <code>
-  ///     Uri localIdentifier = GetLocalIdentifier();
-  ///     Console.WriteLine(localIdentifier);
-  ///   </code>
-  ///   For a fictional `User ID: 123` and `Server: https://speckle.xyz`, the output might look like this:
-  ///   <code>
-  ///     https://speckle.xyz?id=123
-  ///   </code>
-  /// </example>
-  [Obsolete(LOCAL_IDENTIFIER_DEPRECATION_MESSAGE)]
-  internal Uri GetLocalIdentifier() => new($"{serverInfo.url}?id={userInfo.id}");
 }
