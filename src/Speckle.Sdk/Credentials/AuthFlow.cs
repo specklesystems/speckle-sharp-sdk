@@ -137,7 +137,6 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
   /// <exception cref="ArgumentOutOfRangeException ">Invalid <paramref name="serverUrl"/> (must be absolute url)</exception>
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <returns></returns>
-  [Obsolete("AuthFlow is only supporting public clients, who should not refresh tokens")]
   public async Task<TokenExchangeResponse> GetRefreshedToken(
     string? refreshToken,
     Uri serverUrl,
