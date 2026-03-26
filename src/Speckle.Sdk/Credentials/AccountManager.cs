@@ -142,59 +142,26 @@ public sealed class AccountManager(
 
   /// <summary>
   /// Refetches the <paramref name="account"/> information, including <see cref="ServerInfo"/> and <see cref="UserInfo"/>
-  /// If the <see cref="Account.token"/> looks to be expired, this function will also attempt to use the <see cref="Account.refreshToken"/> to refresh it.
   ///
   /// Will only mutate <paramref name="account"/> in memory only, and only if successful.
   /// </summary>
   /// <seealso cref="UpdateAccount"/>
   /// <param name="account"></param>
   /// <param name="cancellationToken"></param>
-  /// <exception cref="AggregateException">Thrown if</exception>
+  /// <exception cref="GraphQLHttpRequestException"></exception>
   public async Task UpdateAccountInMemory(Account account, CancellationToken cancellationToken = default)
   {
     Uri url = account.serverInfo.migration?.movedTo ?? new(account.serverInfo.url);
-    ActiveUserServerInfoResponse userServerInfo;
 
-    try
+    ActiveUserServerInfoResponse userServerInfo = await accountFactory
+      .GetUserServerInfo(url, account.token, cancellationToken)
+      .ConfigureAwait(false);
+
+    if (userServerInfo.activeUser == null)
     {
-      userServerInfo = await accountFactory
-        .GetUserServerInfo(url, account.token, cancellationToken)
-        .ConfigureAwait(false);
+      throw new SpeckleException("GraphQL response indicated that the ActiveUser could not be found");
     }
-    catch (GraphQLHttpRequestException ex)
-    {
-      // Failed to fetch info, perhaps the token is expired?
-      // Attempt to refresh it
-      TokenExchangeResponse refreshTokenResponse;
-      try
-      {
-        refreshTokenResponse = await authFlow
-          .GetRefreshedToken(
-            account.refreshToken.NotNull("No refresh token provided"),
-            url,
-            AuthApp.ConnectorsV3,
-            cancellationToken
-          )
-          .ConfigureAwait(false);
-
-        userServerInfo = await accountFactory
-          .GetUserServerInfo(url, refreshTokenResponse.token, cancellationToken)
-          .ConfigureAwait(false);
-      }
-      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-      {
-        throw;
-      }
-      catch (Exception ex2)
-      {
-        throw new AggregateException("Failed to update account information", ex, ex2);
-      }
-
-      account.token = refreshTokenResponse.token;
-      account.refreshToken = refreshTokenResponse.refreshToken;
-      logger.LogInformation(ex, "Account token has been refreshed");
-    }
-    account.userInfo = userServerInfo.activeUser.NotNull();
+    account.userInfo = userServerInfo.activeUser;
     account.serverInfo = userServerInfo.serverInfo;
     //This is a bit gross, since id is not marked nullable
     //but this will force re-generate the id (e.g. if the user's email, or  servers url has changed)
