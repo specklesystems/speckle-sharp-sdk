@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -42,34 +43,45 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
 
     Uri tokenEndpoint = new(serverUrl, "/oauth/token");
     string codeVerifier = GenerateCodeVerifier();
-    string challenge;
-    string codeChallengeMethod;
-    var req = await client.GetAsync(tokenEndpoint, cancellationToken).ConfigureAwait(false);
+    Uri authnVerify;
+    using var req = await client.GetAsync(tokenEndpoint, cancellationToken).ConfigureAwait(false);
     bool useLegacyEndpoint = req.StatusCode != HttpStatusCode.OK;
 
     if (useLegacyEndpoint)
     {
-      challenge = codeVerifier;
+      string challenge = codeVerifier; // Old endpoint only supports PKCE "plain" method
+      authnVerify = new($"/authn/verify/{authApp.AppId}/{challenge}", UriKind.Relative);
       tokenEndpoint = new(serverUrl, "/auth/token");
-      codeChallengeMethod = "";
     }
     else
     {
-      challenge = GenerateCodeChallenge(codeVerifier);
-      codeChallengeMethod = "?code_challenge_method=S256";
+      string challenge = GenerateCodeChallenge(codeVerifier);
+      authnVerify = new($"/authn/verify/{authApp.AppId}/{challenge}?code_challenge_method=S256", UriKind.Relative);
     }
 
-    Uri endpoint = new(serverUrl, $"/authn/verify/{authApp.AppId}/{challenge}{codeChallengeMethod}");
+    Uri endpoint = new(serverUrl, authnVerify);
     _ = Process.Start(new ProcessStartInfo(endpoint.ToString()) { UseShellExecute = true });
     string accessCode = await RunListenerWithTimeout(authApp.CallbackUrl, timeout, cancellationToken)
       .ConfigureAwait(false);
 
+    object body = useLegacyEndpoint
+      ? new
+      {
+        appId = authApp.AppId,
+        appSecret = authApp.AppSecret,
+        accessCode = accessCode,
+        challenge = codeVerifier,
+      }
+      : new
+      {
+        appId = authApp.AppId,
+        accessCode = accessCode,
+        codeVerifier = codeVerifier,
+      };
+
     return await ExchangeAccessCodeForToken(
         client,
-        accessCode,
-        authApp,
-        useLegacyEndpoint ? challenge : null,
-        !useLegacyEndpoint ? codeVerifier : null,
+        JsonConvert.SerializeObject(body, _serializerSettings),
         tokenEndpoint,
         cancellationToken
       )
@@ -125,6 +137,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
   /// <exception cref="ArgumentOutOfRangeException ">Invalid <paramref name="serverUrl"/> (must be absolute url)</exception>
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <returns></returns>
+  [Obsolete("AuthFlow is only supporting public clients, who should not refresh tokens")]
   public async Task<TokenExchangeResponse> GetRefreshedToken(
     string? refreshToken,
     Uri serverUrl,
@@ -141,7 +154,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
       refreshToken = refreshToken,
     };
 
-    using var content = new StringContent(JsonConvert.SerializeObject(body));
+    using var content = new StringContent(JsonConvert.SerializeObject(body, _serializerSettings));
     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
     var response = await client
       .PostAsync(new Uri(serverUrl, "/auth/token"), content, cancellationToken)
@@ -248,24 +261,12 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
 
   private async Task<TokenExchangeResponse> ExchangeAccessCodeForToken(
     HttpClient client,
-    string accessCode,
-    AuthApp authApp,
-    string? challenge,
-    string? codeVerifier,
+    string jsonContent,
     Uri tokenEndpoint,
     CancellationToken cancellationToken
   )
   {
-    var body = new
-    {
-      appId = authApp.AppId,
-      appSecret = authApp.AppSecret,
-      accessCode = accessCode,
-      challenge = challenge,
-      codeVerifier = codeVerifier,
-    };
-
-    using StringContent content = new(JsonConvert.SerializeObject(body, _serializerSettings));
+    using StringContent content = new(jsonContent);
     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
     using HttpResponseMessage response = await client
@@ -282,6 +283,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     return JsonConvert.DeserializeObject<TokenExchangeResponse>(read, _serializerSettings).NotNull();
   }
 
+  [Pure]
   public static string GenerateCodeVerifier()
   {
 #if NET8_0_OR_GREATER
@@ -296,6 +298,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     return Base64UrlEncode(codeVerifierData);
   }
 
+  [Pure]
   public static string GenerateCodeChallenge(string codeVerifier)
   {
 #if NET8_0_OR_GREATER
@@ -312,6 +315,7 @@ public sealed class AuthFlow(ISdkActivityFactory activityFactory, ISpeckleHttp s
     return Base64UrlEncode(challengeData);
   }
 
+  [Pure]
   private static string Base64UrlEncode(
 #if NET8_0_OR_GREATER
     ReadOnlySpan<byte> bytes
