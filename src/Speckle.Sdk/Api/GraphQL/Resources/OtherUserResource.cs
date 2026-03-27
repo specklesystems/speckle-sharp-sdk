@@ -52,7 +52,6 @@ public sealed class OtherUserResource
   /// <param name="query">String to search for. Must be at least 3 characters</param>
   /// <param name="limit">Max number of users to fetch</param>
   /// <param name="cursor">Optional cursor for pagination</param>
-  /// <param name="archived"></param>
   /// <param name="emailOnly"></param>
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
@@ -61,26 +60,25 @@ public sealed class OtherUserResource
     string query,
     int limit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
     string? cursor = null,
-    bool archived = false,
     bool emailOnly = false,
     CancellationToken cancellationToken = default
   )
   {
     //language=graphql
     const string QUERY = """
-      query UserSearch($query: String!, $limit: Int!, $cursor: String, $archived: Boolean, $emailOnly: Boolean) {
-        data:userSearch(query: $query, limit: $limit, cursor: $cursor, archived: $archived, emailOnly: $emailOnly) {
+      query Users($input: UsersRetrievalInput!) {
+        data:users(input: $input) {
           cursor
           items {
-           id
-           name
-           bio
-           company
-           avatar
-           verified
-           role
-         }
-       }
+            id
+            name
+            bio
+            company
+            avatar
+            verified
+            role
+          }
+        }
       }
       """;
 
@@ -89,11 +87,13 @@ public sealed class OtherUserResource
       Query = QUERY,
       Variables = new
       {
-        query,
-        limit,
-        cursor,
-        archived,
-        emailOnly,
+        input = new
+        {
+          query,
+          limit,
+          emailOnly,
+          cursor,
+        },
       },
     };
 
