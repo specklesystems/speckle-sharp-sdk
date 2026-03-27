@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.CSharp.RuntimeBinder;
 using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
