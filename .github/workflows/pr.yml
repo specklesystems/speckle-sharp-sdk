@@ -42,7 +42,7 @@ jobs:
         run: dotnet pack ${{ env.Solution }} --configuration Release --no-build 
 
       - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         continue-on-error: true
         with:
           fail_ci_if_error: true
