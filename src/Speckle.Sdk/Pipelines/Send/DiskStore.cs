@@ -65,7 +65,12 @@ public sealed class DiskStore
 
       await foreach (var item in _channel.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
       {
-        await writer.WriteLineAsync($"{item.Id}\t{item.SpeckleType}\t{item.Json}").ConfigureAwait(false);
+        await writer.WriteAsync(item.Id).ConfigureAwait(false);
+        await writer.WriteAsync('\t').ConfigureAwait(false);
+        await writer.WriteAsync(item.SpeckleType).ConfigureAwait(false);
+        await writer.WriteAsync('\t').ConfigureAwait(false);
+        await writer.WriteAsync(item.Json.Value).ConfigureAwait(false);
+        await writer.WriteLineAsync().ConfigureAwait(false);
       }
 #if NET8_0_OR_GREATER
       await writer.FlushAsync(_cancellationToken).ConfigureAwait(false);
