@@ -1,13 +1,12 @@
+using System.Buffers;
 using System.Collections;
 using System.Drawing;
-using System.Globalization;
 using System.Reflection;
-using Speckle.DoubleNumerics;
-using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Dependencies;
-using Speckle.Sdk.Helpers;
+using System.Text;
+using System.Text.Json;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
+using Matrix4x4 = Speckle.DoubleNumerics.Matrix4x4;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
@@ -68,7 +67,7 @@ internal sealed class Serializer
         continue;
       }
 
-      if (prop.IsDefined(typeof(JsonIgnoreAttribute), false))
+      if (prop.IsDefined(typeof(Speckle.Newtonsoft.Json.JsonIgnoreAttribute), false))
       {
         continue;
       }
@@ -105,61 +104,50 @@ internal sealed class Serializer
   {
     var childClosures = new Dictionary<string, int>();
 
-    var sb = Pools.StringBuilders.Get();
-    try
+    var arrayBuffer = new ArrayBufferWriter<byte>();
+    using var jsonWriter = new Utf8JsonWriter(arrayBuffer);
+
+    jsonWriter.WriteStartObject();
+
+    foreach (var prop in ExtractProperties(baseObj))
     {
-      using var stringWriter = new StringWriter(sb);
-      using var jsonWriter = new JsonTextWriter(stringWriter);
-      using var idWriter = new SerializerIdWriter(jsonWriter);
-
-      idWriter.WriteStartObject();
-
-      foreach (var prop in ExtractProperties(baseObj))
-      {
-        idWriter.WritePropertyName(prop.Name);
-        SerializeValue(prop.Value, idWriter, prop.IsDetachable, childClosures, detachedObjects);
-      }
-
-      var (jsonForId, finalWriter) = idWriter.FinishIdWriter();
-      var id = IdGenerator.ComputeId(jsonForId);
-
-      finalWriter.WritePropertyName("id");
-      finalWriter.WriteValue(id.Value);
-
-      baseObj.id = id.Value;
-
-      if ((forceDetach || childClosures.Count > 0) && childClosures.Count > 0)
-      {
-        finalWriter.WritePropertyName("__closure");
-        finalWriter.WriteStartObject();
-        foreach (var kvp in childClosures)
-        {
-          finalWriter.WritePropertyName(kvp.Key);
-          finalWriter.WriteValue(kvp.Value);
-        }
-        finalWriter.WriteEndObject();
-
-        foreach (var kvp in childClosures)
-        {
-          closures[kvp.Key] = closures.TryGetValue(kvp.Key, out var existing) ? existing + kvp.Value : kvp.Value;
-        }
-      }
-
-      finalWriter.WriteEndObject();
-      finalWriter.Flush();
-
-      var json = new Json(stringWriter.ToString());
-      return (id, json);
+      jsonWriter.WritePropertyName(prop.Name);
+      SerializeValue(prop.Value, jsonWriter, prop.IsDetachable, childClosures, detachedObjects);
     }
-    finally
+
+    jsonWriter.Flush();
+    var span = arrayBuffer.WrittenSpan;
+    string id = IdGenerator.ComputeId(span);
+
+    jsonWriter.WriteString("id", id);
+
+    baseObj.id = id;
+
+    if ((forceDetach || childClosures.Count > 0) && childClosures.Count > 0)
     {
-      Pools.StringBuilders.Return(sb);
+      jsonWriter.WritePropertyName("__closure");
+      jsonWriter.WriteStartObject();
+      foreach (var kvp in childClosures)
+      {
+        jsonWriter.WriteNumber(kvp.Key, kvp.Value);
+      }
+      jsonWriter.WriteEndObject();
+
+      foreach (var kvp in childClosures)
+      {
+        closures[kvp.Key] = closures.TryGetValue(kvp.Key, out var existing) ? existing + kvp.Value : kvp.Value;
+      }
     }
+
+    jsonWriter.WriteEndObject();
+    jsonWriter.Flush();
+    var json = Encoding.UTF8.GetString(arrayBuffer.WrittenSpan);
+    return (new(id), new(json));
   }
 
   private void SerializeValue(
     object? value,
-    JsonWriter writer,
+    Utf8JsonWriter writer,
     bool isDetachable,
     Dictionary<string, int> closures,
     List<(Id, Json, Dictionary<string, int>, Base, string)> detachedObjects
@@ -167,36 +155,66 @@ internal sealed class Serializer
   {
     switch (value)
     {
-      case Enum:
-        writer.WriteValue((int)value);
+      case null:
+        writer.WriteNullValue();
         return;
-      case Guid g:
-        writer.WriteValue(g.ToString());
+      case string v:
+        writer.WriteStringValue(v);
+        return;
+      case short i:
+        writer.WriteNumberValue(i);
+        return;
+      case ushort i:
+        writer.WriteNumberValue(i);
+        return;
+      case int i:
+        writer.WriteNumberValue(i);
+        return;
+      case uint i:
+        writer.WriteNumberValue(i);
+        return;
+      case long i:
+        writer.WriteNumberValue(i);
+        return;
+      case ulong i:
+        writer.WriteNumberValue(i);
+        return;
+      case bool b:
+        writer.WriteBooleanValue(b);
+        return;
+      case float f:
+        writer.WriteNumberValue(f);
+        return;
+      case double f:
+        writer.WriteNumberValue(f);
+        return;
+      case decimal d:
+        writer.WriteNumberValue(d);
+        return;
+      case Enum:
+        writer.WriteNumberValue((int)value);
         return;
       case Color c:
-        writer.WriteValue(c.ToArgb());
-        return;
-      case DateTime dt:
-        writer.WriteValue(dt.ToString("o", CultureInfo.InvariantCulture));
+        writer.WriteNumberValue(c.ToArgb());
         return;
       case Matrix4x4 md:
         writer.WriteStartArray();
-        writer.WriteValue(md.M11);
-        writer.WriteValue(md.M12);
-        writer.WriteValue(md.M13);
-        writer.WriteValue(md.M14);
-        writer.WriteValue(md.M21);
-        writer.WriteValue(md.M22);
-        writer.WriteValue(md.M23);
-        writer.WriteValue(md.M24);
-        writer.WriteValue(md.M31);
-        writer.WriteValue(md.M32);
-        writer.WriteValue(md.M33);
-        writer.WriteValue(md.M34);
-        writer.WriteValue(md.M41);
-        writer.WriteValue(md.M42);
-        writer.WriteValue(md.M43);
-        writer.WriteValue(md.M44);
+        writer.WriteNumberValue(md.M11);
+        writer.WriteNumberValue(md.M12);
+        writer.WriteNumberValue(md.M13);
+        writer.WriteNumberValue(md.M14);
+        writer.WriteNumberValue(md.M21);
+        writer.WriteNumberValue(md.M22);
+        writer.WriteNumberValue(md.M23);
+        writer.WriteNumberValue(md.M24);
+        writer.WriteNumberValue(md.M31);
+        writer.WriteNumberValue(md.M32);
+        writer.WriteNumberValue(md.M33);
+        writer.WriteNumberValue(md.M34);
+        writer.WriteNumberValue(md.M41);
+        writer.WriteNumberValue(md.M42);
+        writer.WriteNumberValue(md.M43);
+        writer.WriteNumberValue(md.M44);
         writer.WriteEndArray();
         return;
       // Handle ObjectReference before Base (since ObjectReference extends Base)
@@ -204,10 +222,8 @@ internal sealed class Serializer
       case ObjectReference objRef:
       {
         writer.WriteStartObject();
-        writer.WritePropertyName("speckle_type");
-        writer.WriteValue("reference");
-        writer.WritePropertyName("referencedId");
-        writer.WriteValue(objRef.referencedId);
+        writer.WriteString("speckle_type", "reference");
+        writer.WriteString("referencedId", objRef.referencedId);
         writer.WriteEndObject();
 
         // Propagate closure: add the referenced ID
@@ -236,10 +252,8 @@ internal sealed class Serializer
           detachedObjects.Add((childId, childJson, childClosures, baseObj, baseObj.speckle_type));
 
           writer.WriteStartObject();
-          writer.WritePropertyName("speckle_type");
-          writer.WriteValue("reference");
-          writer.WritePropertyName("referencedId");
-          writer.WriteValue(childId.Value);
+          writer.WriteString("speckle_type", "reference");
+          writer.WriteString("referencedId", childId.Value);
           writer.WriteEndObject();
 
           closures[childId.Value] = closures.TryGetValue(childId.Value, out var existing) ? existing + 1 : 1;
@@ -296,56 +310,45 @@ internal sealed class Serializer
       default:
         // This case will handle primitives and `null`
         // Will throw JsonWriterException if not supported
-        writer.WriteValue(value);
-        return;
+        throw new ArgumentOutOfRangeException(nameof(value), $"Unsupported type {value.GetType()}");
     }
   }
 
   private UploadItem ReferenceToUploadItem(ObjectReference existingRef)
   {
-    var sb = Pools.StringBuilders.Get();
-    try
-    {
-      using var stringWriter = new StringWriter(sb);
-      using var jsonWriter = new JsonTextWriter(stringWriter);
+    var m = new ArrayBufferWriter<byte>();
+    using var jsonWriter = new Utf8JsonWriter(m);
 
+    jsonWriter.WriteStartObject();
+    jsonWriter.WriteString("speckle_type", "reference");
+    jsonWriter.WriteString("referencedId", existingRef.referencedId);
+    jsonWriter.WritePropertyName("__closure");
+
+    if (existingRef.closure != null && existingRef.closure.Count > 0)
+    {
       jsonWriter.WriteStartObject();
-      jsonWriter.WritePropertyName("speckle_type");
-      jsonWriter.WriteValue("reference");
-      jsonWriter.WritePropertyName("referencedId");
-      jsonWriter.WriteValue(existingRef.referencedId);
-      jsonWriter.WritePropertyName("__closure");
-
-      if (existingRef.closure != null && existingRef.closure.Count > 0)
+      foreach (var kvp in existingRef.closure)
       {
-        jsonWriter.WriteStartObject();
-        foreach (var kvp in existingRef.closure)
-        {
-          jsonWriter.WritePropertyName(kvp.Key);
-          jsonWriter.WriteValue(kvp.Value);
-        }
-        jsonWriter.WriteEndObject();
+        jsonWriter.WritePropertyName(kvp.Key);
+        jsonWriter.WriteNumberValue(kvp.Value);
       }
-      else
-      {
-        jsonWriter.WriteNull();
-      }
-
       jsonWriter.WriteEndObject();
-      jsonWriter.Flush();
-
-      var refJson = new Json(stringWriter.ToString());
-
-      return new UploadItem(
-        existingRef.referencedId,
-        refJson,
-        existingRef.speckle_type,
-        existingRef // Pass through the original ObjectReference
-      );
     }
-    finally
+    else
     {
-      Pools.StringBuilders.Return(sb);
+      jsonWriter.WriteNullValue();
     }
+
+    jsonWriter.WriteEndObject();
+    jsonWriter.Flush();
+
+    var refJson = new Json(Encoding.UTF8.GetString(m.WrittenSpan));
+
+    return new UploadItem(
+      existingRef.referencedId,
+      refJson,
+      existingRef.speckle_type,
+      existingRef // Pass through the original ObjectReference
+    );
   }
 }
