@@ -1,8 +1,6 @@
-using System.Buffers;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.Reflection;
-using System.Text;
 using System.Text.Json;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -30,7 +28,7 @@ internal sealed class Serializer
       yield break;
     }
 
-    var detachedObjects = new List<(Id, Json, Dictionary<string, int>, Base, string)>();
+    var detachedObjects = new List<(Id, EfficientJson, Dictionary<string, int>, Base, string)>();
     var rootClosures = new Dictionary<string, int>();
 
     var (rootId, rootJson) = SerializeBase(root, false, rootClosures, detachedObjects);
@@ -73,7 +71,7 @@ internal sealed class Serializer
       }
 
       var value = prop.GetValue(baseObj);
-      var isDetachable = prop.GetCustomAttribute<DetachPropertyAttribute>(true)?.Detachable ?? false;
+      var isDetachable = prop.IsDefined(typeof(DetachPropertyAttribute), true);
 
       yield return new PropertyInfo(prop.Name, value, isDetachable);
     }
@@ -95,17 +93,17 @@ internal sealed class Serializer
     }
   }
 
-  private (Id, Json) SerializeBase(
+  private (Id, EfficientJson) SerializeBase(
     Base baseObj,
     bool forceDetach,
     Dictionary<string, int> closures,
-    List<(Id, Json, Dictionary<string, int>, Base, string)> detachedObjects
+    List<(Id, EfficientJson, Dictionary<string, int>, Base, string)> detachedObjects
   )
   {
     var childClosures = new Dictionary<string, int>();
 
-    var arrayBuffer = new ArrayBufferWriter<byte>();
-    using var jsonWriter = new Utf8JsonWriter(arrayBuffer);
+    var efficientJson = new EfficientJson();
+    using var jsonWriter = new Utf8JsonWriter(efficientJson.Buffer);
 
     jsonWriter.WriteStartObject();
 
@@ -116,7 +114,7 @@ internal sealed class Serializer
     }
 
     jsonWriter.Flush();
-    var span = arrayBuffer.WrittenSpan;
+    var span = efficientJson.WrittenSpan;
     string id = IdGenerator.ComputeId(span);
 
     jsonWriter.WriteString("id", id);
@@ -141,8 +139,7 @@ internal sealed class Serializer
 
     jsonWriter.WriteEndObject();
     jsonWriter.Flush();
-    var json = Encoding.UTF8.GetString(arrayBuffer.WrittenSpan);
-    return (new(id), new(json));
+    return (new(id), efficientJson);
   }
 
   private void SerializeValue(
@@ -150,7 +147,7 @@ internal sealed class Serializer
     Utf8JsonWriter writer,
     bool isDetachable,
     Dictionary<string, int> closures,
-    List<(Id, Json, Dictionary<string, int>, Base, string)> detachedObjects
+    List<(Id, EfficientJson, Dictionary<string, int>, Base, string)> detachedObjects
   )
   {
     switch (value)
@@ -270,7 +267,7 @@ internal sealed class Serializer
           var inlineClosures = new Dictionary<string, int>();
           var (_, inlineJson) = SerializeBase(baseObj, false, inlineClosures, detachedObjects);
 
-          writer.WriteRawValue(inlineJson.Value);
+          writer.WriteRawValue(inlineJson.WrittenSpan);
 
           foreach (var kvp in inlineClosures)
           {
@@ -314,10 +311,15 @@ internal sealed class Serializer
     }
   }
 
+  [SuppressMessage(
+    "Reliability",
+    "CA2000:Dispose objects before losing scope",
+    Justification = "EfficientJson IDisposable is returned via UploadItem"
+  )]
   private UploadItem ReferenceToUploadItem(ObjectReference existingRef)
   {
-    var m = new ArrayBufferWriter<byte>();
-    using var jsonWriter = new Utf8JsonWriter(m);
+    var refJson = new EfficientJson();
+    using var jsonWriter = new Utf8JsonWriter(refJson.Buffer);
 
     jsonWriter.WriteStartObject();
     jsonWriter.WriteString("speckle_type", "reference");
@@ -341,8 +343,6 @@ internal sealed class Serializer
 
     jsonWriter.WriteEndObject();
     jsonWriter.Flush();
-
-    var refJson = new Json(Encoding.UTF8.GetString(m.WrittenSpan));
 
     return new UploadItem(
       existingRef.referencedId,

@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.Extensions.ObjectPool;
@@ -23,6 +24,9 @@ public static class Pools
 
   public static Pool<StringBuilder> StringBuilders { get; } =
     new(new StringBuilderPooledObjectPolicy() { MaximumRetainedCapacity = 100 * 1024 * 1024 });
+
+  public static Pool<ArrayBufferWriter<byte>> ArrayBufferWriter { get; } =
+    new(new ArrayBufferWriterPooledObjectPolicy<byte>() { MaximumRetainedCapacity = 100 * 1024 * 1024 });
 
   private sealed class ObjectDictionaryPolicy<TKey, TValue> : IPooledObjectPolicy<Dictionary<TKey, TValue>>
     where TKey : notnull

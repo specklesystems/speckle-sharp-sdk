@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Dependencies;
@@ -46,6 +47,9 @@ public sealed class DiskStore
     return await _writeToDiskTask.ConfigureAwait(false);
   }
 
+  private readonly byte[] _newLineChar = [(byte)'\n'];
+  private readonly byte[] _tabLineChar = [(byte)'\t'];
+
   /// <summary>
   /// Reads from the Channel and streams the <see cref="UploadItem"/>s to a temporary file on disk.
   /// Will keep reading until <see cref="CompleteAsync"/> is called.
@@ -61,21 +65,23 @@ public sealed class DiskStore
     {
       using var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
       using var gzip = new GZipStream(fileStream, CompressionLevel.Optimal);
-      using var writer = new StreamWriter(gzip);
 
       await foreach (var item in _channel.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
       {
-        await writer.WriteAsync(item.Id).ConfigureAwait(false);
-        await writer.WriteAsync('\t').ConfigureAwait(false);
-        await writer.WriteAsync(item.SpeckleType).ConfigureAwait(false);
-        await writer.WriteAsync('\t').ConfigureAwait(false);
-        await writer.WriteAsync(item.Json.Value).ConfigureAwait(false);
-        await writer.WriteLineAsync().ConfigureAwait(false);
+        await gzip.WriteAsync(Encoding.UTF8.GetBytes(item.Id), _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(_tabLineChar, _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(Encoding.UTF8.GetBytes(item.SpeckleType), _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(_tabLineChar, _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(item.Json.WrittenMemory, _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(_newLineChar, _cancellationToken).ConfigureAwait(false);
+
+        item.Dispose();
       }
+
 #if NET8_0_OR_GREATER
-      await writer.FlushAsync(_cancellationToken).ConfigureAwait(false);
+      await gzip.FlushAsync(_cancellationToken).ConfigureAwait(false);
 #else
-      await writer.FlushAsync().ConfigureAwait(false);
+      await gzip.FlushAsync().ConfigureAwait(false);
 #endif
       tempFile.FileInfo.Refresh();
 

@@ -1,4 +1,7 @@
-﻿namespace Speckle.Sdk.Serialisation;
+﻿using System.Buffers;
+using Speckle.Sdk.Dependencies;
+
+namespace Speckle.Sdk.Serialisation;
 
 public readonly record struct SerializationResult(Json Json, Id? Id);
 
@@ -12,6 +15,26 @@ public readonly record struct Json
   public override string ToString() => Value;
 
   public string Value { get; }
+}
+
+public sealed class EfficientJson : IDisposable
+{
+  private readonly ArrayBufferWriter<byte> _value;
+
+  public EfficientJson()
+  {
+    _value = Pools.ArrayBufferWriter.Get();
+  }
+
+  internal IBufferWriter<byte> Buffer => _value;
+
+  public ReadOnlySpan<byte> WrittenSpan => _value.WrittenSpan;
+
+  public ReadOnlyMemory<byte> WrittenMemory => _value.WrittenMemory;
+
+  public int WrittenCount => _value.WrittenCount;
+
+  public void Dispose() => Pools.ArrayBufferWriter.Return(_value);
 }
 
 public readonly record struct Id
