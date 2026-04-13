@@ -341,7 +341,6 @@
         "type": "Project",
         "dependencies": {
           "AwesomeAssertions": "[9.4.0, )",
-          "Microsoft.Extensions.DependencyInjection": "[2.2.0, )",
           "Microsoft.NET.Test.Sdk": "[18.3.0, )",
           "Speckle.Sdk": "[1.0.0, )",
           "Speckle.Sdk.Testing": "[1.0.0, )",
