@@ -316,12 +316,12 @@ indent_style = space
 indent_size = 2
 tab_width = 2
 
-# Verify
+# Verify settings
 [*.{received,verified}.{json}]
 charset = utf-8-bom
 end_of_line = lf
-indent_size = unset
-indent_style = unset
+indent_size = 2
+indent_style = space
 insert_final_newline = false
 tab_width = unset
 trim_trailing_whitespace = false
