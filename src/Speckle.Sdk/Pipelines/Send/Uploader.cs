@@ -65,63 +65,90 @@ public sealed class Uploader : IDisposable
   {
     using var a = _activity.Start("Get Presigned Url");
 
-    var signUri = new Uri($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/sign", UriKind.Relative);
+    try
+    {
+      var signUri = new Uri($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/sign", UriKind.Relative);
 
-    using var signResponse = await _speckleClient.PostAsync(signUri, null, _cancellationToken).ConfigureAwait(false);
-    signResponse.EnsureSuccessStatusCode();
+      using var signResponse = await _speckleClient.PostAsync(signUri, null, _cancellationToken).ConfigureAwait(false);
+      signResponse.EnsureSuccessStatusCode();
 
 #if NET5_0_OR_GREATER
-    string signResponseString = await signResponse.Content.ReadAsStringAsync(_cancellationToken).ConfigureAwait(false);
+      string signResponseString = await signResponse
+        .Content.ReadAsStringAsync(_cancellationToken)
+        .ConfigureAwait(false);
 #else
-    string signResponseString = await signResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+      string signResponseString = await signResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
 #endif
-    PresignedUploadResponse presignedUpload =
-      JsonConvert.DeserializeObject<PresignedUploadResponse>(signResponseString)
-      ?? throw new InvalidOperationException("Failed to get presigned upload URL");
-    return presignedUpload;
+      PresignedUploadResponse presignedUpload =
+        JsonConvert.DeserializeObject<PresignedUploadResponse>(signResponseString)
+        ?? throw new InvalidOperationException("Failed to get presigned upload URL");
+      return presignedUpload;
+    }
+    catch (Exception ex)
+    {
+      a?.SetStatus(SdkActivityStatusCode.Error);
+      a?.RecordException(ex);
+      throw;
+    }
   }
 
   private async Task<string> UploadToS3(Stream fileStream, PresignedUploadResponse presignedUploadResponse)
   {
     using var a = _activity.Start("Uploading file to pre-signed url");
-
-    Stream progressStream = new ProgressStream(fileStream, _progress);
-
-    using var streamContent = new StreamContent(progressStream);
-    streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-    streamContent.Headers.ContentLength = fileStream.Length;
-
-    using var uploadRequest = new HttpRequestMessage(HttpMethod.Put, presignedUploadResponse.Url);
-    foreach (var kvp in presignedUploadResponse.AdditionalRequestHeaders)
+    try
     {
-      uploadRequest.Headers.Add(kvp.Key, kvp.Value);
+      Stream progressStream = new ProgressStream(fileStream, _progress);
+
+      using var streamContent = new StreamContent(progressStream);
+      streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+      streamContent.Headers.ContentLength = fileStream.Length;
+
+      using var uploadRequest = new HttpRequestMessage(HttpMethod.Put, presignedUploadResponse.Url);
+      foreach (var kvp in presignedUploadResponse.AdditionalRequestHeaders)
+      {
+        uploadRequest.Headers.Add(kvp.Key, kvp.Value);
+      }
+
+      uploadRequest.Content = streamContent;
+
+      using var uploadResponse = await _s3Client
+        .SendAsync(uploadRequest, HttpCompletionOption.ResponseHeadersRead, _cancellationToken)
+        .ConfigureAwait(false);
+
+      uploadResponse.EnsureSuccessStatusCode();
+
+      return BlobApiHelpers.ParseEtagHeader(uploadResponse.Headers);
     }
-
-    uploadRequest.Content = streamContent;
-
-    using var uploadResponse = await _s3Client
-      .SendAsync(uploadRequest, HttpCompletionOption.ResponseHeadersRead, _cancellationToken)
-      .ConfigureAwait(false);
-
-    uploadResponse.EnsureSuccessStatusCode();
-
-    return BlobApiHelpers.ParseEtagHeader(uploadResponse.Headers);
+    catch (Exception ex)
+    {
+      a?.SetStatus(SdkActivityStatusCode.Error);
+      a?.RecordException(ex);
+      throw;
+    }
   }
 
   private async Task TriggerProcessing(TriggerUploadRequest request)
   {
     using var a = _activity.Start("Triggering Processing");
+    try
+    {
+      Uri processUri = new($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/process", UriKind.Relative);
+      string requestBody = JsonConvert.SerializeObject(request);
+      using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
-    Uri processUri = new($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/process", UriKind.Relative);
-    string requestBody = JsonConvert.SerializeObject(request);
-    using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+      using HttpResponseMessage processResponse = await _speckleClient
+        .PostAsync(processUri, content, _cancellationToken)
+        .ConfigureAwait(false);
 
-    using HttpResponseMessage processResponse = await _speckleClient
-      .PostAsync(processUri, content, _cancellationToken)
-      .ConfigureAwait(false);
-
-    string body = await processResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-    processResponse.EnsureSuccessStatusCode();
+      string body = await processResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+      processResponse.EnsureSuccessStatusCode();
+    }
+    catch (Exception ex)
+    {
+      a?.SetStatus(SdkActivityStatusCode.Error);
+      a?.RecordException(ex);
+      throw;
+    }
   }
 
   public void Dispose()
