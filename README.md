@@ -18,7 +18,7 @@ Speckle | Sharp | SDK
 
 # Repo structure
 
-This repo is the home of our next-generation Speckle .NET SDK.
+This repo is the home of our Speckle .NET SDK.
 
 - **SDK**
   - [`Speckle.Sdk`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Sdk): Send/Receive operations, Serialization, API wrappers, and more!.
@@ -47,14 +47,11 @@ Developer docs are a bit patchy. See our [📚 Speckle Docs website](https://doc
 # Developing and Debugging
 
 
-To build solutions in this repo, [10.0.2xx of the .NET SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) is required.
+To build solutions in this repo, version [10.0.2xx of the .NET SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) is required.
 
 It is recommended to use JetBrains Rider (version 2025.3 or greater) or Microsoft Visual Studio 2026 (version 18.4 or greater)
 
 From there you can open the main `Speckle.Sdk.slnx` solution and build the project.
-
-For good development experience and environment setup, you the commands are available needed.
-
 
 ### Formatting
 We're using [CSharpier](https://github.com/belav/csharpier) to format our code. You can use Csharpier in a few ways:
