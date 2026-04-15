@@ -51,7 +51,7 @@ To build solutions in this repo, [10.0.2xx of the .NET SDK](https://dotnet.micro
 
 It is recommended to use JetBrains Rider (version 2025.3 or greater) or Microsoft Visual Studio 2026 (version 18.4 or greater)
 
-From there you can open the main `Speckle.Connectors.slnx` solution and build the project.
+From there you can open the main `Speckle.Sdk.slnx` solution and build the project.
 
 For good development experience and environment setup, you the commands are available needed.
 
