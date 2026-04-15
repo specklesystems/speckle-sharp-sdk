@@ -13,6 +13,7 @@
     <PackageReference Include="RichardSzalay.MockHttp" />
     <PackageReference Include="xunit.assert" />
     <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Testing\Speckle.Sdk.Testing.csproj" />
