@@ -6,12 +6,11 @@
    
    - Check lockfiles after making a change, ensure your changes only affect the projects you intended to change.
    
-   - For any dependency we intend to "stay on a older version", set it as the minimum version e.g. [x.x.x,]
+   - Any dependency that uses the "Version=[x.x.x,)" or "Version=[x.x.x]` syntax is pinned for a good reason, and hopfully includes a comment saying why
+  
      see https://learn.microsoft.com/en-us/nuget/concepts/package-versioning?tabs=semver20sort#version-ranges
-     And please add a comment stating WHY you've picked that version.
-     
-     Avoid setting an upper bound unless there is a known (and major) compatability issue with a higher version
-     see https://learn.microsoft.com/en-us/nuget/concepts/package-versioning?tabs=semver20sort#best-practice
+     and https://learn.microsoft.com/en-us/nuget/concepts/package-versioning?tabs=semver20sort#best-practice
+     for best practices.
      
    - Dependencies where "latest and greatest" is generally preferred should use this syntax `Version="x.x.x"`
      and bumped manually as needed; no dependency bump is safe so each change must be tested.
@@ -33,8 +32,7 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Bullseye" Version="6.1.0" />
-    <!-- Keep at exactly 6.0.0 for side by side with V2 -->
-    <PackageVersion Include="GraphQL.Client" Version="[6.0.0,)" />
+    <PackageVersion Include="GraphQL.Client" Version="6.1.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
     <PackageVersion Include="HttpMultipartParser" Version="10.0.0" />
     <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />
@@ -46,11 +44,8 @@
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="[7.0.5,)" />
     <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
-    <!-- Keeping as low as possible for connector compatibility -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="[2.2.0,)" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.2.0,)" />
-    <!-- Keeping as low as possible for connector compatibility -->
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="[2.2.0,)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.6" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
     <PackageVersion Include="Open.ChannelExtensions" Version="9.1.0" />
