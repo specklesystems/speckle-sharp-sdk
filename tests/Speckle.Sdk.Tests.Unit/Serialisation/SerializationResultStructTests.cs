@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;

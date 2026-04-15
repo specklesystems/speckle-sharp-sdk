@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using GraphQL;
 using GraphQL.Client.Http;
 using Microsoft.Extensions.Logging;

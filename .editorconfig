@@ -316,7 +316,7 @@ indent_style = space
 indent_size = 2
 tab_width = 2
 
-# Verify
+# Verify settings
 [*.{received,verified}.{json}]
 charset = utf-8-bom
 end_of_line = lf
@@ -325,3 +325,7 @@ indent_style = unset
 insert_final_newline = false
 tab_width = unset
 trim_trailing_whitespace = false
+
+[*.{received,verified}.{json}]
+indent_size = 2
+indent_style = space
