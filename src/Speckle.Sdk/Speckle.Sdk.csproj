@@ -22,7 +22,6 @@
     <InternalsVisibleTo Include="Speckle.Sdk.Serialization.Tests" />
   </ItemGroup>
   <ItemGroup Label="Package References">
-    <PackageReference Include="GraphQL.Client" />
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
   </ItemGroup>
@@ -30,12 +29,15 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="10.0.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" VersionOverride="10.0.0" />
+    <PackageReference Include="GraphQL.Client" VersionOverride="6.1.0" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="8.0.0" />
     <!--Pinned exactly to match v2-->
     <PackageReference Include="Microsoft.Data.Sqlite" VersionOverride="7.0.5" />
+    <!--Pinned exactly to match v2-->
+    <PackageReference Include="GraphQL.Client" VersionOverride="6.0.0" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.CSharp" />
@@ -43,6 +45,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="2.2.0" />
     <!--Pinned exactly to match v2-->
     <PackageReference Include="Microsoft.Data.Sqlite" VersionOverride="7.0.5" />
+    <!--Pinned exactly to match v2-->
+    <PackageReference Include="GraphQL.Client" VersionOverride="6.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />
