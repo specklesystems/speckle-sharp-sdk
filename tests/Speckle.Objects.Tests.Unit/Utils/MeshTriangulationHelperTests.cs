@@ -71,7 +71,7 @@ public class MeshTriangulationHelperTests
     Mesh mesh = new()
     {
       vertices = vertices,
-      faces = new List<int>(faces),
+      faces = faces.ToList(),
       units = Units.Meters,
     };
 
@@ -102,7 +102,7 @@ public class MeshTriangulationHelperTests
     Mesh mesh = new()
     {
       vertices = vertices,
-      faces = new List<int>(faces),
+      faces = faces,
       units = Units.Meters,
     };
 
