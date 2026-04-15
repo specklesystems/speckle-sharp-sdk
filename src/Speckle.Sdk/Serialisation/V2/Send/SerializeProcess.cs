@@ -113,16 +113,6 @@ public sealed class SerializeProcess(
         _processSource.Token
       );
       var findTotalObjectsTask = Task.CompletedTask;
-      if (!options.SkipFindTotalObjects)
-      {
-        ThrowIfFailed();
-        findTotalObjectsTask = Task.Factory.StartNew(
-          () => TraverseTotal(root),
-          _processSource.Token,
-          TaskCreationOptions.AttachedToParent | TaskCreationOptions.PreferFairness,
-          _highest
-        );
-      }
 
       await Traverse(root).ConfigureAwait(false);
       ThrowIfFailed();
@@ -133,6 +123,7 @@ public sealed class SerializeProcess(
       ThrowIfFailed();
       await WaitForSchedulerCompletion().ConfigureAwait(false);
       ThrowIfFailed();
+
       return new(root.id.NotNull(), baseSerializer.ObjectReferences.Freeze());
     }
     catch (OperationCanceledException)

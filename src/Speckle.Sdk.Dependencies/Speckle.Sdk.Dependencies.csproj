@@ -28,4 +28,36 @@
     <PackageReference Include="Open.ChannelExtensions" PrivateAssets="all" />
     <PackageReference Include="System.Threading.Channels" PrivateAssets="all" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
+  </ItemGroup>
+  <Target Name="BeforeILRepackPrepareBuild" BeforeTargets="ILRepackPrepareBuild">
+    <ItemGroup>
+      <!--
+      We're Being selective about which assemblies we're il-repacking
+      Avoiding repacling `Microsoft.Bcl.AsyncInterfaces.dll` because we need types like `ValueTask` and `IAsyncEnumerable` to be external
+      
+      Yes, this does beg the question, why are we using `IlRepack.FullAuto` instead of raw ILRepack. Well the truth is, I'd like to move away from FullAuto
+      since it's unmaintaned and is lagging behind ILRepack version.
+      -->
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Numerics.Vectors.dll" />
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" />
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Memory.dll" />
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)Open.ChannelExtensions.dll" />
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Threading.Channels.dll" />
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Collections.Immutable.dll" />
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)Polly.dll" />
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)Polly.Contrib.WaitAndRetry.dll" />
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)Polly.Extensions.Http.dll" />
+      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)Microsoft.Extensions.ObjectPool.dll" />
+      <_ILRepackExcludeAssemblies_Items Include="$(OutputPath)*.dll" Exclude="@(_ILRepackIncludeAssemblies_Items)" />
+    </ItemGroup>
+    <Message
+      Text="These are the packages we are NOT ilrepacking '@(_ILRepackExcludeAssemblies_Items)'"
+      Importance="high"
+    />
+    <PropertyGroup>
+      <ILRepackExcludeAssemblies>@(_ILRepackExcludeAssemblies_Items)</ILRepackExcludeAssemblies>
+    </PropertyGroup>
+  </Target>
 </Project>

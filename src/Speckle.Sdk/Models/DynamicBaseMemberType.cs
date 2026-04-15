@@ -7,12 +7,12 @@ namespace Speckle.Sdk.Models;
 public enum DynamicBaseMemberType
 {
   /// <summary>
-  /// The typed members of the DynamicBase object
+  /// The typed members of the <see cref="DynamicBase"/> object
   /// </summary>
   Instance = 1,
 
   /// <summary>
-  /// The dynamically added members of the DynamicBase object
+  /// The dynamically added members of the <see cref="DynamicBase"/> object
   /// </summary>
   Dynamic = 2,
 
@@ -22,8 +22,9 @@ public enum DynamicBaseMemberType
   Obsolete = 4,
 
   /// <summary>
-  /// The typed methods flagged with TODO:
+  /// Old feature supported in v2 for grasshopper
   /// </summary>
+  [Obsolete("Feature no longer supported")]
   SchemaComputed = 16,
 
   /// <summary>

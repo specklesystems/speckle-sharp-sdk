@@ -1,7 +1,11 @@
 name: PR Test
 
 on:
-  pull_request:
+  pull_request: {}
+  push: 
+    branches:
+      - "main" # Need to run for codecov to compare against the BASE
+
 
 jobs:
   build:
@@ -38,7 +42,7 @@ jobs:
         run: dotnet pack ${{ env.Solution }} --configuration Release --no-build 
 
       - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         continue-on-error: true
         with:
           fail_ci_if_error: true
