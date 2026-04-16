@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel;
-using FluentAssertions;
+using AwesomeAssertions;
 using GraphQL;
 using GraphQL.Client.Http;
 using Speckle.Newtonsoft.Json;
@@ -91,7 +91,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
     using CancellationTokenSource cts = new();
     await cts.CancelAsync();
 
-    var ex = await Assert.ThrowsAsync<TaskCanceledException>(async () =>
+    var ex = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
       await _sut.ActiveUser.Get(cts.Token).ConfigureAwait(false)
     );
 

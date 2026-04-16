@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
@@ -97,7 +97,7 @@ public class PointTests
       new(0, 0, 0, Units.Feet),
     ];
 
-  public static TheoryData<Point> PointTestCases() => new(PointTestData);
+  public static TheoryData<Point> PointTestCases() => [.. PointTestData];
 
   public static TheoryData<Matrix4x4, Point> TransformTestCases()
   {

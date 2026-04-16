@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="Compiler Properties">
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
     <Configurations>Debug;Release;Local</Configurations>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
@@ -22,19 +22,31 @@
     <InternalsVisibleTo Include="Speckle.Sdk.Serialization.Tests" />
   </ItemGroup>
   <ItemGroup Label="Package References">
-    <PackageReference Include="GraphQL.Client" />
-    <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="10.0.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" VersionOverride="10.0.0" />
+    <PackageReference Include="GraphQL.Client" VersionOverride="6.1.0" />
+  </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0'">
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" OverrideVersion="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" OverrideVersion="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="8.0.0" />
+    <!--Pinned exactly to match v2-->
+    <PackageReference Include="Microsoft.Data.Sqlite" VersionOverride="7.0.5" />
+    <!--Pinned exactly to match v2-->
+    <PackageReference Include="GraphQL.Client" VersionOverride="6.0.0" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.CSharp" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="2.2.0" />
+    <!--Pinned exactly to match v2-->
+    <PackageReference Include="Microsoft.Data.Sqlite" VersionOverride="7.0.5" />
+    <!--Pinned exactly to match v2-->
+    <PackageReference Include="GraphQL.Client" VersionOverride="6.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />

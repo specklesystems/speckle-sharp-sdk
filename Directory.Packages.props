@@ -1,42 +1,75 @@
 <Project>
+  <!-- 
+  NOTICE ABOUT PACKAGE VERSIONS:
+   - For our SDK nugets: Be very careful introducing new dependencies, or bumping existing ones.
+     We must consider dll conflicts in connector host apps, and other third-party plugins!
+   
+   - Check lockfiles after making a change, ensure your changes only affect the projects you intended to change.
+   
+   - Any dependency that uses the "Version=[x.x.x,)" or "Version=[x.x.x]` syntax is pinned for a good reason, and hopfully includes a comment saying why
+  
+     see https://learn.microsoft.com/en-us/nuget/concepts/package-versioning?tabs=semver20sort#version-ranges
+     and https://learn.microsoft.com/en-us/nuget/concepts/package-versioning?tabs=semver20sort#best-practice
+     for best practices.
+     
+   - Dependencies where "latest and greatest" is generally preferred should use this syntax `Version="x.x.x"`
+     and bumped manually as needed; no dependency bump is safe so each change must be tested.
+     
+   - Try and keep versions of dependencies of the .NET Standard 2.0 targets lower or equal to the
+     versions used by the lowest .NET Core target.
+   
+   - For nugets that are released alongside dotnet, try and keep the .NET targets aligned with their .NET version
+     (e.g. 8.x.x for .NET8, 10.x.x for .NET10).
+     Exceptions can be made when we genuinely need features from higher versions, for `Microsoft.BCL.*` packages,
+     or where ILRepack affords us extra flexibility.
+     
+   - Avoid having production versions of our SDKs depend on pre-release packages
+     If you must suppress NU5104, do so inline e.g. `<PackageReference Include="System.CommandLine" NoWarn="NU5104" />`.
+ 
+  -->
   <ItemGroup>
-    <PackageVersion Include="altcover" Version="9.0.1" />
-    <PackageVersion Include="AwesomeAssertions" Version="8.1.0" />
+    <PackageVersion Include="altcover" Version="9.0.102" />
+    <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
-    <PackageVersion Include="Bullseye" Version="6.0.0" />
-    <PackageVersion Include="GraphQL.Client" Version="6.0.0" />
+    <PackageVersion Include="Bullseye" Version="6.1.0" />
+    <PackageVersion Include="GraphQL.Client" Version="6.1.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
-    <PackageVersion Include="HttpMultipartParser" Version="9.0.0" />
+    <PackageVersion Include="HttpMultipartParser" Version="10.0.0" />
     <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />
-    <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
+    <!-- Keep aligned with channels -->
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[9.0.4,)" />
+    <!-- Keep version aligned with the lowest .NET framework we need to support (e.g. lowest non-eol) -->
+    <PackageVersion Include="Microsoft.CSharp" Version="[4.7.0,)" />
     <!-- Keep at exactly 7.0.5 for side by side with V2 -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="[7.0.5,)" />
     <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.4" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="[2.2.0,)" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[2.2.0,)" />
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[9.0.4,)" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="[2.2.0,)" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.6" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
     <PackageVersion Include="Open.ChannelExtensions" Version="9.1.0" />
-    <PackageVersion Include="Polly" Version="7.2.3" />
-    <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
-    <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
+    <!-- Pinned due to breaking changes in newer versions -->
+    <PackageVersion Include="Polly" Version="[7.2.3,8.0.0]" />
+    <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="[1.1.1,]" />
+    <PackageVersion Include="Polly.Extensions.Http" Version="[3.0.0,]" />
     <PackageVersion Include="RichardSzalay.MockHttp" Version="7.0.0" />
     <PackageVersion Include="Speckle.Newtonsoft.Json" Version="13.0.2" />
     <PackageVersion Include="Speckle.DoubleNumerics" Version="4.1.0" />
-    <PackageVersion Include="SimpleExec" Version="12.0.0" />
-    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
-    <PackageVersion Include="System.Threading.Channels" Version="9.0.4" />
+    <PackageVersion Include="SimpleExec" Version="13.0.0" />
+    <!-- Pinned due to breaking changes in newer versions -->
+    <PackageVersion Include="System.CommandLine" Version="[2.0.0-beta4.22272.1]" />
+    <!-- 9.0.4 is minimum version for .net standard2.0 because it's the first version to include async enumerables in the .NET standard target -->
+    <PackageVersion Include="System.Threading.Channels" Version="[9.0.4,]" />
     <PackageVersion Include="Verify.Quibble" Version="2.1.1" />
-    <PackageVersion Include="Verify.Xunit" Version="29.4.0" />
+    <PackageVersion Include="Verify.Xunit" Version="31.12.5" />
     <PackageVersion Include="System.Text.Json" Version="8.0.5" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.assert" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <GlobalPackageReference Include="PolySharp" Version="1.15.0" />
-    <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+    <!-- Will need to test how 10 behaves... -->
+    <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="[8.0.0,]" />
     <GlobalPackageReference Include="Speckle.InterfaceGenerator" Version="0.9.6" />
   </ItemGroup>
 </Project>

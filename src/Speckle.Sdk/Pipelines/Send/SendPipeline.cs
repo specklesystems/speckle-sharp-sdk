@@ -50,7 +50,6 @@ public sealed class SendPipeline : IDisposable
 
   public async Task WaitForUpload()
   {
-    //await _diskStore.PushAsync(_lastItem).ConfigureAwait(false);
     using DisposableFile tempFile = await _diskStore.CompleteAsync().ConfigureAwait(false);
 
     using Stream fileStreamUpload = new FileStream(
