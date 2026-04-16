@@ -28,6 +28,7 @@ public sealed class EfficientJson : IDisposable
 #if !NET5_0_OR_GREATER
   public byte[] GetInternalBuffer() => _value.InternalBuffer;
 #endif
+
   public int WrittenCount => _value.WrittenCount;
 
   private readonly ArrayBufferWriter<byte> _value = Pools.ArrayBufferWriter.Get();
