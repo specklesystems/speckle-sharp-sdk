@@ -43,7 +43,7 @@
       -->
       <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Numerics.Vectors.dll" />
       <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" />
-      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Memory.dll" />
+      <!--      <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Memory.dll" />-->
       <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)Open.ChannelExtensions.dll" />
       <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Threading.Channels.dll" />
       <_ILRepackIncludeAssemblies_Items Include="$(OutputPath)System.Collections.Immutable.dll" />

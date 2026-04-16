@@ -68,21 +68,29 @@ public sealed class DiskStore
 
       await foreach (var item in _channel.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
       {
-        await gzip.WriteAsync(Encoding.UTF8.GetBytes(item.Id), _cancellationToken).ConfigureAwait(false);
+        byte[] id = Encoding.UTF8.GetBytes(item.Id);
+        byte[] speckleType = Encoding.UTF8.GetBytes(item.SpeckleType);
+#if NET5_0_OR_GREATER
+        await gzip.WriteAsync(id, _cancellationToken).ConfigureAwait(false);
         await gzip.WriteAsync(_tabLineChar, _cancellationToken).ConfigureAwait(false);
-        await gzip.WriteAsync(Encoding.UTF8.GetBytes(item.SpeckleType), _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(speckleType, _cancellationToken).ConfigureAwait(false);
         await gzip.WriteAsync(_tabLineChar, _cancellationToken).ConfigureAwait(false);
         await gzip.WriteAsync(item.Json.WrittenMemory, _cancellationToken).ConfigureAwait(false);
         await gzip.WriteAsync(_newLineChar, _cancellationToken).ConfigureAwait(false);
-
+#else
+        await gzip.WriteAsync(id, 0, id.Length, _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(_tabLineChar, 0, _tabLineChar.Length, _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(speckleType, 0, speckleType.Length, _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(_tabLineChar, 0, _tabLineChar.Length, _cancellationToken).ConfigureAwait(false);
+        await gzip.WriteAsync(item.Json.GetInternalBuffer(), 0, item.Json.WrittenCount, _cancellationToken)
+          .ConfigureAwait(false);
+        await gzip.WriteAsync(_newLineChar, 0, _newLineChar.Length, _cancellationToken).ConfigureAwait(false);
+#endif
         item.Dispose();
       }
 
-#if NET8_0_OR_GREATER
       await gzip.FlushAsync(_cancellationToken).ConfigureAwait(false);
-#else
-      await gzip.FlushAsync().ConfigureAwait(false);
-#endif
+
       tempFile.FileInfo.Refresh();
 
       return tempFile;
