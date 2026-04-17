@@ -2,12 +2,13 @@
 using System.Diagnostics.Contracts;
 using System.Security.Cryptography;
 using System.Text;
-using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
 public static class IdGenerator
 {
+  public const int ID_HEX_LENGTH_CHARS = 32;
+
 #if NET6_0_OR_GREATER
   [Pure]
   public static string ComputeId(ReadOnlySpan<byte> input)
@@ -16,11 +17,11 @@ public static class IdGenerator
     SHA256.HashData(input, hash);
 
 #if NET9_0_OR_GREATER
-    return Convert.ToHexStringLower(hash);
+    return Convert.ToHexStringLower(hash[..(SHA256.HashSizeInBytes / 2)]);
 #else
-    Span<char> output = stackalloc char[HashUtility.HASH_LENGTH];
+    Span<char> output = stackalloc char[ID_HEX_LENGTH_CHARS];
 
-    for (int i = 0, j = 0; j < HashUtility.HASH_LENGTH; i += sizeof(byte), j += sizeof(char))
+    for (int i = 0, j = 0; j < ID_HEX_LENGTH_CHARS; i += sizeof(byte), j += sizeof(char))
     {
       hash[i].TryFormat(output[j..], out _, "x2");
     }
@@ -46,6 +47,6 @@ public static class IdGenerator
       sb.Append(b.ToString("x2"));
     }
 
-    return sb.ToString(0, HashUtility.HASH_LENGTH);
+    return sb.ToString(0, ID_HEX_LENGTH_CHARS);
   }
 }
