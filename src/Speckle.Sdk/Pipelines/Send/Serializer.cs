@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
-using System.Text;
 using System.Text.Json;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -29,7 +28,6 @@ internal sealed class Serializer
       yield break;
     }
 
-    //TODO: can we remove the EfficientJson from here?
     var detachedObjects = new List<(Id, EfficientJson, Dictionary<string, int>, Base, string)>();
     var rootClosures = new Dictionary<string, int>();
 
