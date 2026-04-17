@@ -115,22 +115,14 @@ internal sealed class Serializer
       SerializeValue(prop.Value, jsonWriter, prop.IsDetachable, childClosures, detachedObjects);
     }
 
+    // We want to hash the json string now to calculate the id
+    // We don't want to allocate a separate buffer for it, as this wouldn't be memory efficient
     jsonWriter.Flush();
 
 #if NET6_0_OR_GREATER
-    // We want to hash the json string now to calculate the id
-    // We don't want to allocate a separate buffer for it, as this wouldn't be memory efficient
-    // It's also (debatably) important that the bytes we hash are the full json object (minus id and closures obviously)
-    // For this, we are manually writing the closing } bracket without calling Buffer.Advance
-    // Such that, the buffer can continue to write the id, and closures later in this function.
-    // var bytes = efficientJson.Buffer.GetSpan(1);
-    // bytes[0] = (byte)'}';
     string id = IdGenerator.ComputeId(efficientJson.WrittenSpan);
-    string str = Encoding.UTF8.GetString(efficientJson.WrittenSpan);
 #else
-
     string id = IdGenerator.ComputeId(efficientJson.GetInternalBuffer(), 0, efficientJson.WrittenCount);
-    string str = Encoding.UTF8.GetString(efficientJson.GetInternalBuffer());
 #endif
     jsonWriter.WriteString("id", id);
 

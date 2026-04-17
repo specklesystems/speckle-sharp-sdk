@@ -15,14 +15,17 @@ public static class IdGenerator
     Span<byte> hash = stackalloc byte[SHA256.HashSizeInBytes];
     SHA256.HashData(input, hash);
 
+#if NET9_0_OR_GREATER
+    return Convert.ToHexStringLower(hash);
+#else
     Span<char> output = stackalloc char[HashUtility.HASH_LENGTH];
 
     for (int i = 0, j = 0; j < HashUtility.HASH_LENGTH; i += sizeof(byte), j += sizeof(char))
     {
       hash[i].TryFormat(output[j..], out _, "x2");
     }
-
     return new string(output);
+#endif
   }
 #endif
 
