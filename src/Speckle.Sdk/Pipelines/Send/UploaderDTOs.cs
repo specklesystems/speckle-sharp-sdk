@@ -1,6 +1,5 @@
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Pipelines.Send;
 

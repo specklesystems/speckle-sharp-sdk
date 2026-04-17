@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
+using System.Text;
 using System.Text.Json;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -116,12 +117,21 @@ internal sealed class Serializer
     jsonWriter.Flush();
 
 #if NET6_0_OR_GREATER
-    var span = efficientJson.WrittenSpan;
-    string id = IdGenerator.ComputeId(span);
+    // We want to hash the json string now to calculate the id
+    // We don't want to allocate a separate buffer for it, as this wouldn't be memory efficient
+    // It's also (debatably) important that the bytes we hash are the full json object (minus id and closures obviously)
+    // For this, we are manually writing the closing } bracket without calling Buffer.Advance
+    // Such that, the buffer can continue to write the id, and closures later in this function.
+    var bytes = efficientJson.Buffer.GetSpan(efficientJson.WrittenCount + 1);
+    bytes[^1] = (byte)'}';
+    string id = IdGenerator.ComputeId(bytes);
 #else
+    efficientJson.CheckAndResizeBuffer(efficientJson.WrittenCount + 1);
     var bytes = efficientJson.GetInternalBuffer();
+    bytes[efficientJson.WrittenCount] = (byte)'}';
     string id = IdGenerator.ComputeId(bytes, 0, efficientJson.WrittenCount);
 #endif
+    string str = Encoding.UTF8.GetString(bytes);
     jsonWriter.WriteString("id", id);
 
     baseObj.id = id;

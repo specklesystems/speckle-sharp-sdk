@@ -195,7 +195,7 @@ namespace System.Buffers
       return _buffer.AsSpan(_index);
     }
 
-    private void CheckAndResizeBuffer(int sizeHint)
+    public void CheckAndResizeBuffer(int sizeHint)
     {
       if (sizeHint < 0)
         throw new ArgumentException(nameof(sizeHint));
