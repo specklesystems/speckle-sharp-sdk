@@ -13,7 +13,10 @@ public sealed class DetachPropertyAttribute : Attribute
   /// <para>If set to true the default serialiser will persist it separately, and add a reference to the property's value in the original object.</para>
   /// <para>Only applies to properties of types derived from the Base class.</para>
   /// </summary>
-  public DetachPropertyAttribute() { }
+  public DetachPropertyAttribute()
+  {
+    Detachable = true;
+  }
 
   [Obsolete("detachable = false is no longer supported")]
   public DetachPropertyAttribute(bool detachable = true)
