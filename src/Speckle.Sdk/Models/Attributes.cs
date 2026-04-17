@@ -19,7 +19,7 @@ public sealed class DetachPropertyAttribute : Attribute
   }
 
   [Obsolete("detachable = false is no longer supported")]
-  public DetachPropertyAttribute(bool detachable = true)
+  public DetachPropertyAttribute(bool detachable)
   {
     Detachable = detachable;
   }

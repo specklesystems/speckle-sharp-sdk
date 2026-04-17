@@ -29,6 +29,7 @@ internal sealed class Serializer
       yield break;
     }
 
+    //TODO: can we remove the EfficientJson from here?
     var detachedObjects = new List<(Id, EfficientJson, Dictionary<string, int>, Base, string)>();
     var rootClosures = new Dictionary<string, int>();
 
@@ -122,16 +123,15 @@ internal sealed class Serializer
     // It's also (debatably) important that the bytes we hash are the full json object (minus id and closures obviously)
     // For this, we are manually writing the closing } bracket without calling Buffer.Advance
     // Such that, the buffer can continue to write the id, and closures later in this function.
-    var bytes = efficientJson.Buffer.GetSpan(efficientJson.WrittenCount + 1);
-    bytes[^1] = (byte)'}';
-    string id = IdGenerator.ComputeId(bytes);
+    // var bytes = efficientJson.Buffer.GetSpan(1);
+    // bytes[0] = (byte)'}';
+    string id = IdGenerator.ComputeId(efficientJson.WrittenSpan);
+    string str = Encoding.UTF8.GetString(efficientJson.WrittenSpan);
 #else
-    efficientJson.CheckAndResizeBuffer(efficientJson.WrittenCount + 1);
-    var bytes = efficientJson.GetInternalBuffer();
-    bytes[efficientJson.WrittenCount] = (byte)'}';
-    string id = IdGenerator.ComputeId(bytes, 0, efficientJson.WrittenCount);
+
+    string id = IdGenerator.ComputeId(efficientJson.GetInternalBuffer(), 0, efficientJson.WrittenCount);
+    string str = Encoding.UTF8.GetString(efficientJson.GetInternalBuffer());
 #endif
-    string str = Encoding.UTF8.GetString(bytes);
     jsonWriter.WriteString("id", id);
 
     baseObj.id = id;
