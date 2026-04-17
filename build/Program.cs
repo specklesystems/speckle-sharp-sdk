@@ -169,7 +169,7 @@ Target(
 
 Target(
   PACK,
-  dependsOn: [BUILD],
+  dependsOn: [TEST],
   async () =>
   {
     {
