@@ -1,9 +1,30 @@
 ﻿using System.Buffers;
 using Microsoft.Extensions.ObjectPool;
 
-namespace Speckle.Sdk.Dependencies;
+namespace Speckle.Sdk.ObjectPools;
 
-public sealed class ArrayBufferWriterPooledObjectPolicy<T> : PooledObjectPolicy<ArrayBufferWriter<T>>
+internal sealed class ObjectsPool<T>
+  where T : class, new()
+{
+  private readonly ObjectPool<T> _objectPool;
+
+  internal ObjectsPool(IPooledObjectPolicy<T> objectPolicy)
+  {
+    _objectPool = ObjectPool.Create(objectPolicy);
+  }
+
+  public T Get() => _objectPool.Get();
+
+  public void Return(T obj) => _objectPool.Return(obj);
+}
+
+internal static class ObjectsPools
+{
+  internal static ObjectsPool<ArrayBufferWriter<byte>> ArrayBufferWriter { get; } =
+    new(new ArrayBufferWriterPooledObjectPolicy<byte> { MaximumRetainedCapacity = 100 * 1024 * 1024 });
+}
+
+internal sealed class ArrayBufferWriterPooledObjectPolicy<T> : PooledObjectPolicy<ArrayBufferWriter<T>>
 {
   /// <summary>
   /// Gets or sets the initial capacity of pooled <see cref="ArrayBufferWriter{T}"/> instances.

@@ -1,6 +1,6 @@
 ﻿using System.Buffers;
 using System.Text;
-using Speckle.Sdk.Dependencies;
+using Speckle.Sdk.ObjectPools;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
@@ -24,7 +24,7 @@ public sealed class EfficientJson : IDisposable
 
   public int WrittenCount => _value.WrittenCount;
 
-  private readonly ArrayBufferWriter<byte> _value = Pools.ArrayBufferWriter.Get();
+  private readonly ArrayBufferWriter<byte> _value = ObjectsPools.ArrayBufferWriter.Get();
 
-  public void Dispose() => Pools.ArrayBufferWriter.Return(_value);
+  public void Dispose() => ObjectsPools.ArrayBufferWriter.Return(_value);
 }

@@ -11,7 +11,7 @@ namespace System.Buffers
   /// <summary>
   /// Represents a heap-based, array-backed output sink into which <typeparam name="T"/> data can be written.
   /// </summary>
-  public sealed class ArrayBufferWriter<T> : IBufferWriter<T>
+  internal sealed class ArrayBufferWriter<T> : IBufferWriter<T>
   {
     // Copy of Array.MaxLength.
     // Used by projects targeting .NET Framework.

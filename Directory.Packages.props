@@ -42,7 +42,7 @@
     <PackageVersion Include="Microsoft.CSharp" Version="[4.7.0,)" />
     <!-- Keep at exactly 7.0.5 for side by side with V2 -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="[7.0.5,)" />
-    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="10.0.6" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.6" />
