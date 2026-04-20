@@ -14,7 +14,7 @@ public class PipelineSerializerTest
 {
   private readonly Serializer _sut = new();
   private ServiceProvider _provider;
-  private Collection testData;
+  private Collection _testData;
 
   [GlobalSetup]
   public async Task Setup()
@@ -24,7 +24,7 @@ public class PipelineSerializerTest
     _provider = serviceCollection.BuildServiceProvider();
 
     var operations = _provider.GetRequiredService<IOperations>();
-    testData = (Collection)
+    _testData = (Collection)
       await operations.Receive2(
         new("https://app.speckle.systems"),
         "bf5b49215c",
@@ -38,8 +38,8 @@ public class PipelineSerializerTest
   [Benchmark]
   public List<UploadItem[]> Serialize()
   {
-    List<UploadItem[]> items = new(testData.elements.Count);
-    foreach (var item in testData.elements)
+    List<UploadItem[]> items = new(_testData.elements.Count);
+    foreach (var item in _testData.elements)
     {
       items.Add(_sut.Serialize(item).ToArray());
     }
