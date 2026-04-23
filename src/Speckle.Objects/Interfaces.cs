@@ -176,5 +176,9 @@ public interface IArchicadObject : IDataObject
 
 public interface INavisworksObject : IDataObject { }
 
+public interface IRhinoObject : IDataObject
+{
+  string type { get; }
+}
 
 #endregion
