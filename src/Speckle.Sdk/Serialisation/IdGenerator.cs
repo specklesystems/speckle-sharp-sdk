@@ -7,6 +7,7 @@ namespace Speckle.Sdk.Serialisation;
 public static class IdGenerator
 {
   [Pure]
+  //Obsolete (serializer v2)
   public static Id ComputeId(Json serialized)
   {
 #if NET6_0_OR_GREATER

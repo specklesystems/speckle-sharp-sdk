@@ -39,15 +39,13 @@ public sealed class SendPipeline : IDisposable
   public async Task<ObjectReference> Process(Base @base)
   {
     var results = _serializer.Serialize(@base).ToArray();
-    var first = results.First();
-    // .Reverse ensures the root commit object is written last.
     foreach (var item in results.Reverse())
     {
       // we're not doing fire and forget here so that we get the backpressure from the uploader
       await _diskStore.PushAsync(item).ConfigureAwait(false);
     }
 
-    return first.Reference;
+    return results.First().Reference;
   }
 
   public async Task WaitForUpload()
