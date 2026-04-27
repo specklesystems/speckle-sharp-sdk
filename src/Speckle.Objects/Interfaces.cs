@@ -141,6 +141,11 @@ public interface ICivilObject : IDataObject
   IReadOnlyList<Base> elements { get; }
 }
 
+public interface IAutocadObject : IDataObject
+{
+  string type { get; }
+}
+
 public interface ITeklaObject : IDataObject
 {
   string type { get; }
@@ -171,5 +176,9 @@ public interface IArchicadObject : IDataObject
 
 public interface INavisworksObject : IDataObject { }
 
+public interface IRhinoObject : IDataObject
+{
+  string type { get; }
+}
 
 #endregion
