@@ -42,6 +42,8 @@ public record ModelIngestionFailedInput(
 
 public record ModelIngestionCancelledInput(string ingestionId, string projectId, string cancellationMessage);
 
+public record ModelIngestionInvalidInput(string ingestionId, string projectId, string validationMessage);
+
 public record ModelIngestionStartProcessingInput(
   string ingestionId,
   string projectId,

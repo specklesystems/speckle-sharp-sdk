@@ -1,12 +1,20 @@
+using System.Reflection;
 using AwesomeAssertions;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
+[Collection(nameof(RequiresTypeLoaderCollection))]
 public class TraversalTests
 {
+  public TraversalTests()
+  {
+    TypeLoader.ReInitialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
+  }
+
   [Fact(DisplayName = "Tests that provided breaker rules are respected")]
   public void TestFlattenWithBreaker()
   {
