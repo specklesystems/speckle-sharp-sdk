@@ -105,7 +105,7 @@ public sealed class BlobApi : IBlobApi
 #endif
       response.Content.Headers.ContentLength,
       progress,
-      true
+      false
     );
 
     using var fs = new FileStream(
