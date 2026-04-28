@@ -48,17 +48,20 @@ public sealed class IngestionProgressManager(
 
       trimmedMessage = value.Status.TrimEnd('.');
 
-      LastUpdate = speckleClient
-        .Ingestion.UpdateProgress(
-          new ModelIngestionUpdateInput(ingestion.id, ingestion.projectId, trimmedMessage, value.Progress),
-          cancellationToken
-        )
-        .ContinueWith(
-          Continuation,
-          CancellationToken.None,
-          TaskContinuationOptions.ExecuteSynchronously,
-          TaskScheduler.Default
-        );
+      LastUpdate = Task.Run(async () =>
+        await speckleClient
+          .Ingestion.UpdateProgress(
+            new ModelIngestionUpdateInput(ingestion.id, ingestion.projectId, trimmedMessage, value.Progress),
+            cancellationToken
+          )
+          .ContinueWith(
+            Continuation,
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default
+          )
+          .ConfigureAwait(false)
+      );
     }
 
     logger.LogInformation("Progress update {Message} {Progress}", trimmedMessage, value.Progress);
