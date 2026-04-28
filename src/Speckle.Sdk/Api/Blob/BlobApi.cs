@@ -90,7 +90,10 @@ public sealed class BlobApi : IBlobApi
 
     var url = new Uri($"api/stream/{projectId}/blob/{blobId}", UriKind.Relative);
 
-    using var response = await _authedClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+    using var response = await _authedClient
+      .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+      .ConfigureAwait(false);
+
     response.EnsureSuccessStatusCode();
 
     string fileLocation = pathOverride ?? GetBlobDownloadPath(blobId, response);
@@ -105,7 +108,14 @@ public sealed class BlobApi : IBlobApi
       true
     );
 
-    using var fs = new FileStream(fileLocation, FileMode.OpenOrCreate);
+    using var fs = new FileStream(
+      fileLocation,
+      FileMode.Create,
+      FileAccess.Write,
+      FileShare.None,
+      1024 * 1024,
+      FileOptions.Asynchronous
+    );
 #if NET5_0_OR_GREATER
     await source.CopyToAsync(fs, cancellationToken).ConfigureAwait(false);
 #else
