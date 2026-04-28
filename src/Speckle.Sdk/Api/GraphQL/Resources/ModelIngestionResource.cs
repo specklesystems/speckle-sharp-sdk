@@ -511,7 +511,7 @@ public sealed class ModelIngestionResource
   /// Note simply calling this mutation does not imediatly cancel, it doesn't even guarantee it will be canceled at all.
   /// It's up to the client to observe this cancellation request
   /// via <see cref="SubscriptionResource.CreateProjectModelIngestionCancellationRequestedSubscription"/>
-  /// and report it as canceled via  <see cref="ModelIngestionResource.FailWithCancel"/>
+  /// and report it as cancelled via  <see cref="ModelIngestionResource.FailWithCancel"/>
   /// See "cooperative cancellation pattern"<br/>
   /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
