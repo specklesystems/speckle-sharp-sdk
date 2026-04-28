@@ -444,6 +444,64 @@ public sealed class ModelIngestionResource
   }
 
   /// <summary>
+  /// Fail the ingestion with a <c>invalid</c> status.
+  /// This should only be done if user input e.g. file/settings/target is determined to be invalid or unsupported
+  /// or other forms of deterministic designed behaviour
+  /// For errors that may be caused by internal/infrastructure behaviour, use <see cref="FailWithError"/>.
+  /// API is available for server versions <c>~3.0.23</c> and above
+  /// </summary>
+  /// <seealso cref="FailWithError"/>
+  /// <seealso cref="FailWithCancel"/>
+  /// <seealso cref="Complete"/>
+  /// <param name="input"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<ModelIngestion> FailWithInvalid(
+    ModelIngestionInvalidInput input,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      mutation IngestionFailWithInvalid($input: ModelIngestionInvalidInput!) {
+        data: projectMutations {
+          data: modelIngestionMutations {
+            data: failWithInvalid(input: $input) {
+              id
+              createdAt
+              updatedAt
+              modelId
+              projectId
+              userId
+              cancellationRequested
+              statusData {
+                ... on HasModelIngestionStatus {
+                  status
+                }
+                ... on HasProgressMessage {
+                  progressMessage
+                }
+              }
+            }
+          }
+        }
+      }
+      """;
+
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
+
+    var res = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ModelIngestion>>>>(
+        request,
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+
+    return res.data.data.data;
+  }
+
+  /// <summary>
   /// Request that the <see cref="ModelIngestion"/> is canceled.
   /// </summary>
   /// <remarks>
