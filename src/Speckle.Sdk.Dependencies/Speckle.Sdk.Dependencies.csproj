@@ -27,14 +27,15 @@
     <PackageReference Include="Polly.Extensions.Http" PrivateAssets="all" />
     <PackageReference Include="Open.ChannelExtensions" PrivateAssets="all" />
     <PackageReference Include="System.Threading.Channels" PrivateAssets="all" />
+    <PackageReference Include="System.Memory" VersionOverride="4.5.5" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
     <!--
-    We build for apps that come with 7.0.0, so this is our minimum 
+    Dynamo plugins for revit use 5.x.x, so this is our minimum 
     Consuming apps should override this to 8.x.x or greater
     -->
-    <PackageReference Include="System.Text.Json" NoWarn="NU1903" VersionOverride="7.0.0" />
+    <PackageReference Include="System.Text.Json" NoWarn="NU1903" VersionOverride="5.0.2" />
   </ItemGroup>
   <Target Name="BeforeILRepackPrepareBuild" BeforeTargets="ILRepackPrepareBuild">
     <ItemGroup>

@@ -1,11 +1,21 @@
 ﻿using System.Buffers;
 using System.Text;
+using System.Text.Json;
 using Speckle.Sdk.Dependencies;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
 public sealed class EfficientJson : IDisposable
 {
+  private readonly ArrayBufferWriter<byte> _value;
+  internal Utf8JsonWriter Writer { get; }
+
+  public EfficientJson()
+  {
+    _value = Pools.ArrayBufferWriter.Get();
+    Writer = new(_value);
+  }
+
   internal IBufferWriter<byte> Buffer => _value;
 
   public ReadOnlySpan<byte> WrittenSpan => _value.WrittenSpan;
@@ -23,8 +33,6 @@ public sealed class EfficientJson : IDisposable
 #endif
 
   public int WrittenCount => _value.WrittenCount;
-
-  private readonly ArrayBufferWriter<byte> _value = Pools.ArrayBufferWriter.Get();
 
   public void Dispose() => Pools.ArrayBufferWriter.Return(_value);
 }

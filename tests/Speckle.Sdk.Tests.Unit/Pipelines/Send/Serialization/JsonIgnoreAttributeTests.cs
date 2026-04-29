@@ -72,6 +72,8 @@ public sealed class JsonIgnoreRespected
     result.SpeckleType.Should().Be(testData.speckle_type);
     result.Reference.closure.Should().NotBeNull();
 
+    var a = result.Json.ToJsonString();
+    Console.WriteLine(a);
     foreach (UploadItem child in results)
     {
       string jsonString = child.Json.ToJsonString();

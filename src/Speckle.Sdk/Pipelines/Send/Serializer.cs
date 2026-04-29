@@ -31,7 +31,9 @@ internal sealed class Serializer
     var detachedObjects = new List<(Id, EfficientJson, Dictionary<string, int>, Base, string)>();
     var rootClosures = new Dictionary<string, int>();
 
-    var (rootId, rootJson) = SerializeBase(root, false, rootClosures, detachedObjects);
+    var rootJson = new EfficientJson();
+    using Utf8JsonWriter writer = rootJson.Writer;
+    Id rootId = SerializeBase(root, rootJson, false, rootClosures, detachedObjects);
 
     var rootReference = new ObjectReference
     {
@@ -93,8 +95,9 @@ internal sealed class Serializer
     }
   }
 
-  private (Id, EfficientJson) SerializeBase(
+  private Id SerializeBase(
     Base baseObj,
+    EfficientJson efficientJson,
     bool forceDetach,
     Dictionary<string, int> closures,
     List<(Id, EfficientJson, Dictionary<string, int>, Base, string)> detachedObjects
@@ -102,15 +105,15 @@ internal sealed class Serializer
   {
     var childClosures = new Dictionary<string, int>();
 
-    var efficientJson = new EfficientJson();
-    using var jsonWriter = new Utf8JsonWriter(efficientJson.Buffer);
+    var jsonWriter = efficientJson.Writer;
+    int byteOffset = (int)jsonWriter.BytesCommitted + jsonWriter.BytesPending;
 
     jsonWriter.WriteStartObject();
 
     foreach (var prop in ExtractProperties(baseObj))
     {
       jsonWriter.WritePropertyName(prop.Name);
-      SerializeValue(prop.Value, jsonWriter, prop.IsDetachable, childClosures, detachedObjects);
+      SerializeValue(prop.Value, efficientJson, prop.IsDetachable, childClosures, detachedObjects);
     }
 
     // We want to hash the json string now to calculate the id
@@ -118,9 +121,9 @@ internal sealed class Serializer
     jsonWriter.Flush();
 
 #if NET6_0_OR_GREATER
-    string id = IdGenerator.ComputeId(efficientJson.WrittenSpan);
+    string id = IdGenerator.ComputeId(efficientJson.WrittenSpan[byteOffset..]);
 #else
-    string id = IdGenerator.ComputeId(efficientJson.GetInternalBuffer(), 0, efficientJson.WrittenCount);
+    string id = IdGenerator.ComputeId(efficientJson.GetInternalBuffer(), byteOffset, efficientJson.WrittenCount);
 #endif
     jsonWriter.WriteString("id", id);
 
@@ -144,17 +147,18 @@ internal sealed class Serializer
 
     jsonWriter.WriteEndObject();
     jsonWriter.Flush();
-    return (new(id), efficientJson);
+    return new(id);
   }
 
   private void SerializeValue(
     object? value,
-    Utf8JsonWriter writer,
+    EfficientJson json,
     bool isDetachable,
     Dictionary<string, int> closures,
     List<(Id, EfficientJson, Dictionary<string, int>, Base, string)> detachedObjects
   )
   {
+    var writer = json.Writer;
     switch (value)
     {
       case null:
@@ -249,7 +253,10 @@ internal sealed class Serializer
         if (isDetachable)
         {
           var childClosures = new Dictionary<string, int>();
-          var (childId, childJson) = SerializeBase(baseObj, true, childClosures, detachedObjects);
+
+          var childJson = new EfficientJson();
+          using var innerWriter = childJson.Writer;
+          var childId = SerializeBase(baseObj, childJson, true, childClosures, detachedObjects);
 
           detachedObjects.Add((childId, childJson, childClosures, baseObj, baseObj.speckle_type));
 
@@ -270,9 +277,7 @@ internal sealed class Serializer
         else
         {
           var inlineClosures = new Dictionary<string, int>();
-          var (_, inlineJson) = SerializeBase(baseObj, false, inlineClosures, detachedObjects);
-
-          writer.WriteRawValue(inlineJson.WrittenSpan);
+          _ = SerializeBase(baseObj, json, false, inlineClosures, detachedObjects);
 
           foreach (var kvp in inlineClosures)
           {
@@ -294,7 +299,7 @@ internal sealed class Serializer
           }
 
           writer.WritePropertyName(key);
-          SerializeValue(kvp.Value, writer, false, closures, detachedObjects);
+          SerializeValue(kvp.Value, json, false, closures, detachedObjects);
         }
         writer.WriteEndObject();
         return;
@@ -304,7 +309,7 @@ internal sealed class Serializer
         writer.WriteStartArray();
         foreach (var item in collection)
         {
-          SerializeValue(item, writer, isDetachable, closures, detachedObjects);
+          SerializeValue(item, json, isDetachable, closures, detachedObjects);
         }
         writer.WriteEndArray();
         return;
@@ -324,7 +329,7 @@ internal sealed class Serializer
   private UploadItem ReferenceToUploadItem(ObjectReference existingRef)
   {
     var refJson = new EfficientJson();
-    using var jsonWriter = new Utf8JsonWriter(refJson.Buffer);
+    using var jsonWriter = refJson.Writer;
 
     jsonWriter.WriteStartObject();
     jsonWriter.WriteString("speckle_type", "reference");
