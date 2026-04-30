@@ -22,9 +22,11 @@ public class CryptSha256Hash
     return Speckle.Sdk.Common.Sha256.GetString(testData);
   }
 
+#if NET6_0_OR_GREATER
   [Benchmark]
   public string Sha256_Span()
   {
     return Speckle.Sdk.Common.Sha256.GetString(testData.AsSpan());
   }
+#endif
 }

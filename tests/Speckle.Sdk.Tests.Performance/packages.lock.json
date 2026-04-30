@@ -42,15 +42,6 @@
         "resolved": "0.9.6",
         "contentHash": "HKH7tYrYYlCK1ct483hgxERAdVdMtl7gUKW9ijWXxA1UsYR4Z+TrRHYmzZ9qmpu1NnTycSrp005NYM78GDKV1w=="
       },
-      "Speckle.Objects": {
-        "type": "Direct",
-        "requested": "[3.16.0, )",
-        "resolved": "3.16.0",
-        "contentHash": "rejNd2qSqvl5Z12EkkfLVmME0OCssAYDB3Pv0MR6qSQk1HiKtY6FAZ0cCQrNAW/0my2U9BhAxuuijYVwZ/2kuw==",
-        "dependencies": {
-          "Speckle.Sdk": "3.16.0"
-        }
-      },
       "BenchmarkDotNet.Annotations": {
         "type": "Transitive",
         "resolved": "0.15.8",
@@ -202,25 +193,6 @@
         "resolved": "3.2.4",
         "contentHash": "I5qFifWw/gaTQT52MhzjZpkm/JPlfjSeO/DTZJjO7+hTKI+0aGRgOgZ3NN6D96dDuuqbIAZSeA5RimtHjqrA2A=="
       },
-      "Speckle.Sdk": {
-        "type": "Transitive",
-        "resolved": "3.16.0",
-        "contentHash": "iFKc+8xrKvy4cnc0jDtICiU4KKtl/D9Y4JUFNjln+XDVlDFr4+CFSo5/L1yZ49Z7I7Btva15jHIt0f7kC2eCDw==",
-        "dependencies": {
-          "GraphQL.Client": "6.1.0",
-          "Microsoft.Data.Sqlite": "10.0.0",
-          "Microsoft.Extensions.DependencyInjection": "10.0.0",
-          "Microsoft.Extensions.Logging": "10.0.0",
-          "Speckle.DoubleNumerics": "4.1.0",
-          "Speckle.Newtonsoft.Json": "13.0.2",
-          "Speckle.Sdk.Dependencies": "3.16.0"
-        }
-      },
-      "Speckle.Sdk.Dependencies": {
-        "type": "Transitive",
-        "resolved": "3.16.0",
-        "contentHash": "yOThCiw4lZOepAt/5e/DNnyj5wkdpgYv26Tp7Wvmiq9SI/4P01l/JcveqeynvaH1tfuWa9QyrVFGgiQtNFIbow=="
-      },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
         "resolved": "2.1.11",
@@ -270,6 +242,27 @@
         "type": "Transitive",
         "resolved": "4.7.0",
         "contentHash": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA=="
+      },
+      "speckle.objects": {
+        "type": "Project",
+        "dependencies": {
+          "Speckle.Sdk": "[1.0.0, )"
+        }
+      },
+      "speckle.sdk": {
+        "type": "Project",
+        "dependencies": {
+          "GraphQL.Client": "[6.1.0, )",
+          "Microsoft.Data.Sqlite": "[10.0.0, )",
+          "Microsoft.Extensions.DependencyInjection": "[10.0.0, )",
+          "Microsoft.Extensions.Logging": "[10.0.0, )",
+          "Speckle.DoubleNumerics": "[4.1.0, )",
+          "Speckle.Newtonsoft.Json": "[13.0.2, )",
+          "Speckle.Sdk.Dependencies": "[1.0.0, )"
+        }
+      },
+      "speckle.sdk.dependencies": {
+        "type": "Project"
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",

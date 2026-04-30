@@ -26,7 +26,13 @@ public static class Pools
     new(new StringBuilderPooledObjectPolicy() { MaximumRetainedCapacity = 100 * 1024 * 1024 });
 
   public static Pool<ArrayBufferWriter<byte>> ArrayBufferWriter { get; } =
-    new(new ArrayBufferWriterPooledObjectPolicy<byte>() { MaximumRetainedCapacity = 100 * 1024 * 1024 });
+    new(
+      new ArrayBufferWriterPooledObjectPolicy<byte>()
+      {
+        InitialCapacity = 512,
+        MaximumRetainedCapacity = 100 * 1024 * 1024,
+      }
+    );
 
   private sealed class ObjectDictionaryPolicy<TKey, TValue> : IPooledObjectPolicy<Dictionary<TKey, TValue>>
     where TKey : notnull
