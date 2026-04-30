@@ -123,7 +123,8 @@ internal sealed class Serializer
 #if NET6_0_OR_GREATER
     string id = IdGenerator.ComputeId(efficientJson.WrittenSpan[byteOffset..]);
 #else
-    string id = IdGenerator.ComputeId(efficientJson.GetInternalBuffer(), byteOffset, efficientJson.WrittenCount);
+    byte[] buffer = efficientJson.GetInternalBuffer();
+    string id = IdGenerator.ComputeId(buffer, byteOffset, efficientJson.WrittenCount - byteOffset);
 #endif
     jsonWriter.WriteString("id", id);
 
