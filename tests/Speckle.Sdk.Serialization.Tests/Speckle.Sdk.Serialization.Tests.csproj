@@ -19,6 +19,6 @@
     <ProjectReference Include="..\..\src\Speckle.Objects\Speckle.Objects.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="RevitObject.json.gz" />
+    <EmbeddedResource Include="Send2\RevitObject.json.gz" />
   </ItemGroup>
 </Project>
