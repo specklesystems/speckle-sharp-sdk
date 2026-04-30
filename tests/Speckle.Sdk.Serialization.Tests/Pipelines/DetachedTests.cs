@@ -10,7 +10,7 @@ public class DetachedTests
 
   public DetachedTests()
   {
-    TypeLoader.Initialize(typeof(TestClass).Assembly, typeof(Polyline).Assembly);
+    TypeLoader.ReInitialize(typeof(TestClass).Assembly, typeof(Polyline).Assembly);
 
     _sut = new();
   }

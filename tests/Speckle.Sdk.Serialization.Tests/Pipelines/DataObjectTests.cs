@@ -12,7 +12,7 @@ public class DataObjectTests
 
   public DataObjectTests()
   {
-    TypeLoader.Initialize(typeof(TestClass).Assembly, typeof(Polyline).Assembly);
+    TypeLoader.ReInitialize(typeof(TestClass).Assembly, typeof(Polyline).Assembly);
 
     _sut = new();
   }
