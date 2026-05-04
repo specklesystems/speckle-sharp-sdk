@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
+using System.Globalization;
 using System.Text.Json;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -209,6 +210,9 @@ internal sealed class Serializer
         return;
       case decimal d:
         writer.WriteNumberValue(d);
+        return;
+      case Guid g:
+        writer.WriteStringValue(g.ToString("D", CultureInfo.InvariantCulture));
         return;
       case Enum:
         writer.WriteNumberValue((int)value);
