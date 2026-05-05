@@ -193,10 +193,38 @@ internal sealed class Serializer
         writer.WriteBooleanValue(b);
         return;
       case float f:
-        writer.WriteNumberValue(f);
+        switch (f)
+        {
+          case float.PositiveInfinity:
+            writer.WriteStringValue("Infinity");
+            break;
+          case float.NegativeInfinity:
+            writer.WriteStringValue("-Infinity");
+            break;
+          case float.NaN:
+            writer.WriteStringValue("NaN");
+            break;
+          default:
+            writer.WriteNumberValue(f);
+            break;
+        }
         return;
       case double f:
-        writer.WriteNumberValue(f);
+        switch (f)
+        {
+          case double.PositiveInfinity:
+            writer.WriteStringValue("Infinity");
+            break;
+          case double.NegativeInfinity:
+            writer.WriteStringValue("-Infinity");
+            break;
+          case double.NaN:
+            writer.WriteStringValue("NaN");
+            break;
+          default:
+            writer.WriteNumberValue(f);
+            break;
+        }
         return;
       case decimal d:
         writer.WriteNumberValue(d);
@@ -322,8 +350,6 @@ internal sealed class Serializer
         return;
       }
       default:
-        // This case will handle primitives and `null`
-        // Will throw JsonWriterException if not supported
         throw new ArgumentOutOfRangeException(nameof(value), $"Unsupported type {value.GetType()}");
     }
   }

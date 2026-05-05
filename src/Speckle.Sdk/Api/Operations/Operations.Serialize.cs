@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Pipelines.Send;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
 
@@ -24,6 +25,17 @@ public partial class Operations
   {
     var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
     return serializer.Serialize(value);
+  }
+
+  /// <summary>
+  /// Serializes a given object using the new SendPipeline <see cref="Serialize"/>er
+  /// </summary>
+  /// <param name="value">The object to serializer</param>
+  /// <returns>A json string representation of the object.</returns>
+  public string SerializeNew(Base value)
+  {
+    var serializer = new Serializer();
+    return serializer.Serialize(value).First().Json.ToJsonString();
   }
 
   /// <remarks>
