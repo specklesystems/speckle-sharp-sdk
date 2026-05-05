@@ -1,7 +1,7 @@
 ﻿using System.Buffers;
 using Microsoft.Extensions.ObjectPool;
 
-namespace Speckle.Sdk.Dependencies;
+namespace Speckle.Sdk.MemoryManagement;
 
 public sealed class ArrayBufferWriterPooledObjectPolicy<T> : PooledObjectPolicy<ArrayBufferWriter<T>>
 {

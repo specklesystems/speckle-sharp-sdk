@@ -1,7 +1,7 @@
 ﻿using System.Buffers;
 using System.Text;
 using System.Text.Json;
-using Speckle.Sdk.Dependencies;
+using Speckle.Sdk.MemoryManagement;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
@@ -13,7 +13,17 @@ public sealed class EfficientJson : IDisposable
   public EfficientJson()
   {
     _value = Pools.ArrayBufferWriter.Get();
+    // try
+    // {
     Writer = new(_value);
+    // }
+    // catch (MissingMemberException)
+    // {
+    // Test for
+    // Console.WriteLine("Ctor failed, trying activator create instance");
+    // Writer = (Utf8JsonWriter)typeof(Utf8JsonWriter).GetConstructors()[0].Invoke([_value, new JsonWriterOptions()]);
+    // Activator.CreateInstance(typeof(Utf8JsonWriter), [_value, new JsonWriterOptions()]).NotNull();
+    // }
   }
 
   internal IBufferWriter<byte> Buffer => _value;
