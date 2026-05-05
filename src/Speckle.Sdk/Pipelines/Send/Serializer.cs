@@ -105,21 +105,11 @@ internal sealed class Serializer
   )
   {
     var childClosures = new Dictionary<string, int>();
-
     var jsonWriter = efficientJson.Writer;
-    int byteOffset1 = (int)jsonWriter.BytesCommitted + jsonWriter.BytesPending;
 
     jsonWriter.Flush();
-
+    //The "start" of this inner object
     int byteOffset = efficientJson.WrittenCount;
-
-    if (byteOffset1 != byteOffset)
-    {
-      // Adding this temporarily, I was happy with the `BytesCommitted + jsonWriter.BytesPending` solution
-      // But AI suggested that it would be somehow unreliable.
-      // adding this just to test, will remove and settle on either option after testing is complete.
-      throw new ArgumentException("Offsets differed in an unexpected way");
-    }
 
     jsonWriter.WriteStartObject();
 
