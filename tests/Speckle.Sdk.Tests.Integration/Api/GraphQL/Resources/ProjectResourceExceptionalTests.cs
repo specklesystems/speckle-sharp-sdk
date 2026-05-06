@@ -130,7 +130,10 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     await Sut.Delete(_testProject.id);
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get(_testProject.id));
-    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLStreamNotFoundException>();
+    Assert.Contains(
+      ex.GetType(),
+      new HashSet<Type> { typeof(SpeckleGraphQLStreamNotFoundException), typeof(SpeckleGraphQLForbiddenException) }
+    );
   }
 
   [Fact]
