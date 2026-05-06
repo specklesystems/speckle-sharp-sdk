@@ -57,9 +57,19 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   {
     var from = new DoubleValueMock { value = testCase };
 
-    await FluentActions
-      .Invoking(async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations))
-      .Should()
-      .ThrowAsync<SpeckleDeserializeException>();
+    // ReSharper disable once CompareOfFloatsByEqualityOperator
+    bool isInteger = testCase == unchecked((long)testCase);
+    if (isInteger)
+    {
+      var v = await from.SerializeAsTAndDeserialize<IntValueMock>(_operations);
+      Assert.Equal((long)from.value, v.value);
+    }
+    else
+    {
+      await FluentActions
+        .Invoking(async () => await from.SerializeAsTAndDeserialize<IntValueMock>(_operations))
+        .Should()
+        .ThrowAsync<SpeckleDeserializeException>();
+    }
   }
 }
