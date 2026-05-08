@@ -16,12 +16,6 @@ services:
       - ./setup/db/10-docker_postgres_init.sql:/docker-entrypoint-initdb.d/10-docker_postgres_init.sql
       - ./setup/db/11-docker_postgres_authentik_init.sql:/docker-entrypoint-initdb.d/11-docker_postgres_authentik_init.sql
     command: postgres -c max_prepared_transactions=150
-    healthcheck:
-      # the -U user has to match the POSTGRES_USER value
-      test: ["CMD-SHELL", "pg_isready -U speckle"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
 
   redis:
     image: "valkey/valkey:8.1-alpine@sha256:0d27f0bca0249f61d060029a6aaf2e16b2c417d68d02a508e1dfb763fa2948b4"

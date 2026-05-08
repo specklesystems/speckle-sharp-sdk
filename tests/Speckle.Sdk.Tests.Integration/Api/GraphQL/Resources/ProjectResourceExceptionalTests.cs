@@ -131,7 +131,7 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get(_testProject.id));
     Assert.Contains(
-      ex.GetType(),
+      ex.InnerExceptions[0].GetType(),
       new HashSet<Type> { typeof(SpeckleGraphQLStreamNotFoundException), typeof(SpeckleGraphQLForbiddenException) }
     );
   }
