@@ -28,10 +28,13 @@ public partial class Operations
   }
 
   /// <summary>
-  /// Serializes a given object using the new SendPipeline <see cref="Serialize"/>er
+  /// Serializes a given object using the new SendPipeline (System.Text.Json based) <see cref="Serializer"/>er
   /// </summary>
   /// <param name="value">The object to serializer</param>
   /// <returns>A json string representation of the object.</returns>
+  /// <remarks>
+  /// TODO: Once we strip out the old send2 functionality, we can make this this the normal <see cref="Serialize"/> implementation
+  /// </remarks>
   public string SerializeNew(Base value)
   {
     var serializer = new Serializer();

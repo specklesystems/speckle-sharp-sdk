@@ -15,6 +15,9 @@ namespace Speckle.Sdk.Pipelines.Send;
 /// into serialized JSON structures along with associated metadata, closures, and references.
 /// <para>Any reference objects coming through are being "passed through" serialized - they do not get double encoded.</para>
 /// </summary>
+/// <remarks>
+/// Unlike previous SDK serializers, this one uses <see cref="System.Text.Json"/> rather than <see cref="Speckle.Newtonsoft"/>
+/// </remarks>
 internal sealed class Serializer
 {
   private readonly record struct PropertyInfo(string Name, object? Value, bool IsDetachable);
