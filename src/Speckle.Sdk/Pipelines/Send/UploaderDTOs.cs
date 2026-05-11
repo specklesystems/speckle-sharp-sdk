@@ -3,8 +3,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
-public sealed record UploadItem(string Id, EfficientJson Json, string SpeckleType, ObjectReference Reference)
-  : IDisposable
+public sealed record UploadItem(string Id, Utf8Json Json, string SpeckleType, ObjectReference Reference) : IDisposable
 {
   public void Dispose() => Json.Dispose();
 }

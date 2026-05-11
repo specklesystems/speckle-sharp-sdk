@@ -5,12 +5,20 @@ using Speckle.Sdk.MemoryManagement;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
-public sealed class EfficientJson : IDisposable
+/// <summary>
+/// Wrapper for a UTF8 Encoded array buffer
+/// More efficient to write JSON via <see cref="Utf8JsonWriter"/> than as <see cref="string"/>s
+/// </summary>
+/// <remarks>
+/// Mutability is exposed only internally via <see cref="Utf8Json.Writer"/> to <see cref="Serializer"/>
+/// For all other consumers this class is read-only.
+/// </remarks>
+public sealed class Utf8Json : IDisposable
 {
   private readonly ArrayBufferWriter<byte> _value;
   internal Utf8JsonWriter Writer { get; }
 
-  public EfficientJson()
+  public Utf8Json()
   {
     _value = Pools.ArrayBufferWriter.Get();
 
