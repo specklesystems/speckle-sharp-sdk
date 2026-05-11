@@ -30,10 +30,6 @@
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
-    <!--
-    Dynamo plugins for revit use 5.x.x, so this is our minimum 
-    Consuming apps should override this to 8.x.x or greater
-    -->
   </ItemGroup>
   <Target Name="BeforeILRepackPrepareBuild" BeforeTargets="ILRepackPrepareBuild">
     <ItemGroup>
