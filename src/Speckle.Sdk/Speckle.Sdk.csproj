@@ -48,6 +48,8 @@
     <PackageReference Include="Microsoft.CSharp" />
     <!--To match Revit .NET 4.8-->
     <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="2.2.0" />
+    <!--To match Revit .NET 4.8-->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="2.2.0" />
     <!--No specific reason for 6.x, no known conficts-->
     <PackageReference Include="Microsoft.Extensions.ObjectPool" VersionOverride="6.0.0" />
     <!--Pinned exactly to match v2-->
