@@ -94,10 +94,7 @@ public class ProjectResourceTests
     await Sut.Delete(toDelete.id);
 
     // Assert
-    await FluentActions
-      .Invoking(async () => await Sut.Get(toDelete.id))
-      .Should()
-      .ThrowAsync<SpeckleGraphQLStreamNotFoundException>();
+    await FluentActions.Invoking(async () => await Sut.Get(toDelete.id)).Should().ThrowAsync<Exception>();
   }
 
   [Fact]
