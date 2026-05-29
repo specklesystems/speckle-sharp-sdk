@@ -137,6 +137,11 @@ public class ServerObjectManager : IServerObjectManager
     while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
 #endif
     {
+      if (line == ":heartbeat")
+      {
+        continue;
+      }
+
       cancellationToken.ThrowIfCancellationRequested();
 
       //On the server, Nginx will timeout if the request takes too long on the server side.
