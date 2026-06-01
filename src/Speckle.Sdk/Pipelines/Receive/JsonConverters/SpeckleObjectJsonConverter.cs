@@ -10,6 +10,8 @@ namespace Speckle.Sdk.Pipelines.Receive.JsonConverters;
 
 public sealed class SpeckleObjectJsonConverter(PackFileManager packFileManager) : JsonConverter<Base>
 {
+  public override bool CanConvert(Type typeToConvert) => typeof(Base).IsAssignableFrom(typeToConvert);
+
   public override Base Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
   {
     using var doc = JsonDocument.ParseValue(ref reader);
@@ -61,20 +63,11 @@ public sealed class SpeckleObjectJsonConverter(PackFileManager packFileManager) 
       {
         object? value;
 
-        if (typeof(Base).IsAssignableFrom(prop.PropertyType))
-        {
-          // nested Speckle object
-          value = JsonSerializer.Deserialize<Base>(propElement.GetRawText(), options);
-        }
-        else
-        {
 #if NET5_0_OR_GREATER
-
-          value = propElement.Deserialize(prop.PropertyType, options);
+        value = propElement.Deserialize(prop.PropertyType, options);
 #else
-          value = JsonSerializer.Deserialize(propElement.GetRawText(), prop.PropertyType, options);
+        value = JsonSerializer.Deserialize(propElement.GetRawText(), prop.PropertyType, options);
 #endif
-        }
 
         prop.SetValue(baseObj, value);
       }

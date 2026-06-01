@@ -57,7 +57,7 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// Gets the Euclidean length of this vector.
   /// </summary>
   /// <returns>Length of the vector.</returns>
-  [Newtonsoft.Json.JsonIgnore]
+  [JsonIgnore]
   public double Length => Math.Sqrt(DotProduct(this, this));
 
   /// <inheritdoc/>
