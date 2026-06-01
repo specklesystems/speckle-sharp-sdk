@@ -24,6 +24,7 @@
   <ItemGroup Label="Package References">
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
+    <PackageReference Include="DuckDB.NET.Data.Full" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Microsoft.Extensions.ObjectPool" VersionOverride="10.0.0" />

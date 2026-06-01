@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Pipelines.Progress;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Transports;
@@ -9,6 +11,41 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  public async Task<Base> Receive3(
+    string versionId,
+    string modelId,
+    string projectId,
+    Account account,
+    IProgress<CardProgress>? onProgressAction,
+    CancellationToken cancellationToken
+  )
+  {
+    using var receiveActivity = activityFactory.Start("Operations.Receive3");
+    receiveActivity?.SetTag("speckle.url", new Uri(account.serverInfo.url));
+    receiveActivity?.SetTag("speckle.versionId", versionId);
+    receiveActivity?.SetTag("speckle.modelId", modelId);
+    receiveActivity?.SetTag("speckle.projectId", projectId);
+
+    try
+    {
+      IProgress<StreamProgressArgs> progress = onProgressAction is not null
+        ? new RenderedStreamProgress(onProgressAction)
+        : new NullProgress<StreamProgressArgs>();
+
+      using var receivePipeline = receivePipelineFactory.CreateInstance(versionId, modelId, projectId, account);
+
+      Base root = await receivePipeline.Receive(progress, cancellationToken).ConfigureAwait(false);
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return root;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
   /// <summary>
   /// Receives a Object to the provided URL and Caches the results
   /// </summary>

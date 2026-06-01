@@ -32,7 +32,8 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="Bullseye" Version="6.1.0" />
-    <PackageVersion Include="GraphQL.Client" Version="6.1.0" />
+    <PackageVersion Include="DuckDB.NET.Data.Full" Version="[1.4.4,)" />
+    <PackageVersion Include="GraphQL.Client" Version="6.1.0s" />
     <PackageVersion Include="Glob" Version="1.1.9" />
     <PackageVersion Include="HttpMultipartParser" Version="10.0.0" />
     <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />

@@ -1,3 +1,5 @@
+using System.Drawing;
+
 namespace Speckle.Sdk.Models.Proxies;
 
 /// <summary>
@@ -11,7 +13,7 @@ public class ColorProxy : Base, IProxyCollection
   /// <summary>
   /// The argb int of the color
   /// </summary>
-  public required int value { get; set; }
+  public required Color value { get; set; }
 
   /// <summary>
   /// The name, if any, of the color

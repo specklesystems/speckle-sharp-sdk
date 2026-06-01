@@ -136,6 +136,11 @@ public class ServerObjectManager : IServerObjectManager
     while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
 #endif
     {
+      if (line == ":heartbeat")
+      {
+        continue;
+      }
+
       cancellationToken.ThrowIfCancellationRequested();
       if (!isSingle)
       {
