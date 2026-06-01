@@ -24,15 +24,19 @@ public class ControlPoint : Point, ITransformable<ControlPoint>
   /// </summary>
   [
     JsonProperty(NullValueHandling = NullValueHandling.Ignore),
-    Obsolete("Access coordinates using XYZ and weight fields", true)
+    Obsolete("Access coordinates using XYZ and weight fields", true),
+    JsonIgnore
   ]
-  internal new List<double> value
+  internal new List<double>? value
   {
-#pragma warning disable CS8603 // Possible null reference return. Reason: obsolete.
     get => null;
-#pragma warning restore CS8603 // Possible null reference return. Reason: obsolete.
     set
     {
+      if (value is null)
+      {
+        return;
+      }
+
       x = value[0];
       y = value[1];
       z = value[2];

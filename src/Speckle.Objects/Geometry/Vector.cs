@@ -57,7 +57,7 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// Gets the Euclidean length of this vector.
   /// </summary>
   /// <returns>Length of the vector.</returns>
-  [JsonIgnore]
+  [Newtonsoft.Json.JsonIgnore]
   public double Length => Math.Sqrt(DotProduct(this, this));
 
   /// <inheritdoc/>
@@ -199,15 +199,19 @@ public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
   /// </summary>
   [
     JsonProperty(NullValueHandling = NullValueHandling.Ignore),
-    Obsolete("Use X,Y,Z fields to access coordinates instead", true)
+    Obsolete("Use X,Y,Z fields to access coordinates instead", true),
+    JsonIgnore
   ]
-  public List<double> value
+  public List<double>? value
   {
-#pragma warning disable CS8603 // Possible null reference return.
     get => null;
-#pragma warning restore CS8603 // Possible null reference return.
     set
     {
+      if (value is null)
+      {
+        return;
+      }
+
       x = value[0];
       y = value[1];
       z = value.Count > 2 ? value[2] : 0;

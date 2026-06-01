@@ -103,7 +103,8 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
   /// </summary>
   [
     JsonProperty(NullValueHandling = NullValueHandling.Ignore),
-    Obsolete("Access coordinates using start and end point", true)
+    Obsolete("Access coordinates using start and end point", true),
+    JsonIgnore
   ]
   public List<double>? value
   {

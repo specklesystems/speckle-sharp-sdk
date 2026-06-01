@@ -2,6 +2,7 @@
 using System.Text.Json;
 using DuckDB.NET.Data;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines.Receive.JsonConverters;
 
@@ -15,9 +16,11 @@ public sealed class PackFileManager : IDisposable
   private readonly DuckDBConnection _connection;
   private readonly JsonSerializerOptions _options;
   private DuckDBCommand _getObjectSingleCommand;
+  private readonly ISdkActivityFactory _activityFactory;
 
-  public PackFileManager(FileInfo file)
+  public PackFileManager(FileInfo file, ISdkActivityFactory activityFactory)
   {
+    _activityFactory = activityFactory;
     _connection = new DuckDBConnection($"DataSource={file.FullName};ACCESS_MODE=READ_ONLY");
     _options = new JsonSerializerOptions();
     _options.Converters.Add(new SpeckleObjectJsonConverter(this));
@@ -64,36 +67,68 @@ public sealed class PackFileManager : IDisposable
 
   public string GetObjectString(string id)
   {
-    _getObjectSingleCommand.Parameters.Clear();
-    _getObjectSingleCommand.Parameters.Add(new(id));
-
-    using DbDataReader reader = _getObjectSingleCommand.ExecuteReader();
-
-    if (!reader.Read())
+    using var activity = _activityFactory.Start();
+    try
     {
-      throw new KeyNotFoundException($"Failed to find object with id {id}");
-    }
+      _getObjectSingleCommand.Parameters.Clear();
+      _getObjectSingleCommand.Parameters.Add(new(id));
 
-    return reader.GetString(0); //TODO: benchmark performance allocating strings or byte arrays here
+      using DbDataReader reader = _getObjectSingleCommand.ExecuteReader();
+
+      if (!reader.Read())
+      {
+        throw new KeyNotFoundException($"Failed to find object with id {id}");
+      }
+
+      string json = reader.GetString(0); //TODO: benchmark performance allocating strings or byte arrays here
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
+      return json;
+    }
+    catch (Exception ex)
+    {
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      activity?.RecordException(ex);
+      throw;
+    }
   }
 
   public Base GetCompleteObjectsTree()
   {
-    //language=PostgreSQL
-    const string QUERY = """
-      SELECT data FROM root LIMIT 1
-      """;
-    using DuckDBCommand command = _connection.CreateCommand();
-    command.CommandText = QUERY;
-
-    using DbDataReader reader = command.ExecuteReader();
-
-    if (!reader.Read())
-    {
-      throw new KeyNotFoundException();
-    }
-    string json = reader.GetString(0);
+    string json = GetRootObjectString();
     return JsonSerializer.Deserialize<Base>(json, _options).NotNull();
+  }
+
+  public string GetRootObjectString()
+  {
+    using var activity = _activityFactory.Start();
+
+    try
+    {
+      //language=PostgreSQL
+      const string QUERY = """
+        SELECT data FROM root LIMIT 1
+        """;
+
+      using DuckDBCommand command = _connection.CreateCommand();
+      command.CommandText = QUERY;
+
+      using DbDataReader reader = command.ExecuteReader();
+
+      if (!reader.Read())
+      {
+        throw new KeyNotFoundException();
+      }
+
+      string json = reader.GetString(0);
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
+      return json;
+    }
+    catch (Exception ex)
+    {
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      activity?.RecordException(ex);
+      throw;
+    }
   }
 
   public IEnumerable<Base> GetObjectsDepthFirst() //Too expensive

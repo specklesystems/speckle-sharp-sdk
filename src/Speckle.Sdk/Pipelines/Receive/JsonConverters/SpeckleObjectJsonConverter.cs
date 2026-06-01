@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Pipelines.Receive.JsonConverters;
 
 public sealed class SpeckleObjectJsonConverter(PackFileManager packFileManager) : JsonConverter<Base>
 {
-  public override Base? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+  public override Base Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
   {
     using var doc = JsonDocument.ParseValue(ref reader);
     var root = doc.RootElement;

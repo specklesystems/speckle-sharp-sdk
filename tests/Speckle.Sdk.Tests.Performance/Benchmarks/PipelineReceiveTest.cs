@@ -13,7 +13,7 @@ using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 
 [MemoryDiagnoser]
-[SimpleJob(RunStrategy.Monitoring, 0, 0, 1)]
+[SimpleJob(RunStrategy.Monitoring, 0, 0, 6)]
 public class PipelineReceiveTests : IDisposable
 {
   private ServiceProvider _provider;
