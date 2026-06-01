@@ -329,7 +329,7 @@
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",
-        "requested": "(, )",
+        "requested": "[6.1.0, )",
         "resolved": "6.1.0",
         "contentHash": "oKliAxtNuZDMxO9079mjSbwA0YwhjXBzVnVPuNZ3HI4OllO++CcOLT30l90mM/fxCAMaa8GU4ZYMwD9YjLkyiw==",
         "dependencies": {

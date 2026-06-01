@@ -319,7 +319,7 @@
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",
-        "requested": "(, )",
+        "requested": "[6.1.0, )",
         "resolved": "6.0.0",
         "contentHash": "8yPNBbuVBpTptivyAlak4GZvbwbUcjeQTL4vN1HKHRuOykZ4r7l5fcLS6vpyPyLn0x8FsL31xbOIKyxbmR9rbA==",
         "dependencies": {
@@ -572,7 +572,7 @@
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",
-        "requested": "(, )",
+        "requested": "[6.1.0, )",
         "resolved": "6.1.0",
         "contentHash": "oKliAxtNuZDMxO9079mjSbwA0YwhjXBzVnVPuNZ3HI4OllO++CcOLT30l90mM/fxCAMaa8GU4ZYMwD9YjLkyiw==",
         "dependencies": {
@@ -810,7 +810,7 @@
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",
-        "requested": "(, )",
+        "requested": "[6.1.0, )",
         "resolved": "6.0.0",
         "contentHash": "8yPNBbuVBpTptivyAlak4GZvbwbUcjeQTL4vN1HKHRuOykZ4r7l5fcLS6vpyPyLn0x8FsL31xbOIKyxbmR9rbA==",
         "dependencies": {

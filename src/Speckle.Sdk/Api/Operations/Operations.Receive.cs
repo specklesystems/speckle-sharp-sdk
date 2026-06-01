@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
@@ -6,11 +8,24 @@ using Speckle.Sdk.Pipelines.Progress;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Transports;
+using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  [DebuggerStepThrough]
+  public async Task<Base> Receive3(
+    Version version,
+    Model model,
+    Project project,
+    Account account,
+    IProgress<CardProgress>? onProgressAction,
+    CancellationToken cancellationToken
+  ) =>
+    await Receive3(version.id, model.id, project.id, account, onProgressAction, cancellationToken)
+      .ConfigureAwait(false);
+
   public async Task<Base> Receive3(
     string versionId,
     string modelId,
