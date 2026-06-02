@@ -8,7 +8,8 @@ using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Pipelines.Receive.JsonConverters;
 
-public sealed class SpeckleObjectJsonConverter(PackFileManager packFileManager) : JsonConverter<Base>
+public sealed class SpeckleObjectJsonConverter(SpeckleObjectDeserializer speckleObjectDeserializer)
+  : JsonConverter<Base>
 {
   public override bool CanConvert(Type typeToConvert) => typeof(Base).IsAssignableFrom(typeToConvert);
 
@@ -34,7 +35,7 @@ public sealed class SpeckleObjectJsonConverter(PackFileManager packFileManager) 
   {
     var referenceId = referenceObject.GetProperty(nameof(ObjectReference.referencedId)).GetString().NotNull();
 
-    return packFileManager.GetObject(referenceId);
+    return speckleObjectDeserializer.GetObject(referenceId);
     // return map.TryGetValue(referenceId, out var referenced)
     //   ? referenced
     //   : throw new JsonException($"Unresolved reference '{referenceId}'");

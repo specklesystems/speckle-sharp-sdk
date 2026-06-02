@@ -40,7 +40,15 @@ public sealed class ReceivePipeline(
   ISdkActivityFactory activityFactory
 ) : IDisposable
 {
-  public async Task<Base> Receive(IProgress<StreamProgressArgs> downloadProgress, CancellationToken cancellationToken)
+  public async Task<Base> Receive(
+    IProgress<StreamProgressArgs> downloadProgress,
+    CancellationToken cancellationToken
+  ) => await ReceiveSerial(downloadProgress, cancellationToken).ConfigureAwait(false);
+
+  public async Task<Base> ReceiveSerial(
+    IProgress<StreamProgressArgs> downloadProgress,
+    CancellationToken cancellationToken
+  )
   {
     using var activity = activityFactory.Start();
     try
@@ -54,11 +62,79 @@ public sealed class ReceivePipeline(
       await DownloadDuckFile(downloadUrl, tempFile.FileInfo, downloadProgress, cancellationToken).ConfigureAwait(false);
 
       using PackFileManager packFileManager = new(tempFile.FileInfo, activityFactory);
-      await packFileManager.OpenAsync(cancellationToken).ConfigureAwait(false);
+      var deserializer = new SpeckleObjectDeserializer(packFileManager);
 
       // string rootObject = packFileManager.GetRootObjectId();
       // return packFileManager.GetObjectsDepthFirst().ToArray();
-      Base result = packFileManager.GetCompleteObjectsTree(); //TODO: cancellation
+      Base result = deserializer.GetCompleteObjectsTreeSerial(); //TODO: cancellation
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
+
+      return result;
+    }
+    catch (Exception ex)
+    {
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      activity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  public async Task<Base> ReceiveAsync(
+    IProgress<StreamProgressArgs> downloadProgress,
+    CancellationToken cancellationToken
+  )
+  {
+    using var activity = activityFactory.Start();
+    try
+    {
+      var downloadUrl = new Uri(
+        $"/api/v1/projects/{projectId}/models/{modelId}/versions/{versionId}/download",
+        UriKind.Relative
+      );
+
+      using var tempFile = new DisposableFile(new FileInfo(Path.GetTempFileName()), logger);
+      await DownloadDuckFile(downloadUrl, tempFile.FileInfo, downloadProgress, cancellationToken).ConfigureAwait(false);
+
+      using PackFileManager packFileManager = new(tempFile.FileInfo, activityFactory);
+      var deserializer = new SpeckleObjectDeserializer(packFileManager);
+
+      // string rootObject = packFileManager.GetRootObjectId();
+      // return packFileManager.GetObjectsDepthFirst().ToArray();
+      Base result = await deserializer.GetCompleteObjectsTreeAsync(cancellationToken).ConfigureAwait(false);
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
+
+      return result;
+    }
+    catch (Exception ex)
+    {
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      activity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  public async Task<Base> ReceiveSync(
+    IProgress<StreamProgressArgs> downloadProgress,
+    CancellationToken cancellationToken
+  )
+  {
+    using var activity = activityFactory.Start();
+    try
+    {
+      var downloadUrl = new Uri(
+        $"/api/v1/projects/{projectId}/models/{modelId}/versions/{versionId}/download",
+        UriKind.Relative
+      );
+
+      using var tempFile = new DisposableFile(new FileInfo(Path.GetTempFileName()), logger);
+      await DownloadDuckFile(downloadUrl, tempFile.FileInfo, downloadProgress, cancellationToken).ConfigureAwait(false);
+
+      using PackFileManager packFileManager = new(tempFile.FileInfo, activityFactory);
+      var deserializer = new SpeckleObjectDeserializer(packFileManager);
+
+      // string rootObject = packFileManager.GetRootObjectId();
+      // return packFileManager.GetObjectsDepthFirst().ToArray();
+      Base result = deserializer.GetCompleteObjectsTreeSync(cancellationToken);
       activity?.SetStatus(SdkActivityStatusCode.Ok);
 
       return result;

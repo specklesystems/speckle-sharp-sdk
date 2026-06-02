@@ -9,5 +9,5 @@ using Speckle.Sdk.Tests.Performance.Benchmarks;
 
 using var sut = new PipelineReceiveTests();
 await sut.Setup();
-await sut.Receive3();
+await sut.Receive3_async();
 #endif

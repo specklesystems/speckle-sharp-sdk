@@ -1,79 +1,48 @@
-﻿using System.Data.Common;
-using System.Text.Json;
+﻿using System.Collections.Concurrent;
+using System.Data.Common;
+using System.Runtime.CompilerServices;
 using DuckDB.NET.Data;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
-using Speckle.Sdk.Models;
-using Speckle.Sdk.Pipelines.Receive.JsonConverters;
 
 namespace Speckle.Sdk.Pipelines.Receive;
 
-public sealed class PackFileManager : IDisposable
+internal readonly record struct ThreadContext(DuckDBConnection Connection, DuckDBCommand GetObjectSingleCommand);
+
+public sealed class PackFileManager(FileInfo file, ISdkActivityFactory activityFactory) : IDisposable
 #if NET5_0_OR_GREATER
     , IAsyncDisposable
 #endif
 {
-  private readonly DuckDBConnection _connection;
-  private readonly JsonSerializerOptions _options;
-  private DuckDBCommand _getObjectSingleCommand;
-  private readonly ISdkActivityFactory _activityFactory;
+  private readonly ConcurrentDictionary<int, ThreadContext> _threadContexts = new();
+  private ThreadContext CurrentContext => GetOrCreateContext();
 
-  public PackFileManager(FileInfo file, ISdkActivityFactory activityFactory)
+  private ThreadContext GetOrCreateContext()
   {
-    _activityFactory = activityFactory;
-    _connection = new DuckDBConnection($"DataSource={file.FullName};ACCESS_MODE=READ_ONLY");
-    _options = new JsonSerializerOptions();
-    _options.Converters.Add(new SpeckleObjectJsonConverter(this));
-    _options.Converters.Add(new ChunkedDoubleListJsonConverter(this));
-    _options.Converters.Add(new ChunkedInt32ListJsonConverter(this));
-    _options.Converters.Add(new SpeckleMatrix4x4JsonConverter());
-    _options.Converters.Add(new ColorArgbConverter());
-  }
-
-  public async Task OpenAsync(CancellationToken cancellationToken)
-  {
-    await _connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-    ConfigureCommands();
-  }
-
-  public void Open()
-  {
-    _connection.Open();
-    ConfigureCommands();
-  }
-
-  private void ConfigureCommands()
-  {
+    var id = Environment.CurrentManagedThreadId;
+    if (_threadContexts.TryGetValue(id, out ThreadContext context))
     {
-      //language=PostgreSQL
-      const string QUERY = "SELECT data FROM objects where id = ? LIMIT 1";
-      _getObjectSingleCommand = _connection.CreateCommand();
-      _getObjectSingleCommand.CommandText = QUERY;
+      return context;
     }
-  }
+    var connection = new DuckDBConnection($"DataSource={file.FullName};ACCESS_MODE=READ_ONLY");
+    //language=PostgreSQL
+    const string QUERY = "SELECT data FROM objects where id = ? LIMIT 1";
+    var getObjectSingleCommand = connection.CreateCommand();
+    getObjectSingleCommand.CommandText = QUERY;
 
-  public Base GetObject(string id)
-  {
-    string json = GetObjectString(id);
-    return JsonSerializer.Deserialize<Base>(json, _options).NotNull();
-  }
-
-  public T GetObjectGeneric<T>(string id)
-    where T : class
-  {
-    string json = GetObjectString(id);
-    return JsonSerializer.Deserialize<T>(json, _options).NotNull();
+    connection.Open();
+    return _threadContexts[id] = new ThreadContext(connection, getObjectSingleCommand);
   }
 
   public string GetObjectString(string id)
   {
-    using var activity = _activityFactory.Start();
+    using ISdkActivity? activity = activityFactory.Start();
     try
     {
-      _getObjectSingleCommand.Parameters.Clear();
-      _getObjectSingleCommand.Parameters.Add(new(id));
+      DuckDBCommand command = CurrentContext.GetObjectSingleCommand;
+      command.Parameters.Clear();
+      command.Parameters.Add(new(id));
 
-      using DbDataReader reader = _getObjectSingleCommand.ExecuteReader();
+      using DbDataReader reader = command.ExecuteReader();
 
       if (!reader.Read())
       {
@@ -92,15 +61,41 @@ public sealed class PackFileManager : IDisposable
     }
   }
 
-  public Base GetCompleteObjectsTree()
+  public string GetRootObjectId()
   {
-    string json = GetRootObjectString();
-    return JsonSerializer.Deserialize<Base>(json, _options).NotNull();
+    using var activity = activityFactory.Start();
+    try
+    {
+      //language=PostgreSQL
+      const string QUERY = """
+        SELECT id FROM root LIMIT 1
+        """;
+
+      using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
+      command.CommandText = QUERY;
+
+      using DbDataReader reader = command.ExecuteReader();
+
+      if (!reader.Read())
+      {
+        throw new KeyNotFoundException();
+      }
+
+      string id = reader.GetString(0);
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
+      return id;
+    }
+    catch (Exception ex)
+    {
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      activity?.RecordException(ex);
+      throw;
+    }
   }
 
   public string GetRootObjectString()
   {
-    using var activity = _activityFactory.Start();
+    using var activity = activityFactory.Start();
 
     try
     {
@@ -109,7 +104,7 @@ public sealed class PackFileManager : IDisposable
         SELECT data FROM root LIMIT 1
         """;
 
-      using DuckDBCommand command = _connection.CreateCommand();
+      using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
       command.CommandText = QUERY;
 
       using DbDataReader reader = command.ExecuteReader();
@@ -131,7 +126,7 @@ public sealed class PackFileManager : IDisposable
     }
   }
 
-  public IEnumerable<Base> GetObjectsDepthFirst() //Too expensive
+  public IEnumerable<string> GetObjectsDepthFirst() //Too expensive
   {
     //language=PostgreSQL
     const string QUERY = """
@@ -153,7 +148,7 @@ public sealed class PackFileManager : IDisposable
     //   FROM root r,
     //   json_each(r.data -> '__closure') c;
     //   """;
-    using DuckDBCommand command = _connection.CreateCommand();
+    using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
     command.CommandText = QUERY;
     command.UseStreamingMode = true;
 
@@ -161,37 +156,67 @@ public sealed class PackFileManager : IDisposable
 
     while (reader.Read())
     {
-      string utf8Json = reader.GetString(2); //TODO: benchmark performance allocating strings or byte arrays here
-      yield return JsonSerializer.Deserialize<Base>(utf8Json, _options).NotNull();
+      yield return reader.GetString(2); //TODO: benchmark performance allocating strings or byte arrays here
     }
   }
 
-  public IEnumerable<Base> GetObjects()
+  public IEnumerable<(string id, string json)> GetObjects(CancellationToken cancellationToken)
   {
-    using DuckDBCommand command = _connection.CreateCommand();
-    command.CommandText = "SELECT data FROM objects";
+    using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
+    command.CommandText = "SELECT id, data FROM objects";
+    command.UseStreamingMode = true;
 
     using DbDataReader reader = command.ExecuteReader();
 
     while (reader.Read())
     {
-      string utf8Json = reader.GetString(0); //TODO: benchmark performance allocating strings or byte arrays here
-      yield return JsonSerializer.Deserialize<Base>(utf8Json, _options).NotNull();
+      cancellationToken.ThrowIfCancellationRequested();
+
+      string id = reader.GetString(0);
+      string json = reader.GetString(1);
+      yield return (id, json);
+    }
+  }
+
+  public async IAsyncEnumerable<(string id, string json)> GetObjectsAsync(
+    [EnumeratorCancellation] CancellationToken cancellationToken
+  )
+  {
+    //language=PostgreSQL
+    const string QUERY = "SELECT id, data FROM objects";
+    using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
+    command.CommandText = QUERY;
+    command.UseStreamingMode = true;
+
+    using DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+
+    while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+    {
+      string id = reader.GetString(0);
+      string json = reader.GetString(1);
+      yield return (id, json);
     }
   }
 
   public void Dispose()
   {
-    _connection.Dispose();
-    _getObjectSingleCommand.Dispose();
+    foreach (var context in _threadContexts.Values)
+    {
+      context.GetObjectSingleCommand.Dispose();
+      context.Connection.Dispose();
+    }
+    _threadContexts.Clear();
   }
 
 #if NET5_0_OR_GREATER
   public async ValueTask DisposeAsync()
   {
-    await _connection.DisposeAsync().ConfigureAwait(false);
-    await _getObjectSingleCommand.DisposeAsync().ConfigureAwait(false);
-    ;
+    foreach (var context in _threadContexts.Values)
+    {
+      await context.GetObjectSingleCommand.DisposeAsync().ConfigureAwait(false);
+      await context.Connection.DisposeAsync().ConfigureAwait(false);
+    }
+    _threadContexts.Clear();
   }
 #endif
 }

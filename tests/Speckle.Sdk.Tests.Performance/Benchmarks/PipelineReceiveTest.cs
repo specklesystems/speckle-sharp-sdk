@@ -13,7 +13,7 @@ using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 
 [MemoryDiagnoser]
-[SimpleJob(RunStrategy.Monitoring, 0, 0, 6)]
+[SimpleJob(RunStrategy.Monitoring, 0, 0, 1)]
 public class PipelineReceiveTests : IDisposable
 {
   private ServiceProvider _provider;
@@ -43,31 +43,49 @@ public class PipelineReceiveTests : IDisposable
     _version = await _client.Version.Get("78e73217e6", _project.id);
   }
 
-  [Benchmark]
-  public async Task<Base> Receive1()
+  //
+  // [Benchmark]
+  // public async Task<Base> Receive1()
+  // {
+  //   using ServerTransport remote = _serverTransportFactory.Create(Account, _project.id);
+  //   using SQLiteTransport local = new();
+  //   return await _sut.Receive(_version.referencedObject!, remote, local);
+  // }
+  //
+  // [Benchmark]
+  // public async Task<Base> Receive2()
+  // {
+  //   return await _sut.Receive2(
+  //     _client.ServerUrl,
+  //     _project.id,
+  //     _version.referencedObject!,
+  //     Account.token,
+  //     null,
+  //     CancellationToken.None
+  //   );
+  // }
+  // [Benchmark]
+  // public async Task<Base> Receive3()
+  // {
+  //   return await _sut.Receive3(_version, _model, _project, Account, null, CancellationToken.None);
+  // }
+
+  [Benchmark(Baseline = true)]
+  public async Task<Base> Receive3_serial()
   {
-    using ServerTransport remote = _serverTransportFactory.Create(Account, _project.id);
-    using SQLiteTransport local = new();
-    return await _sut.Receive(_version.referencedObject!, remote, local);
+    return await _sut.Receive3Serial(_version.id, _model.id, _project.id, Account, null, CancellationToken.None);
   }
 
   [Benchmark]
-  public async Task<Base> Receive2()
+  public async Task<Base> Receive3_sync()
   {
-    return await _sut.Receive2(
-      _client.ServerUrl,
-      _project.id,
-      _version.referencedObject!,
-      Account.token,
-      null,
-      CancellationToken.None
-    );
+    return await _sut.Receive3Sync(_version.id, _model.id, _project.id, Account, null, CancellationToken.None);
   }
 
   [Benchmark]
-  public async Task<Base> Receive3()
+  public async Task<Base> Receive3_async()
   {
-    return await _sut.Receive3(_version, _model, _project, Account, null, CancellationToken.None);
+    return await _sut.Receive3Async(_version.id, _model.id, _project.id, Account, null, CancellationToken.None);
   }
 
   [IterationCleanup]

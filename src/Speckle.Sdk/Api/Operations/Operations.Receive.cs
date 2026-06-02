@@ -23,10 +23,10 @@ public partial class Operations
     IProgress<CardProgress>? onProgressAction,
     CancellationToken cancellationToken
   ) =>
-    await Receive3(version.id, model.id, project.id, account, onProgressAction, cancellationToken)
+    await Receive3Serial(version.id, model.id, project.id, account, onProgressAction, cancellationToken)
       .ConfigureAwait(false);
 
-  public async Task<Base> Receive3(
+  public async Task<Base> Receive3Serial(
     string versionId,
     string modelId,
     string projectId,
@@ -49,7 +49,77 @@ public partial class Operations
 
       using var receivePipeline = receivePipelineFactory.CreateInstance(versionId, modelId, projectId, account);
 
-      Base root = await receivePipeline.Receive(progress, cancellationToken).ConfigureAwait(false);
+      Base root = await receivePipeline.ReceiveSerial(progress, cancellationToken).ConfigureAwait(false);
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return root;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  public async Task<Base> Receive3Sync(
+    string versionId,
+    string modelId,
+    string projectId,
+    Account account,
+    IProgress<CardProgress>? onProgressAction,
+    CancellationToken cancellationToken
+  )
+  {
+    using var receiveActivity = activityFactory.Start("Operations.Receive3");
+    receiveActivity?.SetTag("speckle.url", new Uri(account.serverInfo.url));
+    receiveActivity?.SetTag("speckle.versionId", versionId);
+    receiveActivity?.SetTag("speckle.modelId", modelId);
+    receiveActivity?.SetTag("speckle.projectId", projectId);
+
+    try
+    {
+      IProgress<StreamProgressArgs> progress = onProgressAction is not null
+        ? new RenderedStreamProgress(onProgressAction)
+        : new NullProgress<StreamProgressArgs>();
+
+      using var receivePipeline = receivePipelineFactory.CreateInstance(versionId, modelId, projectId, account);
+
+      Base root = await receivePipeline.ReceiveSync(progress, cancellationToken).ConfigureAwait(false);
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return root;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  public async Task<Base> Receive3Async(
+    string versionId,
+    string modelId,
+    string projectId,
+    Account account,
+    IProgress<CardProgress>? onProgressAction,
+    CancellationToken cancellationToken
+  )
+  {
+    using var receiveActivity = activityFactory.Start("Operations.Receive3");
+    receiveActivity?.SetTag("speckle.url", new Uri(account.serverInfo.url));
+    receiveActivity?.SetTag("speckle.versionId", versionId);
+    receiveActivity?.SetTag("speckle.modelId", modelId);
+    receiveActivity?.SetTag("speckle.projectId", projectId);
+
+    try
+    {
+      IProgress<StreamProgressArgs> progress = onProgressAction is not null
+        ? new RenderedStreamProgress(onProgressAction)
+        : new NullProgress<StreamProgressArgs>();
+
+      using var receivePipeline = receivePipelineFactory.CreateInstance(versionId, modelId, projectId, account);
+
+      Base root = await receivePipeline.ReceiveAsync(progress, cancellationToken).ConfigureAwait(false);
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return root;
     }
