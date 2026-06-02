@@ -50,7 +50,7 @@ public sealed class SpeckleObjectDeserializer
 
   public IEnumerable<Base> GetObjects(CancellationToken cancellationToken)
   {
-    foreach ((string id, string json) in _packFileManager.GetObjects(cancellationToken))
+    foreach ((string id, _, string json) in _packFileManager.GetObjects(cancellationToken))
     {
       if (_deserialized.TryGetValue(id, out Base? cachedValue))
       {
@@ -70,7 +70,7 @@ public sealed class SpeckleObjectDeserializer
     await Parallel
       .ForEachAsync(
         _packFileManager.GetObjectsAsync(cancellationToken),
-        new ParallelOptions() { MaxDegreeOfParallelism = 8 },
+        new ParallelOptions() { MaxDegreeOfParallelism = 6 },
         (item, cancellationToken) =>
         {
           if (!_deserialized.ContainsKey(item.id))
@@ -99,7 +99,7 @@ public sealed class SpeckleObjectDeserializer
   {
     Parallel.ForEach(
       _packFileManager.GetObjects(cancellationToken),
-      new ParallelOptions() { MaxDegreeOfParallelism = 8 },
+      new ParallelOptions() { MaxDegreeOfParallelism = 6, CancellationToken = cancellationToken },
       (item) =>
       {
         if (!_deserialized.ContainsKey(item.id))

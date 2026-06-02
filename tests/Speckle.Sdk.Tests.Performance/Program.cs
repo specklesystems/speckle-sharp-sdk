@@ -7,7 +7,7 @@ BenchmarkSwitcher.FromAssemblies([typeof(Program).Assembly]).Run(args);
 #else
 using Speckle.Sdk.Tests.Performance.Benchmarks;
 
-using var sut = new PipelineReceiveTests();
+using var sut = new PipelineDeserialize();
 await sut.Setup();
-await sut.Receive3_async();
+sut.Receive3_sync();
 #endif

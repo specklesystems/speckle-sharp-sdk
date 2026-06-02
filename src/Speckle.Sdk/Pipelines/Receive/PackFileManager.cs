@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
 using DuckDB.NET.Data;
@@ -160,10 +160,11 @@ public sealed class PackFileManager(FileInfo file, ISdkActivityFactory activityF
     }
   }
 
-  public IEnumerable<(string id, string json)> GetObjects(CancellationToken cancellationToken)
+  public IEnumerable<(string id, string speckle_type, string json)> GetObjects(CancellationToken cancellationToken)
   {
     using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
-    command.CommandText = "SELECT id, data FROM objects";
+    command.CommandText =
+      "SELECT id, data, speckle_type FROM objects WHERE speckle_type != 'Speckle.Core.Models.DataChunk' order by rowid desc";
     command.UseStreamingMode = true;
 
     using DbDataReader reader = command.ExecuteReader();
@@ -174,16 +175,18 @@ public sealed class PackFileManager(FileInfo file, ISdkActivityFactory activityF
 
       string id = reader.GetString(0);
       string json = reader.GetString(1);
-      yield return (id, json);
+      string speckleType = reader.GetString(2);
+      yield return (id, speckleType, json);
     }
   }
 
-  public async IAsyncEnumerable<(string id, string json)> GetObjectsAsync(
+  public async IAsyncEnumerable<(string id, string speckle_type, string json)> GetObjectsAsync(
     [EnumeratorCancellation] CancellationToken cancellationToken
   )
   {
     //language=PostgreSQL
-    const string QUERY = "SELECT id, data FROM objects";
+    const string QUERY =
+      "SET preserve_insertion_order = false;SELECT id, data, speckle_type FROM objects WHERE speckle_type != 'Speckle.Core.Models.DataChunk' order by rowid desc";
     using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
     command.CommandText = QUERY;
     command.UseStreamingMode = true;
@@ -194,7 +197,8 @@ public sealed class PackFileManager(FileInfo file, ISdkActivityFactory activityF
     {
       string id = reader.GetString(0);
       string json = reader.GetString(1);
-      yield return (id, json);
+      string speckleType = reader.GetString(2);
+      yield return (id, speckleType, json);
     }
   }
 
