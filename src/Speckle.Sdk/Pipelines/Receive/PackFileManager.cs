@@ -163,8 +163,9 @@ public sealed class PackFileManager(FileInfo file, ISdkActivityFactory activityF
   public IEnumerable<(string id, string speckle_type, string json)> GetObjects(CancellationToken cancellationToken)
   {
     using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
+    //language=PostgreSQL
     command.CommandText =
-      "SELECT id, data, speckle_type FROM objects WHERE speckle_type != 'Speckle.Core.Models.DataChunk' order by rowid desc";
+      "SELECT id, data, speckle_type FROM objects WHERE speckle_type != 'Speckle.Core.Models.DataChunk' ORDER BY rowid DESC";
     command.UseStreamingMode = true;
 
     using DbDataReader reader = command.ExecuteReader();
@@ -186,7 +187,7 @@ public sealed class PackFileManager(FileInfo file, ISdkActivityFactory activityF
   {
     //language=PostgreSQL
     const string QUERY =
-      "SET preserve_insertion_order = false;SELECT id, data, speckle_type FROM objects WHERE speckle_type != 'Speckle.Core.Models.DataChunk' order by rowid desc";
+      "SET preserve_insertion_order = false;SELECT id, data, speckle_type FROM objects WHERE speckle_type != 'Speckle.Core.Models.DataChunk' ORDER BY rowid DESC";
     using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
     command.CommandText = QUERY;
     command.UseStreamingMode = true;

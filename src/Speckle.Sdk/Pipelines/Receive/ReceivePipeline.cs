@@ -40,7 +40,11 @@ public sealed class ReceivePipeline(
   ISdkActivityFactory activityFactory
 ) : IDisposable
 {
-  public async Task<Base> Receive(IProgress<StreamProgressArgs> downloadProgress, CancellationToken cancellationToken)
+  public async Task<Base> Receive(
+    IProgress<StreamProgressArgs> downloadProgress,
+    CancellationToken cancellationToken,
+    bool async = false
+  )
   {
     using var activity = activityFactory.Start();
     try
@@ -51,7 +55,10 @@ public sealed class ReceivePipeline(
       using PackFileManager packFileManager = new(tempFile.FileInfo, activityFactory);
       var deserializer = new SpeckleObjectDeserializer(packFileManager);
 
-      Base result = deserializer.GetCompleteObjectsTreeSync(cancellationToken); //TODO: cancellation
+      Base result = async
+        ? await deserializer.ChannelCompleteObjectsTreeAsync(cancellationToken).ConfigureAwait(false)
+        : deserializer.GetCompleteObjectsTreeSync(cancellationToken);
+
       activity?.SetStatus(SdkActivityStatusCode.Ok);
 
       return result;

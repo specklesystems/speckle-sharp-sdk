@@ -18,7 +18,6 @@ public abstract class ChunkedListJsonConverter<T>(PackFileManager packFileManage
   public override List<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
   {
     var list = new List<T>();
-
     while (reader.Read())
     {
       switch (reader.TokenType)
@@ -31,7 +30,7 @@ public abstract class ChunkedListJsonConverter<T>(PackFileManager packFileManage
           break;
         }
         default:
-          JsonSerializer.Deserialize<double>(ref reader, options);
+          list.Add(JsonSerializer.Deserialize<T>(ref reader, options)!);
           break;
       }
     }

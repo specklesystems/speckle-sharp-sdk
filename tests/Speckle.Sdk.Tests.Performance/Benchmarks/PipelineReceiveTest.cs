@@ -78,6 +78,11 @@ public class PipelineReceiveTests : IDisposable
   {
     return await _sut.Receive3(_version, _model, _project, Account, null, CancellationToken.None);
   }
+  [Benchmark]
+  public async Task<Base> Receive3Channel()
+  {
+    return await _sut.Receive3(_version, _model, _project, Account, null, CancellationToken.None, true);
+  }
 
   [IterationCleanup]
   public void Cleanup()

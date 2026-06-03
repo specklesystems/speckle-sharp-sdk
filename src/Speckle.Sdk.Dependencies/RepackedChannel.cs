@@ -31,7 +31,7 @@ public sealed class RepackedChannel<T>
     );
   }
 
-  public void CompleteWriter() => _channel.Writer.Complete();
+  public void CompleteWriter(Exception? exception = null) => _channel.Writer.Complete(exception);
 
   public ValueTask WriteAsync(T item, CancellationToken cancellationToken) =>
     _channel.Writer.WriteAsync(item, cancellationToken);
