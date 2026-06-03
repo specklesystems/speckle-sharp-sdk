@@ -1,4 +1,4 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Objects.Geometry;
@@ -52,6 +52,12 @@ public class PipelineReceiveTests : IDisposable
     using ServerTransport remote = _serverTransportFactory.Create(Account, _project.id);
     using SQLiteTransport local = new();
     return await _sut.Receive(_version.referencedObject!, remote, local);
+  }
+
+  [Benchmark]
+  public async Task<Base> Receive13()
+  {
+    return await _sut.Receive13(_version.id!, _model.id, _project.id, Account, null, CancellationToken.None);
   }
 
   [Benchmark]
