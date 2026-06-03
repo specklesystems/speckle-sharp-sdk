@@ -40,24 +40,19 @@ public sealed class ReceivePipeline(
   ISdkActivityFactory activityFactory
 ) : IDisposable
 {
-  public async Task<Base> Receive(
-    IProgress<StreamProgressArgs> downloadProgress,
-    CancellationToken cancellationToken,
-    bool async = false
-  )
+  public async Task<Base> Receive(IProgress<CardProgress> progress, CancellationToken cancellationToken)
   {
     using var activity = activityFactory.Start();
     try
     {
       using var tempFile = new DisposableFile(new FileInfo(Path.GetTempFileName()), logger);
-      await DownloadDuckFile(tempFile.FileInfo, downloadProgress, cancellationToken).ConfigureAwait(false);
+      await DownloadDuckFile(tempFile.FileInfo, new RenderedStreamProgress(progress), cancellationToken)
+        .ConfigureAwait(false);
 
       using PackFileManager packFileManager = new(tempFile.FileInfo, activityFactory);
-      var deserializer = new SpeckleObjectDeserializer(packFileManager);
+      var deserializer = new SpeckleObjectDeserializer(packFileManager, -1, cancellationToken);
 
-      Base result = async
-        ? await deserializer.ChannelCompleteObjectsTreeAsync(cancellationToken).ConfigureAwait(false)
-        : deserializer.GetCompleteObjectsTreeSync(cancellationToken);
+      Base result = await deserializer.MaterializeGraphAsync(progress).ConfigureAwait(false);
 
       activity?.SetStatus(SdkActivityStatusCode.Ok);
 

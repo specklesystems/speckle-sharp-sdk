@@ -24,10 +24,9 @@ public partial class Operations
     Project project,
     Account account,
     IProgress<CardProgress>? onProgressAction,
-    CancellationToken cancellationToken,
-    bool useChannel = true
+    CancellationToken cancellationToken
   ) =>
-    await Receive3(version.id, model.id, project.id, account, onProgressAction, cancellationToken, useChannel)
+    await Receive3(version.id, model.id, project.id, account, onProgressAction, cancellationToken)
       .ConfigureAwait(false);
 
   public async Task<Base> Receive3(
@@ -36,8 +35,7 @@ public partial class Operations
     string projectId,
     Account account,
     IProgress<CardProgress>? onProgressAction,
-    CancellationToken cancellationToken,
-    bool useChannel = false
+    CancellationToken cancellationToken
   )
   {
     using var receiveActivity = activityFactory.Start("Operations.Receive3");
@@ -48,13 +46,11 @@ public partial class Operations
 
     try
     {
-      IProgress<StreamProgressArgs> progress = onProgressAction is not null
-        ? new RenderedStreamProgress(onProgressAction)
-        : new NullProgress<StreamProgressArgs>();
+      IProgress<CardProgress> progress = onProgressAction ?? new NullProgress<CardProgress>();
 
       using var receivePipeline = receivePipelineFactory.CreateInstance(versionId, modelId, projectId, account);
 
-      Base root = await receivePipeline.Receive(progress, cancellationToken, useChannel).ConfigureAwait(false);
+      Base root = await receivePipeline.Receive(progress, cancellationToken).ConfigureAwait(false);
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return root;
     }

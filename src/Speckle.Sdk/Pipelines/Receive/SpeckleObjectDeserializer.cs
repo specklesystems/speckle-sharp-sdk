@@ -1,22 +1,26 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Models;
-using Speckle.Sdk.Pipelines.Receive.JsonConverters;
-#if NET6_0_OR_GREATER
 using Speckle.Sdk.Dependencies;
-#endif
-
+using Speckle.Sdk.Models;
+using Speckle.Sdk.Pipelines.Progress;
+using Speckle.Sdk.Pipelines.Receive.JsonConverters;
 
 namespace Speckle.Sdk.Pipelines.Receive;
 
 public sealed class SpeckleObjectDeserializer
 {
   private readonly JsonSerializerOptions _options;
+  private readonly ParallelOptions _deserializeParallelismOptions;
+  private readonly CancellationToken _cancellationToken;
   private readonly PackFileManager _packFileManager;
   private readonly ConcurrentDictionary<string, Base> _deserialized = new();
 
-  public SpeckleObjectDeserializer(PackFileManager packFileManager)
+  public SpeckleObjectDeserializer(
+    PackFileManager packFileManager,
+    int deserializerMaxDegreeOfParallelism,
+    CancellationToken cancellationToken
+  )
   {
     _packFileManager = packFileManager;
     _options = new()
@@ -30,149 +34,139 @@ public sealed class SpeckleObjectDeserializer
         new ColorArgbConverter(),
       },
     };
-  }
-
-  //Decent but a completely serial
-  public Base GetCompleteObjectsTreeSerial()
-  {
-    string json = _packFileManager.GetRootObjectString();
-    return JsonSerializer.Deserialize<Base>(json, _options).NotNull();
+    _deserializeParallelismOptions = new ParallelOptions()
+    {
+      MaxDegreeOfParallelism = deserializerMaxDegreeOfParallelism,
+      CancellationToken = cancellationToken,
+    };
+    _cancellationToken = cancellationToken;
   }
 
   public Base GetObject(string id)
   {
+    _cancellationToken.ThrowIfCancellationRequested();
+
     if (_deserialized.TryGetValue(id, out Base? cachedValue))
     {
       return cachedValue;
     }
 
-    string json = _packFileManager.GetObjectString(id);
+    string json = _packFileManager.GetObjectData(id);
     Base result = JsonSerializer.Deserialize<Base>(json, _options).NotNull();
     _deserialized[id] = result;
     return result;
   }
 
-  public IEnumerable<Base> GetObjects(CancellationToken cancellationToken)
+  private async Task WriterThread(RepackedChannel<(string id, string speckle_type, string json)> channel)
   {
-    foreach ((string id, _, string json) in _packFileManager.GetObjects(cancellationToken))
+    try
     {
-      if (_deserialized.TryGetValue(id, out Base? cachedValue))
+      await foreach (var item in _packFileManager.GetObjectsAsync(_cancellationToken).ConfigureAwait(false))
       {
-        yield return cachedValue;
+        if (!_deserialized.ContainsKey(item.id))
+        {
+          await channel.WriteAsync(item, _cancellationToken).ConfigureAwait(false);
+        }
       }
 
-      Base result = JsonSerializer.Deserialize<Base>(json, _options).NotNull();
-      _deserialized[id] = result;
-      yield return result;
+      channel.CompleteWriter();
+    }
+    catch (Exception ex)
+    {
+      channel.CompleteWriter(ex);
+      throw;
     }
   }
 
-#if NET6_0_OR_GREATER
-  public async Task<Base> GetCompleteObjectsTreeAsync(CancellationToken cancellationToken)
+  private void Deserialize((string id, string speckle_type, string json) item)
   {
-    await Parallel
-      .ForEachAsync(
-        _packFileManager.GetObjectsAsync(cancellationToken),
-        new ParallelOptions() { MaxDegreeOfParallelism = 6 },
-        (item, cancellationToken) =>
-        {
-          if (!_deserialized.ContainsKey(item.id))
-          {
-            Base result = JsonSerializer.Deserialize<Base>(item.json, _options).NotNull();
-            _deserialized[item.id] = result;
-          }
-
-          return default;
-        }
-      )
-      .ConfigureAwait(false);
-
-    string rootId = _packFileManager.GetRootObjectId();
-    return GetObject(rootId);
+    if (!_deserialized.ContainsKey(item.id))
+    {
+      Base result = JsonSerializer.Deserialize<Base>(item.json, _options).NotNull();
+      _deserialized[item.id] = result;
+    }
   }
-#else
-  public Task<Base> GetCompleteObjectsTreeAsync(CancellationToken cancellationToken)
+
+  public async Task<Base> MaterializeGraphAsync(IProgress<CardProgress> deserializeProgress)
   {
-    throw new NotImplementedException();
-  }
-#endif
+    bool useParallel = _deserializeParallelismOptions.MaxDegreeOfParallelism > 1;
 
-#if NET6_0_OR_GREATER
-  public async Task<Base> ChannelCompleteObjectsTreeAsync(
-    CancellationToken cancellationToken,
-    int deserializerMaxDegreeOfParallelism = 6
-  )
-  {
-    RepackedChannel<(string id, string speckle_type, string json)> channel = new(1000, false, true);
+    _cancellationToken.ThrowIfCancellationRequested();
 
-    Task writer = Task.Run(
-      async () =>
-      {
-        try
-        {
-          await foreach (var item in _packFileManager.GetObjectsAsync(cancellationToken).ConfigureAwait(false))
-          {
-            if (!_deserialized.ContainsKey(item.id))
-            {
-              await channel.WriteAsync(item, cancellationToken).ConfigureAwait(false);
-            }
-          }
+    long estimatedObjectCount = _packFileManager.GetEstimatedObjectCount();
+    long counter = 0;
 
-          channel.CompleteWriter();
-        }
-        catch (Exception ex)
-        {
-          channel.CompleteWriter(ex);
-          throw;
-        }
-      },
-      cancellationToken
+    deserializeProgress.Report(
+      new($"Deserializing objects {counter:N0}/{estimatedObjectCount:N0}", (double)counter / estimatedObjectCount)
     );
 
-    var options = new ParallelOptions()
+    RepackedChannel<(string id, string speckle_type, string json)> channel = new(1000, !useParallel, true);
+
+    Task writer = Task.Run(async () => await WriterThread(channel).ConfigureAwait(false), _cancellationToken);
+
+#if NET6_0_OR_GREATER
+    if (useParallel)
     {
-      MaxDegreeOfParallelism = deserializerMaxDegreeOfParallelism,
-      CancellationToken = cancellationToken,
-    };
+      await Task.WhenAll(
+          writer,
+          Parallel.ForEachAsync(
+            channel.ReadAllAsync(_cancellationToken),
+            _deserializeParallelismOptions,
+            (item, _) =>
+            {
+              Deserialize(item);
 
-    await Parallel.ForEachAsync(channel.ReadAllAsync(cancellationToken), options, Foo).ConfigureAwait(false);
+              long counterValue = Interlocked.Increment(ref counter);
+              deserializeProgress.Report(
+                new(
+                  $"Deserializing objects {counterValue:N0}/{estimatedObjectCount:N0}",
+                  (double)counterValue / estimatedObjectCount
+                )
+              );
 
-    await writer.ConfigureAwait(false);
+              return ValueTask.CompletedTask;
+            }
+          )
+        )
+        .ConfigureAwait(false);
+    }
+    else
+#endif
+    {
+      await Task.WhenAll(writer, ReadAll()).ConfigureAwait(false);
+    }
 
     string rootId = _packFileManager.GetRootObjectId();
     return GetObject(rootId);
 
-    ValueTask Foo((string id, string speckle_type, string json) item, CancellationToken ct)
+    async Task ReadAll()
     {
-      ct.ThrowIfCancellationRequested();
-
-      if (!_deserialized.ContainsKey(item.id))
+      await foreach (var item in channel.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
       {
-        Base result = JsonSerializer.Deserialize<Base>(item.json, _options).NotNull();
-        _deserialized[item.id] = result;
-      }
+        Deserialize(item);
 
-      return ValueTask.CompletedTask;
+        long counterValue = Interlocked.Increment(ref counter);
+        deserializeProgress.Report(
+          new(
+            $"Deserializing objects {counterValue:N0}/{estimatedObjectCount:N0}",
+            (double)counterValue / estimatedObjectCount
+          )
+        );
+      }
     }
   }
-#else
-  public Task<Base> ChannelCompleteObjectsTreeAsync(
-    CancellationToken cancellationToken,
-    int deserializerMaxDegreeOfParallelism = 6
-  )
-  {
-    throw new NotImplementedException();
-  }
-#endif
 
-  //To Test
-  public Base GetCompleteObjectsTreeSync(CancellationToken cancellationToken)
+  public Base MaterializeGraph()
   {
+    _cancellationToken.ThrowIfCancellationRequested();
+
     Parallel.ForEach(
-      _packFileManager.GetObjects(cancellationToken),
-      new ParallelOptions() { MaxDegreeOfParallelism = 6, CancellationToken = cancellationToken },
+      _packFileManager.GetObjects(_cancellationToken),
+      _deserializeParallelismOptions,
       (item) =>
       {
+        _cancellationToken.ThrowIfCancellationRequested();
+
         if (!_deserialized.ContainsKey(item.id))
         {
           Base result = JsonSerializer.Deserialize<Base>(item.json, _options).NotNull();

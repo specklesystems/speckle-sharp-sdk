@@ -54,34 +54,29 @@ public class PipelineReceiveTests : IDisposable
     return await _sut.Receive(_version.referencedObject!, remote, local);
   }
 
-  [Benchmark]
-  public async Task<Base> Receive13()
-  {
-    return await _sut.Receive13(_version.id!, _model.id, _project.id, Account, null, CancellationToken.None);
-  }
-
-  [Benchmark]
-  public async Task<Base> Receive2()
-  {
-    return await _sut.Receive2(
-      _client.ServerUrl,
-      _project.id,
-      _version.referencedObject!,
-      Account.token,
-      null,
-      CancellationToken.None
-    );
-  }
+  // [Benchmark]
+  // public async Task<Base> Receive13()
+  // {
+  //   return await _sut.Receive13(_version.id!, _model.id, _project.id, Account, null, CancellationToken.None);
+  // }
+  //
+  // [Benchmark]
+  // public async Task<Base> Receive2()
+  // {
+  //   return await _sut.Receive2(
+  //     _client.ServerUrl,
+  //     _project.id,
+  //     _version.referencedObject!,
+  //     Account.token,
+  //     null,
+  //     CancellationToken.None
+  //   );
+  // }
 
   [Benchmark]
   public async Task<Base> Receive3()
   {
     return await _sut.Receive3(_version, _model, _project, Account, null, CancellationToken.None);
-  }
-  [Benchmark]
-  public async Task<Base> Receive3Channel()
-  {
-    return await _sut.Receive3(_version, _model, _project, Account, null, CancellationToken.None, true);
   }
 
   [IterationCleanup]

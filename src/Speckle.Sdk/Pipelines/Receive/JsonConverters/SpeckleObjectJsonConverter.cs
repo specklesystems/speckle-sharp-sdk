@@ -36,9 +36,6 @@ public sealed class SpeckleObjectJsonConverter(SpeckleObjectDeserializer speckle
     var referenceId = referenceObject.GetProperty(nameof(ObjectReference.referencedId)).GetString().NotNull();
 
     return speckleObjectDeserializer.GetObject(referenceId);
-    // return map.TryGetValue(referenceId, out var referenced)
-    //   ? referenced
-    //   : throw new JsonException($"Unresolved reference '{referenceId}'");
   }
 
   private Base Materialize(JsonElement element, string speckleType, JsonSerializerOptions options)

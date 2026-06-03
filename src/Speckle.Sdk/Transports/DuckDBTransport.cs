@@ -14,7 +14,7 @@ public sealed class DuckDBTransport(PackFileManager packFileManager) : ITranspor
 
   public Task<string?> GetObject(string id)
   {
-    return Task.FromResult<string?>(packFileManager.GetObjectString(id));
+    return Task.FromResult<string?>(packFileManager.GetObjectData(id));
   }
 
   public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)

@@ -10,7 +10,7 @@ public abstract class ChunkedListJsonConverter<T>(PackFileManager packFileManage
   internal virtual LightWeightDataChunk<T> DereferenceDetachedReference(ref Utf8JsonReader reader)
   {
     var reference = JsonSerializer.Deserialize<LightWeightObjectReference>(ref reader).NotNull();
-    string chunkJson = packFileManager.GetObjectString(reference.referencedId);
+    string chunkJson = packFileManager.GetObjectData(reference.referencedId);
     var dataChunk = JsonSerializer.Deserialize<LightWeightDataChunk<T>>(chunkJson).NotNull();
     return dataChunk;
   }
@@ -53,7 +53,7 @@ public sealed class ChunkedDoubleListJsonConverter(PackFileManager packFileManag
     var reference = JsonSerializer
       .Deserialize(ref reader, SpeckleJsonContext.Default.LightWeightObjectReference)
       .NotNull();
-    string chunkJson = _packFileManager.GetObjectString(reference.referencedId);
+    string chunkJson = _packFileManager.GetObjectData(reference.referencedId);
     var dataChunk = JsonSerializer
       .Deserialize(chunkJson, SpeckleJsonContext.Default.LightWeightDataChunkDouble)
       .NotNull();
@@ -73,7 +73,7 @@ public sealed class ChunkedInt32ListJsonConverter(PackFileManager packFileManage
     var reference = JsonSerializer
       .Deserialize(ref reader, SpeckleJsonContext.Default.LightWeightObjectReference)
       .NotNull();
-    string chunkJson = _packFileManager.GetObjectString(reference.referencedId);
+    string chunkJson = _packFileManager.GetObjectData(reference.referencedId);
     var dataChunk = JsonSerializer
       .Deserialize(chunkJson, SpeckleJsonContext.Default.LightWeightDataChunkInt32)
       .NotNull();
