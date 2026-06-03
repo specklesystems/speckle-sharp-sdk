@@ -181,4 +181,9 @@ public interface IRhinoObject : IDataObject
   string type { get; }
 }
 
+public interface IMicrostationObject : IDataObject
+{
+  string type { get; }
+}
+
 #endregion
