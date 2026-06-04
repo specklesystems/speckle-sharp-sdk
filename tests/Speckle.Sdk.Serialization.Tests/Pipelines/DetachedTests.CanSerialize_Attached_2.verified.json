@@ -1,0 +1,21 @@
+﻿{
+  "1c8c3f02283a215451092973eccbd4db": {
+    "applicationId": "1",
+    "arr": null,
+    "attachedProp": {
+      "applicationId": "4",
+      "id": "fa1e5165dc1458a44e4684ce714f0d2b",
+      "line": null,
+      "name": "attachedProp",
+      "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase2"
+    },
+    "crazyProp": null,
+    "detachedProp": null,
+    "detachedProp2": null,
+    "dynamicProp": 123,
+    "id": "1c8c3f02283a215451092973eccbd4db",
+    "list": [],
+    "list2": null,
+    "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase2"
+  }
+}

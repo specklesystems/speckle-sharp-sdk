@@ -1,0 +1,2 @@
+﻿8efe64322221afddffb675932ae27345	Base	{"applicationId":null,"speckle_type":"Base","mux":"mux","qux":"qux","id":"8efe64322221afddffb675932ae27345"}
+18c55d4b2f2853d43648607cabd4b298	Base	{"applicationId":null,"speckle_type":"Base","foo":"foo","bar":"bar","@baz":{"speckle_type":"reference","referencedId":"8efe64322221afddffb675932ae27345"},"id":"18c55d4b2f2853d43648607cabd4b298","__closure":{"8efe64322221afddffb675932ae27345":1}}

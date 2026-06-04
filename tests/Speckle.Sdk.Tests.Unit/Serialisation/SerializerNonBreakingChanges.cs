@@ -329,7 +329,7 @@ public abstract class SerializerMock : Base
   {
     SerializeAs<TTo>();
 
-    var json = operations.Serialize(this);
+    var json = operations.SerializeNew(this);
 
     Base result = await operations.DeserializeAsync(json);
     result.Should().NotBeNull();

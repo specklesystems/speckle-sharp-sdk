@@ -105,6 +105,8 @@ services:
 
       LOG_PRETTY: "true"
 
+      FF_DATA_MODULE_ENABLED: 'true'
+
 networks:
   default:
     name: speckle-server
