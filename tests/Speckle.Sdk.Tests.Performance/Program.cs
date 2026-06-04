@@ -8,6 +8,7 @@ BenchmarkSwitcher.FromAssemblies([typeof(Program).Assembly]).Run(args);
 using Speckle.Sdk.Tests.Performance.Benchmarks;
 
 using var sut = new PipelineDeserialize();
+sut.MaxDegreeOfParallelism = 32;
 await sut.Setup();
-sut.Receive3_sync();
+await sut.Receive3();
 #endif

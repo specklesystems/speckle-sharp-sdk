@@ -89,8 +89,11 @@ public sealed class SpeckleObjectDeserializer
 
   public async Task<Base> MaterializeGraphAsync(IProgress<CardProgress> deserializeProgress)
   {
-    bool useParallel = _deserializeParallelismOptions.MaxDegreeOfParallelism > 1;
-
+#if NET6_0_OR_GREATER
+    bool useParallel = _deserializeParallelismOptions.MaxDegreeOfParallelism != 1;
+#else
+    bool useParallel = false;
+#endif
     _cancellationToken.ThrowIfCancellationRequested();
 
     long estimatedObjectCount = _packFileManager.GetEstimatedObjectCount();
