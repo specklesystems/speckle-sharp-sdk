@@ -18,3 +18,27 @@ public sealed class ObjectReference : Base
 
   public Dictionary<string, int>? closure { get; set; }
 }
+
+/// <summary>
+/// Same as <see cref="ObjectReference"/> but optimized for STJ serialisation/deserialisation
+/// </summary>
+internal sealed class LightWeightObjectReference : ISpeckleObject
+{
+  public required string referencedId { get; init; }
+  public Dictionary<string, int>? closure { get; init; }
+  public string? id { get; init; }
+  public string? applicationId { get; init; }
+  public required string speckle_type { get; init; }
+}
+
+/// <summary>
+/// Same as <see cref="DataChunk"/> but optimized for STJ serialisation/deserialisation
+/// </summary>
+/// <typeparam name="T"></typeparam>
+internal sealed class LightWeightDataChunk<T> : ISpeckleObject
+{
+  public required List<T> data { get; init; }
+  public string? id { get; init; }
+  public string? applicationId { get; init; }
+  public required string speckle_type { get; init; }
+}

@@ -1,14 +1,108 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Credentials;
+using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Pipelines.Progress;
+using Speckle.Sdk.Pipelines.Receive;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Transports;
+using SpeckleObjectDeserializer = Speckle.Sdk.Serialisation.SpeckleObjectDeserializer;
+using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  [DebuggerStepThrough]
+  public async Task<Base> Receive3(
+    Version version,
+    Model model,
+    Project project,
+    Account account,
+    IProgress<CardProgress>? onProgressAction,
+    CancellationToken cancellationToken
+  ) =>
+    await Receive3(version.id, model.id, project.id, account, onProgressAction, cancellationToken)
+      .ConfigureAwait(false);
+
+  public async Task<Base> Receive3(
+    string versionId,
+    string modelId,
+    string projectId,
+    Account account,
+    IProgress<CardProgress>? onProgressAction,
+    CancellationToken cancellationToken
+  )
+  {
+    using var receiveActivity = activityFactory.Start("Operations.Receive3");
+    receiveActivity?.SetTag("speckle.url", new Uri(account.serverInfo.url));
+    receiveActivity?.SetTag("speckle.versionId", versionId);
+    receiveActivity?.SetTag("speckle.modelId", modelId);
+    receiveActivity?.SetTag("speckle.projectId", projectId);
+
+    try
+    {
+      IProgress<CardProgress> progress = onProgressAction ?? new NullProgress<CardProgress>();
+
+      using var receivePipeline = receivePipelineFactory.CreateInstance(versionId, modelId, projectId, account);
+
+      Base root = await receivePipeline.Receive(progress, cancellationToken).ConfigureAwait(false);
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return root;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  public async Task<Base> Receive13(
+    string versionId,
+    string modelId,
+    string projectId,
+    Account account,
+    IProgress<CardProgress>? onProgressAction,
+    CancellationToken cancellationToken
+  )
+  {
+    using var receiveActivity = activityFactory.Start("Operations.Receive3");
+    receiveActivity?.SetTag("speckle.url", new Uri(account.serverInfo.url));
+    receiveActivity?.SetTag("speckle.versionId", versionId);
+    receiveActivity?.SetTag("speckle.modelId", modelId);
+    receiveActivity?.SetTag("speckle.projectId", projectId);
+
+    try
+    {
+      IProgress<StreamProgressArgs> progress = onProgressAction is not null
+        ? new RenderedStreamProgress(onProgressAction)
+        : new NullProgress<StreamProgressArgs>();
+
+      using ReceivePipeline pipeline = receivePipelineFactory.CreateInstance(versionId, modelId, projectId, account);
+
+      using var tempFile = new DisposableFile(new FileInfo(Path.GetTempFileName()), logger);
+      await pipeline.DownloadDuckFile(tempFile.FileInfo, progress, cancellationToken).ConfigureAwait(false);
+
+      using PackFileManager packFileManager = new(tempFile.FileInfo, activityFactory);
+      using DuckDBTransport localTransport = new(packFileManager);
+      string rootObjectId = packFileManager.GetRootObjectId();
+      receiveActivity?.SetTag("speckle.objectId", rootObjectId);
+
+      return await Receive(rootObjectId, null, localTransport, null, cancellationToken).ConfigureAwait(false);
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
   /// <summary>
   /// Receives a Object to the provided URL and Caches the results
   /// </summary>

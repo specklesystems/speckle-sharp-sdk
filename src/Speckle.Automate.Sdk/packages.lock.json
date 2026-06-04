@@ -66,6 +66,14 @@
           "System.Threading.Tasks.Extensions": "4.6.3"
         }
       },
+      "DuckDB.NET.Bindings.Full": {
+        "type": "Transitive",
+        "resolved": "1.4.4",
+        "contentHash": "R4CfP6PhjQvmWxOP5QXfKPWnwB2Dxn6qukdzpKGGVYV8KYvOpVzmsHq8Di54KiVgtxn9AeYyS0VeWF56DTRJ7Q==",
+        "dependencies": {
+          "System.Runtime.CompilerServices.Unsafe": "6.1.0"
+        }
+      },
       "GraphQL.Client.Abstractions": {
         "type": "Transitive",
         "resolved": "6.0.0",
@@ -279,6 +287,7 @@
       "speckle.sdk": {
         "type": "Project",
         "dependencies": {
+          "DuckDB.NET.Data.Full": "[1.4.4, )",
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.CSharp": "[4.7.0, )",
           "Microsoft.Data.Sqlite": "[7.0.5, )",
@@ -295,6 +304,17 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Bcl.AsyncInterfaces": "[9.0.4, )"
+        }
+      },
+      "DuckDB.NET.Data.Full": {
+        "type": "CentralTransitive",
+        "requested": "[1.4.4, )",
+        "resolved": "1.4.4",
+        "contentHash": "/xOA+GliGGToi9dA6MDnmADIy3h5WM4hLfGdQYl5EOiggaLG56TnKHkQRaedLjYMBPTFKTyP3kb9MEqjyv0u9Q==",
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.4.4",
+          "System.Memory": "4.6.0",
+          "System.Runtime.CompilerServices.Unsafe": "6.1.0"
         }
       },
       "GraphQL.Client": {
@@ -411,6 +431,11 @@
         "resolved": "2.0.0-beta4.22272.1",
         "contentHash": "1uqED/q2H0kKoLJ4+hI2iPSBSEdTuhfCYADeJrAqERmiGQ2NNacYKRNEQ+gFbU4glgVyK8rxI+ZOe1onEtr/Pg=="
       },
+      "DuckDB.NET.Bindings.Full": {
+        "type": "Transitive",
+        "resolved": "1.4.4",
+        "contentHash": "R4CfP6PhjQvmWxOP5QXfKPWnwB2Dxn6qukdzpKGGVYV8KYvOpVzmsHq8Di54KiVgtxn9AeYyS0VeWF56DTRJ7Q=="
+      },
       "GraphQL.Client.Abstractions": {
         "type": "Transitive",
         "resolved": "6.1.0",
@@ -523,6 +548,7 @@
       "speckle.sdk": {
         "type": "Project",
         "dependencies": {
+          "DuckDB.NET.Data.Full": "[1.4.4, )",
           "GraphQL.Client": "[6.1.0, )",
           "Microsoft.Data.Sqlite": "[10.0.0, )",
           "Microsoft.Extensions.Logging": "[10.0.0, )",
@@ -534,6 +560,15 @@
       },
       "speckle.sdk.dependencies": {
         "type": "Project"
+      },
+      "DuckDB.NET.Data.Full": {
+        "type": "CentralTransitive",
+        "requested": "[1.4.4, )",
+        "resolved": "1.4.4",
+        "contentHash": "/xOA+GliGGToi9dA6MDnmADIy3h5WM4hLfGdQYl5EOiggaLG56TnKHkQRaedLjYMBPTFKTyP3kb9MEqjyv0u9Q==",
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.4.4"
+        }
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",
@@ -633,6 +668,11 @@
         "requested": "[2.0.0-beta4.22272.1, 2.0.0-beta4.22272.1]",
         "resolved": "2.0.0-beta4.22272.1",
         "contentHash": "1uqED/q2H0kKoLJ4+hI2iPSBSEdTuhfCYADeJrAqERmiGQ2NNacYKRNEQ+gFbU4glgVyK8rxI+ZOe1onEtr/Pg=="
+      },
+      "DuckDB.NET.Bindings.Full": {
+        "type": "Transitive",
+        "resolved": "1.4.4",
+        "contentHash": "R4CfP6PhjQvmWxOP5QXfKPWnwB2Dxn6qukdzpKGGVYV8KYvOpVzmsHq8Di54KiVgtxn9AeYyS0VeWF56DTRJ7Q=="
       },
       "GraphQL.Client.Abstractions": {
         "type": "Transitive",
@@ -746,6 +786,7 @@
       "speckle.sdk": {
         "type": "Project",
         "dependencies": {
+          "DuckDB.NET.Data.Full": "[1.4.4, )",
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.Data.Sqlite": "[7.0.5, )",
           "Microsoft.Extensions.Logging": "[8.0.0, )",
@@ -757,6 +798,15 @@
       },
       "speckle.sdk.dependencies": {
         "type": "Project"
+      },
+      "DuckDB.NET.Data.Full": {
+        "type": "CentralTransitive",
+        "requested": "[1.4.4, )",
+        "resolved": "1.4.4",
+        "contentHash": "/xOA+GliGGToi9dA6MDnmADIy3h5WM4hLfGdQYl5EOiggaLG56TnKHkQRaedLjYMBPTFKTyP3kb9MEqjyv0u9Q==",
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.4.4"
+        }
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",

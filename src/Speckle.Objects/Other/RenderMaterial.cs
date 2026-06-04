@@ -20,21 +20,23 @@ public class RenderMaterial : Base
   public double metalness { get; set; }
   public double roughness { get; set; } = 1;
 
-  public required int diffuse { get; set; } = Color.LightGray.ToArgb();
+  public required Color diffuse { get; set; } = Color.LightGray;
 
-  public int emissive { get; set; } = Color.Black.ToArgb();
+  public Color emissive { get; set; } = Color.Black;
 
   [JsonIgnore]
+  [Obsolete($"use {nameof(diffuse)} instead")]
   public Color diffuseColor
   {
-    get => Color.FromArgb(diffuse);
-    set => diffuse = value.ToArgb();
+    get => diffuse;
+    set => diffuse = value;
   }
 
   [JsonIgnore]
+  [Obsolete($"use {nameof(emissive)} instead")]
   public Color emissiveColor
   {
-    get => Color.FromArgb(emissive);
-    set => emissive = value.ToArgb();
+    get => diffuse;
+    set => diffuse = value;
   }
 }

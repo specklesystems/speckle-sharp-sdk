@@ -233,12 +233,21 @@ public class Point : Base, ITransformable<Point>, IEquatable<Point>
   /// <summary>
   /// Gets or sets the coordinates of the <see cref="Point"/>
   /// </summary>
-  [JsonProperty(NullValueHandling = NullValueHandling.Ignore), Obsolete("Use x,y,z properties instead", true)]
-  public List<double> value
+  [
+    JsonProperty(NullValueHandling = NullValueHandling.Ignore),
+    Obsolete("Use x,y,z properties instead", true),
+    JsonIgnore
+  ]
+  public List<double>? value
   {
-    get => null!;
+    get => null;
     set
     {
+      if (value is null)
+      {
+        return;
+      }
+
       x = value[0];
       y = value[1];
       z = value.Count > 2 ? value[2] : 0;
