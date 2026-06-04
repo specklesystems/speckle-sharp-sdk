@@ -160,6 +160,13 @@ public interface ICsiObject : IDataObject
   IReadOnlyList<ICsiObject> elements { get; }
 }
 
+public interface ITsdObject : IDataObject
+{
+  string type { get; }
+
+  IReadOnlyList<ITsdObject> elements { get; }
+}
+
 public interface IGisObject : IDataObject
 {
   string type { get; }
@@ -177,6 +184,11 @@ public interface IArchicadObject : IDataObject
 public interface INavisworksObject : IDataObject { }
 
 public interface IRhinoObject : IDataObject
+{
+  string type { get; }
+}
+
+public interface IMicrostationObject : IDataObject
 {
   string type { get; }
 }
