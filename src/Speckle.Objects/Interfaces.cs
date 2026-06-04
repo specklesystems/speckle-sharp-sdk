@@ -160,6 +160,13 @@ public interface ICsiObject : IDataObject
   IReadOnlyList<ICsiObject> elements { get; }
 }
 
+public interface ITsdObject : IDataObject
+{
+  string type { get; }
+
+  IReadOnlyList<ITsdObject> elements { get; }
+}
+
 public interface IGisObject : IDataObject
 {
   string type { get; }
