@@ -51,7 +51,7 @@ public sealed class ReceivePipeline(
 
       using PackFileManager packFileManager = new(tempFile.FileInfo, activityFactory);
       // The overheads of parallelism exceeds benefits for super low CPU counts...
-      int maxDegreeOfParallelism = Environment.ProcessorCount >= 4 ? Math.Max(32, Environment.ProcessorCount) : 1;
+      int maxDegreeOfParallelism = Environment.ProcessorCount >= 4 ? Math.Min(32, Environment.ProcessorCount) : 1;
       var deserializer = new SpeckleObjectDeserializer(packFileManager, maxDegreeOfParallelism, cancellationToken);
 
       Base result = await deserializer.MaterializeGraphAsync(progress).ConfigureAwait(false);

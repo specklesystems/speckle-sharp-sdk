@@ -16,7 +16,7 @@ namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 /// Compare receive1 to receive2 to receive3 (e2e cache miss)
 /// </summary>
 [MemoryDiagnoser]
-[SimpleJob(RunStrategy.Monitoring, 0, 0, 6)]
+[SimpleJob(RunStrategy.Monitoring, 0, 0, 4)]
 public class PipelineReceiveTests : IDisposable
 {
   private ServiceProvider _provider;
