@@ -3,6 +3,7 @@ namespace Speckle.Sdk.Logging;
 public interface ISdkActivity : IDisposable
 {
   void SetTag(string key, object? value);
+  void SetBaggage(string key, string? value);
   void RecordException(Exception ex);
 
   ///<summary> W3C <c>tracestate</c> header</summary>
