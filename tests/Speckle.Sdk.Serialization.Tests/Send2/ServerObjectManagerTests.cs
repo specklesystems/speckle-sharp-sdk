@@ -52,7 +52,7 @@ public class ServerObjectManagerTests : MoqTest
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
 
     var activityFactory = Create<ISdkActivityFactory>();
-    activityFactory.Setup(x => x.Start(null, default, "DownloadObjects")).Returns((ISdkActivity?)null);
+    activityFactory.Setup(x => x.Start(null, default, null, default, "DownloadObjects")).Returns((ISdkActivity?)null);
 
     var serverObjectManager = new ServerObjectManager(
       http.Object,
@@ -91,7 +91,9 @@ public class ServerObjectManagerTests : MoqTest
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
 
     var activityFactory = Create<ISdkActivityFactory>();
-    activityFactory.Setup(x => x.Start(null, default, "DownloadSingleObject")).Returns((ISdkActivity?)null);
+    activityFactory
+      .Setup(x => x.Start(null, default, null, default, "DownloadSingleObject"))
+      .Returns((ISdkActivity?)null);
 
     var serverObjectManager = new ServerObjectManager(
       http.Object,
@@ -132,7 +134,7 @@ public class ServerObjectManagerTests : MoqTest
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
 
     var activityFactory = Create<ISdkActivityFactory>();
-    activityFactory.Setup(x => x.Start(null, default, "HasObjects")).Returns((ISdkActivity?)null);
+    activityFactory.Setup(x => x.Start(null, default, null, default, "HasObjects")).Returns((ISdkActivity?)null);
 
     var serverObjectManager = new ServerObjectManager(
       http.Object,
@@ -171,7 +173,7 @@ public class ServerObjectManagerTests : MoqTest
     http.Setup(x => x.CreateHttpClient(It.IsAny<HttpClientHandler>(), timeout, token)).Returns(httpClient);
 
     var activityFactory = Create<ISdkActivityFactory>();
-    activityFactory.Setup(x => x.Start(null, default, "UploadObjects")).Returns((ISdkActivity?)null);
+    activityFactory.Setup(x => x.Start(null, default, null, default, "UploadObjects")).Returns((ISdkActivity?)null);
 
     var serverObjectManager = new ServerObjectManager(
       http.Object,

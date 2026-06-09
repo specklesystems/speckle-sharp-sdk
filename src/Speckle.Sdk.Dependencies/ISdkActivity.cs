@@ -3,7 +3,14 @@ namespace Speckle.Sdk.Logging;
 public interface ISdkActivity : IDisposable
 {
   void SetTag(string key, object? value);
-  void RecordException(Exception e);
+  void RecordException(Exception ex);
+
+  ///<summary> W3C <c>tracestate</c> header</summary>
+  string? TraceState { get; }
+
+  ///<summary> W3C <c>traceparent</c> header</summary>
+  string TraceParent { get; }
+
   string TraceId { get; }
   string SpanId { get; }
   void SetStatus(SdkActivityStatusCode code);
