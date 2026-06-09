@@ -5,10 +5,10 @@ public interface ISdkActivity : IDisposable
   void SetTag(string key, object? value);
   void RecordException(Exception ex);
 
-  // W3C <c>tracestate</c> header
+  ///<summary> W3C <c>tracestate</c> header</summary>
   string? TraceState { get; }
 
-  // W3C <c>traceparent</c> header
+  ///<summary> W3C <c>traceparent</c> header</summary>
   string TraceParent { get; }
 
   string TraceId { get; }
