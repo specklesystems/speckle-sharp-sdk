@@ -264,15 +264,11 @@ public sealed class ActiveUserResource
               name
               role
               slug
-              logo
+              logoUrl
               createdAt
               updatedAt
               readOnly
               description
-              creationState
-              {
-                completed
-              }
               permissions {
                 canCreateProject {
                   authorized
@@ -317,7 +313,7 @@ public sealed class ActiveUserResource
   /// <remarks>note this returns a <see cref="LimitedWorkspace"/>, because it may be a workspace the user is not a member of</remarks>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
   /// <exception cref="SpeckleException">The ActiveUser could not be found (e.g. the client is not authenticated)</exception>
-  public async Task<LimitedWorkspace?> GetActiveWorkspace(CancellationToken cancellationToken = default)
+  private async Task<LimitedWorkspace?> GetActiveWorkspace_Legacy(CancellationToken cancellationToken = default)
   {
     //language=graphql
     const string QUERY = """
@@ -328,7 +324,6 @@ public sealed class ActiveUserResource
             name
             role
             slug
-            logo
             description
           }
         }
@@ -340,6 +335,47 @@ public sealed class ActiveUserResource
     var response = await _client
       .ExecuteGraphQLRequest<NullableResponse<NullableResponse<LimitedWorkspace?>?>>(request, cancellationToken)
       .ConfigureAwait(false);
+
+    if (response.data is null)
+    {
+      throw new SpeckleException("GraphQL response indicated that the ActiveUser could not be found");
+    }
+
+    return response.data.data;
+  }
+
+  public async Task<LimitedWorkspace?> GetActiveWorkspace(CancellationToken cancellationToken = default)
+  {
+    //language=graphql
+    const string QUERY = """
+      query ActiveUser {
+        data:activeUser {
+          data:activeWorkspace {
+            id
+            name
+            role
+            slug
+            logoUrl
+            description
+          }
+        }
+      }
+      """;
+
+    var request = new GraphQLRequest { Query = QUERY };
+
+    NullableResponse<NullableResponse<LimitedWorkspace?>?> response;
+    try
+    {
+      response = await _client
+        .ExecuteGraphQLRequest<NullableResponse<NullableResponse<LimitedWorkspace?>?>>(request, cancellationToken)
+        .ConfigureAwait(false);
+    }
+    catch (SpeckleGraphQLInvalidQueryException)
+    {
+      //v2.x.x servers do not have a logoUrl property
+      return await GetActiveWorkspace_Legacy(cancellationToken).ConfigureAwait(false);
+    }
 
     if (response.data is null)
     {

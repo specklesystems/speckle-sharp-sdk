@@ -28,15 +28,11 @@ public sealed class WorkspaceResource
           name
           role
           slug
-          logo
+          logoUrl
           createdAt
           updatedAt
           readOnly
           description
-          creationState
-          {
-            completed
-          }
           permissions {
             canCreateProject {
               authorized
