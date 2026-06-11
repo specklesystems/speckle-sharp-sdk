@@ -26,16 +26,14 @@ public sealed class ArtifactPipelineFactory(ISpeckleHttp httpClientFactory, ISdk
 /// <summary>
 /// The Speckle 4.0 artifact pipeline: serializes objects into the
 /// purpose-specific DuckDB files (viewer + eav) client-side and uploads them
-/// via the v2 endpoints (sign → presigned PUT per file → complete). Fully
-/// independent of the v1 <see cref="SendPipeline"/> — callers run both during
-/// dual-write and can drop either side without touching the other.
+/// via the v2 endpoints (sign → presigned PUT per file → complete, which
+/// creates the version). Fully independent of the v1 <see cref="SendPipeline"/>
+/// — neither side touches the other.
 /// </summary>
 /// <remarks>
-/// Usage: call <see cref="Process"/> for every object that also goes through
-/// the v1 pipeline (the LAST processed object is recorded as the root, same
-/// convention as the server), then <see cref="UploadAsync"/> once.
-/// The cost of independence is a second serialization pass over the model;
-/// acceptable for the POC, revisit if profiling says otherwise.
+/// Usage: call <see cref="Process"/> for every object (the LAST processed
+/// object is recorded as the root, same convention as the server), then
+/// <see cref="UploadAsync"/> once.
 /// </remarks>
 public sealed class ArtifactPipeline : IDisposable
 {
@@ -65,7 +63,8 @@ public sealed class ArtifactPipeline : IDisposable
     _ingestionId = ingestionId;
     _cancellationToken = cancellationToken;
     _activity = activityFactory;
-    _writer = new DuckDbArtifactWriter(outputDir, $"{projectId}_{ingestionId}");
+    // Local files mirror the staging-key convention: {ingestionId}.{purpose}.duckdb
+    _writer = new DuckDbArtifactWriter(outputDir, ingestionId);
 
     _speckleClient = httpClientFactory.CreateHttpClient(authorizationToken: account.token);
     _speckleClient.BaseAddress = new(new(account.serverInfo.url), "/api/v2/");
@@ -73,25 +72,44 @@ public sealed class ArtifactPipeline : IDisposable
     _s3Client = httpClientFactory.CreateHttpClient();
   }
 
-  /// <summary>Routes one object (and its detached children) into the artifact files.</summary>
-  public void Process(Base @base)
+  private string? _rootId;
+  private int _objectCount;
+
+  /// <summary>
+  /// Routes one object (and its detached children) into the artifact files and
+  /// returns the object's reference (callers use these to build collections).
+  /// </summary>
+  public ObjectReference Process(Base @base)
   {
     var results = _serializer.Serialize(@base).ToArray();
+    var first = results.First();
+    // The first item is the processed object itself; the LAST Process call is
+    // the root collection by convention, so this converges on the root id.
+    _rootId = first.Id;
+    _objectCount += results.Length;
     // .Reverse ensures children precede their parent and the root of this
     // call lands last — the writer treats the overall last item as the root.
     foreach (var item in results.Reverse())
     {
       _writer.Add(item);
     }
+
+    return first.Reference;
   }
 
   /// <summary>
-  /// Finalizes the files and uploads them: v2 sign (server mints the version
-  /// id) → PUT per file → v2 complete (server verifies etags).
+  /// Finalizes the files and uploads them: v2 sign → PUT per file → v2
+  /// complete. The server verifies etags, then creates the version for this
+  /// ingestion (renaming the staged files to their version-keyed names).
   /// </summary>
-  /// <returns>The server-minted version id the artifacts were stored under.</returns>
+  /// <returns>The version id the server created (or reused) for this ingestion.</returns>
   public async Task<string> UploadAsync()
   {
+    if (_rootId is null)
+    {
+      throw new InvalidOperationException("No objects were processed; nothing to upload.");
+    }
+
     using var a = _activity.Start("Uploading duckdb artifacts (v2)");
     try
     {
@@ -115,8 +133,7 @@ public sealed class ArtifactPipeline : IDisposable
         etags[kvp.Key] = await UploadFile(kvp.Value, presigned).ConfigureAwait(false);
       }
 
-      await Complete(signed.VersionId, etags).ConfigureAwait(false);
-      return signed.VersionId;
+      return await Complete(etags, _rootId, _objectCount).ConfigureAwait(false);
     }
     catch (Exception ex)
     {
@@ -161,13 +178,26 @@ public sealed class ArtifactPipeline : IDisposable
     return BlobApiHelpers.ParseEtagHeader(uploadResponse.Headers);
   }
 
-  private async Task Complete(string versionId, Dictionary<string, string> etags)
+  private async Task<string> Complete(Dictionary<string, string> etags, string rootId, int totalChildrenCount)
   {
     var uri = new Uri($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/complete", UriKind.Relative);
-    var body = JsonConvert.SerializeObject(new ArtifactsCompleteRequest { VersionId = versionId, Etags = etags });
+    var body = JsonConvert.SerializeObject(
+      new ArtifactsCompleteRequest
+      {
+        Etags = etags,
+        RootId = rootId,
+        TotalChildrenCount = totalChildrenCount,
+      }
+    );
     using var content = new StringContent(body, Encoding.UTF8, "application/json");
     using var response = await _speckleClient.PostAsync(uri, content, _cancellationToken).ConfigureAwait(false);
     await EnsureSuccessWithBody(response, "artifacts complete").ConfigureAwait(false);
+
+    var responseString = await response.Content.ReadAsStringAsync(_cancellationToken).ConfigureAwait(false);
+    var completed =
+      JsonConvert.DeserializeObject<ArtifactsCompleteResponse>(responseString)
+      ?? throw new InvalidOperationException("Failed to parse artifacts complete response");
+    return completed.VersionId;
   }
 
   /// <summary>
@@ -192,12 +222,9 @@ public sealed class ArtifactPipeline : IDisposable
   }
 }
 
-/// <summary>Response of the v2 artifacts sign endpoint: server-minted version id + one presigned upload per purpose.</summary>
+/// <summary>Response of the v2 artifacts sign endpoint: one presigned upload per purpose (staging keys).</summary>
 internal record ArtifactsSignResponse
 {
-  [JsonProperty("versionId")]
-  public required string VersionId { get; init; }
-
   [JsonProperty("uploads")]
   public required Dictionary<string, PresignedUploadResponse> Uploads { get; init; }
 }
@@ -210,10 +237,20 @@ internal readonly struct ArtifactsSignRequest
 
 internal readonly struct ArtifactsCompleteRequest
 {
-  [JsonProperty("versionId")]
-  public required string VersionId { get; init; }
-
   [JsonProperty("etags")]
   public required Dictionary<string, string> Etags { get; init; }
+
+  [JsonProperty("rootId")]
+  public required string RootId { get; init; }
+
+  [JsonProperty("totalChildrenCount")]
+  public required int TotalChildrenCount { get; init; }
+}
+
+/// <summary>Response of the v2 complete endpoint: the version the server created (or reused) for the ingestion.</summary>
+internal record ArtifactsCompleteResponse
+{
+  [JsonProperty("versionId")]
+  public required string VersionId { get; init; }
 }
 #endif

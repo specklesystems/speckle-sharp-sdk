@@ -12,13 +12,13 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 ///
 /// Produces two files in <c>outputDir</c>:
 /// <list type="bullet">
-/// <item><c>{baseName}_viewer.duckdb</c> — same table shape as today's server
+/// <item><c>{baseName}.viewer.duckdb</c> — same table shape as today's server
 /// packfile (objects / root / blobs), with two reductions:
 /// DataObject envelopes have <c>properties</c> stripped (they live in eav),
 /// and Blob bytes are read from the envelope's local <c>filePath</c> into the
 /// <c>blobs</c> table (uncompressed for now — POC keeps C# simple). Geometry
 /// bytes do NOT travel on the v1 NDJSON wire — this file is their only home.</item>
-/// <item><c>{baseName}_eav.duckdb</c> — the <c>properties</c> table, produced
+/// <item><c>{baseName}.eav.duckdb</c> — the <c>properties</c> table, produced
 /// by <see cref="EavExtraction"/> (client-side port of the server's
 /// flattenObjectProperties).</item>
 /// </list>
@@ -45,8 +45,8 @@ public sealed class DuckDbArtifactWriter : IDisposable
   public DuckDbArtifactWriter(string outputDir, string baseName)
   {
     Directory.CreateDirectory(outputDir);
-    ViewerDbPath = Path.Combine(outputDir, $"{baseName}_viewer.duckdb");
-    EavDbPath = Path.Combine(outputDir, $"{baseName}_eav.duckdb");
+    ViewerDbPath = Path.Combine(outputDir, $"{baseName}.viewer.duckdb");
+    EavDbPath = Path.Combine(outputDir, $"{baseName}.eav.duckdb");
 
     // Stale files from a previous run make CREATE TABLE fail.
     DeleteIfExists(ViewerDbPath);

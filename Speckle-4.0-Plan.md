@@ -65,15 +65,20 @@ Server stores them on S3. Each consumer reads the one it needs.
 ### Naming convention
 
 ```
-{project_id}_{model_id}_{version_id}_{purpose}.duckdb
+{version_id}.{purpose}.duckdb
 ```
+
+Same filename convention as v1 (`{versionId}.duckdb` / `{versionId}.eav.duckdb`),
+stored under the same `versions/` path — the S3 prefix already carries project
+and model, so the filename doesn't repeat them. The eav key is byte-identical
+to v1's derived eav key, so convention-based lookups keep working.
 
 ### The files
 
 | File | Contents | Primary consumer |
 |---|---|---|
-| `…_viewer.duckdb` | Everything needed to render, **self-contained**: base geometry (dedup'd SMSH "binary mesh on steroids"), **instance transforms**, display/material info. | Web viewer, connector-receive (geometry) |
-| `…_eav.duckdb` | Property values, as today (entity-attribute-value). **[TODO: oguzhan — share sample file]** | Property queries, filtering, dashboards |
+| `….viewer.duckdb` | Everything needed to render, **self-contained**: base geometry (dedup'd SMSH "binary mesh on steroids"), **instance transforms**, display/material info. | Web viewer, connector-receive (geometry) |
+| `….eav.duckdb` | Property values, as today (entity-attribute-value). **[TODO: oguzhan — share sample file]** | Property queries, filtering, dashboards |
 
 **Decision (locked):** instance **transforms live in `viewer.duckdb`**.
 Consequence: the viewer file is self-sufficient — base geometry stored once,
@@ -218,6 +223,34 @@ per-consumer; no flag day.
 
 ---
 
+## Cutover plan — single approach, no side-by-side (decided 2026-06-11)
+
+**Strategy: v1 and v2 will NOT run side by side.** Dual-write is a brief
+transition state only; the flip to v2-only happens as soon as the gating items
+land. Frontend and long-tail dependencies are explicitly NOT blockers.
+
+Gating items, in order:
+
+1. ~~**v2 `complete` creates the version**~~ ✅ DONE (2026-06-11): complete
+   verifies etags → finalizes renames → `createCommitByBranchId` (objectKey =
+   viewer artifact, eavObjectKey = eav artifact) → marks ingestion Success.
+   Reuses the existing version id if one exists (transition runs). The
+   Completed-event listener was deleted; complete owns the whole lifecycle.
+   v2 is now a SELF-SUFFICIENT ingestion path.
+2. **Viewer direct-load of `viewer.duckdb`** — pixels from v2 artifacts.
+3. `/eav/download` resolves the v2 eav key by convention.
+
+**Consciously dropped at flip time** (decision, not oversight): current-viewer
+rendering of new versions until item 2 lands, Postgres object indexes /
+object-level queries, root.json + /single endpoint, connector receive,
+fine-grained ingestion progress UI. Version records & frontend version lists
+keep working (created by v2 complete).
+
+At flip: oda drops the `sendPipeline` calls (artifact pipeline only), the
+double-serialization cost disappears, NDJSON/mega-packfile production stops.
+
+---
+
 ## Pre-4.0 pull-forward: kill the server-side re-parse (EAV client-side)
 
 **Finding (from auditing all three repos):** the model is fully traversed three
@@ -292,6 +325,14 @@ comparisons + "is it actually wired" SQL checks, written alongside Slice 1.
   viewer file is self-contained for rendering. `viewer.duckdb` sketched as 3
   tables (geometry / instances / display). `topology.duckdb` parked until
   connector-receive needs are understood. Geometry-split open question resolved.
+- _2026-06-11_ — **Decision: one version id, v1 purely untouched.** Artifacts
+  upload to deterministic ingestion-keyed STAGING keys (restores the
+  one-upload-per-ingestion guard); when v1 processing creates the version it
+  emits `ModelIngestionEvents.Completed` (existing contract) and a new v2
+  listener renames staging → version-keyed names — the same
+  staging→permanent copy pattern v1 uses for its raw NDJSON. The v2 `complete`
+  endpoint finalizes instead when processing won the race. No v1 code touched,
+  no migrations; artifact keys are derivable from the version by convention.
 - _2026-06-11_ — **Decision: geometry bytes leave the v1 wire.** `Blob.content`
   (the base64-in-NDJSON bridge from the 3.x experiments) removed; the artifact
   writer reads bytes from the Blob's local `filePath`. The v1 NDJSON now carries
@@ -302,6 +343,17 @@ comparisons + "is it actually wired" SQL checks, written alongside Slice 1.
   files (viewer + eav); receive stays on v1 during dual-write. v2 purposes enum
   trimmed accordingly. Also: v2 upload endpoints landed (sign/complete) and the
   first convention-named `viewer.duckdb` reached MinIO end-to-end.
+- _2026-06-11_ — **Decision: no dual-write — v2 owns the version.** The
+  Completed-event listener is gone; the v2 `complete` endpoint itself verifies
+  etags, finalizes staging → version-keyed names, creates the version
+  (pre-minted id), and marks the ingestion Success. oda (Navis) flipped to
+  v2-only: SendPipeline removed from the Importer/ModelConverter/
+  NavisModelExtractor chain, `ArtifactPipeline.Process` returns the
+  `ObjectReference`s oda builds its collections from, `UploadAsync` replaces
+  `WaitForUpload`. Artifacts dir defaults to `%TEMP%/Speckle/artifacts` when
+  `SPECKLE_DUCKDB_ARTIFACTS_DIR` is unset. Known gap: no per-object upload
+  progress reporting yet (v1's RenderedStreamProgress was sendPipeline-only).
+  Dwg/Revit importers still on v1, untouched.
 - _2026-05-…_ — **Direction sharpened:** SDK writes the duckdb files client-side
   and uploads to S3 directly; server post-processing (NDJSON parse, packfile
   build) eliminated for these artifacts. Draft DDL v1 for `viewer.duckdb`
