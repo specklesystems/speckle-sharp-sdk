@@ -103,6 +103,11 @@
           "EmptyFiles": "8.17.2"
         }
       },
+      "DuckDB.NET.Bindings.Full": {
+        "type": "Transitive",
+        "resolved": "1.5.3",
+        "contentHash": "3vkxzLkCmPUTRtEBBYrXvl9jOTXJ42uYswsokpysTulOS963ZIcMJRKpcHH2zwa63YI4YchjYvPz0pcR2Helbg=="
+      },
       "EmptyFiles": {
         "type": "Transitive",
         "resolved": "8.17.2",
@@ -298,6 +303,7 @@
       "speckle.sdk": {
         "type": "Project",
         "dependencies": {
+          "DuckDB.NET.Data.Full": "[1.5.3, )",
           "GraphQL.Client": "[6.1.0, )",
           "Microsoft.Data.Sqlite": "[10.0.0, )",
           "Microsoft.Extensions.DependencyInjection": "[10.0.0, )",
@@ -317,6 +323,15 @@
           "Speckle.Sdk": "[1.0.0, )",
           "Verify.Quibble": "[2.1.1, )",
           "Verify.Xunit": "[31.12.5, )"
+        }
+      },
+      "DuckDB.NET.Data.Full": {
+        "type": "CentralTransitive",
+        "requested": "[1.5.3, )",
+        "resolved": "1.5.3",
+        "contentHash": "B0E3JH6nM9CeYLzmOIGGTz7R5vAKf10516Jiz7VnWj4kV7uMoh8m5mTB6IxTGFJMG6i6aOANwjwP7ud7kA87+Q==",
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.5.3"
         }
       },
       "GraphQL.Client": {

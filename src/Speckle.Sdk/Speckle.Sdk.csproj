@@ -25,6 +25,9 @@
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0'" Label="DuckDB artifact writing (net8.0+ only)">
+    <PackageReference Include="DuckDB.NET.Data.Full" />
+  </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="10.0.0" />
