@@ -7,7 +7,7 @@ using Speckle.Sdk.Api.GraphQL.Models.Responses;
 
 namespace Speckle.Automate.Sdk.Test;
 
-internal class TestAutomationRun
+internal sealed class TestAutomationRun
 {
   [JsonRequired]
   public required string AutomationRunId { get; init; }
@@ -19,7 +19,7 @@ internal class TestAutomationRun
   public required IReadOnlyList<TestAutomationRunTrigger> Triggers { get; init; }
 }
 
-internal class TestAutomationRunTrigger : AutomationRunTriggerBase
+internal sealed class TestAutomationRunTrigger : AutomationRunTriggerBase
 {
   /// <remarks>This should really be a TestAutomationRunTriggerPayload, but right now, they look the samee</remarks>
   public required VersionCreationTriggerPayload Payload { get; init; }
