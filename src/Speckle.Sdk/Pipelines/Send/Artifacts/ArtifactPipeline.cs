@@ -113,6 +113,7 @@ public sealed class ArtifactPipeline : IDisposable
     using var a = _activity.Start("Uploading duckdb artifacts (v2)");
     try
     {
+      MemoryLog.Log("pipeline: UploadAsync begin");
       _writer.Complete();
 
       var files = new Dictionary<string, string>
@@ -130,10 +131,14 @@ public sealed class ArtifactPipeline : IDisposable
         {
           throw new InvalidOperationException($"Server did not sign an upload for purpose '{kvp.Key}'");
         }
+        MemoryLog.Phase($"pipeline: PUT {kvp.Key}");
         etags[kvp.Key] = await UploadFile(kvp.Value, presigned).ConfigureAwait(false);
       }
 
-      return await Complete(etags, _rootId, _objectCount).ConfigureAwait(false);
+      MemoryLog.Phase("pipeline: complete request");
+      var versionId = await Complete(etags, _rootId, _objectCount).ConfigureAwait(false);
+      MemoryLog.Log("pipeline: version completed");
+      return versionId;
     }
     catch (Exception ex)
     {

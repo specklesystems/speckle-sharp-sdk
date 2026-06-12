@@ -354,6 +354,51 @@ comparisons + "is it actually wired" SQL checks, written alongside Slice 1.
   `SPECKLE_DUCKDB_ARTIFACTS_DIR` is unset. Known gap: no per-object upload
   progress reporting yet (v1's RenderedStreamProgress was sendPipeline-only).
   Dwg/Revit importers still on v1, untouched.
+- _2026-06-12_ — **Settled on single-phase direct duckdb writes (+ governance);
+  two-phase NDJSON staging prototyped, verified, then removed.** The staged
+  variant (extract → local `{ingestionId}.ndjson.gz` → replay into the writer)
+  measurably de-stacked extraction from artifact-building: extraction loop hit
+  1,027MB — BELOW v1's 1,064MB — and the replay ran flat at 1.1-1.5GB. Removed
+  to keep the pipeline simple (one pass, no temp file, no re-parse); resurrect
+  it from this session's history if pod peaks ever demand max(phase1, phase2)
+  instead of their sum. What ships: direct writes with content-neutral
+  governance — per-file memory_limit (append 256MB / index 1024MB via
+  SPECKLE_DUCKDB_*_MB env vars), appender recycling every 25K objects, viewer
+  connection closed before the eav index builds, and an aggressive GC at
+  Complete() start (the giant root-last envelopes leave ~800MB of dead
+  committed heap right before the heaviest phases). Full EAV + both indexes —
+  artifacts unchanged. The MemoryLog profiler stays active.
+- _2026-06-12_ — **Memory benchmarked end-to-end (led to the decision above).**
+  Full-run phase-attributed profiling (MemoryLog: SDK + oda phase markers,
+  SPECKLE_MEMORY_CSV) on the same model showed v2 peaking ~2.5GB vs v1's
+  ~1.1GB client-side. Output-changing mitigations (dropping the eav index
+  builds, the server-style >10MB EAV skip) were verified to work (peak →
+  2.0GB, eav file 1.07GB → 397MB) but rejected — no regression on the
+  artifact contract; the content-neutral governance was kept and folded into
+  phase 2 of the two-phase build. Knowledge bank:
+  (a) DuckDB fills its memory_limit as cache — budget = floor AND ceiling;
+  (b) index builds are the one non-streamable step (~1GB at 29M rows, OOMs at
+  512MB) and the ART indexes are ~2/3 of eav file size; (c) the giant
+  collection envelope serialization (~0.6-1GB managed, exists in v1 too) is a
+  v1 wire-format relic — redesigning element membership as rows instead of
+  one JSON array is the real fix, belongs in the 4.0 contract. Pod sizing:
+  plan ~3GB limit for current behavior; validate in a memory-capped Linux
+  container.
+- _2026-06-12_ — **Client EAV validated against server EAV on a real model.**
+  Same source file sent through pristine v1 (server-built eav) and v2
+  (client-built eav): 29.38M rows each, all property content equivalent.
+  Two known differences, both accepted as-is: (1) number→value_text rendering —
+  C# `"R"`/Newtonsoft style (`1.0`, `-9.98E-05`) vs JS `String(n)` (`1`,
+  `-0.0000998…`); `value_num` doubles are bit-identical, so numeric queries are
+  unaffected. A JS-compatible formatter (ECMA-262 Number::toString) was
+  prototyped and validated byte-identical against all 557K distinct numbers +
+  136K matrix strings the server produced, but **deliberately not shipped** —
+  revisit only if a consumer turns out to string-match on value_text.
+  (2) v2 extracts the root + element collections that v1 skips via its 10MB
+  NDJSON-line limit (closure bloat) — v2 is a superset, kept. Notes: object ids
+  are NOT comparable across runs (per-run `Guid.NewGuid()` applicationIds feed
+  the content hashes); the two EAV indexes are ~67% of the eav file size and
+  the index build peaks at ~800MB RSS for 29M rows (heaviest client-side step).
 - _2026-05-…_ — **Direction sharpened:** SDK writes the duckdb files client-side
   and uploads to S3 directly; server post-processing (NDJSON parse, packfile
   build) eliminated for these artifacts. Draft DDL v1 for `viewer.duckdb`
