@@ -2,6 +2,7 @@
 using System.Text.Json;
 using GraphQL;
 using GraphQL.Client.Http;
+using Microsoft.Extensions.Logging;
 using Speckle.Automate.Sdk.Schema;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Api;
@@ -13,7 +14,8 @@ namespace Speckle.Automate.Sdk;
 internal sealed class AutomationContextFactory(
   IClientFactory clientFactory,
   IAccountFactory accountFactory,
-  IOperations operations
+  IOperations operations,
+  ILogger<AutomationContext> logger
 ) : IAutomationContextFactory
 {
   private static readonly JsonSerializerOptions s_jsonSerializerSettings = new()
@@ -49,7 +51,7 @@ internal sealed class AutomationContextFactory(
     IClient client = clientFactory.Create(account);
     Stopwatch initTime = Stopwatch.StartNew();
 
-    return new AutomationContext(operations)
+    return new AutomationContext(operations, logger)
     {
       AutomationRunData = automationRunData,
       SpeckleClient = client,

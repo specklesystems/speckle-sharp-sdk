@@ -1,13 +1,15 @@
 using System.CommandLine;
-using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Schema;
 using Newtonsoft.Json.Schema.Generation;
 using Newtonsoft.Json.Serialization;
 using Speckle.Automate.Sdk.DataAnnotations;
 using Speckle.Automate.Sdk.Schema;
+using Speckle.Connectors.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk;
+using Speckle.Sdk.Logging;
 
 namespace Speckle.Automate.Sdk;
 
@@ -15,9 +17,12 @@ namespace Speckle.Automate.Sdk;
 /// Provides mechanisms to execute any function that conforms to the AutomateFunction "interface"
 /// </summary>
 [GenerateAutoInterface(VisibilityModifier = "public")]
-internal class AutomationRunner(IAutomationContextFactory contextFactory) : IAutomationRunner
+internal sealed class AutomationRunner(
+  IAutomationContextFactory contextFactory,
+  ISdkActivityFactory activityFactory,
+  ILogger<AutomationRunner> logger
+) : IAutomationRunner
 {
-  [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
   public async Task<IAutomationContext> RunFunction<TInput>(
     Func<IAutomationContext, TInput, Task> automateFunction,
     AutomationRunData automationRunData,
@@ -27,7 +32,7 @@ internal class AutomationRunner(IAutomationContextFactory contextFactory) : IAut
     where TInput : struct
   {
     var automationContext = await contextFactory.Initialize(automationRunData, speckleToken).ConfigureAwait(false);
-
+    using ISdkActivity? activity = activityFactory.Start();
     try
     {
       await automateFunction.Invoke(automationContext, inputs).ConfigureAwait(false);
@@ -36,12 +41,20 @@ internal class AutomationRunner(IAutomationContextFactory contextFactory) : IAut
         automationContext.MarkRunSuccess(
           "WARNING: Automate assumed a success status, but it was not marked as so by the function."
         );
+        activity?.SetStatus(SdkActivityStatusCode.Ok);
       }
     }
-    catch (Exception ex) when (!ex.IsFatal())
+    catch (Exception ex)
     {
-      Console.WriteLine(ex.ToString());
+      logger.LogCritical(ex, "Function error: {ExceptionMessage}", ex.ToString());
       automationContext.MarkRunException("Function error. Check the automation run logs for details.");
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      activity?.RecordException(ex);
+
+      if (ex.IsFatal())
+      {
+        throw;
+      }
     }
     finally
     {
@@ -95,6 +108,7 @@ internal class AutomationRunner(IAutomationContextFactory contextFactory) : IAut
   public async Task<int> Main<TInput>(string[] args, Func<IAutomationContext, TInput, Task> automateFunction)
     where TInput : struct
   {
+    using ISdkActivity? activity = StartActivityFromEnv();
     Argument<string> pathArg = new(name: "Input Path", description: "A file path to retrieve function inputs");
     RootCommand rootCommand = new();
 
@@ -162,9 +176,21 @@ internal class AutomationRunner(IAutomationContextFactory contextFactory) : IAut
 
     await rootCommand.InvokeAsync(args).ConfigureAwait(false);
 
+    activity?.SetStatus(SdkActivityStatusCode.Ok);
     // if we've gotten this far, the execution should technically be completed as expected
     // thus exiting with 0 is the semantically correct thing to do
     return exitCode;
+  }
+
+  /// <summary>
+  /// Propagates trace context from server via environment variables
+  /// </summary>
+  /// <returns></returns>
+  private ISdkActivity? StartActivityFromEnv()
+  {
+    var traceParent = Environment.GetEnvironmentVariable("SPECKLE_OTEL_TRACEPARENT");
+    var traceState = Environment.GetEnvironmentVariable("SPECKLE_OTEL_TRACESTATE");
+    return activityFactory.StartRemote(traceParent, traceState, SdkActivityKind.Server, "Automation Runner");
   }
 }
 
