@@ -114,7 +114,10 @@ public class DuckDbArtifactWriterTests : IDisposable
     Scalar<long>(eavDb, "SELECT COUNT(*) FROM properties WHERE object_id = 'dobj1' AND path = 'properties.thickness'")
       .Should()
       .Be(1);
-    Scalar<double>(eavDb, "SELECT value_num FROM properties WHERE object_id = 'dobj1' AND path = 'properties.thickness'")
+    Scalar<double>(
+        eavDb,
+        "SELECT value_num FROM properties WHERE object_id = 'dobj1' AND path = 'properties.thickness'"
+      )
       .Should()
       .Be(0.3);
 
@@ -177,7 +180,11 @@ public class DuckDbArtifactWriterTests : IDisposable
     {
       viewerPath = writer.ViewerDbPath;
       writer.Add(
-        Item("b1", "Speckle.Core.Models.Blob", """{"filePath":"/tmp/y.bin","id":"b1","speckle_type":"Speckle.Core.Models.Blob"}""")
+        Item(
+          "b1",
+          "Speckle.Core.Models.Blob",
+          """{"filePath":"/tmp/y.bin","id":"b1","speckle_type":"Speckle.Core.Models.Blob"}"""
+        )
       );
       writer.Complete();
     }
@@ -186,6 +193,121 @@ public class DuckDbArtifactWriterTests : IDisposable
     viewerDb.Open();
     Scalar<long>(viewerDb, "SELECT COUNT(*) FROM blobs").Should().Be(0);
     Scalar<long>(viewerDb, "SELECT COUNT(*) FROM objects").Should().Be(1);
+  }
+
+  [Fact]
+  public void RecycleByObjectCount_CommitsMidRun_AndPreservesAllRows()
+  {
+    var options = new DuckDbWriterOptions { RecycleMaxObjects = 2, RecycleMaxBytes = 0 };
+
+    string viewerPath;
+    int recycles;
+    using (var writer = new DuckDbArtifactWriter(_dir, "recycle_objs", options))
+    {
+      viewerPath = writer.ViewerDbPath;
+      for (var i = 0; i < 5; i++)
+      {
+        writer.Add($"obj{i}", "Objects.Geometry.MeshBinary", $$"""{"units":"m","id":"obj{{i}}"}""");
+      }
+      recycles = writer.RecycleCount;
+      writer.Complete();
+    }
+
+    recycles.Should().Be(2); // after objects 2 and 4
+
+    using var viewerDb = new DuckDBConnection($"Data Source={viewerPath}");
+    viewerDb.Open();
+    Scalar<long>(viewerDb, "SELECT COUNT(*) FROM objects").Should().Be(5);
+    Scalar<string>(viewerDb, "SELECT id FROM root").Should().Be("obj4");
+  }
+
+  [Fact]
+  public void RecycleByBytes_TriggersOnLargeRows_ObjectCountAlone_WouldNot()
+  {
+    // Count cap far away (1000), byte cap tiny (4KB): only the byte trigger
+    // can fire. Three ~3KB objects → recycle after the second one.
+    var options = new DuckDbWriterOptions { RecycleMaxObjects = 1000, RecycleMaxBytes = 4 * 1024 };
+    var pad = new string('x', 3000);
+
+    string viewerPath;
+    int recycles;
+    using (var writer = new DuckDbArtifactWriter(_dir, "recycle_bytes", options))
+    {
+      viewerPath = writer.ViewerDbPath;
+      for (var i = 0; i < 3; i++)
+      {
+        writer.Add($"big{i}", "Objects.Geometry.MeshBinary", $$"""{"units":"m","pad":"{{pad}}","id":"big{{i}}"}""");
+      }
+      recycles = writer.RecycleCount;
+      writer.Complete();
+    }
+
+    recycles.Should().Be(1);
+
+    using var viewerDb = new DuckDBConnection($"Data Source={viewerPath}");
+    viewerDb.Open();
+    Scalar<long>(viewerDb, "SELECT COUNT(*) FROM objects").Should().Be(3);
+  }
+
+  [Fact]
+  public void RecyclingDisabled_FlushesOnlyAtComplete()
+  {
+    // Both triggers off = the pre-recycling baseline (A/B control arm).
+    var options = new DuckDbWriterOptions { RecycleMaxObjects = 0, RecycleMaxBytes = 0 };
+
+    string viewerPath;
+    int recycles;
+    using (var writer = new DuckDbArtifactWriter(_dir, "no_recycle", options))
+    {
+      viewerPath = writer.ViewerDbPath;
+      for (var i = 0; i < 10; i++)
+      {
+        writer.Add($"o{i}", "Objects.Geometry.MeshBinary", $$"""{"units":"m","id":"o{{i}}"}""");
+      }
+      recycles = writer.RecycleCount;
+      writer.Complete();
+    }
+
+    recycles.Should().Be(0);
+
+    using var viewerDb = new DuckDBConnection($"Data Source={viewerPath}");
+    viewerDb.Open();
+    Scalar<long>(viewerDb, "SELECT COUNT(*) FROM objects").Should().Be(10);
+  }
+
+  [Theory]
+  [InlineData(true)]
+  [InlineData(false)]
+  public void PrimaryKeys_ArePresentInFinalFile_WhetherDeferredOrInline(bool deferPk)
+  {
+    // Both A/B arms must produce an identical schema: deferred PKs are added
+    // at Complete(), inline PKs at CREATE TABLE.
+    var options = new DuckDbWriterOptions { DeferPrimaryKeys = deferPk };
+
+    string viewerPath;
+    using (var writer = new DuckDbArtifactWriter(_dir, $"pk_{deferPk}", options))
+    {
+      viewerPath = writer.ViewerDbPath;
+      var bytes = Convert.ToBase64String(new byte[] { 0x01, 0x02 });
+      writer.Add(
+        "b1",
+        "Speckle.Core.Models.Blob",
+        $$"""{"filePath":"/tmp/none.bin","content":"{{bytes}}","id":"b1","speckle_type":"Speckle.Core.Models.Blob"}"""
+      );
+      writer.Add("m1", "Objects.Geometry.MeshBinary", """{"units":"m","id":"m1"}""");
+      writer.Complete();
+    }
+
+    using var viewerDb = new DuckDBConnection($"Data Source={viewerPath}");
+    viewerDb.Open();
+    Scalar<long>(
+        viewerDb,
+        "SELECT COUNT(*) FROM duckdb_constraints() WHERE table_name IN ('objects', 'blobs') AND constraint_type = 'PRIMARY KEY'"
+      )
+      .Should()
+      .Be(2);
+    Scalar<long>(viewerDb, "SELECT COUNT(*) FROM objects").Should().Be(2);
+    Scalar<long>(viewerDb, "SELECT COUNT(*) FROM blobs").Should().Be(1);
   }
 
   [System.Diagnostics.CodeAnalysis.SuppressMessage(

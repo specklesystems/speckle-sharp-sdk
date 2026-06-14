@@ -1,5 +1,4 @@
 #if NET8_0_OR_GREATER
-using System.Globalization;
 using DuckDB.NET.Data;
 using Speckle.Newtonsoft.Json;
 using Speckle.Newtonsoft.Json.Linq;
@@ -30,38 +29,20 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 public sealed class DuckDbArtifactWriter : IDisposable
 {
   private const string BLOB_SPECKLE_TYPE = "Speckle.Core.Models.Blob";
-
-  // Resource governance only — none of these affect the produced content
-  // (same rows, same EAV, same indexes; insertion order preserved).
-
-  /// <summary>
-  /// Caps each DuckDB instance's buffer pool (viewer + eav are separate
-  /// files, so the DuckDB budget is 2× this during appends). Without a limit
-  /// DuckDB defaults to 80% of machine RAM and keeps every written block
-  /// cached until Complete() — the whole dataset rides in RAM.
-  /// </summary>
-  private const string MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_MEMORY_LIMIT_MB";
-  private const int DEFAULT_MEMORY_LIMIT_MB = 256;
-
-  /// <summary>
-  /// CREATE INDEX over tens of millions of rows needs more than the append
-  /// budget (the ART index is built and checkpointed in memory) — the eav
-  /// connection's limit is raised to this for the index phase only, after
-  /// the viewer connection has closed and released its budget. 512MB OOMs on
-  /// a 29M-row table.
-  /// </summary>
-  private const string INDEX_MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_INDEX_MEMORY_LIMIT_MB";
-  private const int DEFAULT_INDEX_MEMORY_LIMIT_MB = 1024;
-
-  /// <summary>
-  /// Appenders defer persistence until disposed; recycling them every N
-  /// objects commits the accumulated rows so DuckDB can checkpoint them to
-  /// the file and evict the blocks mid-run.
-  /// </summary>
-  private const int APPENDER_RECYCLE_INTERVAL = 25_000;
+  private const long MB = 1024 * 1024;
 
   public string ViewerDbPath { get; }
   public string EavDbPath { get; }
+
+  /// <summary>
+  /// How many times the appenders were recycled (committed + recreated)
+  /// during this run — exposed for tests and A/B run summaries.
+  /// </summary>
+  public int RecycleCount { get; private set; }
+
+  // Resource governance (recycle cadence, memory budgets, PK deferral) lives
+  // in DuckDbWriterOptions — env-var-driven per run, content-neutral.
+  private readonly DuckDbWriterOptions _options;
 
   private readonly DuckDBConnection _viewerDb;
   private readonly DuckDBConnection _eavDb;
@@ -71,9 +52,14 @@ public sealed class DuckDbArtifactWriter : IDisposable
   private readonly HashSet<string> _seen = new();
   private (string Id, string Json)? _lastItem;
   private bool _completed;
+  private int _objectsSinceRecycle;
+  private long _bytesSinceRecycle;
+  private long _totalBytes;
 
-  public DuckDbArtifactWriter(string outputDir, string baseName)
+  public DuckDbArtifactWriter(string outputDir, string baseName, DuckDbWriterOptions? options = null)
   {
+    _options = options ?? DuckDbWriterOptions.FromEnvironment();
+
     Directory.CreateDirectory(outputDir);
     ViewerDbPath = Path.Combine(outputDir, $"{baseName}.viewer.duckdb");
     EavDbPath = Path.Combine(outputDir, $"{baseName}.eav.duckdb");
@@ -82,17 +68,22 @@ public sealed class DuckDbArtifactWriter : IDisposable
     DeleteIfExists(ViewerDbPath);
     DeleteIfExists(EavDbPath);
 
-    var memoryLimitMb = ResolveMbEnvVar(MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_MEMORY_LIMIT_MB);
+    // PK deferral: appends pay no per-row ART maintenance and the growing
+    // index doesn't compete with table data inside the append budget; the
+    // PKs are added in Complete(). Uniqueness is guaranteed by _seen either
+    // way, so both variants produce identical files. (root stays inline —
+    // it only ever holds one row.)
+    var pk = _options.DeferPrimaryKeys ? "" : " PRIMARY KEY";
 
     _viewerDb = new DuckDBConnection($"Data Source={ViewerDbPath}");
     _viewerDb.Open();
     Execute(
       _viewerDb,
-      FormattableString.Invariant($"SET memory_limit='{memoryLimitMb}MB'"),
+      FormattableString.Invariant($"SET memory_limit='{_options.MemoryLimitMb}MB'"),
       "SET threads=4", // fewer threads = smaller checkpoint/compression buffers
-      "CREATE TABLE objects (id VARCHAR PRIMARY KEY, data JSON, speckle_type VARCHAR)",
+      FormattableString.Invariant($"CREATE TABLE objects (id VARCHAR{pk}, data JSON, speckle_type VARCHAR)"),
       "CREATE TABLE root (id VARCHAR PRIMARY KEY, data JSON)",
-      "CREATE TABLE blobs (id VARCHAR PRIMARY KEY, content BLOB NOT NULL)"
+      FormattableString.Invariant($"CREATE TABLE blobs (id VARCHAR{pk}, content BLOB NOT NULL)")
     );
     _objectsAppender = _viewerDb.CreateAppender("objects");
     _blobsAppender = _viewerDb.CreateAppender("blobs");
@@ -103,7 +94,7 @@ public sealed class DuckDbArtifactWriter : IDisposable
     _eavDb.Open();
     Execute(
       _eavDb,
-      FormattableString.Invariant($"SET memory_limit='{memoryLimitMb}MB'"),
+      FormattableString.Invariant($"SET memory_limit='{_options.MemoryLimitMb}MB'"),
       "SET threads=4",
       @"CREATE TABLE properties (
         object_id VARCHAR NOT NULL,
@@ -116,6 +107,13 @@ public sealed class DuckDbArtifactWriter : IDisposable
       )"
     );
     _propsAppender = _eavDb.CreateAppender("properties");
+
+    // Self-describing A/B runs: the resolved knobs land in the same [mem]
+    // stream the run is judged by.
+    MemoryLog.Log(
+      $"writer: config memoryLimit={_options.MemoryLimitMb}MB indexMemoryLimit={_options.IndexMemoryLimitMb}MB "
+        + $"recycleObjects={_options.RecycleMaxObjects} recycleBytes={_options.RecycleMaxBytes / MB}MB deferPk={_options.DeferPrimaryKeys}"
+    );
   }
 
   public void Add(UploadItem item) => Add(item.Id, item.SpeckleType, item.Json.Value);
@@ -143,12 +141,6 @@ public sealed class DuckDbArtifactWriter : IDisposable
       return;
     }
 
-    if (_seen.Count % APPENDER_RECYCLE_INTERVAL == 0)
-    {
-      RecycleAppenders();
-      MemoryLog.Log($"writer: {_seen.Count} objects added (appenders recycled)");
-    }
-
     if (speckleType == BLOB_SPECKLE_TYPE)
     {
       json = ExtractBlob(id, json);
@@ -171,6 +163,46 @@ public sealed class DuckDbArtifactWriter : IDisposable
 
     _objectsAppender.CreateRow().AppendValue(id).AppendValue(json).AppendValue(speckleType).EndRow();
     _lastItem = (id, json);
+
+    TrackAppended(id.Length + json.Length + speckleType.Length);
+    _objectsSinceRecycle++;
+    MaybeRecycle();
+  }
+
+  /// <summary>
+  /// Char count as a UTF-8 byte proxy (artifact JSON is ASCII-dominant) —
+  /// the recycle threshold doesn't need exact bytes, just a stable measure.
+  /// </summary>
+  private void TrackAppended(long approxBytes)
+  {
+    _bytesSinceRecycle += approxBytes;
+    _totalBytes += approxBytes;
+  }
+
+  /// <summary>
+  /// Drains the appenders when either since-last-recycle counter crosses its
+  /// cap. The byte cap matters because the object count is blind to row size
+  /// (one blob row can be MBs; one DataObject can fan out into hundreds of
+  /// EAV rows) and appender buffers live OUTSIDE the duckdb memory_limit
+  /// (plain-allocator ColumnDataCollection — untracked, unevictable):
+  /// recycling is the only bound on that memory.
+  /// </summary>
+  private void MaybeRecycle()
+  {
+    var byObjects = _options.RecycleMaxObjects > 0 && _objectsSinceRecycle >= _options.RecycleMaxObjects;
+    if (!byObjects && !(_options.RecycleMaxBytes > 0 && _bytesSinceRecycle >= _options.RecycleMaxBytes))
+    {
+      return;
+    }
+
+    RecycleAppenders();
+    RecycleCount++;
+    MemoryLog.Log(
+      $"writer: appenders recycled #{RecycleCount} by {(byObjects ? "objects" : "bytes")} "
+        + $"({_objectsSinceRecycle} objects / ~{_bytesSinceRecycle / MB}MB since last; {_seen.Count} total)"
+    );
+    _objectsSinceRecycle = 0;
+    _bytesSinceRecycle = 0;
   }
 
   /// <summary>
@@ -202,6 +234,7 @@ public sealed class DuckDbArtifactWriter : IDisposable
     }
 
     _blobsAppender.CreateRow().AppendValue(id).AppendValue(bytes).EndRow();
+    TrackAppended(id.Length + bytes.Length);
 
     if (parsed.Remove("content"))
     {
@@ -210,7 +243,8 @@ public sealed class DuckDbArtifactWriter : IDisposable
     return json;
   }
 
-  private void AppendEavRow(EavRow row) =>
+  private void AppendEavRow(EavRow row)
+  {
     _propsAppender
       .CreateRow()
       .AppendValue(row.ObjectId)
@@ -222,10 +256,22 @@ public sealed class DuckDbArtifactWriter : IDisposable
       .AppendValue(row.InternalDefinitionName)
       .EndRow();
 
+    TrackAppended(
+      row.ObjectId.Length
+        + row.Path.Length
+        + row.ValueText.Length
+        + (row.Units?.Length ?? 0)
+        + (row.InternalDefinitionName?.Length ?? 0)
+        + row.Type.Length
+        + 16 // value_num + per-row overhead
+    );
+  }
+
   /// <summary>
   /// Finalizes both files: flushes appenders, writes the root row (last item
   /// added — same convention as the server, which treats the final NDJSON
-  /// line as the root), creates the EAV indexes, and closes the connections.
+  /// line as the root), builds the deferred viewer PKs, creates the EAV
+  /// indexes, and closes the connections.
   /// After this returns, the files are fully checkpointed and unlocked —
   /// callers can open/upload them immediately.
   /// </summary>
@@ -245,7 +291,9 @@ public sealed class DuckDbArtifactWriter : IDisposable
     GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
     MemoryLog.Log("writer: aggressive GC done");
 
-    MemoryLog.Phase($"writer: appender flush ({_seen.Count} objects)");
+    MemoryLog.Phase(
+      $"writer: appender flush ({_seen.Count} objects, ~{_totalBytes / MB}MB appended, {RecycleCount} recycles)"
+    );
     _objectsAppender.Dispose();
     _blobsAppender.Dispose();
     _propsAppender.Dispose();
@@ -261,6 +309,21 @@ public sealed class DuckDbArtifactWriter : IDisposable
       }
     }
 
+    if (_options.DeferPrimaryKeys)
+    {
+      // PK builds need more than the append budget, same as the eav indexes
+      // below — raised for this phase only. (The eav connection is still
+      // open at its append budget here, so the transient duckdb ceiling is
+      // index + append; the viewer connection closes right after.)
+      MemoryLog.Phase("writer: viewer pk build");
+      Execute(
+        _viewerDb,
+        FormattableString.Invariant($"SET memory_limit='{_options.IndexMemoryLimitMb}MB'"),
+        "ALTER TABLE objects ADD PRIMARY KEY (id)",
+        "ALTER TABLE blobs ADD PRIMARY KEY (id)"
+      );
+    }
+
     // The viewer file is finished — close it BEFORE the index builds so its
     // entire buffer-pool budget is released ahead of the heaviest phase.
     // (Closing also releases the file lock; the upload happens later.)
@@ -270,12 +333,7 @@ public sealed class DuckDbArtifactWriter : IDisposable
     MemoryLog.Phase("writer: index(path) build");
     // Index builds need more than the append budget — raise the limit for
     // this phase only (the connection closes right after).
-    Execute(
-      _eavDb,
-      FormattableString.Invariant(
-        $"SET memory_limit='{ResolveMbEnvVar(INDEX_MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_INDEX_MEMORY_LIMIT_MB)}MB'"
-      )
-    );
+    Execute(_eavDb, FormattableString.Invariant($"SET memory_limit='{_options.IndexMemoryLimitMb}MB'"));
     Execute(_eavDb, "CREATE INDEX idx_props_path ON properties(path)");
 
     MemoryLog.Phase("writer: index(object_id) build");
@@ -290,7 +348,7 @@ public sealed class DuckDbArtifactWriter : IDisposable
   [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Security",
     "CA2100:Review SQL queries for security vulnerabilities",
-    Justification = "Statements are compile-time constants (DDL/settings); the only interpolated value is a parsed int."
+    Justification = "Statements are compile-time constants (DDL/settings); interpolations are a parsed int and a compile-time-chosen DDL fragment."
   )]
   private static void Execute(DuckDBConnection conn, params string[] statements)
   {
@@ -314,14 +372,6 @@ public sealed class DuckDbArtifactWriter : IDisposable
     _objectsAppender = _viewerDb.CreateAppender("objects");
     _blobsAppender = _viewerDb.CreateAppender("blobs");
     _propsAppender = _eavDb.CreateAppender("properties");
-  }
-
-  private static int ResolveMbEnvVar(string name, int fallback)
-  {
-    var raw = Environment.GetEnvironmentVariable(name);
-    return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var mb) && mb > 0
-      ? mb
-      : fallback;
   }
 
   private static void DeleteIfExists(string path)

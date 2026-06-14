@@ -316,6 +316,151 @@ comparisons + "is it actually wired" SQL checks, written alongside Slice 1.
 
 ---
 
+## Optimisation follow-ups (post-benchmark 2026-06-13)
+
+Measured backlog from the HFH WALLSANDROOMS A/B/C runs. Not blockers for the
+cutover; tracked here so they aren't lost.
+
+1. **Giant root-collection envelope (the "#96" spike).** In the A2 memory
+   trace, the final object processed — the root `Collection` whose `elements`
+   is one JSON array of every child reference — spiked the managed heap from
+   ~505MB to ~1,305MB in a single `Process` call (working set 2,571 → 3,414MB),
+   the largest single allocation of the entire run. The aggressive GC at
+   `Complete()` reclaims it before the index builds, but it sets the
+   pre-finalize peak and is pure v1-wire-format overhead (it exists in v1 too).
+   **Fix direction:** stop serialising element membership as one giant JSON
+   array — represent it as rows (membership table / streamed references) so the
+   root envelope is bounded regardless of model size. This is a 4.0 *contract*
+   change (touches how collections are written and how the viewer/receive read
+   them), so it belongs with the `viewer.duckdb` schema work, not the writer.
+   See also the 2026-06-12 benchmark journal note (c).
+
+2. **EAV index build is the finalize peak — and the only lever is the budget
+   (or not building it client-side).** File-level matrix on the frozen 53.5M-row
+   A2 eav table (faithful DuckDB.NET 1.5.3 harness, RSS via /usr/bin/time -l;
+   `/tmp/eav-idx-bench/`), isolating the `CREATE INDEX` phase from the ODA
+   residual:
+   - A **single** index build (`path`) needs **~1.5GB** to checkpoint. At
+     memory_limit=1024 it OOMs ("Failed to create checkpoint … 976.5/976.5
+     MiB"); 2048 completes in ~16s at 1518MB peak.
+   - **None of the cheap levers move it:** `preserve_insertion_order=false`
+     (identical OOM — reverted from the writer, it was cargo-cult),
+     `threads=1` (slower, same OOM), and **sequential isolation** (close/reopen
+     between the two builds) all fail — isolation died on index *#1*, because
+     one index alone exceeds 1024, so there's no sum to split into a max.
+   - **Reading is cheap and lazy:** opening the fully-indexed file at a 256MB
+     budget costs ~40MB; a full 53.5M-row scan stays at 40MB; an indexed
+     `path=` lookup peaks 254MB. The ART does NOT load eagerly on open.
+   - **The index barely helps point lookups:** the same `path=` filter on the
+     *unindexed* seed returns in ~0.1s at 214MB (columnar scan + zonemaps).
+     Join/pivot/`object_id` query latency unindexed is NOT yet measured.
+
+   **Read-path validated against the REAL workload** (local `speckle` Postgres,
+   `ai_conversations.messages`: 84 conversations, 492 `sql` tool calls, 335
+   non-empty statements from production Revit/Navis AI sessions). Shape of the
+   actual queries: 93% hit `properties`; 83% `WHERE path='…'` exact; **68%
+   pivot** (`MAX(CASE WHEN path=… THEN value_num/value_text) … GROUP BY
+   object_id`); 67% GROUP BY object_id; 90% aggregate; only 7% JOIN-on-object_id
+   and 15% DISTINCT object_id; 61% have explicit ORDER BY (so order-sensitivity
+   is always explicit). Across the file's 96,823 paths the AI touched only 124
+   distinct ones, heavily concentrated (Area, builtInCategory, category, SOM
+   Bench params). Cold-process latency on the same model, indexed (A2) vs
+   unindexed (seed): pivot 0.15s vs 0.14s, self-join 0.045s vs 0.044s, exact
+   filter 0.024s vs 0.023s — **the indexes give ZERO measured read benefit.**
+   DuckDB's columnar engine (dict-encoded `path`, zonemaps, vectorised hash
+   agg/join) serves this scan+aggregate workload without the ART; ART indexes
+   only pay off for selective point lookups, which this workload essentially
+   never does.
+
+   Revised recommendation (was "decision deferred" — data now points one way):
+   **drop the eav indexes from the client writer (option b).** It removes the
+   1.5GB finalize OOM entirely, shrinks the file 64% (2.0GB → 729MB), and costs
+   nothing measurable on the real read path. Contract caveats: the server's
+   `processing.ts` builds the same two indexes on v1 eav files, so dropping on
+   the client diverges v2 from v1 — either drop on both sides or accept the
+   (query-invisible) divergence; and re-confirm before huge models where a
+   selective lookup might eventually want the index. Fallbacks if we keep
+   indexes anyway: (a) accept the ~1.5–2GB build budget at finalize (current A2,
+   `SPECKLE_DUCKDB_INDEX_MEMORY_LIMIT_MB=2048`); the cheap config levers
+   (pio/threads/sequential-isolation) do NOT make 1024 viable. Harness:
+   `/tmp/eav-idx-bench/`; SQL trawl: `/tmp/ai_sql_statements.txt`,
+   `/tmp/analyze_sql.py`.
+
+   **Refinement — the index DOES help SELECTIVE retrieval; the obj/path split
+   matters.** Flex dashboards (`flex-layout-exp/flex-experiments`, time-series
+   widgets) use the SAME `@speckle/eav-queries` + `LocalEavExecutor` layer
+   (eav attached from OPFS, so client-built indexes DO travel) — same
+   aggregate/pivot shapes, no new evidence for indexes, BUT they add an
+   `objectIdIn` filter (`object_id IN (...)`). Selective-query timings on the
+   same model (indexed vs unindexed): `object_id=X` 7× faster / ~50× less CPU;
+   `object_id IN (few)` 11× / ~150× CPU; rare `path=` (5 rows) 2× / ~55× CPU.
+   So DuckDB DOES use the ART for selective equality/IN — the win is mostly CPU
+   (scan avoidance), compounding under concurrency and at larger scale. It does
+   NOT help: aggregate/GROUP BY/pivot/scan-most-rows (90%+ of the real workload,
+   incl. all flex dashboards), nor JOINs (DuckDB hash-joins — `idx_props_obj`
+   does NOT accelerate the self-join shape). Asymmetry: **`idx_props_path` is
+   the expensive one (it drives the 1.5GB OOM) with the weakest value** (only
+   helps RARE paths; the hot paths — Area/category — are non-selective and
+   scanned anyway), while **`idx_props_obj` is cheaper and serves the
+   interactive object-inspector / selection-scoped pattern** (`object_id=` /
+   small `IN`). Net: drop `idx_props_path` regardless; keep `idx_props_obj`
+   ONLY if the eav file backs an interactive per-object / selection read path —
+   else drop both. Selective harness queries: `/tmp/q_obj.sql`, `q_objin.sql`,
+   `q_rare.sql`.
+
+   **Build-cost split measured (decision-grade):** `idx_props_obj` ALONE builds
+   fine at memory_limit=1024 (peak 983MB, 5.7s) but OOMs at 768 — so it needs
+   ~1GB, not free. `idx_props_path` ALONE OOMs at 1024 (needs ~1.5GB) — it is
+   the sole reason the eav finalize needs a 2GB budget. Therefore: dropping
+   `idx_props_path` and keeping `idx_props_obj` lets the eav finalize run under
+   a **1024MB** index budget instead of 2048 (and shrinks the file). Dropping
+   both removes the index build entirely (729MB file, finalize bounded by the
+   appender flush). The root-collection serialisation spike (follow-up #1) is
+   then the next-highest transient — note it currently does NOT cause failure
+   (the aggressive GC reclaims it before indexes build); the eav path-index
+   build is what actually OOMs and is the higher absolute peak (3869 vs 3414MB).
+
+   **Cheaper-index research (DuckDB has only ART for secondary indexes; its
+   documented alternative is "sort so zonemaps prune", duckdb.org 2025-05-14).**
+   Tested clustering the eav table by object_id (CTAS ORDER BY, no ART) on the
+   53.5M-row seed:
+   - Lookups: sorted/no-index MATCHES the ART — `object_id=` 0.002s, `IN(3)`
+     0.002s (vs unsorted-no-index 0.010s/0.023s and ~50–150× more CPU). So
+     zonemap pruning fully replaces the ART for the object-inspector / small-
+     selection path.
+   - BUT it BACKFIRES on everything else: sorting by the high-entropy hash
+     object_id **destroyed columnar compression — file bloated 729MB → 1.9GB
+     (+160%)** — and de-clustered the `path` column, making the dominant pivot
+     ~70% slower (0.104s vs 0.072s, CPU 1.16s vs 0.69s). The build also peaks
+     HIGHER RSS than the ART (1273MB@512 / 1935MB@1024 vs obj-ART 983MB@1024).
+   - Verdict: **the ART is the right tool for object_id here; sorting is a net
+     loss** (bigger file, slower pivots) precisely because object_id is a
+     random content hash. obj-ART alone already fits a 1024 budget.
+   The only genuine "cheaper index" lever left is a **narrower key**: object_id
+   is a 32-char hex hash stored as VARCHAR; storing it as a 16-byte UUID/BLOB
+   (or an INT surrogate) would shrink both the column and the ART and cut build
+   memory — but it's a contract change (consumers join on the string id), so
+   future work, not now. Net recommendation stands: drop `idx_props_path`, keep
+   `idx_props_obj` (ART), run eav finalize at 1024MB. Harness strategies:
+   `objonly`/`pathonly`/`sortcluster` in `/tmp/eav-idx-bench/`.
+
+   **Incremental index maintenance (create the index up front, maintain it on
+   appender flushes) — tested, rejected for now.** Load+index of 53.5M rows at
+   1024MB: incremental (index on empty table, chunked insert+checkpoint) peak
+   1678MB vs build-at-end 1745MB — ~4% lower and SMOOTHER (gradual climb, no end
+   step), but: (a) for the OBJ index the end-build "spike" is only +3MB anyway
+   (the real spike was always PATH, which we're dropping); (b) ~40% slower
+   (20.3s vs 14.7s — per-row ART maintenance, the cost deferred-PK avoids); and
+   (c) decisively, in the real writer it would RAISE peak — today the index
+   builds in Complete() AFTER the aggressive GC frees ODA/root-serialisation
+   garbage (managed 1305→590MB), i.e. at the lowest-memory moment; maintaining
+   it during the loop stacks the growing ~1GB ART on top of the ODA-dominated
+   ~2.5GB loop ceiling for the whole run. Revisit ONLY if obj-ART ever stops
+   fitting the post-GC budget on a much larger model. Strategies `incremental`/
+   `bulkload` in the harness.
+
+---
+
 ## Status log
 
 - _2026-05-…_ — Doc created. Overview, current-state, new-approach captured from
@@ -354,6 +499,50 @@ comparisons + "is it actually wired" SQL checks, written alongside Slice 1.
   `SPECKLE_DUCKDB_ARTIFACTS_DIR` is unset. Known gap: no per-object upload
   progress reporting yet (v1's RenderedStreamProgress was sendPipeline-only).
   Dwg/Revit importers still on v1, untouched.
+- _2026-06-13_ — **A/B/C benchmarked on HFH WALLSANDROOMS (575,418 objects,
+  ~6.2GB through the writer, 53.5M EAV rows / 96,823 distinct paths) — byte
+  recycling + deferred PK validated; eav index budget found undersized for
+  grown models; `preserve_insertion_order=false` added to the eav
+  connection.** Findings: (1) the no-recycling baseline arm OOMs the 256MB
+  append budget in Complete() — it cannot produce the file at pod budgets at
+  all, so recycling is a correctness requirement, not an optimization;
+  (2) byte recycling held appender buffering to ~64MB/cycle (96 cycles) vs
+  235–353MB for count-only @25K (23 cycles); (3) deferred PK built in 0.4s
+  for 575K rows AND yields a 31% smaller viewer file (539MB vs 785MB,
+  identical row counts) — bulk ART builds are compact where incremental ones
+  fragment; (4) the eav `path` index build OOMs the 1024MB index budget in
+  ALL arms — that budget was calibrated on 29M rows, this model now emits
+  53.5M; at `SPECKLE_DUCKDB_INDEX_MEMORY_LIMIT_MB=2048` the full writer
+  completes (index(path) 9.7s, index(object_id) 5s, finalize ~15s total,
+  artifacts contract-verified incl. PKs + both indexes). Default index budget
+  left at 1024 pending re-measurement with `preserve_insertion_order=false`
+  on the eav connection — added after verifying across eav-queries and the
+  frontend-3 AI executors that no consumer reads `properties`
+  order-sensitively (the AI sql tool emits arbitrary DuckDB SQL, so both eav
+  indexes stay). Known follow-ups: MemoryLog.Report() never fires on crashed
+  runs (diagnosis had to be reconstructed from streaming lines — should emit
+  from a failure path too); upload step blocked separately by a 404 on the
+  local server's v2 sign endpoint (server branch missing the route, not an
+  SDK issue).
+- _2026-06-12_ — **Recycling made byte-aware, viewer PKs deferred to
+  Complete(), governance extracted into `DuckDbWriterOptions` for per-run A/B
+  testing.** The 25K-object recycle interval was blind to row size — one blob
+  row can be MBs, one DataObject fans out into hundreds of EAV rows, and
+  appender buffers live OUTSIDE duckdb's memory_limit (plain-allocator
+  ColumnDataCollection: untracked, unevictable) — so a byte trigger
+  (default 64MB, counting object JSON + blob bytes + EAV strings) now recycles
+  alongside the count trigger, whichever crosses first. objects/blobs PKs are
+  now built via `ALTER TABLE ADD PRIMARY KEY` in Complete() under the index
+  budget (appends pay no per-row ART maintenance; `_seen` already guarantees
+  uniqueness; final schema identical — verified against duckdb 1.5.3). All
+  knobs live in `DuckDbWriterOptions` (defaults = `FromEnvironment()`):
+  `SPECKLE_DUCKDB_RECYCLE_OBJECTS` / `SPECKLE_DUCKDB_RECYCLE_MB` (0 disables;
+  0/0 = pre-recycling baseline) / `SPECKLE_DUCKDB_DEFER_PK` (0 = inline PKs) +
+  the two existing `*_MEMORY_LIMIT_MB` vars — so an A/B arm is just env vars
+  on a navis-local run, no recompile. The writer echoes the resolved config
+  and each recycle (trigger, objects/MB since last) into the `[mem]` stream,
+  and Complete() logs totals (objects, ~MB appended, recycle count), making
+  every profiled run self-describing.
 - _2026-06-12_ — **Settled on single-phase direct duckdb writes (+ governance);
   two-phase NDJSON staging prototyped, verified, then removed.** The staged
   variant (extract → local `{ingestionId}.ndjson.gz` → replay into the writer)
