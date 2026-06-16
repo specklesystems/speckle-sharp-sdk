@@ -30,6 +30,19 @@ public static class EavExtraction
 {
   private const int MAX_DEPTH = 10;
 
+  /// <summary>
+  /// Top-level keys under <c>properties</c> excluded from EAV by default —
+  /// high-volume / redundant Revit tabs (carried through Navisworks) with little
+  /// query value. "Autodesk Material" alone was ~29% of all rows; "Document"
+  /// repeats per object. Shared by the binary (objects.duckdb) and envelope
+  /// (viewer.duckdb) eav writers so both files exclude the same categories.
+  /// </summary>
+  public static readonly ISet<string> DefaultExcludedTopLevelProperties = new HashSet<string>(StringComparer.Ordinal)
+  {
+    "Autodesk Material",
+    "Document",
+  };
+
   /// <summary>Root-level fields to index (outside of `properties`).</summary>
   private static readonly string[] s_rootScalarFields =
   [

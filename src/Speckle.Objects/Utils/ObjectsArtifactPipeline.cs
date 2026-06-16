@@ -21,18 +21,6 @@ namespace Speckle.Objects.Utils;
 /// </summary>
 public sealed class ObjectsArtifactPipeline : IDisposable
 {
-  /// <summary>
-  /// Top-level property categories dropped from the binary <c>eav.duckdb</c> by
-  /// default: high-volume / redundant Revit tabs that bloat EAV with little
-  /// query value (per the property-distribution investigation). "Autodesk
-  /// Material" alone was ~29% of all rows; "Document" repeats per object.
-  /// </summary>
-  public static readonly ISet<string> DefaultExcludedProperties = new HashSet<string>(StringComparer.Ordinal)
-  {
-    "Autodesk Material",
-    "Document",
-  };
-
   private readonly ObjectsArtifactWriter _writer;
   private readonly ApplicationIdEavWriter _eavWriter;
   private readonly ISet<string> _excludedProperties;
@@ -45,7 +33,9 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     _writer = new ObjectsArtifactWriter(outputDir, baseName);
     _eavWriter = new ApplicationIdEavWriter(outputDir, baseName);
-    _excludedProperties = excludedTopLevelProperties ?? DefaultExcludedProperties;
+    // Shared canonical exclusion list (Autodesk Material, Document, …) so the
+    // binary and envelope eav files drop the same categories.
+    _excludedProperties = excludedTopLevelProperties ?? EavExtraction.DefaultExcludedTopLevelProperties;
   }
 
   /// <summary>The local path of the produced <c>objects.duckdb</c> file.</summary>

@@ -188,6 +188,47 @@ public class DuckDbArtifactWriterTests : IDisposable
     Scalar<long>(viewerDb, "SELECT COUNT(*) FROM objects").Should().Be(1);
   }
 
+  [Fact]
+  public void Eav_ExcludesNoisyCategories_AndInstanceProxies()
+  {
+    string eavPath;
+    using (var writer = new DuckDbArtifactWriter(_dir, "excl"))
+    {
+      eavPath = writer.EavDbPath;
+
+      // DataObject: "Autodesk Material" excluded, "Element" kept.
+      writer.Add(
+        Item(
+          "d1",
+          "Objects.Data.DataObject:Objects.Data.NavisworksObject",
+          """{"speckle_type":"Objects.Data.DataObject:Objects.Data.NavisworksObject","properties":{"Autodesk Material":{"Name":{"name":"Name","value":"Concrete"}},"Element":{"Volume":{"name":"Volume","value":1.5}}},"id":"d1"}"""
+        )
+      );
+
+      // InstanceProxy: no EAV at all (proxy.* dropped).
+      writer.Add(
+        Item(
+          "p1",
+          "Speckle.Core.Models.Instances.InstanceProxy",
+          """{"speckle_type":"Speckle.Core.Models.Instances.InstanceProxy","applicationId":"app-p1","transform":[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],"id":"p1"}"""
+        )
+      );
+
+      writer.Complete();
+    }
+
+    using var eavDb = new DuckDBConnection($"Data Source={eavPath}");
+    eavDb.Open();
+
+    Scalar<long>(eavDb, "SELECT COUNT(*) FROM properties WHERE path LIKE 'properties.Autodesk Material%'")
+      .Should()
+      .Be(0);
+    Scalar<long>(eavDb, "SELECT COUNT(*) FROM properties WHERE path = 'properties.Element.Volume'").Should().Be(1);
+    // InstanceProxy contributed no EAV rows (incl. no proxy.* transform rows).
+    Scalar<long>(eavDb, "SELECT COUNT(*) FROM properties WHERE object_id = 'p1'").Should().Be(0);
+    Scalar<long>(eavDb, "SELECT COUNT(*) FROM properties WHERE path LIKE 'proxy.%'").Should().Be(0);
+  }
+
   [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Security",
     "CA2100:Review SQL queries for security vulnerabilities",

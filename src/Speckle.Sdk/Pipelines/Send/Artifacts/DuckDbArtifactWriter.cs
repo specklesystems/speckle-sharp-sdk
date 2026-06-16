@@ -153,12 +153,18 @@ public sealed class DuckDbArtifactWriter : IDisposable
     {
       json = ExtractBlob(id, json);
     }
-    else if (EavExtraction.ProducesRows(speckleType))
+    // InstanceProxies are skipped for EAV entirely — their only EAV output is the
+    // proxy.transform.* rows (~the model's instance count × 4), which we don't
+    // query; transforms live on the InstanceProxy object itself. This matches the
+    // binary path (which never flattens proxies into eav).
+    else if (EavExtraction.ProducesRows(speckleType) && !speckleType.Contains("InstanceProxy"))
     {
       // One parse serves both EAV extraction and (for DataObjects) stripping.
       var parsed = JObject.Parse(json);
 
-      foreach (var row in EavExtraction.FlattenObjectProperties(id, parsed))
+      // Drop high-volume / redundant property tabs (Autodesk Material, Document)
+      // — same exclusion the binary eav uses.
+      foreach (var row in EavExtraction.FlattenObjectProperties(id, parsed, EavExtraction.DefaultExcludedTopLevelProperties))
       {
         AppendEavRow(row);
       }

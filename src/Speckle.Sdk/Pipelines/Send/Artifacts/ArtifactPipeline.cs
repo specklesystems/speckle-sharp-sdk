@@ -40,14 +40,27 @@ public sealed class ArtifactPipeline : IDisposable
   private const string VIEWER_PURPOSE = "viewer";
   private const string EAV_PURPOSE = "eav";
 
-  private readonly Serializer _serializer = new();
-  private readonly DuckDbArtifactWriter _writer;
+  private readonly string _outputDir;
   private readonly string _projectId;
   private readonly string _ingestionId;
   private readonly CancellationToken _cancellationToken;
   private readonly HttpClient _speckleClient;
   private readonly HttpClient _s3Client;
   private readonly ISdkActivityFactory _activity;
+
+  // Created lazily on first use. The envelope path triggers them via Process()
+  // (serialize → id + __closure) and UploadAsync() (viewer/eav writer). The
+  // full-binary path uses ONLY UploadFilesAsync(), so it constructs NEITHER —
+  // no id/closure serialization, no DuckDbArtifactWriter, no empty viewer/eav
+  // files. This keeps the binary flow free of all serialization machinery.
+  private SerializerV2? _serializer;
+  private DuckDbArtifactWriter? _writer;
+
+  // The artifact pipeline uses the closure-free 4.0 serializer (SerializerV2):
+  // no object generates __closure. The legacy closure-based Serializer is left
+  // intact for other/comparison uses. id + JSON + speckle_type still emitted.
+  private SerializerV2 Serializer => _serializer ??= new();
+  private DuckDbArtifactWriter Writer => _writer ??= new DuckDbArtifactWriter(_outputDir, _ingestionId);
 
   internal ArtifactPipeline(
     string projectId,
@@ -63,8 +76,9 @@ public sealed class ArtifactPipeline : IDisposable
     _ingestionId = ingestionId;
     _cancellationToken = cancellationToken;
     _activity = activityFactory;
-    // Local files mirror the staging-key convention: {ingestionId}.{purpose}.duckdb
-    _writer = new DuckDbArtifactWriter(outputDir, ingestionId);
+    // Local files mirror the staging-key convention: {ingestionId}.{purpose}.duckdb.
+    // The writer itself is created lazily (see Writer) so the binary path builds none.
+    _outputDir = outputDir;
 
     _speckleClient = httpClientFactory.CreateHttpClient(authorizationToken: account.token);
     _speckleClient.BaseAddress = new(new(account.serverInfo.url), "/api/v2/");
@@ -81,7 +95,7 @@ public sealed class ArtifactPipeline : IDisposable
   /// </summary>
   public ObjectReference Process(Base @base)
   {
-    var results = _serializer.Serialize(@base).ToArray();
+    var results = Serializer.Serialize(@base).ToArray();
     var first = results.First();
     // The first item is the processed object itself; the LAST Process call is
     // the root collection by convention, so this converges on the root id.
@@ -91,7 +105,7 @@ public sealed class ArtifactPipeline : IDisposable
     // call lands last — the writer treats the overall last item as the root.
     foreach (var item in results.Reverse())
     {
-      _writer.Add(item);
+      Writer.Add(item);
     }
 
     return first.Reference;
@@ -114,12 +128,12 @@ public sealed class ArtifactPipeline : IDisposable
     try
     {
       MemoryLog.Log("pipeline: UploadAsync begin");
-      _writer.Complete();
+      Writer.Complete();
 
       var files = new Dictionary<string, string>
       {
-        [VIEWER_PURPOSE] = _writer.ViewerDbPath,
-        [EAV_PURPOSE] = _writer.EavDbPath,
+        [VIEWER_PURPOSE] = Writer.ViewerDbPath,
+        [EAV_PURPOSE] = Writer.EavDbPath,
       };
 
       var signed = await Sign(files.Keys.ToArray()).ConfigureAwait(false);
@@ -261,7 +275,7 @@ public sealed class ArtifactPipeline : IDisposable
 
   public void Dispose()
   {
-    _writer.Dispose();
+    _writer?.Dispose(); // null on the binary path (never created)
     _speckleClient.Dispose();
     _s3Client.Dispose();
   }
