@@ -61,7 +61,7 @@ public sealed class DuckDbArtifactWriter : IDisposable
   /// which vary wildly in size) or a row count (keeps small uniform rows
   /// committing frequently).
   /// </summary>
-  private const int APPENDER_RECYCLE_INTERVAL = 25_000;
+  private const int APPENDER_RECYCLE_INTERVAL = 10_000;
   private const string FLUSH_MB_ENV_VAR = "SPECKLE_DUCKDB_FLUSH_MB";
   private const int DEFAULT_FLUSH_MB = 64;
 

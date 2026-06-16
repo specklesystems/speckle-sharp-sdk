@@ -42,10 +42,30 @@ storage/content figures are the stable signals.
 | peakManaged @ extraction loop | 387 | 308 / 296 / 304 | **167 / 169 / 170** |
 | peakNative @ peak phase | 1328 | 1755 / 1806 / 1694 | 1347 / 1927 / 1977 |
 
-> **Binary run 1 (native 1347 / peakWS 1454) was a low outlier.** Runs 2–3 are
-> consistent (native ~1.95 GB, peakWS ~2.0–2.1 GB) — so binary peak workingSet
-> **overlaps the envelope** (~2.35 GB) and is **not a differentiator**. Managed
-> heap stays pinned at ~170 MB across all binary runs.
+> Binary at DEFAULTS (`memory_limit=256`): runs 2–3 peak ~2.0–2.1 GB (run 1's
+> 1454 was a low outlier). Managed pinned at ~170 MB across all runs.
+
+### Memory tuning — DECISIVE (the +600 MB was DuckDB's buffer pool)
+Binary run with **`SPECKLE_DUCKDB_MEMORY_LIMIT_MB=64` + `SPECKLE_DUCKDB_FLUSH_MB=16`**:
+
+| | default (mem 256) | tuned (mem 64 / flush 16) |
+|---|---:|---:|
+| peak workingSet | ~2026–2087 MB | **1430 MB** |
+| peakNative | ~1927–1977 MB | **1320 MB** |
+| peakManaged | ~169 MB | 163 MB |
+| process time | 339–342 s | 341 s (unchanged) |
+
+**Conclusion: the +600 MB over the old NDJSON path was DuckDB's buffer-pool cache**
+(`memory_limit` × 2 connections), not our code, not a leak. Capping it to 64 MB
+drops the binary path onto the **ODA tessellation floor (~1.3 GB) ≈ the old
+NDJSON peak**, at **no time cost**. It's a pure cache/ceiling knob — DuckDB fills
+`memory_limit` opportunistically; bounding it reclaims the lot.
+
+Implication for peak-WS comparison: at equal tuning the envelope would still carry
+its ~730 MB managed collections-serialization spike (binary has none), so
+**tuned-vs-tuned, binary should peak *lower* than envelope** — the default-vs-default
+"wash" was just both paths letting DuckDB cache freely. (Pending a tuned envelope
+run to confirm.)
 
 **Two separable components — read them differently:**
 - **Managed heap = stable + structural.** Binary's extraction-loop managed peak
@@ -84,6 +104,20 @@ delta with confidence.
 > carries the 332k-object JSON graph (speckle_type + id envelopes for DataObjects,
 > InstanceProxies, collections) + id-keyed index on top of the SMSH blobs;
 > objects.duckdb is just SGEO blobs (byte-equal to SMSH) + 28k proxy rows.
+>
+> **⚠ Storage-fragmentation finding (2026-06-16).** A low-memory binary run
+> produced a **482 MB** objects.duckdb — but it holds only **~241 MB of content**
+> (27,527 mesh blobs = 233.9 MB + 28,021 proxy rows = 6.9 MB); the other ~241 MB
+> is **dead space**. Cause: the `SPECKLE_DUCKDB_FLUSH_MB=16` byte-flush recycles
+> the geometry appender ~15× over the run, and each recycle commits a transaction
+> against the PK-indexed `geometries` table, leaving superseded blocks as free
+> space that `CHECKPOINT` does **not** reclaim — only a full rewrite does.
+> Confirmed by three same-model runs: flush-default (~4 recycles) → **266 MB**,
+> flush=16 (~15 recycles) → **481–483 MB**; eav (row-driven, no byte-flush) stayed
+> flat ~456 MB throughout. **Fix:** `ObjectsArtifactWriter.Complete()` now rewrites
+> the table into a fresh file at finalize (482 → **265 MB** verified, same rows, PK
+> preserved), decoupling on-disk size from the memory tuning — so the **253 MB**
+> figure above is the true content size and is what ships, at any flush setting.
 >
 > History: closures + no exclusions + 2 indexes → ENV viewer 675 MB / eav 1.1 GB
 > (~1.8 GB). Closure removal + eav exclusions → ~1.32 GB. Path-index drop →
@@ -128,9 +162,11 @@ eav into the `proxies` table, and one fewer index (path index dropped).
    - **storage −62%** (~1.8 GB → ~686 MB) — stable,
    - **managed heap ~4–6× lower** (167 MB vs 750–1004 MB) — stable,
    - **time ~−20–25%** (323–352 s vs 424–461 s) — consistent despite variance.
-   - **peak workingSet: inconclusive** — native-noise-dominated; binary ranged
-     1454–2026 MB across runs, overlapping envelope. Needs many runs / a capped
-     container to claim a number. (Earlier "−33%" retracted — single-run artifact.)
+   - **peak workingSet: tunable, not noise.** At default `memory_limit=256` the
+     binary path peaks ~2.0 GB; capping it (`SPECKLE_DUCKDB_MEMORY_LIMIT_MB=64` +
+     `SPECKLE_DUCKDB_FLUSH_MB=16`) drops it to **1430 MB** — the ODA floor (≈ the
+     old NDJSON peak) — at no time cost. The default inflation was purely DuckDB's
+     buffer-pool cache (× 2 connections). See "Memory tuning" above.
 4. Geometry format (SMSH vs SGEO) is byte-equivalent; the win is structural (no
    per-object JSON, no id, no closures, no collections — proxies + applicationId).
 

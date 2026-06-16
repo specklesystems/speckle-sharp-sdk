@@ -17,6 +17,75 @@
 
 ---
 
+## Next step (after finalizing the purpose-file shape) — Diffing
+
+> **Status: agreed direction, NOT started — PARKED.** Captured here so the design
+> + concerns are on record once the 3-file shape is locked. No implementation yet.
+
+**Goal.** For every application object we already extract **geometries** and
+**properties**. Derive a per-object **diff hash** so the platform can detect, across
+two versions, whether an object was **unchanged / modified / added / removed**.
+
+**Matching key (verified stable):** the application object's `applicationId` is the
+Navis **handle** (`ElementExtractor.cs:37`, `objectId().getHandle()`) — persists
+across re-exports. This is the cross-version match key. Diff classification:
+
+| applicationId | hash | verdict |
+|---|---|---|
+| in both | equal | unchanged |
+| in both | differs | **modified** |
+| old only | — | removed |
+| new only | — | added |
+
+### Concern 1 — do NOT hash the per-run Guids
+`MeshListExtractor.cs:61` / `GeometryExtractor.cs:72` mint `Guid.NewGuid()` ids, but
+only as the *internal row key* for a deduplicated geometry definition. They are
+**volatile per run** and must never enter the hash. The stable geometry identity is
+the **content hash** `geomHash` (`GeometryExtractor.cs:68,73`).
+
+### Concern 2 — geometry is deduplicated & instanced, not per-object
+~27.5k geometry rows for 287k elements (≈10× sharing). An object does not *own* a
+geometry row; it *instances a definition with a transform* (proxy chain: handle →
+instance(transform, definitionId=geomHash) → definition → mesh). So the per-object
+diff id **cannot live on the shared `geometries` row** (a definition shared by 100
+objects can't carry one object's id). Inlining geometry per object to make it fit
+would discard the 10× dedup → big storage regression. **Keep geometry dedup'd.**
+
+### Schema (refinement of the original "id on geometries + eav" sketch)
+The object diff `id` lives **on the object**; `geometries.id` stays the *content* hash:
+
+```
+geometries:  | id (= geomHash, content hash) | applicationId | content(BLOB) | type |   -- unchanged: dedup + geometry-level diff
+eav:         | applicationId | path | value_* | ... |                                   -- per object; join to objectHash via applicationId
+envelope:    "atomic object" proxy row { applicationId, objectHash,
+                                          geometry: [ {geomHash, transform}, … ] }       -- the board's TODO "atomic object → display values" proxy
+```
+
+The **atomic-object proxy** (already a TODO on the board's `envelope.duckdb`) is the
+natural home for `objectHash` + the object→geometry link.
+
+### Stable hash recipe
+Order-normalized so an untouched object is byte-identical across runs:
+```
+objectHash = SHA256(
+    applicationId (handle)
+  ‖ instanced { geomHash, transform[16] } list, sorted by geomHash      -- geometry contribution (content + placement)
+  ‖ properties, canonicalized: eav rows sorted by path, each (path, value, unit)
+)
+```
+Geometry edit (new geomHash), move (new transform), or property change all flip the
+hash; an untouched object keeps it.
+
+### Open decisions (confirm before building)
+1. **Keep geometry dedup'd/instanced** (recommended) vs inline-per-object. → keep.
+2. **Where `objectHash` lives:** authoritative in the atomic-object proxy (lean,
+   ~287k rows). Denormalizing onto every eav row costs a 64-char id × 18.6M rows —
+   skip unless property-diffing must be self-contained (else JOIN eav→objects on
+   applicationId). → atomic-object proxy.
+3. **Transform/placement change counts as "modified"** (transform in the hash). → yes.
+
+---
+
 ## Overview
 
 **Core idea:** separation of concerns. Generate **purpose-specific DuckDB files

@@ -51,11 +51,17 @@ further, attacking the costs the master plan only named:
 surviving object identity is the host **`applicationId`**. Topology becomes a
 single flat `proxies` table. Geometry becomes an opaque binary blob (SGEO).
 
-## The artifact set (revised)
+## The artifact set (revised — final shape 2026-06-16)
+
+> **Update:** the original single `objects.duckdb` (geometries + proxies) is now
+> **split into two files** — `geometries.duckdb` (the heavy binary blobs) and a
+> lean `envelope.duckdb` (proxies only). This keeps the topology file small and
+> independently fetchable from the geometry payload. eav is unchanged.
 
 | File | Purpose (board) | Tables |
 |---|---|---|
-| `{versionId}.objects.duckdb` | *what the viewer needs* | `geometries`, `proxies` |
+| `{versionId}.geometries.duckdb` | *the renderable geometry* | `geometries` |
+| `{versionId}.envelope.duckdb` | *relationships between objects (no collection tree)* | `proxies` |
 | `{versionId}.eav.duckdb` | *what the viewer doesn't need but all others do* | `eav` |
 | `{versionId}.blobs.parquet` | *what connectors need* (receive fidelity) | `blobs` — **parked** |
 
