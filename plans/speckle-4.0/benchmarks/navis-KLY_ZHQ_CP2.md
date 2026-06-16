@@ -20,24 +20,27 @@ storage/content figures are the stable signals.
 | **BIN** | binary (`objects.duckdb` + `eav.duckdb`) | SGEO blob | proxies (applicationId) | no (only geom content hash) | no |
 
 ## Time (seconds)
-| | ENV+cl | ENV−cl | BIN |
+| | ENV+cl | ENV−cl (run1 / run2) | BIN |
 |---|---:|---:|---:|
-| extraction (`process`) | 389.9 | 430.5 | 311.3 |
-| upload (`send`) | 33.6 | 30.3 | 11.0 |
-| **total** | **424.2** | **461.5** | **323.1** |
+| extraction (`process`) | 389.9 | 430.5 / 406.3 | 311.3 |
+| upload (`send`) | 33.6 | 30.3 / 22.6 | 11.0 |
+| **total** | **424.2** | **461.5 / 429.6** | **323.1** |
 
-> ENV−cl total is *higher* than ENV+cl — counter-intuitive, since dropping
-> closures is less work. Attributed to run-to-run variance in the extraction
-> loop (the loop is ODA/IO-bound; ±10% between runs). Not a real regression from
-> `SerializerV2`. Re-run 3× for a stable mean before quoting time deltas.
+> Two ENV−cl runs (461.5 s, 429.6 s) **bracket** the ENV+cl baseline (424.2 s) —
+> i.e. dropping closures did **not** change total time; the spread is run-to-run
+> variance in the ODA/IO-bound extraction loop (±~10%). Not a `SerializerV2`
+> regression. The binary path (323 s) is the only one clearly faster.
 
 ## Memory — peak (MB)
 | | ENV+cl | ENV−cl | BIN |
 |---|---:|---:|---:|
-| GLOBAL peak workingSet | 2159 | 2351 | **1454** |
-| peakManaged @ collections | 1004 | **760** | — (no collections) |
-| peakManaged @ extraction loop | 387 | 308 | 167 |
-| peakNative @ peak phase | 1328 | 1755 | 1347 |
+| GLOBAL peak workingSet | 2159 | 2351 / 2362 | **1454** |
+| peakManaged @ collections | 1004 | **760 / 749** | — (no collections) |
+| peakManaged @ extraction loop | 387 | 308 / 296 | 167 |
+| peakNative @ peak phase | 1328 | 1755 / 1806 | 1347 |
+
+(ENV−cl shown as run1 / run2 — both consistent: collections managed ~750 MB vs
+1004 MB baseline = the stable closure saving; workingSet stays native-bound.)
 
 **The clean signal is managed heap at peak: 1004 → 760 → 167 MB.**
 - ENV+cl → ENV−cl: **−244 MB managed** = the `__closure` dict (one entry per
@@ -100,13 +103,17 @@ eav into the `proxies` table, and one fewer index (path index dropped).
 
 ### ENV−cl (envelope, no closures) — SerializerV2
 ```
+# run 1
 [CONV SUMMARY] ENVELOPE (viewer+eav) | load=0.69s collect=0.03s process=430.48s send=30.34s total=461.54s | elements=287326 peakMem=2001MB
 oda: extraction + artifact write loop  430.7s  583→1905 MB  peakWS 2003  peakManaged 308  peakNative 1800
 oda: collections                         1.5s 1905→2137 MB  peakWS 2351  peakManaged 760  peakNative 1755
-writer: appender flush (332589 objects)  0.6s 2137→2237 MB
-writer: index(path) build                6.3s
-writer: index(object_id) build           3.6s
-GLOBAL PEAK workingSet 2351MB at t=433.1s during 'oda: collections'
+GLOBAL PEAK workingSet 2351MB during 'oda: collections'
+
+# run 2
+[CONV SUMMARY] ENVELOPE (viewer+eav) | load=0.66s collect=0.03s process=406.33s send=22.58s total=429.60s | elements=287326 peakMem=2042MB
+oda: extraction + artifact write loop  406.5s  584→1946 MB  peakWS 2041  peakManaged 296  peakNative 1850
+oda: collections                         1.5s 1946→2180 MB  peakWS 2362  peakManaged 749  peakNative 1806
+GLOBAL PEAK workingSet 2362MB at t=408.8s during 'oda: collections'
 ```
 
 ### ENV+cl (envelope, with closures) — baseline

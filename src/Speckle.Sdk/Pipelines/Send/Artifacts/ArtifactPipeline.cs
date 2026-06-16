@@ -62,6 +62,12 @@ public sealed class ArtifactPipeline : IDisposable
   private SerializerV2 Serializer => _serializer ??= new();
   private DuckDbArtifactWriter Writer => _writer ??= new DuckDbArtifactWriter(_outputDir, _ingestionId);
 
+  /// <summary>Local viewer.duckdb path once written (null if nothing was processed).</summary>
+  public string? ViewerDbPath => _writer?.ViewerDbPath;
+
+  /// <summary>Local eav.duckdb path once written (null if nothing was processed).</summary>
+  public string? EavDbPath => _writer?.EavDbPath;
+
   internal ArtifactPipeline(
     string projectId,
     string ingestionId,
