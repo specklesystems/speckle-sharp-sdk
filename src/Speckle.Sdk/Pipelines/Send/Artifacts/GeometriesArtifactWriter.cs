@@ -38,20 +38,6 @@ public sealed class GeometriesArtifactWriter : IDisposable
   // floor — starving it below a single mesh is a false economy.)
   private const int MIN_MEMORY_LIMIT_MB = 256;
 
-  // The finalize compaction (INSERT … SELECT into a fresh file) is run
-  // single-threaded with insertion-order preservation OFF — geometry row order is
-  // irrelevant, and DuckDB's parallel order-preserving INSERT buffers per-thread
-  // results, which needlessly balloons the working set. But the rewrite still has
-  // a real floor (a few hundred MB): it buffers blob row groups, and that floor
-  // scales with individual mesh size (it OOMs pinning row-group blocks at commit,
-  // NOT on the PK index — dropping the PK barely moves the floor). So it gets its
-  // own ceiling: high enough not to OOM on blob-heavy models, but well below the
-  // eav index's 1024 so the two finalize phases don't stack into a peak (that
-  // 1024+1024 stack was the 1940 MB spike). Raise the env var if a model with very
-  // large single meshes still OOMs here.
-  private const string COMPACT_MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_COMPACT_MEMORY_LIMIT_MB";
-  private const int DEFAULT_COMPACT_MEMORY_LIMIT_MB = 384;
-
   // Geometry blobs vary wildly in size (a line is ~80 B, a big mesh is MBs), so
   // the appender is recycled (committed) on whichever comes first: an accumulated
   // BYTE budget or a row count. Byte budget bounds the in-flight blob pile-up.
@@ -88,12 +74,18 @@ public sealed class GeometriesArtifactWriter : IDisposable
       _db,
       FormattableString.Invariant($"SET memory_limit='{memoryLimitMb}MB'"),
       "SET threads=4",
+      // No PRIMARY KEY: uniqueness of (applicationId, id) is already guaranteed by
+      // the in-memory _seenGeometry dedup, and consumers bulk-scan geometry (no
+      // point lookup needs the index). Dropping it removes the ART-index
+      // maintenance that fragmented the file under appender recycling (which is
+      // why we no longer rewrite/compact at finalize) AND removes the index's
+      // memory cost — so committing a big mesh blob only needs room for the blob,
+      // not blob + index.
       @"CREATE TABLE geometries (
         applicationId VARCHAR NOT NULL,
         content BLOB NOT NULL,
         id VARCHAR NOT NULL,
-        type VARCHAR NOT NULL,
-        PRIMARY KEY (applicationId, id)
+        type VARCHAR NOT NULL
       )"
     );
     _geometriesAppender = _db.CreateAppender("geometries");
@@ -123,9 +115,17 @@ public sealed class GeometriesArtifactWriter : IDisposable
       return;
     }
 
-    // Commit the accumulated batch on whichever fires first: byte budget (bounds
-    // big-blob pile-up) or row count.
-    if (_bytesSinceFlush >= _flushBytes || _rowsSinceFlush >= APPENDER_RECYCLE_INTERVAL)
+    // Commit (recycle) the accumulated batch BEFORE appending this blob if adding
+    // it would push the batch over the byte budget — i.e. empty the desk first, so
+    // a large blob commits in (close to) its own batch instead of lumped on top of
+    // an accumulated one. That keeps each commit's peak ≈ one blob rather than
+    // batch+blob, which is what made big-mesh commits OOM. The row-count interval
+    // is the other trigger. (Guarded on a non-empty batch so we never recycle an
+    // empty appender; a single blob bigger than the whole pool still can't be
+    // committed — the pool must exceed the biggest mesh — but this raises the
+    // safe single-mesh size to ~the full pool instead of pool-minus-batch.)
+    bool wouldOverflowBudget = _bytesSinceFlush + sgeo.Length >= _flushBytes;
+    if (_rowsSinceFlush > 0 && (wouldOverflowBudget || _rowsSinceFlush >= APPENDER_RECYCLE_INTERVAL))
     {
       RecycleAppender();
       _bytesSinceFlush = 0;
@@ -139,8 +139,8 @@ public sealed class GeometriesArtifactWriter : IDisposable
   }
 
   /// <summary>
-  /// Flushes the appender, compacts the file, and closes the connection so the
-  /// file can be uploaded immediately (releases the DuckDB lock).
+  /// Flushes the appender, checkpoints, and closes the connection so the file can
+  /// be uploaded immediately (releases the DuckDB lock).
   /// </summary>
   public void Complete()
   {
@@ -150,44 +150,15 @@ public sealed class GeometriesArtifactWriter : IDisposable
     }
     _completed = true;
 
+    // No finalize rewrite/compaction. It existed only to reclaim the free blocks
+    // left by appender recycling on a PK-indexed table — but it had to buffer
+    // whole mesh blobs to rewrite them, so a single large mesh OOM'd it (and a
+    // failed rewrite fatally invalidated the DB). With the PK dropped the table is
+    // append-only, so recycling no longer fragments meaningfully and there is
+    // nothing to reclaim. A plain checkpoint is all that's needed.
     _geometriesAppender.Dispose();
-
-    // Appender recycling (which bounds write-time memory) commits many small
-    // transactions against the PK-indexed geometries table; DuckDB leaves the
-    // superseded blocks as free space that CHECKPOINT does NOT reclaim — only a
-    // full rewrite does. So rewrite into a fresh file: the uploaded artifact is
-    // then content-sized regardless of how often we recycled (or model size).
-    // Observed on Navis: a 482 MB fragmented file → 265 MB compacted, same rows.
-    // Single-threaded + no insertion-order preservation keeps the rewrite's
-    // working set small (see COMPACT_* note above); a modest dedicated ceiling
-    // gives headroom without the eav index's big bump that would stack onto the
-    // finalize-phase peak.
-    var compactPath = GeometriesDbPath + ".compact";
-    DeleteIfExists(compactPath);
-    var attach = compactPath.Replace("'", "''", StringComparison.Ordinal);
-    var compactMemoryMb = ResolveMbEnvVar(COMPACT_MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_COMPACT_MEMORY_LIMIT_MB);
-    Execute(
-      _db,
-      "SET threads=1",
-      "SET preserve_insertion_order=false",
-      FormattableString.Invariant($"SET memory_limit='{compactMemoryMb}MB'"),
-      FormattableString.Invariant($"ATTACH '{attach}' AS compact"),
-      @"CREATE TABLE compact.geometries (
-        applicationId VARCHAR NOT NULL,
-        content BLOB NOT NULL,
-        id VARCHAR NOT NULL,
-        type VARCHAR NOT NULL,
-        PRIMARY KEY (applicationId, id)
-      )",
-      "INSERT INTO compact.geometries SELECT * FROM geometries",
-      "CHECKPOINT compact",
-      "DETACH compact"
-    );
+    Execute(_db, "CHECKPOINT");
     _db.Dispose();
-
-    // Swap the compact file in for the fragmented original.
-    DeleteIfExists(GeometriesDbPath);
-    File.Move(compactPath, GeometriesDbPath);
   }
 
   public void Dispose() => Complete();
@@ -219,7 +190,7 @@ public sealed class GeometriesArtifactWriter : IDisposable
   [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Security",
     "CA2100:Review SQL queries for security vulnerabilities",
-    Justification = "Statements are compile-time constants (DDL/settings); interpolated values are a parsed int and an internally-derived, quote-escaped file path."
+    Justification = "Statements are compile-time constants (DDL/settings); the only interpolated value is a parsed int."
   )]
   private static void Execute(DuckDBConnection conn, params string[] statements)
   {
