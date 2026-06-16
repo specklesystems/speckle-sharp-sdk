@@ -28,6 +28,30 @@ public sealed class GeometriesArtifactWriter : IDisposable
   private const string MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_MEMORY_LIMIT_MB";
   private const int DEFAULT_MEMORY_LIMIT_MB = 256;
 
+  // Hard floor for the GEOMETRY connection's buffer pool. Unlike the eav connection
+  // (tiny uniform rows), this one commits whole mesh blobs — a single mesh can be
+  // tens of MB, and DuckDB must allocate a contiguous block for it on top of the
+  // in-flight batch. If the shared memory_limit knob is tuned below this (e.g. 64
+  // to shave the loop peak), a big-mesh model OOMs on commit. The pool MUST exceed
+  // the largest blob + working room, so we clamp up regardless of the shared knob.
+  // (The ~200 MB this costs vs a tiny pool is noise next to ODA's ~1.3 GB native
+  // floor — starving it below a single mesh is a false economy.)
+  private const int MIN_MEMORY_LIMIT_MB = 256;
+
+  // The finalize compaction (INSERT … SELECT into a fresh file) is run
+  // single-threaded with insertion-order preservation OFF — geometry row order is
+  // irrelevant, and DuckDB's parallel order-preserving INSERT buffers per-thread
+  // results, which needlessly balloons the working set. But the rewrite still has
+  // a real floor (a few hundred MB): it buffers blob row groups, and that floor
+  // scales with individual mesh size (it OOMs pinning row-group blocks at commit,
+  // NOT on the PK index — dropping the PK barely moves the floor). So it gets its
+  // own ceiling: high enough not to OOM on blob-heavy models, but well below the
+  // eav index's 1024 so the two finalize phases don't stack into a peak (that
+  // 1024+1024 stack was the 1940 MB spike). Raise the env var if a model with very
+  // large single meshes still OOMs here.
+  private const string COMPACT_MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_COMPACT_MEMORY_LIMIT_MB";
+  private const int DEFAULT_COMPACT_MEMORY_LIMIT_MB = 384;
+
   // Geometry blobs vary wildly in size (a line is ~80 B, a big mesh is MBs), so
   // the appender is recycled (committed) on whichever comes first: an accumulated
   // BYTE budget or a row count. Byte budget bounds the in-flight blob pile-up.
@@ -55,7 +79,7 @@ public sealed class GeometriesArtifactWriter : IDisposable
 
     DeleteIfExists(GeometriesDbPath);
 
-    var memoryLimitMb = ResolveMbEnvVar(MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_MEMORY_LIMIT_MB);
+    var memoryLimitMb = Math.Max(ResolveMbEnvVar(MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_MEMORY_LIMIT_MB), MIN_MEMORY_LIMIT_MB);
     _flushBytes = ResolveMbEnvVar(FLUSH_MB_ENV_VAR, DEFAULT_FLUSH_MB) * 1024L * 1024L;
 
     _db = new DuckDBConnection($"Data Source={GeometriesDbPath}");
@@ -134,16 +158,19 @@ public sealed class GeometriesArtifactWriter : IDisposable
     // full rewrite does. So rewrite into a fresh file: the uploaded artifact is
     // then content-sized regardless of how often we recycled (or model size).
     // Observed on Navis: a 482 MB fragmented file → 265 MB compacted, same rows.
-    // Runs at the loop's memory_limit (already set on the connection): the rewrite
-    // streams the blobs and the geometry PK index scales with ROW COUNT (tens of
-    // thousands), not blob bytes — so it needs no higher ceiling. Bumping it here
-    // would inflate the finalize-phase peak (it stacks in RSS with the eav index
-    // build) for no benefit.
+    // Single-threaded + no insertion-order preservation keeps the rewrite's
+    // working set small (see COMPACT_* note above); a modest dedicated ceiling
+    // gives headroom without the eav index's big bump that would stack onto the
+    // finalize-phase peak.
     var compactPath = GeometriesDbPath + ".compact";
     DeleteIfExists(compactPath);
     var attach = compactPath.Replace("'", "''", StringComparison.Ordinal);
+    var compactMemoryMb = ResolveMbEnvVar(COMPACT_MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_COMPACT_MEMORY_LIMIT_MB);
     Execute(
       _db,
+      "SET threads=1",
+      "SET preserve_insertion_order=false",
+      FormattableString.Invariant($"SET memory_limit='{compactMemoryMb}MB'"),
       FormattableString.Invariant($"ATTACH '{attach}' AS compact"),
       @"CREATE TABLE compact.geometries (
         applicationId VARCHAR NOT NULL,
