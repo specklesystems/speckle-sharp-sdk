@@ -54,21 +54,29 @@ public sealed class DuckDbArtifactWriter : IDisposable
   private const int DEFAULT_INDEX_MEMORY_LIMIT_MB = 1024;
 
   /// <summary>
-  /// Appenders defer persistence until disposed; recycling them every N
-  /// objects commits the accumulated rows so DuckDB can checkpoint them to
-  /// the file and evict the blocks mid-run.
+  /// Appenders defer persistence until disposed; recycling them commits the
+  /// accumulated rows so DuckDB can checkpoint them to the file and evict the
+  /// blocks mid-run. Recycle fires on whichever comes first: an accumulated
+  /// BYTE budget (bounds the in-flight pile-up of large object JSON / blob bytes,
+  /// which vary wildly in size) or a row count (keeps small uniform rows
+  /// committing frequently).
   /// </summary>
   private const int APPENDER_RECYCLE_INTERVAL = 25_000;
+  private const string FLUSH_MB_ENV_VAR = "SPECKLE_DUCKDB_FLUSH_MB";
+  private const int DEFAULT_FLUSH_MB = 64;
 
   public string ViewerDbPath { get; }
   public string EavDbPath { get; }
 
   private readonly DuckDBConnection _viewerDb;
   private readonly DuckDBConnection _eavDb;
+  private readonly long _flushBytes;
   private DuckDBAppender _objectsAppender;
   private DuckDBAppender _blobsAppender;
   private DuckDBAppender _propsAppender;
   private readonly HashSet<string> _seen = new();
+  private int _rowsSinceFlush;
+  private long _bytesSinceFlush;
   private (string Id, string Json)? _lastItem;
   private bool _completed;
 
@@ -83,6 +91,7 @@ public sealed class DuckDbArtifactWriter : IDisposable
     DeleteIfExists(EavDbPath);
 
     var memoryLimitMb = ResolveMbEnvVar(MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_MEMORY_LIMIT_MB);
+    _flushBytes = ResolveMbEnvVar(FLUSH_MB_ENV_VAR, DEFAULT_FLUSH_MB) * 1024L * 1024L;
 
     _viewerDb = new DuckDBConnection($"Data Source={ViewerDbPath}");
     _viewerDb.Open();
@@ -143,9 +152,13 @@ public sealed class DuckDbArtifactWriter : IDisposable
       return;
     }
 
-    if (_seen.Count % APPENDER_RECYCLE_INTERVAL == 0)
+    // Commit the accumulated batch on whichever fires first: byte budget (bounds
+    // big object-JSON / blob pile-up) or row count.
+    if (_bytesSinceFlush >= _flushBytes || _rowsSinceFlush >= APPENDER_RECYCLE_INTERVAL)
     {
       RecycleAppenders();
+      _bytesSinceFlush = 0;
+      _rowsSinceFlush = 0;
       MemoryLog.Log($"writer: {_seen.Count} objects added (appenders recycled)");
     }
 
@@ -176,6 +189,8 @@ public sealed class DuckDbArtifactWriter : IDisposable
     }
 
     _objectsAppender.CreateRow().AppendValue(id).AppendValue(json).AppendValue(speckleType).EndRow();
+    _rowsSinceFlush++;
+    _bytesSinceFlush += json.Length; // blob bytes (if any) were added in ExtractBlob
     _lastItem = (id, json);
   }
 
@@ -208,6 +223,7 @@ public sealed class DuckDbArtifactWriter : IDisposable
     }
 
     _blobsAppender.CreateRow().AppendValue(id).AppendValue(bytes).EndRow();
+    _bytesSinceFlush += bytes.Length; // count blob bytes toward the byte-budget flush
 
     if (parsed.Remove("content"))
     {

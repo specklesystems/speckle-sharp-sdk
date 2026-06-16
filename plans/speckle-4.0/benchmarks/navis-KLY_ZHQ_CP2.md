@@ -20,13 +20,13 @@ storage/content figures are the stable signals.
 | **BIN** | binary (`objects.duckdb` + `eav.duckdb`) | SGEO blob | proxies (applicationId) | no (only geom content hash) | no |
 
 ## Time (seconds)
-| | ENV+cl | ENV−cl (run1 / run2) | BIN (run1 / run2) |
+| | ENV+cl | ENV−cl (r1 / r2 / r3) | BIN (r1 / r2 / r3) |
 |---|---:|---:|---:|
-| extraction (`process`) | 389.9 | 430.5 / 406.3 | 311.3 / 338.8 |
-| upload (`send`) | 33.6 | 30.3 / 22.6 | 11.0 / 7.7 |
-| **total** | **424.2** | **461.5 / 429.6** | **323.1 / ~351.9** |
+| extraction (`process`) | 389.9 | 430.5 / 406.3 / 418.9 | 311.3 / 338.8 / 342.0 |
+| upload (`send`) | 33.6 | 30.3 / 22.6 / 16.2 | 11.0 / 7.7 / 9.9 |
+| **total** | **424.2** | **461.5 / 429.6 / 435.8** | **323.1 / 351.9 / 352.7** |
 
-> Binary is consistently the fastest (~323–352 s vs ~424–461 s envelope), even
+> Binary is consistently the fastest (~323–353 s vs ~424–461 s envelope), even
 > with extraction-loop variance.
 
 > Two ENV−cl runs (461.5 s, 429.6 s) **bracket** the ENV+cl baseline (424.2 s) —
@@ -35,12 +35,17 @@ storage/content figures are the stable signals.
 > regression. The binary path (323 s) is the only one clearly faster.
 
 ## Memory — peak (MB)
-| | ENV+cl | ENV−cl (r1 / r2) | BIN (r1 / r2) |
+| | ENV+cl | ENV−cl (r1 / r2 / r3) | BIN (r1 / r2 / r3) |
 |---|---:|---:|---:|
-| GLOBAL peak workingSet | 2159 | 2351 / 2362 | **1454 / 2026** |
-| peakManaged @ collections | 1004 | **760 / 749** | — (no collections) |
-| peakManaged @ extraction loop | 387 | 308 / 296 | **167 / 169** |
-| peakNative @ peak phase | 1328 | 1755 / 1806 | 1347 / **1927** |
+| GLOBAL peak workingSet | 2159 | 2351 / 2362 / 2253 | **1454 / 2026 / 2087** |
+| peakManaged @ collections | 1004 | **760 / 749 / 730** | — (no collections) |
+| peakManaged @ extraction loop | 387 | 308 / 296 / 304 | **167 / 169 / 170** |
+| peakNative @ peak phase | 1328 | 1755 / 1806 / 1694 | 1347 / 1927 / 1977 |
+
+> **Binary run 1 (native 1347 / peakWS 1454) was a low outlier.** Runs 2–3 are
+> consistent (native ~1.95 GB, peakWS ~2.0–2.1 GB) — so binary peak workingSet
+> **overlaps the envelope** (~2.35 GB) and is **not a differentiator**. Managed
+> heap stays pinned at ~170 MB across all binary runs.
 
 **Two separable components — read them differently:**
 - **Managed heap = stable + structural.** Binary's extraction-loop managed peak
@@ -64,12 +69,25 @@ stable; its *workingSet* peak is similar-to-lower but native-noise-dominated.
 Multiple runs (or a memory-capped Linux container) are needed to quote a peak-WS
 delta with confidence.
 
-## Storage (on disk, checkpointed)
-| | ENV (viewer+eav) | BIN (objects+eav) |
-|---|---:|---:|
-| geometry/objects file | viewer.duckdb **675 MB** | objects.duckdb **253 MB** |
-| eav file | **1.1 GB** | **433 MB** |
-| **total artifacts** | **~1.8 GB** | **~686 MB** (−62%) |
+## Storage (on disk, checkpointed) — current (both: no closures, exclusions, 1 eav index)
+| | ENV (viewer+eav) | BIN (objects+eav) | gap |
+|---|---:|---:|---:|
+| geometry/objects file | viewer.duckdb **642 MB** | objects.duckdb **253 MB** | **−389 MB** |
+| eav file | **470 MB** (object_id key) | **436 MB** (applicationId key) | −34 MB |
+| **total artifacts** | **~1.11 GB** | **~689 MB** | **−38%** |
+
+> **eav is now essentially equal** (470 vs 436 MB): same exclusions, same single
+> `idx_props_obj`/`idx_eav_appid` index, ~same rows (18.66M vs 18.38M). The
+> residual ~34 MB is purely the key column — 32-char SHA256 `object_id`
+> (high-entropy, poor compression) vs short `applicationId`.
+> **The real storage gap is the geometry/objects file (−389 MB)**: viewer.duckdb
+> carries the 332k-object JSON graph (speckle_type + id envelopes for DataObjects,
+> InstanceProxies, collections) + id-keyed index on top of the SMSH blobs;
+> objects.duckdb is just SGEO blobs (byte-equal to SMSH) + 28k proxy rows.
+>
+> History: closures + no exclusions + 2 indexes → ENV viewer 675 MB / eav 1.1 GB
+> (~1.8 GB). Closure removal + eav exclusions → ~1.32 GB. Path-index drop →
+> ~1.11 GB (eav 673→470 MB, −203 MB).
 
 (ENV−cl viewer.duckdb size not captured — expected somewhat smaller than 675 MB
 since the root collection's `__closure` JSON block is gone; the `elements`
@@ -153,9 +171,14 @@ GLOBAL PEAK workingSet 1454MB during extraction loop
 # run 2 (native memory higher this run)
 {"ProcessingTime":338.77,"SendTime":351.92,"ProcessingPeakMemory":2025.9,"ElementsProcessed":287326}
 oda(binary): extraction + SGEO/eav write loop  339.0s  606→1718 MB  peakWS 2026  peakManaged 169  peakNative 1927
-oda(binary): proxies + finalize                  2.6s
 oda(binary): upload objects + eav                7.7s
 GLOBAL PEAK workingSet 2026MB at t=336.5s during extraction loop
+
+# run 3 (consistent with run 2 — version-id-named files: cbc404f6e0.{objects,eav}.duckdb)
+[CONV SUMMARY] BINARY (objects+eav) | load=0.71s collect=0.03s process=342.04s send=9.94s total=352.73s | elements=287326 peakMem=2089MB
+oda(binary): extraction + SGEO/eav write loop  342.2s  608→1732 MB  peakWS 2087  peakManaged 170  peakNative 1977
+oda(binary): upload objects + eav                7.4s
+GLOBAL PEAK workingSet 2087MB at t=342.6s during extraction loop
 ```
 
 > Geometry/eav content was confirmed identical to run 1 earlier
