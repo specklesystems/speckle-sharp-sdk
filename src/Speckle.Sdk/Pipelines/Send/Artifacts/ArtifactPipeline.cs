@@ -148,6 +148,46 @@ public sealed class ArtifactPipeline : IDisposable
     }
   }
 
+  /// <summary>
+  /// Uploads an already-built set of artifact files (purpose → local path) via
+  /// the same v2 sign → PUT → complete flow as <see cref="UploadAsync"/>, but
+  /// WITHOUT this pipeline's own <see cref="DuckDbArtifactWriter"/>. Used by the
+  /// full-binary path to upload objects.duckdb + eav.duckdb, reusing the
+  /// account / project / ingestion / HTTP context this pipeline carries. The
+  /// server creates the version with the given <paramref name="rootId"/>
+  /// (which may be a synthetic id — the binary path has no serialized root).
+  /// </summary>
+  public async Task<string> UploadFilesAsync(
+    IReadOnlyDictionary<string, string> purposeToFilePath,
+    string rootId,
+    int totalChildrenCount
+  )
+  {
+    using var a = _activity.Start("Uploading binary duckdb artifacts (v2)");
+    try
+    {
+      var signed = await Sign(purposeToFilePath.Keys.ToArray()).ConfigureAwait(false);
+
+      var etags = new Dictionary<string, string>();
+      foreach (var kvp in purposeToFilePath)
+      {
+        if (!signed.Uploads.TryGetValue(kvp.Key, out var presigned))
+        {
+          throw new InvalidOperationException($"Server did not sign an upload for purpose '{kvp.Key}'");
+        }
+        etags[kvp.Key] = await UploadFile(kvp.Value, presigned).ConfigureAwait(false);
+      }
+
+      return await Complete(etags, rootId, totalChildrenCount).ConfigureAwait(false);
+    }
+    catch (Exception ex)
+    {
+      a?.SetStatus(SdkActivityStatusCode.Error);
+      a?.RecordException(ex);
+      throw;
+    }
+  }
+
   private async Task<ArtifactsSignResponse> Sign(string[] purposes)
   {
     var uri = new Uri($"projects/{_projectId}/modelingestion/{_ingestionId}/uploads/sign", UriKind.Relative);

@@ -59,7 +59,17 @@ public static class EavExtraction
   /// properties + elements; everything else (geometry primitives, chunks,
   /// blobs) → no rows.
   /// </summary>
-  public static List<EavRow> FlattenObjectProperties(string objectId, JObject obj)
+  /// <param name="excludedTopLevelProperties">
+  /// Optional set of top-level keys under <c>properties</c> to skip entirely
+  /// (the whole subtree is not walked). Used by the 4.0 binary path to drop
+  /// high-volume / redundant Revit categories (e.g. "Autodesk Material",
+  /// "Document"). Null/empty (the envelope path) extracts everything as before.
+  /// </param>
+  public static List<EavRow> FlattenObjectProperties(
+    string objectId,
+    JObject obj,
+    ISet<string>? excludedTopLevelProperties = null
+  )
   {
     var speckleType = obj["speckle_type"]?.Type == JTokenType.String ? (string)obj["speckle_type"]! : "";
 
@@ -69,11 +79,11 @@ public static class EavExtraction
     }
     if (speckleType.Length == 0 || speckleType.StartsWith("Objects.Data."))
     {
-      return ExtractDataObject(objectId, obj);
+      return ExtractDataObject(objectId, obj, excludedTopLevelProperties);
     }
     if (IsCollectionType(speckleType))
     {
-      return ExtractCollection(objectId, obj);
+      return ExtractCollection(objectId, obj, excludedTopLevelProperties);
     }
     return [];
   }
@@ -98,7 +108,11 @@ public static class EavExtraction
     return speckleType.Contains("Collection");
   }
 
-  private static List<EavRow> ExtractDataObject(string objectId, JObject obj)
+  private static List<EavRow> ExtractDataObject(
+    string objectId,
+    JObject obj,
+    ISet<string>? excludedTopLevelProperties
+  )
   {
     var rows = new List<EavRow>();
 
@@ -109,7 +123,7 @@ public static class EavExtraction
     var props = obj["properties"] as JObject;
     if (props != null)
     {
-      WalkProperties(objectId, props, "properties", 0, rows);
+      WalkProperties(objectId, props, "properties", 0, rows, excludedTopLevelProperties);
     }
 
     // 3. Material Quantities (Revit) — inside `properties`, special structure
@@ -170,7 +184,11 @@ public static class EavExtraction
     return rows;
   }
 
-  private static List<EavRow> ExtractCollection(string objectId, JObject obj)
+  private static List<EavRow> ExtractCollection(
+    string objectId,
+    JObject obj,
+    ISet<string>? excludedTopLevelProperties
+  )
   {
     var rows = new List<EavRow>();
 
@@ -179,7 +197,7 @@ public static class EavExtraction
     // Only RootCollection carries `properties` (model-wide metadata)
     if (obj["properties"] is JObject props)
     {
-      WalkProperties(objectId, props, "properties", 0, rows);
+      WalkProperties(objectId, props, "properties", 0, rows, excludedTopLevelProperties);
     }
 
     if (obj["elements"] is JArray elements)
@@ -271,7 +289,14 @@ public static class EavExtraction
     rows.Add(MakeRow(objectId, "elements", new JValue(json), null, null));
   }
 
-  private static void WalkProperties(string objectId, JObject obj, string prefix, int depth, List<EavRow> rows)
+  private static void WalkProperties(
+    string objectId,
+    JObject obj,
+    string prefix,
+    int depth,
+    List<EavRow> rows,
+    ISet<string>? excludedTopLevelProperties = null
+  )
   {
     if (depth >= MAX_DEPTH)
     {
@@ -283,6 +308,13 @@ public static class EavExtraction
       var key = prop.Name;
       var val = prop.Value;
       var path = prefix + "." + key;
+
+      // Drop excluded top-level categories (e.g. "Autodesk Material",
+      // "Document") wholesale — skip the entire subtree, not just the leaves.
+      if (depth == 0 && excludedTopLevelProperties != null && excludedTopLevelProperties.Contains(key))
+      {
+        continue;
+      }
 
       if (val.Type == JTokenType.Null)
       {
@@ -335,7 +367,7 @@ public static class EavExtraction
         continue;
       }
 
-      // Regular nested object — recurse
+      // Regular nested object — recurse (exclusions apply at depth 0 only)
       WalkProperties(objectId, asRecord, path, depth + 1, rows);
     }
   }

@@ -3,6 +3,17 @@
 > Living design doc for the end-to-end refactor. Contract-first: the goal is to
 > nail down what each layer produces and consumes before implementing anything.
 > Sections marked **[OPEN]** are undecided; **[TODO: <who>]** needs an input.
+>
+> **2026-06-16 — Integrations Board revision.** The content model has moved on
+> from this doc. See [plans/speckle-4.0/objects-duckdb-proxies-sgeo.md](plans/speckle-4.0/objects-duckdb-proxies-sgeo.md)
+> (artifact set → `objects.duckdb` with `geometries`+`proxies`, `eav.duckdb`,
+> parked `blobs.parquet`; no speckle id / no `__closure` / no Collections /
+> applicationId-keyed; proxies-as-topology adjacency) and
+> [plans/speckle-4.0/sgeo-binary-format.md](plans/speckle-4.0/sgeo-binary-format.md)
+> (the SGEO per-primitive binary spec). Where the two disagree, the
+> `plans/speckle-4.0/` docs win. **Superseded below:** the `viewer.duckdb` DDL
+> sketch (now `objects.duckdb`), and the `[TODO: oguzhan] EAV sample` (EAV was
+> validated against the server on a real model — see the 2026-06-12 status entry).
 
 ---
 
