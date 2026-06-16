@@ -273,18 +273,19 @@ public sealed class DuckDbArtifactWriter : IDisposable
     MemoryLog.Phase("writer: viewer checkpoint + close");
     _viewerDb.Dispose();
 
-    MemoryLog.Phase("writer: index(path) build");
-    // Index builds need more than the append budget — raise the limit for
-    // this phase only (the connection closes right after).
+    MemoryLog.Phase("writer: index(object_id) build");
+    // Only the object_id (per-object) index is built — the path index was
+    // dropped to match the binary eav (idx_eav_appid). The dominant query is
+    // "all properties for this object"; a global path index roughly doubles the
+    // index-build memory/time and the on-disk eav size for a pattern we don't
+    // rely on. Index build needs more than the append budget — raise the limit
+    // for this phase only (the connection closes right after).
     Execute(
       _eavDb,
       FormattableString.Invariant(
         $"SET memory_limit='{ResolveMbEnvVar(INDEX_MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_INDEX_MEMORY_LIMIT_MB)}MB'"
       )
     );
-    Execute(_eavDb, "CREATE INDEX idx_props_path ON properties(path)");
-
-    MemoryLog.Phase("writer: index(object_id) build");
     Execute(_eavDb, "CREATE INDEX idx_props_obj ON properties(object_id)");
 
     MemoryLog.Phase("writer: eav checkpoint + close");

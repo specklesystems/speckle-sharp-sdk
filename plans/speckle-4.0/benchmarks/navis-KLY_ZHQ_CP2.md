@@ -20,11 +20,14 @@ storage/content figures are the stable signals.
 | **BIN** | binary (`objects.duckdb` + `eav.duckdb`) | SGEO blob | proxies (applicationId) | no (only geom content hash) | no |
 
 ## Time (seconds)
-| | ENV+cl | ENV−cl (run1 / run2) | BIN |
+| | ENV+cl | ENV−cl (run1 / run2) | BIN (run1 / run2) |
 |---|---:|---:|---:|
-| extraction (`process`) | 389.9 | 430.5 / 406.3 | 311.3 |
-| upload (`send`) | 33.6 | 30.3 / 22.6 | 11.0 |
-| **total** | **424.2** | **461.5 / 429.6** | **323.1** |
+| extraction (`process`) | 389.9 | 430.5 / 406.3 | 311.3 / 338.8 |
+| upload (`send`) | 33.6 | 30.3 / 22.6 | 11.0 / 7.7 |
+| **total** | **424.2** | **461.5 / 429.6** | **323.1 / ~351.9** |
+
+> Binary is consistently the fastest (~323–352 s vs ~424–461 s envelope), even
+> with extraction-loop variance.
 
 > Two ENV−cl runs (461.5 s, 429.6 s) **bracket** the ENV+cl baseline (424.2 s) —
 > i.e. dropping closures did **not** change total time; the spread is run-to-run
@@ -32,25 +35,34 @@ storage/content figures are the stable signals.
 > regression. The binary path (323 s) is the only one clearly faster.
 
 ## Memory — peak (MB)
-| | ENV+cl | ENV−cl | BIN |
+| | ENV+cl | ENV−cl (r1 / r2) | BIN (r1 / r2) |
 |---|---:|---:|---:|
-| GLOBAL peak workingSet | 2159 | 2351 / 2362 | **1454** |
+| GLOBAL peak workingSet | 2159 | 2351 / 2362 | **1454 / 2026** |
 | peakManaged @ collections | 1004 | **760 / 749** | — (no collections) |
-| peakManaged @ extraction loop | 387 | 308 / 296 | 167 |
-| peakNative @ peak phase | 1328 | 1755 / 1806 | 1347 |
+| peakManaged @ extraction loop | 387 | 308 / 296 | **167 / 169** |
+| peakNative @ peak phase | 1328 | 1755 / 1806 | 1347 / **1927** |
 
-(ENV−cl shown as run1 / run2 — both consistent: collections managed ~750 MB vs
-1004 MB baseline = the stable closure saving; workingSet stays native-bound.)
+**Two separable components — read them differently:**
+- **Managed heap = stable + structural.** Binary's extraction-loop managed peak
+  is rock-steady **167 / 169 MB**; envelope's collections managed peak is
+  **1004 (with closures) → ~750 (without)**. So:
+  - closures cost **~250 MB managed** (the `__closure` dict, one entry per
+    transitive object ~277k+, plus the JSON block) — real but partial,
+  - per-object JSON serialization costs the rest: envelope ~750 MB vs binary
+    ~167 MB managed. **This ~580 MB gap is the durable memory win of binary.**
+- **Native heap (ODA tessellation + DuckDB) = dominant + volatile.** It swings
+  run-to-run: binary 1347 → 1927 MB, envelope 1755 → 1806 MB. Because native
+  dominates workingSet (the figure a pod limit enforces), **peak workingSet is
+  noisy and NOT a reliable discriminator** — binary's GLOBAL peak ranged
+  1454–2026 MB across two runs, overlapping the envelope's 2351–2362. The first
+  comparison's "−33% peak" was a low-native binary run vs a high-native envelope
+  run; don't over-read it. (DuckDB fills its `memory_limit` as cache, so the
+  duckdb budget is both floor and ceiling — a known native contributor.)
 
-**The clean signal is managed heap at peak: 1004 → 760 → 167 MB.**
-- ENV+cl → ENV−cl: **−244 MB managed** = the `__closure` dict (one entry per
-  transitive object, ~277k+ for the root) + the `__closure` JSON block. Real, but
-  partial.
-- ENV−cl → BIN: **−593 MB managed** = eliminating per-object JSON serialization
-  entirely (no DataObject/collection/instance-proxy envelopes built).
-- workingSet (physical RAM, what a pod limit enforces) is **native-bound** here
-  (ODA geometry + DuckDB), so trimming managed alone barely moves it; only the
-  binary path's smaller everything brings the global peak down (2159/2351 → 1454).
+**Bottom line on memory:** binary's *managed* footprint is ~4–6× smaller and
+stable; its *workingSet* peak is similar-to-lower but native-noise-dominated.
+Multiple runs (or a memory-capped Linux container) are needed to quote a peak-WS
+delta with confidence.
 
 ## Storage (on disk, checkpointed)
 | | ENV (viewer+eav) | BIN (objects+eav) |
@@ -93,9 +105,14 @@ eav into the `proxies` table, and one fewer index (path index dropped).
    332,589 JSON envelopes (speckle_type + id + references) in the extraction loop.
    That's ~430 s and the bulk of managed allocation. The binary path removes it
    (managed peak 167 MB).
-3. **Binary wins across the board**: −62% storage (~1.8 GB → ~686 MB), −33% global
-   peak workingSet (2159 → 1454 MB), ~−24% time vs ENV+cl — same pixels (identical
-   27,527 geometry buffers) and same per-element properties.
+3. **Binary wins on storage, managed memory, and time** — same pixels (identical
+   27,527 geometry buffers) and same per-element properties:
+   - **storage −62%** (~1.8 GB → ~686 MB) — stable,
+   - **managed heap ~4–6× lower** (167 MB vs 750–1004 MB) — stable,
+   - **time ~−20–25%** (323–352 s vs 424–461 s) — consistent despite variance.
+   - **peak workingSet: inconclusive** — native-noise-dominated; binary ranged
+     1454–2026 MB across runs, overlapping envelope. Needs many runs / a capped
+     container to claim a number. (Earlier "−33%" retracted — single-run artifact.)
 4. Geometry format (SMSH vs SGEO) is byte-equivalent; the win is structural (no
    per-object JSON, no id, no closures, no collections — proxies + applicationId).
 
@@ -126,9 +143,21 @@ GLOBAL PEAK workingSet 2159MB during 'oda: collections'
 
 ### BIN (binary objects + eav)
 ```
+# run 1
 [CONV SUMMARY] BINARY (objects+eav) | load=0.68s collect=0.04s process=311.33s send=11.03s total=323.07s | elements=287326 peakMem=1454MB
 oda(binary): extraction + SGEO/eav write loop  311.5s  608→1431 MB  peakWS 1454  peakManaged 167  peakNative 1347
 oda(binary): proxies + finalize                  2.8s
 oda(binary): upload objects + eav                8.2s
 GLOBAL PEAK workingSet 1454MB during extraction loop
+
+# run 2 (native memory higher this run)
+{"ProcessingTime":338.77,"SendTime":351.92,"ProcessingPeakMemory":2025.9,"ElementsProcessed":287326}
+oda(binary): extraction + SGEO/eav write loop  339.0s  606→1718 MB  peakWS 2026  peakManaged 169  peakNative 1927
+oda(binary): proxies + finalize                  2.6s
+oda(binary): upload objects + eav                7.7s
+GLOBAL PEAK workingSet 2026MB at t=336.5s during extraction loop
 ```
+
+> Geometry/eav content was confirmed identical to run 1 earlier
+> (27,527 mesh geometries, 18.38M eav rows) — the +580 MB native swing is
+> ODA/DuckDB run variance, not extra data.
