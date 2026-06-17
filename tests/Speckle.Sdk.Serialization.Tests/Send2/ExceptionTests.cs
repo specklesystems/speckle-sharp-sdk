@@ -33,8 +33,13 @@ public class ExceptionTests
 
     var objects = new ConcurrentDictionary<Id, Json>();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(new MemoryJsonCacheManager(objects), new ExceptionServerObjectManager(), null, TestContext.Current.CancellationToken, new SerializeProcessOptions(false, false, false, true)
-);
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new MemoryJsonCacheManager(objects),
+      new ExceptionServerObjectManager(),
+      null,
+      TestContext.Current.CancellationToken,
+      new SerializeProcessOptions(false, false, false, true)
+    );
 
     //4 exceptions are fine because we use 4 threads for saving cache
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
@@ -46,8 +51,13 @@ public class ExceptionTests
   {
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(new ExceptionSendCacheManager(), new MemoryServerObjectManager(new()), null, TestContext.Current.CancellationToken, new SerializeProcessOptions(false, false, false, true)
-);
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ExceptionSendCacheManager(),
+      new MemoryServerObjectManager(new()),
+      null,
+      TestContext.Current.CancellationToken,
+      new SerializeProcessOptions(false, false, false, true)
+    );
 
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(testClass));
     await Verify(ex);
@@ -78,13 +88,18 @@ public class ExceptionTests
       line = new Polyline() { units = "test", value = [3.0, 4.0] },
     };
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(new ExceptionSendCacheManager(exceptionsAfter: 10), new MemoryServerObjectManager(new()), null, TestContext.Current.CancellationToken, new SerializeProcessOptions(false, false, false, true)
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new ExceptionSendCacheManager(exceptionsAfter: 10),
+      new MemoryServerObjectManager(new()),
+      null,
+      TestContext.Current.CancellationToken,
+      new SerializeProcessOptions(false, false, false, true)
       {
         MaxHttpSendBatchSize = 1,
         MaxCacheBatchSize = 1,
         MaxParallelism = 1,
       }
-);
+    );
 
     var ex = await Assert.ThrowsAsync<SpeckleException>(async () => await serializeProcess.Serialize(@base));
     await Verify(ex);

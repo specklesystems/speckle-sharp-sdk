@@ -223,8 +223,14 @@ public class SerializationTests
     var newIdToJson = new ConcurrentDictionary<string, string>();
 
     await using (
-      var serializeProcess = _factory.CreateSerializeProcess(SqLiteJsonCacheManager.FromMemory(1), new MemoryServerObjectManager(newIdToJson), null, TestContext.Current.CancellationToken, new SerializeProcessOptions(false, false, false, true) { MaxCacheBatchSize = 1, MaxParallelism = concurrency }
-))
+      var serializeProcess = _factory.CreateSerializeProcess(
+        SqLiteJsonCacheManager.FromMemory(1),
+        new MemoryServerObjectManager(newIdToJson),
+        null,
+        TestContext.Current.CancellationToken,
+        new SerializeProcessOptions(false, false, false, true) { MaxCacheBatchSize = 1, MaxParallelism = concurrency }
+      )
+    )
     {
       var (rootId2, _) = await serializeProcess.Serialize(root);
       rootId2.Should().Be(root.id);

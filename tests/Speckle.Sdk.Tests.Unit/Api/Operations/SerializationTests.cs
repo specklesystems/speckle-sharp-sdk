@@ -139,9 +139,12 @@ public class ObjectSerialization
     var stringChunkString = _operations.Serialize(stringBasedChunk, TestContext.Current.CancellationToken);
     var doubleChunkString = _operations.Serialize(doubleBasedChunk, TestContext.Current.CancellationToken);
 
-    var baseChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(baseChunkString, TestContext.Current.CancellationToken);
-    var stringChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(stringChunkString, TestContext.Current.CancellationToken);
-    var doubleChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(doubleChunkString, TestContext.Current.CancellationToken);
+    var baseChunkDeserialised = (DataChunk)
+      await _operations.DeserializeAsync(baseChunkString, TestContext.Current.CancellationToken);
+    var stringChunkDeserialised = (DataChunk)
+      await _operations.DeserializeAsync(stringChunkString, TestContext.Current.CancellationToken);
+    var doubleChunkDeserialised = (DataChunk)
+      await _operations.DeserializeAsync(doubleChunkString, TestContext.Current.CancellationToken);
 
     baseChunkDeserialised.data.Count.Should().Be(baseBasedChunk.data.Count);
     stringChunkDeserialised.data.Count.Should().Be(stringBasedChunk.data.Count);
@@ -268,7 +271,8 @@ public class ObjectSerialization
     var mockBase = new StringDateTimeRegressionMock { TestField = "2021-11-12T11:32:01" };
 
     var result = _operations.Serialize(mockBase, TestContext.Current.CancellationToken);
-    var test = (StringDateTimeRegressionMock)await _operations.DeserializeAsync(result, TestContext.Current.CancellationToken);
+    var test = (StringDateTimeRegressionMock)
+      await _operations.DeserializeAsync(result, TestContext.Current.CancellationToken);
 
     test.TestField.Should().Be(mockBase.TestField);
   }

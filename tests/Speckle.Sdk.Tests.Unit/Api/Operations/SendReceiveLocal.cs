@@ -43,12 +43,20 @@ public sealed class SendReceiveLocal : IDisposable
     }
 
     using SQLiteTransport localTransport = new();
-    (var objId01, var references) = await _operations.Send(myObject, localTransport, false, cancellationToken: TestContext.Current.CancellationToken);
+    (var objId01, var references) = await _operations.Send(
+      myObject,
+      localTransport,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     objId01.Should().NotBeNull();
     references.Count.Should().Be(NUM_OBJECTS);
 
-    var commitPulled = await _operations.Receive(objId01.NotNull(), cancellationToken: TestContext.Current.CancellationToken);
+    var commitPulled = await _operations.Receive(
+      objId01.NotNull(),
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     ((List<object>)commitPulled["@items"].NotNull())[0].Should().BeOfType<Point>();
     ((List<object>)commitPulled["@items"].NotNull()).Count.Should().Be(NUM_OBJECTS);
@@ -69,7 +77,12 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    (var objId01, _) = await _operations.Send(myObject, _sut, false, cancellationToken: TestContext.Current.CancellationToken);
+    (var objId01, _) = await _operations.Send(
+      myObject,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     var commitPulled = await _operations.Receive(objId01, cancellationToken: TestContext.Current.CancellationToken);
     List<object> items = (List<object>)commitPulled["@items"].NotNull();
@@ -92,7 +105,12 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    (var objId01, _) = await _operations.Send(myObject, _sut, false, cancellationToken: TestContext.Current.CancellationToken);
+    (var objId01, _) = await _operations.Send(
+      myObject,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     objId01.Should().NotBeNull();
 
@@ -115,7 +133,12 @@ public sealed class SendReceiveLocal : IDisposable
     myObject["@dictionary"] = myDic;
     myObject["@list"] = myList;
 
-    (var _objId01, _) = await _operations.Send(myObject, _sut, false, cancellationToken: TestContext.Current.CancellationToken);
+    (var _objId01, _) = await _operations.Send(
+      myObject,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     _objId01.Should().NotBeNull();
 
@@ -150,7 +173,12 @@ public sealed class SendReceiveLocal : IDisposable
       ((List<Base>)((dynamic)obj)["@LayerC"]).Add(new Point(i, i, i + rand.NextDouble()) { applicationId = i + "baz" });
     }
 
-    (var objId01, _) = await _operations.Send(obj, _sut, false, cancellationToken: TestContext.Current.CancellationToken);
+    (var objId01, _) = await _operations.Send(
+      obj,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     objId01.Should().NotBeNull();
 
@@ -186,14 +214,22 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    (var commitId02, _) = await _operations.Send(myObject, _sut, false, cancellationToken: TestContext.Current.CancellationToken);
+    (var commitId02, _) = await _operations.Send(
+      myObject,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     ProgressArgs? progress = null;
-    await _operations.Receive(commitId02.NotNull(), onProgressAction: new UnitTestProgress<ProgressArgs>(x =>
+    await _operations.Receive(
+      commitId02.NotNull(),
+      onProgressAction: new UnitTestProgress<ProgressArgs>(x =>
       {
         progress = x;
-      })
-, cancellationToken: TestContext.Current.CancellationToken);
+      }),
+      cancellationToken: TestContext.Current.CancellationToken
+    );
     progress.Should().NotBeNull();
   }
 
@@ -204,10 +240,25 @@ public sealed class SendReceiveLocal : IDisposable
     @base["test"] = "the best";
 
     SQLiteTransport myLocalTransport = new();
-    var sendResult = await _operations.Send(@base, myLocalTransport, false, cancellationToken: TestContext.Current.CancellationToken);
+    var sendResult = await _operations.Send(
+      @base,
+      myLocalTransport,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
     await _operations.Send(@base, myLocalTransport, false, cancellationToken: TestContext.Current.CancellationToken);
 
-    _ = await _operations.Receive(sendResult.rootObjId, null, myLocalTransport, cancellationToken: TestContext.Current.CancellationToken);
-    await _operations.Receive(sendResult.rootObjId, null, myLocalTransport, cancellationToken: TestContext.Current.CancellationToken);
+    _ = await _operations.Receive(
+      sendResult.rootObjId,
+      null,
+      myLocalTransport,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
+    await _operations.Receive(
+      sendResult.rootObjId,
+      null,
+      myLocalTransport,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
   }
 }

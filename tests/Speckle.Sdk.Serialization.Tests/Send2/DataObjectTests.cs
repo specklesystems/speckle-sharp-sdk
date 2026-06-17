@@ -36,8 +36,13 @@ public class DataObjectTests
     Base x = (Base)(Activator.CreateInstance(type) ?? throw new Exception("Could not create instance of " + type.Name));
 
     var json = new ConcurrentDictionary<Id, Json>();
-    await using var serializeProcess = _factory.CreateSerializeProcess(new MemoryJsonCacheManager(json), new DummyServerObjectManager(), null, TestContext.Current.CancellationToken, new SerializeProcessOptions(false, false, true, true)
-);
+    await using var serializeProcess = _factory.CreateSerializeProcess(
+      new MemoryJsonCacheManager(json),
+      new DummyServerObjectManager(),
+      null,
+      TestContext.Current.CancellationToken,
+      new SerializeProcessOptions(false, false, true, true)
+    );
     await serializeProcess.Serialize(x);
     await VerifyJson(json.Single().Value.Value).UseParameters(type);
   }

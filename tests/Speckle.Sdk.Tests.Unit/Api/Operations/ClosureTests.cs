@@ -48,9 +48,18 @@ public class Closures
 
     var transport = new MemoryTransport();
 
-    var sendResult = await _operations.Send(d1, transport, false, cancellationToken: TestContext.Current.CancellationToken);
+    var sendResult = await _operations.Send(
+      d1,
+      transport,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
-    var test = await _operations.Receive(sendResult.rootObjId, localTransport: transport, cancellationToken: TestContext.Current.CancellationToken);
+    var test = await _operations.Receive(
+      sendResult.rootObjId,
+      localTransport: transport,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     test.id.NotNull();
     d1.GetId(true).Should().BeEquivalentTo((test.id));
