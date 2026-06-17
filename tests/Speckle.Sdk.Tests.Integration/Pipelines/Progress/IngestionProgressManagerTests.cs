@@ -15,7 +15,7 @@ public class IngestionProgressManagerTests : IAsyncLifetime
   private Model _model;
   private ModelIngestion _ingestion;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _factory = serviceProvider.GetRequiredService<IIngestionProgressManagerFactory>();
@@ -68,9 +68,9 @@ public class IngestionProgressManagerTests : IAsyncLifetime
     Assert.Equal(EXPECTED_MESSAGE, res.statusData.progressMessage);
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client.Dispose();
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 }

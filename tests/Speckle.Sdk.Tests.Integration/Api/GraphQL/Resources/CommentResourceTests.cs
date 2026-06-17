@@ -20,7 +20,7 @@ public class CommentResourceTests : IAsyncLifetime
   private Comment _comment;
 
   // Constructor for setup
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     // Synchronous operations converted to async Task.Run for constructor
     _testUser = await Fixtures.SeedUserWithClient();
@@ -31,10 +31,10 @@ public class CommentResourceTests : IAsyncLifetime
     Sut = _testUser.Comment;
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     // No resources to dispose
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
   [Fact(Skip = SERVER_SKIP_MESSAGE)]

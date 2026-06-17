@@ -14,7 +14,7 @@ public sealed class SendReceiveTests : IAsyncLifetime
   private const string NON_EXISTENT_OBJECT_ID = "0a480dfb7aa774f19a82bee9d6320abd";
   private const string NON_EXISTENT_PROJECT_ID = "8cdc651d13";
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
@@ -177,9 +177,9 @@ public sealed class SendReceiveTests : IAsyncLifetime
     });
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client?.Dispose();
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 }

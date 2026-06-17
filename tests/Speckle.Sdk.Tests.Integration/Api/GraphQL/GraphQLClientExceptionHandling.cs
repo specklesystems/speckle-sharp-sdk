@@ -12,9 +12,9 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
 {
   private IClient _sut;
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _sut = await Fixtures.SeedUserWithClient();
   }

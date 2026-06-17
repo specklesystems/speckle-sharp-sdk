@@ -15,7 +15,7 @@ public class FileUploadResourceTests : IAsyncLifetime
   private FileInfo _payload;
   private const string PAYLOAD_CONTENTS = "Hello World!";
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     var account = await Fixtures.SeedUser().ConfigureAwait(false);
@@ -31,14 +31,14 @@ public class FileUploadResourceTests : IAsyncLifetime
     _payload = new FileInfo(filePath);
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client.Dispose();
     if (File.Exists(_payload.FullName))
     {
       File.Delete(_payload.FullName);
     }
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
   [Fact]

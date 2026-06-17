@@ -15,7 +15,7 @@ public class ProjectInviteResourceTests : IAsyncLifetime
   private Project _project;
   private PendingStreamCollaborator _createdInvite;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _inviter = await Fixtures.SeedUserWithClient();
     _invitee = await Fixtures.SeedUserWithClient();
@@ -23,7 +23,7 @@ public class ProjectInviteResourceTests : IAsyncLifetime
     _createdInvite = await SeedInvite();
   }
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
   private async Task<PendingStreamCollaborator> SeedInvite()
   {

@@ -15,7 +15,7 @@ using Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 using Speckle.Sdk.Transports;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
-[assembly: AssemblyTrait("Category", "Integration")]
+[assembly: Trait("Category", "Integration")]
 
 #if DEBUG
 [assembly: CollectionBehavior(MaxParallelThreads = 8)]

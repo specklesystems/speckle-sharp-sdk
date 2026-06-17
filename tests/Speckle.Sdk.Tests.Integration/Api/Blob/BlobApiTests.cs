@@ -14,7 +14,7 @@ public class BlobApiTests : IAsyncLifetime
   private IClient _client;
   private Project _project;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     var account = await Fixtures.SeedUser().ConfigureAwait(false);
@@ -54,9 +54,10 @@ public class BlobApiTests : IAsyncLifetime
     lines.Length.Should().Be(1);
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client.Dispose();
-    return Task.CompletedTask;
+    _blobApi.Dispose();
+    return ValueTask.CompletedTask;
   }
 }

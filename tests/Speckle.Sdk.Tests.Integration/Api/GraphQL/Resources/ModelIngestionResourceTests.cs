@@ -19,9 +19,9 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
   private Model _model;
   private IOperations _operations;
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();

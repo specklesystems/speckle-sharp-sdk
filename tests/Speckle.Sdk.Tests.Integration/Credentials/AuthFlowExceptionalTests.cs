@@ -70,15 +70,15 @@ public class AuthFlowExceptionalTests : IAsyncLifetime
     await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await task1);
   }
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _authFlow = Fixtures.ServiceProvider.GetRequiredService<IAuthFlow>();
     _client = await Fixtures.SeedUserWithClient();
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client.Dispose();
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 }

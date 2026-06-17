@@ -15,14 +15,14 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   private Model _model;
 
   // Replaces NUnit's OneTimeSetUp with an async constructor logic or initializer pattern
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new("Test project", "", ProjectVisibility.Private));
     _model = await _testUser.Model.Create(new("Test Model", "", _project.id));
   }
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
   [Theory]
   [InlineData("")]

@@ -14,7 +14,7 @@ public class ModelResourceTests : IAsyncLifetime
   private Project _project;
   private Model _model;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     // Runs instead of [SetUp] in NUnit
     _testUser = await Fixtures.SeedUserWithClient();
@@ -22,10 +22,10 @@ public class ModelResourceTests : IAsyncLifetime
     _model = await _testUser.Model.Create(new("Test Model", "", _project.id));
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     // Perform any cleanup, if needed
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
   [Theory]

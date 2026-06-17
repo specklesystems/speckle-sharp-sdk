@@ -23,13 +23,13 @@ public class SubscriptionResourceTests : IAsyncLifetime
 
   private SubscriptionResource Sut => _testUser.Subscription;
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _testUser.Dispose();
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     await _testUser.InitializeWebsocket();

@@ -16,9 +16,13 @@ public class VersionResourceTests : IAsyncLifetime
   private Model _model2;
   private Version _version;
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync()
+  {
+    _testUser.Dispose();
+    return ValueTask.CompletedTask;
+  }
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new("Test project", "", null));

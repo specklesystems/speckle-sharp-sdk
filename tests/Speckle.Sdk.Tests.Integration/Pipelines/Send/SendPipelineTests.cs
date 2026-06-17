@@ -19,7 +19,7 @@ public sealed class SendPipelineTests : IAsyncLifetime
 
   private ISendPipelineFactory _factory;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _factory = serviceProvider.GetRequiredService<ISendPipelineFactory>();
@@ -148,9 +148,9 @@ public sealed class SendPipelineTests : IAsyncLifetime
     });
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client?.Dispose();
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 }

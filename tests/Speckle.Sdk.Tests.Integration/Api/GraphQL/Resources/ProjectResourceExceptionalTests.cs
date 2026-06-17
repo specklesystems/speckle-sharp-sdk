@@ -17,9 +17,9 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
   private Project _testProject;
   private ProjectResource Sut => _testUser.Project;
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     _secondUser = await Fixtures.SeedUserWithClient();

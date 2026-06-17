@@ -11,13 +11,17 @@ public class AccountFactoryTests : IAsyncLifetime
   private IAccountFactory _sut;
   private IClient _client;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _sut = Fixtures.ServiceProvider.GetRequiredService<IAccountFactory>();
     _client = await Fixtures.SeedUserWithClient();
   }
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync()
+  {
+    _client.Dispose();
+    return ValueTask.CompletedTask;
+  }
 
   [Fact]
   public async Task GetUserServerInfo()

@@ -9,16 +9,16 @@ public class ServerResourceTests : IAsyncLifetime
   private IClient _testUser;
   private ServerResource Sut => _testUser.Server;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     // Runs instead of [SetUp] in NUnit
     _testUser = await Fixtures.SeedUserWithClient();
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     // Perform any cleanup, if needed
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
   [Fact]

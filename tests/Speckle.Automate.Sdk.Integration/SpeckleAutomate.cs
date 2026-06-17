@@ -23,7 +23,7 @@ public sealed class AutomationContextTest : IAsyncLifetime
   private Account _account;
   private IAutomationContextFactory _contextFactory;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceCollection = new ServiceCollection();
     serviceCollection.AddAutomateSdk();
@@ -35,10 +35,10 @@ public sealed class AutomationContextTest : IAsyncLifetime
     _contextFactory = serviceProvider.GetRequiredService<IAutomationContextFactory>();
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client?.Dispose();
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
   private async Task<AutomationRunData> AutomationRunData(Base testObject)

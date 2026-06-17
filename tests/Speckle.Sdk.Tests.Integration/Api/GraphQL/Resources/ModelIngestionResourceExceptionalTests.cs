@@ -13,9 +13,9 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
   private Project _project;
   private Model _model;
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new("Test project", "", null));

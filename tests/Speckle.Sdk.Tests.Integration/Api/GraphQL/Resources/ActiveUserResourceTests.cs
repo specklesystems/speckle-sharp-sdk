@@ -12,15 +12,15 @@ public class ActiveUserResourceTests : IAsyncLifetime
   private ActiveUserResource Sut => _testUser.ActiveUser;
 
   // Setup method for xUnit using IAsyncLifetime
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
-    // No resources to dispose
-    return Task.CompletedTask;
+    _testUser.Dispose();
+    return ValueTask.CompletedTask;
   }
 
   [Fact]
