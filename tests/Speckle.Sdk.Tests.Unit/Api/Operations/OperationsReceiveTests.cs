@@ -60,7 +60,7 @@ public sealed partial class OperationsReceiveTests : IDisposable
   [MemberData(nameof(TestCases))]
   public async Task Receive_FromLocal_ExistingObjects(string id)
   {
-    Base result = await _operations.Receive(id, null, _testCaseTransport);
+    Base result = await _operations.Receive(id, null, _testCaseTransport, cancellationToken: TestContext.Current.CancellationToken);
 
     Assert.NotNull(result);
     Assert.Equal(id, result.id);
@@ -71,7 +71,7 @@ public sealed partial class OperationsReceiveTests : IDisposable
   public async Task Receive_FromRemote_ExistingObjects(string id)
   {
     MemoryTransport localTransport = new();
-    Base result = await _operations.Receive(id, _testCaseTransport, localTransport);
+    Base result = await _operations.Receive(id, _testCaseTransport, localTransport, cancellationToken: TestContext.Current.CancellationToken);
 
     Assert.NotNull(result);
     Assert.Equal(id, result.id);
@@ -82,12 +82,8 @@ public sealed partial class OperationsReceiveTests : IDisposable
   public async Task Receive_FromLocal_OnProgressActionCalled(string id)
   {
     bool wasCalled = false;
-    _ = await _operations.Receive(
-      id,
-      null,
-      _testCaseTransport,
-      onProgressAction: new UnitTestProgress<ProgressArgs>(_ => wasCalled = true)
-    );
+    _ = await _operations.Receive(id, null, _testCaseTransport, onProgressAction: new UnitTestProgress<ProgressArgs>(_ => wasCalled = true)
+, cancellationToken: TestContext.Current.CancellationToken);
 
     Assert.True(wasCalled);
   }

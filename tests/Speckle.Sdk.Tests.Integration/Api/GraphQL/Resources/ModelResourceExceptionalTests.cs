@@ -34,7 +34,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
 
     // Act & Assert
     var ex = await FluentActions
-      .Invoking(async () => await Sut.Create(input))
+      .Invoking(async () => await Sut.Create(input, TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
 
@@ -46,7 +46,9 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   {
     // Act & Assert
     var ex = await FluentActions
-      .Invoking(async () => await Fixtures.Unauthed.Model.Get(_model.id, _project.id))
+      .Invoking(async () =>
+        await Fixtures.Unauthed.Model.Get(_model.id, _project.id, TestContext.Current.CancellationToken)
+      )
       .Should()
       .ThrowAsync<AggregateException>();
 
@@ -58,7 +60,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   {
     // Act & Assert
     var ex = await FluentActions
-      .Invoking(async () => await Sut.Get("non existent model", _project.id))
+      .Invoking(async () => await Sut.Get("non existent model", _project.id, TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLException>();
@@ -69,7 +71,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   {
     // Act & Assert
     var ex = await FluentActions
-      .Invoking(async () => await Sut.Get(_model.id, "non existent project"))
+      .Invoking(async () => await Sut.Get(_model.id, "non existent project", TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLStreamNotFoundException>();
@@ -83,7 +85,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
 
     // Act & Assert
     var ex = await FluentActions
-      .Invoking(async () => await Sut.Update(input))
+      .Invoking(async () => await Sut.Update(input, TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLException>();
@@ -97,7 +99,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
 
     // Act & Assert
     var ex = await FluentActions
-      .Invoking(async () => await Sut.Update(input))
+      .Invoking(async () => await Sut.Update(input, TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLStreamNotFoundException>();
@@ -111,7 +113,7 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
 
     // Act & Assert
     var ex = await FluentActions
-      .Invoking(async () => await Fixtures.Unauthed.Model.Update(input))
+      .Invoking(async () => await Fixtures.Unauthed.Model.Update(input, TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLForbiddenException>();
@@ -121,14 +123,14 @@ public class ModelResourceExceptionalTests : IAsyncLifetime
   public async Task ModelDelete_Throws_NoAuth()
   {
     // Arrange
-    Model toDelete = await Sut.Create(new("Delete me", null, _project.id));
+    Model toDelete = await Sut.Create(new("Delete me", null, _project.id), TestContext.Current.CancellationToken);
     DeleteModelInput input = new(toDelete.id, _project.id);
 
-    await Sut.Delete(input);
+    await Sut.Delete(input, TestContext.Current.CancellationToken);
 
     // Act & Assert
     var ex = await FluentActions
-      .Invoking(async () => await Sut.Delete(input))
+      .Invoking(async () => await Sut.Delete(input, TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
     ex.WithInnerExceptionExactly<SpeckleGraphQLException>();

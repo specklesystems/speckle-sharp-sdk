@@ -144,7 +144,7 @@ public sealed class AutomationContextTest : IAsyncLifetime
     IAutomationContext automationContext = await _contextFactory.Initialize(automationRunData, _account.token);
 
     string filePath = $"./{Utils.RandomString(10)}";
-    await File.WriteAllTextAsync(filePath, "foobar");
+    await File.WriteAllTextAsync(filePath, "foobar", TestContext.Current.CancellationToken);
 
     await automationContext.StoreFileResult(filePath);
 
@@ -162,14 +162,21 @@ public sealed class AutomationContextTest : IAsyncLifetime
     const string COMMIT_MSG = "automation test";
 
     var model = await automationContext.SpeckleClient.Model.Create(
-      new(BRANCH_NAME, default, automationRunData.ProjectId)
+      new(BRANCH_NAME, default, automationRunData.ProjectId),
+      TestContext.Current.CancellationToken
     );
 
-    await automationContext.CreateNewVersionInProject(Utils.TestObject(), model, COMMIT_MSG);
+    await automationContext.CreateNewVersionInProject(
+      Utils.TestObject(),
+      model,
+      COMMIT_MSG,
+      TestContext.Current.CancellationToken
+    );
 
     var modelWithVersions = await automationContext.SpeckleClient.Model.GetWithVersions(
       model.id,
-      automationRunData.ProjectId
+      automationRunData.ProjectId,
+      cancellationToken: TestContext.Current.CancellationToken
     );
 
     modelWithVersions.versions.items[0].message.Should().Be(COMMIT_MSG);
@@ -183,13 +190,22 @@ public sealed class AutomationContextTest : IAsyncLifetime
 
     var trigger = GetVersionCreationTrigger(automationRunData.Triggers);
 
-    var model = await automationContext.SpeckleClient.Model.Get(trigger.Payload.ModelId, automationRunData.ProjectId);
+    var model = await automationContext.SpeckleClient.Model.Get(
+      trigger.Payload.ModelId,
+      automationRunData.ProjectId,
+      TestContext.Current.CancellationToken
+    );
 
     const string COMMIT_MSG = "automation test";
 
     await Assert.ThrowsAsync<ArgumentException>(async () =>
     {
-      await automationContext.CreateNewVersionInProject(Utils.TestObject(), model, COMMIT_MSG);
+      await automationContext.CreateNewVersionInProject(
+        Utils.TestObject(),
+        model,
+        COMMIT_MSG,
+        TestContext.Current.CancellationToken
+      );
     });
   }
 

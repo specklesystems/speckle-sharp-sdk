@@ -27,9 +27,9 @@ public class ObjectSerialization
     var pt = new Point(1, 2, 3);
     pt["circle"] = pt;
 
-    var test = _operations.Serialize(pt);
+    var test = _operations.Serialize(pt, TestContext.Current.CancellationToken);
 
-    var result = await _operations.DeserializeAsync(test);
+    var result = await _operations.DeserializeAsync(test, TestContext.Current.CancellationToken);
     var circle = result["circle"];
     circle.Should().BeNull();
   }
@@ -66,9 +66,9 @@ public class ObjectSerialization
       cat.Fur[i] = new Line { Start = new Point(i, i, i), End = new Point(i + 3.14, i + 3.14, i + 3.14) };
     }
 
-    var result = _operations.Serialize(cat);
+    var result = _operations.Serialize(cat, TestContext.Current.CancellationToken);
 
-    var deserialisedFeline = await _operations.DeserializeAsync(result);
+    var deserialisedFeline = await _operations.DeserializeAsync(result, TestContext.Current.CancellationToken);
 
     deserialisedFeline.GetId().Should().Be(cat.GetId());
   }
@@ -84,8 +84,8 @@ public class ObjectSerialization
       W = 42,
     };
 
-    var str = _operations.Serialize(superPoint);
-    var sstr = await _operations.DeserializeAsync(str);
+    var str = _operations.Serialize(superPoint, TestContext.Current.CancellationToken);
+    var sstr = await _operations.DeserializeAsync(str, TestContext.Current.CancellationToken);
 
     sstr.speckle_type.Should().Be(superPoint.speckle_type);
   }
@@ -103,12 +103,15 @@ public class ObjectSerialization
 
     point["test"] = test;
 
-    var str = _operations.Serialize(point);
-    var dsrls = await _operations.DeserializeAsync(str);
+    var str = _operations.Serialize(point, TestContext.Current.CancellationToken);
+    if (_operations != null)
+    {
+      var dsrls = await _operations.DeserializeAsync(str, TestContext.Current.CancellationToken);
 
-    var list = dsrls["test"] as List<object>;
-    list.Should().NotBeNull(); // Ensure the list isn't null in first place
-    list!.Count.Should().Be(100);
+      var list = dsrls["test"] as List<object>;
+      list.Should().NotBeNull(); // Ensure the list isn't null in first place
+      list!.Count.Should().Be(100);
+    }
   }
 
   [Fact]
@@ -132,13 +135,13 @@ public class ObjectSerialization
       doubleBasedChunk.data.Add(i + 0.33);
     }
 
-    var baseChunkString = _operations.Serialize(baseBasedChunk);
-    var stringChunkString = _operations.Serialize(stringBasedChunk);
-    var doubleChunkString = _operations.Serialize(doubleBasedChunk);
+    var baseChunkString = _operations.Serialize(baseBasedChunk, TestContext.Current.CancellationToken);
+    var stringChunkString = _operations.Serialize(stringBasedChunk, TestContext.Current.CancellationToken);
+    var doubleChunkString = _operations.Serialize(doubleBasedChunk, TestContext.Current.CancellationToken);
 
-    var baseChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(baseChunkString);
-    var stringChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(stringChunkString);
-    var doubleChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(doubleChunkString);
+    var baseChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(baseChunkString, TestContext.Current.CancellationToken);
+    var stringChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(stringChunkString, TestContext.Current.CancellationToken);
+    var doubleChunkDeserialised = (DataChunk)await _operations.DeserializeAsync(doubleChunkString, TestContext.Current.CancellationToken);
 
     baseChunkDeserialised.data.Count.Should().Be(baseBasedChunk.data.Count);
     stringChunkDeserialised.data.Count.Should().Be(stringBasedChunk.data.Count);
@@ -167,8 +170,8 @@ public class ObjectSerialization
     mesh["@(800)CustomChunk"] = customChunk;
     mesh["@()DefaultChunk"] = defaultChunk;
 
-    var serialised = _operations.Serialize(mesh);
-    var deserialised = await _operations.DeserializeAsync(serialised);
+    var serialised = _operations.Serialize(mesh, TestContext.Current.CancellationToken);
+    var deserialised = await _operations.DeserializeAsync(serialised, TestContext.Current.CancellationToken);
 
     mesh.GetId().Should().Be(deserialised.GetId());
   }
@@ -188,7 +191,7 @@ public class ObjectSerialization
     test["nestedList"] = new List<object> { new List<object> { new List<object>() } };
     test["@nestedDetachableList"] = new List<object> { new List<object> { new List<object>() } };
 
-    var serialised = _operations.Serialize(test);
+    var serialised = _operations.Serialize(test, TestContext.Current.CancellationToken);
     var isCorrect =
       serialised.Contains("\"@(5)emptyChunks\":[]")
       && serialised.Contains("\"emptyList\":[]")
@@ -211,8 +214,8 @@ public class ObjectSerialization
     var date = new DateTime(2020, 1, 14);
     var mockBase = new DateMock { TestField = date };
 
-    var result = _operations.Serialize(mockBase);
-    var test = (DateMock)await _operations.DeserializeAsync(result);
+    var result = _operations.Serialize(mockBase, TestContext.Current.CancellationToken);
+    var test = (DateMock)await _operations.DeserializeAsync(result, TestContext.Current.CancellationToken);
 
     test.TestField.Should().Be(date);
   }
@@ -229,8 +232,8 @@ public class ObjectSerialization
     var guid = Guid.NewGuid();
     var mockBase = new GUIDMock { TestField = guid };
 
-    var result = _operations.Serialize(mockBase);
-    var test = (GUIDMock)await _operations.DeserializeAsync(result);
+    var result = _operations.Serialize(mockBase, TestContext.Current.CancellationToken);
+    var test = (GUIDMock)await _operations.DeserializeAsync(result, TestContext.Current.CancellationToken);
 
     test.TestField.Should().Be(guid);
   }
@@ -247,8 +250,8 @@ public class ObjectSerialization
     var color = Color.FromArgb(255, 4, 126, 251);
     var mockBase = new ColorMock { TestField = color };
 
-    var result = _operations.Serialize(mockBase);
-    var test = (ColorMock)await _operations.DeserializeAsync(result);
+    var result = _operations.Serialize(mockBase, TestContext.Current.CancellationToken);
+    var test = (ColorMock)await _operations.DeserializeAsync(result, TestContext.Current.CancellationToken);
 
     test.TestField.Should().Be(color);
   }
@@ -264,8 +267,8 @@ public class ObjectSerialization
   {
     var mockBase = new StringDateTimeRegressionMock { TestField = "2021-11-12T11:32:01" };
 
-    var result = _operations.Serialize(mockBase);
-    var test = (StringDateTimeRegressionMock)await _operations.DeserializeAsync(result);
+    var result = _operations.Serialize(mockBase, TestContext.Current.CancellationToken);
+    var test = (StringDateTimeRegressionMock)await _operations.DeserializeAsync(result, TestContext.Current.CancellationToken);
 
     test.TestField.Should().Be(mockBase.TestField);
   }

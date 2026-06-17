@@ -36,13 +36,8 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(
-      new ConcurrentDictionary<Id, Json>(),
-      objects,
-      null,
-      default,
-      new SerializeProcessOptions(true, true, false, true)
-    );
+    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(), objects, null, TestContext.Current.CancellationToken, new SerializeProcessOptions(true, true, false, true)
+);
     await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
@@ -118,13 +113,8 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(
-      new ConcurrentDictionary<Id, Json>(),
-      objects,
-      null,
-      default,
-      new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
-    );
+    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(), objects, null, TestContext.Current.CancellationToken, new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
+);
     var results = await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
@@ -145,13 +135,8 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(
-      new ConcurrentDictionary<Id, Json>(),
-      objects,
-      null,
-      default,
-      new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
-    );
+    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(), objects, null, TestContext.Current.CancellationToken, new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
+);
     var results = await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
@@ -167,13 +152,8 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(
-      new ConcurrentDictionary<Id, Json>(),
-      objects,
-      null,
-      default,
-      new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
-    );
+    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(), objects, null, TestContext.Current.CancellationToken, new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
+);
     var results = await serializeProcess.Serialize(@base);
 
     await VerifyJsonDictionary(objects);
@@ -234,13 +214,8 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(
-      new ConcurrentDictionary<Id, Json>(),
-      objects,
-      null,
-      default,
-      new SerializeProcessOptions(true, true, false, true)
-    );
+    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(), objects, null, TestContext.Current.CancellationToken, new SerializeProcessOptions(true, true, false, true)
+);
 
     var results = await serializeProcess.Serialize(@base);
 
@@ -267,13 +242,8 @@ public class DetachedTests
 
     var objects = new ConcurrentDictionary<string, string>();
 
-    await using var serializeProcess = _factory.CreateSerializeProcess(
-      new ConcurrentDictionary<Id, Json>(),
-      objects,
-      null,
-      default,
-      new SerializeProcessOptions(true, true, false, true)
-    );
+    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(), objects, null, TestContext.Current.CancellationToken, new SerializeProcessOptions(true, true, false, true)
+);
     var results = await serializeProcess.Serialize(@base);
     await VerifyJsonDictionary(objects);
   }

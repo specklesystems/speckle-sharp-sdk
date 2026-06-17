@@ -40,7 +40,7 @@ public class CommentResourceTests : IAsyncLifetime
   [Fact(Skip = SERVER_SKIP_MESSAGE)]
   public async Task Get()
   {
-    var comment = await Sut.Get(_comment.id, _project.id);
+    var comment = await Sut.Get(_comment.id, _project.id, cancellationToken: TestContext.Current.CancellationToken);
 
     comment.Should().NotBeNull();
     comment.id.Should().Be(_comment.id);
@@ -50,7 +50,7 @@ public class CommentResourceTests : IAsyncLifetime
   [Fact(Skip = SERVER_SKIP_MESSAGE)]
   public async Task GetProjectComments()
   {
-    var comments = await Sut.GetProjectComments(_project.id);
+    var comments = await Sut.GetProjectComments(_project.id, cancellationToken: TestContext.Current.CancellationToken);
 
     comments.Should().NotBeNull();
     comments.items.Count.Should().Be(1);
@@ -68,22 +68,22 @@ public class CommentResourceTests : IAsyncLifetime
   [Fact(Skip = SERVER_SKIP_MESSAGE)]
   public async Task MarkViewed()
   {
-    await Sut.MarkViewed(new(_comment.id, _project.id));
+    await Sut.MarkViewed(new(_comment.id, _project.id), TestContext.Current.CancellationToken);
 
-    var res = await Sut.Get(_comment.id, _project.id);
+    var res = await Sut.Get(_comment.id, _project.id, cancellationToken: TestContext.Current.CancellationToken);
     res.viewedAt.Should().NotBeNull();
   }
 
   [Fact(Skip = SERVER_SKIP_MESSAGE)]
   public async Task Archive()
   {
-    await Sut.Archive(new(_comment.id, _project.id, true));
-    var archived = await Sut.Get(_comment.id, _project.id);
+    await Sut.Archive(new(_comment.id, _project.id, true), TestContext.Current.CancellationToken);
+    var archived = await Sut.Get(_comment.id, _project.id, cancellationToken: TestContext.Current.CancellationToken);
 
     archived.archived.Should().BeTrue();
 
-    await Sut.Archive(new(_comment.id, _project.id, false));
-    var unarchived = await Sut.Get(_comment.id, _project.id);
+    await Sut.Archive(new(_comment.id, _project.id, false), TestContext.Current.CancellationToken);
+    var unarchived = await Sut.Get(_comment.id, _project.id, cancellationToken: TestContext.Current.CancellationToken);
 
     unarchived.archived.Should().BeFalse();
   }
@@ -95,7 +95,7 @@ public class CommentResourceTests : IAsyncLifetime
     var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
     var input = new EditCommentInput(new(blobIds, null), _comment.id, _project.id);
 
-    var editedComment = await Sut.Edit(input);
+    var editedComment = await Sut.Edit(input, TestContext.Current.CancellationToken);
 
     editedComment.Should().NotBeNull();
     editedComment.id.Should().Be(_comment.id);
@@ -111,7 +111,7 @@ public class CommentResourceTests : IAsyncLifetime
     var blobIds = blobs.Select(b => b.id.NotNull()).ToList();
     var input = new CreateCommentReplyInput(new(blobIds, null), _comment.id, _project.id);
 
-    var editedComment = await Sut.Reply(input);
+    var editedComment = await Sut.Reply(input, TestContext.Current.CancellationToken);
 
     editedComment.Should().NotBeNull();
   }

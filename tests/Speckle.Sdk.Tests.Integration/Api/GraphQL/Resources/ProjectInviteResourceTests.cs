@@ -37,9 +37,9 @@ public class ProjectInviteResourceTests : IAsyncLifetime
   public async Task ProjectInviteCreate_ByEmail()
   {
     ProjectInviteCreateInput input = new(_invitee.Account.userInfo.email, null, null, null);
-    var res = await _inviter.ProjectInvite.Create(_project.id, input);
+    var res = await _inviter.ProjectInvite.Create(_project.id, input, TestContext.Current.CancellationToken);
 
-    var invites = await _invitee.ActiveUser.GetProjectInvites();
+    var invites = await _invitee.ActiveUser.GetProjectInvites(TestContext.Current.CancellationToken);
     var invite = invites.First(i => i.projectId == res.id);
 
     res.id.Should().Be(_project.id);
@@ -52,7 +52,7 @@ public class ProjectInviteResourceTests : IAsyncLifetime
   public async Task ProjectInviteCreate_ByUserId()
   {
     ProjectInviteCreateInput input = new(null, null, null, _invitee.Account.userInfo.id);
-    var res = await _inviter.ProjectInvite.Create(_project.id, input);
+    var res = await _inviter.ProjectInvite.Create(_project.id, input, TestContext.Current.CancellationToken);
 
     res.id.Should().Be(_project.id);
     res.invitedTeam.Should().ContainSingle();
@@ -62,7 +62,9 @@ public class ProjectInviteResourceTests : IAsyncLifetime
   [Fact]
   public async Task ProjectInviteGet()
   {
-    var collaborator = await _invitee.ProjectInvite.Get(_project.id, _createdInvite.token).NotNull();
+    var collaborator = await _invitee
+      .ProjectInvite.Get(_project.id, _createdInvite.token, TestContext.Current.CancellationToken)
+      .NotNull();
 
     collaborator.inviteId.Should().Be(_createdInvite.inviteId);
     collaborator.user!.id.Should().Be(_createdInvite.user!.id);
@@ -71,7 +73,11 @@ public class ProjectInviteResourceTests : IAsyncLifetime
   [Fact]
   public async Task ProjectInviteGet_NonExisting()
   {
-    var collaborator = await _invitee.ProjectInvite.Get(_project.id, "this is not a real token");
+    var collaborator = await _invitee.ProjectInvite.Get(
+      _project.id,
+      "this is not a real token",
+      TestContext.Current.CancellationToken
+    );
     collaborator.Should().BeNull();
   }
 
@@ -79,9 +85,9 @@ public class ProjectInviteResourceTests : IAsyncLifetime
   public async Task ProjectInviteUse_MemberAdded()
   {
     ProjectInviteUseInput input = new(true, _createdInvite.projectId, _createdInvite.token.NotNull());
-    await _invitee.ProjectInvite.Use(input);
+    await _invitee.ProjectInvite.Use(input, TestContext.Current.CancellationToken);
 
-    var project = await _inviter.Project.GetWithTeam(_project.id);
+    var project = await _inviter.Project.GetWithTeam(_project.id, TestContext.Current.CancellationToken);
     var teamMembers = project.team.Select(c => c.user.id).ToArray();
     var expectedTeamMembers = new[] { _inviter.Account.userInfo.id, _invitee.Account.userInfo.id };
 
@@ -91,7 +97,11 @@ public class ProjectInviteResourceTests : IAsyncLifetime
   [Fact]
   public async Task ProjectInviteCancel_MemberNotAdded()
   {
-    var res = await _inviter.ProjectInvite.Cancel(_createdInvite.projectId, _createdInvite.inviteId);
+    var res = await _inviter.ProjectInvite.Cancel(
+      _createdInvite.projectId,
+      _createdInvite.inviteId,
+      TestContext.Current.CancellationToken
+    );
     res.invitedTeam.Should().BeEmpty();
   }
 
@@ -105,9 +115,9 @@ public class ProjectInviteResourceTests : IAsyncLifetime
     await ProjectInviteUse_MemberAdded();
 
     ProjectUpdateRoleInput input = new(_invitee.Account.userInfo.id, _project.id, newRole);
-    await _inviter.Project.UpdateRole(input);
+    await _inviter.Project.UpdateRole(input, TestContext.Current.CancellationToken);
 
-    var finalProject = await _invitee.Project.Get(_project.id);
+    var finalProject = await _invitee.Project.Get(_project.id, TestContext.Current.CancellationToken);
     finalProject.role.Should().Be(newRole);
   }
 }

@@ -56,7 +56,7 @@ public class IngestionProgressManagerTests : IAsyncLifetime
     var sut = _factory.CreateInstance(_client, _ingestion, TimeSpan.FromMilliseconds(500), CancellationToken.None);
     const string EXPECTED_MESSAGE = "First message should go through 123";
 
-    await Task.Delay(TimeSpan.FromMilliseconds(600));
+    await Task.Delay(TimeSpan.FromMilliseconds(600), TestContext.Current.CancellationToken);
 
     // first message (should go through)
     sut.Report(new CardProgress(EXPECTED_MESSAGE, 0.123123123d));

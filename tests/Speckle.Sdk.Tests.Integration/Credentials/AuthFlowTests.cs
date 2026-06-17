@@ -21,7 +21,10 @@ public sealed class AuthFlowTests
     using var client = new HttpClient();
     const string EXPECTED_ACCESS_CODE = "abcdef123456";
 
-    var response = await client.GetAsync(new Uri(_url, $"?access_code={EXPECTED_ACCESS_CODE}"));
+    var response = await client.GetAsync(
+      new Uri(_url, $"?access_code={EXPECTED_ACCESS_CODE}"),
+      TestContext.Current.CancellationToken
+    );
     response.EnsureSuccessStatusCode();
 
     string result = await listenerTask;
@@ -35,7 +38,7 @@ public sealed class AuthFlowTests
     var listenerTask = AuthFlow.RunListener(_url, CancellationToken.None);
     using var client = new HttpClient();
 
-    var response = await client.GetAsync(new Uri(_url, ""));
+    var response = await client.GetAsync(new Uri(_url, ""), TestContext.Current.CancellationToken);
     response.EnsureSuccessStatusCode();
 
     await Assert.ThrowsAsync<AuthFlowException>(async () =>
@@ -87,7 +90,7 @@ public sealed class AuthFlowTests
     user.Account.token = tokenExchange.token;
     user.Account.refreshToken = tokenExchange.refreshToken;
 
-    var apiTest = await user.ActiveUser.Get();
+    var apiTest = await user.ActiveUser.Get(TestContext.Current.CancellationToken);
 
     Assert.NotNull(apiTest);
   }

@@ -29,7 +29,7 @@ public class AccountFactoryTests : IAsyncLifetime
     const string NAME = "new expected name";
     const string COMPANY = "new expected company";
     var input = new UserUpdateInput(company: COMPANY, name: NAME);
-    await _client.ActiveUser.Update(input);
+    await _client.ActiveUser.Update(input, TestContext.Current.CancellationToken);
 
     var result = await _sut.GetUserServerInfo(_client.ServerUrl, _client.Account.token, CancellationToken.None);
 
@@ -64,7 +64,11 @@ public class AccountFactoryTests : IAsyncLifetime
   {
     var expectedServerInfo = _client.Account.serverInfo;
     var expectedUserInfo = _client.Account.userInfo;
-    var result = await _sut.CreateAccount(_client.ServerUrl, _client.Account.token);
+    var result = await _sut.CreateAccount(
+      _client.ServerUrl,
+      _client.Account.token,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     result.serverInfo.url.Should().Be(expectedServerInfo.url).And.NotBeNull();
     result.serverInfo.name.Should().Be(expectedServerInfo.name).And.NotBeNull();
@@ -81,7 +85,7 @@ public class AccountFactoryTests : IAsyncLifetime
   public async Task CreateAccount_ExpectFail_NoUser()
   {
     var res = await Assert.ThrowsAsync<SpeckleException>(async () =>
-      _ = await _sut.CreateAccount(_client.ServerUrl, null!)
+      _ = await _sut.CreateAccount(_client.ServerUrl, null!, cancellationToken: TestContext.Current.CancellationToken)
     );
 
     await Verify(res);
@@ -93,7 +97,7 @@ public class AccountFactoryTests : IAsyncLifetime
     Uri server = new("https://non-existing-server.local");
     await Assert.ThrowsAsync<HttpRequestException>(async () =>
     {
-      _ = await _sut.CreateAccount(server, "ASDFASDF");
+      _ = await _sut.CreateAccount(server, "ASDFASDF", cancellationToken: TestContext.Current.CancellationToken);
     });
   }
 }

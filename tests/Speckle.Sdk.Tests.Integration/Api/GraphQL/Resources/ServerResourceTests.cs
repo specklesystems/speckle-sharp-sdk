@@ -24,7 +24,7 @@ public class ServerResourceTests : IAsyncLifetime
   [Fact]
   public async Task ExpectWorkspaceNotEnabled()
   {
-    bool result = await Sut.IsWorkspaceEnabled();
+    bool result = await Sut.IsWorkspaceEnabled(TestContext.Current.CancellationToken);
     result.Should().Be(false);
   }
 }

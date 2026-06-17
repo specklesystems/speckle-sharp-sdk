@@ -35,7 +35,7 @@ public class AccountManagerTests
 
     Assert.NotEqual(realAccountId, user.Account.id);
 
-    await _sut.UpdateAccountInMemory(user.Account);
+    await _sut.UpdateAccountInMemory(user.Account, TestContext.Current.CancellationToken);
 
     Assert.Equal(realUserData.avatar, user.Account.userInfo.avatar);
     Assert.Equal(realUserData.company, user.Account.userInfo.company);
@@ -65,7 +65,7 @@ public class AccountManagerTests
 
     Assert.Equal(realAccountId, user.Account.id); //account id should not change since we didn't change server url
 
-    await _sut.UpdateAccountInMemory(user.Account);
+    await _sut.UpdateAccountInMemory(user.Account, TestContext.Current.CancellationToken);
 
     Assert.Equal(realServerData.company, user.Account.serverInfo.company);
     Assert.Equal(realServerData.description, user.Account.serverInfo.description);
@@ -95,7 +95,7 @@ public class AccountManagerTests
 
     Assert.Equal(realAccountId, user.Account.id); //account id should not change since we didn't change server url
 
-    await _sut.UpdateAccountInMemory(user.Account);
+    await _sut.UpdateAccountInMemory(user.Account, TestContext.Current.CancellationToken);
 
     Assert.Equal(realServerData.company, user.Account.serverInfo.company);
     Assert.Equal(realServerData.description, user.Account.serverInfo.description);

@@ -26,13 +26,8 @@ public class ExplicitInterfaceTests
     var testClass = new TestClass() { RegularProperty = "Hello" };
 
     var objects = new ConcurrentDictionary<string, string>();
-    await using var serializeProcess = _factory.CreateSerializeProcess(
-      new ConcurrentDictionary<Id, Json>(),
-      objects,
-      null,
-      default,
-      new SerializeProcessOptions(true, true, false, true)
-    );
+    await using var serializeProcess = _factory.CreateSerializeProcess(new ConcurrentDictionary<Id, Json>(), objects, null, TestContext.Current.CancellationToken, new SerializeProcessOptions(true, true, false, true)
+);
 
     await serializeProcess.Serialize(testClass);
 

@@ -37,8 +37,8 @@ public class SimpleRoundTripTests
   [MemberData(nameof(TestData))]
   public async Task SimpleSerialization(Base testData)
   {
-    var result = _operations.Serialize(testData);
-    var test = await _operations.DeserializeAsync(result);
+    var result = _operations.Serialize(testData, TestContext.Current.CancellationToken);
+    var test = await _operations.DeserializeAsync(result, TestContext.Current.CancellationToken);
 
     testData.GetId().Should().Be(test.GetId());
   }

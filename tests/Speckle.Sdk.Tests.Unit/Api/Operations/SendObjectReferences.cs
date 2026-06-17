@@ -27,7 +27,7 @@ public class SendObjectReferences
   {
     Base testData = GenerateTestCase(testDepth, true);
     MemoryTransport transport = new();
-    var result = await _operations.Send(testData, [transport]);
+    var result = await _operations.Send(testData, [transport], cancellationToken: TestContext.Current.CancellationToken);
 
     result.rootObjId.Should().NotBeNull();
 
@@ -44,7 +44,7 @@ public class SendObjectReferences
   {
     Base testData = GenerateTestCase(testDepth, false);
     MemoryTransport transport = new();
-    var result = await _operations.Send(testData, [transport]);
+    var result = await _operations.Send(testData, [transport], cancellationToken: TestContext.Current.CancellationToken);
 
     result.rootObjId.Should().NotBeNull();
 

@@ -37,7 +37,7 @@ public class ProgressStreamTests : IDisposable
       .Returns(Task.FromResult(5));
 
     // Act
-    _ = await _sut.ReadAsync(buffer, 0, buffer.Length);
+    _ = await _sut.ReadAsync(buffer, 0, buffer.Length, TestContext.Current.CancellationToken);
 
     // Assert - Inner Stream Read was called
     _innerStreamMock.Verify(s => s.ReadAsync(buffer, 0, buffer.Length, CancellationToken.None), Times.Once);
@@ -56,7 +56,7 @@ public class ProgressStreamTests : IDisposable
       .Returns(Task.FromResult(5));
 
     // Act
-    await _sut.WriteAsync(buffer, 0, buffer.Length);
+    await _sut.WriteAsync(buffer, 0, buffer.Length, TestContext.Current.CancellationToken);
 
     // Assert - Inner Stream Write was called
     _innerStreamMock.Verify(s => s.WriteAsync(buffer, 0, buffer.Length, CancellationToken.None), Times.Once);

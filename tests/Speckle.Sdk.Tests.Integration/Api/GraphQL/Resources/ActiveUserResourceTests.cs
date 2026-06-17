@@ -26,7 +26,7 @@ public class ActiveUserResourceTests : IAsyncLifetime
   [Fact]
   public async Task ActiveUserGet()
   {
-    var res = await Sut.Get();
+    var res = await Sut.Get(TestContext.Current.CancellationToken);
     res.Should().NotBeNull();
     res!.id.Should().Be(_testUser.Account.userInfo.id);
   }
@@ -34,7 +34,7 @@ public class ActiveUserResourceTests : IAsyncLifetime
   [Fact]
   public async Task ActiveUserGet_NonAuthed()
   {
-    var result = await Fixtures.Unauthed.ActiveUser.Get();
+    var result = await Fixtures.Unauthed.ActiveUser.Get(TestContext.Current.CancellationToken);
     result.Should().BeNull();
   }
 
@@ -45,7 +45,10 @@ public class ActiveUserResourceTests : IAsyncLifetime
     const string NEW_BIO = "Now I have a bio, isn't that nice!";
     const string NEW_COMPANY = "Limited Cooperation Organization Inc";
 
-    var res = await Sut.Update(new UserUpdateInput(name: NEW_NAME, bio: NEW_BIO, company: NEW_COMPANY));
+    var res = await Sut.Update(
+      new UserUpdateInput(name: NEW_NAME, bio: NEW_BIO, company: NEW_COMPANY),
+      TestContext.Current.CancellationToken
+    );
 
     res.Should().NotBeNull();
     res.id.Should().Be(_testUser.Account.userInfo.id);
@@ -57,10 +60,10 @@ public class ActiveUserResourceTests : IAsyncLifetime
   [Fact]
   public async Task ActiveUserGetProjects()
   {
-    var p1 = await _testUser.Project.Create(new("Project 1", null, null));
-    var p2 = await _testUser.Project.Create(new("Project 2", null, null));
+    var p1 = await _testUser.Project.Create(new("Project 1", null, null), TestContext.Current.CancellationToken);
+    var p2 = await _testUser.Project.Create(new("Project 2", null, null), TestContext.Current.CancellationToken);
 
-    var res = await Sut.GetProjects();
+    var res = await Sut.GetProjects(cancellationToken: TestContext.Current.CancellationToken);
 
     res.items.Should().Contain(x => x.id == p1.id);
     res.items.Should().Contain(x => x.id == p2.id);
@@ -70,10 +73,13 @@ public class ActiveUserResourceTests : IAsyncLifetime
   [Fact]
   public async Task ActiveUserGetProjectsWithPermissions()
   {
-    var p1 = await _testUser.Project.Create(new("Project 3", null, null));
-    var p2 = await _testUser.Project.Create(new("Project 4", null, null));
+    var p1 = await _testUser.Project.Create(
+      new ProjectCreateInput("Project 3", null, null),
+      TestContext.Current.CancellationToken
+    );
+    var p2 = await _testUser.Project.Create(new("Project 4", null, null), TestContext.Current.CancellationToken);
 
-    var res = await Sut.GetProjectsWithPermissions();
+    var res = await Sut.GetProjectsWithPermissions(cancellationToken: TestContext.Current.CancellationToken);
 
     res.items.Should().Contain(x => x.id == p1.id);
     res.items.Should().Contain(x => x.id == p2.id);
@@ -84,7 +90,9 @@ public class ActiveUserResourceTests : IAsyncLifetime
   public async Task ActiveUserGetProjects_NoAuth()
   {
     await FluentActions
-      .Invoking(async () => await Fixtures.Unauthed.ActiveUser.GetProjects())
+      .Invoking(async () =>
+        await Fixtures.Unauthed.ActiveUser.GetProjects(cancellationToken: TestContext.Current.CancellationToken)
+      )
       .Should()
       .ThrowAsync<SpeckleException>();
   }
@@ -92,7 +100,7 @@ public class ActiveUserResourceTests : IAsyncLifetime
   [Fact]
   public async Task ActiveUserProjectCreationPermission()
   {
-    var res = await Sut.CanCreatePersonalProjects();
+    var res = await Sut.CanCreatePersonalProjects(TestContext.Current.CancellationToken);
     res.EnsureAuthorised();
 
     res.authorized.Should().Be(true);
@@ -102,7 +110,9 @@ public class ActiveUserResourceTests : IAsyncLifetime
   public async Task ActiveUserProjectCreationPermission_NoAuth()
   {
     await FluentActions
-      .Invoking(async () => await Fixtures.Unauthed.ActiveUser.CanCreatePersonalProjects())
+      .Invoking(async () =>
+        await Fixtures.Unauthed.ActiveUser.CanCreatePersonalProjects(TestContext.Current.CancellationToken)
+      )
       .Should()
       .ThrowAsync<SpeckleException>();
   }
@@ -110,7 +120,9 @@ public class ActiveUserResourceTests : IAsyncLifetime
   [Fact]
   public async Task ActiveUserGetWorkspaces()
   {
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.GetWorkspaces());
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+      _ = await Sut.GetWorkspaces(cancellationToken: TestContext.Current.CancellationToken)
+    );
     await Verify(ex);
   }
 
@@ -118,7 +130,9 @@ public class ActiveUserResourceTests : IAsyncLifetime
   public async Task ActiveUserGetWorkspaces_NoAuth()
   {
     await FluentActions
-      .Invoking(async () => await Fixtures.Unauthed.ActiveUser.GetWorkspaces())
+      .Invoking(async () =>
+        await Fixtures.Unauthed.ActiveUser.GetWorkspaces(cancellationToken: TestContext.Current.CancellationToken)
+      )
       .Should()
       .ThrowAsync<SpeckleException>();
   }
@@ -126,7 +140,7 @@ public class ActiveUserResourceTests : IAsyncLifetime
   [Fact]
   public async Task ActiveUserGetActiveWorkspace()
   {
-    var res = await Sut.GetActiveWorkspace();
+    var res = await Sut.GetActiveWorkspace(TestContext.Current.CancellationToken);
     res.Should().Be(null);
   }
 
@@ -134,7 +148,9 @@ public class ActiveUserResourceTests : IAsyncLifetime
   public async Task ActiveUserGetActiveWorkspace_NoAuth()
   {
     await FluentActions
-      .Invoking(async () => await Fixtures.Unauthed.ActiveUser.GetActiveWorkspace())
+      .Invoking(async () =>
+        await Fixtures.Unauthed.ActiveUser.GetActiveWorkspace(TestContext.Current.CancellationToken)
+      )
       .Should()
       .ThrowAsync<SpeckleException>();
   }
@@ -155,12 +171,12 @@ public class ActiveUserResourceTests : IAsyncLifetime
   public async Task RequestWithNewerInput()
   {
     var filterNull = new FakeProjectInput(null);
-    _ = await Sut.GetProjects(filter: filterNull);
+    _ = await Sut.GetProjects(filter: filterNull, cancellationToken: TestContext.Current.CancellationToken);
 
     var filterNotNull = new FakeProjectInput("fake value");
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
     {
-      _ = await Sut.GetProjects(filter: filterNotNull);
+      _ = await Sut.GetProjects(filter: filterNotNull, cancellationToken: TestContext.Current.CancellationToken);
     });
     ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLBadInputException>();
   }
