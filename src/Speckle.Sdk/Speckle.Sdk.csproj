@@ -27,6 +27,12 @@
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0'" Label="DuckDB artifact writing (net8.0+ only)">
     <PackageReference Include="DuckDB.NET.Data.Full" />
+    <PackageReference Include="Parquet.Net" />
+    <!-- Parquet.Net transitively pulls Snappier, which carries an advisory on every published
+         version (GHSA-pggp-6c3x-2xmx, a Snappy-DECOMPRESSION issue). We write parquet
+         UNCOMPRESSED and never decompress untrusted Snappy in the SDK, so the code path is dead
+         here. Suppress that one advisory (assessed not-applicable) rather than ship a vuln. -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-pggp-6c3x-2xmx" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="10.0.0" />

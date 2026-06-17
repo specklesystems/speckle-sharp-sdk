@@ -23,7 +23,7 @@ public sealed class EnvelopeArtifactWriter : IDisposable
   // Resource governance only — does not affect produced content.
   private const string MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_MEMORY_LIMIT_MB";
   private const int DEFAULT_MEMORY_LIMIT_MB = 256;
-  private const int APPENDER_RECYCLE_INTERVAL = 25_000;
+  private const int APPENDER_RECYCLE_INTERVAL = 10_000;
 
   public string EnvelopeDbPath { get; }
 
@@ -81,11 +81,11 @@ public sealed class EnvelopeArtifactWriter : IDisposable
     }
     _completed = true;
 
+    // Disposing the appender flushes the final batch; disposing the connection
+    // checkpoints the WAL into the file. No explicit CHECKPOINT — it overlaps the
+    // appender's dispose-flush checkpoint and can trip a DuckDB internal assertion
+    // ("active_checkpoint was already set"). Let close own the single checkpoint.
     _proxiesAppender.Dispose();
-    // proxies is small and written in ~one batch (no PK, ~1 recycle), so the
-    // geometry path's free-block fragmentation doesn't apply — a checkpoint is
-    // enough; no rewrite needed.
-    Execute(_db, "CHECKPOINT");
     _db.Dispose();
   }
 

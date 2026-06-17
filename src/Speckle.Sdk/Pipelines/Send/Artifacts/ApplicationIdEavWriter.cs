@@ -22,7 +22,7 @@ public sealed class ApplicationIdEavWriter : IDisposable
   private const int DEFAULT_MEMORY_LIMIT_MB = 256;
   private const string INDEX_MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_INDEX_MEMORY_LIMIT_MB";
   private const int DEFAULT_INDEX_MEMORY_LIMIT_MB = 1024;
-  private const int APPENDER_RECYCLE_INTERVAL = 25_000;
+  private const int APPENDER_RECYCLE_INTERVAL = 10_000;
 
   public string EavDbPath { get; }
 
@@ -122,7 +122,33 @@ public sealed class ApplicationIdEavWriter : IDisposable
     _db.Dispose();
   }
 
-  public void Dispose() => Complete();
+  /// <summary>
+  /// Cleanup path (e.g. the owning <c>using</c> firing during exception unwind) —
+  /// deliberately NOT the success path. It stays cheap and never throws: building
+  /// the index here (the heaviest, most OOM-prone step) on a failing run would both
+  /// waste work and MASK the real exception that triggered the unwind — a throwing
+  /// Dispose replaces the original exception in a try/finally. The index is built
+  /// only by the explicit <see cref="Complete"/>; cleanup just releases the handles.
+  /// </summary>
+  public void Dispose()
+  {
+    if (_completed)
+    {
+      return;
+    }
+    _completed = true;
+    try
+    {
+      _appender.Dispose();
+      _db.Dispose();
+    }
+#pragma warning disable CA1031 // cleanup path: swallow so the original failure propagates unmasked
+    catch (Exception)
+#pragma warning restore CA1031
+    {
+      // Intentionally ignored.
+    }
+  }
 
   private void RecycleAppender()
   {

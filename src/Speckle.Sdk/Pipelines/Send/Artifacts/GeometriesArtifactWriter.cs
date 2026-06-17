@@ -150,14 +150,14 @@ public sealed class GeometriesArtifactWriter : IDisposable
     }
     _completed = true;
 
-    // No finalize rewrite/compaction. It existed only to reclaim the free blocks
-    // left by appender recycling on a PK-indexed table — but it had to buffer
-    // whole mesh blobs to rewrite them, so a single large mesh OOM'd it (and a
-    // failed rewrite fatally invalidated the DB). With the PK dropped the table is
-    // append-only, so recycling no longer fragments meaningfully and there is
-    // nothing to reclaim. A plain checkpoint is all that's needed.
+    // No finalize rewrite/compaction (the PK is gone, so the append-only table
+    // doesn't fragment and there's nothing to reclaim). Just close: disposing the
+    // appender flushes the final batch, and disposing the connection checkpoints
+    // the WAL into the file. We deliberately do NOT issue an explicit CHECKPOINT
+    // here — it overlaps the appender's own dispose-flush checkpoint and trips a
+    // DuckDB internal assertion ("active_checkpoint was already set") on large
+    // models, fatally invalidating the DB. Let close own the single checkpoint.
     _geometriesAppender.Dispose();
-    Execute(_db, "CHECKPOINT");
     _db.Dispose();
   }
 

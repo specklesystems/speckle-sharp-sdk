@@ -17,13 +17,13 @@ namespace Speckle.Objects.Utils;
 /// <see cref="EavExtraction"/>, re-keyed to applicationId.
 ///
 /// Producing the files is decoupled from uploading them: write here, then hand
-/// <see cref="GeometriesDbPath"/> + <see cref="EnvelopeDbPath"/> +
+/// <see cref="GeometriesPath"/> + <see cref="EnvelopeDbPath"/> +
 /// <see cref="EavDbPath"/> to <c>ArtifactPipeline.UploadFilesAsync</c>. See
 /// <c>plans/speckle-4.0/objects-duckdb-proxies-sgeo.md</c>.
 /// </summary>
 public sealed class ObjectsArtifactPipeline : IDisposable
 {
-  private readonly GeometriesArtifactWriter _geometriesWriter;
+  private readonly GeometriesParquetWriter _geometriesWriter;
   private readonly EnvelopeArtifactWriter _envelopeWriter;
   private readonly ApplicationIdEavWriter _eavWriter;
   private readonly ISet<string> _excludedProperties;
@@ -34,7 +34,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     ISet<string>? excludedTopLevelProperties = null
   )
   {
-    _geometriesWriter = new GeometriesArtifactWriter(outputDir, baseName);
+    _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName);
     _envelopeWriter = new EnvelopeArtifactWriter(outputDir, baseName);
     _eavWriter = new ApplicationIdEavWriter(outputDir, baseName);
     // Shared canonical exclusion list (Autodesk Material, Document, …) so the
@@ -42,8 +42,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _excludedProperties = excludedTopLevelProperties ?? EavExtraction.DefaultExcludedTopLevelProperties;
   }
 
-  /// <summary>The local path of the produced <c>geometries.duckdb</c> file.</summary>
-  public string GeometriesDbPath => _geometriesWriter.GeometriesDbPath;
+  /// <summary>The local path of the produced <c>geometries.parquet</c> file.</summary>
+  public string GeometriesPath => _geometriesWriter.GeometriesPath;
 
   /// <summary>The local path of the produced <c>envelope.duckdb</c> (proxies) file.</summary>
   public string EnvelopeDbPath => _envelopeWriter.EnvelopeDbPath;
@@ -86,11 +86,29 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _eavWriter.Complete();
   }
 
+  // Cleanup path: dispose every writer independently and never let one writer's
+  // cleanup error escape. On a failing run this fires during exception unwind, so a
+  // throwing Dispose would (a) skip the remaining writers and (b) mask the real
+  // exception. Success closes the writers via Complete(); this is just the net.
   public void Dispose()
   {
-    _geometriesWriter.Dispose();
-    _envelopeWriter.Dispose();
-    _eavWriter.Dispose();
+    SafeDispose(_geometriesWriter);
+    SafeDispose(_envelopeWriter);
+    SafeDispose(_eavWriter);
+  }
+
+  private static void SafeDispose(IDisposable writer)
+  {
+    try
+    {
+      writer.Dispose();
+    }
+#pragma warning disable CA1031 // cleanup path: swallow so the original failure propagates unmasked
+    catch (Exception)
+#pragma warning restore CA1031
+    {
+      // Intentionally ignored.
+    }
   }
 }
 #endif
