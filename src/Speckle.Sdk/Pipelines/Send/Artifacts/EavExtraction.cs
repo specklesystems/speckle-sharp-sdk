@@ -31,16 +31,46 @@ public static class EavExtraction
   private const int MAX_DEPTH = 10;
 
   /// <summary>
-  /// Top-level keys under <c>properties</c> excluded from EAV by default —
-  /// high-volume / redundant Revit tabs (carried through Navisworks) with little
-  /// query value. "Autodesk Material" alone was ~29% of all rows; "Document"
-  /// repeats per object. Shared by the binary (objects.duckdb) and envelope
-  /// (viewer.duckdb) eav writers so both files exclude the same categories.
+  /// UNIVERSAL top-level keys under <c>properties</c> excluded from EAV regardless
+  /// of source application — render/document noise that's either available elsewhere
+  /// (viewer materials) or pure repetition, safe to drop for any source. This set is
+  /// applied by the eav writers (binary objects.duckdb + envelope viewer.duckdb) to
+  /// EVERY object, so it must stay source-agnostic. App-specific author categories
+  /// belong in a source-scoped set instead (e.g. <see cref="RevitExcludedTopLevelProperties"/>),
+  /// applied only to objects of that source — NOT here.
   /// </summary>
   public static readonly ISet<string> DefaultExcludedTopLevelProperties = new HashSet<string>(StringComparer.Ordinal)
   {
+    
+  };
+
+  /// <summary>
+  /// Revit-specific top-level categories to skip — author tabs the team has decided
+  /// not to index (high-volume, low query value: "Material" ~1.6M rows, "Revit
+  /// Material" ~790k, "Category" ~560k, "Phase Created" ~520k on a typical model).
+  /// Applied ONLY to Revit-sourced elements (ODA class <c>LcRevit*</c>) at READ time,
+  /// so the costly per-property ODA read is never paid; NOT a writer exclusion, so it
+  /// never drops a same-named category on non-Revit federated content (DGN/IFC/CAD).
+  /// Curate this list as the indexing contract for Revit evolves.
+  /// (Names must match the Navisworks category display name exactly. "SketchPlane" /
+  /// "GeometryCurve" were 0-row no-ops on the CP2 model — kept for other models.)
+  /// </summary>
+  public static readonly ISet<string> RevitExcludedTopLevelProperties = new HashSet<string>(StringComparer.Ordinal)
+  {
     "Autodesk Material",
     "Document",
+    "Line Style",
+    "SketchPlane",
+    "GeometryCurve",
+    "Element ID",
+    "Category",
+    "CreatedPhaseId",
+    "Id",
+    "Material",
+    "Revit Material",
+    "Orientation",
+    "ParametersMap",
+    "Phase Created",
   };
 
   /// <summary>Root-level fields to index (outside of `properties`).</summary>
