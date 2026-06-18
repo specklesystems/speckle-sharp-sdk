@@ -1,5 +1,72 @@
 # Benchmark — Navis model `KLY_ZHQ_CP2`
 
+## 2026-06-17 — Compact interned eav (geometry on parquet)
+Swapped the eav storage from the fat single-table `eav(applicationId, path, …)` +
+ART index to the compact interned `objects`/`paths`/`eav` (int32 refs, only a small
+`objects.application_id` index, no ART index over eav). Same feed
+(`EavExtraction.FlattenObjectProperties`) — isolates the storage change.
+
+| | fat eav (baseline) | **compact eav** | Δ |
+|---|---:|---:|---:|
+| eav.duckdb | 456.4 MB | **195.6 MB** | **−57%** |
+| geometries.parquet | 237 MB | 237 MB | — |
+| envelope.duckdb | 7.9 MB | 7.9 MB | — |
+| `proxies + finalize` | (eav ART index build) | **0.3 s** | cliff gone |
+| upload (send) | ~30 s | 5.3 s | ~6× |
+| total | ~355 s | 336.6 s | — |
+| **peak WS** | 1592 MB (at upload) | **1773 MB (in loop)** | +11% |
+
+- The 456 MB fat eav was repeated `applicationId`/path strings (×~65/object) + the
+  ART index over 18.66M rows. Interning + no eav index → 195.6 MB.
+- **Finalize cliff eliminated**: the heavy eav-ART build (the 8 GB-budget OOM on big
+  models) is replaced by a tiny `objects.application_id` index → finalize is 0.3 s,
+  and the global peak moved *off* finalize into the extraction loop.
+- **Cost**: loop peak +11%. The interning `objects` dict is managed and **scales with
+  object count** (~2.6 GB projected at 26M), plus 3 appenders/tables vs 1 = more
+  native buffering. If the dict dominates at scale, drop it to a counter (objects are
+  added once each → dedup not strictly needed) or move eav to parquet.
+
+### Phase-2 feed delta — native streaming (no JObject)
+Replaced the `NavisworksObject → JObject.FromObject → EavExtraction.FlattenObjectProperties(JObject)`
+detour with `EavExtraction.FlattenProperties` over the native `Dictionary<string,object?>`,
+streamed straight into the writer (same flatten semantics + exclusions).
+
+| | JObject feed | **native feed** | Δ |
+|---|---:|---:|---:|
+| eav.duckdb | 195.6 MB | 189.5 MB | −6 MB (dropped redundant `applicationId` row) |
+| process (loop) | 330.6 s | **302.8 s** | **−28 s (~8%)** |
+| total | 336.6 s | 308.7 s | −28 s |
+| peak WS | 1773 MB | 1755 MB | ~flat |
+| peak managed | 578 MB | 578 MB | unchanged |
+
+- Removing the per-object `JObject.FromObject` deep-clone is a **CPU win (~8%)**, not a
+  memory win — **peak managed is unchanged**, so the JObject transient was *not* the
+  peak driver. The loop peak is the interning dicts + SGEO encode buffers + churn.
+- Remaining Phase-2 work: (a) richer **denylist cleanup** (cuts row count → smaller
+  eav + fewer values; mechanism in place, list still just `{Autodesk Material,
+  Document}`); (b) ~~ancestry caching~~ — **tried and reverted, see below**.
+
+### Ancestry caching — TRIED, REVERTED (bad trade on this model)
+Cached each ancestor node's raw extract by stable handle (extract once, reuse for
+descendants). Result vs the no-cache native feed:
+
+| | no cache | ancestor cache | Δ |
+|---|---:|---:|---:|
+| process (loop) | 302.8 s | 276.2 s | −9% |
+| **peak managed** | 578 MB | **5007 MB** | **+4.4 GB** |
+| peak WS | 1755 MB | 6082 MB | +4.3 GB |
+| eav.duckdb | 189.5 MB | 191.6 MB | ~same |
+
+**Why it backfired:** without caching, ancestor dicts are transient (allocated →
+merged → GC'd → ~578 MB steady). Caching *retains* the union of all ancestor
+extracts for the whole run; on this model the ancestry is **not shared enough**
+(many near-unique ancestor nodes carrying heavy property dicts), so retention cost
++4.4 GB while reuse bought only 9%. Reverted. If revisited, it needs a **bounded
+LRU** (capture sibling-locality only) — but the no-cache path is memory-clean, and
+the 9% isn't worth re-introducing memory risk on a memory-bound pipeline.
+
+---
+
 Comparison of the three send strategies on one real Navisworks model (sourced
 from Revit, so it carries Revit property tabs). All runs on the same machine,
 same model. **Single runs** — workingSet/native figures carry run-to-run

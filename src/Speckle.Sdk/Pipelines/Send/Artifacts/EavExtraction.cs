@@ -537,4 +537,231 @@ public static class EavExtraction
     value = Convert.ToDouble(((JValue)token).Value, CultureInfo.InvariantCulture);
     return IsFinite(value);
   }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Native (Dictionary) flatten path — Speckle 4.0 binary Navis (phase 2).
+  // Streams EAV rows straight from the extracted Dictionary<string,object?> tree
+  // with NO NavisworksObject → JObject.FromObject round-trip. Mirrors the JObject
+  // WalkProperties semantics above (paths, parameter {name,value}+units/idn,
+  // Material Quantities, MAX_DEPTH, depth-0 exclusions) so eav content matches,
+  // minus whatever the caller cleaned out of the dictionary upstream.
+  // ───────────────────────────────────────────────────────────────────────────
+
+  /// <summary>
+  /// Flattens an object's native property tree into <paramref name="rows"/> in
+  /// place. <paramref name="rootScalars"/> are bare top-level fields (e.g.
+  /// speckle_type, name, units); <paramref name="properties"/> is walked under the
+  /// <c>properties.</c> prefix. Same row shape/paths as the JObject path.
+  /// </summary>
+  public static void FlattenProperties(
+    string objectId,
+    IReadOnlyDictionary<string, object?> properties,
+    IEnumerable<KeyValuePair<string, object?>>? rootScalars,
+    ISet<string>? excludedTopLevelProperties,
+    ICollection<EavRow> rows
+  )
+  {
+    if (rootScalars != null)
+    {
+      foreach (var kvp in rootScalars)
+      {
+        if (IsScalar(kvp.Value))
+        {
+          rows.Add(MakeRowNative(objectId, kvp.Key, kvp.Value!, null, null));
+        }
+      }
+    }
+
+    WalkPropertiesNative(objectId, properties, "properties", 0, rows, excludedTopLevelProperties);
+
+    if (
+      properties.TryGetValue("Material Quantities", out var mq)
+      && mq is IReadOnlyDictionary<string, object?> matQuants
+    )
+    {
+      ExtractMaterialQuantitiesNative(objectId, matQuants, rows);
+    }
+  }
+
+  private static void WalkPropertiesNative(
+    string objectId,
+    IReadOnlyDictionary<string, object?> obj,
+    string prefix,
+    int depth,
+    ICollection<EavRow> rows,
+    ISet<string>? excludedTopLevelProperties
+  )
+  {
+    if (depth >= MAX_DEPTH)
+    {
+      return;
+    }
+
+    foreach (var kvp in obj)
+    {
+      var key = kvp.Key;
+      var val = kvp.Value;
+
+      if (depth == 0 && excludedTopLevelProperties != null && excludedTopLevelProperties.Contains(key))
+      {
+        continue;
+      }
+      if (val == null)
+      {
+        continue;
+      }
+
+      var path = prefix + "." + key;
+
+      if (val is IReadOnlyDictionary<string, object?> asRecord)
+      {
+        // Parameter pattern { name, value } → single row at this path.
+        if (asRecord.ContainsKey("name") && asRecord.TryGetValue("value", out var paramVal))
+        {
+          if (!IsScalar(paramVal))
+          {
+            continue;
+          }
+          string? units = asRecord.TryGetValue("units", out var u) && u is string us ? us : null;
+          string? idn =
+            asRecord.TryGetValue("internalDefinitionName", out var i) && i is string isn ? isn : null;
+          rows.Add(MakeRowNative(objectId, path, paramVal!, units, idn));
+          continue;
+        }
+
+        // Parity with the JObject walk's special-cases.
+        if (key == "Structure" && prefix.EndsWith(".Type Parameters", StringComparison.Ordinal))
+        {
+          continue;
+        }
+        if (key == "Material Quantities")
+        {
+          continue; // handled separately
+        }
+
+        WalkPropertiesNative(objectId, asRecord, path, depth + 1, rows, null);
+        continue;
+      }
+
+      if (IsScalar(val))
+      {
+        rows.Add(MakeRowNative(objectId, path, val, null, null));
+      }
+      // non-scalar, non-dictionary (arrays, etc.) → skipped, as in the JObject walk.
+    }
+  }
+
+  private static void ExtractMaterialQuantitiesNative(
+    string objectId,
+    IReadOnlyDictionary<string, object?> matQuants,
+    ICollection<EavRow> rows
+  )
+  {
+    foreach (var matProp in matQuants)
+    {
+      if (matProp.Value is not IReadOnlyDictionary<string, object?> mat)
+      {
+        continue;
+      }
+      var category = mat.TryGetValue("materialCategory", out var c) && c is string cs ? cs : "Unknown";
+      AppendQuantityNative(objectId, mat, "area", category, matProp.Key, rows);
+      AppendQuantityNative(objectId, mat, "volume", category, matProp.Key, rows);
+    }
+  }
+
+  private static void AppendQuantityNative(
+    string objectId,
+    IReadOnlyDictionary<string, object?> mat,
+    string kind,
+    string category,
+    string matName,
+    ICollection<EavRow> rows
+  )
+  {
+    if (!mat.TryGetValue(kind, out var qObj) || qObj is not IReadOnlyDictionary<string, object?> q)
+    {
+      return;
+    }
+    if (!q.TryGetValue("value", out var value) || !IsScalar(value))
+    {
+      return;
+    }
+    string? units = q.TryGetValue("units", out var u) && u is string us ? us : null;
+    rows.Add(
+      MakeRowNative(objectId, $"properties.Material Quantities.{category}.{matName}.{kind}", value!, units, null)
+    );
+  }
+
+  private static bool IsScalar(object? v) =>
+    v is bool or string or sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal;
+
+  private static EavRow MakeRowNative(string objectId, string path, object value, string? units, string? idn)
+  {
+    var type = InferTypeNative(value);
+    double? num = type == "number" ? ToNumNative(value) : null;
+    return new EavRow(objectId, path, ToTextNative(value), num, type, units, idn);
+  }
+
+  private static string ToTextNative(object value) =>
+    value switch
+    {
+      bool b => b ? "true" : "false",
+      string s => s,
+      double d => d.ToString("R", CultureInfo.InvariantCulture),
+      float f => f.ToString("R", CultureInfo.InvariantCulture),
+      decimal m => m.ToString(CultureInfo.InvariantCulture),
+      IFormattable fmt => fmt.ToString(null, CultureInfo.InvariantCulture),
+      _ => value.ToString() ?? "",
+    };
+
+  private static string InferTypeNative(object value)
+  {
+    switch (value)
+    {
+      case bool:
+        return "boolean";
+      case float f:
+        return IsFinite(f) ? "number" : "string";
+      case double d:
+        return IsFinite(d) ? "number" : "string";
+      case sbyte or byte or short or ushort or int or uint or long or ulong or decimal:
+        return "number";
+      case string s:
+      {
+        var lower = s.ToLowerInvariant();
+        if (lower is "true" or "false")
+        {
+          return "boolean";
+        }
+        var trimmed = s.Trim();
+        if (trimmed.Length == 0 || s_uuidLike.IsMatch(trimmed))
+        {
+          return "string";
+        }
+        return double.TryParse(trimmed, NumberStyles.Float, CultureInfo.InvariantCulture, out var num) && IsFinite(num)
+          ? "number"
+          : "string";
+      }
+      default:
+        return "string";
+    }
+  }
+
+  private static double? ToNumNative(object value)
+  {
+    switch (value)
+    {
+      case string s:
+        return double.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var num) && IsFinite(num)
+          ? num
+          : null;
+      case IConvertible c: // numeric scalars only reach here (bool/string handled above / by type)
+      {
+        var d = c.ToDouble(CultureInfo.InvariantCulture);
+        return IsFinite(d) ? d : null;
+      }
+      default:
+        return null;
+    }
+  }
 }

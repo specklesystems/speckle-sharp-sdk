@@ -1,5 +1,4 @@
 #if NET8_0_OR_GREATER
-using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
 
@@ -25,7 +24,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 {
   private readonly GeometriesParquetWriter _geometriesWriter;
   private readonly EnvelopeArtifactWriter _envelopeWriter;
-  private readonly ApplicationIdEavWriter _eavWriter;
+  private readonly CompactEavWriter _eavWriter;
   private readonly ISet<string> _excludedProperties;
 
   public ObjectsArtifactPipeline(
@@ -36,7 +35,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName);
     _envelopeWriter = new EnvelopeArtifactWriter(outputDir, baseName);
-    _eavWriter = new ApplicationIdEavWriter(outputDir, baseName);
+    _eavWriter = new CompactEavWriter(outputDir, baseName);
     // Shared canonical exclusion list (Autodesk Material, Document, …) so the
     // binary and envelope eav files drop the same categories.
     _excludedProperties = excludedTopLevelProperties ?? EavExtraction.DefaultExcludedTopLevelProperties;
@@ -67,16 +66,23 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void AddProxy(string type, string dataJson) => _envelopeWriter.AddProxy(type, dataJson);
 
   /// <summary>
-  /// Flattens an object's properties into the <c>eav</c> table keyed by
-  /// <paramref name="applicationId"/>. <paramref name="objectJson"/> is the
-  /// object's JSON (root scalars + a <c>properties</c> subtree); geometry is
-  /// expected to be excluded by the caller.
+  /// Flattens an object's native property tree straight into the <c>eav</c> table
+  /// keyed by <paramref name="applicationId"/> — no <c>JObject.FromObject</c> /
+  /// <c>EavExtraction.FlattenObjectProperties(JObject)</c> round-trip.
+  /// <paramref name="properties"/> is the merged-ancestry Dictionary from the
+  /// extractor (geometry excluded by construction); <paramref name="rootScalars"/>
+  /// are bare top-level fields (speckle_type, name, units, …).
   /// </summary>
-  public void AddProperties(string applicationId, JObject objectJson) =>
-    _eavWriter.AddRows(
-      applicationId,
-      EavExtraction.FlattenObjectProperties(applicationId, objectJson, _excludedProperties)
-    );
+  public void AddProperties(
+    string applicationId,
+    IReadOnlyDictionary<string, object?> properties,
+    IEnumerable<KeyValuePair<string, object?>>? rootScalars = null
+  )
+  {
+    var rows = new List<EavRow>();
+    EavExtraction.FlattenProperties(applicationId, properties, rootScalars, _excludedProperties, rows);
+    _eavWriter.AddRows(applicationId, rows);
+  }
 
   /// <summary>Flushes and closes all three files (releases the DuckDB locks).</summary>
   public void Complete()
