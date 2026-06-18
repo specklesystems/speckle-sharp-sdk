@@ -6,13 +6,16 @@
 >
 > **2026-06-16 — Integrations Board revision.** The content model has moved on
 > from this doc. See [plans/speckle-4.0/objects-duckdb-proxies-sgeo.md](plans/speckle-4.0/objects-duckdb-proxies-sgeo.md)
-> (artifact set → `objects.duckdb` with `geometries`+`proxies`, `eav.duckdb`,
-> parked `blobs.parquet`; no speckle id / no `__closure` / no Collections /
-> applicationId-keyed; proxies-as-topology adjacency) and
+> (artifact set → the **triple** `geometries.parquet` (SGEO blobs) +
+> `envelope.duckdb` (proxies) + `eav.duckdb`, parked `blobs.parquet`; no speckle
+> id / no `__closure` / no Collections / applicationId-keyed; proxies-as-topology
+> adjacency) and
 > [plans/speckle-4.0/sgeo-binary-format.md](plans/speckle-4.0/sgeo-binary-format.md)
 > (the SGEO per-primitive binary spec). Where the two disagree, the
 > `plans/speckle-4.0/` docs win. **Superseded below:** the `viewer.duckdb` DDL
-> sketch (now `objects.duckdb`), and the `[TODO: oguzhan] EAV sample` (EAV was
+> sketch (now the `geometries.parquet` + `envelope.duckdb` triple — and note the
+> old single-`objects.duckdb`/`geometries.duckdb` naming is itself superseded:
+> geometry ships as Parquet), and the `[TODO: oguzhan] EAV sample` (EAV was
 > validated against the server on a real model — see the 2026-06-12 status entry).
 
 ---
@@ -398,6 +401,19 @@ comparisons + "is it actually wired" SQL checks, written alongside Slice 1.
 
 ## Status log
 
+- _2026-06-19_ — **Binary triple is the shipped shape; legacy paths isolated +
+  SDK/oda tidied.** The producer is `ObjectsArtifactPipeline` →
+  `GeometriesParquetWriter` (**`geometries.parquet`**) + `EnvelopeWriter`
+  (`envelope.duckdb`) + `EavWriter` (`eav.duckdb`); geometry ships as **Parquet,
+  not DuckDB**. Cleanup: deleted the dead `GeometriesArtifactWriter` (the
+  `geometries.duckdb` writer) + `ApplicationIdEavWriter`; renamed
+  `CompactEavWriter`→`EavWriter`, `EnvelopeArtifactWriter`→`EnvelopeWriter`;
+  removed oda's comparison-only `NavisModelEnvelopeExtractor` (Binary is the sole
+  Navis extractor). **Still legacy, kept on purpose:** `DuckDbArtifactWriter` +
+  `ArtifactPipeline.Process` (→ `viewer.duckdb`) remain because **Revit/Dwg still
+  use them**; that path retires only when those importers move to
+  `ObjectsArtifactPipeline`. Added `SgeoParityTests` (old SDK objects → SGEO
+  round-trip, all 11 primitives) proving the binary format loses nothing.
 - _2026-05-…_ — Doc created. Overview, current-state, new-approach captured from
   reference diagram + initial brief. Contracts and open questions scaffolded;
   awaiting EAV sample and the geometry/topology split decision.

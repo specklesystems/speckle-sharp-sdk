@@ -4,13 +4,23 @@
 > while the server is live for benchmarks — **nothing in speckle-server-internal
 > was modified**; this is read-only investigation + a plan. All line refs are from
 > a read-only pass and should be re-confirmed at implementation time.
+>
+> **Update (2026-06-18) — topology source revised.** Decision (with colleague):
+> build topology from **`eav.duckdb` pivots + `proxies`** (see
+> [objects-duckdb-proxies-sgeo.md §Topology source revision](./objects-duckdb-proxies-sgeo.md)).
+> The explicit `parentId` / `layer` / `level` / `group` adjacency in the
+> "build-from-proxies" sections below is now the **fallback** behind the open
+> `source_tree`/`CollectionProxy` question (2.1), not necessarily the primary
+> path; pivot EAV first. The standalone `nodes`-table variant is **not adopted**.
 
 ## TL;DR
 - **Envelope (viewer.duckdb) WorldTree is already closure-free** for the v2
   duckdb loader. Dropping `__closure` does **not** break it. Expect little/no
   surgery — mostly verification.
-- **Binary (objects.duckdb) WorldTree is the real work**: a new build-from-proxies
-  path (no `speckle_type`/`id`/`__closure`/collections; applicationId-keyed).
+- **Binary WorldTree is the real work** (from the `geometries.parquet` +
+  `envelope.duckdb` triple — earlier drafts called this `objects.duckdb`): a new
+  build-from-proxies path (no `speckle_type`/`id`/`__closure`/collections;
+  applicationId-keyed).
 - One cross-cutting caveat: the **legacy HTTP object path** (`download.ts` +
   `ObjectLoader2`/`Traverser`) *does* use `__closure` to enumerate a version's
   objects. It is NOT the v2 duckdb path, but anything still hitting it (old 2.0
@@ -49,9 +59,9 @@ The 4.0 viewer path is the duckdb one. Evidence:
 WorldTree essentially already supports closure-less artifacts.
 
 ## Binary WorldTree — the real surgery (build-from-proxies)
-Target: build the WorldTree from `objects.duckdb` (`geometries(applicationId,
-content, id, type)` + `proxies(type, data)`) + `eav` — no `speckle_type`, no `id`,
-no `__closure`, no collections. Algorithm already specified in
+Target: build the WorldTree from `geometries.parquet` (`geometries(applicationId,
+content, id, type)`) + `envelope.duckdb` (`proxies(type, data)`) + `eav` — no
+`speckle_type`, no `id`, no `__closure`, no collections. Algorithm already specified in
 [objects-duckdb-proxies-sgeo.md](./objects-duckdb-proxies-sgeo.md) (§Server WorldTree
 reconstruction). Server/viewer touch points to implement:
 

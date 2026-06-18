@@ -10,13 +10,48 @@
 
 ## Decisions locked (Q&A, 2026-06-16)
 
-1. Topology = **adjacency list** (`id` + `parentId` per proxy row).
+1. Topology = **adjacency list** (`id` + `parentId` per proxy row). **[REVISED
+   2026-06-18 — see §Topology source revision. Topology is now built from
+   `eav.duckdb` pivots + `proxies`; explicit per-proxy `parentId` adjacency is
+   contingent on the open `source_tree`/`CollectionProxy` question (2.1).]**
 2. `objects.duckdb` is a **rename / reorganization** of the existing
    `viewer.duckdb` content model, not a greenfield rewrite.
 3. `blobs.parquet` + connector-receive = **documented, implementation parked**
    (receive stays on v1 for the first slices).
 4. Cutover = **no side-by-side** (v2 owns the version; flip per-consumer as
    gating items land).
+
+## Topology source revision (2026-06-18 — decided with colleague)
+
+**Decision:** topology is built from **`eav.duckdb` pivots + `proxies` (in
+`envelope.duckdb`)** — *not* a standalone explicit node/adjacency table. `eav`
+is the **source of truth for the object set**: every `applicationId` and its
+flattened properties, including the container tiers (`layer` / `category` /
+`level`) carried as ordinary property values. `proxies` carry the relationships
+EAV can't express (`material`, `colour`, `group`, `instanceDef`). The explorer
+grouping is obtained by **pivoting EAV** on the tier properties rather than by
+re-encoding the container tree as its own rows.
+
+**Supersedes:** the standalone `nodes(id, kind, parent_id, ordinal[, path])`
+adjacency table explored in design discussion. That variant — and its
+`ordinal`/`path`/depth refinements — is **not adopted**. No separate `nodes`
+table ships; structure comes from EAV pivots + proxies.
+
+**Open question (2.1) — UNRESOLVED.** Collection/layer **adjacency is not
+derivable from EAV pivots alone**. A pivot groups objects by a property value;
+it does **not** recover ordered parent→child container nesting — sibling order,
+multi-tier paths (Level→Category→Family→Type), or *empty* containers that hold
+no objects to group by. So it is still open whether a `layer`/`category` EAV
+property **+ pivot** can fully replace an explicit **`CollectionProxy` /
+`source_tree`** proxy, or whether that adjacency must remain an explicit proxy
+row. Until resolved, keep the door open for a `source_tree`/`CollectionProxy`
+proxy `type` *alongside* the EAV-pivot path.
+
+**Consequence for §Proxy-as-topology and §Server WorldTree (below):** the
+`layer`/`level`/`group` proxy `parentId` adjacency those sections describe is now
+the **explicit / fallback** form behind (2.1) — the primary path attempts
+EAV-pivot derivation first and only encodes adjacency explicitly where pivots
+provably can't recover it.
 
 **Two viewers, named:**
 - **Viewer 2.0** — the **Three.js** viewer in
@@ -53,14 +88,19 @@ single flat `proxies` table. Geometry becomes an opaque binary blob (SGEO).
 
 ## The artifact set (revised — final shape 2026-06-16)
 
-> **Update:** the original single `objects.duckdb` (geometries + proxies) is now
-> **split into two files** — `geometries.duckdb` (the heavy binary blobs) and a
-> lean `envelope.duckdb` (proxies only). This keeps the topology file small and
-> independently fetchable from the geometry payload. eav is unchanged.
+> **Update (2026-06-19 — implemented).** The artifact set is the **three-file
+> triple**, and geometry landed as **Parquet, not DuckDB**: `geometries.parquet`
+> (flat append of opaque SGEO blobs keyed by applicationId — a columnar file is
+> smaller and seekable with no DB engine), `envelope.duckdb` (proxies only),
+> `eav.duckdb` (properties). Producer: `ObjectsArtifactPipeline`
+> (`src/Speckle.Objects/Utils/`) → `GeometriesParquetWriter` + `EnvelopeWriter` +
+> `EavWriter`. `blobs.parquet` stays parked. (Earlier revisions of this doc said a
+> single `objects.duckdb`, then a `geometries.duckdb` + `envelope.duckdb` split —
+> both superseded by the parquet triple below.)
 
 | File | Purpose (board) | Tables |
 |---|---|---|
-| `{versionId}.geometries.duckdb` | *the renderable geometry* | `geometries` |
+| `{versionId}.geometries.parquet` | *the renderable geometry* | `geometries` |
 | `{versionId}.envelope.duckdb` | *relationships between objects (no collection tree)* | `proxies` |
 | `{versionId}.eav.duckdb` | *what the viewer doesn't need but all others do* | `eav` |
 | `{versionId}.blobs.parquet` | *what connectors need* (receive fidelity) | `blobs` — **parked** |
@@ -103,7 +143,7 @@ re-keyed and re-shaped, not re-derived.
 ## Schemas
 
 ```sql
--- objects.duckdb
+-- geometries.parquet  (flat columnar append — same columns, written by GeometriesParquetWriter; no DB engine)
 CREATE TABLE geometries (
   applicationId VARCHAR NOT NULL,   -- host object this buffer is displayed under (NOT unique)
   content       BLOB,               -- one SGEO buffer (NULL allowed if dedup'd by id — see §dedup)
@@ -111,6 +151,7 @@ CREATE TABLE geometries (
   type          VARCHAR NOT NULL,    -- mesh | line | polyline | point | polycurve | curve | arc | points
   PRIMARY KEY (applicationId, id)
 );
+-- envelope.duckdb  (written by EnvelopeWriter)
 CREATE TABLE proxies (
   type VARCHAR NOT NULL,             -- instanceDef | layer | material | colour | group | level
   data JSON   NOT NULL               -- per-type envelope (see §proxy-as-topology)
@@ -278,20 +319,21 @@ Transform compounding for nested instances (RenderTree.ts:156-175) is retained.
 ## Per-repo work
 
 **speckle-oda (client — parse + write directly):**
-- Replace `CollectionBuilder` / `LayerUnpacker` / Navis flat collections with one
-  **proxy emitter** producing `layer`/`level`/`group` adjacency.
-- During conversion, write SGEO blobs → `geometries`, flattened props → `eav`,
-  proxy relationships accumulated in memory → `proxies` as the last step.
-- No more C# wrapper objects for serialization; no calls into the id/closure path.
-- Generalize the `ArtifactPipeline` path already used by Navis
-  (`speckle-oda/src/Navis/Speckle.ODA.Navis/Importer.cs`) to Revit/DWG.
+- **Navis: DONE.** `NavisModelBinaryExtractor` is the sole Navis extractor (the
+  comparison-only `NavisModelEnvelopeExtractor` was removed 2026-06-19). It writes
+  SGEO blobs → `geometries`, flattened props → `eav`, proxy relationships →
+  `proxies` (last step), via `ObjectsArtifactPipeline`. No C# wrapper objects, no
+  id/closure path.
+- **Still TODO:** the per-segment proxy emitter generalization, and moving
+  **Revit/DWG** off the legacy `ArtifactPipeline.Process` envelope path (still on
+  `CollectionBuilder` / `LayerUnpacker` / `viewer.duckdb`) onto this pipeline.
 
 **speckle-sharp-sdk (client — owns format + row inserts):**
-- Extend
-  `speckle-sharp-sdk/src/Speckle.Sdk/Pipelines/Send/Artifacts/DuckDbArtifactWriter.cs`:
-  `objects`/`root`/`blobs` → `geometries(applicationId,content,id,type)` +
-  `proxies(type,data)`; keep `eav`; add `blobs.parquet` writer (parked behind the
-  schema).
+- **DONE.** `ObjectsArtifactPipeline` (`src/Speckle.Objects/Utils/`) writes the
+  triple via `GeometriesParquetWriter` (→ `geometries.parquet`) + `EnvelopeWriter`
+  (→ `envelope.duckdb`) + `EavWriter` (→ `eav.duckdb`). The legacy
+  `DuckDbArtifactWriter` (→ `viewer.duckdb` + eav) survives ONLY for the Revit/Dwg
+  envelope path until those importers migrate. `blobs.parquet` writer still parked.
 - Add the **SGEO encoder** (family header + per-primitive bodies) extending
   `MeshBinaryEncoder`; `Units.GetEncodingFromUnit` for `units_code`; CRC32 of body.
   See [sgeo-binary-format.md](./sgeo-binary-format.md).
@@ -329,8 +371,9 @@ place in host app`. Receive stays on the v1 path for the first slices.
 (`speckle-viewer-webgpu`) today bakes its render artefacts in the browser
 (per-user DFS traversal of the packfile into OPFS `.dat`/primitives/placements/
 manifest). The future move — mirroring the SDK→server direction of this plan — is
-to **generate viewer-3.0 artefacts on the server side** (from `objects.duckdb`:
-proxies + SGEO geometries) and serve them, so the browser skips the bake. This is
+to **generate viewer-3.0 artefacts on the server side** (from the binary
+artifacts: `envelope.duckdb` proxies + `geometries.parquet` SGEO) and serve them,
+so the browser skips the bake. This is
 the board's "compatibility with viewer 3.0 → work needed" item. It is sequenced
 *after* viewer 2.0 (Three.js) renders the slice end-to-end; it does not block
 anything in this plan, and is recorded here only so the direction is on file.
@@ -340,7 +383,8 @@ anything in this plan, and is recorded here only so the direction is on file.
 Keep the master plan's stance: v2 owns the version; flip per-consumer as gating
 items land, no production dual-run. Gating items (restated for the new model):
 1. ✅ v2 `complete` creates the version (done per master plan).
-2. Viewer direct-load of `objects.duckdb` (proxies + geometries + SGEO).
+2. Viewer direct-load of the binary triple (`envelope.duckdb` proxies +
+   `geometries.parquet` SGEO + `eav.duckdb`).
 3. `/eav/download` resolves the v2 eav key by convention.
 
 ## Rollout — vertical slice first
@@ -348,8 +392,8 @@ items land, no production dual-run. Gating items (restated for the new model):
 One representative Revit model exercising the hard cases (levels + categories,
 instanced families, multi-geometry walls, render materials), end-to-end, before
 widening to DWG / Navis / federated multi-unit:
-- **Stage 0** — hand-author a small `objects.duckdb` (proxies + a few SGEO blobs)
-  for the slice model and drive the new build-from-proxies path in
+- **Stage 0** — hand-author a small `envelope.duckdb` + `geometries.parquet`
+  (proxies + a few SGEO blobs) for the slice model and drive the new build-from-proxies path in
   speckle-server-internal's Three.js viewer; validate the proxy schema + SGEO
   decode actually render before any C# is written.
 - **Stage 1** — SDK: `geometries`/`proxies` tables + SGEO encoder + tests.
@@ -373,6 +417,6 @@ widening to DWG / Navis / federated multi-unit:
 - **Schema "is it wired" SQL checks**: every `geometries.applicationId` resolves
   in `eav`; every proxy `objects[]`/`parentId` resolves; no orphan placements.
 - **Render parity**: the Three.js viewer (speckle-server-internal) renders the
-  slice model from `objects.duckdb` and visually matches the current v1 render (A/B).
+  slice model from the binary triple and visually matches the current v1 render (A/B).
 - **End-to-end**: oda send → server store → Three.js viewer direct-load of the
   slice model, topology (explorer tree), instancing, and materials correct.
