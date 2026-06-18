@@ -6,11 +6,11 @@ namespace Speckle.Objects.Utils;
 
 /// <summary>
 /// Speckle 4.0 producer for the full-binary artifact TRIPLE (Integrations Board
-/// final shape): <c>geometries.duckdb</c> (SGEO geometry blobs keyed by
-/// applicationId, via <see cref="GeometriesArtifactWriter"/>),
+/// final shape): <c>geometries.parquet</c> (SGEO geometry blobs keyed by
+/// applicationId, via <see cref="GeometriesParquetWriter"/>),
 /// <c>envelope.duckdb</c> (lean topology/material proxies, via
-/// <see cref="EnvelopeArtifactWriter"/>), and <c>eav.duckdb</c> (flattened
-/// properties keyed by applicationId, via <see cref="ApplicationIdEavWriter"/> —
+/// <see cref="EnvelopeWriter"/>), and <c>eav.duckdb</c> (flattened
+/// properties keyed by applicationId, via <see cref="EavWriter"/> —
 /// distinct from the envelope path's object-id-keyed properties table). Geometry
 /// is encoded with <see cref="SgeoEncoder"/>; EAV uses the shared
 /// <see cref="EavExtraction"/>, re-keyed to applicationId.
@@ -23,8 +23,8 @@ namespace Speckle.Objects.Utils;
 public sealed class ObjectsArtifactPipeline : IDisposable
 {
   private readonly GeometriesParquetWriter _geometriesWriter;
-  private readonly EnvelopeArtifactWriter _envelopeWriter;
-  private readonly CompactEavWriter _eavWriter;
+  private readonly EnvelopeWriter _envelopeWriter;
+  private readonly EavWriter _eavWriter;
   private readonly ISet<string> _excludedProperties;
 
   public ObjectsArtifactPipeline(
@@ -34,8 +34,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   )
   {
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName);
-    _envelopeWriter = new EnvelopeArtifactWriter(outputDir, baseName);
-    _eavWriter = new CompactEavWriter(outputDir, baseName);
+    _envelopeWriter = new EnvelopeWriter(outputDir, baseName);
+    _eavWriter = new EavWriter(outputDir, baseName);
     // Shared canonical exclusion list (Autodesk Material, Document, …) so the
     // binary and envelope eav files drop the same categories.
     _excludedProperties = excludedTopLevelProperties ?? EavExtraction.DefaultExcludedTopLevelProperties;

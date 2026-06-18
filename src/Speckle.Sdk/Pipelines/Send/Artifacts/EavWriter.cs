@@ -22,7 +22,7 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 /// Query path (server, read-only DuckDB): resolve application_id → object_index via
 /// the objects index, then join eav → paths. Not thread-safe: calls are sequential.
 /// </summary>
-public sealed class CompactEavWriter : IDisposable
+public sealed class EavWriter : IDisposable
 {
   private const string MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_MEMORY_LIMIT_MB";
   private const int DEFAULT_MEMORY_LIMIT_MB = 256;
@@ -45,7 +45,7 @@ public sealed class CompactEavWriter : IDisposable
   private int _eavRowsSinceFlush;
   private bool _completed;
 
-  public CompactEavWriter(string outputDir, string baseName)
+  public EavWriter(string outputDir, string baseName)
   {
     Directory.CreateDirectory(outputDir);
     EavDbPath = Path.Combine(outputDir, $"{baseName}.eav.duckdb");

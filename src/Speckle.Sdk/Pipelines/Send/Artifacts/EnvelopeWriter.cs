@@ -12,13 +12,13 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 /// | colour | group | level, …) rather than a single object's geometry. It
 /// replaces the collection/object tree ("no collection, all topology via
 /// proxies"). Geometry blobs live in the sibling
-/// <see cref="GeometriesArtifactWriter"/> (<c>geometries.duckdb</c>); flattened
-/// properties live in <see cref="ApplicationIdEavWriter"/> (<c>eav.duckdb</c>).
+/// <see cref="GeometriesParquetWriter"/> (<c>geometries.parquet</c>); flattened
+/// properties live in <see cref="EavWriter"/> (<c>eav.duckdb</c>).
 ///
 /// Proxies are typically written last, after all geometry, in one tight pass.
 /// Not thread-safe: calls are expected to be sequential.
 /// </summary>
-public sealed class EnvelopeArtifactWriter : IDisposable
+public sealed class EnvelopeWriter : IDisposable
 {
   // Resource governance only — does not affect produced content.
   private const string MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_MEMORY_LIMIT_MB";
@@ -32,7 +32,7 @@ public sealed class EnvelopeArtifactWriter : IDisposable
   private int _rowCount;
   private bool _completed;
 
-  public EnvelopeArtifactWriter(string outputDir, string baseName)
+  public EnvelopeWriter(string outputDir, string baseName)
   {
     Directory.CreateDirectory(outputDir);
     EnvelopeDbPath = Path.Combine(outputDir, $"{baseName}.envelope.duckdb");
