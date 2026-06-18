@@ -41,7 +41,8 @@ public static class EavExtraction
   /// </summary>
   public static readonly ISet<string> DefaultExcludedTopLevelProperties = new HashSet<string>(StringComparer.Ordinal)
   {
-    
+    "Autodesk Material",
+    "Document",
   };
 
   /// <summary>
@@ -57,8 +58,6 @@ public static class EavExtraction
   /// </summary>
   public static readonly ISet<string> RevitExcludedTopLevelProperties = new HashSet<string>(StringComparer.Ordinal)
   {
-    "Autodesk Material",
-    "Document",
     "Line Style",
     "SketchPlane",
     "GeometryCurve",
