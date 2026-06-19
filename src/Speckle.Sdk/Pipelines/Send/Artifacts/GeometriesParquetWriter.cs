@@ -24,8 +24,8 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 /// in-flight row group (flushed on a byte budget). Consumers read it with DuckDB
 /// (<c>SELECT … FROM read_parquet('…')</c>).
 ///
-/// Written UNCOMPRESSED — SGEO blobs are already binary and don't compress. Not
-/// thread-safe: calls are sequential (converter loop). One row per <c>geometryIndex</c>
+/// Written with <c>Zstd</c> compression — fast to compress and DuckDB reads it natively.
+/// Not thread-safe: calls are sequential (converter loop). One row per <c>geometryIndex</c>
 /// (the interner guarantees uniqueness); consumers bulk-scan or build their own index.
 /// </summary>
 public sealed class GeometriesParquetWriter : IDisposable
@@ -80,7 +80,7 @@ public sealed class GeometriesParquetWriter : IDisposable
 
     _stream = new FileStream(GeometriesPath, FileMode.Create, FileAccess.Write, FileShare.None);
     _writer = ParquetWriter.CreateAsync(schema, _stream).GetAwaiter().GetResult();
-    _writer.CompressionMethod = CompressionMethod.None;
+    _writer.CompressionMethod = CompressionMethod.Zstd;
   }
 
   /// <summary>
