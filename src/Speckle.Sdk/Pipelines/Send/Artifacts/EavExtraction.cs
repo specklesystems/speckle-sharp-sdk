@@ -612,6 +612,45 @@ public static class EavExtraction
     }
   }
 
+  private static readonly IReadOnlyDictionary<string, object?> s_emptyRecord = new Dictionary<string, object?>();
+
+  /// <summary>
+  /// Recognises any string-keyed dictionary as a record for the EAV walk — crucially
+  /// including strongly-typed nested dictionaries like
+  /// <c>Dictionary&lt;string, Dictionary&lt;string, object?&gt;&gt;</c> produced by the Revit
+  /// parameter extractor (Instance/Type/System parameter groups). The fast path returns the
+  /// dict as-is; otherwise it normalises a non-generic <see cref="System.Collections.IDictionary"/>
+  /// (string keys) to <c>IReadOnlyDictionary&lt;string, object?&gt;</c>.
+  ///
+  /// Without this, those typed nested dicts fail a plain
+  /// <c>val is IReadOnlyDictionary&lt;string, object?&gt;</c> check (IReadOnlyDictionary is invariant
+  /// in TValue), so the ENTIRE parameter subtree was silently dropped from eav. The fast path keeps
+  /// uniform <c>&lt;string, object?&gt;</c> dictionaries (e.g. Navis) allocation-free and unchanged.
+  /// </summary>
+  private static bool TryAsStringKeyedRecord(object val, out IReadOnlyDictionary<string, object?> record)
+  {
+    switch (val)
+    {
+      case IReadOnlyDictionary<string, object?> r:
+        record = r;
+        return true;
+      case System.Collections.IDictionary d:
+        var map = new Dictionary<string, object?>(d.Count, StringComparer.Ordinal);
+        foreach (System.Collections.DictionaryEntry e in d)
+        {
+          if (e.Key is string k)
+          {
+            map[k] = e.Value;
+          }
+        }
+        record = map;
+        return true;
+      default:
+        record = s_emptyRecord;
+        return false;
+    }
+  }
+
   private static void WalkPropertiesNative(
     string objectId,
     IReadOnlyDictionary<string, object?> obj,
@@ -642,7 +681,7 @@ public static class EavExtraction
 
       var path = prefix + "." + key;
 
-      if (val is IReadOnlyDictionary<string, object?> asRecord)
+      if (TryAsStringKeyedRecord(val, out var asRecord))
       {
         // Parameter pattern { name, value } → single row at this path.
         if (asRecord.ContainsKey("name") && asRecord.TryGetValue("value", out var paramVal))
