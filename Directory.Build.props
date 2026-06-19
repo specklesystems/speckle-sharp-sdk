@@ -53,6 +53,8 @@
       CA1710;CA1711;CA1720;CA1724;
       <!-- Aspirational -->
       CA1502;CA1716;NETSDK1206;
+      <!-- NuGet audit: transitive SQLitePCLRaw.lib.e_sqlite3 advisory GHSA-2m69-gcr7-jv3q, accepted risk -->
+      NU1903;
       $(NoWarn)
     </NoWarn
     >

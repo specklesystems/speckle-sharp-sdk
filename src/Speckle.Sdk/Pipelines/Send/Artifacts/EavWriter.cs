@@ -172,7 +172,14 @@ public sealed class EavWriter : IDisposable
     }
   }
 
-  private int GetOrAddObject(string applicationId)
+  /// <summary>
+  /// Interns <paramref name="applicationId"/> to its dense <c>object_index</c> (the
+  /// object-namespace <c>K</c>), writing the <c>objects</c> dictionary row on first
+  /// sight. Public so the envelope path can resolve the SAME <c>K</c> for an object's
+  /// edges (DISPLAY/SUBELEMENT/ON_LEVEL) that eav assigns it — both share this one
+  /// interner, which is the object-namespace identity guarantee.
+  /// </summary>
+  public int GetOrAddObject(string applicationId)
   {
     if (_objectIndex.TryGetValue(applicationId, out var idx))
     {

@@ -1,5 +1,13 @@
 # Speckle 4.0 — `objects.duckdb`, proxies-as-topology, SGEO
 
+> **⚠️ SUPERSEDED (2026-06-19) for the ENVELOPE shape.** The `envelope.duckdb`
+> `proxies(type, data JSON)` model in this doc is replaced by the dense-int **relations +
+> nodes** property graph specified in `notes/topology-envelope-SOT.md` (Source notes tree).
+> Material/colour/level are value-nodes (not eav attributes); identity is a per-namespace
+> dense `int32`; `geometries.parquet` is now int-keyed (`geometryIndex`). The eav and SGEO
+> decisions below still hold. Do NOT build the `proxies` table from this doc — the
+> `EnvelopeWriter` now writes `relations`/`nodes`.
+
 > Extension of [Speckle-4.0-Plan.md](../../Speckle-4.0-Plan.md). Captures the
 > Integrations Board model: the artifact set is reframed, and the
 > "no collection — all topology via proxies", "no speckle id / no `__closure` /

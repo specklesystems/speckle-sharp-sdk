@@ -8,24 +8,25 @@ using Parquet.Schema;
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
 /// <summary>
-/// Writes the Speckle 4.0 <c>geometries.parquet</c> artifact client-side: one row
-/// per unique geometry buffer — <c>(applicationId, content, id, type)</c> — exactly
-/// the shape of the former DuckDB <c>geometries</c> table, but as a plain Parquet
-/// file instead of a transactional database.
+/// Writes the Speckle 4.0 <c>geometries.parquet</c> artifact client-side: one row per
+/// mesh — <c>(geometryIndex, content, id, type)</c>. <c>geometryIndex</c> is the dense
+/// geometry-namespace <c>K</c> (minted by the caller's geometry <see cref="IdInterner"/>),
+/// which the envelope's <c>DISPLAY</c>/<c>DEFINES</c>/<c>HAS_MATERIAL</c> edges reference —
+/// pure int, no <c>applicationId</c> strings. <c>id</c> is the SHA256 of the blob, kept as
+/// a column for READ-TIME shape dedup (the server builder / viewer collapses identical
+/// shapes into one GPU buffer); we do NOT content-dedup at write time, so a per-mesh row
+/// stays addressable and its material bindable.
 ///
-/// Why Parquet and not DuckDB: storing opaque mesh blobs in DuckDB drove its write
-/// engine (WAL + checkpoints + transaction manager + ART index) into OOMs and an
-/// internal checkpoint assertion at scale. Parquet is a passive columnar file — we
-/// append row groups and close. No WAL, no checkpoints, no index build: that whole
-/// failure class is structurally impossible. Memory is bounded by the in-flight row
-/// group (flushed on a byte budget), so a single huge mesh costs only its own size,
-/// with no compounding. Consumers still read it with DuckDB (read-only is rock
-/// solid: <c>SELECT … FROM read_parquet('…')</c>).
+/// Why Parquet and not DuckDB: storing opaque mesh blobs in DuckDB drove its write engine
+/// (WAL + checkpoints + transaction manager + ART index) into OOMs and an internal
+/// checkpoint assertion at scale. Parquet is a passive columnar file — we append row
+/// groups and close. No WAL, no checkpoints, no index build. Memory is bounded by the
+/// in-flight row group (flushed on a byte budget). Consumers read it with DuckDB
+/// (<c>SELECT … FROM read_parquet('…')</c>).
 ///
-/// Written UNCOMPRESSED — SGEO blobs are already binary and don't compress, and it
-/// keeps us off Snappy entirely. Not thread-safe: calls are sequential (converter
-/// loop). No PRIMARY KEY/index: uniqueness of (applicationId, id) is guaranteed by
-/// the in-memory dedup, and consumers bulk-scan or build their own index on read.
+/// Written UNCOMPRESSED — SGEO blobs are already binary and don't compress. Not
+/// thread-safe: calls are sequential (converter loop). One row per <c>geometryIndex</c>
+/// (the interner guarantees uniqueness); consumers bulk-scan or build their own index.
 /// </summary>
 public sealed class GeometriesParquetWriter : IDisposable
 {
@@ -42,15 +43,15 @@ public sealed class GeometriesParquetWriter : IDisposable
 
   private readonly Stream _stream;
   private readonly ParquetWriter _writer;
-  private readonly DataField _appIdField;
+  private readonly DataField _indexField;
   private readonly DataField _contentField;
   private readonly DataField _idField;
   private readonly DataField _typeField;
   private readonly long _flushBytes;
-  private readonly HashSet<string> _seenGeometry = new();
+  private readonly HashSet<int> _seenGeometry = new();
 
   // In-flight row-group buffers (parallel lists, one entry per row).
-  private readonly List<string> _appIds = new();
+  private readonly List<int> _indices = new();
   private readonly List<byte[]> _contents = new();
   private readonly List<string> _ids = new();
   private readonly List<string> _types = new();
@@ -66,13 +67,13 @@ public sealed class GeometriesParquetWriter : IDisposable
     _flushBytes = ResolveMbEnvVar(ROWGROUP_MB_ENV_VAR, DEFAULT_ROWGROUP_MB) * 1024L * 1024L;
 
     var schema = new ParquetSchema(
-      new DataField<string>("applicationId"),
+      new DataField<int>("geometryIndex"),
       new DataField<byte[]>("content"),
       new DataField<string>("id"),
       new DataField<string>("type")
     );
     var fields = schema.DataFields;
-    _appIdField = fields[0];
+    _indexField = fields[0];
     _contentField = fields[1];
     _idField = fields[2];
     _typeField = fields[3];
@@ -83,11 +84,12 @@ public sealed class GeometriesParquetWriter : IDisposable
   }
 
   /// <summary>
-  /// Adds one SGEO geometry buffer for <paramref name="applicationId"/>. The row's
-  /// <c>id</c> is the SHA256 of the blob (dedup key) and <c>type</c> is read from the
-  /// SGEO header. A repeated (applicationId, id) pair is written once.
+  /// Adds one SGEO geometry buffer under its dense <paramref name="geometryIndex"/>. The
+  /// row's <c>id</c> is the SHA256 of the blob (read-time dedup column) and <c>type</c> is
+  /// read from the SGEO header. A repeated <paramref name="geometryIndex"/> is written once
+  /// (the caller's interner should already only emit on first sight).
   /// </summary>
-  public void AddGeometry(string applicationId, byte[] sgeo)
+  public void AddGeometry(int geometryIndex, byte[] sgeo)
   {
     if (_completed)
     {
@@ -97,20 +99,19 @@ public sealed class GeometriesParquetWriter : IDisposable
     {
       throw new ArgumentException("Buffer is not a valid SGEO blob.", nameof(sgeo));
     }
-
-    string id = Convert.ToHexString(SHA256.HashData(sgeo)).ToLowerInvariant();
-    if (!_seenGeometry.Add($"{applicationId} {id}"))
+    if (!_seenGeometry.Add(geometryIndex))
     {
       return;
     }
 
-    _appIds.Add(applicationId);
+    string id = Convert.ToHexString(SHA256.HashData(sgeo)).ToLowerInvariant();
+    _indices.Add(geometryIndex);
     _contents.Add(sgeo);
     _ids.Add(id);
     _types.Add(PrimitiveTypeName(sgeo[5]));
     _bufferedBytes += sgeo.Length;
 
-    if (_bufferedBytes >= _flushBytes || _appIds.Count >= MAX_ROWS_PER_GROUP)
+    if (_bufferedBytes >= _flushBytes || _indices.Count >= MAX_ROWS_PER_GROUP)
     {
       FlushRowGroup();
     }
@@ -135,17 +136,17 @@ public sealed class GeometriesParquetWriter : IDisposable
   // Serializes the buffered rows as one Parquet row group and frees the buffers.
   private void FlushRowGroup()
   {
-    if (_appIds.Count == 0)
+    if (_indices.Count == 0)
     {
       return;
     }
     using var rowGroup = _writer.CreateRowGroup();
-    rowGroup.WriteColumnAsync(new DataColumn(_appIdField, _appIds.ToArray())).GetAwaiter().GetResult();
+    rowGroup.WriteColumnAsync(new DataColumn(_indexField, _indices.ToArray())).GetAwaiter().GetResult();
     rowGroup.WriteColumnAsync(new DataColumn(_contentField, _contents.ToArray())).GetAwaiter().GetResult();
     rowGroup.WriteColumnAsync(new DataColumn(_idField, _ids.ToArray())).GetAwaiter().GetResult();
     rowGroup.WriteColumnAsync(new DataColumn(_typeField, _types.ToArray())).GetAwaiter().GetResult();
 
-    _appIds.Clear();
+    _indices.Clear();
     _contents.Clear();
     _ids.Clear();
     _types.Clear();
