@@ -4,32 +4,81 @@ using DuckDB.NET.Data;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
+/// <summary>Edge kinds in <see cref="EnvelopeWriter"/>'s <c>relations</c> table.
+/// The <c>rel</c> fixes the identity namespace of <c>src</c>/<c>dst</c> (see
+/// <c>notes/topology-envelope-SOT.md</c> §2): object / geometry / node.</summary>
+public static class RelKind
+{
+  /// <summary>object → geometry. Direct renderable geometry (world-coord mesh). <c>ord</c> = fragment.</summary>
+  public const byte Display = 1;
+
+  /// <summary>object → node(INSTANCE). Renderable via a placement (transform + definition). <c>ord</c> = fragment.
+  /// Distinct from <see cref="Display"/> so <c>dst</c>'s namespace (geometry vs node) is unambiguous —
+  /// node and geometry ids are separate per-namespace counters and would otherwise collide.</summary>
+  public const byte DisplayInstance = 8;
+
+  /// <summary>object → geometry. Authoritative solid (Brep/Solid).</summary>
+  public const byte Solid = 2;
+
+  /// <summary>object → object. Host→hosted nesting (curtain wall → panels).</summary>
+  public const byte Subelement = 3;
+
+  /// <summary>node(DEFINITION) → geometry | node(nested INSTANCE). Definition membership.</summary>
+  public const byte Defines = 4;
+
+  /// <summary>geometry → node(MATERIAL). Per-mesh render material.</summary>
+  public const byte HasMaterial = 5;
+
+  /// <summary>geometry | object → node(COLOR). Display colour.</summary>
+  public const byte HasColor = 6;
+
+  /// <summary>object → node(LEVEL). Level membership.</summary>
+  public const byte OnLevel = 7;
+}
+
+/// <summary>Value-node kinds in <see cref="EnvelopeWriter"/>'s <c>nodes</c> table.</summary>
+public static class NodeKind
+{
+  public const byte Definition = 1;
+  public const byte Instance = 2;
+  public const byte Material = 3;
+  public const byte Color = 4;
+  public const byte Level = 5;
+}
+
 /// <summary>
-/// Writes the Speckle 4.0 <c>envelope.duckdb</c> artifact client-side: the
-/// <c>proxies</c> table from the Integrations Board model (see
-/// <c>plans/speckle-4.0/objects-duckdb-proxies-sgeo.md</c>). This is the lean
-/// topology file — relationships between objects (instanceDef | layer | material
-/// | colour | group | level, …) rather than a single object's geometry. It
-/// replaces the collection/object tree ("no collection, all topology via
-/// proxies"). Geometry blobs live in the sibling
-/// <see cref="GeometriesParquetWriter"/> (<c>geometries.parquet</c>); flattened
-/// properties live in <see cref="EavWriter"/> (<c>eav.duckdb</c>).
+/// Writes the Speckle 4.0 <c>envelope.duckdb</c> artefact client-side — the topology
+/// property graph from <c>notes/topology-envelope-SOT.md</c>. Two tables, pure dense
+/// <c>int32</c> identity (no <c>applicationId</c> strings):
+/// <code>
+///   relations(rel, src, dst, ord)   -- typed edges; src/dst namespace is rel-determined
+///   nodes(id, kind, name, def_ref,  -- shared value-entities (definition / instance /
+///         transform, units, argb,      material / colour / level), sparse per kind
+///         opacity, metalness, roughness, elevation)
+/// </code>
+/// Supersedes the old <c>proxies(type, data JSON)</c> shape. Material/colour/level are
+/// value-nodes here (not eav attributes): they bind to objects OR meshes, and meshes are
+/// not eav entities. Geometry blobs live in <see cref="GeometriesParquetWriter"/>;
+/// per-object labels + the identity dictionary live in <see cref="EavWriter"/>.
 ///
-/// Proxies are typically written last, after all geometry, in one tight pass.
-/// Not thread-safe: calls are expected to be sequential.
+/// All <c>src</c>/<c>dst</c>/<c>id</c> values are dense ints minted by the caller's
+/// per-namespace <see cref="IdInterner"/>s. <c>transform</c> is 16 row-major doubles,
+/// comma-separated (invariant culture). Not thread-safe: calls are sequential.
 /// </summary>
 public sealed class EnvelopeWriter : IDisposable
 {
   // Resource governance only — does not affect produced content.
   private const string MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_MEMORY_LIMIT_MB";
   private const int DEFAULT_MEMORY_LIMIT_MB = 256;
-  private const int APPENDER_RECYCLE_INTERVAL = 10_000;
+  private const int APPENDER_RECYCLE_INTERVAL = 25_000;
 
   public string EnvelopeDbPath { get; }
 
   private readonly DuckDBConnection _db;
-  private DuckDBAppender _proxiesAppender;
-  private int _rowCount;
+  private DuckDBAppender _relationsAppender;
+  private DuckDBAppender _nodesAppender;
+  private int _relRowsSinceFlush;
+  private int _nodeRowsSinceFlush;
   private bool _completed;
 
   public EnvelopeWriter(string outputDir, string baseName)
@@ -46,32 +95,81 @@ public sealed class EnvelopeWriter : IDisposable
       _db,
       FormattableString.Invariant($"SET memory_limit='{memoryLimitMb}MB'"),
       "SET threads=4",
-      "CREATE TABLE proxies (type VARCHAR NOT NULL, data JSON NOT NULL)"
+      "CREATE TABLE relations (rel INTEGER NOT NULL, src INTEGER NOT NULL, dst INTEGER NOT NULL, ord INTEGER NOT NULL)",
+      @"CREATE TABLE nodes (
+        id INTEGER NOT NULL,
+        kind INTEGER NOT NULL,
+        name VARCHAR,
+        def_ref INTEGER,
+        transform VARCHAR,
+        units VARCHAR,
+        argb INTEGER,
+        opacity DOUBLE,
+        metalness DOUBLE,
+        roughness DOUBLE,
+        elevation DOUBLE
+      )"
     );
-    _proxiesAppender = _db.CreateAppender("proxies");
+    _relationsAppender = _db.CreateAppender("relations");
+    _nodesAppender = _db.CreateAppender("nodes");
   }
 
-  /// <summary>
-  /// Adds one proxy row. <paramref name="type"/> is one of the board's proxy
-  /// kinds (instanceDef | layer | material | colour | group | level);
-  /// <paramref name="dataJson"/> is the per-type JSON envelope.
-  /// </summary>
-  public void AddProxy(string type, string dataJson)
+  /// <summary>Appends one typed edge. <paramref name="src"/>/<paramref name="dst"/> are
+  /// dense ids in the namespaces fixed by <paramref name="rel"/> (see <see cref="RelKind"/>).</summary>
+  public void AddRelation(byte rel, int src, int dst, int ord)
   {
-    if (_completed)
+    EnsureNotCompleted();
+    _relationsAppender.CreateRow().AppendValue((int)rel).AppendValue(src).AppendValue(dst).AppendValue(ord).EndRow();
+    if (++_relRowsSinceFlush >= APPENDER_RECYCLE_INTERVAL)
     {
-      throw new InvalidOperationException("Writer already completed.");
+      _relationsAppender.Dispose();
+      _relationsAppender = _db.CreateAppender("relations");
+      _relRowsSinceFlush = 0;
     }
-    _proxiesAppender.CreateRow().AppendValue(type).AppendValue(dataJson).EndRow();
-    if (++_rowCount % APPENDER_RECYCLE_INTERVAL == 0)
+  }
+
+  /// <summary>Appends one value-node. Only the columns relevant to
+  /// <paramref name="kind"/> are non-null (see <see cref="NodeKind"/>).</summary>
+  public void AddNode(
+    int id,
+    byte kind,
+    string? name,
+    int? defRef,
+    string? transform,
+    string? units,
+    int? argb,
+    double? opacity,
+    double? metalness,
+    double? roughness,
+    double? elevation
+  )
+  {
+    EnsureNotCompleted();
+    _nodesAppender
+      .CreateRow()
+      .AppendValue(id)
+      .AppendValue((int)kind)
+      .AppendValue(name)
+      .AppendValue(defRef)
+      .AppendValue(transform)
+      .AppendValue(units)
+      .AppendValue(argb)
+      .AppendValue(opacity)
+      .AppendValue(metalness)
+      .AppendValue(roughness)
+      .AppendValue(elevation)
+      .EndRow();
+    if (++_nodeRowsSinceFlush >= APPENDER_RECYCLE_INTERVAL)
     {
-      RecycleAppender();
+      _nodesAppender.Dispose();
+      _nodesAppender = _db.CreateAppender("nodes");
+      _nodeRowsSinceFlush = 0;
     }
   }
 
   /// <summary>
-  /// Flushes the appender, checkpoints, and closes the connection so the file
-  /// can be uploaded immediately (releases the DuckDB lock).
+  /// Flushes the appenders, checkpoints, and closes the connection so the file can be
+  /// uploaded immediately (releases the DuckDB lock).
   /// </summary>
   public void Complete()
   {
@@ -81,20 +179,22 @@ public sealed class EnvelopeWriter : IDisposable
     }
     _completed = true;
 
-    // Disposing the appender flushes the final batch; disposing the connection
-    // checkpoints the WAL into the file. No explicit CHECKPOINT — it overlaps the
-    // appender's dispose-flush checkpoint and can trip a DuckDB internal assertion
-    // ("active_checkpoint was already set"). Let close own the single checkpoint.
-    _proxiesAppender.Dispose();
+    // Disposing the appenders flushes the final batch; disposing the connection
+    // checkpoints the WAL into the file. No explicit CHECKPOINT — let close own the
+    // single checkpoint (an explicit one can trip a DuckDB internal assertion).
+    _relationsAppender.Dispose();
+    _nodesAppender.Dispose();
     _db.Dispose();
   }
 
   public void Dispose() => Complete();
 
-  private void RecycleAppender()
+  private void EnsureNotCompleted()
   {
-    _proxiesAppender.Dispose();
-    _proxiesAppender = _db.CreateAppender("proxies");
+    if (_completed)
+    {
+      throw new InvalidOperationException("Writer already completed.");
+    }
   }
 
   [System.Diagnostics.CodeAnalysis.SuppressMessage(
