@@ -2,21 +2,18 @@ using System.Drawing;
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Point = Speckle.Sdk.Tests.Unit.Host.Point;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class ObjectSerialization
 {
   private readonly IOperations _operations;
 
   public ObjectSerialization()
   {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(DataChunk).Assembly, typeof(ColorMock).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

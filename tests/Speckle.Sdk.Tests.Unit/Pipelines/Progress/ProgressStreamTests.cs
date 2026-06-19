@@ -33,14 +33,17 @@ public class ProgressStreamTests : IDisposable
     // Arrange
     var buffer = new byte[10];
     _innerStreamMock
-      .Setup(s => s.ReadAsync(buffer, 0, buffer.Length, CancellationToken.None))
+      .Setup(s => s.ReadAsync(buffer, 0, buffer.Length, TestContext.Current.CancellationToken))
       .Returns(Task.FromResult(5));
 
     // Act
     _ = await _sut.ReadAsync(buffer, 0, buffer.Length, TestContext.Current.CancellationToken);
 
     // Assert - Inner Stream Read was called
-    _innerStreamMock.Verify(s => s.ReadAsync(buffer, 0, buffer.Length, CancellationToken.None), Times.Once);
+    _innerStreamMock.Verify(
+      s => s.ReadAsync(buffer, 0, buffer.Length, TestContext.Current.CancellationToken),
+      Times.Once
+    );
 
     // Assert - Progress Report was called with the correct byte count
     _progressMock.Verify(p => p.Report(It.IsAny<StreamProgressArgs>()), Times.Once);
@@ -52,14 +55,17 @@ public class ProgressStreamTests : IDisposable
     // Arrange
     var buffer = new byte[10];
     _innerStreamMock
-      .Setup(s => s.WriteAsync(buffer, 0, buffer.Length, CancellationToken.None))
+      .Setup(s => s.WriteAsync(buffer, 0, buffer.Length, TestContext.Current.CancellationToken))
       .Returns(Task.FromResult(5));
 
     // Act
     await _sut.WriteAsync(buffer, 0, buffer.Length, TestContext.Current.CancellationToken);
 
     // Assert - Inner Stream Write was called
-    _innerStreamMock.Verify(s => s.WriteAsync(buffer, 0, buffer.Length, CancellationToken.None), Times.Once);
+    _innerStreamMock.Verify(
+      s => s.WriteAsync(buffer, 0, buffer.Length, TestContext.Current.CancellationToken),
+      Times.Once
+    );
 
     // Assert - Progress Report was called with the correct byte count
     _progressMock.Verify(p => p.Report(It.IsAny<StreamProgressArgs>()), Times.Once);

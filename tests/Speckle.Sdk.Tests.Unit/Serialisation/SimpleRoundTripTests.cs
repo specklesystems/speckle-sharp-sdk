@@ -1,20 +1,17 @@
 ﻿using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class SimpleRoundTripTests
 {
   private readonly IOperations _operations;
 
   public SimpleRoundTripTests()
   {
-    TypeLoader.ReInitialize(typeof(DiningTable).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

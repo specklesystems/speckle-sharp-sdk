@@ -1,10 +1,7 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
-using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
@@ -14,7 +11,6 @@ namespace Speckle.Sdk.Tests.Unit.Serialisation;
 /// This doesn't guarantee things work this way for SpecklePy
 /// Nor does it encompass other tricks (like deserialize callback, or computed json ignored properties)
 /// </summary>
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class SerializerBreakingChanges : PrimitiveTestFixture
 {
   private readonly IOperations _operations;
@@ -22,7 +18,6 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   // xUnit does not support a Setup method; instead, you can use the constructor for initialization.
   public SerializerBreakingChanges()
   {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(Point).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
@@ -39,7 +34,7 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
   }
 
   [Theory]
-  [MemberData(nameof(MyEnums))] // Replaces [TestCaseSource(nameof(MyEnums))]
+  [MemberData(nameof(MyEnums))]
   public async Task StringToEnum_ShouldThrow(MyEnum testCase)
   {
     var from = new StringValueMock { value = testCase.ToString() };
@@ -52,7 +47,7 @@ public class SerializerBreakingChanges : PrimitiveTestFixture
 
   [Theory(DisplayName = "Deserialization of a JTokenType.Float to a .NET short/int/long should throw exception")]
   [MemberData(nameof(Float64TestCases))]
-  [InlineData(1e+30)] // Inline test case replaces [TestCase(1e+30)]
+  [InlineData(1e+30)]
   public async Task DoubleToInt_ShouldThrow(double testCase)
   {
     var from = new DoubleValueMock { value = testCase };

@@ -1,20 +1,17 @@
 ﻿using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class SendObjectReferences
 {
   private readonly IOperations _operations;
 
   public SendObjectReferences()
   {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

@@ -3,21 +3,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class Closures
 {
   private readonly IOperations _operations;
 
   public Closures()
   {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }

@@ -1,18 +1,11 @@
 using AwesomeAssertions;
 using Microsoft.CSharp.RuntimeBinder;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class DynamicBaseTests
 {
-  public DynamicBaseTests()
-  {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(BaseTests).Assembly);
-  }
-
   [Fact]
   public void Indexer_SetAndGet()
   {
