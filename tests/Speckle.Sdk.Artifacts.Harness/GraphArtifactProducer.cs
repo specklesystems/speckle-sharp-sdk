@@ -146,51 +146,57 @@ public static class GraphArtifactProducer
     pipeline.AddProperties(appId, props, rootScalars, typeKey);
 
     // SOT §1 — atomic is type-agnostic; dispatch on the leaf shape:
-    switch (obj)
+    if (obj is InstanceProxy ip)
     {
-      case InstanceProxy ip:
-        // instance-atomic: the leaf IS a placement → object DISPLAY_INSTANCEs its own INSTANCE node.
-        var instK = ResolveInstanceNode(pipeline, ip, instanceNodeByAppId);
-        pipeline.DisplayInstance(objK, instK, 0);
-        stats.DisplayInstanceEdges++;
-        stats.InstanceAtomics++;
-        break;
-
-      case { } g when IsGeometry(g):
-        // mesh-atomic: the leaf IS the geometry → DISPLAY(object-K → its own geometry-K). The appId
-        // interns into BOTH the object and geometry namespaces (separate counters, no collision).
-        if (TryAddGeometry(pipeline, appId, g, stats, seenGeometryAppIds))
-        {
-          pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
-          stats.DisplayEdges++;
-          stats.MeshAtomics++;
-        }
-        break;
-
-      default:
-        // dataobject-atomic: references its geometry/instances via displayValue (as today).
-        int ord = 0;
-        foreach (var item in GetBaseList(obj, "displayValue"))
-        {
-          if (item is InstanceProxy dip)
-          {
-            var dInstK = ResolveInstanceNode(pipeline, dip, instanceNodeByAppId);
-            pipeline.DisplayInstance(objK, dInstK, ord++);
-            stats.DisplayInstanceEdges++;
-          }
-          else
-          {
-            var gAppId = GeometryKey(item);
-            if (TryAddGeometry(pipeline, gAppId, item, stats, seenGeometryAppIds))
-            {
-              pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
-              stats.DisplayEdges++;
-            }
-          }
-        }
-        break;
+      // instance-atomic: the leaf IS a placement → object DISPLAY_INSTANCEs its own INSTANCE node.
+      var instK = ResolveInstanceNode(pipeline, ip, instanceNodeByAppId);
+      pipeline.DisplayInstance(objK, instK, 0);
+      stats.DisplayInstanceEdges++;
+      stats.InstanceAtomics++;
+      return objK;
     }
 
+    // A leaf that carries displayValue references its geometry there — covers DataObjects AND geometry
+    // leaves that aren't directly SGEO-encodable but ship a display mesh (Rhino BrepX/SubD, extrusions…).
+    // Checked BEFORE the raw-geometry case so we encode the display mesh, not the un-encodable parent.
+    var displayValue = GetBaseList(obj, "displayValue").ToList();
+    if (displayValue.Count > 0)
+    {
+      int ord = 0;
+      foreach (var item in displayValue)
+      {
+        if (item is InstanceProxy dip)
+        {
+          var dInstK = ResolveInstanceNode(pipeline, dip, instanceNodeByAppId);
+          pipeline.DisplayInstance(objK, dInstK, ord++);
+          stats.DisplayInstanceEdges++;
+        }
+        else
+        {
+          var gAppId = GeometryKey(item);
+          if (TryAddGeometry(pipeline, gAppId, item, stats, seenGeometryAppIds))
+          {
+            pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
+            stats.DisplayEdges++;
+          }
+        }
+      }
+      return objK;
+    }
+
+    if (IsGeometry(obj))
+    {
+      // mesh-atomic: the leaf IS the geometry → DISPLAY(object-K → its own geometry-K). The appId interns
+      // into BOTH the object and geometry namespaces (separate counters, no collision).
+      if (TryAddGeometry(pipeline, appId, obj, stats, seenGeometryAppIds))
+      {
+        pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
+        stats.DisplayEdges++;
+        stats.MeshAtomics++;
+      }
+    }
+
+    // else: a non-geometry leaf with no displayValue — an eav object with no renderable geometry.
     return objK;
   }
 
@@ -286,9 +292,10 @@ public static class GraphArtifactProducer
     {
       return;
     }
-    var geometry = IsGeometry(obj)
-      ? obj
-      : GetBaseList(obj, "displayValue").FirstOrDefault(d => d is not InstanceProxy);
+    // Prefer a display mesh (encodable) over the parent geometry, which may be an un-encodable Brep/SubD.
+    var geometry =
+      GetBaseList(obj, "displayValue").FirstOrDefault(d => d is not InstanceProxy)
+      ?? (IsGeometry(obj) ? obj : null);
     if (geometry is null)
     {
       seenGeometryAppIds.Remove(appId);
