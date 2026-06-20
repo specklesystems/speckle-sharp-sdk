@@ -116,8 +116,12 @@ public static class GraphArtifactProducer
       _ = parent;
     }
 
+    // layer/collection appId → the geometry of all its descendant objects — for ByLayer material/colour
+    // (CAD proxies reference a Layer; resolve the walk-up at PRODUCE so the consumer stays flat).
+    var layerGeomKeys = BuildLayerGeomKeys(root, objectDisplayGeomKeys);
+
     // 2) Value-nodes + their edges, from the root collection's proxy arrays.
-    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
+    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, layerGeomKeys);
 
     stats.Geometries = seenGeometryAppIds.Count;
 
@@ -352,9 +356,64 @@ public static class GraphArtifactProducer
     HashSet<string> seenObjectAppIds,
     HashSet<string> seenGeometryAppIds,
     Dictionary<string, int> instanceNodeByAppId,
-    Dictionary<string, List<string>> objectDisplayGeomKeys
+    Dictionary<string, List<string>> objectDisplayGeomKeys,
+    Dictionary<string, List<string>> layerGeomKeys
   )
   {
+    // DIRECT resolve of a proxy ref: (1) names the mesh; (2) names a DataObject → its display meshes.
+    // NOT the layer tier — that's applied second, with lower precedence, in BindWithPrecedence.
+    IReadOnlyList<string> DirectGeomKeys(string refAppId)
+    {
+      if (seenGeometryAppIds.Contains(refAppId))
+      {
+        return new[] { refAppId };
+      }
+      if (objectDisplayGeomKeys.TryGetValue(refAppId, out var og))
+      {
+        return og;
+      }
+      return System.Array.Empty<string>();
+    }
+
+    // Bind nodes (material/colour) to geometry with CAD walk-up precedence: a DIRECT (mesh/object) ref
+    // claims a geometry first; a Layer ref then fills only geometry not already directly claimed — so an
+    // object's own colour overrides its layer's. Returns geomAppId → nodeK (deduped: one per mesh).
+    Dictionary<string, int> BindWithPrecedence(List<(int nodeK, List<string> refs)> proxies, out int skipped)
+    {
+      var byGeom = new Dictionary<string, int>(StringComparer.Ordinal);
+      var skip = 0;
+      foreach (var (nodeK, refs) in proxies)
+      {
+        foreach (var r in refs)
+        {
+          var direct = DirectGeomKeys(r);
+          if (direct.Count == 0 && !layerGeomKeys.ContainsKey(r))
+          {
+            skip++;
+          }
+          foreach (var gk in direct)
+          {
+            byGeom.TryAdd(gk, nodeK);
+          }
+        }
+      }
+      foreach (var (nodeK, refs) in proxies)
+      {
+        foreach (var r in refs)
+        {
+          if (layerGeomKeys.TryGetValue(r, out var lg))
+          {
+            foreach (var gk in lg)
+            {
+              byGeom.TryAdd(gk, nodeK);
+            }
+          }
+        }
+      }
+      skipped = skip;
+      return byGeom;
+    }
+
     // Definitions: members are either raw geometry → DEFINES (rel 4, → geometry), or nested instances →
     // DEFINES_INSTANCE (rel 9, → INSTANCE node). The rel fixes the dst namespace (gap 2).
     foreach (var def in GetBaseList(root, "instanceDefinitionProxies"))
@@ -386,8 +445,9 @@ public static class GraphArtifactProducer
       }
     }
 
-    // Materials: HAS_MATERIAL(mesh → material), per-mesh (SOT Fact 2). objects[] may name the mesh directly
-    // (BIM) OR the OBJECT (Navis/CAD object-grained) — in the latter case bind to the object's display meshes.
+    // Materials: HAS_MATERIAL(mesh → material), per-mesh, deduped with object>layer precedence. objects[]
+    // may name the mesh (BIM), the OBJECT (object-grained), or a Layer (ByLayer, resolved at produce).
+    var matProxies = new List<(int, List<string>)>();
     foreach (var mat in GetBaseList(root, "renderMaterialProxies"))
     {
       if (mat is not RenderMaterialProxy rmp)
@@ -395,58 +455,34 @@ public static class GraphArtifactProducer
         continue;
       }
       var v = rmp.value;
-      var matK = pipeline.AddMaterial(MaterialKey(rmp), v.diffuse, v.opacity, v.metalness, v.roughness);
+      matProxies.Add((pipeline.AddMaterial(MaterialKey(rmp), v.diffuse, v.opacity, v.metalness, v.roughness), rmp.objects));
       stats.Materials++;
-      foreach (var refAppId in rmp.objects)
-      {
-        if (seenGeometryAppIds.Contains(refAppId))
-        {
-          // per-mesh: ref names the mesh directly.
-          pipeline.HasMaterial(pipeline.InternGeometryId(refAppId), matK);
-          stats.HasMaterialEdges++;
-        }
-        else if (objectDisplayGeomKeys.TryGetValue(refAppId, out var geomKeys))
-        {
-          // object-grained: ref names a DataObject → bind to each of its display meshes.
-          foreach (var gk in geomKeys)
-          {
-            pipeline.HasMaterial(pipeline.InternGeometryId(gk), matK);
-            stats.HasMaterialEdges++;
-          }
-        }
-        else
-        {
-          stats.SkippedMaterial++; // genuinely not in the bundle.
-        }
-      }
+    }
+    var matBindings = BindWithPrecedence(matProxies, out var matSkipped);
+    stats.SkippedMaterial += matSkipped;
+    foreach (var (geomAppId, matK) in matBindings)
+    {
+      pipeline.HasMaterial(pipeline.InternGeometryId(geomAppId), matK);
+      stats.HasMaterialEdges++;
     }
 
-    // Colors: HAS_COLOR(object|mesh → color). Resolve to whichever namespace the ref lives in.
+    // Colors: HAS_COLOR(mesh → colour), per-mesh — same 3-tier resolve + object>layer precedence.
+    var colProxies = new List<(int, List<string>)>();
     foreach (var col in GetBaseList(root, "colorProxies"))
     {
       if (col is not ColorProxy cp)
       {
         continue;
       }
-      var colK = pipeline.AddColor(cp.value);
+      colProxies.Add((pipeline.AddColor(cp.value), cp.objects));
       stats.Colors++;
-      foreach (var refAppId in cp.objects)
-      {
-        if (seenObjectAppIds.Contains(refAppId))
-        {
-          pipeline.HasColor(pipeline.InternObject(refAppId), colK);
-          stats.HasColorEdges++;
-        }
-        else if (seenGeometryAppIds.Contains(refAppId))
-        {
-          pipeline.HasColor(pipeline.InternGeometryId(refAppId), colK);
-          stats.HasColorEdges++;
-        }
-        else
-        {
-          stats.SkippedColor++;
-        }
-      }
+    }
+    var colBindings = BindWithPrecedence(colProxies, out var colSkipped);
+    stats.SkippedColor += colSkipped;
+    foreach (var (geomAppId, colK) in colBindings)
+    {
+      pipeline.HasColor(pipeline.InternGeometryId(geomAppId), colK);
+      stats.HasColorEdges++;
     }
 
     // Levels: ON_LEVEL(object → level). Generic read (no strong-typed LevelProxy in the SDK).
@@ -509,6 +545,54 @@ public static class GraphArtifactProducer
       foreach (var child in ChildContainers(node))
       {
         stack.Push((child, node));
+      }
+    }
+  }
+
+  // layer/collection appId → the display-geometry appIds of every object beneath it (any depth). Lets a
+  // ByLayer material/colour proxy (which references a Layer) bind to that layer's objects' meshes — the
+  // CAD "walk up to the layer's colour" resolved once at produce, keeping the envelope flat.
+  private static Dictionary<string, List<string>> BuildLayerGeomKeys(
+    Base root,
+    Dictionary<string, List<string>> objectDisplayGeomKeys
+  )
+  {
+    var result = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+    void Walk(Base node)
+    {
+      foreach (var child in ChildContainers(node))
+      {
+        if (child is Collection)
+        {
+          var geoms = new List<string>();
+          CollectDescendantGeom(child, objectDisplayGeomKeys, geoms);
+          if (geoms.Count > 0)
+          {
+            result[Aid(child)] = geoms;
+          }
+          Walk(child);
+        }
+      }
+    }
+    Walk(root);
+    return result;
+  }
+
+  private static void CollectDescendantGeom(
+    Base collection,
+    Dictionary<string, List<string>> objectDisplayGeomKeys,
+    List<string> acc
+  )
+  {
+    foreach (var child in ChildContainers(collection))
+    {
+      if (child is Collection)
+      {
+        CollectDescendantGeom(child, objectDisplayGeomKeys, acc);
+      }
+      else if (objectDisplayGeomKeys.TryGetValue(Aid(child), out var gks))
+      {
+        acc.AddRange(gks);
       }
     }
   }
