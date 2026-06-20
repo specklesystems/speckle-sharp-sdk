@@ -72,6 +72,9 @@ public sealed class EnvelopeWriter : IDisposable
   private const int DEFAULT_MEMORY_LIMIT_MB = 256;
   private const int APPENDER_RECYCLE_INTERVAL = 25_000;
 
+  /// <summary>Bumped when the relations/nodes/catalog schema changes (written to <c>meta</c>).</summary>
+  private const int SCHEMA_VERSION = 1;
+
   public string EnvelopeDbPath { get; }
 
   private readonly DuckDBConnection _db;
@@ -108,7 +111,25 @@ public sealed class EnvelopeWriter : IDisposable
         metalness DOUBLE,
         roughness DOUBLE,
         elevation DOUBLE
-      )"
+      )",
+      // Self-describing catalog (notes/topology-envelope-SOT.md §6): the rel/kind vocabulary travels
+      // IN the artefact so a generic consumer learns meaning + namespaces without our source, and can
+      // skip unknown rels/kinds gracefully. rel/kind stay compact ints in the hot tables.
+      $"CREATE TABLE meta (schema_version INTEGER NOT NULL, produced_by VARCHAR)",
+      $"INSERT INTO meta VALUES ({SCHEMA_VERSION}, 'Speckle.Sdk EnvelopeWriter')",
+      "CREATE TABLE rel_types (rel INTEGER PRIMARY KEY, name VARCHAR, src_ns VARCHAR, dst_ns VARCHAR)",
+      @"INSERT INTO rel_types VALUES
+        (1,'DISPLAY','object','geometry'),
+        (2,'SOLID','object','geometry'),
+        (3,'SUBELEMENT','object','object'),
+        (4,'DEFINES','node','geometry'),
+        (5,'HAS_MATERIAL','geometry','node'),
+        (6,'HAS_COLOR','geometry|object','node'),
+        (7,'ON_LEVEL','object','node'),
+        (8,'DISPLAY_INSTANCE','object','node')",
+      "CREATE TABLE node_kinds (kind INTEGER PRIMARY KEY, name VARCHAR)",
+      @"INSERT INTO node_kinds VALUES
+        (1,'DEFINITION'),(2,'INSTANCE'),(3,'MATERIAL'),(4,'COLOR'),(5,'LEVEL')"
     );
     _relationsAppender = _db.CreateAppender("relations");
     _nodesAppender = _db.CreateAppender("nodes");

@@ -612,6 +612,18 @@ public static class EavExtraction
     }
   }
 
+  /// <summary>
+  /// Flattens a property SUBTREE under <paramref name="prefix"/> into <paramref name="rows"/> — used to
+  /// route the Type/System parameter trees (under <c>properties.Parameters</c>) into <c>type_eav</c>.
+  /// Same row shape/paths as the per-object walk; rows carry an empty object id (the caller keys them by
+  /// <c>type_index</c>, not object). See SOT §6.
+  /// </summary>
+  public static void FlattenSubtree(
+    IReadOnlyDictionary<string, object?> subtree,
+    string prefix,
+    ICollection<EavRow> rows
+  ) => WalkPropertiesNative(string.Empty, subtree, prefix, 0, rows, null);
+
   private static readonly IReadOnlyDictionary<string, object?> s_emptyRecord = new Dictionary<string, object?>();
 
   /// <summary>

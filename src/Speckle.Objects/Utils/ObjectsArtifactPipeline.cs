@@ -73,13 +73,81 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void AddProperties(
     string applicationId,
     IReadOnlyDictionary<string, object?> properties,
-    IEnumerable<KeyValuePair<string, object?>>? rootScalars = null
+    IEnumerable<KeyValuePair<string, object?>>? rootScalars = null,
+    string? typeKey = null
   )
   {
-    var rows = new List<EavRow>();
-    EavExtraction.FlattenProperties(applicationId, properties, rootScalars, _excludedProperties, rows);
-    _eavWriter.AddRows(applicationId, rows);
+    // No type key (or nothing type-scoped to split) → flatten everything per-object, as before.
+    if (typeKey is null || !TrySplitTypeParameters(properties, out var instanceProps, out var typeSubtree))
+    {
+      var rows = new List<EavRow>();
+      EavExtraction.FlattenProperties(applicationId, properties, rootScalars, _excludedProperties, rows);
+      _eavWriter.AddRows(applicationId, rows);
+      return;
+    }
+
+    // Instance-scoped props → eav; Type/System params deduped into type_eav (flattened once per type,
+    // via the lazy factory) with an object_type weak ref. See notes/topology-envelope-SOT.md §6.
+    var instanceRows = new List<EavRow>();
+    EavExtraction.FlattenProperties(applicationId, instanceProps, rootScalars, _excludedProperties, instanceRows);
+    _eavWriter.AddRows(applicationId, instanceRows);
+
+    _eavWriter.AddType(
+      applicationId,
+      typeKey,
+      () =>
+      {
+        var typeRows = new List<EavRow>();
+        EavExtraction.FlattenSubtree(typeSubtree, "properties.Parameters", typeRows);
+        return typeRows;
+      }
+    );
   }
+
+  // Splits `properties.Parameters` into instance-scoped (kept on the object) and type-scoped (Type +
+  // System Parameters, deduped per type). False if there's nothing type-scoped to split out.
+  private static bool TrySplitTypeParameters(
+    IReadOnlyDictionary<string, object?> properties,
+    out IReadOnlyDictionary<string, object?> instanceProps,
+    out IReadOnlyDictionary<string, object?> typeSubtree
+  )
+  {
+    instanceProps = properties;
+    typeSubtree = s_emptyDict;
+
+    if (
+      !properties.TryGetValue("Parameters", out var pv)
+      || pv is not IReadOnlyDictionary<string, object?> paramsDict
+    )
+    {
+      return false;
+    }
+
+    var typeParams = new Dictionary<string, object?>(StringComparer.Ordinal);
+    var instanceParams = new Dictionary<string, object?>(StringComparer.Ordinal);
+    foreach (var kv in paramsDict)
+    {
+      if (kv.Key is "Type Parameters" or "System Type Parameters")
+      {
+        typeParams[kv.Key] = kv.Value;
+      }
+      else
+      {
+        instanceParams[kv.Key] = kv.Value;
+      }
+    }
+
+    if (typeParams.Count == 0)
+    {
+      return false;
+    }
+
+    instanceProps = new Dictionary<string, object?>(properties, StringComparer.Ordinal) { ["Parameters"] = instanceParams };
+    typeSubtree = typeParams;
+    return true;
+  }
+
+  private static readonly IReadOnlyDictionary<string, object?> s_emptyDict = new Dictionary<string, object?>();
 
   // ── geometry namespace ────────────────────────────────────────────────────────────
 

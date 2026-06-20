@@ -63,6 +63,13 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, "SELECT data_type FROM information_schema.columns WHERE table_name='relations' AND column_name='src'")
       .Should()
       .Be("INTEGER");
+
+    // self-describing catalog (SOT §6): rel/kind vocabulary travels in the artefact
+    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(8L);
+    Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(5L);
+    Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DisplayInstance}").Should().Be("DISPLAY_INSTANCE");
+    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry");
+    Scalar(db, "SELECT schema_version FROM meta").Should().Be(1);
   }
 
   [System.Diagnostics.CodeAnalysis.SuppressMessage(
