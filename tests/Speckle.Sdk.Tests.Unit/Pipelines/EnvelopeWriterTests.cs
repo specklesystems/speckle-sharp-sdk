@@ -51,9 +51,13 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, $"SELECT elevation FROM nodes WHERE kind = {NodeKind.Level}").Should().Be(3000.0);
 
     // self-describing catalog (SOT §6)
-    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(8L);
+    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(9L);
     Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(5L);
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DisplayInstance}").Should().Be("DISPLAY_INSTANCE");
+    Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("DEFINES_INSTANCE");
+    // DEFINES (4) is now geometry-only; DEFINES_INSTANCE (9) carries node→node nesting. rel fixes dst namespace.
+    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.Defines}").Should().Be("geometry");
+    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("node");
     Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry");
     Scalar(db, "SELECT schema_version FROM meta").Should().Be(1);
   }

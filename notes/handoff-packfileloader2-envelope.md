@@ -59,16 +59,19 @@ Six parquet files (no manifest — see banner):
 | 1 | DISPLAY | object → geometry | direct world-coord renderable mesh; `ord` = fragment index |
 | 2 | SOLID | object → geometry | authoritative Brep/Solid |
 | 3 | SUBELEMENT | object → object | host→hosted nesting (curtain wall → panels) |
-| 4 | DEFINES | node(DEFINITION) → geometry \| node(nested INSTANCE) | definition membership |
+| 4 | DEFINES | node(DEFINITION) → **geometry** | definition contains a raw mesh member (geometry-dst only) |
 | 5 | HAS_MATERIAL | geometry → node(MATERIAL) | **per-mesh** render material |
 | 6 | HAS_COLOR | geometry\|object → node(COLOR) | display colour |
 | 7 | ON_LEVEL | object → node(LEVEL) | level membership |
 | 8 | DISPLAY_INSTANCE | object → node(INSTANCE) | renderable via a placement (transform + definition) |
+| 9 | DEFINES_INSTANCE | node(DEFINITION) → **node**(INSTANCE) | definition contains a nested block placement |
 
-> **DISPLAY (1) vs DISPLAY_INSTANCE (8) are split on purpose.** Direct geometry vs instanced placement use
-> different dst namespaces (geometry vs node), and per-namespace ids overlap — a single rel would be
-> ambiguous. If you want "everything renderable for object X": union rel 1 (→ geometry blobs) with rel 8
-> (→ INSTANCE node → its transform + DEFINES geometries).
+> **The split rels exist so `rel` fixes the dst namespace** (per-namespace ids overlap, so one rel can't span
+> two namespaces): DISPLAY (1, →geometry) vs DISPLAY_INSTANCE (8, →node); and **DEFINES (4, →geometry) vs
+> DEFINES_INSTANCE (9, →node).** **Never resolve a DEFINES (4) dst as a node id** — it is always a
+> `geometry_index`; nested-block members come on DEFINES_INSTANCE (9). (Treating DEFINES dsts as node ids is
+> exactly what produces phantom cycles in definition-graph traversal.) "Everything renderable for object X" =
+> union rel 1 (→ geometry blobs) with rel 8 (→ INSTANCE node → expand its def via 4/9).
 
 ### `kind` enum (nodes.kind) — also self-described in `node_kinds`
 | kind | name | populated columns |
@@ -123,8 +126,9 @@ How the server actually hands you a version's bundle:
 
 **Instancing contract (the bit PackfileLoader2 cares most about):** an instanced object carries no baked
 geometry under DISPLAY. Instead: object —rel 8→ INSTANCE node; that node's `transform`+`units` give the
-placement, `def_ref` points at a DEFINITION node; DEFINITION —rel 4→ the shared geometry blobs (and/or nested
-INSTANCE nodes for nested instancing). So the shared mesh is stored **once** in `geometries.parquet` and
+placement, `def_ref` points at a DEFINITION node; DEFINITION —rel 4 (DEFINES)→ the shared geometry blobs,
+and —rel 9 (DEFINES_INSTANCE)→ nested INSTANCE nodes for nested instancing. So the shared mesh is stored
+**once** in `geometries.parquet` and
 referenced by N instances — exactly the "don't pollute geometry with transforms; share raw + place via node"
 design. Material is per-mesh (rel 5 off the geometry id), not per-object.
 

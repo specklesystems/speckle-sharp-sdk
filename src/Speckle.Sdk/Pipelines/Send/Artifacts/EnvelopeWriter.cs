@@ -16,7 +16,7 @@ public static class RelKind
   /// <summary>object → object. Host→hosted nesting (curtain wall → panels).</summary>
   public const byte Subelement = 3;
 
-  /// <summary>node(DEFINITION) → geometry | node(nested INSTANCE). Definition membership.</summary>
+  /// <summary>node(DEFINITION) → geometry. Definition contains a raw mesh member.</summary>
   public const byte Defines = 4;
 
   /// <summary>geometry → node(MATERIAL). Per-mesh render material.</summary>
@@ -30,6 +30,11 @@ public static class RelKind
 
   /// <summary>object → node(INSTANCE). Renderable via a placement (transform + definition).</summary>
   public const byte DisplayInstance = 8;
+
+  /// <summary>node(DEFINITION) → node(nested INSTANCE). Definition contains a nested block placement.
+  /// Split from <see cref="Defines"/> so <c>rel</c> fixes the dst namespace (geometry vs node) — the same
+  /// reason <see cref="Display"/>/<see cref="DisplayInstance"/> are split; per-namespace ids overlap.</summary>
+  public const byte DefinesInstance = 9;
 }
 
 /// <summary>Value-node kinds in the envelope <c>nodes</c> table.</summary>
@@ -177,6 +182,7 @@ public sealed class EnvelopeWriter : IDisposable
       rt.AddRow(6, "HAS_COLOR", "geometry|object", "node");
       rt.AddRow(7, "ON_LEVEL", "object", "node");
       rt.AddRow(8, "DISPLAY_INSTANCE", "object", "node");
+      rt.AddRow(9, "DEFINES_INSTANCE", "node", "node");
     }
     using var nk = new ParquetTableWriter(P("node_kinds.parquet"), new ParquetSchema(I("kind"), S("name")));
     nk.AddRow(1, "DEFINITION");
