@@ -1,5 +1,20 @@
 # Context handoff — artefact storage/serving for server-changes-v2-data-endpoints
 
+> ⚠️ **SUPERSEDED / RESOLVED (2026-06-20).** This was the *pre-implementation* "open questions for the server
+> thread" doc; everything it asks is now decided and shipped, so the body below is **historical** — do not act
+> on its open questions. Final state + canonical record:
+> - **Server built + E2E-validated.** New v2 data-endpoints live; 5/5 runs uploaded clean (4 Revit + 1 Navis),
+>   `schemaVersion=3`, served via `GET /api/v2/projects/:p/models/:m/versions/:v/artifacts` (presigned GET).
+>   Upload is **no longer a stub**.
+> - **Naming settled:** files are `{versionId}.<artefact>.<table>.parquet`, versionId **pre-allocated** at
+>   ingestion creation, keyed `versions/{versionId}/`. No rename. (The "manifest ↔ filenames" coupling + its 3
+>   options below are moot.)
+> - **Manifest DROPPED entirely** — never served; consumers build their own `read_parquet` views. The bundle is
+>   **12 parquet, 0 `.sql`** (not "12 + 2 manifests" as the body says).
+> - **`dataShape` skipped** — `schemaVersion: Int` only.
+> - Canonical docs now: **`notes/topology-envelope-SOT.md` §4/§6** (consumer reads + `object_properties`) and
+>   **`notes/server-v2-data-endpoints-SOT.md`** (server impl). Consumer view: `notes/handoff-packfileloader2-envelope.md`.
+
 **Audience:** the server-side thread settling artefact naming + data endpoints. **Producer:** Speckle.Sdk
 artefact pipeline (`src/Speckle.Sdk/Pipelines/Send/Artifacts/*`), driven by the ODA-Revit POC. As of
 **2026-06-20** the producer emits **passive Zstd parquet** for all three artefacts (no DuckDB write engine).

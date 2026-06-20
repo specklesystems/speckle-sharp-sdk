@@ -5,23 +5,23 @@
 three artefacts are **direct Zstd parquet** (no DuckDB write engine). Validated data-identical to the prior
 DuckDB form on Trabzon T1/T2. SDK commit `98d381cf` on branch `topology-envelope-poc`.
 
-> ⚠️ **Filenames below are PROVISIONAL.** The `{base}.eav.*` / `{base}.envelope.*` scheme is what the
-> producer emits *today*. A different naming scheme is being settled in **server-changes-v2-data-endpoints**.
-> Treat the **table shapes + view contract as stable**; treat **filenames as a variable** you'll rebind once
-> that lands. The producer's only naming touch-points are `P(suffix)` + `Manifest()` in each writer.
+> ✅ **Naming SETTLED + E2E-validated (2026-06-20).** `{base}` below **= the server pre-allocated `versionId`**
+> (== the commit id). Files are `{versionId}.eav.*.parquet` / `{versionId}.envelope.*.parquet`, served under
+> `versions/{versionId}/`. **No `manifest.sql` is produced or served** — the rows showing `*.manifest.sql` below
+> are historical; the bundle is **12 parquet, 0 `.sql`** (consumer builds its own views — see the read model).
 
 ---
 
 ## The three artefacts
 
-For a model with base name `{base}`:
+For a version with id `{versionId}` (used as the file basename; `{base}` ≡ `{versionId}` below):
 
 ### 1. `geometries` — the renderable blobs
 - `{base}.geometries.parquet` — int-keyed (`geometry_index`), SGEO-encoded mesh/brep blobs, `CompressionMethod.Zstd`.
 - This is the **only** place vertex/index/transform-baked geometry lives.
 
 ### 2. `eav` — object set + identity dictionary + per-object labels
-Six parquet files + a SQL manifest:
+Six parquet files (no manifest — see banner):
 | file | columns | meaning |
 |---|---|---|
 | `{base}.eav.objects.parquet`     | `object_index:int, application_id:string` | **the K dictionary**: dense int ↔ applicationId, one row per atomic object |
@@ -30,7 +30,7 @@ Six parquet files + a SQL manifest:
 | `{base}.eav.types.parquet`       | `type_index:int, type_key:string` | type dictionary |
 | `{base}.eav.type_eav.parquet`    | same value shape, keyed by `type_index` | **type**-scoped params, written **once per type** (deduped) |
 | `{base}.eav.object_type.parquet` | `object_index:int, type_index:int` | weak ref: object → its type |
-| `{base}.eav.manifest.sql`        | — | `CREATE VIEW` over all of the above + the flat-read `object_properties` view |
+| ~~`{base}.eav.manifest.sql`~~ | — | *removed — not produced/served; build the `object_properties` view yourself (read model below)* |
 
 ### 3. `envelope` — the topology (relations + nodes + self-describing catalog)
 | file | columns | meaning |
@@ -40,7 +40,7 @@ Six parquet files + a SQL manifest:
 | `{base}.envelope.meta.parquet`      | `schema_version:int, produced_by:string` | catalog |
 | `{base}.envelope.rel_types.parquet` | `rel:int, name:string, src_ns:string, dst_ns:string` | catalog: what each `rel` means + its namespaces |
 | `{base}.envelope.node_kinds.parquet`| `kind:int, name:string` | catalog |
-| `{base}.envelope.manifest.sql`      | — | `CREATE VIEW` over the five tables |
+| ~~`{base}.envelope.manifest.sql`~~ | — | *removed — not produced/served* |
 
 ---
 
@@ -110,7 +110,7 @@ How the server actually hands you a version's bundle:
 - **"All properties for an object" (instance ∪ type, flat)** → the shipped `object_properties` view already
   unions instance eav with the deduped type_eav via `object_type`:
   ```sql
-  -- Embed this in the loader (it's the object_properties view from EavWriter.Manifest() — NOT a fetched file):
+  -- Embed this in the loader (canonical in topology-envelope-SOT.md §6 — NOT a fetched file):
   CREATE VIEW object_properties AS
     SELECT object_index, path_index, value_string, value_double, value_boolean, unit, internal_definition_name
       FROM eav
