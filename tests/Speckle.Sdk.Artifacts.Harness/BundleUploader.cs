@@ -44,6 +44,26 @@ public static class BundleUploader
     ).ConfigureAwait(false);
     Console.WriteLine($"Ingestion created: {ingestionId}  (reserved versionId {reservedVersionId})");
 
+    // ── name files after the reserved versionId: {versionId}.<suffix> ─────────────────
+    // The producer wrote {modelId}.<suffix> (the versionId isn't known until the ingestion exists), so
+    // rename now to match the intended SOT naming (basename == versionId). Per-version S3 keys
+    // (versions/{versionId}/…) already isolate storage; this makes the BASENAME unambiguous per version
+    // too, so a consumer never mistakes one version's files for another's.
+    foreach (var path in Directory.GetFiles(outDir))
+    {
+      var name = Path.GetFileName(path);
+      var dot = name.IndexOf('.', StringComparison.Ordinal);
+      if (dot <= 0)
+      {
+        continue;
+      }
+      var renamed = reservedVersionId + name[dot..];
+      if (!string.Equals(renamed, name, StringComparison.Ordinal))
+      {
+        File.Move(path, Path.Combine(outDir, renamed), overwrite: true);
+      }
+    }
+
     // ── files to upload: every flat file the producer wrote into outDir ───────────────
     var files = Directory.GetFiles(outDir).Select(Path.GetFileName).Where(n => n is not null).Cast<string>().ToList();
     if (files.Count == 0)
