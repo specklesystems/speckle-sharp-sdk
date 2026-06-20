@@ -14,19 +14,23 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 ///   {base}.eav.types.parquet(type_index, type_key)                 -- type dictionary
 ///   {base}.eav.type_eav.parquet(type_index, path_index, value_*)    -- TYPE-scoped params, once per type
 ///   {base}.eav.object_type.parquet(object_index, type_index)       -- the weak ref
-///   {base}.eav.manifest.sql                                        -- attaches the above + the flat-read view
 /// </code>
-/// The <c>object_properties</c> view (instance ∪ type) is shipped as the manifest, run on attach — DuckDB
-/// reads the parquet natively. Interning (applicationId/path/type_key → dense int) and the type dedup are
-/// unchanged. Not thread-safe: calls are sequential.
+/// No manifest is written: consumers build their own <c>read_parquet</c> views + the canonical
+/// <c>object_properties</c> flat view (instance ∪ deduped-type) — the read recipe lives in
+/// <c>notes/topology-envelope-SOT.md</c> §4/§6, not in a generated, never-served <c>.sql</c>. Interning
+/// (applicationId/path/type_key → dense int) and the type dedup are unchanged. Not thread-safe: calls are sequential.
 /// </summary>
 public sealed class EavWriter : IDisposable
 {
   public string OutputDir { get; }
   public string BaseName { get; }
 
-  /// <summary>The manifest entry point (kept named <c>EavDbPath</c> for caller compatibility).</summary>
-  public string EavDbPath { get; }
+  /// <summary>
+  /// The directory holding this artefact's parquet tables. There is no single entry-point file — the bundle
+  /// is consumed by building <c>read_parquet</c> views over the individual files (see
+  /// <c>notes/topology-envelope-SOT.md</c> §4). Kept named <c>EavDbPath</c> for caller compatibility.
+  /// </summary>
+  public string EavDbPath => OutputDir;
 
   private readonly ParquetTableWriter _objects;
   private readonly ParquetTableWriter _paths;
@@ -47,7 +51,6 @@ public sealed class EavWriter : IDisposable
     Directory.CreateDirectory(outputDir);
     OutputDir = outputDir;
     BaseName = baseName;
-    EavDbPath = P("manifest.sql");
 
     _objects = new ParquetTableWriter(P("objects.parquet"), new ParquetSchema(I("object_index"), S("application_id")));
     _paths = new ParquetTableWriter(P("paths.parquet"), new ParquetSchema(I("path_index"), S("path")));
@@ -122,8 +125,6 @@ public sealed class EavWriter : IDisposable
     _types.Complete();
     _typeEav.Complete();
     _objectType.Complete();
-
-    File.WriteAllText(EavDbPath, Manifest());
   }
 
   public void Dispose()
@@ -171,24 +172,6 @@ public sealed class EavWriter : IDisposable
     row.Type == "boolean" && bool.TryParse(row.ValueText, out var b) ? b : null;
 
   private string P(string suffix) => System.IO.Path.Combine(OutputDir, $"{BaseName}.eav.{suffix}");
-
-  // Manifest: attach each parquet as a view + the flat-read `object_properties` (instance ∪ type).
-  // Filenames are relative so the consumer runs it from the artefact directory.
-  private string Manifest() =>
-    $@"-- Speckle 4.0 eav artefact. Run from the artefact directory (DuckDB reads parquet natively).
-CREATE VIEW objects      AS SELECT * FROM read_parquet('{BaseName}.eav.objects.parquet');
-CREATE VIEW paths        AS SELECT * FROM read_parquet('{BaseName}.eav.paths.parquet');
-CREATE VIEW eav          AS SELECT * FROM read_parquet('{BaseName}.eav.eav.parquet');
-CREATE VIEW types        AS SELECT * FROM read_parquet('{BaseName}.eav.types.parquet');
-CREATE VIEW type_eav     AS SELECT * FROM read_parquet('{BaseName}.eav.type_eav.parquet');
-CREATE VIEW object_type  AS SELECT * FROM read_parquet('{BaseName}.eav.object_type.parquet');
-CREATE VIEW object_properties AS
-  SELECT object_index, path_index, value_string, value_double, value_boolean, unit, internal_definition_name
-    FROM eav
-  UNION ALL
-  SELECT ot.object_index, te.path_index, te.value_string, te.value_double, te.value_boolean, te.unit, te.internal_definition_name
-    FROM object_type ot JOIN type_eav te ON te.type_index = ot.type_index;
-";
 
   private void EnsureNotCompleted()
   {

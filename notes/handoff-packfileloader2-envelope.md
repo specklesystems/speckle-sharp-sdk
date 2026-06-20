@@ -97,9 +97,9 @@ How the server actually hands you a version's bundle:
    there is **no `dataShape` field** yet — branch on `schemaVersion`).
 2. Fetch each parquet (to OPFS, or range-read the presigned URL via DuckDB httpfs), then **create the views
    yourself** — one `CREATE VIEW <table> AS SELECT * FROM read_parquet('<local-or-url>')` per file, plus the
-   `object_properties` union below. The view SQL is NOT shipped; **embed it in the loader.** (The producer's
-   `manifest.sql` is still a faithful *reference* for the exact statements — see `EavWriter.Manifest()` /
-   `EnvelopeWriter.Manifest()` — but treat it as a template you copy into code, not a file you fetch.)
+   `object_properties` union below. The view SQL is NOT shipped; **embed it in the loader.** (The producer no
+   longer emits any `manifest.sql` — the canonical read recipe + the `object_properties` view live in
+   `notes/topology-envelope-SOT.md` §4/§6; copy from there into code.)
 3. Join across the now-registered tables on the dense ids.
 
 **Two reads PackfileLoader2 specifically needs:**
