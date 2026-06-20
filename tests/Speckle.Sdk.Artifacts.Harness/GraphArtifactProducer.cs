@@ -81,6 +81,9 @@ public static class GraphArtifactProducer
     // INSTANCE-node K by appId — for both atomic instance leaves and nested-instance definition members,
     // so the DEFINES_INSTANCE (rel 9) edges from a definition to a nested instance resolve to the node.
     var instanceNodeByAppId = new Dictionary<string, int>(StringComparer.Ordinal);
+    // object appId → the geometry appIds of its DISPLAY meshes — lets OBJECT-grained material/colour proxy
+    // refs (which name the DataObject, not its mesh — Navis/CAD) bind to the object's display geometry.
+    var objectDisplayGeomKeys = new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
     // Instance-definition source members: appIds in `instanceDefinitionProxies[].objects[]`. These are the
     // definition's content (rendered via instance placements, never directly), NOT atomic scene objects —
@@ -98,7 +101,7 @@ public static class GraphArtifactProducer
         continue;
       }
 
-      var objK = EmitObject(pipeline, obj, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId);
+      var objK = EmitObject(pipeline, obj, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
 
       // host→hosted nesting: a non-collection object carrying `elements` (e.g. curtain wall → panels).
       foreach (var child in GetBaseList(obj, "elements"))
@@ -107,14 +110,14 @@ public static class GraphArtifactProducer
         {
           continue;
         }
-        var childK = EmitObject(pipeline, child, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId);
+        var childK = EmitObject(pipeline, child, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
         pipeline.Subelement(objK, childK, stats.SubelementEdges++);
       }
       _ = parent;
     }
 
     // 2) Value-nodes + their edges, from the root collection's proxy arrays.
-    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId);
+    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
 
     stats.Geometries = seenGeometryAppIds.Count;
 
@@ -130,7 +133,8 @@ public static class GraphArtifactProducer
     Stats stats,
     HashSet<string> seenObjectAppIds,
     HashSet<string> seenGeometryAppIds,
-    Dictionary<string, int> instanceNodeByAppId
+    Dictionary<string, int> instanceNodeByAppId,
+    Dictionary<string, List<string>> objectDisplayGeomKeys
   )
   {
     var appId = Aid(obj);
@@ -178,6 +182,7 @@ public static class GraphArtifactProducer
           {
             pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
             stats.DisplayEdges++;
+            RecordObjectGeom(objectDisplayGeomKeys, appId, gAppId);
           }
         }
       }
@@ -193,11 +198,28 @@ public static class GraphArtifactProducer
         pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
         stats.DisplayEdges++;
         stats.MeshAtomics++;
+        RecordObjectGeom(objectDisplayGeomKeys, appId, appId);
       }
     }
 
     // else: a non-geometry leaf with no displayValue — an eav object with no renderable geometry.
     return objK;
+  }
+
+  // Records that object `objAppId` renders geometry `geomAppId` — so an OBJECT-grained material/colour ref
+  // (proxies that name the DataObject, not its mesh) can bind to the object's display meshes.
+  private static void RecordObjectGeom(
+    Dictionary<string, List<string>> map,
+    string objAppId,
+    string geomAppId
+  )
+  {
+    if (!map.TryGetValue(objAppId, out var list))
+    {
+      list = new List<string>();
+      map[objAppId] = list;
+    }
+    list.Add(geomAppId);
   }
 
   // Intern/emit an INSTANCE node for a placement (idempotent by appId), recording its K so DEFINES_INSTANCE
@@ -329,7 +351,8 @@ public static class GraphArtifactProducer
     Stats stats,
     HashSet<string> seenObjectAppIds,
     HashSet<string> seenGeometryAppIds,
-    Dictionary<string, int> instanceNodeByAppId
+    Dictionary<string, int> instanceNodeByAppId,
+    Dictionary<string, List<string>> objectDisplayGeomKeys
   )
   {
     // Definitions: members are either raw geometry → DEFINES (rel 4, → geometry), or nested instances →
@@ -363,7 +386,8 @@ public static class GraphArtifactProducer
       }
     }
 
-    // Materials: HAS_MATERIAL(mesh → material), per-mesh (SOT Fact 2). objects[] are mesh appIds.
+    // Materials: HAS_MATERIAL(mesh → material), per-mesh (SOT Fact 2). objects[] may name the mesh directly
+    // (BIM) OR the OBJECT (Navis/CAD object-grained) — in the latter case bind to the object's display meshes.
     foreach (var mat in GetBaseList(root, "renderMaterialProxies"))
     {
       if (mat is not RenderMaterialProxy rmp)
@@ -373,16 +397,27 @@ public static class GraphArtifactProducer
       var v = rmp.value;
       var matK = pipeline.AddMaterial(MaterialKey(rmp), v.diffuse, v.opacity, v.metalness, v.roughness);
       stats.Materials++;
-      foreach (var meshAppId in rmp.objects)
+      foreach (var refAppId in rmp.objects)
       {
-        // Skip if the mesh isn't in geometries — emitting would mint a phantom geometry K.
-        if (!seenGeometryAppIds.Contains(meshAppId))
+        if (seenGeometryAppIds.Contains(refAppId))
         {
-          stats.SkippedMaterial++;
-          continue;
+          // per-mesh: ref names the mesh directly.
+          pipeline.HasMaterial(pipeline.InternGeometryId(refAppId), matK);
+          stats.HasMaterialEdges++;
         }
-        pipeline.HasMaterial(pipeline.InternGeometryId(meshAppId), matK);
-        stats.HasMaterialEdges++;
+        else if (objectDisplayGeomKeys.TryGetValue(refAppId, out var geomKeys))
+        {
+          // object-grained: ref names a DataObject → bind to each of its display meshes.
+          foreach (var gk in geomKeys)
+          {
+            pipeline.HasMaterial(pipeline.InternGeometryId(gk), matK);
+            stats.HasMaterialEdges++;
+          }
+        }
+        else
+        {
+          stats.SkippedMaterial++; // genuinely not in the bundle.
+        }
       }
     }
 
@@ -437,25 +472,67 @@ public static class GraphArtifactProducer
 
   // ── traversal ────────────────────────────────────────────────────────────────────
 
-  // Yields every collection LEAF reachable through `elements`, with its parent. A leaf is atomic
-  // type-agnostically (SOT §1) — DataObject, raw geometry, or a bare InstanceProxy placement. Only
-  // containers (Collection) and the value/definition proxy arrays (which live on dynamic members, never
-  // in `elements`) are excluded; a bare InstanceProxy IS a yielded atomic leaf.
+  // Members that hold geometry or proxy data, NOT child objects — never descended as containers.
+  // (`displayValue` is the object's own geometry, handled in EmitObject; the proxy arrays live on the root.)
+  private static readonly HashSet<string> s_nonContainerMembers = new(StringComparer.Ordinal)
+  {
+    "displayValue", "@displayValue", "baseCurves", "@baseCurves",
+    "instanceDefinitionProxies", "@instanceDefinitionProxies",
+    "renderMaterialProxies", "@renderMaterialProxies",
+    "colorProxies", "@colorProxies", "levelProxies", "@levelProxies",
+    "groupProxies", "@groupProxies",
+    // non-scene metadata containers (not renderable model objects)
+    "cameras", "@cameras", "views", "@views",
+  };
+
+  // Yields every LEAF reachable through any container member, with its parent. A leaf is atomic
+  // type-agnostically (SOT §1) — DataObject, raw geometry, or a bare InstanceProxy placement. Descent
+  // follows `elements` AND any other Base-list member (e.g. Civil3D `@mainBaselineFeatureLines`, `@regions`)
+  // except geometry/proxy members — so awkwardly-nested geometry is reached, not just `elements`.
   private static IEnumerable<(Base obj, Base? parent)> TraverseAtomics(Base root)
   {
     var stack = new Stack<(Base node, Base? parent)>();
+    var visited = new HashSet<string>(StringComparer.Ordinal);
     stack.Push((root, null));
     while (stack.Count > 0)
     {
       var (node, parent) = stack.Pop();
+      if (node.id is { } id && !visited.Add(id))
+      {
+        continue; // already walked (shared reference) — avoid re-descending
+      }
       var isContainer = node is Collection || ReferenceEquals(node, root);
       if (!isContainer && !IsValueOrDefinitionProxy(node))
       {
         yield return (node, parent);
       }
-      foreach (var child in GetBaseList(node, "elements"))
+      foreach (var child in ChildContainers(node))
       {
         stack.Push((child, node));
+      }
+    }
+  }
+
+  // All child Base objects under `node`'s container members (every Base-list member except the
+  // geometry/proxy members in s_nonContainerMembers).
+  private static IEnumerable<Base> ChildContainers(Base node)
+  {
+    var members = node.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
+    foreach (var kv in members)
+    {
+      if (s_nonContainerMembers.Contains(kv.Key))
+      {
+        continue;
+      }
+      if (kv.Value is System.Collections.IEnumerable seq and not string)
+      {
+        foreach (var item in seq)
+        {
+          if (item is Base b)
+          {
+            yield return b;
+          }
+        }
       }
     }
   }
