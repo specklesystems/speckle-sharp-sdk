@@ -44,6 +44,10 @@ public static class GraphArtifactProducer
     public int Levels;
     public int OnLevelEdges;
     public int DefinitionGeometries;
+    public int DefinitionInstances;
+    public int DefinesInstanceEdges;
+    public int MeshAtomics;
+    public int InstanceAtomics;
     public int GeometryEncodeFailures;
 
     // Proxy refs skipped because the target appId is absent from the graph (e.g. level membership to a
@@ -57,10 +61,10 @@ public static class GraphArtifactProducer
 
     public override string ToString() =>
       $"""
-      objects={Objects}  geometries={Geometries} (defGeom={DefinitionGeometries})  encodeFailures={GeometryEncodeFailures}
+      objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})  encodeFailures={GeometryEncodeFailures}
       edges: DISPLAY={DisplayEdges} DISPLAY_INSTANCE={DisplayInstanceEdges} SUBELEMENT={SubelementEdges}
-             DEFINES={DefinesEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges}
-      nodes: DEFINITION={Definitions} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels}
+             DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges}
+      nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels}
       skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel})
       """;
   }
@@ -74,25 +78,27 @@ public static class GraphArtifactProducer
     // appIds we have actually emitted as objects / geometry — to detect dangling proxy refs.
     var seenObjectAppIds = new HashSet<string>(StringComparer.Ordinal);
     var seenGeometryAppIds = new HashSet<string>(StringComparer.Ordinal);
+    // INSTANCE-node K by appId — for both atomic instance leaves and nested-instance definition members,
+    // so the DEFINES_INSTANCE (rel 9) edges from a definition to a nested instance resolve to the node.
+    var instanceNodeByAppId = new Dictionary<string, int>(StringComparer.Ordinal);
 
-    // Instance-definition source geometry: meshes referenced by `instanceDefinitionProxies[].objects[]`.
-    // These live standalone in the `elements` tree (old-connector style) but are NOT atomic objects — they
-    // are the definition's raw shape sources (rendered via instance placements, never directly). Route them
-    // to the GEOMETRY namespace so DEFINES + HAS_MATERIAL resolve to real SGEO blobs (mirrors ODA's
-    // DefinitionGeometries). Without this they fall into the object namespace and every DEFINES/HAS_MATERIAL
-    // edge that targets them dangles. See notes/server-v2-migration-plan-SOT.md.
+    // Instance-definition source members: appIds in `instanceDefinitionProxies[].objects[]`. These are the
+    // definition's content (rendered via instance placements, never directly), NOT atomic scene objects —
+    // route each to GEOMETRY (raw-mesh member) or to an INSTANCE node (nested-instance member), so
+    // DEFINES/DEFINES_INSTANCE + HAS_MATERIAL resolve. Mirrors ODA's DefinitionGeometries.
     var defSourceAppIds = CollectDefinitionSourceAppIds(root);
 
-    // 1) Walk the object tree. Definition-source meshes → geometry; everything else → atomic object.
+    // 1) Walk the collection tree. Definition members → geometry/instance-node; every other leaf is an
+    //    atomic object — type-agnostically (SOT §1): DataObject, raw mesh, or bare instance.
     foreach (var (obj, parent) in TraverseAtomics(root))
     {
       if (defSourceAppIds.Contains(Aid(obj)))
       {
-        EmitDefinitionGeometry(pipeline, obj, stats, seenGeometryAppIds);
+        EmitDefinitionMember(pipeline, obj, stats, seenGeometryAppIds, instanceNodeByAppId);
         continue;
       }
 
-      var objK = EmitObject(pipeline, obj, stats, seenObjectAppIds, seenGeometryAppIds);
+      var objK = EmitObject(pipeline, obj, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId);
 
       // host→hosted nesting: a non-collection object carrying `elements` (e.g. curtain wall → panels).
       foreach (var child in GetBaseList(obj, "elements"))
@@ -101,14 +107,14 @@ public static class GraphArtifactProducer
         {
           continue;
         }
-        var childK = EmitObject(pipeline, child, stats, seenObjectAppIds, seenGeometryAppIds);
+        var childK = EmitObject(pipeline, child, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId);
         pipeline.Subelement(objK, childK, stats.SubelementEdges++);
       }
       _ = parent;
     }
 
     // 2) Value-nodes + their edges, from the root collection's proxy arrays.
-    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds);
+    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId);
 
     stats.Geometries = seenGeometryAppIds.Count;
 
@@ -123,7 +129,8 @@ public static class GraphArtifactProducer
     Base obj,
     Stats stats,
     HashSet<string> seenObjectAppIds,
-    HashSet<string> seenGeometryAppIds
+    HashSet<string> seenGeometryAppIds,
+    Dictionary<string, int> instanceNodeByAppId
   )
   {
     var appId = Aid(obj);
@@ -138,40 +145,98 @@ public static class GraphArtifactProducer
     var (props, rootScalars, typeKey) = ExtractProperties(obj);
     pipeline.AddProperties(appId, props, rootScalars, typeKey);
 
-    int ord = 0;
-    foreach (var item in GetBaseList(obj, "displayValue"))
+    // SOT §1 — atomic is type-agnostic; dispatch on the leaf shape:
+    switch (obj)
     {
-      switch (item)
-      {
-        case InstanceProxy ip:
-          var defK = pipeline.AddDefinition(ip.definitionId, ip.definitionId);
-          var instK = pipeline.AddInstance(InstanceKey(ip), defK, Flatten(ip.transform), ip.units);
-          pipeline.DisplayInstance(objK, instK, ord++);
-          stats.DisplayInstanceEdges++;
-          break;
-        default:
-          var gAppId = GeometryKey(item);
-          try
+      case InstanceProxy ip:
+        // instance-atomic: the leaf IS a placement → object DISPLAY_INSTANCEs its own INSTANCE node.
+        var instK = ResolveInstanceNode(pipeline, ip, instanceNodeByAppId);
+        pipeline.DisplayInstance(objK, instK, 0);
+        stats.DisplayInstanceEdges++;
+        stats.InstanceAtomics++;
+        break;
+
+      case { } g when IsGeometry(g):
+        // mesh-atomic: the leaf IS the geometry → DISPLAY(object-K → its own geometry-K). The appId
+        // interns into BOTH the object and geometry namespaces (separate counters, no collision).
+        if (TryAddGeometry(pipeline, appId, g, stats, seenGeometryAppIds))
+        {
+          pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
+          stats.DisplayEdges++;
+          stats.MeshAtomics++;
+        }
+        break;
+
+      default:
+        // dataobject-atomic: references its geometry/instances via displayValue (as today).
+        int ord = 0;
+        foreach (var item in GetBaseList(obj, "displayValue"))
+        {
+          if (item is InstanceProxy dip)
           {
-            var gK = pipeline.AddGeometry(gAppId, item);
-            seenGeometryAppIds.Add(gAppId);
-            pipeline.Display(objK, gK, ord++);
-            stats.DisplayEdges++;
-            stats.Geometries = Math.Max(stats.Geometries, seenGeometryAppIds.Count);
+            var dInstK = ResolveInstanceNode(pipeline, dip, instanceNodeByAppId);
+            pipeline.DisplayInstance(objK, dInstK, ord++);
+            stats.DisplayInstanceEdges++;
           }
-          catch (Exception ex)
+          else
           {
-            stats.GeometryEncodeFailures++;
-            if (stats.Notes.Count < 20)
+            var gAppId = GeometryKey(item);
+            if (TryAddGeometry(pipeline, gAppId, item, stats, seenGeometryAppIds))
             {
-              stats.Notes.Add($"encode fail [{item.speckle_type}]: {ex.Message}");
+              pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
+              stats.DisplayEdges++;
             }
           }
-          break;
-      }
+        }
+        break;
     }
 
     return objK;
+  }
+
+  // Intern/emit an INSTANCE node for a placement (idempotent by appId), recording its K so DEFINES_INSTANCE
+  // edges to a nested instance can resolve. AddDefinition links it to its own DEFINITION via def_ref.
+  private static int ResolveInstanceNode(
+    ObjectsArtifactPipeline pipeline,
+    InstanceProxy ip,
+    Dictionary<string, int> instanceNodeByAppId
+  )
+  {
+    var key = Aid(ip);
+    if (instanceNodeByAppId.TryGetValue(key, out var existing))
+    {
+      return existing;
+    }
+    var defK = pipeline.AddDefinition(ip.definitionId, ip.definitionId);
+    var instK = pipeline.AddInstance(key, defK, Flatten(ip.transform), ip.units);
+    instanceNodeByAppId[key] = instK;
+    return instK;
+  }
+
+  // Encode a geometry blob under `appId` (once). Returns false (and counts) on encode failure.
+  private static bool TryAddGeometry(
+    ObjectsArtifactPipeline pipeline,
+    string appId,
+    Base geometry,
+    Stats stats,
+    HashSet<string> seenGeometryAppIds
+  )
+  {
+    try
+    {
+      pipeline.AddGeometry(appId, geometry);
+      seenGeometryAppIds.Add(appId);
+      return true;
+    }
+    catch (Exception ex)
+    {
+      stats.GeometryEncodeFailures++;
+      if (stats.Notes.Count < 20)
+      {
+        stats.Notes.Add($"encode fail [{geometry.speckle_type}]: {ex.Message}");
+      }
+      return false;
+    }
   }
 
   // The union of all appIds referenced by the root's instance-definition proxies — i.e. the definition
@@ -192,17 +257,31 @@ public static class GraphArtifactProducer
     return set;
   }
 
-  // Encode a definition source as a geometry blob under its OWN applicationId (so DEFINES/HAS_MATERIAL
-  // edges that reference it resolve). A bare geometry (Mesh/Brep/…) is encoded directly; a display-bearing
-  // object contributes its first non-instance displayValue mesh under the object's appId.
-  private static void EmitDefinitionGeometry(
+  // A definition member (referenced by instanceDefinitionProxies[].objects[]) is definition CONTENT, not an
+  // atomic scene object. Route by shape: a raw mesh → geometry blob (linked later via DEFINES); a nested
+  // instance → its own INSTANCE node (linked via DEFINES_INSTANCE). A display-bearing member contributes its
+  // first display mesh under the member's appId.
+  private static void EmitDefinitionMember(
     ObjectsArtifactPipeline pipeline,
     Base obj,
     Stats stats,
-    HashSet<string> seenGeometryAppIds
+    HashSet<string> seenGeometryAppIds,
+    Dictionary<string, int> instanceNodeByAppId
   )
   {
     var appId = Aid(obj);
+
+    if (obj is InstanceProxy ip)
+    {
+      // nested-instance member → INSTANCE node; the outer definition links it via DEFINES_INSTANCE.
+      if (!instanceNodeByAppId.ContainsKey(appId))
+      {
+        ResolveInstanceNode(pipeline, ip, instanceNodeByAppId);
+        stats.DefinitionInstances++;
+      }
+      return;
+    }
+
     if (!seenGeometryAppIds.Add(appId))
     {
       return;
@@ -212,10 +291,11 @@ public static class GraphArtifactProducer
       : GetBaseList(obj, "displayValue").FirstOrDefault(d => d is not InstanceProxy);
     if (geometry is null)
     {
+      seenGeometryAppIds.Remove(appId);
       stats.SkippedDefines++;
       if (stats.Notes.Count < 20)
       {
-        stats.Notes.Add($"def source {appId} has no encodable geometry [{obj.speckle_type}]");
+        stats.Notes.Add($"def member {appId} has no encodable geometry [{obj.speckle_type}]");
       }
       return;
     }
@@ -241,10 +321,12 @@ public static class GraphArtifactProducer
     Base root,
     Stats stats,
     HashSet<string> seenObjectAppIds,
-    HashSet<string> seenGeometryAppIds
+    HashSet<string> seenGeometryAppIds,
+    Dictionary<string, int> instanceNodeByAppId
   )
   {
-    // Definitions: DEFINES(definition → member geometry). members are source-app appIds of meshes.
+    // Definitions: members are either raw geometry → DEFINES (rel 4, → geometry), or nested instances →
+    // DEFINES_INSTANCE (rel 9, → INSTANCE node). The rel fixes the dst namespace (gap 2).
     foreach (var def in GetBaseList(root, "instanceDefinitionProxies"))
     {
       if (def is not InstanceDefinitionProxy idp)
@@ -256,14 +338,21 @@ public static class GraphArtifactProducer
       int o = 0;
       foreach (var memberAppId in idp.objects)
       {
-        // Skip if the member geometry isn't in the bundle — emitting would mint a phantom geometry K.
-        if (!seenGeometryAppIds.Contains(memberAppId))
+        if (instanceNodeByAppId.TryGetValue(memberAppId, out var instK))
         {
-          stats.SkippedDefines++;
-          continue;
+          pipeline.DefinesInstance(defK, instK, o++);
+          stats.DefinesInstanceEdges++;
         }
-        pipeline.Defines(defK, pipeline.InternGeometryId(memberAppId), o++);
-        stats.DefinesEdges++;
+        else if (seenGeometryAppIds.Contains(memberAppId))
+        {
+          pipeline.Defines(defK, pipeline.InternGeometryId(memberAppId), o++);
+          stats.DefinesEdges++;
+        }
+        else
+        {
+          // member geometry isn't in the bundle — skip rather than mint a phantom K.
+          stats.SkippedDefines++;
+        }
       }
     }
 
@@ -341,7 +430,10 @@ public static class GraphArtifactProducer
 
   // ── traversal ────────────────────────────────────────────────────────────────────
 
-  // Yields every atomic object (non-collection, non-proxy) reachable through `elements`, with its parent.
+  // Yields every collection LEAF reachable through `elements`, with its parent. A leaf is atomic
+  // type-agnostically (SOT §1) — DataObject, raw geometry, or a bare InstanceProxy placement. Only
+  // containers (Collection) and the value/definition proxy arrays (which live on dynamic members, never
+  // in `elements`) are excluded; a bare InstanceProxy IS a yielded atomic leaf.
   private static IEnumerable<(Base obj, Base? parent)> TraverseAtomics(Base root)
   {
     var stack = new Stack<(Base node, Base? parent)>();
@@ -350,7 +442,7 @@ public static class GraphArtifactProducer
     {
       var (node, parent) = stack.Pop();
       var isContainer = node is Collection || ReferenceEquals(node, root);
-      if (!isContainer && !IsProxy(node))
+      if (!isContainer && !IsValueOrDefinitionProxy(node))
       {
         yield return (node, parent);
       }
@@ -412,8 +504,6 @@ public static class GraphArtifactProducer
 
   private static string GeometryKey(Base mesh) => mesh.applicationId ?? "spk:" + mesh.id;
 
-  private static string InstanceKey(InstanceProxy ip) => ip.applicationId ?? "spk:" + ip.id;
-
   private static string DefinitionKey(InstanceDefinitionProxy idp) => idp.applicationId ?? idp.name;
 
   private static string MaterialKey(RenderMaterialProxy rmp) =>
@@ -423,8 +513,10 @@ public static class GraphArtifactProducer
 
   // ── helpers ──────────────────────────────────────────────────────────────────────
 
-  private static bool IsProxy(Base b) =>
-    b is InstanceDefinitionProxy or InstanceProxy or RenderMaterialProxy or ColorProxy or GroupProxy;
+  // Value/definition proxies that are NEVER atomic leaves (they live on the root's dynamic members).
+  // Note: InstanceProxy is deliberately excluded — a bare instance placement CAN be an atomic leaf.
+  private static bool IsValueOrDefinitionProxy(Base b) =>
+    b is InstanceDefinitionProxy or RenderMaterialProxy or ColorProxy or GroupProxy;
 
   private static bool IsGeometry(Base b) =>
     b.speckle_type.StartsWith("Objects.Geometry.", StringComparison.Ordinal);
@@ -432,10 +524,10 @@ public static class GraphArtifactProducer
   private static IEnumerable<Base> GetBaseList(Base b, string key)
   {
     var members = b.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
-    if (!members.TryGetValue(key, out var raw) || raw is null)
-    {
-      yield break;
-    }
+    // A detached list may live under the typed key OR the `@`-prefixed dynamic key (older connectors /
+    // app.speckle.systems keep `@elements`/`@displayValue` as dynamic members the deserializer didn't map
+    // onto the typed property). Take whichever is a non-empty Base list.
+    var raw = NonEmpty(members.GetValueOrDefault(key)) ?? NonEmpty(members.GetValueOrDefault("@" + key));
     if (raw is System.Collections.IEnumerable seq and not string)
     {
       foreach (var item in seq)
@@ -447,6 +539,11 @@ public static class GraphArtifactProducer
       }
     }
   }
+
+  // Returns the value only if it's a non-empty enumerable (so an empty typed `elements` falls through to
+  // the `@elements` dynamic member).
+  private static object? NonEmpty(object? v) =>
+    v is System.Collections.ICollection c && c.Count == 0 ? null : v;
 
   private static IEnumerable<string> AsStringList(object? raw)
   {
