@@ -47,6 +47,7 @@ public sealed class ModelIngestionResource
               projectId
               userId
               cancellationRequested
+              versionId
               statusData {
                 ... on HasModelIngestionStatus {
                   status

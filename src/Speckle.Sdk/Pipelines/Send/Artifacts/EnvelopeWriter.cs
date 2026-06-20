@@ -1,5 +1,4 @@
 #if NET8_0_OR_GREATER
-using System.Globalization;
 using Parquet.Schema;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -17,7 +16,7 @@ public static class RelKind
   /// <summary>object → object. Host→hosted nesting (curtain wall → panels).</summary>
   public const byte Subelement = 3;
 
-  /// <summary>node(DEFINITION) → geometry | node(nested INSTANCE). Definition membership.</summary>
+  /// <summary>node(DEFINITION) → geometry. Definition contains a raw mesh member.</summary>
   public const byte Defines = 4;
 
   /// <summary>geometry → node(MATERIAL). Per-mesh render material.</summary>
@@ -31,6 +30,11 @@ public static class RelKind
 
   /// <summary>object → node(INSTANCE). Renderable via a placement (transform + definition).</summary>
   public const byte DisplayInstance = 8;
+
+  /// <summary>node(DEFINITION) → node(nested INSTANCE). Definition contains a nested block placement.
+  /// Split from <see cref="Defines"/> so <c>rel</c> fixes the dst namespace (geometry vs node) — the same
+  /// reason <see cref="Display"/>/<see cref="DisplayInstance"/> are split; per-namespace ids overlap.</summary>
+  public const byte DefinesInstance = 9;
 }
 
 /// <summary>Value-node kinds in the envelope <c>nodes</c> table.</summary>
@@ -53,8 +57,8 @@ public static class NodeKind
 ///         transform, units, argb, opacity, metalness,             instance / material / colour / level)
 ///         roughness, elevation)
 ///   {base}.envelope.{meta,rel_types,node_kinds}.parquet        -- self-describing catalog (SOT §6)
-///   {base}.envelope.manifest.sql                               -- attaches the above as views
 /// </code>
+/// No manifest is written — consumers build their own <c>read_parquet</c> views (SOT §4).
 /// <c>transform</c> is 16 row-major doubles, comma-separated. Not thread-safe: calls are sequential.
 /// </summary>
 public sealed class EnvelopeWriter : IDisposable
@@ -64,8 +68,12 @@ public sealed class EnvelopeWriter : IDisposable
   public string OutputDir { get; }
   public string BaseName { get; }
 
-  /// <summary>The manifest entry point (kept named <c>EnvelopeDbPath</c> for caller compatibility).</summary>
-  public string EnvelopeDbPath { get; }
+  /// <summary>
+  /// The directory holding this artefact's parquet tables. No single entry-point file — consumers build their
+  /// own <c>read_parquet</c> views (see <c>notes/topology-envelope-SOT.md</c> §4). Kept named
+  /// <c>EnvelopeDbPath</c> for caller compatibility.
+  /// </summary>
+  public string EnvelopeDbPath => OutputDir;
 
   private readonly ParquetTableWriter _relations;
   private readonly ParquetTableWriter _nodes;
@@ -76,7 +84,6 @@ public sealed class EnvelopeWriter : IDisposable
     Directory.CreateDirectory(outputDir);
     OutputDir = outputDir;
     BaseName = baseName;
-    EnvelopeDbPath = P("manifest.sql");
 
     _relations = new ParquetTableWriter(
       P("relations.parquet"),
@@ -140,7 +147,6 @@ public sealed class EnvelopeWriter : IDisposable
     _completed = true;
     _relations.Complete();
     _nodes.Complete();
-    File.WriteAllText(EnvelopeDbPath, Manifest());
   }
 
   public void Dispose()
@@ -176,6 +182,7 @@ public sealed class EnvelopeWriter : IDisposable
       rt.AddRow(6, "HAS_COLOR", "geometry|object", "node");
       rt.AddRow(7, "ON_LEVEL", "object", "node");
       rt.AddRow(8, "DISPLAY_INSTANCE", "object", "node");
+      rt.AddRow(9, "DEFINES_INSTANCE", "node", "node");
     }
     using var nk = new ParquetTableWriter(P("node_kinds.parquet"), new ParquetSchema(I("kind"), S("name")));
     nk.AddRow(1, "DEFINITION");
@@ -186,18 +193,6 @@ public sealed class EnvelopeWriter : IDisposable
   }
 
   private string P(string suffix) => Path.Combine(OutputDir, $"{BaseName}.envelope.{suffix}");
-
-  private string Manifest() =>
-    string.Create(
-      CultureInfo.InvariantCulture,
-      $@"-- Speckle 4.0 envelope artefact. Run from the artefact directory (DuckDB reads parquet natively).
-CREATE VIEW relations  AS SELECT * FROM read_parquet('{BaseName}.envelope.relations.parquet');
-CREATE VIEW nodes      AS SELECT * FROM read_parquet('{BaseName}.envelope.nodes.parquet');
-CREATE VIEW meta       AS SELECT * FROM read_parquet('{BaseName}.envelope.meta.parquet');
-CREATE VIEW rel_types  AS SELECT * FROM read_parquet('{BaseName}.envelope.rel_types.parquet');
-CREATE VIEW node_kinds AS SELECT * FROM read_parquet('{BaseName}.envelope.node_kinds.parquet');
-"
-    );
 
   private void EnsureNotCompleted()
   {

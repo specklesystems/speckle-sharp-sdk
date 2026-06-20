@@ -253,9 +253,14 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void Subelement(int parentObjectK, int childObjectK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Subelement, parentObjectK, childObjectK, ord);
 
-  /// <summary>node(DEFINITION) → geometry | node(nested INSTANCE): definition membership.</summary>
-  public void Defines(int definitionK, int memberK, int ord) =>
-    _envelopeWriter.AddRelation(RelKind.Defines, definitionK, memberK, ord);
+  /// <summary>node(DEFINITION) → geometry: definition contains a raw mesh member.</summary>
+  public void Defines(int definitionK, int geometryK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.Defines, definitionK, geometryK, ord);
+
+  /// <summary>node(DEFINITION) → node(nested INSTANCE): definition contains a nested block placement.
+  /// Distinct rel from <see cref="Defines"/> so <c>rel</c> fixes the dst namespace (node, not geometry).</summary>
+  public void DefinesInstance(int definitionK, int instanceK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.DefinesInstance, definitionK, instanceK, ord);
 
   /// <summary>geometry → node(MATERIAL): per-mesh render material.</summary>
   public void HasMaterial(int geometryK, int materialK) =>
