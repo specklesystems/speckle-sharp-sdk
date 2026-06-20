@@ -6,10 +6,10 @@ using Speckle.Sdk.Pipelines.Send.Artifacts;
 namespace Speckle.Sdk.Tests.Unit.Pipelines;
 
 /// <summary>
-/// Type-parameter normalization (SOT §6): type params dedup into <c>type_eav</c> (once per type),
-/// objects carry a weak ref via <c>object_type</c>, and the <c>object_properties</c> view re-flattens
-/// instance ∪ type so the old flat contract holds. The lazy factory must run once per type, not per
-/// instance.
+/// Type-parameter normalization (SOT §6) over the direct-parquet eav writer: type params dedup into
+/// <c>type_eav</c> (once per type), objects carry a weak ref via <c>object_type</c>, and the
+/// <c>object_properties</c> view (instance ∪ type) re-flattens to the flat contract. The lazy factory
+/// must run once per type, not per instance. Read back via DuckDB <c>read_parquet</c>.
 /// </summary>
 public sealed class EavTypeDedupTests : IDisposable
 {
@@ -18,14 +18,10 @@ public sealed class EavTypeDedupTests : IDisposable
   [Fact]
   public void TypeParams_DedupedOncePerType_ViewReflattens()
   {
-    string dbPath;
     int t1FlattenCalls = 0;
 
     using (var w = new EavWriter(_dir, "model"))
     {
-      dbPath = w.EavDbPath;
-
-      // A & B share type T1; C is type T2. Instance params live per-object in eav.
       w.AddRows("A", new[] { new EavRow("A", "properties.elementId", "1", 1, "number", null, null) });
       w.AddRows("B", new[] { new EavRow("B", "properties.elementId", "2", 2, "number", null, null) });
       w.AddRows("C", new[] { new EavRow("C", "properties.elementId", "3", 3, "number", null, null) });
@@ -47,19 +43,31 @@ public sealed class EavTypeDedupTests : IDisposable
         () => new[] { new EavRow("", "properties.Parameters.Type Parameters.Other.Type Mark", "W2", null, "string", null, "TYPE_MARK") }
       );
 
-      w.Complete(); // builds the index + object_properties view (Dispose alone is the cleanup path)
+      w.Complete();
     }
 
     t1FlattenCalls.Should().Be(1); // flattened once for T1, not per instance
 
-    using var db = new DuckDBConnection($"Data Source={dbPath};ACCESS_MODE=READ_ONLY");
+    using var db = new DuckDBConnection("Data Source=:memory:");
     db.Open();
+    foreach (var t in new[] { "objects", "paths", "eav", "types", "type_eav", "object_type" })
+    {
+      Exec(db, $"CREATE VIEW {t} AS SELECT * FROM read_parquet('{_dir}/model.eav.{t}.parquet')");
+    }
+    Exec(
+      db,
+      @"CREATE VIEW object_properties AS
+        SELECT object_index, path_index, value_string, value_double, value_boolean, unit, internal_definition_name FROM eav
+        UNION ALL
+        SELECT ot.object_index, te.path_index, te.value_string, te.value_double, te.value_boolean, te.unit, te.internal_definition_name
+        FROM object_type ot JOIN type_eav te ON te.type_index = ot.type_index"
+    );
 
     Scalar(db, "SELECT count(*) FROM types").Should().Be(2L); // T1, T2
     Scalar(db, "SELECT count(*) FROM type_eav").Should().Be(2L); // one Type Mark per type (deduped)
     Scalar(db, "SELECT count(*) FROM object_type").Should().Be(3L); // A, B, C each linked
 
-    // Raw eav does NOT carry type params (the dedup) — only instance.
+    // Raw eav carries NO type params (the dedup) — only instance.
     Scalar(db, "SELECT count(*) FROM eav e JOIN paths p ON p.path_index=e.path_index WHERE p.path LIKE '%Type Mark'")
       .Should()
       .Be(0L);
@@ -77,6 +85,18 @@ public sealed class EavTypeDedupTests : IDisposable
       )
       .Should()
       .Be("W2");
+  }
+
+  [System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Security",
+    "CA2100:Review SQL queries for security vulnerabilities",
+    Justification = "Test-controlled constant SQL."
+  )]
+  private static void Exec(DuckDBConnection db, string sql)
+  {
+    using var cmd = db.CreateCommand();
+    cmd.CommandText = sql;
+    cmd.ExecuteNonQuery();
   }
 
   [System.Diagnostics.CodeAnalysis.SuppressMessage(

@@ -1,183 +1,156 @@
 #if NET8_0_OR_GREATER
-using System.Globalization;
-using DuckDB.NET.Data;
+using Parquet.Schema;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
 /// <summary>
-/// Speckle 4.0 compact, interned eav writer (Integrations Board refactor).
-/// Replaces the single fat <c>eav(applicationId, path, …)</c> table with three
-/// interned tables:
+/// Speckle 4.0 compact, interned eav writer — now DIRECT Zstd PARQUET (one file per table) instead of
+/// DuckDB, à la <see cref="GeometriesParquetWriter"/>: passive columnar files, no WAL/checkpoint/index
+/// (so no finalize-OOM cliff), bounded memory at any row count, ~80% smaller than the .duckdb form.
 /// <code>
-///   objects(object_index INTEGER, application_id VARCHAR)   -- one row per object
-///   paths(path_index INTEGER, path VARCHAR)                 -- one row per distinct path
-///   eav(object_index INTEGER, path_index INTEGER, value_*)  -- integer references only
+///   {base}.eav.objects.parquet(object_index, application_id)        -- one row per object (the K dictionary)
+///   {base}.eav.paths.parquet(path_index, path)                     -- SHARED path vocabulary
+///   {base}.eav.eav.parquet(object_index, path_index, value_*)       -- INSTANCE-scoped property rows
+///   {base}.eav.types.parquet(type_index, type_key)                 -- type dictionary
+///   {base}.eav.type_eav.parquet(type_index, path_index, value_*)    -- TYPE-scoped params, once per type
+///   {base}.eav.object_type.parquet(object_index, type_index)       -- the weak ref
+///   {base}.eav.manifest.sql                                        -- attaches the above + the flat-read view
 /// </code>
-/// Repeated <c>applicationId</c>s and property paths collapse to one dense int32 id
-/// (in-memory interning), so eav rows carry integers instead of repeated strings —
-/// far smaller — and we build only a small lookup index on
-/// <c>objects.application_id</c>, NOT an ART index over the (billions-of-rows) eav
-/// table (that index was the finalize-OOM cliff).
-///
-/// Query path (server, read-only DuckDB): resolve application_id → object_index via
-/// the objects index, then join eav → paths. Not thread-safe: calls are sequential.
+/// The <c>object_properties</c> view (instance ∪ type) is shipped as the manifest, run on attach — DuckDB
+/// reads the parquet natively. Interning (applicationId/path/type_key → dense int) and the type dedup are
+/// unchanged. Not thread-safe: calls are sequential.
 /// </summary>
 public sealed class EavWriter : IDisposable
 {
-  private const string MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_MEMORY_LIMIT_MB";
-  private const int DEFAULT_MEMORY_LIMIT_MB = 256;
-  private const string INDEX_MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_INDEX_MEMORY_LIMIT_MB";
-  private const int DEFAULT_INDEX_MEMORY_LIMIT_MB = 1024;
-  private const int APPENDER_RECYCLE_INTERVAL = 25_000;
+  public string OutputDir { get; }
+  public string BaseName { get; }
 
+  /// <summary>The manifest entry point (kept named <c>EavDbPath</c> for caller compatibility).</summary>
   public string EavDbPath { get; }
 
-  private readonly DuckDBConnection _db;
-  private DuckDBAppender _objectsAppender;
-  private DuckDBAppender _pathsAppender;
-  private DuckDBAppender _eavAppender;
-  private DuckDBAppender _typesAppender;
-  private DuckDBAppender _objectTypeAppender;
-  private DuckDBAppender _typeEavAppender;
+  private readonly ParquetTableWriter _objects;
+  private readonly ParquetTableWriter _paths;
+  private readonly ParquetTableWriter _eav;
+  private readonly ParquetTableWriter _types;
+  private readonly ParquetTableWriter _typeEav;
+  private readonly ParquetTableWriter _objectType;
 
-  // Interning: applicationId / path / type_key → dense sequential int32 id. The id is simply
-  // the dictionary's current count, so ids are 0..N-1 in first-seen order.
+  // Interning: applicationId / path / type_key → dense sequential int32 id (0..N-1, first-seen order).
   private readonly Dictionary<string, int> _objectIndex = new(StringComparer.Ordinal);
   private readonly Dictionary<string, int> _pathIndex = new(StringComparer.Ordinal);
   private readonly Dictionary<string, int> _typeIndex = new(StringComparer.Ordinal);
 
-  private int _eavRowsSinceFlush;
   private bool _completed;
 
   public EavWriter(string outputDir, string baseName)
   {
     Directory.CreateDirectory(outputDir);
-    EavDbPath = Path.Combine(outputDir, $"{baseName}.eav.duckdb");
-    DeleteIfExists(EavDbPath);
+    OutputDir = outputDir;
+    BaseName = baseName;
+    EavDbPath = P("manifest.sql");
 
-    var memoryLimitMb = ResolveMbEnvVar(MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_MEMORY_LIMIT_MB);
-    _db = new DuckDBConnection($"Data Source={EavDbPath}");
-    _db.Open();
-    Execute(
-      _db,
-      FormattableString.Invariant($"SET memory_limit='{memoryLimitMb}MB'"),
-      "SET threads=4",
-      "CREATE TABLE objects (object_index INTEGER NOT NULL, application_id VARCHAR NOT NULL)",
-      "CREATE TABLE paths (path_index INTEGER NOT NULL, path VARCHAR NOT NULL)",
-      @"CREATE TABLE eav (
-        object_index INTEGER NOT NULL,
-        path_index INTEGER NOT NULL,
-        value_string VARCHAR,
-        value_double DOUBLE,
-        value_boolean BOOLEAN,
-        unit VARCHAR,
-        internal_definition_name VARCHAR
-      )",
-      // Type-parameter normalization (notes/topology-envelope-SOT.md §6): type params dedup into a
-      // type dimension keyed by type_index; objects carry a weak ref via object_type. type_eav shares
-      // the `paths` dictionary, so path discovery is unchanged. The object_properties VIEW (built at
-      // Complete) re-flattens instance ∪ type for consumers that want the old flat contract.
-      "CREATE TABLE types (type_index INTEGER NOT NULL, type_key VARCHAR NOT NULL)",
-      "CREATE TABLE object_type (object_index INTEGER NOT NULL, type_index INTEGER NOT NULL)",
-      @"CREATE TABLE type_eav (
-        type_index INTEGER NOT NULL,
-        path_index INTEGER NOT NULL,
-        value_string VARCHAR,
-        value_double DOUBLE,
-        value_boolean BOOLEAN,
-        unit VARCHAR,
-        internal_definition_name VARCHAR
-      )"
+    _objects = new ParquetTableWriter(P("objects.parquet"), new ParquetSchema(I("object_index"), S("application_id")));
+    _paths = new ParquetTableWriter(P("paths.parquet"), new ParquetSchema(I("path_index"), S("path")));
+    _eav = new ParquetTableWriter(P("eav.parquet"), EavSchema("object_index"));
+    _types = new ParquetTableWriter(P("types.parquet"), new ParquetSchema(I("type_index"), S("type_key")));
+    _typeEav = new ParquetTableWriter(P("type_eav.parquet"), EavSchema("type_index"));
+    _objectType = new ParquetTableWriter(
+      P("object_type.parquet"),
+      new ParquetSchema(I("object_index"), I("type_index"))
     );
-    _objectsAppender = _db.CreateAppender("objects");
-    _pathsAppender = _db.CreateAppender("paths");
-    _eavAppender = _db.CreateAppender("eav");
-    _typesAppender = _db.CreateAppender("types");
-    _objectTypeAppender = _db.CreateAppender("object_type");
-    _typeEavAppender = _db.CreateAppender("type_eav");
   }
 
-  /// <summary>
-  /// Appends the flattened rows for one object, keyed by its
-  /// <paramref name="applicationId"/>. The applicationId is interned to an
-  /// <c>object_index</c> and each <see cref="EavRow.Path"/> to a <c>path_index</c>;
-  /// the eav rows store only those integer references plus the values.
-  /// </summary>
+  /// <summary>Appends the flattened rows for one object, keyed by its <paramref name="applicationId"/>.</summary>
   public void AddRows(string applicationId, IEnumerable<EavRow> rows)
   {
-    if (_completed)
-    {
-      throw new InvalidOperationException("Writer already completed.");
-    }
-
+    EnsureNotCompleted();
     int objectIndex = GetOrAddObject(applicationId);
     foreach (var row in rows)
     {
-      int pathIndex = GetOrAddPath(row.Path);
-      bool? valueBoolean = null;
-      if (row.Type == "boolean" && bool.TryParse(row.ValueText, out var b))
-      {
-        valueBoolean = b;
-      }
-
-      _eavAppender
-        .CreateRow()
-        .AppendValue(objectIndex)
-        .AppendValue(pathIndex)
-        .AppendValue(row.ValueText)
-        .AppendValue(row.ValueNum)
-        .AppendValue(valueBoolean)
-        .AppendValue(row.Units)
-        .AppendValue(row.InternalDefinitionName)
-        .EndRow();
-
-      if (++_eavRowsSinceFlush >= APPENDER_RECYCLE_INTERVAL)
-      {
-        RecycleAppenders();
-        _eavRowsSinceFlush = 0;
-      }
+      _eav.AddRow(objectIndex, GetOrAddPath(row.Path), row.ValueText, row.ValueNum, Boolean(row), row.Units, row.InternalDefinitionName);
     }
+  }
+
+  /// <summary>
+  /// Interns <paramref name="applicationId"/> to its dense <c>object_index</c>, writing the
+  /// <c>objects</c> dictionary row on first sight. Public so the envelope path resolves the SAME K.
+  /// </summary>
+  public int GetOrAddObject(string applicationId)
+  {
+    if (_objectIndex.TryGetValue(applicationId, out var idx))
+    {
+      return idx;
+    }
+    idx = _objectIndex.Count;
+    _objectIndex.Add(applicationId, idx);
+    _objects.AddRow(idx, applicationId);
+    return idx;
   }
 
   /// <summary>
   /// Links <paramref name="applicationId"/> to its type (<paramref name="typeKey"/>) via
-  /// <c>object_type</c> — the weak ref — and writes that type's parameters to <c>type_eav</c> ONCE
-  /// (deduped by <paramref name="typeKey"/>). <paramref name="typeRowsFactory"/> is invoked only on the
-  /// type's first sight, so type params are flattened once, not per instance. See SOT §6.
+  /// <c>object_type</c>, and writes that type's parameters to <c>type_eav</c> ONCE (deduped).
+  /// <paramref name="typeRowsFactory"/> is invoked only on the type's first sight.
   /// </summary>
   public void AddType(string applicationId, string typeKey, Func<IEnumerable<EavRow>> typeRowsFactory)
   {
-    if (_completed)
-    {
-      throw new InvalidOperationException("Writer already completed.");
-    }
+    EnsureNotCompleted();
 
     int typeIndex = GetOrAddType(typeKey, out var isNew);
     if (isNew)
     {
       foreach (var row in typeRowsFactory())
       {
-        int pathIndex = GetOrAddPath(row.Path);
-        bool? valueBoolean = null;
-        if (row.Type == "boolean" && bool.TryParse(row.ValueText, out var b))
-        {
-          valueBoolean = b;
-        }
-        _typeEavAppender
-          .CreateRow()
-          .AppendValue(typeIndex)
-          .AppendValue(pathIndex)
-          .AppendValue(row.ValueText)
-          .AppendValue(row.ValueNum)
-          .AppendValue(valueBoolean)
-          .AppendValue(row.Units)
-          .AppendValue(row.InternalDefinitionName)
-          .EndRow();
+        _typeEav.AddRow(typeIndex, GetOrAddPath(row.Path), row.ValueText, row.ValueNum, Boolean(row), row.Units, row.InternalDefinitionName);
       }
     }
+    _objectType.AddRow(GetOrAddObject(applicationId), typeIndex);
+  }
 
-    int objectIndex = GetOrAddObject(applicationId);
-    _objectTypeAppender.CreateRow().AppendValue(objectIndex).AppendValue(typeIndex).EndRow();
+  /// <summary>Flushes all parquet tables and writes the attach/view manifest.</summary>
+  public void Complete()
+  {
+    if (_completed)
+    {
+      return;
+    }
+    _completed = true;
+
+    _objects.Complete();
+    _paths.Complete();
+    _eav.Complete();
+    _types.Complete();
+    _typeEav.Complete();
+    _objectType.Complete();
+
+    File.WriteAllText(EavDbPath, Manifest());
+  }
+
+  public void Dispose()
+  {
+    if (_completed)
+    {
+      return;
+    }
+    _completed = true;
+    SafeDispose(_objects);
+    SafeDispose(_paths);
+    SafeDispose(_eav);
+    SafeDispose(_types);
+    SafeDispose(_typeEav);
+    SafeDispose(_objectType);
+  }
+
+  private int GetOrAddPath(string path)
+  {
+    if (_pathIndex.TryGetValue(path, out var idx))
+    {
+      return idx;
+    }
+    idx = _pathIndex.Count;
+    _pathIndex.Add(path, idx);
+    _paths.AddRow(idx, path);
+    return idx;
   }
 
   private int GetOrAddType(string typeKey, out bool isNew)
@@ -189,162 +162,69 @@ public sealed class EavWriter : IDisposable
     }
     idx = _typeIndex.Count;
     _typeIndex.Add(typeKey, idx);
-    _typesAppender.CreateRow().AppendValue(idx).AppendValue(typeKey).EndRow();
+    _types.AddRow(idx, typeKey);
     isNew = true;
     return idx;
   }
 
-  /// <summary>Flushes, builds the small objects lookup index + the object_properties view, and closes the file.</summary>
-  public void Complete()
+  private static bool? Boolean(EavRow row) =>
+    row.Type == "boolean" && bool.TryParse(row.ValueText, out var b) ? b : null;
+
+  private string P(string suffix) => System.IO.Path.Combine(OutputDir, $"{BaseName}.eav.{suffix}");
+
+  // Manifest: attach each parquet as a view + the flat-read `object_properties` (instance ∪ type).
+  // Filenames are relative so the consumer runs it from the artefact directory.
+  private string Manifest() =>
+    $@"-- Speckle 4.0 eav artefact. Run from the artefact directory (DuckDB reads parquet natively).
+CREATE VIEW objects      AS SELECT * FROM read_parquet('{BaseName}.eav.objects.parquet');
+CREATE VIEW paths        AS SELECT * FROM read_parquet('{BaseName}.eav.paths.parquet');
+CREATE VIEW eav          AS SELECT * FROM read_parquet('{BaseName}.eav.eav.parquet');
+CREATE VIEW types        AS SELECT * FROM read_parquet('{BaseName}.eav.types.parquet');
+CREATE VIEW type_eav     AS SELECT * FROM read_parquet('{BaseName}.eav.type_eav.parquet');
+CREATE VIEW object_type  AS SELECT * FROM read_parquet('{BaseName}.eav.object_type.parquet');
+CREATE VIEW object_properties AS
+  SELECT object_index, path_index, value_string, value_double, value_boolean, unit, internal_definition_name
+    FROM eav
+  UNION ALL
+  SELECT ot.object_index, te.path_index, te.value_string, te.value_double, te.value_boolean, te.unit, te.internal_definition_name
+    FROM object_type ot JOIN type_eav te ON te.type_index = ot.type_index;
+";
+
+  private void EnsureNotCompleted()
   {
     if (_completed)
     {
-      return;
+      throw new InvalidOperationException("Writer already completed.");
     }
-    _completed = true;
-
-    _objectsAppender.Dispose();
-    _pathsAppender.Dispose();
-    _eavAppender.Dispose();
-    _typesAppender.Dispose();
-    _objectTypeAppender.Dispose();
-    _typeEavAppender.Dispose();
-
-    // Only the per-object lookup index (objects.application_id) — one row per
-    // object, small. Deliberately NO index over eav: an ART index across the
-    // hundreds-of-millions / billions of eav rows is the finalize-OOM cliff, and
-    // consumers query eav by joining on the interned integer ids, not by string.
-    Execute(
-      _db,
-      FormattableString.Invariant(
-        $"SET memory_limit='{ResolveMbEnvVar(INDEX_MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_INDEX_MEMORY_LIMIT_MB)}MB'"
-      )
-    );
-    Execute(_db, "CREATE INDEX idx_objects_appid ON objects(application_id)");
-
-    // The canonical FLAT read: instance params (eav) ∪ type params (type_eav) fanned to each object via
-    // its object_type weak ref. Consumers/agents that want the old "all props on the object" contract —
-    // including value sampling during path discovery — read this view; the normalized tables stay deduped.
-    Execute(
-      _db,
-      @"CREATE VIEW object_properties AS
-        SELECT object_index, path_index, value_string, value_double, value_boolean, unit, internal_definition_name
-          FROM eav
-        UNION ALL
-        SELECT ot.object_index, te.path_index, te.value_string, te.value_double, te.value_boolean, te.unit, te.internal_definition_name
-          FROM object_type ot JOIN type_eav te ON te.type_index = ot.type_index"
-    );
-
-    _db.Dispose();
   }
 
-  /// <summary>
-  /// Cleanup path (e.g. the owning <c>using</c> firing during exception unwind) —
-  /// stays cheap and never throws: it does NOT build the index here (the heaviest
-  /// step), which on a failing run would waste work and mask the real exception.
-  /// </summary>
-  public void Dispose()
+  // eav / type_eav share the same value-row shape (keyed by object_index or type_index).
+  private static ParquetSchema EavSchema(string keyColumn) =>
+    new(
+      I(keyColumn),
+      I("path_index"),
+      S("value_string"),
+      new DataField<double?>("value_double"),
+      new DataField<bool?>("value_boolean"),
+      S("unit"),
+      S("internal_definition_name")
+    );
+
+  private static DataField I(string name) => new DataField<int>(name);
+
+  private static DataField S(string name) => new DataField<string>(name);
+
+  private static void SafeDispose(IDisposable d)
   {
-    if (_completed)
-    {
-      return;
-    }
-    _completed = true;
     try
     {
-      _objectsAppender.Dispose();
-      _pathsAppender.Dispose();
-      _eavAppender.Dispose();
-      _typesAppender.Dispose();
-      _objectTypeAppender.Dispose();
-      _typeEavAppender.Dispose();
-      _db.Dispose();
+      d.Dispose();
     }
 #pragma warning disable CA1031 // cleanup path: swallow so the original failure propagates unmasked
     catch (Exception)
 #pragma warning restore CA1031
     {
       // Intentionally ignored.
-    }
-  }
-
-  /// <summary>
-  /// Interns <paramref name="applicationId"/> to its dense <c>object_index</c> (the
-  /// object-namespace <c>K</c>), writing the <c>objects</c> dictionary row on first
-  /// sight. Public so the envelope path can resolve the SAME <c>K</c> for an object's
-  /// edges (DISPLAY/SUBELEMENT/ON_LEVEL) that eav assigns it — both share this one
-  /// interner, which is the object-namespace identity guarantee.
-  /// </summary>
-  public int GetOrAddObject(string applicationId)
-  {
-    if (_objectIndex.TryGetValue(applicationId, out var idx))
-    {
-      return idx;
-    }
-    idx = _objectIndex.Count;
-    _objectIndex.Add(applicationId, idx);
-    _objectsAppender.CreateRow().AppendValue(idx).AppendValue(applicationId).EndRow();
-    return idx;
-  }
-
-  private int GetOrAddPath(string path)
-  {
-    if (_pathIndex.TryGetValue(path, out var idx))
-    {
-      return idx;
-    }
-    idx = _pathIndex.Count;
-    _pathIndex.Add(path, idx);
-    _pathsAppender.CreateRow().AppendValue(idx).AppendValue(path).EndRow();
-    return idx;
-  }
-
-  private void RecycleAppenders()
-  {
-    _objectsAppender.Dispose();
-    _pathsAppender.Dispose();
-    _eavAppender.Dispose();
-    _typesAppender.Dispose();
-    _objectTypeAppender.Dispose();
-    _typeEavAppender.Dispose();
-    _objectsAppender = _db.CreateAppender("objects");
-    _pathsAppender = _db.CreateAppender("paths");
-    _eavAppender = _db.CreateAppender("eav");
-    _typesAppender = _db.CreateAppender("types");
-    _objectTypeAppender = _db.CreateAppender("object_type");
-    _typeEavAppender = _db.CreateAppender("type_eav");
-  }
-
-  [System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "Security",
-    "CA2100:Review SQL queries for security vulnerabilities",
-    Justification = "Statements are compile-time constants (DDL/settings); the only interpolated value is a parsed int."
-  )]
-  private static void Execute(DuckDBConnection conn, params string[] statements)
-  {
-    foreach (var sql in statements)
-    {
-      using var cmd = conn.CreateCommand();
-      cmd.CommandText = sql;
-      cmd.ExecuteNonQuery();
-    }
-  }
-
-  private static int ResolveMbEnvVar(string name, int fallback)
-  {
-    var raw = Environment.GetEnvironmentVariable(name);
-    return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var mb) && mb > 0 ? mb : fallback;
-  }
-
-  private static void DeleteIfExists(string path)
-  {
-    if (File.Exists(path))
-    {
-      File.Delete(path);
-    }
-    if (File.Exists(path + ".wal"))
-    {
-      File.Delete(path + ".wal");
     }
   }
 }

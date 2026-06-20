@@ -1,21 +1,15 @@
 #if NET8_0_OR_GREATER
 using System.Globalization;
-using DuckDB.NET.Data;
+using Parquet.Schema;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
-/// <summary>Edge kinds in <see cref="EnvelopeWriter"/>'s <c>relations</c> table.
-/// The <c>rel</c> fixes the identity namespace of <c>src</c>/<c>dst</c> (see
-/// <c>notes/topology-envelope-SOT.md</c> §2): object / geometry / node.</summary>
+/// <summary>Edge kinds in the envelope <c>relations</c> table. The <c>rel</c> fixes the identity
+/// namespace of <c>src</c>/<c>dst</c> (see <c>notes/topology-envelope-SOT.md</c> §2).</summary>
 public static class RelKind
 {
   /// <summary>object → geometry. Direct renderable geometry (world-coord mesh). <c>ord</c> = fragment.</summary>
   public const byte Display = 1;
-
-  /// <summary>object → node(INSTANCE). Renderable via a placement (transform + definition). <c>ord</c> = fragment.
-  /// Distinct from <see cref="Display"/> so <c>dst</c>'s namespace (geometry vs node) is unambiguous —
-  /// node and geometry ids are separate per-namespace counters and would otherwise collide.</summary>
-  public const byte DisplayInstance = 8;
 
   /// <summary>object → geometry. Authoritative solid (Brep/Solid).</summary>
   public const byte Solid = 2;
@@ -34,9 +28,12 @@ public static class RelKind
 
   /// <summary>object → node(LEVEL). Level membership.</summary>
   public const byte OnLevel = 7;
+
+  /// <summary>object → node(INSTANCE). Renderable via a placement (transform + definition).</summary>
+  public const byte DisplayInstance = 8;
 }
 
-/// <summary>Value-node kinds in <see cref="EnvelopeWriter"/>'s <c>nodes</c> table.</summary>
+/// <summary>Value-node kinds in the envelope <c>nodes</c> table.</summary>
 public static class NodeKind
 {
   public const byte Definition = 1;
@@ -47,110 +44,74 @@ public static class NodeKind
 }
 
 /// <summary>
-/// Writes the Speckle 4.0 <c>envelope.duckdb</c> artefact client-side — the topology
-/// property graph from <c>notes/topology-envelope-SOT.md</c>. Two tables, pure dense
-/// <c>int32</c> identity (no <c>applicationId</c> strings):
+/// Writes the Speckle 4.0 envelope topology artefact — now DIRECT Zstd PARQUET (one file per table)
+/// instead of DuckDB, à la <see cref="GeometriesParquetWriter"/>: passive columnar files, no
+/// WAL/checkpoint/index, ~90% smaller than the .duckdb form. Pure dense <c>int32</c> identity.
 /// <code>
-///   relations(rel, src, dst, ord)   -- typed edges; src/dst namespace is rel-determined
-///   nodes(id, kind, name, def_ref,  -- shared value-entities (definition / instance /
-///         transform, units, argb,      material / colour / level), sparse per kind
-///         opacity, metalness, roughness, elevation)
+///   {base}.envelope.relations.parquet(rel, src, dst, ord)      -- typed edges; src/dst namespace = rel
+///   {base}.envelope.nodes.parquet(id, kind, name, def_ref,     -- shared value-entities (definition /
+///         transform, units, argb, opacity, metalness,             instance / material / colour / level)
+///         roughness, elevation)
+///   {base}.envelope.{meta,rel_types,node_kinds}.parquet        -- self-describing catalog (SOT §6)
+///   {base}.envelope.manifest.sql                               -- attaches the above as views
 /// </code>
-/// Supersedes the old <c>proxies(type, data JSON)</c> shape. Material/colour/level are
-/// value-nodes here (not eav attributes): they bind to objects OR meshes, and meshes are
-/// not eav entities. Geometry blobs live in <see cref="GeometriesParquetWriter"/>;
-/// per-object labels + the identity dictionary live in <see cref="EavWriter"/>.
-///
-/// All <c>src</c>/<c>dst</c>/<c>id</c> values are dense ints minted by the caller's
-/// per-namespace <see cref="IdInterner"/>s. <c>transform</c> is 16 row-major doubles,
-/// comma-separated (invariant culture). Not thread-safe: calls are sequential.
+/// <c>transform</c> is 16 row-major doubles, comma-separated. Not thread-safe: calls are sequential.
 /// </summary>
 public sealed class EnvelopeWriter : IDisposable
 {
-  // Resource governance only — does not affect produced content.
-  private const string MEMORY_LIMIT_MB_ENV_VAR = "SPECKLE_DUCKDB_MEMORY_LIMIT_MB";
-  private const int DEFAULT_MEMORY_LIMIT_MB = 256;
-  private const int APPENDER_RECYCLE_INTERVAL = 25_000;
-
-  /// <summary>Bumped when the relations/nodes/catalog schema changes (written to <c>meta</c>).</summary>
   private const int SCHEMA_VERSION = 1;
 
+  public string OutputDir { get; }
+  public string BaseName { get; }
+
+  /// <summary>The manifest entry point (kept named <c>EnvelopeDbPath</c> for caller compatibility).</summary>
   public string EnvelopeDbPath { get; }
 
-  private readonly DuckDBConnection _db;
-  private DuckDBAppender _relationsAppender;
-  private DuckDBAppender _nodesAppender;
-  private int _relRowsSinceFlush;
-  private int _nodeRowsSinceFlush;
+  private readonly ParquetTableWriter _relations;
+  private readonly ParquetTableWriter _nodes;
   private bool _completed;
 
   public EnvelopeWriter(string outputDir, string baseName)
   {
     Directory.CreateDirectory(outputDir);
-    EnvelopeDbPath = Path.Combine(outputDir, $"{baseName}.envelope.duckdb");
+    OutputDir = outputDir;
+    BaseName = baseName;
+    EnvelopeDbPath = P("manifest.sql");
 
-    DeleteIfExists(EnvelopeDbPath);
-
-    var memoryLimitMb = ResolveMbEnvVar(MEMORY_LIMIT_MB_ENV_VAR, DEFAULT_MEMORY_LIMIT_MB);
-    _db = new DuckDBConnection($"Data Source={EnvelopeDbPath}");
-    _db.Open();
-    Execute(
-      _db,
-      FormattableString.Invariant($"SET memory_limit='{memoryLimitMb}MB'"),
-      "SET threads=4",
-      "CREATE TABLE relations (rel INTEGER NOT NULL, src INTEGER NOT NULL, dst INTEGER NOT NULL, ord INTEGER NOT NULL)",
-      @"CREATE TABLE nodes (
-        id INTEGER NOT NULL,
-        kind INTEGER NOT NULL,
-        name VARCHAR,
-        def_ref INTEGER,
-        transform VARCHAR,
-        units VARCHAR,
-        argb INTEGER,
-        opacity DOUBLE,
-        metalness DOUBLE,
-        roughness DOUBLE,
-        elevation DOUBLE
-      )",
-      // Self-describing catalog (notes/topology-envelope-SOT.md §6): the rel/kind vocabulary travels
-      // IN the artefact so a generic consumer learns meaning + namespaces without our source, and can
-      // skip unknown rels/kinds gracefully. rel/kind stay compact ints in the hot tables.
-      $"CREATE TABLE meta (schema_version INTEGER NOT NULL, produced_by VARCHAR)",
-      $"INSERT INTO meta VALUES ({SCHEMA_VERSION}, 'Speckle.Sdk EnvelopeWriter')",
-      "CREATE TABLE rel_types (rel INTEGER PRIMARY KEY, name VARCHAR, src_ns VARCHAR, dst_ns VARCHAR)",
-      @"INSERT INTO rel_types VALUES
-        (1,'DISPLAY','object','geometry'),
-        (2,'SOLID','object','geometry'),
-        (3,'SUBELEMENT','object','object'),
-        (4,'DEFINES','node','geometry'),
-        (5,'HAS_MATERIAL','geometry','node'),
-        (6,'HAS_COLOR','geometry|object','node'),
-        (7,'ON_LEVEL','object','node'),
-        (8,'DISPLAY_INSTANCE','object','node')",
-      "CREATE TABLE node_kinds (kind INTEGER PRIMARY KEY, name VARCHAR)",
-      @"INSERT INTO node_kinds VALUES
-        (1,'DEFINITION'),(2,'INSTANCE'),(3,'MATERIAL'),(4,'COLOR'),(5,'LEVEL')"
+    _relations = new ParquetTableWriter(
+      P("relations.parquet"),
+      new ParquetSchema(I("rel"), I("src"), I("dst"), I("ord"))
     );
-    _relationsAppender = _db.CreateAppender("relations");
-    _nodesAppender = _db.CreateAppender("nodes");
+    _nodes = new ParquetTableWriter(
+      P("nodes.parquet"),
+      new ParquetSchema(
+        I("id"),
+        I("kind"),
+        S("name"),
+        new DataField<int?>("def_ref"),
+        S("transform"),
+        S("units"),
+        new DataField<int?>("argb"),
+        new DataField<double?>("opacity"),
+        new DataField<double?>("metalness"),
+        new DataField<double?>("roughness"),
+        new DataField<double?>("elevation")
+      )
+    );
+
+    WriteCatalog();
   }
 
-  /// <summary>Appends one typed edge. <paramref name="src"/>/<paramref name="dst"/> are
-  /// dense ids in the namespaces fixed by <paramref name="rel"/> (see <see cref="RelKind"/>).</summary>
+  /// <summary>Appends one typed edge. <paramref name="src"/>/<paramref name="dst"/> are dense ids in
+  /// the namespaces fixed by <paramref name="rel"/> (see <see cref="RelKind"/>).</summary>
   public void AddRelation(byte rel, int src, int dst, int ord)
   {
     EnsureNotCompleted();
-    _relationsAppender.CreateRow().AppendValue((int)rel).AppendValue(src).AppendValue(dst).AppendValue(ord).EndRow();
-    if (++_relRowsSinceFlush >= APPENDER_RECYCLE_INTERVAL)
-    {
-      _relationsAppender.Dispose();
-      _relationsAppender = _db.CreateAppender("relations");
-      _relRowsSinceFlush = 0;
-    }
+    _relations.AddRow((int)rel, src, dst, ord);
   }
 
-  /// <summary>Appends one value-node. Only the columns relevant to
-  /// <paramref name="kind"/> are non-null (see <see cref="NodeKind"/>).</summary>
+  /// <summary>Appends one value-node. Only the columns relevant to <paramref name="kind"/> are
+  /// non-null (see <see cref="NodeKind"/>).</summary>
   public void AddNode(
     int id,
     byte kind,
@@ -166,32 +127,10 @@ public sealed class EnvelopeWriter : IDisposable
   )
   {
     EnsureNotCompleted();
-    _nodesAppender
-      .CreateRow()
-      .AppendValue(id)
-      .AppendValue((int)kind)
-      .AppendValue(name)
-      .AppendValue(defRef)
-      .AppendValue(transform)
-      .AppendValue(units)
-      .AppendValue(argb)
-      .AppendValue(opacity)
-      .AppendValue(metalness)
-      .AppendValue(roughness)
-      .AppendValue(elevation)
-      .EndRow();
-    if (++_nodeRowsSinceFlush >= APPENDER_RECYCLE_INTERVAL)
-    {
-      _nodesAppender.Dispose();
-      _nodesAppender = _db.CreateAppender("nodes");
-      _nodeRowsSinceFlush = 0;
-    }
+    _nodes.AddRow(id, (int)kind, name, defRef, transform, units, argb, opacity, metalness, roughness, elevation);
   }
 
-  /// <summary>
-  /// Flushes the appenders, checkpoints, and closes the connection so the file can be
-  /// uploaded immediately (releases the DuckDB lock).
-  /// </summary>
+  /// <summary>Flushes the parquet tables and writes the attach manifest.</summary>
   public void Complete()
   {
     if (_completed)
@@ -199,16 +138,66 @@ public sealed class EnvelopeWriter : IDisposable
       return;
     }
     _completed = true;
-
-    // Disposing the appenders flushes the final batch; disposing the connection
-    // checkpoints the WAL into the file. No explicit CHECKPOINT — let close own the
-    // single checkpoint (an explicit one can trip a DuckDB internal assertion).
-    _relationsAppender.Dispose();
-    _nodesAppender.Dispose();
-    _db.Dispose();
+    _relations.Complete();
+    _nodes.Complete();
+    File.WriteAllText(EnvelopeDbPath, Manifest());
   }
 
-  public void Dispose() => Complete();
+  public void Dispose()
+  {
+    if (_completed)
+    {
+      return;
+    }
+    _completed = true;
+    SafeDispose(_relations);
+    SafeDispose(_nodes);
+  }
+
+  // Self-describing catalog (SOT §6): the rel/kind vocabulary + schema version, written once. Tiny.
+  private void WriteCatalog()
+  {
+    using (var meta = new ParquetTableWriter(P("meta.parquet"), new ParquetSchema(I("schema_version"), S("produced_by"))))
+    {
+      meta.AddRow(SCHEMA_VERSION, "Speckle.Sdk EnvelopeWriter");
+    }
+    using (
+      var rt = new ParquetTableWriter(
+        P("rel_types.parquet"),
+        new ParquetSchema(I("rel"), S("name"), S("src_ns"), S("dst_ns"))
+      )
+    )
+    {
+      rt.AddRow(1, "DISPLAY", "object", "geometry");
+      rt.AddRow(2, "SOLID", "object", "geometry");
+      rt.AddRow(3, "SUBELEMENT", "object", "object");
+      rt.AddRow(4, "DEFINES", "node", "geometry");
+      rt.AddRow(5, "HAS_MATERIAL", "geometry", "node");
+      rt.AddRow(6, "HAS_COLOR", "geometry|object", "node");
+      rt.AddRow(7, "ON_LEVEL", "object", "node");
+      rt.AddRow(8, "DISPLAY_INSTANCE", "object", "node");
+    }
+    using var nk = new ParquetTableWriter(P("node_kinds.parquet"), new ParquetSchema(I("kind"), S("name")));
+    nk.AddRow(1, "DEFINITION");
+    nk.AddRow(2, "INSTANCE");
+    nk.AddRow(3, "MATERIAL");
+    nk.AddRow(4, "COLOR");
+    nk.AddRow(5, "LEVEL");
+  }
+
+  private string P(string suffix) => Path.Combine(OutputDir, $"{BaseName}.envelope.{suffix}");
+
+  private string Manifest() =>
+    string.Create(
+      CultureInfo.InvariantCulture,
+      $@"-- Speckle 4.0 envelope artefact. Run from the artefact directory (DuckDB reads parquet natively).
+CREATE VIEW relations  AS SELECT * FROM read_parquet('{BaseName}.envelope.relations.parquet');
+CREATE VIEW nodes      AS SELECT * FROM read_parquet('{BaseName}.envelope.nodes.parquet');
+CREATE VIEW meta       AS SELECT * FROM read_parquet('{BaseName}.envelope.meta.parquet');
+CREATE VIEW rel_types  AS SELECT * FROM read_parquet('{BaseName}.envelope.rel_types.parquet');
+CREATE VIEW node_kinds AS SELECT * FROM read_parquet('{BaseName}.envelope.node_kinds.parquet');
+"
+    );
 
   private void EnsureNotCompleted()
   {
@@ -218,36 +207,21 @@ public sealed class EnvelopeWriter : IDisposable
     }
   }
 
-  [System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "Security",
-    "CA2100:Review SQL queries for security vulnerabilities",
-    Justification = "Statements are compile-time constants (DDL/settings); the only interpolated value is a parsed int."
-  )]
-  private static void Execute(DuckDBConnection conn, params string[] statements)
-  {
-    foreach (var sql in statements)
-    {
-      using var cmd = conn.CreateCommand();
-      cmd.CommandText = sql;
-      cmd.ExecuteNonQuery();
-    }
-  }
+  private static DataField I(string name) => new DataField<int>(name);
 
-  private static int ResolveMbEnvVar(string name, int fallback)
-  {
-    var raw = Environment.GetEnvironmentVariable(name);
-    return int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var mb) && mb > 0 ? mb : fallback;
-  }
+  private static DataField S(string name) => new DataField<string>(name);
 
-  private static void DeleteIfExists(string path)
+  private static void SafeDispose(IDisposable d)
   {
-    if (File.Exists(path))
+    try
     {
-      File.Delete(path);
+      d.Dispose();
     }
-    if (File.Exists(path + ".wal"))
+#pragma warning disable CA1031 // cleanup path: swallow so the original failure propagates unmasked
+    catch (Exception)
+#pragma warning restore CA1031
     {
-      File.Delete(path + ".wal");
+      // Intentionally ignored.
     }
   }
 }
