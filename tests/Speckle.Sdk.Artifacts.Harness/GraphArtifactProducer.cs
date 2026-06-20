@@ -542,6 +542,13 @@ public static class GraphArtifactProducer
       {
         yield return (node, parent);
       }
+      // Geometry is TERMINAL — never descend into it. Its list-members (Polycurve `segments`, Mesh
+      // `vertices`/`faces`, etc.) are internal components, not child scene objects; descending would extract
+      // them as spurious fragment-objects (and they'd miss layer-colour resolution).
+      if (IsGeometry(node))
+      {
+        continue;
+      }
       foreach (var child in ChildContainers(node))
       {
         stack.Push((child, node));
