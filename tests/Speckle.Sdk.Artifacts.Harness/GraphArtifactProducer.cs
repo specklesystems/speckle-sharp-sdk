@@ -97,7 +97,7 @@ public static class GraphArtifactProducer
     {
       if (defSourceAppIds.Contains(Aid(obj)))
       {
-        EmitDefinitionMember(pipeline, obj, stats, seenGeometryAppIds, instanceNodeByAppId);
+        EmitDefinitionMember(pipeline, obj, stats, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
         continue;
       }
 
@@ -301,7 +301,8 @@ public static class GraphArtifactProducer
     Base obj,
     Stats stats,
     HashSet<string> seenGeometryAppIds,
-    Dictionary<string, int> instanceNodeByAppId
+    Dictionary<string, int> instanceNodeByAppId,
+    Dictionary<string, List<string>> objectDisplayGeomKeys
   )
   {
     var appId = Aid(obj);
@@ -339,6 +340,12 @@ public static class GraphArtifactProducer
     {
       pipeline.AddGeometry(appId, geometry);
       stats.DefinitionGeometries++;
+      // Record the definition geometry under its own appId so the ByLayer walk (CollectDescendantGeom) can
+      // reach it: block content sits under its SOURCE layer Collection in the tree, and ByLayer colour must
+      // bind to this shared geometry-K (fixed across placements) — NOT flood from the instance's layer. The
+      // consumer's appearanceFor prefers colors.get(geomK) over colors.get(objK), so the source-layer colour
+      // wins over the instance's ByBlock fallback. (Tagged g: — materials/colours are geometry-targeted.)
+      objectDisplayGeomKeys[appId] = new List<string> { "g:" + appId };
     }
     catch (Exception ex)
     {
