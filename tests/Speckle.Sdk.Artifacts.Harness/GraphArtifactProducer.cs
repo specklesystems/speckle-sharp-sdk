@@ -530,19 +530,19 @@ public static class GraphArtifactProducer
       pipeline.HasMaterial(pipeline.InternGeometryId(target[2..]), matK);
       stats.HasMaterialEdges++;
     }
-    // COLOUR (rel 6, src_ns = geometry|object): direct mesh → on the geometry; instance → on the OBJECT,
-    // which the consumer applies to the placed (shared) definition geometry during instance expansion.
+    // COLOUR (rel 6): GEOMETRY-targeted only. A geometry-K and an object-K share one dense numeric space, but
+    // the consumer keys HAS_COLOR by raw src into a SINGLE map (colors.get(geomK) ?? colors.get(objK)) — so an
+    // object-targeted colour and a geometry-targeted colour at the same numeric K COLLIDE (a window frame's def
+    // geometry picked up an unrelated plot-hatch instance's green). The earlier ByBlock fallback bound colours
+    // to the instance OBJECT (o:); now that def geometry carries its real SOURCE-LAYER colour on the geometry-K
+    // (see EmitDefinitionMember), that object fallback is redundant — drop it, killing the collision.
     foreach (var (target, colK) in colBindings)
     {
-      var appId = target[2..];
       if (target[0] == 'o')
       {
-        pipeline.HasColor(pipeline.InternObject(appId), colK);
+        continue;
       }
-      else
-      {
-        pipeline.HasColor(pipeline.InternGeometryId(appId), colK);
-      }
+      pipeline.HasColor(pipeline.InternGeometryId(target[2..]), colK);
       stats.HasColorEdges++;
     }
 
