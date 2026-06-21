@@ -161,6 +161,9 @@ public static class GraphArtifactProducer
       pipeline.DisplayInstance(objK, instK, 0);
       stats.DisplayInstanceEdges++;
       stats.InstanceAtomics++;
+      // Appearance target is the OBJECT itself (ByBlock): the placed definition geometry is shared, so a
+      // ByLayer colour must ride on the instance object — the consumer applies it during instance placement.
+      RecordObjectGeom(objectDisplayGeomKeys, appId, "o:" + appId);
       return objK;
     }
 
@@ -186,7 +189,7 @@ public static class GraphArtifactProducer
           {
             pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
             stats.DisplayEdges++;
-            RecordObjectGeom(objectDisplayGeomKeys, appId, gAppId);
+            RecordObjectGeom(objectDisplayGeomKeys, appId, "g:" + gAppId);
           }
         }
       }
@@ -202,7 +205,7 @@ public static class GraphArtifactProducer
         pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
         stats.DisplayEdges++;
         stats.MeshAtomics++;
-        RecordObjectGeom(objectDisplayGeomKeys, appId, appId);
+        RecordObjectGeom(objectDisplayGeomKeys, appId, "g:" + appId);
       }
     }
 
@@ -360,17 +363,18 @@ public static class GraphArtifactProducer
     Dictionary<string, List<string>> layerGeomKeys
   )
   {
-    // DIRECT resolve of a proxy ref: (1) names the mesh; (2) names a DataObject → its display meshes.
-    // NOT the layer tier — that's applied second, with lower precedence, in BindWithPrecedence.
+    // DIRECT resolve of a proxy ref to TAGGED appearance targets ("g:<geomAppId>" mesh | "o:<objAppId>"
+    // instance-object for ByBlock). (1) names the mesh; (2) names a DataObject/instance → its targets.
+    // NOT the layer tier — that's applied second, lower precedence, in BindWithPrecedence.
     IReadOnlyList<string> DirectGeomKeys(string refAppId)
     {
-      if (seenGeometryAppIds.Contains(refAppId))
-      {
-        return new[] { refAppId };
-      }
       if (objectDisplayGeomKeys.TryGetValue(refAppId, out var og))
       {
-        return og;
+        return og; // already tagged g:/o:
+      }
+      if (seenGeometryAppIds.Contains(refAppId))
+      {
+        return new[] { "g:" + refAppId };
       }
       return System.Array.Empty<string>();
     }
@@ -484,20 +488,35 @@ public static class GraphArtifactProducer
     var colBindings = BindWithPrecedence(colProxies, out var colSkipped);
     stats.SkippedColor += colSkipped;
 
-    // Emit — but drop a placeholder-black material on any mesh that has a real display colour, so the
-    // colour (not black) becomes the appearance the loader uses.
-    foreach (var (geomAppId, matK) in matBindings)
+    // Emit. Targets are tagged "g:<geomAppId>" (mesh) or "o:<objAppId>" (instance object, ByBlock).
+    // MATERIAL (rel 5) is geometry-only; also drop a placeholder-black material on a mesh that has a real
+    // display colour so the colour wins.
+    foreach (var (target, matK) in matBindings)
     {
-      if (placeholderMatKs.Contains(matK) && colBindings.ContainsKey(geomAppId))
+      if (target[0] != 'g')
+      {
+        continue; // instances don't carry a per-mesh material
+      }
+      if (placeholderMatKs.Contains(matK) && colBindings.ContainsKey(target))
       {
         continue;
       }
-      pipeline.HasMaterial(pipeline.InternGeometryId(geomAppId), matK);
+      pipeline.HasMaterial(pipeline.InternGeometryId(target[2..]), matK);
       stats.HasMaterialEdges++;
     }
-    foreach (var (geomAppId, colK) in colBindings)
+    // COLOUR (rel 6, src_ns = geometry|object): direct mesh → on the geometry; instance → on the OBJECT,
+    // which the consumer applies to the placed (shared) definition geometry during instance expansion.
+    foreach (var (target, colK) in colBindings)
     {
-      pipeline.HasColor(pipeline.InternGeometryId(geomAppId), colK);
+      var appId = target[2..];
+      if (target[0] == 'o')
+      {
+        pipeline.HasColor(pipeline.InternObject(appId), colK);
+      }
+      else
+      {
+        pipeline.HasColor(pipeline.InternGeometryId(appId), colK);
+      }
       stats.HasColorEdges++;
     }
 
