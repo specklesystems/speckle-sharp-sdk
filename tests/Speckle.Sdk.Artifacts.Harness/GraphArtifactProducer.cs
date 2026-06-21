@@ -43,6 +43,8 @@ public static class GraphArtifactProducer
     public int HasColorEdges;
     public int Levels;
     public int OnLevelEdges;
+    public int Collections;
+    public int InCollectionEdges;
     public int DefinitionGeometries;
     public int DefinitionInstances;
     public int DefinesInstanceEdges;
@@ -63,8 +65,8 @@ public static class GraphArtifactProducer
       $"""
       objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})  encodeFailures={GeometryEncodeFailures}
       edges: DISPLAY={DisplayEdges} DISPLAY_INSTANCE={DisplayInstanceEdges} SUBELEMENT={SubelementEdges}
-             DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges}
-      nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels}
+             DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges}
+      nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections}
       skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel})
       """;
   }
@@ -91,6 +93,11 @@ public static class GraphArtifactProducer
     // DEFINES/DEFINES_INSTANCE + HAS_MATERIAL resolve. Mirrors ODA's DefinitionGeometries.
     var defSourceAppIds = CollectDefinitionSourceAppIds(root);
 
+    // Scene-tree containers (Rhino/CAD layers, ETABS story/category, Tekla category, …): one COLLECTION node
+    // per source Collection (root excluded), parent-chained, so the loader can rebuild the source hierarchy
+    // that flattening would otherwise lose. collectionMap: collection appId → COLLECTION node-K.
+    var collectionMap = BuildCollectionNodes(root, pipeline, stats);
+
     // 1) Walk the collection tree. Definition members → geometry/instance-node; every other leaf is an
     //    atomic object — type-agnostically (SOT §1): DataObject, raw mesh, or bare instance.
     foreach (var (obj, parent) in TraverseAtomics(root))
@@ -103,6 +110,14 @@ public static class GraphArtifactProducer
 
       var objK = EmitObject(pipeline, obj, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
 
+      // IN_COLLECTION: the object's direct membership in its enclosing scene-tree container (null parent or a
+      // non-collection parent — e.g. an object directly under the root — gets no edge).
+      if (parent is Collection && collectionMap.TryGetValue(Aid(parent), out var collK))
+      {
+        pipeline.InCollection(objK, collK, 0);
+        stats.InCollectionEdges++;
+      }
+
       // host→hosted nesting: a non-collection object carrying `elements` (e.g. curtain wall → panels).
       foreach (var child in GetBaseList(obj, "elements"))
       {
@@ -113,7 +128,6 @@ public static class GraphArtifactProducer
         var childK = EmitObject(pipeline, child, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
         pipeline.Subelement(objK, childK, stats.SubelementEdges++);
       }
-      _ = parent;
     }
 
     // layer/collection appId → the geometry of all its descendant objects — for ByLayer material/colour
@@ -620,6 +634,50 @@ public static class GraphArtifactProducer
   // layer/collection appId → the display-geometry appIds of every object beneath it (any depth). Lets a
   // ByLayer material/colour proxy (which references a Layer) bind to that layer's objects' meshes — the
   // CAD "walk up to the layer's colour" resolved once at produce, keeping the envelope flat.
+  // Scene-tree containers → COLLECTION nodes (root excluded), parent-chained. Generic over source: Rhino/CAD
+  // `Layer` collections, ETABS story→category, Tekla category — any Collection in the tree. The parent chain
+  // (COLLECTION.def_ref) reconstructs the source hierarchy that flattening loses; the subtype tag
+  // (collectionType ?? speckle_type leaf) lets the loader distinguish layer / category / story.
+  private static Dictionary<string, int> BuildCollectionNodes(
+    Base root,
+    ObjectsArtifactPipeline pipeline,
+    Stats stats
+  )
+  {
+    var map = new Dictionary<string, int>(StringComparer.Ordinal);
+    void Walk(Base node, int? parentK)
+    {
+      foreach (var child in ChildContainers(node))
+      {
+        if (child is not Collection col)
+        {
+          continue;
+        }
+        var appId = Aid(child);
+        if (!map.TryGetValue(appId, out var k))
+        {
+          k = pipeline.AddCollection(CollectionKey(col), col.name, parentK, CollectionSubtype(col));
+          map[appId] = k;
+          stats.Collections++;
+        }
+        Walk(child, k);
+      }
+    }
+    Walk(root, null); // root itself is NOT a node — its child collections are top-level (parentK = null)
+    return map;
+  }
+
+  private static string CollectionKey(Collection col) => col.applicationId ?? "coll:" + col.id;
+
+  // Subtype tag for the loader: prefer the source collectionType ("layer" on SketchUp), else the speckle_type
+  // leaf ("Layer" on Rhino/AutoCAD/Civil3D, "Collection" on Revit/Tekla/ETABS category grouping).
+  private static string CollectionSubtype(Collection col)
+  {
+    var members = col.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
+    var ct = members.GetValueOrDefault("collectionType") as string;
+    return !string.IsNullOrEmpty(ct) ? ct : col.speckle_type.Split('.')[^1];
+  }
+
   private static Dictionary<string, List<string>> BuildLayerGeomKeys(
     Base root,
     Dictionary<string, List<string>> objectDisplayGeomKeys,

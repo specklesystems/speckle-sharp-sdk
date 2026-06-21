@@ -235,6 +235,19 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     return k;
   }
 
+  /// <summary>Interns a COLLECTION (scene-tree container: layer / category / story) node, writing it once.
+  /// <paramref name="parentCollectionK"/> is its parent COLLECTION node (null = top-level, directly under the
+  /// excluded root) — the parent chain IS the source hierarchy. <paramref name="subtype"/> is a tag
+  /// (e.g. "Layer"/"Collection"/source collectionType) carried in <c>units</c> for the loader to label it.</summary>
+  public int AddCollection(string collectionKey, string? name, int? parentCollectionK, string? subtype)
+  {
+    if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
+    {
+      _envelopeWriter.AddNode(k, NodeKind.Collection, name, parentCollectionK, null, subtype, null, null, null, null, null);
+    }
+    return k;
+  }
+
   // ── relations ──────────────────────────────────────────────────────────────────────
 
   /// <summary>object → geometry: direct renderable geometry (world-coord mesh).</summary>
@@ -271,6 +284,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
   /// <summary>object → node(LEVEL): level membership.</summary>
   public void OnLevel(int objectK, int levelK) => _envelopeWriter.AddRelation(RelKind.OnLevel, objectK, levelK, 0);
+
+  /// <summary>object → node(COLLECTION): the object's direct membership in a scene-tree container.</summary>
+  public void InCollection(int objectK, int collectionK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InCollection, objectK, collectionK, ord);
 
   /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed
   /// node/relation API (<see cref="AddDefinition"/>, <see cref="AddMaterial"/>, <see cref="Display"/>, …).

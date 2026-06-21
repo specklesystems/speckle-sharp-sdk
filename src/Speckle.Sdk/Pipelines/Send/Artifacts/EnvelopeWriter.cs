@@ -35,6 +35,12 @@ public static class RelKind
   /// Split from <see cref="Defines"/> so <c>rel</c> fixes the dst namespace (geometry vs node) — the same
   /// reason <see cref="Display"/>/<see cref="DisplayInstance"/> are split; per-namespace ids overlap.</summary>
   public const byte DefinesInstance = 9;
+
+  /// <summary>object → node(COLLECTION). The object's direct membership in a scene-tree container (Rhino/CAD
+  /// layer, ETABS story/category, Tekla category, …). The container TREE is the COLLECTION node's
+  /// <c>def_ref</c> = parent collection chain. Lets the loader rebuild the source hierarchy (otherwise lost
+  /// when the scene is flattened). Source root collection excluded.</summary>
+  public const byte InCollection = 10;
 }
 
 /// <summary>Value-node kinds in the envelope <c>nodes</c> table.</summary>
@@ -45,6 +51,11 @@ public static class NodeKind
   public const byte Material = 3;
   public const byte Color = 4;
   public const byte Level = 5;
+
+  /// <summary>A scene-tree container (layer / category / story). <c>name</c> = its name, <c>def_ref</c> = its
+  /// PARENT collection node (null = top-level, directly under the excluded root), <c>units</c> = its subtype
+  /// tag (e.g. "Layer", "Collection", or the source <c>collectionType</c>) so the loader can label it.</summary>
+  public const byte Collection = 6;
 }
 
 /// <summary>
@@ -183,6 +194,7 @@ public sealed class EnvelopeWriter : IDisposable
       rt.AddRow(7, "ON_LEVEL", "object", "node");
       rt.AddRow(8, "DISPLAY_INSTANCE", "object", "node");
       rt.AddRow(9, "DEFINES_INSTANCE", "node", "node");
+      rt.AddRow(10, "IN_COLLECTION", "object", "node");
     }
     using var nk = new ParquetTableWriter(P("node_kinds.parquet"), new ParquetSchema(I("kind"), S("name")));
     nk.AddRow(1, "DEFINITION");
@@ -190,6 +202,7 @@ public sealed class EnvelopeWriter : IDisposable
     nk.AddRow(3, "MATERIAL");
     nk.AddRow(4, "COLOR");
     nk.AddRow(5, "LEVEL");
+    nk.AddRow(6, "COLLECTION");
   }
 
   private string P(string suffix) => Path.Combine(OutputDir, $"{BaseName}.envelope.{suffix}");
