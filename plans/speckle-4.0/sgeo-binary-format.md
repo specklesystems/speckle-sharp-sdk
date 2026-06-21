@@ -134,20 +134,33 @@ type/flags/units), length-prefixed so a decoder can skip an unknown segment type
 
 ### 4 — curve / NURBS (`Curve`)
 
-`weights` present only when `rational` (flag bit2). `closed` = bit1, `periodic` =
-bit3. The derived `displayValue` polyline is NOT stored — the server/viewer
-tessellates, or reads a sibling polyline row.
+Two parts: a **leading `displayValue` polyline** (render — the viewer has no NURBS
+evaluator, and `Curve.displayValue` is a required, connector-baked polyline), then
+the **full NURBS definition** trailing (kept for the analytical engine — nothing is
+dropped). A render-only decoder reads the leading polyline at `0x10` exactly like
+primitive 2 and stops; an analytical decoder skips it to reach the definition. The
+leading polyline body is `8 + display_point_count*24` bytes and is already 8-aligned,
+so the definition begins at `def_off = 0x18 + display_point_count*3*8`.
+
+`closed` (bit1) reflects `displayValue.closed`; `rational` = bit2 (then `weights`
+present), `periodic` = bit3.
 
 ```
-0x10  u32  degree
-0x14  u32  control_point_count     (= points.Count / 3)
-0x18  u32  knot_count
-0x1C  u32  reserved = 0
-0x20  f64  domain.start
-0x28  f64  domain.end
-0x30  f64[control_point_count*3]  control_points   x,y,z …
-   +  f64[control_point_count]    weights           if flag bit2 (rational)
-   +  f64[knot_count]             knots
+# leading displayValue polyline (render)
+0x10  u32  display_point_count    (= displayValue.value.Count / 3)
+0x14  u32  reserved = 0
+0x18  f64[display_point_count*3]  display points   x,y,z …
+   (already 8-aligned)
+# trailing NURBS definition (analytical), at def_off
+def_off+0x00  u32  degree
+       +0x04  u32  control_point_count     (= points.Count / 3)
+       +0x08  u32  knot_count
+       +0x0C  u32  reserved = 0
+       +0x10  f64  domain.start
+       +0x18  f64  domain.end
+       +0x20  f64[control_point_count*3]  control_points   x,y,z …
+          +   f64[control_point_count]    weights           if flag bit2 (rational)
+          +   f64[knot_count]             knots
 ```
 
 ### 5 — arc (`Arc`)
@@ -211,23 +224,31 @@ Authoritative = plane + 3 points (radius/measure/length derived). 23 doubles =
 
 ### 9 — spiral (`Spiral`)
 
-`spiralType` is the enum ordinal (Biquadratic=0 … Unknown). `displayValue`
-derived, not stored.
+Same shape as Curve (#4): a **leading `displayValue` polyline** (render) then the
+**full analytic definition** trailing (kept). `spiralType` is the enum ordinal
+(Biquadratic=0 … Unknown). `closed` (bit1) reflects `displayValue.closed`. The
+definition begins at `def_off = 0x18 + display_point_count*3*8`.
 
 ```
-0x10  u32  spiral_type            (enum ordinal)
+# leading displayValue polyline (render)
+0x10  u32  display_point_count    (= displayValue.value.Count / 3)
 0x14  u32  reserved = 0
-0x18  f64[3]  startPoint
-0x30  f64[3]  endPoint
-0x48  f64[3]  plane.origin
-0x60  f64[3]  plane.normal
-0x78  f64[3]  plane.xdir
-0x90  f64[3]  plane.ydir
-0xA8  f64     turns
-0xB0  f64[3]  pitchAxis
-0xC8  f64     pitch
-0xD0  f64     domain.start
-0xD8  f64     domain.end
+0x18  f64[display_point_count*3]  display points   x,y,z …
+   (already 8-aligned)
+# trailing analytic definition, at def_off
+def_off+0x00  u32  spiral_type            (enum ordinal)
+       +0x04  u32  reserved = 0
+       +0x08  f64[3]  startPoint
+       +0x20  f64[3]  endPoint
+       +0x38  f64[3]  plane.origin
+       +0x50  f64[3]  plane.normal
+       +0x68  f64[3]  plane.xdir
+       +0x80  f64[3]  plane.ydir
+       +0x98  f64     turns
+       +0xA0  f64[3]  pitchAxis
+       +0xB8  f64     pitch
+       +0xC0  f64     domain.start
+       +0xC8  f64     domain.end
 ```
 
 ### 10 — box (`Box`)

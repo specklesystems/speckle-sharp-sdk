@@ -23,6 +23,11 @@ return await Run(args).ConfigureAwait(false);
 
 async Task<int> Run(string[] argv)
 {
+  if (argv.Length == 1 && argv[0] == "--selftest")
+  {
+    return SgeoSelfTest.Run();
+  }
+
   Options opts;
   try
   {

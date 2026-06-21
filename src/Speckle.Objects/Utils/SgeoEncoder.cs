@@ -130,6 +130,10 @@ public static class SgeoEncoder
     return Assemble(SgeoPrimitiveType.Polycurve, flags, pc.units, body);
   }
 
+  // Curve blob = the connector-baked smooth `displayValue` polyline LEADING (render: the viewer has no NURBS
+  // evaluator, and this required polyline is exactly what legacy renders), then the FULL NURBS definition
+  // TRAILING (degree/points/weights/knots — kept for the analytical engine; nothing is dropped). The render
+  // consumer reads the leading polyline at a fixed offset; the def offset is computable from displayCount.
   private static byte[] EncodeCurve(Curve c)
   {
     if (c.points.Count % 3 != 0)
@@ -137,12 +141,13 @@ public static class SgeoEncoder
       throw new SpeckleException("Curve.points length must be a multiple of 3.");
     }
     var flags = SgeoFlags.None;
+    if (c.displayValue.closed) { flags |= SgeoFlags.Closed; }
     if (c.rational) { flags |= SgeoFlags.Rational; }
     if (c.periodic) { flags |= SgeoFlags.Periodic; }
-    if (c.closed) { flags |= SgeoFlags.Closed; }
 
-    var body = new List<byte>(c.points.Count * 8 + c.knots.Count * 8 + 32);
-    AddUInt32(body, (uint)c.degree);
+    var body = new List<byte>(c.displayValue.value.Count * 8 + c.points.Count * 8 + c.knots.Count * 8 + 56);
+    AddPolylineBody(body, c.displayValue); // [render] leading displayValue polyline
+    AddUInt32(body, (uint)c.degree); // [analytical] trailing NURBS definition
     AddUInt32(body, (uint)(c.points.Count / 3));
     AddUInt32(body, (uint)c.knots.Count);
     AddUInt32(body, 0);
@@ -152,6 +157,19 @@ public static class SgeoEncoder
     if (c.rational) { foreach (var w in c.weights) { AddDouble(body, w); } }
     foreach (var k in c.knots) { AddDouble(body, k); }
     return Assemble(SgeoPrimitiveType.Curve, flags, c.units, body);
+  }
+
+  // Writes a Polyline body (count, pad, xyz…) — shared by EncodePolyline and the curve/spiral leading render.
+  private static void AddPolylineBody(List<byte> body, Polyline p)
+  {
+    if (p.value.Count % 3 != 0)
+    {
+      throw new SpeckleException("Polyline.value length must be a multiple of 3.");
+    }
+    AddUInt32(body, (uint)(p.value.Count / 3));
+    AddUInt32(body, 0);
+    foreach (var v in p.value) { AddDouble(body, v); }
+    Pad8(body);
   }
 
   private static byte[] EncodeArc(Arc a)
@@ -223,10 +241,14 @@ public static class SgeoEncoder
     return Assemble(SgeoPrimitiveType.Ellipse, flags, e.units, body);
   }
 
+  // Spiral blob = leading displayValue polyline (render — the consumer never tessellated Spiral, so it was
+  // invisible) + trailing analytic def (spiralType/start/end/plane/turns/pitchAxis/pitch/domain — kept).
   private static byte[] EncodeSpiral(Spiral s)
   {
-    var body = new List<byte>(224);
-    AddUInt32(body, (uint)s.spiralType);
+    var flags = s.displayValue.closed ? SgeoFlags.Closed : SgeoFlags.None;
+    var body = new List<byte>(s.displayValue.value.Count * 8 + 112);
+    AddPolylineBody(body, s.displayValue); // [render] leading displayValue polyline
+    AddUInt32(body, (uint)s.spiralType); // [analytical] trailing spiral definition
     AddUInt32(body, 0);
     AddPoint(body, s.startPoint);
     AddPoint(body, s.endPoint);
@@ -236,7 +258,7 @@ public static class SgeoEncoder
     AddDouble(body, s.pitch);
     AddDouble(body, s.domain.start);
     AddDouble(body, s.domain.end);
-    return Assemble(SgeoPrimitiveType.Spiral, SgeoFlags.None, s.units, body);
+    return Assemble(SgeoPrimitiveType.Spiral, flags, s.units, body);
   }
 
   private static byte[] EncodeBox(Box b)
