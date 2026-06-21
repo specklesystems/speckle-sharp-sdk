@@ -707,6 +707,10 @@ public static class GraphArtifactProducer
         : obj.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
 
     var members = obj.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
+    // Root-level scalar fields indexed outside `properties` (mirrors the SDK's EavExtraction
+    // s_rootScalarFields). `level` is a top-level member on Revit DataObjects = the level NAME
+    // ("GRND" etc.) — it lives at the top level, NOT under properties, so it must be listed here
+    // explicitly or it is dropped (the deep `properties.Parameters…Level` rows are unrelated params).
     var rootScalars = new List<KeyValuePair<string, object?>>
     {
       new("speckle_type", obj.speckle_type),
@@ -715,6 +719,7 @@ public static class GraphArtifactProducer
       new("category", members.GetValueOrDefault("category")),
       new("family", members.GetValueOrDefault("family")),
       new("type", members.GetValueOrDefault("type")),
+      new("level", members.GetValueOrDefault("level")),
     };
 
     var typeKey =
