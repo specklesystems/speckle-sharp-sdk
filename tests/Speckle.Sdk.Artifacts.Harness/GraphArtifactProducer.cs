@@ -118,10 +118,10 @@ public static class GraphArtifactProducer
 
     // layer/collection appId → the geometry of all its descendant objects — for ByLayer material/colour
     // (CAD proxies reference a Layer; resolve the walk-up at PRODUCE so the consumer stays flat).
-    var layerGeomKeys = BuildLayerGeomKeys(root, objectDisplayGeomKeys);
+    var layerGeomKeys = BuildLayerGeomKeys(root, objectDisplayGeomKeys, out var layerDepth);
 
     // 2) Value-nodes + their edges, from the root collection's proxy arrays.
-    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, layerGeomKeys);
+    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, layerGeomKeys, layerDepth);
 
     stats.Geometries = seenGeometryAppIds.Count;
 
@@ -367,7 +367,8 @@ public static class GraphArtifactProducer
     HashSet<string> seenGeometryAppIds,
     Dictionary<string, int> instanceNodeByAppId,
     Dictionary<string, List<string>> objectDisplayGeomKeys,
-    Dictionary<string, List<string>> layerGeomKeys
+    Dictionary<string, List<string>> layerGeomKeys,
+    Dictionary<string, int> layerDepth
   )
   {
     // DIRECT resolve of a proxy ref to TAGGED appearance targets ("g:<geomAppId>" mesh | "o:<objAppId>"
@@ -408,18 +409,36 @@ public static class GraphArtifactProducer
           }
         }
       }
+      // Layer tier: a geometry can be enclosed by several nested layers (e.g. cladding under the specific
+      // "RAINSCREEN" layer, itself under a "WALL BUILDUP" grouping layer — both carry a ByLayer colour). The
+      // DEEPEST (most specific) layer must win, else the parent grouping's colour floods all its sub-layers
+      // (black "WALL BUILDUP" over tan "RAINSCREEN"). Collect the deepest candidate per geometry, then bind.
+      var layerCandidate = new Dictionary<string, (int depth, int nodeK)>(StringComparer.Ordinal);
       foreach (var (nodeK, refs) in proxies)
       {
         foreach (var r in refs)
         {
-          if (layerGeomKeys.TryGetValue(r, out var lg))
+          if (!layerGeomKeys.TryGetValue(r, out var lg))
           {
-            foreach (var gk in lg)
+            continue;
+          }
+          var depth = layerDepth.GetValueOrDefault(r, 0);
+          foreach (var gk in lg)
+          {
+            if (byGeom.ContainsKey(gk))
             {
-              byGeom.TryAdd(gk, nodeK);
+              continue; // a direct (mesh/object) ref already claimed it — beats any layer
+            }
+            if (!layerCandidate.TryGetValue(gk, out var cur) || depth > cur.depth)
+            {
+              layerCandidate[gk] = (depth, nodeK);
             }
           }
         }
+      }
+      foreach (var (gk, (_, nodeK)) in layerCandidate)
+      {
+        byGeom[gk] = nodeK;
       }
       skipped = skip;
       return byGeom;
@@ -603,11 +622,13 @@ public static class GraphArtifactProducer
   // CAD "walk up to the layer's colour" resolved once at produce, keeping the envelope flat.
   private static Dictionary<string, List<string>> BuildLayerGeomKeys(
     Base root,
-    Dictionary<string, List<string>> objectDisplayGeomKeys
+    Dictionary<string, List<string>> objectDisplayGeomKeys,
+    out Dictionary<string, int> layerDepth
   )
   {
     var result = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-    void Walk(Base node)
+    var depths = new Dictionary<string, int>(StringComparer.Ordinal);
+    void Walk(Base node, int depth)
     {
       foreach (var child in ChildContainers(node))
       {
@@ -618,12 +639,14 @@ public static class GraphArtifactProducer
           if (geoms.Count > 0)
           {
             result[Aid(child)] = geoms;
+            depths[Aid(child)] = depth;
           }
-          Walk(child);
+          Walk(child, depth + 1);
         }
       }
     }
-    Walk(root);
+    Walk(root, 0);
+    layerDepth = depths;
     return result;
   }
 
