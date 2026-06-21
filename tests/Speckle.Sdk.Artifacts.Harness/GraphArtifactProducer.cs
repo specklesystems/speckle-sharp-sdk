@@ -448,6 +448,7 @@ public static class GraphArtifactProducer
     // Materials: HAS_MATERIAL(mesh → material), per-mesh, deduped with object>layer precedence. objects[]
     // may name the mesh (BIM), the OBJECT (object-grained), or a Layer (ByLayer, resolved at produce).
     var matProxies = new List<(int, List<string>)>();
+    var placeholderMatKs = new HashSet<int>();
     foreach (var mat in GetBaseList(root, "renderMaterialProxies"))
     {
       if (mat is not RenderMaterialProxy rmp)
@@ -455,16 +456,19 @@ public static class GraphArtifactProducer
         continue;
       }
       var v = rmp.value;
-      matProxies.Add((pipeline.AddMaterial(MaterialKey(rmp), v.diffuse, v.opacity, v.metalness, v.roughness), rmp.objects));
+      var matK = pipeline.AddMaterial(MaterialKey(rmp), v.diffuse, v.opacity, v.metalness, v.roughness);
+      matProxies.Add((matK, rmp.objects));
       stats.Materials++;
+      // A pure-black diffuse is the CAD "no material / ByLayer" placeholder — must not override a real
+      // display colour (the loader applies HAS_MATERIAL over HAS_COLOR). Real materials (Rhino tans etc.)
+      // are kept; only the black placeholder yields to colour.
+      if ((v.diffuse & 0xFFFFFF) == 0)
+      {
+        placeholderMatKs.Add(matK);
+      }
     }
     var matBindings = BindWithPrecedence(matProxies, out var matSkipped);
     stats.SkippedMaterial += matSkipped;
-    foreach (var (geomAppId, matK) in matBindings)
-    {
-      pipeline.HasMaterial(pipeline.InternGeometryId(geomAppId), matK);
-      stats.HasMaterialEdges++;
-    }
 
     // Colors: HAS_COLOR(mesh → colour), per-mesh — same 3-tier resolve + object>layer precedence.
     var colProxies = new List<(int, List<string>)>();
@@ -479,6 +483,18 @@ public static class GraphArtifactProducer
     }
     var colBindings = BindWithPrecedence(colProxies, out var colSkipped);
     stats.SkippedColor += colSkipped;
+
+    // Emit — but drop a placeholder-black material on any mesh that has a real display colour, so the
+    // colour (not black) becomes the appearance the loader uses.
+    foreach (var (geomAppId, matK) in matBindings)
+    {
+      if (placeholderMatKs.Contains(matK) && colBindings.ContainsKey(geomAppId))
+      {
+        continue;
+      }
+      pipeline.HasMaterial(pipeline.InternGeometryId(geomAppId), matK);
+      stats.HasMaterialEdges++;
+    }
     foreach (var (geomAppId, colK) in colBindings)
     {
       pipeline.HasColor(pipeline.InternGeometryId(geomAppId), colK);
