@@ -24,8 +24,8 @@
      or where ILRepack affords us extra flexibility.
      
    - Avoid having production versions of our SDKs depend on pre-release packages
-     If you must suppress NU5104, do so inline e.g. `<PackageReference Include="System.CommandLine" NoWarn="NU5104" />`.
- 
+     If you must suppress nuget warnings (NU1901, NU1902, NU1903, NU1904), do so inline e.g. `<PackageReference Include="System.CommandLine" NoWarn="NU5104" />`.
+     or use NuGetAuditSuppress
   -->
   <ItemGroup>
     <PackageVersion Include="altcover" Version="9.0.102" />
