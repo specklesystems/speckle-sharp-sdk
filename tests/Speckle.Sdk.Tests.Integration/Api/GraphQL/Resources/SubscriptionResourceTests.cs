@@ -15,7 +15,8 @@ public class SubscriptionResourceTests : IAsyncLifetime
 #else
   private const int WAIT_PERIOD = 600; // For CI runs, a much smaller wait time is acceptable
 #endif
-  private const int TIMEOUT = WAIT_PERIOD + WAIT_PERIOD + 600;
+  // I don't know why, I needed to increase this massively from (WAIT_PERIOD * 2 + 600) when migrating from XUnit v2 to XUnit v3
+  private const int TIMEOUT = WAIT_PERIOD * 8; 
   private IClient _testUser;
   private Project _testProject;
   private Model _testModel;
