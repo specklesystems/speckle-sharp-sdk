@@ -6,11 +6,12 @@ using Speckle.Sdk.Pipelines.Send.Artifacts;
 namespace Speckle.Objects.Utils;
 
 /// <summary>
-/// Speckle 4.0 producer for the artefact TRIPLE (see <c>notes/topology-envelope-SOT.md</c>):
+/// Speckle 4.0 producer for the artefact bundle (see <c>notes/topology-envelope-SOT.md</c>),
+/// now PARQUET-ONLY — direct Zstd parquet, one file per table, no DuckDB:
 /// <c>geometries.parquet</c> (SGEO shape blobs, <see cref="GeometriesParquetWriter"/>),
-/// <c>envelope.duckdb</c> (the topology property graph — relations + value-nodes,
-/// <see cref="EnvelopeWriter"/>), and <c>eav.duckdb</c> (object set + identity dictionary +
-/// per-object labels, <see cref="EavWriter"/>).
+/// the <c>envelope.*.parquet</c> table set (the topology property graph — relations + value-nodes,
+/// <see cref="EnvelopeWriter"/>), and the <c>eav.*.parquet</c> table set (object set + identity
+/// dictionary + per-object labels, <see cref="EavWriter"/>).
 ///
 /// This class owns the three per-namespace identity interners and exposes a typed emit API
 /// so the producer stays string-based while the artefacts store pure dense <c>int32</c>:
@@ -52,10 +53,12 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <summary>The local path of the produced <c>geometries.parquet</c> file.</summary>
   public string GeometriesPath => _geometriesWriter.GeometriesPath;
 
-  /// <summary>The local path of the produced <c>envelope.duckdb</c> (relations+nodes) file.</summary>
+  /// <summary>The output directory holding the produced <c>envelope.*.parquet</c> tables
+  /// (relations + nodes). Name kept (<c>...DbPath</c>) for caller compatibility — no DuckDB is written.</summary>
   public string EnvelopeDbPath => _envelopeWriter.EnvelopeDbPath;
 
-  /// <summary>The local path of the produced <c>eav.duckdb</c> file.</summary>
+  /// <summary>The output directory holding the produced <c>eav.*.parquet</c> tables.
+  /// Name kept (<c>...DbPath</c>) for caller compatibility — no DuckDB is written.</summary>
   public string EavDbPath => _eavWriter.EavDbPath;
 
   // ── object namespace ──────────────────────────────────────────────────────────────
