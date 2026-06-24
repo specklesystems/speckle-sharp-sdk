@@ -20,7 +20,8 @@ public sealed class EavTypeDedupTests : IDisposable
   {
     int t1FlattenCalls = 0;
 
-    using (var w = new EavWriter(_dir, "model"))
+    using var scheduler = new ParquetWriteScheduler();
+    using (var w = new EavWriter(_dir, "model", scheduler))
     {
       w.AddRows("A", new[] { new EavRow("A", "properties.elementId", "1", 1, "number", null, null) });
       w.AddRows("B", new[] { new EavRow("B", "properties.elementId", "2", 2, "number", null, null) });
@@ -45,6 +46,7 @@ public sealed class EavTypeDedupTests : IDisposable
 
       w.Complete();
     }
+    scheduler.CompleteAndWait(); // drain the background writer so the parquet files are on disk
 
     t1FlattenCalls.Should().Be(1); // flattened once for T1, not per instance
 

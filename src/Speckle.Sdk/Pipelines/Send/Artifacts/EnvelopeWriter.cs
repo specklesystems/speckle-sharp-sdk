@@ -88,17 +88,20 @@ public sealed class EnvelopeWriter : IDisposable
 
   private readonly ParquetTableWriter _relations;
   private readonly ParquetTableWriter _nodes;
+  private readonly ParquetWriteScheduler _scheduler;
   private bool _completed;
 
-  public EnvelopeWriter(string outputDir, string baseName)
+  public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
   {
     Directory.CreateDirectory(outputDir);
     OutputDir = outputDir;
     BaseName = baseName;
+    _scheduler = scheduler;
 
     _relations = new ParquetTableWriter(
       P("relations.parquet"),
-      new ParquetSchema(I("rel"), I("src"), I("dst"), I("ord"))
+      new ParquetSchema(I("rel"), I("src"), I("dst"), I("ord")),
+      scheduler
     );
     _nodes = new ParquetTableWriter(
       P("nodes.parquet"),
@@ -114,7 +117,8 @@ public sealed class EnvelopeWriter : IDisposable
         new DataField<double?>("metalness"),
         new DataField<double?>("roughness"),
         new DataField<double?>("elevation")
-      )
+      ),
+      scheduler
     );
 
     WriteCatalog();
@@ -174,14 +178,21 @@ public sealed class EnvelopeWriter : IDisposable
   // Self-describing catalog (SOT §6): the rel/kind vocabulary + schema version, written once. Tiny.
   private void WriteCatalog()
   {
-    using (var meta = new ParquetTableWriter(P("meta.parquet"), new ParquetSchema(I("schema_version"), S("produced_by"))))
+    using (
+      var meta = new ParquetTableWriter(
+        P("meta.parquet"),
+        new ParquetSchema(I("schema_version"), S("produced_by")),
+        _scheduler
+      )
+    )
     {
       meta.AddRow(SCHEMA_VERSION, "Speckle.Sdk EnvelopeWriter");
     }
     using (
       var rt = new ParquetTableWriter(
         P("rel_types.parquet"),
-        new ParquetSchema(I("rel"), S("name"), S("src_ns"), S("dst_ns"))
+        new ParquetSchema(I("rel"), S("name"), S("src_ns"), S("dst_ns")),
+        _scheduler
       )
     )
     {
@@ -196,7 +207,11 @@ public sealed class EnvelopeWriter : IDisposable
       rt.AddRow(9, "DEFINES_INSTANCE", "node", "node");
       rt.AddRow(10, "IN_COLLECTION", "object", "node");
     }
-    using var nk = new ParquetTableWriter(P("node_kinds.parquet"), new ParquetSchema(I("kind"), S("name")));
+    using var nk = new ParquetTableWriter(
+      P("node_kinds.parquet"),
+      new ParquetSchema(I("kind"), S("name")),
+      _scheduler
+    );
     nk.AddRow(1, "DEFINITION");
     nk.AddRow(2, "INSTANCE");
     nk.AddRow(3, "MATERIAL");

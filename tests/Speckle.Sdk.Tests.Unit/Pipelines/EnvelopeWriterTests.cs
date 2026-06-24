@@ -16,7 +16,8 @@ public sealed class EnvelopeWriterTests : IDisposable
   [Fact]
   public void WritesRelationsAndNodes_RoundTrips()
   {
-    using (var w = new EnvelopeWriter(_dir, "model"))
+    using var scheduler = new ParquetWriteScheduler();
+    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
     {
       w.AddNode(0, NodeKind.Definition, "wall-def", null, null, null, null, null, null, null, null);
       w.AddNode(1, NodeKind.Instance, null, 0, "1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1", "mm", null, null, null, null, null);
@@ -31,6 +32,7 @@ public sealed class EnvelopeWriterTests : IDisposable
 
       w.Complete();
     }
+    scheduler.CompleteAndWait(); // drain the background writer so the parquet files are on disk
 
     using var db = new DuckDBConnection("Data Source=:memory:");
     db.Open();
@@ -51,8 +53,8 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, $"SELECT elevation FROM nodes WHERE kind = {NodeKind.Level}").Should().Be(3000.0);
 
     // self-describing catalog (SOT §6)
-    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(9L);
-    Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(5L);
+    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(10L); // 9 + IN_COLLECTION
+    Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(6L); // 5 + COLLECTION
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DisplayInstance}").Should().Be("DISPLAY_INSTANCE");
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("DEFINES_INSTANCE");
     // DEFINES (4) is now geometry-only; DEFINES_INSTANCE (9) carries node→node nesting. rel fixes dst namespace.

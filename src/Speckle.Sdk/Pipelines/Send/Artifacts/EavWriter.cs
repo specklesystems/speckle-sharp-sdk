@@ -46,20 +46,25 @@ public sealed class EavWriter : IDisposable
 
   private bool _completed;
 
-  public EavWriter(string outputDir, string baseName)
+  public EavWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
   {
     Directory.CreateDirectory(outputDir);
     OutputDir = outputDir;
     BaseName = baseName;
 
-    _objects = new ParquetTableWriter(P("objects.parquet"), new ParquetSchema(I("object_index"), S("application_id")));
-    _paths = new ParquetTableWriter(P("paths.parquet"), new ParquetSchema(I("path_index"), S("path")));
-    _eav = new ParquetTableWriter(P("eav.parquet"), EavSchema("object_index"));
-    _types = new ParquetTableWriter(P("types.parquet"), new ParquetSchema(I("type_index"), S("type_key")));
-    _typeEav = new ParquetTableWriter(P("type_eav.parquet"), EavSchema("type_index"));
+    _objects = new ParquetTableWriter(
+      P("objects.parquet"),
+      new ParquetSchema(I("object_index"), S("application_id")),
+      scheduler
+    );
+    _paths = new ParquetTableWriter(P("paths.parquet"), new ParquetSchema(I("path_index"), S("path")), scheduler);
+    _eav = new ParquetTableWriter(P("eav.parquet"), EavSchema("object_index"), scheduler);
+    _types = new ParquetTableWriter(P("types.parquet"), new ParquetSchema(I("type_index"), S("type_key")), scheduler);
+    _typeEav = new ParquetTableWriter(P("type_eav.parquet"), EavSchema("type_index"), scheduler);
     _objectType = new ParquetTableWriter(
       P("object_type.parquet"),
-      new ParquetSchema(I("object_index"), I("type_index"))
+      new ParquetSchema(I("object_index"), I("type_index")),
+      scheduler
     );
   }
 

@@ -22,19 +22,28 @@ public sealed class ParquetTableWriter : IDisposable
 
   public string Path { get; }
 
+#pragma warning disable CA2213 // disposed on the background writer thread via the Complete() finalize job, not inline
   private readonly Stream _stream;
   private readonly ParquetWriter _writer;
+#pragma warning restore CA2213
   private readonly DataField[] _fields;
   private readonly Col[] _cols;
   private readonly int _flushRows;
+  private readonly ParquetWriteScheduler _scheduler;
   private int _buffered;
   private bool _completed;
 
-  public ParquetTableWriter(string path, ParquetSchema schema, int flushRows = DEFAULT_ROWGROUP_ROWS)
+  public ParquetTableWriter(
+    string path,
+    ParquetSchema schema,
+    ParquetWriteScheduler scheduler,
+    int flushRows = DEFAULT_ROWGROUP_ROWS
+  )
   {
     Path = path;
     DeleteIfExists(path);
 
+    _scheduler = scheduler;
     _fields = schema.DataFields;
     _cols = new Col[_fields.Length];
     for (var i = 0; i < _fields.Length; i++)
@@ -65,7 +74,8 @@ public sealed class ParquetTableWriter : IDisposable
     }
   }
 
-  /// <summary>Writes the final row group and the Parquet footer, then closes the file.</summary>
+  /// <summary>Enqueues the final row group and the file finalize (footer + close) on the background
+  /// writer. The file is fully written only after <see cref="ParquetWriteScheduler.CompleteAndWait"/>.</summary>
   public void Complete()
   {
     if (_completed)
@@ -74,24 +84,46 @@ public sealed class ParquetTableWriter : IDisposable
     }
     _completed = true;
     FlushRowGroup();
-    _writer.Dispose(); // footer/metadata
-    _stream.Dispose();
+
+    // Footer/close runs on the background thread too, AFTER this file's row-group jobs (FIFO),
+    // so it never blocks the producer and never races the row-group writes.
+    var writer = _writer;
+    var stream = _stream;
+    _scheduler.Enqueue(() =>
+    {
+      writer.Dispose(); // footer/metadata
+      stream.Dispose();
+    });
   }
 
   public void Dispose() => Complete();
 
+  // Snapshots the buffered columns into plain arrays and hands the encode/compress/IO to the
+  // background writer. The producer keeps buffering the next row group immediately; the only thing
+  // that ever touches _writer/_stream after construction is the background thread.
   private void FlushRowGroup()
   {
     if (_buffered == 0)
     {
       return;
     }
-    using var rowGroup = _writer.CreateRowGroup();
+    var arrays = new Array[_fields.Length];
     for (var i = 0; i < _fields.Length; i++)
     {
-      rowGroup.WriteColumnAsync(new DataColumn(_fields[i], _cols[i].ToArrayAndClear())).GetAwaiter().GetResult();
+      arrays[i] = _cols[i].ToArrayAndClear();
     }
     _buffered = 0;
+
+    var writer = _writer;
+    var fields = _fields;
+    _scheduler.Enqueue(() =>
+    {
+      using var rowGroup = writer.CreateRowGroup();
+      for (var i = 0; i < fields.Length; i++)
+      {
+        rowGroup.WriteColumnAsync(new DataColumn(fields[i], arrays[i])).GetAwaiter().GetResult();
+      }
+    });
   }
 
   private static Col MakeCol(DataField f)

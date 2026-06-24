@@ -41,13 +41,16 @@ public sealed class GeometriesParquetWriter : IDisposable
 
   public string GeometriesPath { get; }
 
+#pragma warning disable CA2213 // disposed on the background writer thread via the Complete() finalize job, not inline
   private readonly Stream _stream;
   private readonly ParquetWriter _writer;
+#pragma warning restore CA2213
   private readonly DataField _indexField;
   private readonly DataField _contentField;
   private readonly DataField _idField;
   private readonly DataField _typeField;
   private readonly long _flushBytes;
+  private readonly ParquetWriteScheduler _scheduler;
   private readonly HashSet<int> _seenGeometry = new();
 
   // In-flight row-group buffers (parallel lists, one entry per row).
@@ -58,12 +61,13 @@ public sealed class GeometriesParquetWriter : IDisposable
   private long _bufferedBytes;
   private bool _completed;
 
-  public GeometriesParquetWriter(string outputDir, string baseName)
+  public GeometriesParquetWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
   {
     Directory.CreateDirectory(outputDir);
     GeometriesPath = Path.Combine(outputDir, $"{baseName}.geometries.parquet");
     DeleteIfExists(GeometriesPath);
 
+    _scheduler = scheduler;
     _flushBytes = ResolveMbEnvVar(ROWGROUP_MB_ENV_VAR, DEFAULT_ROWGROUP_MB) * 1024L * 1024L;
 
     var schema = new ParquetSchema(
@@ -117,7 +121,8 @@ public sealed class GeometriesParquetWriter : IDisposable
     }
   }
 
-  /// <summary>Writes the final row group and the Parquet footer, then closes the file.</summary>
+  /// <summary>Enqueues the final row group and the file finalize (footer + close) on the background
+  /// writer. The file is fully written only after <see cref="ParquetWriteScheduler.CompleteAndWait"/>.</summary>
   public void Complete()
   {
     if (_completed)
@@ -127,30 +132,50 @@ public sealed class GeometriesParquetWriter : IDisposable
     _completed = true;
 
     FlushRowGroup();
-    _writer.Dispose(); // writes the footer/metadata
-    _stream.Dispose();
+    var writer = _writer;
+    var stream = _stream;
+    _scheduler.Enqueue(() =>
+    {
+      writer.Dispose(); // writes the footer/metadata
+      stream.Dispose();
+    });
   }
 
   public void Dispose() => Complete();
 
-  // Serializes the buffered rows as one Parquet row group and frees the buffers.
+  // Snapshots the buffered rows into plain arrays and hands the encode/compress/IO to the background
+  // writer (off the ODA pinned thread — see ParquetWriteScheduler). The buffer is freed immediately so
+  // the producer keeps accumulating the next row group while this one is written.
   private void FlushRowGroup()
   {
     if (_indices.Count == 0)
     {
       return;
     }
-    using var rowGroup = _writer.CreateRowGroup();
-    rowGroup.WriteColumnAsync(new DataColumn(_indexField, _indices.ToArray())).GetAwaiter().GetResult();
-    rowGroup.WriteColumnAsync(new DataColumn(_contentField, _contents.ToArray())).GetAwaiter().GetResult();
-    rowGroup.WriteColumnAsync(new DataColumn(_idField, _ids.ToArray())).GetAwaiter().GetResult();
-    rowGroup.WriteColumnAsync(new DataColumn(_typeField, _types.ToArray())).GetAwaiter().GetResult();
+    var indices = _indices.ToArray();
+    var contents = _contents.ToArray();
+    var ids = _ids.ToArray();
+    var types = _types.ToArray();
 
     _indices.Clear();
     _contents.Clear();
     _ids.Clear();
     _types.Clear();
     _bufferedBytes = 0;
+
+    var writer = _writer;
+    var indexField = _indexField;
+    var contentField = _contentField;
+    var idField = _idField;
+    var typeField = _typeField;
+    _scheduler.Enqueue(() =>
+    {
+      using var rowGroup = writer.CreateRowGroup();
+      rowGroup.WriteColumnAsync(new DataColumn(indexField, indices)).GetAwaiter().GetResult();
+      rowGroup.WriteColumnAsync(new DataColumn(contentField, contents)).GetAwaiter().GetResult();
+      rowGroup.WriteColumnAsync(new DataColumn(idField, ids)).GetAwaiter().GetResult();
+      rowGroup.WriteColumnAsync(new DataColumn(typeField, types)).GetAwaiter().GetResult();
+    });
   }
 
   // SGEO primitive_type byte (header offset 0x05) → board geometries.type label.

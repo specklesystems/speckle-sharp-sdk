@@ -28,6 +28,11 @@ namespace Speckle.Objects.Utils;
 /// </summary>
 public sealed class ObjectsArtifactPipeline : IDisposable
 {
+  // One background writer thread shared by all three artefacts. The ODA extraction thread interns +
+  // buffers rows synchronously; every row-group flush + file finalize is handed to this scheduler, so
+  // Parquet's sync-over-async IO never runs on the ODA pinned thread (no deadlock), overlaps extraction,
+  // and is bounded by the scheduler's queue (backpressure). See ParquetWriteScheduler.
+  private readonly ParquetWriteScheduler _scheduler = new();
   private readonly GeometriesParquetWriter _geometriesWriter;
   private readonly EnvelopeWriter _envelopeWriter;
   private readonly EavWriter _eavWriter;
@@ -44,9 +49,9 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     ISet<string>? excludedTopLevelProperties = null
   )
   {
-    _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName);
-    _envelopeWriter = new EnvelopeWriter(outputDir, baseName);
-    _eavWriter = new EavWriter(outputDir, baseName);
+    _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName, _scheduler);
+    _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler);
+    _eavWriter = new EavWriter(outputDir, baseName, _scheduler);
     _excludedProperties = excludedTopLevelProperties ?? EavExtraction.DefaultExcludedTopLevelProperties;
   }
 
@@ -301,21 +306,28 @@ public sealed class ObjectsArtifactPipeline : IDisposable
       "AddProxy was removed with the proxies(type,json) envelope. Use the typed relations+nodes API."
     );
 
-  /// <summary>Flushes and closes all three files (releases the DuckDB locks).</summary>
+  /// <summary>
+  /// Enqueues every artefact's final flush + finalize, then BLOCKS until the background writer has
+  /// drained — so all parquet files are fully written and closed on return. The uploader reads
+  /// <see cref="GeometriesPath"/>/<see cref="EnvelopeDbPath"/>/<see cref="EavDbPath"/> only after this.
+  /// Re-throws on this thread if any background write faulted.
+  /// </summary>
   public void Complete()
   {
     _geometriesWriter.Complete();
     _envelopeWriter.Complete();
     _eavWriter.Complete();
+    _scheduler.CompleteAndWait();
   }
 
-  // Cleanup path: dispose every writer independently and never let one writer's cleanup
-  // error escape (it fires during exception unwind).
+  // Cleanup path: enqueue each writer's finalize (best-effort), then drain + join the background
+  // writer so file handles close. Never let one writer's cleanup error escape (it fires during unwind).
   public void Dispose()
   {
     SafeDispose(_geometriesWriter);
     SafeDispose(_envelopeWriter);
     SafeDispose(_eavWriter);
+    SafeDispose(_scheduler);
   }
 
   private static string FormatTransform(IReadOnlyList<double> transform) =>
