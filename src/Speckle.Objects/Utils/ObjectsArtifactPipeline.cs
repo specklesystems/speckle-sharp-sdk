@@ -256,6 +256,20 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     return k;
   }
 
+  /// <summary>Interns a CONTAINER (semantic-topology bucket: model / room / system / …) node, writing it
+  /// once. Distinct from <see cref="AddCollection"/> (the authored scene-tree). <paramref name="parentContainerK"/>
+  /// is its parent CONTAINER (null = top-level) — self-nesting for nested links / appended files.
+  /// <paramref name="subtype"/> is the canonical axis tag carried in <c>units</c> (e.g. "Model"); use the
+  /// SAME tag across connectors for the same concept (see the <see cref="RelKind"/> naming convention).</summary>
+  public int AddContainer(string containerKey, string? name, int? parentContainerK, string? subtype)
+  {
+    if (_nodeInterner.GetOrAdd("cont:" + containerKey, out var k))
+    {
+      _envelopeWriter.AddNode(k, NodeKind.Container, name, parentContainerK, null, subtype, null, null, null, null, null);
+    }
+    return k;
+  }
+
   // ── relations ──────────────────────────────────────────────────────────────────────
 
   /// <summary>object → geometry: direct renderable geometry (world-coord mesh).</summary>
@@ -296,6 +310,18 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <summary>object → node(COLLECTION): the object's direct membership in a scene-tree container.</summary>
   public void InCollection(int objectK, int collectionK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InCollection, objectK, collectionK, ord);
+
+  /// <summary>object → node(CONTAINER, subtype "Model"): the object's source-document / host / linked-model
+  /// membership. The default-projection top key for Revit links / Navis federated files (SOT §8).</summary>
+  public void InModel(int objectK, int modelK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InModel, objectK, modelK, ord);
+
+  // ── scene views ──────────────────────────────────────────────────────────────────────
+
+  /// <summary>Authors a scene_views projection (SOT §8): the producer's default (and optional named
+  /// alternate) scene-explorer grouping, which the consumer seeds the model-tree grouping from. Build keys
+  /// with <see cref="SceneViewKey.Rel"/> / <see cref="SceneViewKey.Eav"/>. Omit keys with no data.</summary>
+  public void AddSceneView(SceneView view) => _envelopeWriter.AddSceneView(view);
 
   /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed
   /// node/relation API (<see cref="AddDefinition"/>, <see cref="AddMaterial"/>, <see cref="Display"/>, …).
