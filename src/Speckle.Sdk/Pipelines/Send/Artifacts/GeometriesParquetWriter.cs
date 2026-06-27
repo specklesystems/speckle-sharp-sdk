@@ -36,22 +36,49 @@ public sealed class GeometriesParquetWriter : IDisposable
   private const int DEFAULT_ROWGROUP_MB = 64;
   private const int MAX_ROWS_PER_GROUP = 200_000; // safety cap for tiny-blob models
 
+  // Roll to a new shard file once the CURRENT shard's uncompressed content bytes would
+  // exceed this. The cap is on uncompressed blob bytes, so the on-disk (Zstd) shard is
+  // always smaller than the cap — guaranteed under the viewer's per-file ceiling
+  // (duckdb-wasm wasm32 32-bit file offsets / OPFS, ~4 GiB) regardless of compression
+  // ratio. Shard 0 keeps the canonical `{base}.geometries.parquet` name (so a model
+  // that fits in one shard is byte-for-byte unchanged); overflow shards are
+  // `{base}.geometries.{N}.parquet` (N = 1, 2, …). Consumers read the set via the glob
+  // `{base}.geometries*.parquet` (a single-shard model matches only the canonical name).
+  // This contract is shared verbatim with the native nwextract `GeomSharder` (C++).
+  private const string SHARD_MB_ENV_VAR = "SPECKLE_GEOMETRY_SHARD_MB";
+  private const int DEFAULT_SHARD_MB = 1536; // 1.5 GiB uncompressed content per shard
+
   private const int SGEO_HEADER_SIZE = 16;
   private static ReadOnlySpan<byte> SgeoMagic => "SGEO"u8;
 
+  /// <summary>The canonical shard-0 path (<c>{base}.geometries.parquet</c>). For the full set
+  /// of shard files produced, use <see cref="GeometryPaths"/>.</summary>
   public string GeometriesPath { get; }
 
-#pragma warning disable CA2213 // disposed on the background writer thread via the Complete() finalize job, not inline
-  private readonly Stream _stream;
-  private readonly ParquetWriter _writer;
+  /// <summary>Every geometry shard file written, in order (shard 0 = <see cref="GeometriesPath"/>).
+  /// Callers that enumerate the output dir for upload pick these up automatically; this is the
+  /// explicit list for callers that don't.</summary>
+  public IReadOnlyList<string> GeometryPaths => _geometryPaths;
+
+#pragma warning disable CA2213 // disposed on the background writer thread via the per-shard finalize job, not inline
+  private Stream _stream = null!; // set by OpenShard(0) in the ctor
+  private ParquetWriter _writer = null!;
 #pragma warning restore CA2213
   private readonly DataField _indexField;
   private readonly DataField _contentField;
   private readonly DataField _idField;
   private readonly DataField _typeField;
   private readonly long _flushBytes;
+  private readonly long _shardCapBytes;
   private readonly ParquetWriteScheduler _scheduler;
   private readonly HashSet<int> _seenGeometry = new();
+
+  private readonly string _outputDir;
+  private readonly string _baseName;
+  private readonly ParquetSchema _schema;
+  private readonly List<string> _geometryPaths = new();
+  private int _shardIndex;
+  private long _shardBytes; // uncompressed content bytes assigned to the current shard
 
   // In-flight row-group buffers (parallel lists, one entry per row).
   private readonly List<int> _indices = new();
@@ -61,30 +88,91 @@ public sealed class GeometriesParquetWriter : IDisposable
   private long _bufferedBytes;
   private bool _completed;
 
-  public GeometriesParquetWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
+  /// <param name="shardCapBytes">Override the per-shard uncompressed-content cap (bytes). When
+  /// null, resolved from <c>SPECKLE_GEOMETRY_SHARD_MB</c> or <see cref="DEFAULT_SHARD_MB"/>. Mainly
+  /// a test seam — production uses the env/default.</param>
+  public GeometriesParquetWriter(
+    string outputDir,
+    string baseName,
+    ParquetWriteScheduler scheduler,
+    long? shardCapBytes = null
+  )
   {
     Directory.CreateDirectory(outputDir);
-    GeometriesPath = Path.Combine(outputDir, $"{baseName}.geometries.parquet");
-    DeleteIfExists(GeometriesPath);
-
+    _outputDir = outputDir;
+    _baseName = baseName;
     _scheduler = scheduler;
     _flushBytes = ResolveMbEnvVar(ROWGROUP_MB_ENV_VAR, DEFAULT_ROWGROUP_MB) * 1024L * 1024L;
+    _shardCapBytes = shardCapBytes ?? ResolveMbEnvVar(SHARD_MB_ENV_VAR, DEFAULT_SHARD_MB) * 1024L * 1024L;
 
-    var schema = new ParquetSchema(
+    _schema = new ParquetSchema(
       new DataField<int>("geometryIndex"),
       new DataField<byte[]>("content"),
       new DataField<string>("id"),
       new DataField<string>("type")
     );
-    var fields = schema.DataFields;
+    var fields = _schema.DataFields;
     _indexField = fields[0];
     _contentField = fields[1];
     _idField = fields[2];
     _typeField = fields[3];
 
-    _stream = new FileStream(GeometriesPath, FileMode.Create, FileAccess.Write, FileShare.None);
-    _writer = ParquetWriter.CreateAsync(schema, _stream).GetAwaiter().GetResult();
+    GeometriesPath = ShardPath(0);
+    // A previous run may have produced MORE shards than this one will — delete the whole
+    // `{base}.geometries*.parquet` set so the dir-glob upload never picks up a stale shard.
+    DeleteStaleShards();
+    OpenShard(0);
+  }
+
+  // Shard 0 keeps the canonical name; overflow shards get a `.{N}` ordinal before `.parquet`.
+  private string ShardPath(int shardIndex) =>
+    Path.Combine(
+      _outputDir,
+      shardIndex == 0 ? $"{_baseName}.geometries.parquet" : $"{_baseName}.geometries.{shardIndex}.parquet"
+    );
+
+  // Open a fresh shard file + ParquetWriter (Zstd). Mirrors the original ctor body; called
+  // once for shard 0 and again on each roll. Synchronous create is safe — it writes the
+  // parquet header to a brand-new stream, never touched by the background writer thread.
+  private void OpenShard(int shardIndex)
+  {
+    var path = ShardPath(shardIndex);
+    _stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+    _writer = ParquetWriter.CreateAsync(_schema, _stream).GetAwaiter().GetResult();
     _writer.CompressionMethod = CompressionMethod.Zstd;
+    _shardBytes = 0;
+    _geometryPaths.Add(path);
+  }
+
+  // Enqueue the footer-write + close of the current shard's writer/stream on the background
+  // thread (FIFO after this shard's row groups), then leave _writer/_stream dangling for the
+  // caller to replace (roll) or for Complete() to stop using.
+  private void FinalizeCurrentShard()
+  {
+    var writer = _writer;
+    var stream = _stream;
+    _scheduler.Enqueue(() =>
+    {
+      writer.Dispose(); // writes the footer/metadata
+      stream.Dispose();
+    });
+  }
+
+  // Flush the current shard's pending rows, finalize it, and open the next one.
+  private void RollShard()
+  {
+    FlushRowGroup();
+    FinalizeCurrentShard();
+    OpenShard(++_shardIndex);
+  }
+
+  private void DeleteStaleShards()
+  {
+    DeleteIfExists(ShardPath(0));
+    foreach (var stale in Directory.EnumerateFiles(_outputDir, $"{_baseName}.geometries.*.parquet"))
+    {
+      DeleteIfExists(stale);
+    }
   }
 
   /// <summary>
@@ -108,12 +196,21 @@ public sealed class GeometriesParquetWriter : IDisposable
       return;
     }
 
+    // Roll to a new shard before this blob would push the current shard past the cap.
+    // Guard on _shardBytes > 0 so a single blob larger than the whole cap still lands in
+    // its own shard rather than spinning up an empty file ahead of it.
+    if (_shardBytes > 0 && _shardBytes + sgeo.Length > _shardCapBytes)
+    {
+      RollShard();
+    }
+
     string id = Convert.ToHexString(SHA256.HashData(sgeo)).ToLowerInvariant();
     _indices.Add(geometryIndex);
     _contents.Add(sgeo);
     _ids.Add(id);
     _types.Add(PrimitiveTypeName(sgeo[5]));
     _bufferedBytes += sgeo.Length;
+    _shardBytes += sgeo.Length;
 
     if (_bufferedBytes >= _flushBytes || _indices.Count >= MAX_ROWS_PER_GROUP)
     {
@@ -132,13 +229,7 @@ public sealed class GeometriesParquetWriter : IDisposable
     _completed = true;
 
     FlushRowGroup();
-    var writer = _writer;
-    var stream = _stream;
-    _scheduler.Enqueue(() =>
-    {
-      writer.Dispose(); // writes the footer/metadata
-      stream.Dispose();
-    });
+    FinalizeCurrentShard();
   }
 
   public void Dispose() => Complete();
