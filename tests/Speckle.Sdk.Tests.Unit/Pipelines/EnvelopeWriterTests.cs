@@ -53,8 +53,8 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, $"SELECT elevation FROM nodes WHERE kind = {NodeKind.Level}").Should().Be(3000.0);
 
     // self-describing catalog (SOT §6)
-    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(11L); // 10 + IN_MODEL
-    Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(7L); // 6 + CONTAINER
+    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(22L); // 11 + cross-connector topology vocab (IN_ROOM..HOSTED_ON)
+    Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(7L); // 6 + CONTAINER (new IN_* rels all reuse CONTAINER)
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DisplayInstance}").Should().Be("DISPLAY_INSTANCE");
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("DEFINES_INSTANCE");
     // DEFINES (4) is now geometry-only; DEFINES_INSTANCE (9) carries node→node nesting. rel fixes dst namespace.
@@ -65,7 +65,14 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("IN_MODEL");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("node");
     Scalar(db, $"SELECT name FROM node_kinds WHERE kind = {NodeKind.Container}").Should().Be("CONTAINER");
-    Scalar(db, "SELECT schema_version FROM meta").Should().Be(2);
+    // cross-connector topology vocab (ENG-8693): IN_* membership → CONTAINER (object→node); the two graph
+    // edges (CONNECTS_TO / HOSTED_ON) are object→object — rel fixes the dst namespace.
+    Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.InSystem}").Should().Be("IN_SYSTEM");
+    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.InNetwork}").Should().Be("node");
+    Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.ConnectsTo}").Should().Be("CONNECTS_TO");
+    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.ConnectsTo}").Should().Be("object");
+    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.HostedOn}").Should().Be("object");
+    Scalar(db, "SELECT schema_version FROM meta").Should().Be(3);
 
     // No scene views authored ⇒ the table is absent (consumer feature-detects by file presence).
     File.Exists(Path.Combine(_dir, "model.envelope.scene_views.parquet")).Should().BeFalse();

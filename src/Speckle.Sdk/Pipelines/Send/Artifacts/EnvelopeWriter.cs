@@ -57,6 +57,51 @@ public static class RelKind
   /// scene_views projection (e.g. Revit IN_MODEL → ON_LEVEL → category). Self-nesting via the CONTAINER
   /// node's <c>def_ref</c> (parent model) for nested links / appended-within-appended. SOT §8.</summary>
   public const byte InModel = 11;
+
+  /// <summary>object → node(CONTAINER, subtype "Room"). Room containment (the bounding / occupied room).</summary>
+  public const byte InRoom = 12;
+
+  /// <summary>object → node(CONTAINER, subtype "Space"). Spatial-zone / HVAC-space membership.</summary>
+  public const byte InSpace = 13;
+
+  /// <summary>object → node(CONTAINER, subtype "System"). Named logical engineering system membership
+  /// (Revit MEPSystem, IFC IfcDistributionSystem) — e.g. "Domestic Cold Water". Many-to-many (equipment sits
+  /// on both supply and return), so a dedicated CONTAINER axis, NOT a single-parent <see cref="InCollection"/>.</summary>
+  public const byte InSystem = 14;
+
+  /// <summary>object → node(CONTAINER, subtype "Network"). A physically connected run (a connected component
+  /// of <see cref="ConnectsTo"/>; an IFC pipe / cable network). May be unnamed (synthesised from connectivity)
+  /// where a logical <see cref="InSystem"/> assignment is absent.</summary>
+  public const byte InNetwork = 15;
+
+  /// <summary>object → node(CONTAINER, subtype "Line"). A single named run / line-number group (a process
+  /// line, a Plant3D line, a Civil3D pipe run).</summary>
+  public const byte InLine = 16;
+
+  /// <summary>object → node(CONTAINER, subtype "Group"). Authoring-tool group membership (Revit Group).</summary>
+  public const byte InGroup = 17;
+
+  /// <summary>object → node(CONTAINER, subtype "Assembly"). Assembly membership (Revit / Tekla assembly).</summary>
+  public const byte InAssembly = 18;
+
+  /// <summary>object → node(CONTAINER, subtype "Subassembly"). Sub-assembly nested under an
+  /// <see cref="InAssembly"/> (self-nesting CONTAINER via def_ref).</summary>
+  public const byte InSubassembly = 19;
+
+  /// <summary>object → node(CONTAINER, subtype "ExternalModel"). External reference / xref attachment (DWG /
+  /// DGN xref, IFC referenced model), distinct from an in-place <see cref="InModel"/> link.</summary>
+  public const byte Xref = 20;
+
+  /// <summary>object → object. Physical flow connectivity between elements (MEP port↔port resolved to the
+  /// owning elements; IFC IfcRelConnectsPorts, Revit connectors). DIRECTED src→dst by flow (source→target);
+  /// a reciprocal pair = undirected / unknown flow. Per-port detail stays in EAV — the rel is element-granular.
+  /// First peer connectivity rel after <see cref="Subelement"/>.</summary>
+  public const byte ConnectsTo = 21;
+
+  /// <summary>object → object. Hosted→host dependency (window / door → its wall; face hosting). Distinct from
+  /// <see cref="Subelement"/> (host OWNS hosted / containment) — this is positional dependency, opposite
+  /// direction.</summary>
+  public const byte HostedOn = 22;
 }
 
 /// <summary>Value-node kinds in the envelope <c>nodes</c> table.</summary>
@@ -137,7 +182,7 @@ public sealed record SceneView(int View, string Name, bool IsDefault, IReadOnlyL
 public sealed class EnvelopeWriter : IDisposable
 {
   // 2: + IN_MODEL rel & CONTAINER node kind (SOT §8). Additive — consumers skip unknown rels/kinds.
-  private const int SCHEMA_VERSION = 2;
+  private const int SCHEMA_VERSION = 3;
 
   public string OutputDir { get; }
   public string BaseName { get; }
@@ -280,6 +325,17 @@ public sealed class EnvelopeWriter : IDisposable
       rt.AddRow(9, "DEFINES_INSTANCE", "node", "node");
       rt.AddRow(10, "IN_COLLECTION", "object", "node");
       rt.AddRow(11, "IN_MODEL", "object", "node");
+      rt.AddRow(12, "IN_ROOM", "object", "node");
+      rt.AddRow(13, "IN_SPACE", "object", "node");
+      rt.AddRow(14, "IN_SYSTEM", "object", "node");
+      rt.AddRow(15, "IN_NETWORK", "object", "node");
+      rt.AddRow(16, "IN_LINE", "object", "node");
+      rt.AddRow(17, "IN_GROUP", "object", "node");
+      rt.AddRow(18, "IN_ASSEMBLY", "object", "node");
+      rt.AddRow(19, "IN_SUBASSEMBLY", "object", "node");
+      rt.AddRow(20, "XREF", "object", "node");
+      rt.AddRow(21, "CONNECTS_TO", "object", "object");
+      rt.AddRow(22, "HOSTED_ON", "object", "object");
     }
     using var nk = new ParquetTableWriter(
       P("node_kinds.parquet"),

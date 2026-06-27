@@ -316,6 +316,53 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void InModel(int objectK, int modelK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InModel, objectK, modelK, ord);
 
+  /// <summary>object → node(CONTAINER, subtype "Room"): room containment.</summary>
+  public void InRoom(int objectK, int roomK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InRoom, objectK, roomK, ord);
+
+  /// <summary>object → node(CONTAINER, subtype "Space"): spatial-zone / HVAC-space membership.</summary>
+  public void InSpace(int objectK, int spaceK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InSpace, objectK, spaceK, ord);
+
+  /// <summary>object → node(CONTAINER, subtype "System"): named logical engineering system membership
+  /// (Revit MEPSystem, IFC IfcDistributionSystem).</summary>
+  public void InSystem(int objectK, int systemK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InSystem, objectK, systemK, ord);
+
+  /// <summary>object → node(CONTAINER, subtype "Network"): a physically connected run (a connected component
+  /// of <see cref="ConnectsTo"/>).</summary>
+  public void InNetwork(int objectK, int networkK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InNetwork, objectK, networkK, ord);
+
+  /// <summary>object → node(CONTAINER, subtype "Line"): a named run / line-number group.</summary>
+  public void InLine(int objectK, int lineK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InLine, objectK, lineK, ord);
+
+  /// <summary>object → node(CONTAINER, subtype "Group"): authoring-tool group membership.</summary>
+  public void InGroup(int objectK, int groupK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InGroup, objectK, groupK, ord);
+
+  /// <summary>object → node(CONTAINER, subtype "Assembly"): assembly membership.</summary>
+  public void InAssembly(int objectK, int assemblyK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InAssembly, objectK, assemblyK, ord);
+
+  /// <summary>object → node(CONTAINER, subtype "Subassembly"): sub-assembly membership.</summary>
+  public void InSubassembly(int objectK, int subassemblyK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InSubassembly, objectK, subassemblyK, ord);
+
+  /// <summary>object → node(CONTAINER, subtype "ExternalModel"): external reference / xref attachment.</summary>
+  public void Xref(int objectK, int externalModelK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.Xref, objectK, externalModelK, ord);
+
+  /// <summary>object → object: physical flow connectivity, DIRECTED src→dst by flow (source→target). A
+  /// reciprocal pair encodes undirected / unknown flow.</summary>
+  public void ConnectsTo(int sourceObjectK, int targetObjectK) =>
+    _envelopeWriter.AddRelation(RelKind.ConnectsTo, sourceObjectK, targetObjectK, 0);
+
+  /// <summary>object → object: hosted→host dependency (window → wall).</summary>
+  public void HostedOn(int hostedObjectK, int hostObjectK) =>
+    _envelopeWriter.AddRelation(RelKind.HostedOn, hostedObjectK, hostObjectK, 0);
+
   // ── scene views ──────────────────────────────────────────────────────────────────────
 
   /// <summary>Authors a scene_views projection (SOT §8): the producer's default (and optional named
