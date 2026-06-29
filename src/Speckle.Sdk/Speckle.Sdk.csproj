@@ -16,6 +16,12 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+    <!-- Parquet.Net's netstandard2.0 build forces System.Text.Json 9.x, whose System.* facades put a second
+         System.ObsoleteAttribute into the netstandard2.0 reference closure → CS0419 cref ambiguity in existing
+         XML-doc comments (the [Obsolete] CODE resolves fine; only doc-cref resolution is strict). Benign. -->
+    <NoWarn>$(NoWarn);CS0419</NoWarn>
+  </PropertyGroup>
   <ItemGroup Label="Expose internals to test projects">
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Unit" />
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Integration" />
@@ -25,8 +31,7 @@
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'netstandard2.0'" Label="DuckDB artifact writing (net8.0+ only)">
-    <PackageReference Include="DuckDB.NET.Data.Full" />
+  <ItemGroup Label="Parquet artifact writing (all TFMs — Parquet.Net ships netstandard2.0, so the net48 plugin can produce artifacts too)">
     <PackageReference Include="Parquet.Net" />
     <!-- Parquet.Net transitively pulls Snappier, which carries an advisory on every published
          version (GHSA-pggp-6c3x-2xmx, a Snappy-DECOMPRESSION issue). We write parquet
@@ -56,6 +61,9 @@
     <PackageReference Include="Microsoft.Data.Sqlite" VersionOverride="7.0.5" />
     <!--Pinned exactly to match v2-->
     <PackageReference Include="GraphQL.Client" VersionOverride="6.0.0" />
+    <!-- Parquet.Net's netstandard2.0 build requires System.Text.Json >= 9.0.10 (its net8/net10 builds pull
+         no STJ at all). Pin it here for net48 consumers; they binding-redirect STJ to the host's version. -->
+    <PackageReference Include="System.Text.Json" VersionOverride="9.0.10" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />

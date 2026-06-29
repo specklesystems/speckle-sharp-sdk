@@ -1,4 +1,4 @@
-#if NET8_0_OR_GREATER
+#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -150,7 +150,15 @@ public sealed class ObjectsArtifactPipeline : IDisposable
       return false;
     }
 
-    instanceProps = new Dictionary<string, object?>(properties, StringComparer.Ordinal) { ["Parameters"] = instanceParams };
+    // Copy via foreach (the Dictionary(IEnumerable<KVP>, comparer) ctor is net5+; netstandard2.0 only has the
+    // IDictionary ctor, and `properties` is an IReadOnlyDictionary).
+    var merged = new Dictionary<string, object?>(StringComparer.Ordinal);
+    foreach (var kv in properties)
+    {
+      merged[kv.Key] = kv.Value;
+    }
+    merged["Parameters"] = instanceParams;
+    instanceProps = merged;
     typeSubtree = typeParams;
     return true;
   }
@@ -169,6 +177,22 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     if (_geometryInterner.GetOrAdd(meshApplicationId, out var geometryK))
     {
       _geometriesWriter.AddGeometry(geometryK, SgeoEncoder.Encode(geometry));
+    }
+    return geometryK;
+  }
+
+  /// <summary>
+  /// Interns <paramref name="geometryApplicationId"/> to a dense geometry <c>K</c> and stores the RAW
+  /// <paramref name="content"/> bytes verbatim (no SGEO encoding) with an explicit <paramref name="type"/>
+  /// label on first sight, returning the <c>K</c>. Use for host-native geometry kept losslessly for
+  /// receive — e.g. a Rhino Brep/Extrusion/SubD serialized to a 3dm blob (<c>type = "3dm"</c>) linked via
+  /// the <c>SOLID</c> rel, alongside its <c>DISPLAY</c> meshes added through <see cref="AddGeometry"/>.
+  /// </summary>
+  public int AddRawGeometry(string geometryApplicationId, byte[] content, string type)
+  {
+    if (_geometryInterner.GetOrAdd(geometryApplicationId, out var geometryK))
+    {
+      _geometriesWriter.AddRawGeometry(geometryK, content, type);
     }
     return geometryK;
   }

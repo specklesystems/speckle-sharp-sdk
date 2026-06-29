@@ -1,4 +1,4 @@
-#if NET8_0_OR_GREATER
+#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
 using Parquet.Schema;
 

@@ -1,4 +1,4 @@
-#if NET8_0_OR_GREATER
+#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Diagnostics;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -165,7 +165,11 @@ public static class MemoryLog
       s_clock.Elapsed.TotalSeconds,
       s_phase,
       GC.GetTotalMemory(false),
+#if NET8_0_OR_GREATER
       GC.GetGCMemoryInfo().TotalCommittedBytes,
+#else
+      0L, // GC.GetGCMemoryInfo() is core-only; this diagnostic field is unavailable on netstandard2.0
+#endif
       process.WorkingSet64
     );
     s_samples.Add(sample);

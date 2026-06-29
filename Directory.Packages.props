@@ -32,7 +32,8 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageVersion Include="Bullseye" Version="6.1.0" />
-    <!-- POC: client-side viewer/eav duckdb artifact generation. net8.0+ only (no netstandard2.0 target upstream). -->
+    <!-- TEST-ONLY: SDK tests read the produced parquet artefacts back via DuckDB read_parquet to assert
+         their shape. NOT a production/SDK dependency — the SDK writes parquet with Parquet.Net only. -->
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.3" />
     <PackageVersion Include="GraphQL.Client" Version="6.1.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />

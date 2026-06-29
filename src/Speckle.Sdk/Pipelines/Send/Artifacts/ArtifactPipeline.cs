@@ -1,4 +1,4 @@
-#if NET8_0_OR_GREATER
+#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Net.Http.Headers;
 using System.Text;
 using Speckle.InterfaceGenerator;
@@ -6,7 +6,6 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
-using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
@@ -25,26 +24,23 @@ public sealed class ArtifactPipelineFactory(ISpeckleHttp httpClientFactory, ISdk
 }
 
 /// <summary>
-/// The Speckle 4.0 artifact pipeline: serializes objects into client-side
-/// artefact files and uploads them via the v2 data endpoints (sign → presigned
-/// PUT per file → complete, which creates the version). Fully independent of the
-/// v1 <see cref="SendPipeline"/> — neither side touches the other.
+/// The Speckle 4.0 artifact pipeline: uploads a client-built artefact bundle (the parquet triple —
+/// <c>geometries.parquet</c> + <c>eav.*.parquet</c> + <c>envelope.*.parquet</c>, produced by
+/// <c>ObjectsArtifactPipeline</c>) via the v2 data endpoints — sign → presigned PUT per file →
+/// complete (which creates the version). Fully independent of the v1 <see cref="SendPipeline"/>;
+/// neither side touches the other.
 /// </summary>
 /// <remarks>
-/// <para>The server v2 endpoints are <b>filename-keyed and count-agnostic</b>: sign
-/// takes the list of artefact basenames, the server presigns one PUT per name
-/// under <c>versions/{versionId}/{name}</c>, and complete verifies the etags and
-/// creates the commit with <c>id = versionId</c>. The <see cref="VersionId"/> is
-/// <b>pre-allocated by the server at ingestion creation</b>, so the producer can
-/// bake it into the artefact filenames before any bytes exist.</para>
-/// <para>Usage: call <see cref="Process"/> for every object (the LAST processed
-/// object is recorded as the root, same convention as the server), then
-/// <see cref="UploadAsync"/> once; OR build the artefact bundle externally and
-/// call <see cref="UploadFilesAsync"/>.</para>
+/// <para>The server v2 endpoints are <b>filename-keyed and count-agnostic</b>: sign takes the list of
+/// artefact basenames, the server presigns one PUT per name under <c>versions/{versionId}/{name}</c>, and
+/// complete verifies the etags and creates the commit with <c>id = versionId</c>. The <see cref="VersionId"/>
+/// is <b>pre-allocated by the server at ingestion creation</b>, so the producer can bake it into the artefact
+/// filenames before any bytes exist.</para>
+/// <para>Usage: build the artefact bundle externally (via <c>ObjectsArtifactPipeline</c>), then call
+/// <see cref="UploadFilesAsync"/> once.</para>
 /// </remarks>
 public sealed class ArtifactPipeline : IDisposable
 {
-  private readonly string _outputDir;
   private readonly string _projectId;
   private readonly string _ingestionId;
   private readonly CancellationToken _cancellationToken;
@@ -52,31 +48,14 @@ public sealed class ArtifactPipeline : IDisposable
   private readonly HttpClient _s3Client;
   private readonly ISdkActivityFactory _activity;
 
-  // Created lazily on first use. The envelope path triggers them via Process()
-  // (serialize → id + __closure) and UploadAsync() (viewer/eav writer). The
-  // full-binary path uses ONLY UploadFilesAsync(), so it constructs NEITHER —
-  // no id/closure serialization, no DuckDbArtifactWriter, no empty viewer/eav
-  // files. This keeps the binary flow free of all serialization machinery.
-  private SerializerV2? _serializer;
-  private DuckDbArtifactWriter? _writer;
-
-  // The artifact pipeline uses the closure-free 4.0 serializer (SerializerV2):
-  // no object generates __closure. The legacy closure-based Serializer is left
-  // intact for other/comparison uses. id + JSON + speckle_type still emitted.
-  private SerializerV2 Serializer => _serializer ??= new();
-  private DuckDbArtifactWriter Writer => _writer ??= new DuckDbArtifactWriter(_outputDir, VersionId);
-
   /// <summary>
   /// The server pre-allocated version id this pipeline uploads under. Same id the producer bakes into
   /// artefact filenames, the server uses as the S3 key prefix, and the commit PK at complete.
   /// </summary>
   public string VersionId { get; }
 
-  /// <summary>Local viewer.duckdb path once written (null if nothing was processed).</summary>
-  public string? ViewerDbPath => _writer?.ViewerDbPath;
-
-  /// <summary>Local eav.duckdb path once written (null if nothing was processed).</summary>
-  public string? EavDbPath => _writer?.EavDbPath;
+  /// <summary>The local directory the artefact bundle was written to (the producer's output dir).</summary>
+  public string OutputDir { get; }
 
   internal ArtifactPipeline(
     string projectId,
@@ -95,9 +74,8 @@ public sealed class ArtifactPipeline : IDisposable
     _cancellationToken = cancellationToken;
     _activity = activityFactory;
     // Local artefact files are named by the pre-allocated versionId (final names from byte one — no
-    // placeholder, no server-side rename). The writer is created lazily (see Writer) so the binary path
-    // builds none. The ingestionId still keys the sign/complete endpoint URLs.
-    _outputDir = outputDir;
+    // placeholder, no server-side rename). The ingestionId keys the sign/complete endpoint URLs.
+    OutputDir = outputDir;
 
     _speckleClient = httpClientFactory.CreateHttpClient(authorizationToken: account.token);
     _speckleClient.BaseAddress = new(new(account.serverInfo.url), "/api/v2/");
@@ -105,80 +83,12 @@ public sealed class ArtifactPipeline : IDisposable
     _s3Client = httpClientFactory.CreateHttpClient();
   }
 
-  private string? _rootId;
-  private int _objectCount;
-
   /// <summary>
-  /// Routes one object (and its detached children) into the artifact files and
-  /// returns the object's reference (callers use these to build collections).
-  /// </summary>
-  public ObjectReference Process(Base @base)
-  {
-    var results = Serializer.Serialize(@base).ToArray();
-    var first = results.First();
-    // The first item is the processed object itself; the LAST Process call is
-    // the root collection by convention, so this converges on the root id.
-    _rootId = first.Id;
-    _objectCount += results.Length;
-    // .Reverse ensures children precede their parent and the root of this
-    // call lands last — the writer treats the overall last item as the root.
-    foreach (var item in results.Reverse())
-    {
-      Writer.Add(item);
-    }
-
-    return first.Reference;
-  }
-
-  /// <summary>
-  /// Finalizes the files and uploads them: v2 sign → PUT per file → v2
-  /// complete. The server verifies etags, then creates the version (commit
-  /// PK = the pre-allocated <see cref="VersionId"/>).
-  /// </summary>
-  /// <returns>The pre-allocated <see cref="VersionId"/> (now backed by a committed version).</returns>
-  public async Task<string> UploadAsync()
-  {
-    if (_rootId is null)
-    {
-      throw new InvalidOperationException("No objects were processed; nothing to upload.");
-    }
-
-    using var a = _activity.Start("Uploading duckdb artifacts (v2)");
-    try
-    {
-      MemoryLog.Log("pipeline: UploadAsync begin");
-      Writer.Complete();
-
-      // Keyed by the artefact basename (server v2 signs/keys per filename, not per purpose).
-      return await UploadByFileNameAsync(
-          new Dictionary<string, string>
-          {
-            [Path.GetFileName(Writer.ViewerDbPath)] = Writer.ViewerDbPath,
-            [Path.GetFileName(Writer.EavDbPath)] = Writer.EavDbPath,
-          },
-          _rootId,
-          _objectCount
-        )
-        .ConfigureAwait(false);
-    }
-    catch (Exception ex)
-    {
-      a?.SetStatus(SdkActivityStatusCode.Error);
-      a?.RecordException(ex);
-      throw;
-    }
-  }
-
-  /// <summary>
-  /// Uploads an already-built artefact bundle (<b>filename → local path</b>) via the
-  /// same v2 sign → PUT → complete flow as <see cref="UploadAsync"/>, but WITHOUT
-  /// this pipeline's own <see cref="DuckDbArtifactWriter"/>. Used by the full-binary /
-  /// parquet-bundle path, reusing the account / project / ingestion / HTTP context this
-  /// pipeline carries. Count-agnostic — pass however many files the bundle has (the
-  /// dictionary keys are the basenames the server presigns and keys under
-  /// <c>versions/{versionId}/</c>). The server creates the version with the given
-  /// <paramref name="rootId"/> (which may be a synthetic id — the binary path has no
-  /// serialized root).
+  /// Uploads an already-built artefact bundle (<b>filename → local path</b>) via the v2
+  /// sign → PUT → complete flow. Count-agnostic — pass however many files the bundle has (the
+  /// dictionary keys are the basenames the server presigns and keys under <c>versions/{versionId}/</c>).
+  /// The server creates the version with the given <paramref name="rootId"/> (which may be a synthetic id —
+  /// the artefact path has no serialized root).
   /// </summary>
   public Task<string> UploadFilesAsync(
     IReadOnlyDictionary<string, string> fileNameToPath,
@@ -236,7 +146,7 @@ public sealed class ArtifactPipeline : IDisposable
     using var response = await _speckleClient.PostAsync(uri, content, _cancellationToken).ConfigureAwait(false);
     await EnsureSuccessWithBody(response, "artifacts sign").ConfigureAwait(false);
 
-    var responseString = await response.Content.ReadAsStringAsync(_cancellationToken).ConfigureAwait(false);
+    var responseString = await ReadBodyAsync(response).ConfigureAwait(false);
     return JsonConvert.DeserializeObject<ArtifactsSignResponse>(responseString)
       ?? throw new InvalidOperationException("Failed to get presigned artifact upload URLs");
   }
@@ -282,7 +192,7 @@ public sealed class ArtifactPipeline : IDisposable
     // server just completed against — so it is authoritative. We return it rather than depending on the
     // complete response echoing it (it may legitimately return no body). If the server DOES echo a
     // versionId it must match; a mismatch means we'd point at the wrong version, so fail loudly.
-    var responseString = await response.Content.ReadAsStringAsync(_cancellationToken).ConfigureAwait(false);
+    var responseString = await ReadBodyAsync(response).ConfigureAwait(false);
     var echoed = TryReadEchoedVersionId(responseString);
     if (echoed is not null && !string.Equals(echoed, VersionId, StringComparison.Ordinal))
     {
@@ -292,6 +202,15 @@ public sealed class ArtifactPipeline : IDisposable
     }
     return VersionId;
   }
+
+  // HttpContent.ReadAsStringAsync(CancellationToken) is net5+; netstandard2.0 (the net48 plugin build) only
+  // has the no-arg overload. The token still bounds the surrounding PostAsync, so dropping it here is benign.
+  private Task<string> ReadBodyAsync(HttpResponseMessage response) =>
+#if NET8_0_OR_GREATER
+    response.Content.ReadAsStringAsync(_cancellationToken);
+#else
+    response.Content.ReadAsStringAsync();
+#endif
 
   private static string? TryReadEchoedVersionId(string responseString)
   {
@@ -312,13 +231,12 @@ public sealed class ArtifactPipeline : IDisposable
     {
       return;
     }
-    var body = await response.Content.ReadAsStringAsync(_cancellationToken).ConfigureAwait(false);
+    var body = await ReadBodyAsync(response).ConfigureAwait(false);
     throw new HttpRequestException($"{operation} failed with {(int)response.StatusCode} ({response.StatusCode}): {body}");
   }
 
   public void Dispose()
   {
-    _writer?.Dispose(); // null on the binary path (never created)
     _speckleClient.Dispose();
     _s3Client.Dispose();
   }

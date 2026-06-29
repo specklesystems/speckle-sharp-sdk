@@ -330,3 +330,14 @@ trim_trailing_whitespace = false
 [*.{received,verified}.{json}]
 indent_size = 2
 indent_style = space
+# CA2213 false positive: GeometriesParquetWriter intentionally disposes its _stream/_writer on the
+# background writer thread (per-shard finalize job), not inline in Dispose() — disposing inline would
+# race the scheduler's pending footer write and corrupt the parquet file. The analyzer can't see the
+# deferred disposal. Scoped off here (an in-code suppression can't satisfy net8 + net10 analyzers at once:
+# net8 doesn't raise CA2213 so a suppression trips IDE0370, while net10 does raise it).
+[**/Pipelines/Send/Artifacts/GeometriesParquetWriter.cs]
+dotnet_diagnostic.CA2213.severity = none
+# IDE0370 ("remove unnecessary suppression") is also disabled here: the CA2213=none above is REQUIRED on
+# net10 (where CA2213 fires) but looks "unnecessary" on net8 (where it doesn't) — so IDE0370 flags it on
+# net8. The suppression is genuinely needed for one target, so silence IDE0370 for this file on both.
+dotnet_diagnostic.IDE0370.severity = none
