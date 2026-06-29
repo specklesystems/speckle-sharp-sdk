@@ -209,7 +209,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("def:" + definitionKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Definition, name, null, null, null, null, null, null, null, null);
+      _envelopeWriter.AddNode(k, NodeKind.Definition, name, null, null, null, null, null, null, null, null, null);
     }
     return k;
   }
@@ -231,6 +231,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         null,
+        null,
         null
       );
     }
@@ -242,7 +243,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("mat:" + materialKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Material, null, null, null, null, argb, opacity, metalness, roughness, null);
+      _envelopeWriter.AddNode(k, NodeKind.Material, null, null, null, null, null, argb, opacity, metalness, roughness, null);
     }
     return k;
   }
@@ -252,7 +253,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("col:" + argb.ToString(CultureInfo.InvariantCulture), out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Color, null, null, null, null, argb, null, null, null, null);
+      _envelopeWriter.AddNode(k, NodeKind.Color, null, null, null, null, null, argb, null, null, null, null);
     }
     return k;
   }
@@ -262,7 +263,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("lvl:" + levelKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Level, name, null, null, null, null, null, null, null, elevation);
+      _envelopeWriter.AddNode(k, NodeKind.Level, name, null, null, null, null, null, null, null, null, elevation);
     }
     return k;
   }
@@ -275,7 +276,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Collection, name, parentCollectionK, null, subtype, null, null, null, null, null);
+      // v5: a collection is a CONTAINER whose `subtype` carries its tag; the IN_COLLECTION rel marks the axis.
+      _envelopeWriter.AddNode(k, NodeKind.Container, name, parentCollectionK, null, null, subtype, null, null, null, null, null);
     }
     return k;
   }
@@ -289,7 +291,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("cont:" + containerKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Container, name, parentContainerK, null, subtype, null, null, null, null, null);
+      _envelopeWriter.AddNode(k, NodeKind.Container, name, parentContainerK, null, null, subtype, null, null, null, null, null);
     }
     return k;
   }
@@ -344,48 +346,17 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void InRoom(int objectK, int roomK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InRoom, objectK, roomK, ord);
 
-  /// <summary>object → node(CONTAINER, subtype "Space"): spatial-zone / HVAC-space membership.</summary>
-  public void InSpace(int objectK, int spaceK, int ord) =>
-    _envelopeWriter.AddRelation(RelKind.InSpace, objectK, spaceK, ord);
-
   /// <summary>object → node(CONTAINER, subtype "System"): named logical engineering system membership
-  /// (Revit MEPSystem, IFC IfcDistributionSystem).</summary>
+  /// (Revit MEPSystem, IFC IfcDistributionSystem). Also the v5 home of physically-connected NETWORKS —
+  /// a network is a CONTAINER with subtype "Network" reached through this same rel (the IN_NETWORK rel was
+  /// collapsed into IN_SYSTEM).</summary>
   public void InSystem(int objectK, int systemK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InSystem, objectK, systemK, ord);
-
-  /// <summary>object → node(CONTAINER, subtype "Network"): a physically connected run (a connected component
-  /// of <see cref="ConnectsTo"/>).</summary>
-  public void InNetwork(int objectK, int networkK, int ord) =>
-    _envelopeWriter.AddRelation(RelKind.InNetwork, objectK, networkK, ord);
-
-  /// <summary>object → node(CONTAINER, subtype "Line"): a named run / line-number group.</summary>
-  public void InLine(int objectK, int lineK, int ord) =>
-    _envelopeWriter.AddRelation(RelKind.InLine, objectK, lineK, ord);
-
-  /// <summary>object → node(CONTAINER, subtype "Group"): authoring-tool group membership.</summary>
-  public void InGroup(int objectK, int groupK, int ord) =>
-    _envelopeWriter.AddRelation(RelKind.InGroup, objectK, groupK, ord);
-
-  /// <summary>object → node(CONTAINER, subtype "Assembly"): assembly membership.</summary>
-  public void InAssembly(int objectK, int assemblyK, int ord) =>
-    _envelopeWriter.AddRelation(RelKind.InAssembly, objectK, assemblyK, ord);
-
-  /// <summary>object → node(CONTAINER, subtype "Subassembly"): sub-assembly membership.</summary>
-  public void InSubassembly(int objectK, int subassemblyK, int ord) =>
-    _envelopeWriter.AddRelation(RelKind.InSubassembly, objectK, subassemblyK, ord);
-
-  /// <summary>object → node(CONTAINER, subtype "ExternalModel"): external reference / xref attachment.</summary>
-  public void Xref(int objectK, int externalModelK, int ord) =>
-    _envelopeWriter.AddRelation(RelKind.Xref, objectK, externalModelK, ord);
 
   /// <summary>object → object: physical flow connectivity, DIRECTED src→dst by flow (source→target). A
   /// reciprocal pair encodes undirected / unknown flow.</summary>
   public void ConnectsTo(int sourceObjectK, int targetObjectK) =>
     _envelopeWriter.AddRelation(RelKind.ConnectsTo, sourceObjectK, targetObjectK, 0);
-
-  /// <summary>object → object: hosted→host dependency (window → wall).</summary>
-  public void HostedOn(int hostedObjectK, int hostObjectK) =>
-    _envelopeWriter.AddRelation(RelKind.HostedOn, hostedObjectK, hostObjectK, 0);
 
   // ── scene views ──────────────────────────────────────────────────────────────────────
 

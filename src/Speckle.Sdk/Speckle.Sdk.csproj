@@ -38,6 +38,13 @@
          UNCOMPRESSED and never decompress untrusted Snappy in the SDK, so the code path is dead
          here. Suppress that one advisory (assessed not-applicable) rather than ship a vuln. -->
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-pggp-6c3x-2xmx" />
+    <!-- Bundle format spec — generated C# constants/schemas (Rel/NodeKind enums, catalog rows,
+         table column descriptors). Single source of truth in speckle-bundle-spec, cloned as a
+         sibling repo one level up (same convention as the native producers). Compiled into the
+         assembly, so the published package carries the IL — only the SDK's own build needs the
+         sibling. net8.0+ only, alongside the artifact writer that consumes it. -->
+    <Compile Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSpec.cs" Link="Generated/BundleSpec.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSchemas.cs" Link="Generated/BundleSchemas.cs" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="10.0.0" />

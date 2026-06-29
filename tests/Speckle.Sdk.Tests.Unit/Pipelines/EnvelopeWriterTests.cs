@@ -19,10 +19,10 @@ public sealed class EnvelopeWriterTests : IDisposable
     using var scheduler = new ParquetWriteScheduler();
     using (var w = new EnvelopeWriter(_dir, "model", scheduler))
     {
-      w.AddNode(0, NodeKind.Definition, "wall-def", null, null, null, null, null, null, null, null);
-      w.AddNode(1, NodeKind.Instance, null, 0, "1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1", "mm", null, null, null, null, null);
-      w.AddNode(2, NodeKind.Material, null, null, null, null, unchecked((int)0xFF8800FFu), 1.0, 0.0, 0.4, null);
-      w.AddNode(3, NodeKind.Level, "Level 1", null, null, null, null, null, null, null, 3000.0);
+      w.AddNode(0, NodeKind.Definition, "wall-def", null, null, null, null, null, null, null, null, null);
+      w.AddNode(1, NodeKind.Instance, null, 0, "1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1", "mm", null, null, null, null, null, null);
+      w.AddNode(2, NodeKind.Material, null, null, null, null, null, unchecked((int)0xFF8800FFu), 1.0, 0.0, 0.4, null);
+      w.AddNode(3, NodeKind.Level, "Level 1", null, null, null, null, null, null, null, null, 3000.0);
 
       w.AddRelation(RelKind.DisplayInstance, 0, 1, 0);
       w.AddRelation(RelKind.Defines, 0, 5, 0);
@@ -52,9 +52,9 @@ public sealed class EnvelopeWriterTests : IDisposable
       .Be("1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1");
     Scalar(db, $"SELECT elevation FROM nodes WHERE kind = {NodeKind.Level}").Should().Be(3000.0);
 
-    // self-describing catalog (SOT §6)
-    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(22L); // 11 + cross-connector topology vocab (IN_ROOM..HOSTED_ON)
-    Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(7L); // 6 + CONTAINER (new IN_* rels all reuse CONTAINER)
+    // self-describing catalog (SOT §6) — sourced from speckle-bundle-spec (v5: live + reserved rows).
+    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(15L); // 14 live + SOLID (reserved); retired ids absent
+    Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(6L); // COLLECTION folded into CONTAINER
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DisplayInstance}").Should().Be("DISPLAY_INSTANCE");
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("DEFINES_INSTANCE");
     // DEFINES (4) is now geometry-only; DEFINES_INSTANCE (9) carries node→node nesting. rel fixes dst namespace.
@@ -68,11 +68,13 @@ public sealed class EnvelopeWriterTests : IDisposable
     // cross-connector topology vocab (ENG-8693): IN_* membership → CONTAINER (object→node); the two graph
     // edges (CONNECTS_TO / HOSTED_ON) are object→object — rel fixes the dst namespace.
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.InSystem}").Should().Be("IN_SYSTEM");
-    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.InNetwork}").Should().Be("node");
+    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.InSystem}").Should().Be("node");
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.ConnectsTo}").Should().Be("CONNECTS_TO");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.ConnectsTo}").Should().Be("object");
-    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.HostedOn}").Should().Be("object");
-    Scalar(db, "SELECT schema_version FROM meta").Should().Be(3);
+    Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.Bounds}").Should().Be("BOUNDS");
+    // retired ids (IN_NETWORK 15, IN_SPACE 13, HOSTED_ON 22, …) are absent from the catalog.
+    Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 17, 18, 19, 20, 22)").Should().Be(0L);
+    Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
 
     // No scene views authored ⇒ the table is absent (consumer feature-detects by file presence).
     File.Exists(Path.Combine(_dir, "model.envelope.scene_views.parquet")).Should().BeFalse();

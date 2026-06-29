@@ -1,137 +1,52 @@
 #if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
 using Parquet.Schema;
+using SpecRel = Speckle.Bundle.Spec.Rel;
+using SpecKind = Speckle.Bundle.Spec.NodeKind;
+using SpecCatalog = Speckle.Bundle.Spec.Catalog;
+using SpecBundle = Speckle.Bundle.Spec.BundleSpec;
+using SpecSchemas = Speckle.Bundle.Spec.BundleSchemas;
+using SpecColumn = Speckle.Bundle.Spec.ColumnSpec;
+using SpecArrow = Speckle.Bundle.Spec.ArrowType;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
-/// <summary>Edge kinds in the envelope <c>relations</c> table. The <c>rel</c> fixes the identity
-/// namespace of <c>src</c>/<c>dst</c> (see <c>notes/topology-envelope-SOT.md</c> §2).
-///
-/// CROSS-CONNECTOR NAMING CONVENTION (ENG-8690 residual): the same topological concept MUST get the
-/// same rel code + <c>rel_types.name</c> across every producer (Revit / IFC / Civil3D / Navis / …).
-/// This enum plus the <c>rel_types</c> rows in <see cref="EnvelopeWriter.WriteCatalog"/> are the SINGLE
-/// source of that vocabulary — connectors emit through the typed pipeline methods, never an ad-hoc name.
-/// The catalog is self-describing, so new rels are additive and non-breaking (consumers skip unknown
-/// rels); add each one in the same change as the connector that first emits it, and bump
-/// <c>schema_version</c>.</summary>
+/// <summary>Edge kinds in the envelope <c>relations</c> table — a thin PascalCase facade over the
+/// generated <c>Speckle.Bundle.Spec.Rel</c> enum so connectors keep an idiomatic C# vocabulary while the
+/// VALUES, the <c>rel_types</c> catalog, and the table schemas all come from the single source of truth
+/// (the <c>speckle-bundle-spec</c> sibling repo). Add a new rel in the spec and regenerate; retired rels
+/// are simply absent here. See <see cref="EnvelopeWriter.WriteCatalog"/>.</summary>
 public static class RelKind
 {
-  /// <summary>object → geometry. Direct renderable geometry (world-coord mesh). <c>ord</c> = fragment.</summary>
-  public const byte Display = 1;
-
-  /// <summary>object → geometry. Authoritative solid (Brep/Solid).</summary>
-  public const byte Solid = 2;
-
-  /// <summary>object → object. Host→hosted nesting (curtain wall → panels).</summary>
-  public const byte Subelement = 3;
-
-  /// <summary>node(DEFINITION) → geometry. Definition contains a raw mesh member.</summary>
-  public const byte Defines = 4;
-
-  /// <summary>geometry → node(MATERIAL). Per-mesh render material.</summary>
-  public const byte HasMaterial = 5;
-
-  /// <summary>geometry | object → node(COLOR). Display colour.</summary>
-  public const byte HasColor = 6;
-
-  /// <summary>object → node(LEVEL). Level membership.</summary>
-  public const byte OnLevel = 7;
-
-  /// <summary>object → node(INSTANCE). Renderable via a placement (transform + definition).</summary>
-  public const byte DisplayInstance = 8;
-
-  /// <summary>node(DEFINITION) → node(nested INSTANCE). Definition contains a nested block placement.
-  /// Split from <see cref="Defines"/> so <c>rel</c> fixes the dst namespace (geometry vs node) — the same
-  /// reason <see cref="Display"/>/<see cref="DisplayInstance"/> are split; per-namespace ids overlap.</summary>
-  public const byte DefinesInstance = 9;
-
-  /// <summary>object → node(COLLECTION). The object's direct membership in a scene-tree container (Rhino/CAD
-  /// layer, ETABS story/category, Tekla category, …). The container TREE is the COLLECTION node's
-  /// <c>def_ref</c> = parent collection chain. Lets the loader rebuild the source hierarchy (otherwise lost
-  /// when the scene is flattened). Source root collection excluded.</summary>
-  public const byte InCollection = 10;
-
-  /// <summary>object → node(CONTAINER, subtype "Model"). The object's source-document / host / linked-model
-  /// membership (Revit linked models, Navis source document, DGN models &amp; reference attachments). A
-  /// DEDICATED rel — NOT a <see cref="InCollection"/> subtype — so it can sit explicitly atop a default
-  /// scene_views projection (e.g. Revit IN_MODEL → ON_LEVEL → category). Self-nesting via the CONTAINER
-  /// node's <c>def_ref</c> (parent model) for nested links / appended-within-appended. SOT §8.</summary>
-  public const byte InModel = 11;
-
-  /// <summary>object → node(CONTAINER, subtype "Room"). Room containment (the bounding / occupied room).</summary>
-  public const byte InRoom = 12;
-
-  /// <summary>object → node(CONTAINER, subtype "Space"). Spatial-zone / HVAC-space membership.</summary>
-  public const byte InSpace = 13;
-
-  /// <summary>object → node(CONTAINER, subtype "System"). Named logical engineering system membership
-  /// (Revit MEPSystem, IFC IfcDistributionSystem) — e.g. "Domestic Cold Water". Many-to-many (equipment sits
-  /// on both supply and return), so a dedicated CONTAINER axis, NOT a single-parent <see cref="InCollection"/>.</summary>
-  public const byte InSystem = 14;
-
-  /// <summary>object → node(CONTAINER, subtype "Network"). A physically connected run (a connected component
-  /// of <see cref="ConnectsTo"/>; an IFC pipe / cable network). May be unnamed (synthesised from connectivity)
-  /// where a logical <see cref="InSystem"/> assignment is absent.</summary>
-  public const byte InNetwork = 15;
-
-  /// <summary>object → node(CONTAINER, subtype "Line"). A single named run / line-number group (a process
-  /// line, a Plant3D line, a Civil3D pipe run).</summary>
-  public const byte InLine = 16;
-
-  /// <summary>object → node(CONTAINER, subtype "Group"). Authoring-tool group membership (Revit Group).</summary>
-  public const byte InGroup = 17;
-
-  /// <summary>object → node(CONTAINER, subtype "Assembly"). Assembly membership (Revit / Tekla assembly).</summary>
-  public const byte InAssembly = 18;
-
-  /// <summary>object → node(CONTAINER, subtype "Subassembly"). Sub-assembly nested under an
-  /// <see cref="InAssembly"/> (self-nesting CONTAINER via def_ref).</summary>
-  public const byte InSubassembly = 19;
-
-  /// <summary>object → node(CONTAINER, subtype "ExternalModel"). External reference / xref attachment (DWG /
-  /// DGN xref, IFC referenced model), distinct from an in-place <see cref="InModel"/> link.</summary>
-  public const byte Xref = 20;
-
-  /// <summary>object → object. Physical flow connectivity between elements (MEP port↔port resolved to the
-  /// owning elements; IFC IfcRelConnectsPorts, Revit connectors). DIRECTED src→dst by flow (source→target);
-  /// a reciprocal pair = undirected / unknown flow. Per-port detail stays in EAV — the rel is element-granular.
-  /// First peer connectivity rel after <see cref="Subelement"/>.</summary>
-  public const byte ConnectsTo = 21;
-
-  /// <summary>object → object. Hosted→host dependency (window / door → its wall; face hosting). Distinct from
-  /// <see cref="Subelement"/> (host OWNS hosted / containment) — this is positional dependency, opposite
-  /// direction.</summary>
-  public const byte HostedOn = 22;
+  public const byte Display = (byte)SpecRel.DISPLAY;
+  public const byte Solid = (byte)SpecRel.SOLID;
+  public const byte Subelement = (byte)SpecRel.SUBELEMENT;
+  public const byte Defines = (byte)SpecRel.DEFINES;
+  public const byte HasMaterial = (byte)SpecRel.HAS_MATERIAL;
+  public const byte HasColor = (byte)SpecRel.HAS_COLOR;
+  public const byte OnLevel = (byte)SpecRel.ON_LEVEL;
+  public const byte DisplayInstance = (byte)SpecRel.DISPLAY_INSTANCE;
+  public const byte DefinesInstance = (byte)SpecRel.DEFINES_INSTANCE;
+  public const byte InCollection = (byte)SpecRel.IN_COLLECTION;
+  public const byte InModel = (byte)SpecRel.IN_MODEL;
+  public const byte InRoom = (byte)SpecRel.IN_ROOM;
+  public const byte InSystem = (byte)SpecRel.IN_SYSTEM;
+  public const byte ConnectsTo = (byte)SpecRel.CONNECTS_TO;
+  public const byte Bounds = (byte)SpecRel.BOUNDS;
 }
 
-/// <summary>Value-node kinds in the envelope <c>nodes</c> table.</summary>
+/// <summary>Value-node kinds in the envelope <c>nodes</c> table — a thin facade over the generated
+/// <c>Speckle.Bundle.Spec.NodeKind</c> enum. COLLECTION folded into CONTAINER (v5): a scene-tree
+/// collection is a CONTAINER whose <c>subtype</c> carries its tag; the inbound rel (<c>IN_COLLECTION</c>
+/// vs <c>IN_MODEL</c>/<c>IN_SYSTEM</c>/…) disambiguates the grouping axis.</summary>
 public static class NodeKind
 {
-  public const byte Definition = 1;
-  public const byte Instance = 2;
-  public const byte Material = 3;
-  public const byte Color = 4;
-  public const byte Level = 5;
-
-  /// <summary>A scene-tree container (layer / category / story). <c>name</c> = its name, <c>def_ref</c> = its
-  /// PARENT collection node (null = top-level, directly under the excluded root), <c>units</c> = its subtype
-  /// tag (e.g. "Layer", "Collection", or the source <c>collectionType</c>) so the loader can label it.</summary>
-  public const byte Collection = 6;
-
-  /// <summary>A generic SEMANTIC-TOPOLOGY container (model / room / space / system / …), distinct from the
-  /// authored <see cref="Collection"/> scene-tree. The inbound rel (<see cref="RelKind.InModel"/>, …)
-  /// disambiguates which axis it is; <c>name</c> = its label, <c>def_ref</c> = its PARENT container
-  /// (null = top-level, self-nesting), <c>units</c> = its subtype tag (e.g. "Model"). One generic kind keeps
-  /// node_kinds stable as the rel vocabulary grows (SOT §8).
-  ///
-  /// WHY DISTINCT FROM <see cref="Collection"/> (they share columns): a COLLECTION is a SINGLE membership —
-  /// an object lives at exactly one spot in one authored tree (its leaf layer), reached only by
-  /// <see cref="RelKind.InCollection"/>. CONTAINER axes are INDEPENDENT and SIMULTANEOUS — the same object
-  /// can be "from linked model Structural.rvt" AND "in Room 101" AND "on system HVAC-2" at once, each via a
-  /// different rel. They can't share one membership relation: if model and layer were both IN_COLLECTION into
-  /// the same kind you could not express "group by model, THEN by the layer tree" — the two axes would
-  /// collapse into one. Separate kind + dedicated rels keep each a reorderable scene_views projection key.</summary>
-  public const byte Container = 7;
+  public const byte Definition = (byte)SpecKind.DEFINITION;
+  public const byte Instance = (byte)SpecKind.INSTANCE;
+  public const byte Material = (byte)SpecKind.MATERIAL;
+  public const byte Color = (byte)SpecKind.COLOR;
+  public const byte Level = (byte)SpecKind.LEVEL;
+  public const byte Container = (byte)SpecKind.CONTAINER;
 }
 
 /// <summary>The store a <see cref="SceneViewKey"/> reads from: a relation walk or an eav group-by.</summary>
@@ -164,26 +79,22 @@ public sealed record SceneViewKey(ProjectionSource Source, string Ref)
 public sealed record SceneView(int View, string Name, bool IsDefault, IReadOnlyList<SceneViewKey> Keys);
 
 /// <summary>
-/// Writes the Speckle 4.0 envelope topology artefact — now DIRECT Zstd PARQUET (one file per table)
-/// instead of DuckDB, à la <see cref="GeometriesParquetWriter"/>: passive columnar files, no
-/// WAL/checkpoint/index, ~90% smaller than the .duckdb form. Pure dense <c>int32</c> identity.
+/// Writes the Speckle 4.0 envelope topology artefact as DIRECT Zstd PARQUET (one file per table). The
+/// table SHAPES and the self-describing catalog (<c>rel_types</c>/<c>node_kinds</c>/<c>meta</c>) come from
+/// the generated <c>speckle-bundle-spec</c> — this writer no longer hand-declares them.
 /// <code>
 ///   {base}.envelope.relations.parquet(rel, src, dst, ord)      -- typed edges; src/dst namespace = rel
-///   {base}.envelope.nodes.parquet(id, kind, name, def_ref,     -- shared value-entities (definition /
-///         transform, units, argb, opacity, metalness,             instance / material / colour / level)
-///         roughness, elevation)
+///   {base}.envelope.nodes.parquet(id, kind, name, def_ref,     -- shared value-entities; `subtype` is the
+///         transform, units, subtype, argb, opacity,                CONTAINER discriminator (Model/Collection/…)
+///         metalness, roughness, elevation)
 ///   {base}.envelope.{meta,rel_types,node_kinds}.parquet        -- self-describing catalog (SOT §6)
-///   {base}.envelope.scene_views.parquet(view, name,           -- producer-authored default + named
-///         is_default, ord, source, ref)                          grouping projections (SOT §8); absent if none
+///   {base}.envelope.scene_views.parquet(view, name,           -- producer-authored grouping projections
+///         is_default, ord, source, ref)                          (SOT §8); absent if none
 /// </code>
-/// No manifest is written — consumers build their own <c>read_parquet</c> views (SOT §4).
 /// <c>transform</c> is 16 row-major doubles, comma-separated. Not thread-safe: calls are sequential.
 /// </summary>
 public sealed class EnvelopeWriter : IDisposable
 {
-  // 2: + IN_MODEL rel & CONTAINER node kind (SOT §8). Additive — consumers skip unknown rels/kinds.
-  private const int SCHEMA_VERSION = 3;
-
   public string OutputDir { get; }
   public string BaseName { get; }
 
@@ -207,28 +118,8 @@ public sealed class EnvelopeWriter : IDisposable
     BaseName = baseName;
     _scheduler = scheduler;
 
-    _relations = new ParquetTableWriter(
-      P("relations.parquet"),
-      new ParquetSchema(I("rel"), I("src"), I("dst"), I("ord")),
-      scheduler
-    );
-    _nodes = new ParquetTableWriter(
-      P("nodes.parquet"),
-      new ParquetSchema(
-        I("id"),
-        I("kind"),
-        S("name"),
-        new DataField<int?>("def_ref"),
-        S("transform"),
-        S("units"),
-        new DataField<int?>("argb"),
-        new DataField<double?>("opacity"),
-        new DataField<double?>("metalness"),
-        new DataField<double?>("roughness"),
-        new DataField<double?>("elevation")
-      ),
-      scheduler
-    );
+    _relations = new ParquetTableWriter(P("relations.parquet"), SchemaOf(SpecSchemas.Relations), scheduler);
+    _nodes = new ParquetTableWriter(P("nodes.parquet"), SchemaOf(SpecSchemas.Nodes), scheduler);
 
     WriteCatalog();
   }
@@ -242,7 +133,8 @@ public sealed class EnvelopeWriter : IDisposable
   }
 
   /// <summary>Appends one value-node. Only the columns relevant to <paramref name="kind"/> are
-  /// non-null (see <see cref="NodeKind"/>).</summary>
+  /// non-null (see <see cref="NodeKind"/>). <paramref name="subtype"/> is the CONTAINER discriminator
+  /// (e.g. "Model", "Network") — null for non-container kinds.</summary>
   public void AddNode(
     int id,
     byte kind,
@@ -250,6 +142,7 @@ public sealed class EnvelopeWriter : IDisposable
     int? defRef,
     string? transform,
     string? units,
+    string? subtype,
     int? argb,
     double? opacity,
     double? metalness,
@@ -258,7 +151,7 @@ public sealed class EnvelopeWriter : IDisposable
   )
   {
     EnsureNotCompleted();
-    _nodes.AddRow(id, (int)kind, name, defRef, transform, units, argb, opacity, metalness, roughness, elevation);
+    _nodes.AddRow(id, (int)kind, name, defRef, transform, units, subtype, argb, opacity, metalness, roughness, elevation);
   }
 
   /// <summary>Buffers a producer-authored projection (SOT §8); flushed to <c>scene_views.parquet</c> on
@@ -293,7 +186,8 @@ public sealed class EnvelopeWriter : IDisposable
     SafeDispose(_nodes);
   }
 
-  // Self-describing catalog (SOT §6): the rel/kind vocabulary + schema version, written once. Tiny.
+  // Self-describing catalog (SOT §6): the rel/kind vocabulary + schema version, written once from the
+  // generated spec catalog (live + reserved rows; retired ids are absent and never reused). Tiny.
   private void WriteCatalog()
   {
     using (
@@ -304,7 +198,7 @@ public sealed class EnvelopeWriter : IDisposable
       )
     )
     {
-      meta.AddRow(SCHEMA_VERSION, "Speckle.Sdk EnvelopeWriter");
+      meta.AddRow(SpecBundle.SchemaVersion, "Speckle.Sdk EnvelopeWriter");
     }
     using (
       var rt = new ParquetTableWriter(
@@ -314,41 +208,20 @@ public sealed class EnvelopeWriter : IDisposable
       )
     )
     {
-      rt.AddRow(1, "DISPLAY", "object", "geometry");
-      rt.AddRow(2, "SOLID", "object", "geometry");
-      rt.AddRow(3, "SUBELEMENT", "object", "object");
-      rt.AddRow(4, "DEFINES", "node", "geometry");
-      rt.AddRow(5, "HAS_MATERIAL", "geometry", "node");
-      rt.AddRow(6, "HAS_COLOR", "geometry|object", "node");
-      rt.AddRow(7, "ON_LEVEL", "object", "node");
-      rt.AddRow(8, "DISPLAY_INSTANCE", "object", "node");
-      rt.AddRow(9, "DEFINES_INSTANCE", "node", "node");
-      rt.AddRow(10, "IN_COLLECTION", "object", "node");
-      rt.AddRow(11, "IN_MODEL", "object", "node");
-      rt.AddRow(12, "IN_ROOM", "object", "node");
-      rt.AddRow(13, "IN_SPACE", "object", "node");
-      rt.AddRow(14, "IN_SYSTEM", "object", "node");
-      rt.AddRow(15, "IN_NETWORK", "object", "node");
-      rt.AddRow(16, "IN_LINE", "object", "node");
-      rt.AddRow(17, "IN_GROUP", "object", "node");
-      rt.AddRow(18, "IN_ASSEMBLY", "object", "node");
-      rt.AddRow(19, "IN_SUBASSEMBLY", "object", "node");
-      rt.AddRow(20, "XREF", "object", "node");
-      rt.AddRow(21, "CONNECTS_TO", "object", "object");
-      rt.AddRow(22, "HOSTED_ON", "object", "object");
+      foreach (var r in SpecCatalog.RelTypes)
+      {
+        rt.AddRow(r.Id, r.Name, r.SrcNs, r.DstNs);
+      }
     }
     using var nk = new ParquetTableWriter(
       P("node_kinds.parquet"),
       new ParquetSchema(I("kind"), S("name")),
       _scheduler
     );
-    nk.AddRow(1, "DEFINITION");
-    nk.AddRow(2, "INSTANCE");
-    nk.AddRow(3, "MATERIAL");
-    nk.AddRow(4, "COLOR");
-    nk.AddRow(5, "LEVEL");
-    nk.AddRow(6, "COLLECTION");
-    nk.AddRow(7, "CONTAINER");
+    foreach (var k in SpecCatalog.NodeKinds)
+    {
+      nk.AddRow(k.Id, k.Name);
+    }
   }
 
   // Producer-authored projections (SOT §8) — written at Complete(), not eagerly like the static catalog,
@@ -383,6 +256,30 @@ public sealed class EnvelopeWriter : IDisposable
       throw new InvalidOperationException("Writer already completed.");
     }
   }
+
+  // Build a Parquet.Net schema from the generated spec column descriptors (the single source of truth
+  // for table shapes). DDL nullability → DataField<T> (required) vs DataField<T?> (nullable).
+  private static ParquetSchema SchemaOf(SpecColumn[] cols)
+  {
+    var fields = new Field[cols.Length];
+    for (var i = 0; i < cols.Length; i++)
+    {
+      fields[i] = ToField(cols[i]);
+    }
+    return new ParquetSchema(fields);
+  }
+
+  private static DataField ToField(SpecColumn c) =>
+    c.Type switch
+    {
+      SpecArrow.Int32 => c.Nullable ? new DataField<int?>(c.Name) : new DataField<int>(c.Name),
+      SpecArrow.Int64 => c.Nullable ? new DataField<long?>(c.Name) : new DataField<long>(c.Name),
+      SpecArrow.Float64 => c.Nullable ? new DataField<double?>(c.Name) : new DataField<double>(c.Name),
+      SpecArrow.Boolean => c.Nullable ? new DataField<bool?>(c.Name) : new DataField<bool>(c.Name),
+      SpecArrow.Utf8 => new DataField<string>(c.Name),
+      SpecArrow.Binary => new DataField<byte[]>(c.Name),
+      _ => throw new NotSupportedException($"Unmapped ArrowType {c.Type} for column {c.Name}"),
+    };
 
   private static DataField I(string name) => new DataField<int>(name);
 
