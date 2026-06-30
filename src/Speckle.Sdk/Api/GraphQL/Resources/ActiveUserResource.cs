@@ -1,4 +1,4 @@
-﻿using GraphQL;
+using GraphQL;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
@@ -308,42 +308,6 @@ public sealed class ActiveUserResource
     return response.data.data;
   }
 
-  /// <param name="cancellationToken"></param>
-  /// <returns>The active (last selected) workspace</returns>
-  /// <remarks>note this returns a <see cref="LimitedWorkspace"/>, because it may be a workspace the user is not a member of</remarks>
-  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
-  /// <exception cref="SpeckleException">The ActiveUser could not be found (e.g. the client is not authenticated)</exception>
-  private async Task<LimitedWorkspace?> GetActiveWorkspace_Legacy(CancellationToken cancellationToken = default)
-  {
-    //language=graphql
-    const string QUERY = """
-      query ActiveUser {
-        data:activeUser {
-          data:activeWorkspace {
-            id
-            name
-            role
-            slug
-            description
-          }
-        }
-      }
-      """;
-
-    var request = new GraphQLRequest { Query = QUERY };
-
-    var response = await _client
-      .ExecuteGraphQLRequest<NullableResponse<NullableResponse<LimitedWorkspace?>?>>(request, cancellationToken)
-      .ConfigureAwait(false);
-
-    if (response.data is null)
-    {
-      throw new SpeckleException("GraphQL response indicated that the ActiveUser could not be found");
-    }
-
-    return response.data.data;
-  }
-
   public async Task<LimitedWorkspace?> GetActiveWorkspace(CancellationToken cancellationToken = default)
   {
     //language=graphql
@@ -374,7 +338,7 @@ public sealed class ActiveUserResource
     catch (SpeckleGraphQLInvalidQueryException)
     {
       //v2.x.x servers do not have a logoUrl property
-      return await GetActiveWorkspace_Legacy(cancellationToken).ConfigureAwait(false);
+      return null;
     }
 
     if (response.data is null)

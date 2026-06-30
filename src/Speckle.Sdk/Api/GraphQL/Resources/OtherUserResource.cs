@@ -56,6 +56,7 @@ public sealed class OtherUserResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete("User search is deprecated")]
   public async Task<UserSearchResultCollection> UserSearch(
     string query,
     int limit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
