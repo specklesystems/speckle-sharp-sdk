@@ -22,17 +22,25 @@ public class WorkspaceResourceTests
     return testUser;
   }
 
-  [Fact]
+  [Fact, Trait("Server", "Internal")]
   public async Task TestGetWorkspace()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
       _ = await Sut.Get("non-existent-id", TestContext.Current.CancellationToken)
     );
     ex.InnerExceptions.Should().HaveCount(1);
-    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLForbiddenException>();
+    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLWorkspaceNotEnabledException>();
   }
 
-  [Fact]
+  [Fact, Trait("Server", "Internal")]
+  public async Task TestGetProjectsInternal()
+  {
+    var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.GetProjects("non-existent-id"));
+    ex.InnerExceptions.Should().HaveCount(1);
+    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLWorkspaceNotEnabledException>();
+  }
+
+  [Fact, Trait("Server", "Public")]
   public async Task TestGetProjects()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
