@@ -308,6 +308,11 @@ public sealed class ActiveUserResource
     return response.data.data;
   }
 
+  /// <param name="cancellationToken"></param>
+  /// <returns>The active (last selected) workspace</returns>
+  /// <remarks>note this returns a <see cref="LimitedWorkspace"/>, because it may be a workspace the user is not a member of</remarks>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  /// <exception cref="SpeckleException">The ActiveUser could not be found (e.g. the client is not authenticated)</exception>
   public async Task<LimitedWorkspace?> GetActiveWorkspace(CancellationToken cancellationToken = default)
   {
     //language=graphql
