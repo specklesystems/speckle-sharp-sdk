@@ -37,7 +37,7 @@ public class ProgressStreamTests : IDisposable
       .Returns(Task.FromResult(5));
 
     // Act
-    await _sut.ReadAsync(buffer, 0, buffer.Length);
+    _ = await _sut.ReadAsync(buffer, 0, buffer.Length);
 
     // Assert - Inner Stream Read was called
     _innerStreamMock.Verify(s => s.ReadAsync(buffer, 0, buffer.Length, CancellationToken.None), Times.Once);

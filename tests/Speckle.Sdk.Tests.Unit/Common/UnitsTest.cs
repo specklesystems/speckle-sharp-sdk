@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Tests.Unit.Common;

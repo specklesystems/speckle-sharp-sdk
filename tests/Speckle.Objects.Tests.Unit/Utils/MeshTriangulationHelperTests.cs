@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Common;
@@ -71,7 +71,7 @@ public class MeshTriangulationHelperTests
     Mesh mesh = new()
     {
       vertices = vertices,
-      faces = new List<int>(faces),
+      faces = faces.ToList(),
       units = Units.Meters,
     };
 
@@ -102,7 +102,7 @@ public class MeshTriangulationHelperTests
     Mesh mesh = new()
     {
       vertices = vertices,
-      faces = new List<int>(faces),
+      faces = faces,
       units = Units.Meters,
     };
 

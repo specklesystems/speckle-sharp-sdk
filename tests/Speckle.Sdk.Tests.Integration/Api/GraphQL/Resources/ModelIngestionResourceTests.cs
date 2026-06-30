@@ -96,6 +96,26 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
   }
 
   [Fact]
+  public async Task CreateAndFailWithInvalid()
+  {
+    var createInput = new ModelIngestionCreateInput(
+      _model.id,
+      _project.id,
+      "Starting processing",
+      new(".NET test runner", "0.0.0", null, null)
+    );
+    ModelIngestion ingest = await Sut.Create(createInput);
+
+    var input = new ModelIngestionInvalidInput(
+      ingest.id,
+      _project.id,
+      validationMessage: "The users input was invalid"
+    );
+    var res = await Sut.FailWithInvalid(input);
+    Assert.Equal(ingest.id, res.id);
+  }
+
+  [Fact]
   public async Task CreateAndComplete()
   {
     ModelIngestionCreateInput createInput = new(

@@ -154,10 +154,10 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
       activity?.SetStatus(SdkActivityStatusCode.Ok);
       return ret;
     }
-    catch (Exception)
+    catch (Exception ex)
     {
       activity?.SetStatus(SdkActivityStatusCode.Error);
-      // Don't record exception as it's rethrown.
+      activity?.RecordException(ex);
       throw;
     }
   }

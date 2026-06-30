@@ -294,6 +294,7 @@ public sealed class ModelIngestionResource
   /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <seealso cref="FailWithError"/>
+  /// <seealso cref="FailWithInvalid"/>
   /// <seealso cref="FailWithCancel"/>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
@@ -337,6 +338,7 @@ public sealed class ModelIngestionResource
   /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>
   /// <seealso cref="FailWithCancel"/>
+  /// <seealso cref="FailWithInvalid"/>
   /// <seealso cref="Complete"/>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
@@ -387,13 +389,14 @@ public sealed class ModelIngestionResource
   }
 
   /// <summary>
-  /// Fail the ingestion with a <c>canceled</c> status.
-  /// This should only be done if the user has explicitly requested cancellation
-  /// Other forms of cancellation use <see cref="FailWithError"/>.
-  /// The ingestion should then enter a terminal "canceled" state.<br/>
+  /// Fail the ingestion with a <c>cancelled</c> status.
+  /// This should only be done if the user has explicitly requested cancellation.
+  /// Other forms of termination use <see cref="FailWithError"/>.
+  /// The ingestion should then enter a terminal "cancelled" state.<br/>
   /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </summary>
   /// <seealso cref="FailWithError"/>
+  /// <seealso cref="FailWithInvalid"/>
   /// <seealso cref="Complete"/>
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
@@ -444,13 +447,71 @@ public sealed class ModelIngestionResource
   }
 
   /// <summary>
+  /// Fail the ingestion with a <c>invalid</c> status.
+  /// This should only be done if user input e.g. file/settings/target is determined to be invalid or unsupported
+  /// or other forms of deterministic designed behaviour.
+  /// For errors that may be caused by internal/infrastructure behaviour, use <see cref="FailWithError"/>.
+  /// API is available for server versions <c>~3.0.23</c> and above
+  /// </summary>
+  /// <seealso cref="FailWithError"/>
+  /// <seealso cref="FailWithCancel"/>
+  /// <seealso cref="Complete"/>
+  /// <param name="input"></param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  public async Task<ModelIngestion> FailWithInvalid(
+    ModelIngestionInvalidInput input,
+    CancellationToken cancellationToken = default
+  )
+  {
+    //language=graphql
+    const string QUERY = """
+      mutation IngestionFailWithInvalid($input: ModelIngestionInvalidInput!) {
+        data: projectMutations {
+          data: modelIngestionMutations {
+            data: failWithInvalid(input: $input) {
+              id
+              createdAt
+              updatedAt
+              modelId
+              projectId
+              userId
+              cancellationRequested
+              statusData {
+                ... on HasModelIngestionStatus {
+                  status
+                }
+                ... on HasProgressMessage {
+                  progressMessage
+                }
+              }
+            }
+          }
+        }
+      }
+      """;
+
+    GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
+
+    var res = await _client
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<ModelIngestion>>>>(
+        request,
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+
+    return res.data.data.data;
+  }
+
+  /// <summary>
   /// Request that the <see cref="ModelIngestion"/> is canceled.
   /// </summary>
   /// <remarks>
   /// Note simply calling this mutation does not imediatly cancel, it doesn't even guarantee it will be canceled at all.
   /// It's up to the client to observe this cancellation request
   /// via <see cref="SubscriptionResource.CreateProjectModelIngestionCancellationRequestedSubscription"/>
-  /// and report it as canceled via  <see cref="ModelIngestionResource.FailWithCancel"/>
+  /// and report it as cancelled via  <see cref="ModelIngestionResource.FailWithCancel"/>
   /// See "cooperative cancellation pattern"<br/>
   /// Model Ingestion API is available for server versions <c>3.0.3</c> and above
   /// </remarks>

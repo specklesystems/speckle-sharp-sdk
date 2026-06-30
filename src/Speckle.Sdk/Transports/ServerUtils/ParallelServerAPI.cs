@@ -236,7 +236,9 @@ internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>
 
       try
       {
+#pragma warning disable CA2025
         var result = RunOperation(operation, inputValue.NotNull(), serialApi).GetAwaiter().GetResult();
+#pragma warning restore CA2025
         tcs.SetResult(result);
       }
       catch (Exception ex)

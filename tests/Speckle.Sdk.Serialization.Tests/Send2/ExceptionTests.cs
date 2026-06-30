@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;

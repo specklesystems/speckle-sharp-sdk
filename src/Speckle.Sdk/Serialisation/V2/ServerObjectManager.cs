@@ -71,12 +71,15 @@ public class ServerObjectManager : IServerObjectManager
     string serializedPayload = JsonConvert.SerializeObject(postParameters);
     childrenHttpMessage.Content = new StringContent(serializedPayload, Encoding.UTF8, "application/json");
     childrenHttpMessage.Headers.Add("Accept", "text/plain");
+    childrenHttpMessage.Headers.Add("x-speckle-object-stream-heartbeats", "true");
 
     HttpResponseMessage childrenHttpResponse = await _client
       .SendAsync(childrenHttpMessage, HttpCompletionOption.ResponseContentRead, cancellationToken)
       .ConfigureAwait(false);
 
-    await foreach (var (id, json) in ResponseProgress(childrenHttpResponse, progress, false, cancellationToken))
+    await foreach (
+      var (id, json) in ResponseProgress(childrenHttpResponse, progress, false, cancellationToken).ConfigureAwait(false)
+    )
     {
       if (id is not null)
       {
@@ -135,6 +138,14 @@ public class ServerObjectManager : IServerObjectManager
 #endif
     {
       cancellationToken.ThrowIfCancellationRequested();
+
+      //On the server, Nginx will timeout if the request takes too long on the server side.
+      //So the server will send heartbeats to keep the connection alive
+      if (line == ":heartbeat")
+      {
+        continue;
+      }
+
       if (!isSingle)
       {
         var pcs = line.Split(s_separator, 2);

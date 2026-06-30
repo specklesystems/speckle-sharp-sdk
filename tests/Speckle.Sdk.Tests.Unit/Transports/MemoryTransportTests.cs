@@ -1,6 +1,6 @@
 // MemoryTransportTests.cs
 
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Transports;
 

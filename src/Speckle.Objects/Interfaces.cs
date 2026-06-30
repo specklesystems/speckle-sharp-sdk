@@ -141,6 +141,11 @@ public interface ICivilObject : IDataObject
   IReadOnlyList<Base> elements { get; }
 }
 
+public interface IAutocadObject : IDataObject
+{
+  string type { get; }
+}
+
 public interface ITeklaObject : IDataObject
 {
   string type { get; }
@@ -153,6 +158,13 @@ public interface ICsiObject : IDataObject
   string type { get; }
 
   IReadOnlyList<ICsiObject> elements { get; }
+}
+
+public interface ITsdObject : IDataObject
+{
+  string type { get; }
+
+  IReadOnlyList<ITsdObject> elements { get; }
 }
 
 public interface IGisObject : IDataObject
@@ -171,5 +183,14 @@ public interface IArchicadObject : IDataObject
 
 public interface INavisworksObject : IDataObject { }
 
+public interface IRhinoObject : IDataObject
+{
+  string type { get; }
+}
+
+public interface IMicrostationObject : IDataObject
+{
+  string type { get; }
+}
 
 #endregion

@@ -1,5 +1,5 @@
 using System.Drawing;
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Host;

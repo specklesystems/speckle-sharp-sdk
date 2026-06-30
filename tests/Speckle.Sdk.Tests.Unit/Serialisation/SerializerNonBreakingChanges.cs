@@ -1,5 +1,5 @@
 using System.Drawing;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Host;
@@ -329,7 +329,7 @@ public abstract class SerializerMock : Base
   {
     SerializeAs<TTo>();
 
-    var json = operations.Serialize(this);
+    var json = operations.SerializeNew(this);
 
     Base result = await operations.DeserializeAsync(json);
     result.Should().NotBeNull();

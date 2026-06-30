@@ -2,7 +2,7 @@
 using System.Diagnostics.Contracts;
 using System.Security.Cryptography;
 using System.Text;
-using FluentAssertions;
+using AwesomeAssertions;
 
 namespace Speckle.Sdk.Tests.Unit.Common;
 

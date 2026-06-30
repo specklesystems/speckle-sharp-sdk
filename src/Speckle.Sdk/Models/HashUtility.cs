@@ -21,6 +21,10 @@ public static class HashUtility
     using var stream = File.OpenRead(filePath);
 
     var hash = hashAlgorithm.ComputeHash(stream);
+#if NET8_0_OR_GREATER
+    return Convert.ToHexString(hash, 0, HASH_LENGTH).ToLowerInvariant();
+#else
     return BitConverter.ToString(hash, 0, HASH_LENGTH).Replace("-", "").ToLowerInvariant();
+#endif
   }
 }

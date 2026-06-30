@@ -3,7 +3,6 @@ using Moq;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Credentials;
-using Speckle.Sdk.Helpers;
 using Speckle.Sdk.SQLite;
 using Speckle.Sdk.Testing;
 
@@ -28,14 +27,11 @@ public sealed class AccountManagerTests : MoqTest
     ) => throw new NotImplementedException();
   }
 
-  private readonly Mock<ISpeckleApplication> _mockApplication;
   private readonly Mock<ILogger<AccountManager>> _mockLogger;
-  private readonly Mock<IGraphQLClientFactory> _mockGraphQLClientFactory;
-  private readonly Mock<ISpeckleHttp> _mockSpeckleHttp;
   private readonly IAccountFactory _mockAccountFactory;
   private readonly Mock<ISqLiteJsonCacheManagerFactory> _mockSqLiteJsonCacheManagerFactory;
   private readonly Mock<ISqLiteJsonCacheManager> _mockAccountStorage;
-  private readonly Mock<ISqLiteJsonCacheManager> _mockAccountAddLockStorage;
+  private readonly Mock<IAuthFlow> _mockAuthFlow;
 
 #pragma warning disable CA2213
   private readonly AccountManager _accountManager;
@@ -43,27 +39,19 @@ public sealed class AccountManagerTests : MoqTest
 
   public AccountManagerTests()
   {
-    _mockApplication = Create<ISpeckleApplication>();
     _mockLogger = Create<ILogger<AccountManager>>(MockBehavior.Loose);
-    _mockGraphQLClientFactory = Create<IGraphQLClientFactory>();
-    _mockSpeckleHttp = Create<ISpeckleHttp>();
     _mockAccountFactory = new TestAccountFactory();
     _mockSqLiteJsonCacheManagerFactory = Create<ISqLiteJsonCacheManagerFactory>();
+    _mockAuthFlow = Create<IAuthFlow>();
 
     _mockAccountStorage = Create<ISqLiteJsonCacheManager>();
-    _mockAccountAddLockStorage = Create<ISqLiteJsonCacheManager>();
 
     _mockSqLiteJsonCacheManagerFactory.Setup(f => f.CreateForUser("Accounts")).Returns(_mockAccountStorage.Object);
-    _mockSqLiteJsonCacheManagerFactory
-      .Setup(f => f.CreateForUser("AccountAddFlow"))
-      .Returns(_mockAccountAddLockStorage.Object);
 
     _accountManager = new AccountManager(
-      _mockApplication.Object,
       _mockLogger.Object,
-      _mockGraphQLClientFactory.Object,
-      _mockSpeckleHttp.Object,
       _mockAccountFactory,
+      _mockAuthFlow.Object,
       _mockSqLiteJsonCacheManagerFactory.Object
     );
   }
@@ -328,71 +316,6 @@ public sealed class AccountManagerTests : MoqTest
       s => s.UpdateObject(account2.id, It.Is<string>(json => json.Contains("\"isDefault\":true"))),
       Times.Once
     );
-  }
-
-  [Fact]
-  public void GetLocalIdentifierForAccount_ReturnsIdentifier_WhenAccountExists()
-  {
-    // Arrange
-    var account = CreateTestAccount("test-account");
-    var expectedUri = new Uri($"{account.serverInfo.url}?id={account.userInfo.id}");
-
-    _mockAccountStorage.Setup(s => s.GetAllObjects()).Returns(new[] { ("bad", JsonConvert.SerializeObject(account)) });
-
-    // Act
-    var result = _accountManager.GetLocalIdentifierForAccount(account);
-
-    // Assert
-    Assert.NotNull(result);
-    Assert.Equal(expectedUri, result);
-  }
-
-  [Fact]
-  public void GetLocalIdentifierForAccount_ReturnsNull_WhenAccountDoesNotExist()
-  {
-    // Arrange
-    var account = CreateTestAccount("non-existent-account");
-
-    _mockAccountStorage.Setup(s => s.GetAllObjects()).Returns([]);
-
-    // Act
-    var result = _accountManager.GetLocalIdentifierForAccount(account);
-
-    // Assert
-    Assert.Null(result);
-  }
-
-  [Fact]
-  public void GetAccountForLocalIdentifier_ReturnsAccount_WhenMatches()
-  {
-    // Arrange
-    var account = CreateTestAccount("test-account");
-    var localIdentifier = new Uri($"{account.serverInfo.url}?id={account.userInfo.id}");
-
-    _mockAccountStorage.Setup(s => s.GetAllObjects()).Returns(new[] { ("bad", JsonConvert.SerializeObject(account)) });
-
-    // Act
-    var result = _accountManager.GetAccountForLocalIdentifier(localIdentifier);
-
-    // Assert
-    Assert.NotNull(result);
-    Assert.Equal(account.id, result!.id);
-  }
-
-  [Fact]
-  public void GetAccountForLocalIdentifier_ReturnsNull_WhenNoMatch()
-  {
-    // Arrange
-    var account = CreateTestAccount("test-account");
-    var localIdentifier = new Uri("https://different.url?u=different-user");
-
-    _mockAccountStorage.Setup(s => s.GetAllObjects()).Returns(new[] { ("bad", JsonConvert.SerializeObject(account)) });
-
-    // Act
-    var result = _accountManager.GetAccountForLocalIdentifier(localIdentifier);
-
-    // Assert
-    Assert.Null(result);
   }
 
   // Helper method to create a test account

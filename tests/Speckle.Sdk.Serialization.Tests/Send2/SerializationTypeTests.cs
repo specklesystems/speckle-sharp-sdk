@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Send;
 

@@ -18,7 +18,7 @@ Speckle | Sharp | SDK
 
 # Repo structure
 
-This repo is the home of our next-generation Speckle .NET SDK. It uses .NET Standard 2.0 and has been tested on Windows and MacOS.
+This repo is the home of our Speckle .NET SDK.
 
 - **SDK**
   - [`Speckle.Sdk`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Sdk): Send/Receive operations, Serialization, API wrappers, and more!.
@@ -42,25 +42,27 @@ Make sure to also check and ⭐️ these other  repositories:
 
 ## Documentation
 
-Comprehensive developer and user documentation can be found in our:
-
-### 📚 [Speckle Docs website](https://speckle.guide/dev/)
+Developer docs are a bit patchy. See our [📚 Speckle Docs website](https://docs.speckle.systems/developers/introduction)
 
 # Developing and Debugging
 
-### Building
 
-Ensure you're using a [8.0.4xx](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) .NET SDK. 
-After cloning this repository, just restore all the NuGet packages and hit Build!
+To build solutions in this repo, version [10.0.2xx of the .NET SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) is required.
 
-### Developing
+It is recommended to use JetBrains Rider (version 2025.3 or greater) or Microsoft Visual Studio 2026 (version 18.4 or greater)
 
-It is highly recommended you use
- - Either Jetbrains Rider or Visual Studio 2022
- - Ensure your IDE is set to use [the correct .NET SDK version](https://github.com/specklesystems/speckle-sharp-sdk/blob/main/global.json) (newer major versions may work, but may incorrectly run analysers we haven't configured)
- - You should install the cshapier plugin ([Rider](https://plugins.jetbrains.com/plugin/18243-csharpier), [VS](https://marketplace.visualstudio.com/items?itemName=csharpier.CSharpier)) and configure it to run on save
+From there you can open the main `Speckle.Sdk.slnx` solution and build the project.
 
-Docs are a bit patchy [https://docs.speckle.systems/developers/looking-for-developer-docs](https://docs.speckle.systems/developers/looking-for-developer-docs)
+### Formatting
+We're using [CSharpier](https://github.com/belav/csharpier) to format our code. You can use Csharpier in a few ways:
+- Install CSharpier and reformat from CLI
+  ```
+  dotnet tool restore
+  dotnet csharpier format ./
+  ```
+- Install the CSharpier extension for [Rider](https://plugins.jetbrains.com/plugin/18243-csharpier) or [Visual Studio](https://marketplace.visualstudio.com/items?itemName=csharpier.CSharpier)<br/>
+  For best DX, we recommend turning on CSharpier's `reformat on save` setting if you've installed it in your IDE.
+
 
 ### Tests
 
@@ -71,6 +73,7 @@ You must have docker installed. Then you can run `docker compose up` from the ro
 
 In CI, they will be run against both the public and private versions of the server.
 It is important that we remain compatible with both server versions.
+
 ## Contributing
 
 Before embarking on submitting a patch, please make sure you read:

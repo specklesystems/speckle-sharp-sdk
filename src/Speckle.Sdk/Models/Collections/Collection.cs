@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Speckle.Sdk.Models.Collections;
 
 /// <summary>
@@ -20,6 +22,8 @@ public class Collection : Base
   /// Constructor for a basic collection.
   /// </summary>
   /// <param name="name">The human-readable name of this collection</param>
+  [SetsRequiredMembers]
+  [Obsolete("Use parameterless constructor with initialiser")]
   public Collection(string name)
   {
     this.name = name;
@@ -29,7 +33,7 @@ public class Collection : Base
   /// The human-readable name of the <see cref="Collection"/>.
   /// </summary>
   /// <remarks>This name is not necessarily unique within a commit. Set the applicationId for a unique identifier.</remarks>
-  public string name { get; set; }
+  public required string name { get; set; }
 
   /// <summary>
   /// The type of this collection. Note: Claire and Dim would propose we deprecate this prop. Do not use, please!

@@ -6,16 +6,19 @@ namespace Speckle.Sdk.Credentials;
 internal sealed class ActiveUserServerInfoResponse
 {
   [property: JsonProperty(Required = Required.AllowNull)]
-  public UserInfo? activeUser { get; init; }
+  public required UserInfo? activeUser { get; init; }
 
   [property: JsonProperty(Required = Required.Always)]
-  public ServerInfo serverInfo { get; init; }
+  public required ServerInfo serverInfo { get; init; }
 }
 
-internal sealed class TokenExchangeResponse
+public sealed class TokenExchangeResponse
 {
-  public string token { get; init; }
-  public string refreshToken { get; init; }
+  [JsonRequired]
+  public required string token { get; init; }
+
+  [JsonRequired]
+  public required string refreshToken { get; init; }
 }
 
 public sealed class UserInfo

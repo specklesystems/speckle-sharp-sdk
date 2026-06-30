@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using Speckle.DoubleNumerics;
 using Speckle.Objects.Geometry;
 

@@ -8,7 +8,9 @@ public enum ModelIngestionStatus
 {
   cancelled,
   failed,
+  invalidInput,
   processing,
   queued,
   success,
+  timeout,
 }

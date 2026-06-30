@@ -1,5 +1,16 @@
 namespace Speckle.Sdk.Credentials;
 
+public sealed class AuthFlowException : SpeckleException
+{
+  public AuthFlowException(string? message, Exception? innerException)
+    : base(message, innerException) { }
+
+  public AuthFlowException(string? message)
+    : base(message) { }
+
+  public AuthFlowException() { }
+}
+
 public class SpeckleAccountManagerException : SpeckleException
 {
   public SpeckleAccountManagerException(string message)
@@ -9,15 +20,4 @@ public class SpeckleAccountManagerException : SpeckleException
     : base(message, inner) { }
 
   public SpeckleAccountManagerException() { }
-}
-
-public class SpeckleAccountFlowLockedException : SpeckleAccountManagerException
-{
-  public SpeckleAccountFlowLockedException(string message)
-    : base(message) { }
-
-  public SpeckleAccountFlowLockedException() { }
-
-  public SpeckleAccountFlowLockedException(string message, Exception? innerException)
-    : base(message, innerException) { }
 }

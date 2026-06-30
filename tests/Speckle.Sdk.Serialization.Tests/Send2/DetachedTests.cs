@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Objects.Geometry;

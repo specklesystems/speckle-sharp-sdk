@@ -108,12 +108,14 @@ public sealed class ObjectLoader(
   {
     var toCache = new List<BaseItem>();
     await foreach (
-      var (id, json) in serverObjectManager.DownloadObjects(
-        ids.Select(x => x.NotNull()).ToList(),
-        null, //TODO: Implement attribute masking in a safe way that will not poison SQLite DB.
-        progress,
-        _cancellationToken
-      )
+      var (id, json) in serverObjectManager
+        .DownloadObjects(
+          ids.Select(x => x.NotNull()).ToList(),
+          null, //TODO: Implement attribute masking in a safe way that will not poison SQLite DB.
+          progress,
+          _cancellationToken
+        )
+        .ConfigureAwait(false)
     )
     {
       _cancellationToken.ThrowIfCancellationRequested();

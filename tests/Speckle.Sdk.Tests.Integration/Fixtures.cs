@@ -27,7 +27,12 @@ namespace Speckle.Sdk.Tests.Integration;
 public static class Fixtures
 {
   public static readonly ServerInfo Server = new() { url = "http://localhost:3000", name = "Docker Server" };
-
+  public static readonly AuthApp TestAuthApp = new()
+  {
+    AppId = "spklwebapp",
+    AppSecret = "spklwebapp",
+    CallbackUrl = new Uri("invaid://localhost"),
+  };
   public static IServiceProvider ServiceProvider { get; set; }
 
   static Fixtures()
@@ -95,8 +100,8 @@ public static class Fixtures
     Dictionary<string, string> tokenBody = new()
     {
       ["accessCode"] = accessCode,
-      ["appId"] = "spklwebapp",
-      ["appSecret"] = "spklwebapp",
+      ["appId"] = TestAuthApp.AppId,
+      ["appSecret"] = TestAuthApp.AppSecret,
       ["challenge"] = "challengingchallenge",
     };
 
@@ -109,8 +114,11 @@ public static class Fixtures
     );
 
     var token = deserialised.NotNull()["token"].NotNull();
+    var refreshToken = deserialised.NotNull()["refreshToken"].NotNull();
 
-    return await ServiceProvider.GetRequiredService<IAccountFactory>().CreateAccount(new(Server.url), token);
+    return await ServiceProvider
+      .GetRequiredService<IAccountFactory>()
+      .CreateAccount(new(Server.url), token, refreshToken);
   }
 
   public static Base GenerateSimpleObject()

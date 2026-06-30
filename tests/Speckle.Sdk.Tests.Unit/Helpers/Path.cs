@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using FluentAssertions;
+using AwesomeAssertions;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Tests.Unit.Helpers;

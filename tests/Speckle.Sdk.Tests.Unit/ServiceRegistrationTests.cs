@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Speckle.Sdk.Tests.Unit;

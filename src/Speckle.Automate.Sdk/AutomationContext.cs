@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using GraphQL;
+using Microsoft.Extensions.Logging;
 using Speckle.Automate.Sdk.Schema;
 using Speckle.Automate.Sdk.Schema.Triggers;
 using Speckle.InterfaceGenerator;
@@ -16,7 +17,7 @@ using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 namespace Speckle.Automate.Sdk;
 
 [GenerateAutoInterface(VisibilityModifier = "public")]
-internal sealed class AutomationContext(IOperations operations) : IAutomationContext
+internal sealed class AutomationContext(IOperations operations, ILogger<AutomationContext> logger) : IAutomationContext
 {
   public AutomationRunData AutomationRunData { get; set; }
   public string? ContextView
@@ -77,8 +78,11 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
     await SpeckleClient
       .Version.Received(new(version.id, AutomationRunData.ProjectId, "automate_function"), cancellationToken)
       .ConfigureAwait(false);
-
-    Console.WriteLine($"It took {Elapsed.TotalSeconds} seconds to receive the speckle version {versionId}");
+    logger.LogInformation(
+      "It took {TotalSeconds} seconds to receive the speckle version {VersionId}",
+      Elapsed.TotalSeconds,
+      versionId
+    );
     return rootObject;
   }
 
@@ -245,7 +249,8 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
       .ConfigureAwait(false);
     request.EnsureSuccessStatusCode();
     string responseString = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
-    Console.WriteLine("RESPONSE - " + responseString);
+
+    logger.LogInformation("RESPONSE - {Response}", responseString);
     BlobUploadResponse uploadResponse = JsonConvert.DeserializeObject<BlobUploadResponse>(responseString);
     if (uploadResponse.UploadResults.Count != 1)
     {
@@ -269,7 +274,7 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
       msg += $"\n{statusMessage}";
     }
 
-    Console.WriteLine(msg);
+    logger.LogInformation("Marking run with {Status} {Message}", status, msg);
   }
 
   public void MarkRunFailed(string statusMessage) => MarkRun(AutomationStatus.Failed, statusMessage);
@@ -356,7 +361,12 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
       x => x.applicationId
     );
 
-    Console.WriteLine($"Created new {levelString.ToUpper()} category: {category} caused by: {message}");
+    logger.LogInformation(
+      "Created new {Level} category: {Category} caused by: {Messag}",
+      levelString.ToUpper(),
+      category,
+      message
+    );
 
     ResultCase resultCase = new()
     {
@@ -375,5 +385,5 @@ internal sealed class AutomationContext(IOperations operations) : IAutomationCon
 public partial interface IAutomationContext
 {
   [MemberNotNull(nameof(ContextView))]
-  public void SetContextView(IReadOnlyCollection<string>? resourceIds = null, bool includeSourceModelVersion = true);
+  void SetContextView(IReadOnlyCollection<string>? resourceIds = null, bool includeSourceModelVersion = true);
 }

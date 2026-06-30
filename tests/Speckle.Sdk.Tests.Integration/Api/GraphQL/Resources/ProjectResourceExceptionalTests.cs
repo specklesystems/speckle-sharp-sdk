@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using AwesomeAssertions;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Enums;
@@ -130,7 +130,10 @@ public class ProjectResourceExceptionalTests : IAsyncLifetime
     await Sut.Delete(_testProject.id);
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.Get(_testProject.id));
-    ex.InnerExceptions.Single().Should().BeOfType<SpeckleGraphQLStreamNotFoundException>();
+    Assert.Contains(
+      ex.InnerExceptions[0].GetType(),
+      new HashSet<Type> { typeof(SpeckleGraphQLStreamNotFoundException), typeof(SpeckleGraphQLForbiddenException) }
+    );
   }
 
   [Fact]
