@@ -21,6 +21,7 @@ public sealed class CommentResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete("Comments are deprecated in favour of Issues which we don't provide a .NET Resource for at this time")]
   public async Task<Comment> Get(
     string commentId,
     string projectId,
@@ -99,6 +100,7 @@ public sealed class CommentResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete("Comments are deprecated in favour of Issues which we don't provide a .NET Resource for at this time")]
   public async Task<ProjectCommentCollection> GetProjectComments(
     string projectId,
     int limit = ServerLimits.DEFAULT_PAGINATION_REQUEST,
@@ -186,6 +188,7 @@ public sealed class CommentResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete("Comments are deprecated in favour of Issues which we don't provide a .NET Resource for at this time")]
   internal async Task<Comment> Create(CreateCommentInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
@@ -227,6 +230,7 @@ public sealed class CommentResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete("Comments are deprecated in favour of Issues which we don't provide a .NET Resource for at this time")]
   internal async Task<Comment> Edit(EditCommentInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
@@ -267,6 +271,7 @@ public sealed class CommentResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete("Comments are deprecated in favour of Issues which we don't provide a .NET Resource for at this time")]
   public async Task Archive(ArchiveCommentInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
@@ -293,6 +298,7 @@ public sealed class CommentResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete("Comments are deprecated in favour of Issues which we don't provide a .NET Resource for at this time")]
   public async Task MarkViewed(MarkCommentViewedInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
@@ -320,6 +326,7 @@ public sealed class CommentResource
   /// <param name="cancellationToken"></param>
   /// <returns></returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete("Comments are deprecated in favour of Issues which we don't provide a .NET Resource for at this time")]
   internal async Task<Comment> Reply(CreateCommentReplyInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql

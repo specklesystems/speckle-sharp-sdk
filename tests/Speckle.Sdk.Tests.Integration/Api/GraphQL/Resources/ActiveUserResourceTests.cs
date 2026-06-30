@@ -107,14 +107,14 @@ public class ActiveUserResourceTests : IAsyncLifetime
       .ThrowAsync<SpeckleException>();
   }
 
-  [Fact]
+  [Fact, Trait("Server", "Internal")]
   public async Task ActiveUserGetWorkspaces()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () => _ = await Sut.GetWorkspaces());
     await Verify(ex);
   }
 
-  [Fact]
+  [Fact, Trait("Server", "Internal")]
   public async Task ActiveUserGetWorkspaces_NoAuth()
   {
     await FluentActions
@@ -130,7 +130,7 @@ public class ActiveUserResourceTests : IAsyncLifetime
     res.Should().Be(null);
   }
 
-  [Fact]
+  [Fact, Trait("Server", "Internal")]
   public async Task ActiveUserGetActiveWorkspace_NoAuth()
   {
     await FluentActions

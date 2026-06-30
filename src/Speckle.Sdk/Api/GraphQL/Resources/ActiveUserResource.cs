@@ -1,4 +1,4 @@
-﻿using GraphQL;
+using GraphQL;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
@@ -264,15 +264,11 @@ public sealed class ActiveUserResource
               name
               role
               slug
-              logo
+              logoUrl
               createdAt
               updatedAt
               readOnly
               description
-              creationState
-              {
-                completed
-              }
               permissions {
                 canCreateProject {
                   authorized
@@ -328,7 +324,7 @@ public sealed class ActiveUserResource
             name
             role
             slug
-            logo
+            logoUrl
             description
           }
         }
@@ -337,9 +333,20 @@ public sealed class ActiveUserResource
 
     var request = new GraphQLRequest { Query = QUERY };
 
-    var response = await _client
-      .ExecuteGraphQLRequest<NullableResponse<NullableResponse<LimitedWorkspace?>?>>(request, cancellationToken)
-      .ConfigureAwait(false);
+    NullableResponse<NullableResponse<LimitedWorkspace?>?> response;
+    try
+    {
+      response = await _client
+        .ExecuteGraphQLRequest<NullableResponse<NullableResponse<LimitedWorkspace?>?>>(request, cancellationToken)
+        .ConfigureAwait(false);
+    }
+    catch (AggregateException a)
+    {
+      //v2.x.x servers do not have a logoUrl property
+      a.Handle(x => x is SpeckleGraphQLInvalidQueryException);
+
+      return null;
+    }
 
     if (response.data is null)
     {

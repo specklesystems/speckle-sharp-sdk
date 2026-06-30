@@ -76,6 +76,7 @@ public sealed class SubscriptionResource : IDisposable
   /// <summary>Subscribe to updates to resource comments/threads. Optionally specify resource ID string to only receive updates regarding comments for those resources</summary>
   /// <remarks><inheritdoc cref="CreateUserProjectsUpdatedSubscription"/></remarks>
   /// <inheritdoc cref="ISpeckleGraphQLClient.SubscribeTo{T}"/>
+  [Obsolete("Comments are now issues, and we've not update SDKs with the new subs")]
   public Subscription<ProjectCommentsUpdatedMessage> CreateProjectCommentsUpdatedSubscription(
     ViewerUpdateTrackingTarget target
   )
