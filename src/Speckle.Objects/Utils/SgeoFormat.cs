@@ -95,8 +95,11 @@ public struct SgeoHeader
 }
 
 /// <summary>
-/// CRC-32 (IEEE 802.3, polynomial 0xEDB88820) over a byte span. Used as the
-/// SGEO header integrity check on the body bytes.
+/// CRC-32 (IEEE 802.3, canonical reflected polynomial 0xEDB88320) over a byte span.
+/// Used as the SGEO header integrity check on the body bytes. This is the standard
+/// CRC-32 (matches zlib.crc32 / System.IO.Hashing.Crc32) — the same polynomial the
+/// Python (specklepy) and native (nw/rvextract) encoders use, so SGEO blobs stay
+/// byte-for-byte identical across producers.
 /// </summary>
 internal static class Crc32
 {
@@ -110,7 +113,7 @@ internal static class Crc32
       uint c = i;
       for (int k = 0; k < 8; k++)
       {
-        c = (c & 1) != 0 ? 0xEDB88820u ^ (c >> 1) : c >> 1;
+        c = (c & 1) != 0 ? 0xEDB88320u ^ (c >> 1) : c >> 1;
       }
       table[i] = c;
     }
