@@ -34,7 +34,11 @@ public sealed class ObjectsArtifactReader
   private const string RenderMaterialProxiesKey = "renderMaterialProxies";
   private const string InstanceDefinitionProxiesKey = "instanceDefinitionProxies";
 
-  public async Task<Base> ReadAsync(string bundleDir, ArtifactReceiveOptions options, CancellationToken cancellationToken)
+  public async Task<Base> ReadAsync(
+    string bundleDir,
+    ArtifactReceiveOptions options,
+    CancellationToken cancellationToken
+  )
   {
     var bundle = await ArtefactBundleReader.ReadAsync(bundleDir, cancellationToken).ConfigureAwait(false);
     return Build(bundle, options, cancellationToken);
@@ -65,7 +69,10 @@ public sealed class ObjectsArtifactReader
       props ??= new Dictionary<string, object?>();
 
       Base built;
-      if (rels.DisplayInstanceByObject.TryGetValue(objK, out int instNodeK) && nodes.TryGetValue(instNodeK, out var instNode))
+      if (
+        rels.DisplayInstanceByObject.TryGetValue(objK, out int instNodeK)
+        && nodes.TryGetValue(instNodeK, out var instNode)
+      )
       {
         built = BuildInstanceProxy(appId, instNode);
       }
@@ -75,9 +82,11 @@ public sealed class ObjectsArtifactReader
       }
 
       // place into its collection (layer); fall back to the root.
-      var host = rels.CollectionByObject.TryGetValue(objK, out int collNodeK) && layerByNode.TryGetValue(collNodeK, out var layer)
-        ? layer.elements
-        : root.elements;
+      var host =
+        rels.CollectionByObject.TryGetValue(objK, out int collNodeK)
+        && layerByNode.TryGetValue(collNodeK, out var layer)
+          ? layer.elements
+          : root.elements;
       host.Add(built);
     }
 
@@ -92,15 +101,21 @@ public sealed class ObjectsArtifactReader
   }
 
   // ── collections (layers) ──────────────────────────────────────────────────────────────────────────────
-  private static (Collection root, Dictionary<int, Collection> byNode) BuildCollectionTree(Dictionary<int, ArtefactNode> nodes)
+  private static (Collection root, Dictionary<int, Collection> byNode) BuildCollectionTree(
+    Dictionary<int, ArtefactNode> nodes
+  )
   {
     var root = new Collection("Received model") { applicationId = "artifact-root", id = "artifact-root" };
     var byNode = new Dictionary<int, Collection>();
     foreach (var kv in nodes)
     {
-      if (kv.Value.Kind == NodeKind.Collection)
+      if (kv.Value.Kind == NodeKind.Container)
       {
-        byNode[kv.Key] = new Layer(kv.Value.Name ?? "Layer") { applicationId = "coll-" + kv.Key, id = "coll-" + kv.Key };
+        byNode[kv.Key] = new Layer(kv.Value.Name ?? "Layer")
+        {
+          applicationId = "coll-" + kv.Key,
+          id = "coll-" + kv.Key,
+        };
       }
     }
     // nest via parent (def_ref); roots (no parent) under the model root.
@@ -218,7 +233,11 @@ public sealed class ObjectsArtifactReader
       {
         foreach (var geomK in geomKs)
         {
-          if (objByGeom.TryGetValue(geomK, out int objK) && objIdToApp.TryGetValue(objK, out var appId) && !members.Contains(appId))
+          if (
+            objByGeom.TryGetValue(geomK, out int objK)
+            && objIdToApp.TryGetValue(objK, out var appId)
+            && !members.Contains(appId)
+          )
           {
             members.Add(appId);
           }
@@ -289,7 +308,11 @@ public sealed class ObjectsArtifactReader
             // received artefact objects aren't serialized (no content hash) — use the applicationId as a stable,
             // non-null id so the receive conversion-report path (ReceiveConversionResult.source.id) is satisfied.
             id = appId,
-            rawEncoding = new RawEncoding { format = RawEncodingFormats.RHINO_3DM, contents = Convert.ToBase64String(g.Content) },
+            rawEncoding = new RawEncoding
+            {
+              format = RawEncodingFormats.RHINO_3DM,
+              contents = Convert.ToBase64String(g.Content),
+            },
           };
         }
       }
@@ -335,7 +358,24 @@ public sealed class ObjectsArtifactReader
     {
       d[0] = d[5] = d[10] = d[15] = 1.0; // identity
     }
-    return new Matrix4x4(d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15]);
+    return new Matrix4x4(
+      d[0],
+      d[1],
+      d[2],
+      d[3],
+      d[4],
+      d[5],
+      d[6],
+      d[7],
+      d[8],
+      d[9],
+      d[10],
+      d[11],
+      d[12],
+      d[13],
+      d[14],
+      d[15]
+    );
   }
 }
 #endif
