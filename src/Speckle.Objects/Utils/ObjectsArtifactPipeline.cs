@@ -268,10 +268,12 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     return k;
   }
 
-  /// <summary>Interns a COLLECTION (scene-tree container: layer / category / story) node, writing it once.
-  /// <paramref name="parentCollectionK"/> is its parent COLLECTION node (null = top-level, directly under the
-  /// excluded root) — the parent chain IS the source hierarchy. <paramref name="subtype"/> is a tag
-  /// (e.g. "Layer"/"Collection"/source collectionType) carried in <c>units</c> for the loader to label it.</summary>
+  /// <summary>Interns a scene-tree collection (layer / category / story) node, writing it once. In v5 a
+  /// collection is a CONTAINER node whose <c>subtype</c> carries its tag; the <c>IN_COLLECTION</c> rel marks
+  /// the grouping axis (distinct from IN_MODEL / IN_SYSTEM / …). <paramref name="parentCollectionK"/> is its
+  /// parent collection node (null = top-level, directly under the excluded root) — the parent chain IS the
+  /// source hierarchy. <paramref name="subtype"/> is a tag (e.g. "Layer" / "Collection" / source
+  /// collectionType) carried in the <c>subtype</c> column for the loader to label it.</summary>
   public int AddCollection(string collectionKey, string? name, int? parentCollectionK, string? subtype)
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
@@ -285,8 +287,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <summary>Interns a CONTAINER (semantic-topology bucket: model / room / system / …) node, writing it
   /// once. Distinct from <see cref="AddCollection"/> (the authored scene-tree). <paramref name="parentContainerK"/>
   /// is its parent CONTAINER (null = top-level) — self-nesting for nested links / appended files.
-  /// <paramref name="subtype"/> is the canonical axis tag carried in <c>units</c> (e.g. "Model"); use the
-  /// SAME tag across connectors for the same concept (see the <see cref="RelKind"/> naming convention).</summary>
+  /// <paramref name="subtype"/> is the canonical axis tag carried in the <c>subtype</c> column (e.g. "Model");
+  /// use the SAME tag across connectors for the same concept (see the <see cref="RelKind"/> naming convention).</summary>
   public int AddContainer(string containerKey, string? name, int? parentContainerK, string? subtype)
   {
     if (_nodeInterner.GetOrAdd("cont:" + containerKey, out var k))
