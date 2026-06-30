@@ -340,8 +340,10 @@ public sealed class ActiveUserResource
         .ExecuteGraphQLRequest<NullableResponse<NullableResponse<LimitedWorkspace?>?>>(request, cancellationToken)
         .ConfigureAwait(false);
     }
-    catch (SpeckleGraphQLInvalidQueryException)
+    catch (AggregateException a)
     {
+      a.Handle(x => x is SpeckleGraphQLInvalidQueryException);
+
       //v2.x.x servers do not have a logoUrl property
       return null;
     }
