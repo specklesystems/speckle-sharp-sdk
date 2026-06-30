@@ -342,9 +342,9 @@ public sealed class ActiveUserResource
     }
     catch (AggregateException a)
     {
+      //v2.x.x servers do not have a logoUrl property
       a.Handle(x => x is SpeckleGraphQLInvalidQueryException);
 
-      //v2.x.x servers do not have a logoUrl property
       return null;
     }
 
