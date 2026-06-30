@@ -7,6 +7,13 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Objects.Utils;
 
+/// <summary>Base-free decoded mesh fields: flat xyz <c>Vertices</c>, Speckle-format <c>Faces</c> (count-prefixed per
+/// face), per-vertex argb <c>Colors</c> (may be empty) and <c>Units</c>. For hosts that build their own mesh type
+/// directly from a SGEO blob without allocating a <see cref="Geometry.Mesh"/> (Base). See <see cref="SgeoDecoder.TryDecodeMesh"/>.</summary>
+#pragma warning disable CA1819 // flat geometry arrays are intentional; this is a lightweight transport record
+public readonly record struct SgeoMesh(double[] Vertices, int[] Faces, int[] Colors, string Units);
+#pragma warning restore CA1819
+
 /// <summary>
 /// Decodes SGEO v1 byte buffers (see <see cref="SgeoFormat"/>) back into Speckle
 /// geometry objects. The inverse of <see cref="SgeoEncoder"/>; derived fields
@@ -52,6 +59,60 @@ public static class SgeoDecoder
       UnitsCode = unitsCode,
       Crc = crc,
     };
+  }
+
+  /// <summary>Decodes a SGEO <see cref="SgeoPrimitiveType.Mesh"/> blob to neutral mesh fields without allocating a
+  /// <see cref="Mesh"/> (Base). Returns false for non-mesh primitives or the (unsupported) quantized layout.</summary>
+  public static bool TryDecodeMesh(ReadOnlySpan<byte> bytes, out SgeoMesh mesh)
+  {
+    mesh = default;
+    var header = ReadHeader(bytes);
+    if (header.PrimitiveType != SgeoPrimitiveType.Mesh || (header.Flags & SgeoFlags.Quantized) != 0)
+    {
+      return false;
+    }
+    string units = Units.GetUnitFromEncoding(header.UnitsCode);
+    var r = new Reader(bytes, SgeoFormat.HeaderSize);
+    int vCount = (int)r.U();
+    int fCount = (int)r.U();
+    var verts = new double[vCount * 3];
+    for (int i = 0; i < verts.Length; i++)
+    {
+      verts[i] = r.D();
+    }
+    var faces = new int[fCount];
+    for (int i = 0; i < fCount; i++)
+    {
+      faces[i] = r.I();
+    }
+    // skip normals + uvs (same order as Decode) so the colour cursor lands correctly.
+    if ((header.Flags & SgeoFlags.HasNormals) != 0)
+    {
+      r.Align8();
+      for (int i = 0; i < vCount * 3; i++)
+      {
+        r.D();
+      }
+    }
+    if ((header.Flags & SgeoFlags.HasUvs) != 0)
+    {
+      r.Align8();
+      for (int i = 0; i < vCount * 2; i++)
+      {
+        r.D();
+      }
+    }
+    int[] colors = Array.Empty<int>();
+    if ((header.Flags & SgeoFlags.HasColors) != 0)
+    {
+      colors = new int[vCount];
+      for (int i = 0; i < vCount; i++)
+      {
+        colors[i] = r.I();
+      }
+    }
+    mesh = new SgeoMesh(verts, faces, colors, units);
+    return true;
   }
 
   /// <summary>Decodes an SGEO blob into the corresponding Speckle geometry object.</summary>
