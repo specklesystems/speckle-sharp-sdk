@@ -19,7 +19,7 @@ public sealed class SendPipelineTests : IAsyncLifetime
 
   private ISendPipelineFactory _factory;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _factory = serviceProvider.GetRequiredService<ISendPipelineFactory>();
@@ -43,7 +43,8 @@ public sealed class SendPipelineTests : IAsyncLifetime
     Base myObject = Fixtures.GenerateNestedObject();
 
     var ingestion = await _client.Ingestion.Create(
-      new(_model.id, _project.id, "Starting send test", new("IntegrationTests", "0", null, null))
+      new(_model.id, _project.id, "Starting send test", new("IntegrationTests", "0", null, null)),
+      TestContext.Current.CancellationToken
     );
 
     using SendPipeline sender = _factory.CreateInstance(
@@ -66,7 +67,8 @@ public sealed class SendPipelineTests : IAsyncLifetime
     Base myObject = Fixtures.GenerateNestedObject();
 
     var ingestion = await _client.Ingestion.Create(
-      new(_model.id, _project.id, "Starting send test", new("IntegrationTests", "0", null, null))
+      new(_model.id, _project.id, "Starting send test", new("IntegrationTests", "0", null, null)),
+      TestContext.Current.CancellationToken
     );
 
     //SEND
@@ -85,7 +87,8 @@ public sealed class SendPipelineTests : IAsyncLifetime
     }
 
     var secondIngestion = await _client.Ingestion.Create(
-      new(_model.id, _project.id, "Starting again", new("IntegrationTests", "0", null, null))
+      new(_model.id, _project.id, "Starting again", new("IntegrationTests", "0", null, null)),
+      TestContext.Current.CancellationToken
     );
 
     //SEND AGAIN!
@@ -113,7 +116,8 @@ public sealed class SendPipelineTests : IAsyncLifetime
     myObject["invalidProp"] = new StringBuilder(); //Serializer does not support serializing this type
 
     var ingestion = await _client.Ingestion.Create(
-      new(_model.id, _project.id, "Starting send test", new("IntegrationTests", "0", null, null))
+      new(_model.id, _project.id, "Starting send test", new("IntegrationTests", "0", null, null)),
+      TestContext.Current.CancellationToken
     );
 
     await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () =>
@@ -148,9 +152,9 @@ public sealed class SendPipelineTests : IAsyncLifetime
     });
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client?.Dispose();
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 }

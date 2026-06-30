@@ -37,7 +37,7 @@ public class ExceptionTests
       new MemoryJsonCacheManager(objects),
       new ExceptionServerObjectManager(),
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(false, false, false, true)
     );
 
@@ -55,7 +55,7 @@ public class ExceptionTests
       new ExceptionSendCacheManager(),
       new MemoryServerObjectManager(new()),
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(false, false, false, true)
     );
 
@@ -92,7 +92,7 @@ public class ExceptionTests
       new ExceptionSendCacheManager(exceptionsAfter: 10),
       new MemoryServerObjectManager(new()),
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(false, false, false, true)
       {
         MaxHttpSendBatchSize = 1,
@@ -201,7 +201,7 @@ public class ExceptionTests
   public void Test_SpeckleSerializerException()
   {
     var factory = new ObjectSerializerFactory(new BasePropertyGatherer());
-    var serializer = factory.Create(default);
+    var serializer = factory.Create(TestContext.Current.CancellationToken);
     Assert.Throws<SpeckleSerializeException>(() =>
     {
       var _ = serializer.Serialize(new BadBase()).ToList();

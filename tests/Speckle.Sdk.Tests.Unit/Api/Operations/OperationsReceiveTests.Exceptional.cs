@@ -11,7 +11,12 @@ public partial class OperationsReceiveTests
     MemoryTransport emptyTransport2 = new();
     await Assert.ThrowsAsync<TransportException>(async () =>
     {
-      await _operations.Receive(id, emptyTransport1, emptyTransport2);
+      await _operations.Receive(
+        id,
+        emptyTransport1,
+        emptyTransport2,
+        cancellationToken: TestContext.Current.CancellationToken
+      );
     });
   }
 
@@ -21,7 +26,7 @@ public partial class OperationsReceiveTests
     MemoryTransport emptyTransport = new();
     await Assert.ThrowsAsync<TransportException>(async () =>
     {
-      await _operations.Receive(id, null, emptyTransport);
+      await _operations.Receive(id, null, emptyTransport, cancellationToken: TestContext.Current.CancellationToken);
     });
   }
 

@@ -1,20 +1,17 @@
 ﻿using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class SimpleRoundTripTests
 {
   private readonly IOperations _operations;
 
   public SimpleRoundTripTests()
   {
-    TypeLoader.ReInitialize(typeof(DiningTable).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
@@ -37,8 +34,8 @@ public class SimpleRoundTripTests
   [MemberData(nameof(TestData))]
   public async Task SimpleSerialization(Base testData)
   {
-    var result = _operations.Serialize(testData);
-    var test = await _operations.DeserializeAsync(result);
+    var result = _operations.Serialize(testData, TestContext.Current.CancellationToken);
+    var test = await _operations.DeserializeAsync(result, TestContext.Current.CancellationToken);
 
     testData.GetId().Should().Be(test.GetId());
   }

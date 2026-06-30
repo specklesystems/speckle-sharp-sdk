@@ -1,19 +1,11 @@
 using System.Diagnostics;
 using AwesomeAssertions;
-using Speckle.Sdk.Host;
-using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class Hashing
 {
-  public Hashing()
-  {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(DiningTable).Assembly);
-  }
-
   [Fact(DisplayName = "Checks that hashing (as represented by object IDs) actually works.")]
   public void HashChangeCheck_Test()
   {

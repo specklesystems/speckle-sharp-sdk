@@ -3,21 +3,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class Closures
 {
   private readonly IOperations _operations;
 
   public Closures()
   {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(TableLegFixture).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
@@ -48,9 +45,18 @@ public class Closures
 
     var transport = new MemoryTransport();
 
-    var sendResult = await _operations.Send(d1, transport, false);
+    var sendResult = await _operations.Send(
+      d1,
+      transport,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
-    var test = await _operations.Receive(sendResult.rootObjId, localTransport: transport);
+    var test = await _operations.Receive(
+      sendResult.rootObjId,
+      localTransport: transport,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     test.id.NotNull();
     d1.GetId(true).Should().BeEquivalentTo((test.id));

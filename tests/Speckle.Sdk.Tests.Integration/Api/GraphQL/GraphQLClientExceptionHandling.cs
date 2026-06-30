@@ -12,9 +12,9 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
 {
   private IClient _sut;
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _sut = await Fixtures.SeedUserWithClient();
   }
@@ -25,7 +25,9 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
   {
     _sut.GQLClient.Options.EndPoint = new Uri("http://127.0.0.1:1234"); //There is no server on this port...
 
-    await Assert.ThrowsAsync<HttpRequestException>(async () => await _sut.ActiveUser.Get().ConfigureAwait(false));
+    await Assert.ThrowsAsync<HttpRequestException>(async () =>
+      await _sut.ActiveUser.Get(TestContext.Current.CancellationToken).ConfigureAwait(false)
+    );
   }
 
   [Fact]
@@ -49,7 +51,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
       """;
     GraphQLRequest request = new(query: QUERY);
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
-      await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
+      await _sut.ExecuteGraphQLRequest<dynamic>(request, TestContext.Current.CancellationToken).ConfigureAwait(false)
     );
     ex.InnerExceptions.OfType<SpeckleGraphQLForbiddenException>().Count().Should().Be(1);
   }
@@ -67,7 +69,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
       """;
     GraphQLRequest request = new(query: QUERY);
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
-      await _sut.ExecuteGraphQLRequest<dynamic>(request).ConfigureAwait(false)
+      await _sut.ExecuteGraphQLRequest<dynamic>(request, TestContext.Current.CancellationToken).ConfigureAwait(false)
     );
     ex.InnerExceptions.OfType<SpeckleGraphQLInvalidQueryException>().Count().Should().Be(1);
   }
@@ -80,7 +82,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
   {
     ProjectUpdateRoleInput input = new(null!, null!, null);
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
-      await _sut.Project.UpdateRole(input).ConfigureAwait(false)
+      await _sut.Project.UpdateRole(input, TestContext.Current.CancellationToken).ConfigureAwait(false)
     );
     ex.InnerExceptions.OfType<SpeckleGraphQLBadInputException>().Count().Should().Be(2);
   }
@@ -122,7 +124,7 @@ public class GraphQLClientExceptionHandling : IAsyncLifetime
       """;
     GraphQLRequest request = new(query: QUERY);
     await Assert.ThrowsAsync<JsonReaderException>(async () =>
-      await _sut.ExecuteGraphQLRequest<int>(request).ConfigureAwait(false)
+      await _sut.ExecuteGraphQLRequest<int>(request, TestContext.Current.CancellationToken).ConfigureAwait(false)
     );
   }
 }

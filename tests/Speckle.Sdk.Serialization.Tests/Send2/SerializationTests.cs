@@ -227,7 +227,7 @@ public class SerializationTests
         SqLiteJsonCacheManager.FromMemory(1),
         new MemoryServerObjectManager(newIdToJson),
         null,
-        default,
+        TestContext.Current.CancellationToken,
         new SerializeProcessOptions(false, false, false, true) { MaxCacheBatchSize = 1, MaxParallelism = concurrency }
       )
     )

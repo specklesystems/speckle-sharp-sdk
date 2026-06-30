@@ -15,7 +15,9 @@ public class SubscriptionResourceTests : IAsyncLifetime
 #else
   private const int WAIT_PERIOD = 600; // For CI runs, a much smaller wait time is acceptable
 #endif
-  private const int TIMEOUT = WAIT_PERIOD + WAIT_PERIOD + 600;
+
+  // I don't know why, I needed to increase this massively from (WAIT_PERIOD * 2 + 600) when migrating from XUnit v2 to XUnit v3
+  private const int TIMEOUT = WAIT_PERIOD * 8;
   private IClient _testUser;
   private Project _testProject;
   private Model _testModel;
@@ -23,13 +25,13 @@ public class SubscriptionResourceTests : IAsyncLifetime
 
   private SubscriptionResource Sut => _testUser.Subscription;
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _testUser.Dispose();
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     await _testUser.InitializeWebsocket();
@@ -45,9 +47,9 @@ public class SubscriptionResourceTests : IAsyncLifetime
     using var sub = Sut.CreateUserProjectsUpdatedSubscription();
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
-    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+    await Task.Delay(WAIT_PERIOD, TestContext.Current.CancellationToken); // Give time to subscription to be setup
 
-    var created = await _testUser.Project.Create(new(null, null, null));
+    var created = await _testUser.Project.Create(new(null, null, null), TestContext.Current.CancellationToken);
 
     var subscriptionMessage = await tcs.Task;
 
@@ -64,10 +66,10 @@ public class SubscriptionResourceTests : IAsyncLifetime
     using var sub = Sut.CreateProjectModelsUpdatedSubscription(_testProject.id);
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
-    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+    await Task.Delay(WAIT_PERIOD, TestContext.Current.CancellationToken); // Give time to subscription to be setup
 
     CreateModelInput input = new("my model", "myDescription", _testProject.id);
-    var created = await _testUser.Model.Create(input);
+    var created = await _testUser.Model.Create(input, TestContext.Current.CancellationToken);
 
     var subscriptionMessage = await tcs.Task;
 
@@ -84,10 +86,10 @@ public class SubscriptionResourceTests : IAsyncLifetime
     using Subscription<ProjectUpdatedMessage> sub = Sut.CreateProjectUpdatedSubscription(_testProject.id);
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
-    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+    await Task.Delay(WAIT_PERIOD, TestContext.Current.CancellationToken); // Give time to subscription to be setup
 
     ProjectUpdateInput input = new(_testProject.id, "This is my new name");
-    Project created = await _testUser.Project.Update(input);
+    Project created = await _testUser.Project.Update(input, TestContext.Current.CancellationToken);
 
     ProjectUpdatedMessage subscriptionMessage = await tcs.Task;
 
@@ -104,7 +106,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     using var sub = Sut.CreateProjectVersionsUpdatedSubscription(_testProject.id);
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
-    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+    await Task.Delay(WAIT_PERIOD, TestContext.Current.CancellationToken); // Give time to subscription to be setup
 
     var created = await Fixtures.CreateVersion(_testUser, _testProject.id, _testModel.id);
 
@@ -125,7 +127,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     using var sub = Sut.CreateProjectCommentsUpdatedSubscription(new(_testProject.id, resourceIdString));
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
-    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+    await Task.Delay(WAIT_PERIOD, TestContext.Current.CancellationToken); // Give time to subscription to be setup
 
     var created = await Fixtures.CreateComment(_testUser, _testProject.id, _testModel.id, _testVersion.id);
 
@@ -141,16 +143,20 @@ public class SubscriptionResourceTests : IAsyncLifetime
   public async Task ProjectModelIngestionCancellationRequested_SubscriptionIsCalled()
   {
     ModelIngestion ingestion = await _testUser.Ingestion.Create(
-      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
+      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null)),
+      TestContext.Current.CancellationToken
     );
     TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
 
     using var sub = Sut.CreateProjectModelIngestionCancellationRequestedSubscription(ingestion.id, _testProject.id);
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
-    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+    await Task.Delay(WAIT_PERIOD, TestContext.Current.CancellationToken); // Give time to subscription to be setup
 
-    await _testUser.Ingestion.RequestCancellation(new(ingestion.id, _testProject.id, "please cancel"));
+    await _testUser.Ingestion.RequestCancellation(
+      new(ingestion.id, _testProject.id, "please cancel"),
+      TestContext.Current.CancellationToken
+    );
 
     var subscriptionMessage = await tcs.Task;
 
@@ -163,7 +169,8 @@ public class SubscriptionResourceTests : IAsyncLifetime
   public async Task ProjectModelIngestionUpdate_UpdateSubscriptionIs()
   {
     ModelIngestion ingestion = await _testUser.Ingestion.Create(
-      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
+      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null)),
+      TestContext.Current.CancellationToken
     );
     TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
 
@@ -176,9 +183,12 @@ public class SubscriptionResourceTests : IAsyncLifetime
     );
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
-    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+    await Task.Delay(WAIT_PERIOD, TestContext.Current.CancellationToken); // Give time to subscription to be setup
 
-    await _testUser.Ingestion.UpdateProgress(new(ingestion.id, _testProject.id, "Here's an update", 0.314));
+    await _testUser.Ingestion.UpdateProgress(
+      new(ingestion.id, _testProject.id, "Here's an update", 0.314),
+      TestContext.Current.CancellationToken
+    );
 
     var subscriptionMessage = await tcs.Task;
 
@@ -191,18 +201,22 @@ public class SubscriptionResourceTests : IAsyncLifetime
   public async Task ProjectModelIngestionUpdate_CancelSubscriptionIsNotCalled()
   {
     ModelIngestion ingestion = await _testUser.Ingestion.Create(
-      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null))
+      new(_testModel.id, _testProject.id, "", new(".NET test", "0.0.0", null, null)),
+      TestContext.Current.CancellationToken
     );
     TaskCompletionSource<ProjectModelIngestionUpdatedMessage> tcs = new();
 
     using var sub = Sut.CreateProjectModelIngestionCancellationRequestedSubscription(ingestion.id, _testProject.id);
     sub.Listeners += (_, message) => tcs.SetResult(message);
 
-    await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
+    await Task.Delay(WAIT_PERIOD, TestContext.Current.CancellationToken); // Give time to subscription to be setup
 
-    await _testUser.Ingestion.UpdateProgress(new(ingestion.id, _testProject.id, "this shouldn't cancel", null));
+    await _testUser.Ingestion.UpdateProgress(
+      new(ingestion.id, _testProject.id, "this shouldn't cancel", null),
+      TestContext.Current.CancellationToken
+    );
 
-    await Task.Delay(WAIT_PERIOD); // Give time to subscription to maybe fire
+    await Task.Delay(WAIT_PERIOD, TestContext.Current.CancellationToken); // Give time to subscription to maybe fire
 
     tcs.Task.IsCompleted.Should().BeFalse();
   }

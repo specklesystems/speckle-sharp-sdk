@@ -40,7 +40,7 @@ public class DataObjectTests
       new MemoryJsonCacheManager(json),
       new DummyServerObjectManager(),
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(false, false, true, true)
     );
     await serializeProcess.Serialize(x);

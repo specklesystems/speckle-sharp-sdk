@@ -40,7 +40,7 @@ public class DetachedTests
       new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(true, true, false, true)
     );
     await serializeProcess.Serialize(@base);
@@ -122,7 +122,7 @@ public class DetachedTests
       new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
@@ -149,7 +149,7 @@ public class DetachedTests
       new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
@@ -171,7 +171,7 @@ public class DetachedTests
       new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(true, true, false, true) { MaxParallelism = 1, MaxHttpSendBatchSize = 1 }
     );
     var results = await serializeProcess.Serialize(@base);
@@ -238,7 +238,7 @@ public class DetachedTests
       new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(true, true, false, true)
     );
 
@@ -271,7 +271,7 @@ public class DetachedTests
       new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(true, true, false, true)
     );
     var results = await serializeProcess.Serialize(@base);

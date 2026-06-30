@@ -1,28 +1,13 @@
 using AwesomeAssertions;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Extensions;
 
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class DisplayValueTests
 {
   private const string PAYLOAD = "This is my payload";
   private static readonly Base s_displayValue = new() { applicationId = PAYLOAD };
-
-  static DisplayValueTests()
-  {
-    Reset();
-  }
-
-  private static void Reset()
-  {
-    TypeLoader.ReInitialize(typeof(Base).Assembly);
-  }
-
-  [Fact]
-  public void Setup() => Reset();
 
   [Theory]
   [MemberData(nameof(TestCases))]

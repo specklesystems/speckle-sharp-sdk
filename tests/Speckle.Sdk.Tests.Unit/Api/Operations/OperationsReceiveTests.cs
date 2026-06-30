@@ -1,13 +1,10 @@
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public sealed partial class OperationsReceiveTests : IDisposable
 {
   private static readonly Base[] s_testObjects;
@@ -16,7 +13,6 @@ public sealed partial class OperationsReceiveTests : IDisposable
 
   static OperationsReceiveTests()
   {
-    Reset();
     s_testObjects =
     [
       new() { ["string prop"] = "simple test case", ["numerical prop"] = 123 },
@@ -31,7 +27,6 @@ public sealed partial class OperationsReceiveTests : IDisposable
 
   public OperationsReceiveTests()
   {
-    Reset();
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
     _testCaseTransport = new MemoryTransport();
@@ -41,11 +36,6 @@ public sealed partial class OperationsReceiveTests : IDisposable
     {
       _ = _operations.Send(b, _testCaseTransport, false).GetAwaiter().GetResult();
     }
-  }
-
-  private static void Reset()
-  {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, Assembly.GetExecutingAssembly());
   }
 
   public static IEnumerable<object[]> TestCases()
@@ -60,7 +50,12 @@ public sealed partial class OperationsReceiveTests : IDisposable
   [MemberData(nameof(TestCases))]
   public async Task Receive_FromLocal_ExistingObjects(string id)
   {
-    Base result = await _operations.Receive(id, null, _testCaseTransport);
+    Base result = await _operations.Receive(
+      id,
+      null,
+      _testCaseTransport,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     Assert.NotNull(result);
     Assert.Equal(id, result.id);
@@ -71,7 +66,12 @@ public sealed partial class OperationsReceiveTests : IDisposable
   public async Task Receive_FromRemote_ExistingObjects(string id)
   {
     MemoryTransport localTransport = new();
-    Base result = await _operations.Receive(id, _testCaseTransport, localTransport);
+    Base result = await _operations.Receive(
+      id,
+      _testCaseTransport,
+      localTransport,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     Assert.NotNull(result);
     Assert.Equal(id, result.id);
@@ -86,7 +86,8 @@ public sealed partial class OperationsReceiveTests : IDisposable
       id,
       null,
       _testCaseTransport,
-      onProgressAction: new UnitTestProgress<ProgressArgs>(_ => wasCalled = true)
+      onProgressAction: new UnitTestProgress<ProgressArgs>(_ => wasCalled = true),
+      cancellationToken: TestContext.Current.CancellationToken
     );
 
     Assert.True(wasCalled);

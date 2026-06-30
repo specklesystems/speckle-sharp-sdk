@@ -12,7 +12,7 @@ public class BlobApiExceptionalTests : IAsyncLifetime
   private IClient _client;
   private Project _project;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     var account = await Fixtures.SeedUser().ConfigureAwait(false);
@@ -98,9 +98,10 @@ public class BlobApiExceptionalTests : IAsyncLifetime
     await Verify(ex);
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client.Dispose();
-    return Task.CompletedTask;
+    _sut.Dispose();
+    return ValueTask.CompletedTask;
   }
 }

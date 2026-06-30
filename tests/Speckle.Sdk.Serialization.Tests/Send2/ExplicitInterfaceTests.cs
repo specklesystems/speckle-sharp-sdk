@@ -30,7 +30,7 @@ public class ExplicitInterfaceTests
       new ConcurrentDictionary<Id, Json>(),
       objects,
       null,
-      default,
+      TestContext.Current.CancellationToken,
       new SerializeProcessOptions(true, true, false, true)
     );
 

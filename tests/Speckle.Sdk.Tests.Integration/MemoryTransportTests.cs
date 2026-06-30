@@ -37,12 +37,22 @@ public class MemoryTransportTests : IDisposable
     var myObject = Fixtures.GenerateSimpleObject();
     myObject["blobs"] = Fixtures.GenerateThreeBlobs();
 
-    var sendResult = await _operations.Send(myObject, _memoryTransport, false);
+    var sendResult = await _operations.Send(
+      myObject,
+      _memoryTransport,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     // NOTE: used to debug diffing
     // await Operations.Send(myObject, new List<ITransport> { transport });
 
-    var receivedObject = await _operations.Receive(sendResult.rootObjId, _memoryTransport, new MemoryTransport());
+    var receivedObject = await _operations.Receive(
+      sendResult.rootObjId,
+      _memoryTransport,
+      new MemoryTransport(),
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     var allFiles = Directory
       .GetFiles(_memoryTransport.BlobStorageFolder)

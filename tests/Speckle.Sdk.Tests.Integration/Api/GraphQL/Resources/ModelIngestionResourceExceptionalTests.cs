@@ -13,9 +13,9 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
   private Project _project;
   private Model _model;
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new("Test project", "", null));
@@ -34,7 +34,7 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
     {
-      _ = await Sut.Create(createInput);
+      _ = await Sut.Create(createInput, TestContext.Current.CancellationToken);
     });
     Assert.Single(ex.InnerExceptions);
     Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLStreamNotFoundException>(item));
@@ -47,7 +47,7 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
 
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
     {
-      _ = await Sut.UpdateProgress(updateInput);
+      _ = await Sut.UpdateProgress(updateInput, TestContext.Current.CancellationToken);
     });
     Assert.Single(ex.InnerExceptions);
     Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLException>(item));
@@ -63,7 +63,7 @@ public sealed class ModelIngestionResourceExceptionalTests : IAsyncLifetime
     );
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
     {
-      _ = await Sut.FailWithCancel(input);
+      _ = await Sut.FailWithCancel(input, TestContext.Current.CancellationToken);
     });
     Assert.Single(ex.InnerExceptions);
     Assert.All(ex.InnerExceptions, item => Assert.IsType<SpeckleGraphQLException>(item));

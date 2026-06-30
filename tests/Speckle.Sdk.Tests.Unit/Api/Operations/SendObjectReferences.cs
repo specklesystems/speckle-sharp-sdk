@@ -1,20 +1,17 @@
 ﻿using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class SendObjectReferences
 {
   private readonly IOperations _operations;
 
   public SendObjectReferences()
   {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(DataChunk).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
@@ -27,7 +24,11 @@ public class SendObjectReferences
   {
     Base testData = GenerateTestCase(testDepth, true);
     MemoryTransport transport = new();
-    var result = await _operations.Send(testData, [transport]);
+    var result = await _operations.Send(
+      testData,
+      [transport],
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     result.rootObjId.Should().NotBeNull();
 
@@ -44,7 +45,11 @@ public class SendObjectReferences
   {
     Base testData = GenerateTestCase(testDepth, false);
     MemoryTransport transport = new();
-    var result = await _operations.Send(testData, [transport]);
+    var result = await _operations.Send(
+      testData,
+      [transport],
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     result.rootObjId.Should().NotBeNull();
 
