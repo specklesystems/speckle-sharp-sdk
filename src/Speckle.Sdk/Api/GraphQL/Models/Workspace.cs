@@ -8,11 +8,11 @@ public class LimitedWorkspace
   public required string name { get; init; }
   public string? role { get; init; }
   public required string slug { get; init; }
-  public string? logoUri { get; init; }
+  public string? logoUrl { get; init; }
   public string? description { get; init; }
 
   [JsonIgnore]
-  [Obsolete($"Deprecated, use {nameof(logoUri)} instead", true)]
+  [Obsolete($"Deprecated, use {nameof(logoUrl)} instead", true)]
   public string? logo { get; init; }
 }
 
