@@ -36,6 +36,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   private readonly GeometriesParquetWriter _geometriesWriter;
   private readonly EnvelopeWriter _envelopeWriter;
   private readonly EavWriter _eavWriter;
+  private readonly StructuralResultsWriter _structuralResultsWriter;
   private readonly ISet<string> _excludedProperties;
 
   // Per-namespace interners. The object namespace is owned by the eav writer (it writes the
@@ -52,6 +53,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName, _scheduler);
     _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler);
     _eavWriter = new EavWriter(outputDir, baseName, _scheduler);
+    _structuralResultsWriter = new StructuralResultsWriter(outputDir, baseName, _scheduler);
     _excludedProperties = excludedTopLevelProperties ?? EavExtraction.DefaultExcludedTopLevelProperties;
   }
 
@@ -360,6 +362,33 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void ConnectsTo(int sourceObjectK, int targetObjectK) =>
     _envelopeWriter.AddRelation(RelKind.ConnectsTo, sourceObjectK, targetObjectK, 0);
 
+  // ── structural results ─────────────────────────────────────────────────────────────────
+
+  /// <summary>
+  /// Appends one structural analysis/design result value to <c>{base}.eav.structural-results.parquet</c>
+  /// (see <see cref="StructuralResultsWriter"/>). <b>Object-level</b> results pass the member/joint's
+  /// <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned with, so
+  /// results join back to it) and leave <paramref name="location"/> null; <b>model-level</b> results (story
+  /// drift, modal period, base reaction) pass a null <paramref name="objectApplicationId"/> and identify via
+  /// <paramref name="location"/> (story) and/or <paramref name="step"/> (mode). Numeric results set
+  /// <paramref name="value"/>; non-numeric design verdicts set <paramref name="valueText"/>.
+  /// </summary>
+  public void AddStructuralResult(
+    string? objectApplicationId,
+    string? location,
+    string resultType,
+    string loadCase,
+    string component,
+    double? station,
+    int? step,
+    double? value,
+    string? valueText = null
+  )
+  {
+    int? objectIndex = objectApplicationId is null ? null : _eavWriter.GetOrAddObject(objectApplicationId);
+    _structuralResultsWriter.AddRow(objectIndex, location, resultType, loadCase, component, station, step, value, valueText);
+  }
+
   // ── scene views ──────────────────────────────────────────────────────────────────────
 
   /// <summary>Authors a scene_views projection (SOT §8): the producer's default (and optional named
@@ -387,6 +416,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _geometriesWriter.Complete();
     _envelopeWriter.Complete();
     _eavWriter.Complete();
+    _structuralResultsWriter.Complete();
     _scheduler.CompleteAndWait();
   }
 
@@ -397,6 +427,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     SafeDispose(_geometriesWriter);
     SafeDispose(_envelopeWriter);
     SafeDispose(_eavWriter);
+    SafeDispose(_structuralResultsWriter);
     SafeDispose(_scheduler);
   }
 
