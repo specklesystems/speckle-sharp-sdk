@@ -1,0 +1,30 @@
+﻿{
+  "5053b39434bf2f35a388fe8e419ca181": {
+    "applicationId": null,
+    "id": "5053b39434bf2f35a388fe8e419ca181",
+    "name": "detachedProp",
+    "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase"
+  },
+  "a8ec0370e21dd89402803fd450d2f58c": {
+    "__closure": {
+      "5053b39434bf2f35a388fe8e419ca181": 1
+    },
+    "applicationId": null,
+    "arr": null,
+    "attachedProp": {
+      "applicationId": null,
+      "id": "6e5c34adf929602ce78d559d71f53c01",
+      "name": "attachedProp",
+      "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SamplePropBase"
+    },
+    "crazyProp": null,
+    "detachedProp": {
+      "referencedId": "5053b39434bf2f35a388fe8e419ca181",
+      "speckle_type": "reference"
+    },
+    "dynamicProp": 123,
+    "id": "a8ec0370e21dd89402803fd450d2f58c",
+    "list": [],
+    "speckle_type": "Speckle.Core.Tests.Unit.Models.BaseTests+SampleObjectBase"
+  }
+}

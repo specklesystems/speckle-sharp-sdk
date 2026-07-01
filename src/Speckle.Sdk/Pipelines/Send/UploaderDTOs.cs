@@ -1,10 +1,12 @@
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Models;
-using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
-public record UploadItem(string Id, Json Json, string SpeckleType, ObjectReference Reference);
+public sealed record UploadItem(string Id, Utf8Json Json, string SpeckleType, ObjectReference Reference) : IDisposable
+{
+  public void Dispose() => Json.Dispose();
+}
 
 internal record PresignedUploadResponse
 {

@@ -296,6 +296,7 @@
           "Microsoft.Data.Sqlite": "[7.0.5, )",
           "Microsoft.Extensions.DependencyInjection": "[2.2.0, )",
           "Microsoft.Extensions.Logging": "[2.2.0, )",
+          "Microsoft.Extensions.ObjectPool": "[6.0.0, )",
           "Parquet.Net": "[5.3.0, )",
           "Speckle.DoubleNumerics": "[4.1.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
@@ -366,6 +367,12 @@
           "Microsoft.Extensions.Options": "2.2.0"
         }
       },
+      "Microsoft.Extensions.ObjectPool": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.4, )",
+        "resolved": "6.0.0",
+        "contentHash": "7hR9FU0JJHOCLmn/Ary31pLLAhlzoMptBKs5CJmNUzD87dXjl+/NqVkyCTl6cT2JAfTK0G39HpvCOv1fhsX3BQ=="
+      },
       "Parquet.Net": {
         "type": "CentralTransitive",
         "requested": "[5.3.0, )",
@@ -394,7 +401,7 @@
       },
       "System.Text.Json": {
         "type": "CentralTransitive",
-        "requested": "[8.0.5, )",
+        "requested": "[10.0.7, )",
         "resolved": "9.0.10",
         "contentHash": "XM02ZBnzxk7Ti6l9YRy8Bp639wANqJzJzw4W4VYiCh+HXY9hBOWkGB4k89OLP/s/RxgM02P4a/mWcJTgFiLf1Q==",
         "dependencies": {
@@ -558,8 +565,8 @@
         "dependencies": {
           "GraphQL.Client": "[6.1.0, )",
           "Microsoft.Data.Sqlite": "[10.0.0, )",
-          "Microsoft.Extensions.DependencyInjection": "[10.0.0, )",
           "Microsoft.Extensions.Logging": "[10.0.0, )",
+          "Microsoft.Extensions.ObjectPool": "[10.0.0, )",
           "Parquet.Net": "[5.3.0, )",
           "Speckle.DoubleNumerics": "[4.1.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
@@ -610,6 +617,12 @@
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
           "Microsoft.Extensions.Options": "10.0.0"
         }
+      },
+      "Microsoft.Extensions.ObjectPool": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.4, )",
+        "resolved": "10.0.0",
+        "contentHash": "bpeCq0IYmVLACyEUMzFIOQX+zZUElG1t+nu1lSxthe7B+1oNYking7b91305+jNB6iwojp9fqTY9O+Nh7ULQxg=="
       },
       "Parquet.Net": {
         "type": "CentralTransitive",
@@ -784,8 +797,8 @@
         "dependencies": {
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.Data.Sqlite": "[7.0.5, )",
-          "Microsoft.Extensions.DependencyInjection": "[8.0.0, )",
           "Microsoft.Extensions.Logging": "[8.0.0, )",
+          "Microsoft.Extensions.ObjectPool": "[8.0.0, )",
           "Parquet.Net": "[5.3.0, )",
           "Speckle.DoubleNumerics": "[4.1.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
@@ -835,6 +848,12 @@
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Microsoft.Extensions.Options": "8.0.0"
         }
+      },
+      "Microsoft.Extensions.ObjectPool": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.4, )",
+        "resolved": "8.0.0",
+        "contentHash": "4pm+XgxSukskwjzDDfSjG4KNUIOdFF2VaqZZDtTzoyQMOVSnlV6ZM8a9aVu5dg9LVZTB//utzSc8fOi0b0Mb2Q=="
       },
       "Parquet.Net": {
         "type": "CentralTransitive",

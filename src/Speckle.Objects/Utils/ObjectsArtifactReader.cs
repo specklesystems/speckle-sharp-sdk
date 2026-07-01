@@ -105,14 +105,20 @@ public sealed class ObjectsArtifactReader
     Dictionary<int, ArtefactNode> nodes
   )
   {
-    var root = new Collection("Received model") { applicationId = "artifact-root", id = "artifact-root" };
+    var root = new Collection
+    {
+      name = "Received model",
+      applicationId = "artifact-root",
+      id = "artifact-root",
+    };
     var byNode = new Dictionary<int, Collection>();
     foreach (var kv in nodes)
     {
       if (kv.Value.Kind == NodeKind.Container)
       {
-        byNode[kv.Key] = new Layer(kv.Value.Name ?? "Layer")
+        byNode[kv.Key] = new Layer
         {
+          name = kv.Value.Name ?? "Layer",
           applicationId = "coll-" + kv.Key,
           id = "coll-" + kv.Key,
         };

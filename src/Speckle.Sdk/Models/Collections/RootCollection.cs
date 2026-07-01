@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Sdk.Models.Data;
 
 namespace Speckle.Sdk.Models.Collections;
@@ -11,6 +12,8 @@ public class RootCollection : Collection, IProperties
 {
   public RootCollection() { }
 
+  [SetsRequiredMembers]
+  [Obsolete("Use parameterless constructor with initialiser")]
   public RootCollection(string name)
     : base(name) { }
 

@@ -19,14 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout ${{ env.CLIENT_REPO }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: ${{ env.CLIENT_DIR }}
           repository: ${{ env.CLIENT_REPO }}
           ref: ${{ inputs.speckle-sharp-sdk-ref }}
 
       - name: Checkout ${{ env.SERVER_REPO }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ env.SERVER_REPO }}
           path: ${{ env.SERVER_DIR }}
@@ -34,7 +34,7 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 10.0.2xx
+          dotnet-version: 10.0.2xx #Keep aligned with global.json
       #          cache: true
       #          cache-dependency-path: "**/packages.lock.json"
 

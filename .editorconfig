@@ -318,7 +318,7 @@ indent_size = 2
 tab_width = 2
 
 # Verify settings
-[*.{received,verified}.{json}]
+[*.{received,verified}.{json,txt}]
 charset = utf-8-bom
 end_of_line = lf
 indent_size = unset
