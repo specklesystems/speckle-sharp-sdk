@@ -89,6 +89,64 @@ The harness implements, against the DST server (paths derived from
    with `{ "etags": { "<name>": "<etag>" }, "rootId", "totalChildrenCount"? }` →
    `{ "versionId", "files" }`. This creates the commit (schemaVersion 3, `artifactFiles`).
 
+## Direct S3 route (recommended for bulk / large models — much faster than `--remote`)
+
+**Prefer this over `--remote` for anything non-trivial.** The `--remote` path pulls the graph
+through the SDK's server-backed deserialize (many batched HTTP round-trips against the objects
+API). On large graphs it is slow and, in practice, hangs — a big plant model can sit at 0% CPU
+for minutes and never return; the server's bulk `GET /objects/{projectId}/{rootId}` endpoint
+times out too. When the source server writes its artefacts to object storage, skip the API
+entirely: pull the pre-serialised NDJSON straight from S3 and feed it to `--local`. Downloads
+are seconds instead of multi-minute hangs.
+
+### Bucket layout
+
+Each version is stored under a per-workspace/project/model/version prefix:
+
+```
+workspaces/{workspaceId}/projects/{projectId}/models/{modelId}/versions/{versionId}.raw.ndjson.gz   ← feed this to --local
+workspaces/{workspaceId}/projects/{projectId}/models/{modelId}/versions/{versionId}.duckdb
+workspaces/{workspaceId}/projects/{projectId}/models/{modelId}/versions/{versionId}.eav.duckdb
+workspaces/{workspaceId}/projects/{projectId}/models/{modelId}/versions/{versionId}.root.json
+```
+
+`{versionId}.raw.ndjson.gz` is the full object closure as gzipped tab-separated `id\ttype\tjson`
+— exactly the shape `--local` consumes (it decompresses `.gz` and tolerates the 3-column form).
+The `{versionId}` in the key equals the Speckle version `id` from GraphQL.
+
+### Recipe
+
+The GraphQL API is only used for cheap metadata lookups (fast), never the graph download:
+
+```bash
+# 0. S3 creds (e.g. DigitalOcean Spaces). Read-only key; keep it out of the repo.
+export AWS_ACCESS_KEY_ID=...  AWS_SECRET_ACCESS_KEY=...  AWS_DEFAULT_REGION=ams3
+ENDPOINT=https://ams3.digitaloceanspaces.com  BUCKET=speckle-xyz-release
+export SPECKLE_SRC_TOKEN=<src-token>  SPECKLE_DST_TOKEN=<dst-token>
+
+# 1. workspaceId for the source project (GraphQL): project(id).workspaceId
+# 2. per model, latest version id + its rootId (GraphQL):
+#      project.models.items[].versions(limit:1).items[0] → { id (=versionId), referencedObject (=rootId) }
+#    versions come back newest-first, so items[0] is latest.
+
+# 3. pull the closure straight from S3 (fast) …
+KEY="workspaces/$WS/projects/$SRC_PROJECT/models/$MODEL/versions/$VERSION.raw.ndjson.gz"
+aws s3 cp "s3://$BUCKET/$KEY" ./model.raw.ndjson.gz --endpoint-url "$ENDPOINT"
+
+# 4. … and migrate from the local file. Pass the FULL 32-char referencedObject as --root
+#    (a truncated id fails with "root not found"); --root auto also works if unambiguous.
+dotnet <path>/Speckle.Sdk.Artifacts.Harness.dll \
+  --local ./model.raw.ndjson.gz --root <referencedObject> \
+  --upload https://dst.server dstProj dstModel
+```
+
+Notes:
+- `--upload <dstModel>` is a **model id**, not a name — the destination model must already
+  exist (create it first via `modelMutations.create`; a name containing `/` nests it as folders).
+- The big models are memory-hungry (the whole closure loads into a transport): a ~520 MB gzipped
+  closure peaked around ~8 GB RSS. Process the heavy ones one at a time.
+- Invoke the built **dll directly** (not `dotnet run`) — see the BUILD GOTCHA below.
+
 ## Fan-out runner
 
 `run-validation.sh` fans the harness across many source models with bounded parallelism
