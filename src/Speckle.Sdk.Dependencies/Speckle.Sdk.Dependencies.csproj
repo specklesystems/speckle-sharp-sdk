@@ -5,6 +5,13 @@
     <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
     <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
     <ILRepackMergeDebugSymbols>true</ILRepackMergeDebugSymbols>
+    <!--
+      Make ILRepack.FullAuto's in-place merge incremental-safe (see ILRepackIncremental.targets). Imported via
+      CustomAfterMicrosoftCSharpTargets so our override of ILRepackBuildTarget lands AFTER the package's.
+      Without this, incremental builds double-merge the internalized polyfills into a duplicate
+      System.<guid>IAsyncDisposable and any host plugin loading this assembly fails (BadImageFormatException).
+    -->
+    <CustomAfterMicrosoftCSharpTargets>$(MSBuildThisFileDirectory)ILRepackIncremental.targets</CustomAfterMicrosoftCSharpTargets>
   </PropertyGroup>
   <PropertyGroup Label="Nugetspec Package Properties">
     <PackageId>Speckle.Sdk.Dependencies</PackageId>

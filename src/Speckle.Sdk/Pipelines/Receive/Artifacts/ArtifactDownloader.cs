@@ -46,7 +46,7 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
     foreach (var file in files)
     {
       string path = Path.Combine(destDir, file.Name);
-      await DownloadFileAsync(s3Client, file.Url, path, cancellationToken).ConfigureAwait(false);
+      await DownloadFileAsync(s3Client, file.Name, file.Url, path, cancellationToken).ConfigureAwait(false);
       paths.Add(path);
     }
     return paths;
@@ -81,6 +81,7 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
 
   private static async Task DownloadFileAsync(
     HttpClient client,
+    string name,
     string url,
     string path,
     CancellationToken cancellationToken
@@ -89,7 +90,17 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
     using var response = await client
       .GetAsync(new Uri(url), HttpCompletionOption.ResponseHeadersRead, cancellationToken)
       .ConfigureAwait(false);
-    response.EnsureSuccessStatusCode();
+    // Name the artefact file (and echo the status) so a broken/expired presigned url is diagnosable — the bare
+    // EnsureSuccessStatusCode() message ("Response status code does not indicate success: 404") hides which file
+    // the list endpoint pointed at but the bucket didn't have.
+    if (!response.IsSuccessStatusCode)
+    {
+      throw new HttpRequestException(
+        $"Downloading artefact file '{name}' failed with {(int)response.StatusCode} ({response.StatusCode}). "
+          + "The version's artefact manifest listed this file but the presigned download did not resolve "
+          + "(missing/expired object or a server-side ingestion→version key mismatch)."
+      );
+    }
     using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
     await CopyToFileAsync(response.Content, fileStream, cancellationToken).ConfigureAwait(false);
   }
