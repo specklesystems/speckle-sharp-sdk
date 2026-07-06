@@ -346,7 +346,9 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void InModel(int objectK, int modelK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InModel, objectK, modelK, ord);
 
-  /// <summary>object → node(CONTAINER, subtype "Room"): room containment.</summary>
+  /// <summary>object → object: spatial occupancy — the object's containing ROOM object (furniture/door/window
+  /// → room). Rooms are sent as objects (their geometry is the room volume), so <paramref name="roomK"/> is the
+  /// room's interned object K, not a node.</summary>
   public void InRoom(int objectK, int roomK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InRoom, objectK, roomK, ord);
 
@@ -358,9 +360,20 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _envelopeWriter.AddRelation(RelKind.InSystem, objectK, systemK, ord);
 
   /// <summary>object → object: physical flow connectivity, DIRECTED src→dst by flow (source→target). A
-  /// reciprocal pair encodes undirected / unknown flow.</summary>
-  public void ConnectsTo(int sourceObjectK, int targetObjectK) =>
-    _envelopeWriter.AddRelation(RelKind.ConnectsTo, sourceObjectK, targetObjectK, 0);
+  /// reciprocal pair encodes undirected / unknown flow. Unscoped (ord=0) — see the scoped overload.</summary>
+  public void ConnectsTo(int sourceObjectK, int targetObjectK) => ConnectsTo(sourceObjectK, targetObjectK, 0);
+
+  /// <summary>object → object connectivity with a SCOPE tag (CONNECTS_TO uses <c>ord</c> as a scope, not an
+  /// ordinal — see <c>rel_types.ord_semantics='scope'</c>). <paramref name="scope"/> tags which connectivity
+  /// graph the edge belongs to: an MEP system node K (flow scope), a door/opening object K (room adjacency),
+  /// or 0 (unscoped). Lets one relation table carry several overlapping connectivity graphs.</summary>
+  public void ConnectsTo(int sourceObjectK, int targetObjectK, int scope) =>
+    _envelopeWriter.AddRelation(RelKind.ConnectsTo, sourceObjectK, targetObjectK, scope);
+
+  /// <summary>object → object: a room-bounding element → the ROOM object it bounds (which walls/separators form a
+  /// room's footprint, for egress / plan analysis). Both are interned objects.</summary>
+  public void Bounds(int boundingObjectK, int roomObjectK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.Bounds, boundingObjectK, roomObjectK, ord);
 
   // ── structural results ─────────────────────────────────────────────────────────────────
 
