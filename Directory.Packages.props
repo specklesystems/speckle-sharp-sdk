@@ -40,7 +40,7 @@
     <PackageVersion Include="HttpMultipartParser" Version="10.0.0" />
     <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />
     <!-- Keep aligned with channels -->
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[9.0.4,)" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[9.0.10,)" />
     <!-- Keep version aligned with the lowest .NET framework we need to support (e.g. lowest non-eol) -->
     <PackageVersion Include="Microsoft.CSharp" Version="[4.7.0,)" />
     <!-- Keep at exactly 7.0.5 for side by side with V2 -->
@@ -64,7 +64,7 @@
     <!-- Pinned due to breaking changes in newer versions -->
     <PackageVersion Include="System.CommandLine" Version="[2.0.0-beta4.22272.1]" />
     <!-- 9.0.4 is minimum version for .net standard2.0 because it's the first version to include async enumerables in the .NET standard target -->
-    <PackageVersion Include="System.Threading.Channels" Version="[9.0.4,]" />
+    <PackageVersion Include="System.Threading.Channels" Version="[9.0.10,]" />
     <PackageVersion Include="Verify.Quibble" Version="2.1.1" />
     <PackageVersion Include="Verify.Xunit" Version="31.12.5" />
     <PackageVersion Include="System.Text.Json" Version="10.0.7" />
