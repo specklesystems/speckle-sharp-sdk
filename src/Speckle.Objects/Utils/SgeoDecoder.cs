@@ -135,8 +135,8 @@ public static class SgeoDecoder
     {
       case SgeoPrimitiveType.Mesh:
       {
-        int vCount = (int)r.U();
-        int fCount = (int)r.U();
+        int vCount = r.Count(24); // 3 doubles per vertex
+        int fCount = r.Count(4);
         var verts = new List<double>(vCount * 3);
         for (int i = 0; i < vCount * 3; i++) { verts.Add(r.D()); }
         var faces = new List<int>(fCount);
@@ -186,7 +186,7 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Polyline:
       {
-        int count = (int)r.U();
+        int count = r.Count(24); // 3 doubles per point
         _ = r.U(); // reserved
         var value = new List<double>(count * 3);
         for (int i = 0; i < count * 3; i++) { value.Add(r.D()); }
@@ -200,12 +200,12 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Polycurve:
       {
-        int segCount = (int)r.U();
+        int segCount = r.Count(8); // each segment is at least a header + framing
         _ = r.U(); // reserved
         var segments = new List<ICurve>(segCount);
         for (int i = 0; i < segCount; i++)
         {
-          int blobLen = (int)r.U();
+          int blobLen = r.Count(1); // bytes
           _ = r.U(); // reserved
           segments.Add((ICurve)Decode(r.Slice(blobLen)));
           r.Align8();
@@ -220,9 +220,11 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Curve:
       {
-        int degree = (int)r.U();
-        int cpCount = (int)r.U();
-        int knotCount = (int)r.U();
+        bool closed = (header.Flags & SgeoFlags.Closed) != 0;
+        var display = ReadPolylineBody(ref r, units, closed); // [render] leading displayValue polyline (see encoder)
+        int degree = (int)r.U(); // [analytical] trailing NURBS definition
+        int cpCount = r.Count(24); // control points: 3 doubles each
+        int knotCount = r.Count(8);
         _ = r.U(); // reserved
         double ds = r.D();
         double de = r.D();
@@ -245,12 +247,12 @@ public static class SgeoDecoder
           degree = degree,
           periodic = (header.Flags & SgeoFlags.Periodic) != 0,
           rational = rational,
-          closed = (header.Flags & SgeoFlags.Closed) != 0,
+          closed = closed,
           points = points,
           weights = weights,
           knots = knots,
           domain = new Interval { start = ds, end = de },
-          displayValue = new Polyline { value = new(), units = units },
+          displayValue = display,
           units = units,
         };
       }
@@ -291,7 +293,7 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Points:
       {
-        int count = (int)r.U();
+        int count = r.Count(24); // 3 doubles per point
         _ = r.U(); // reserved
         var points = new List<double>(count * 3);
         for (int i = 0; i < count * 3; i++) { points.Add(r.D()); }
@@ -340,7 +342,9 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Spiral:
       {
-        var spiralType = (SpiralType)r.U();
+        bool closed = (header.Flags & SgeoFlags.Closed) != 0;
+        var display = ReadPolylineBody(ref r, units, closed); // [render] leading displayValue polyline (see encoder)
+        var spiralType = (SpiralType)r.U(); // [analytical] trailing spiral definition
         _ = r.U(); // reserved
         var startPoint = ReadPoint(ref r, units);
         var endPoint = ReadPoint(ref r, units);
@@ -362,7 +366,7 @@ public static class SgeoDecoder
           units = units,
           length = 0, // derived; not stored
           domain = new Interval { start = ds, end = de },
-          displayValue = new Polyline { value = new(), units = units },
+          displayValue = display,
         };
       }
 
@@ -385,6 +389,23 @@ public static class SgeoDecoder
       default:
         throw new SpeckleException($"Unknown SGEO primitive type {(byte)header.PrimitiveType}.");
     }
+  }
+
+  // Reads a Polyline body written by SgeoEncoder.AddPolylineBody (count, reserved, xyz…, pad-to-8): the leading render
+  // polyline prepended to Curve and Spiral blobs. Standalone Polyline blobs are NOT padded and use the Polyline case.
+  private static Polyline ReadPolylineBody(ref Reader r, string units, bool closed)
+  {
+    int count = r.Count(24); // each point is 3 doubles
+    _ = r.U(); // reserved
+    var value = new List<double>(count * 3);
+    for (int i = 0; i < count * 3; i++) { value.Add(r.D()); }
+    r.Align8();
+    return new Polyline
+    {
+      value = value,
+      closed = closed,
+      units = units,
+    };
   }
 
   private static Point ReadPoint(ref Reader r, string units)
@@ -444,6 +465,18 @@ public static class SgeoDecoder
       uint v = BinaryPrimitives.ReadUInt32LittleEndian(_bytes.Slice(_offset, 4));
       _offset += 4;
       return v;
+    }
+
+    // Reads a uint element count and rejects a value that can't fit in the remaining buffer. Guards a corrupt or
+    // misaligned blob from driving a giant allocation → OutOfMemoryException, which callers can't treat as recoverable.
+    public int Count(int elementBytes)
+    {
+      uint v = U();
+      if (v > int.MaxValue || v * elementBytes > _bytes.Length - _offset)
+      {
+        throw new SpeckleException($"SGEO element count {v} exceeds the remaining buffer ({_bytes.Length - _offset} bytes).");
+      }
+      return (int)v;
     }
 
     public ReadOnlySpan<byte> Slice(int length)
