@@ -48,6 +48,7 @@ public enum SgeoPrimitiveType
   Ellipse = 8,
   Spiral = 9,
   Box = 10,
+  Region = 11,
 }
 
 /// <summary>SGEO header flags (offset 0x06, stored as a uint16 bitfield).</summary>

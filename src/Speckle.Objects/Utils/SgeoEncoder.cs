@@ -35,6 +35,7 @@ public static class SgeoEncoder
       Ellipse e => EncodeEllipse(e),
       Spiral s => EncodeSpiral(s),
       Box b => EncodeBox(b),
+      Region rg => EncodeRegion(rg),
       _ => throw new SpeckleException($"No SGEO encoding for geometry type '{geometry.GetType().Name}'."),
     };
   }
@@ -55,6 +56,7 @@ public static class SgeoEncoder
       Ellipse => SgeoPrimitiveType.Ellipse,
       Spiral => SgeoPrimitiveType.Spiral,
       Box => SgeoPrimitiveType.Box,
+      Region => SgeoPrimitiveType.Region,
       _ => (SgeoPrimitiveType)255,
     };
     return (byte)type != 255;
@@ -121,13 +123,35 @@ public static class SgeoEncoder
     AddUInt32(body, 0);
     foreach (var seg in pc.segments)
     {
-      byte[] blob = Encode((Base)seg);
-      AddUInt32(body, (uint)blob.Length);
-      AddUInt32(body, 0);
-      body.AddRange(blob);
-      Pad8(body);
+      AddCurveBlob(body, seg);
     }
     return Assemble(SgeoPrimitiveType.Polycurve, flags, pc.units, body);
+  }
+
+  // Region blob = hasHatchPattern flag + boundary curve (nested SGEO blob) + N inner-loop curves (nested blobs). The
+  // display meshes and the hatch pattern/rotation/scale are NOT stored here — meshes ride the DISPLAY rel and the
+  // pattern styling rides EAV properties; this blob is the authoritative boundary geometry (host: Hatch/Region).
+  private static byte[] EncodeRegion(Region r)
+  {
+    var body = new List<byte>(256);
+    AddUInt32(body, r.hasHatchPattern ? 1u : 0u);
+    AddUInt32(body, (uint)r.innerLoops.Count);
+    AddCurveBlob(body, r.boundary);
+    foreach (var loop in r.innerLoops)
+    {
+      AddCurveBlob(body, loop);
+    }
+    return Assemble(SgeoPrimitiveType.Region, SgeoFlags.None, r.units, body);
+  }
+
+  // Writes one nested curve as [blobLen][reserved][blob][pad-to-8] — shared by Polycurve segments and Region loops.
+  private static void AddCurveBlob(List<byte> body, ICurve curve)
+  {
+    byte[] blob = Encode((Base)curve);
+    AddUInt32(body, (uint)blob.Length);
+    AddUInt32(body, 0);
+    body.AddRange(blob);
+    Pad8(body);
   }
 
   // Curve blob = the connector-baked smooth `displayValue` polyline LEADING (render: the viewer has no NURBS
