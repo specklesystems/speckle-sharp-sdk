@@ -60,6 +60,12 @@ public sealed class ArtefactRelations
   public Dictionary<int, Dictionary<int, int>> ObjectNodeByRel { get; } = new();
   public Dictionary<int, int> MaterialByGeometry { get; } = new();
   public Dictionary<int, List<int>> DefinesByDefinition { get; } = new();
+
+  /// <summary>DEFINES ordinals, index-aligned with <see cref="DefinesByDefinition"/>. The ordinal is the member index
+  /// (all geometry of one definition member shares it), so a consumer can group a member's authoritative solid + its
+  /// display mesh(es) together and pick the solid over its shadow. Older bundles number per-geometry; a consumer that
+  /// ignores this map just treats every geometry as its own member (the pre-grouping behaviour).</summary>
+  public Dictionary<int, List<int>> DefinesOrdByDefinition { get; } = new();
   public Dictionary<int, List<int>> DefinesInstanceByDefinition { get; } = new();
 
   private Dictionary<int, List<ArtefactEdge>>? _displayByObject;
@@ -348,6 +354,7 @@ public static class ArtefactBundleReader
           break;
         case RelKind.Defines:
           sets.Add(sets.DefinesByDefinition, src[i], dst[i]);
+          sets.Add(sets.DefinesOrdByDefinition, src[i], ord[i]);
           break;
         case RelKind.DefinesInstance:
           sets.Add(sets.DefinesInstanceByDefinition, src[i], dst[i]);
