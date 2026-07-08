@@ -41,6 +41,50 @@ public static class SceneViewResolver
     return segments;
   }
 
+  /// <summary>Like <see cref="Segments"/> but pairs each segment with its source node's colour (argb) for node ("rel")
+  /// tiers, so a host can colour layers, not just name them. eav tiers carry no node → null colour.</summary>
+  public static IReadOnlyList<(string Name, int? Argb)> SegmentsWithColor(ArtefactBundle bundle, int objK)
+  {
+    var segments = new List<(string, int?)>();
+    foreach (var tier in bundle.DefaultSceneView)
+    {
+      if (tier.Source == "rel")
+      {
+        if (
+          int.TryParse(tier.Ref, NumberStyles.Integer, CultureInfo.InvariantCulture, out int relNum)
+          && bundle.Relations.ObjectNodeByRel.TryGetValue(relNum, out var map)
+          && map.TryGetValue(objK, out int nodeK)
+        )
+        {
+          segments.AddRange(NodeAncestryWithColor(bundle.Nodes, nodeK));
+        }
+      }
+      else if (tier.Source == "eav" && ResolveEav(bundle.Properties, objK, tier.Ref) is { Length: > 0 } val)
+      {
+        segments.Add((val, null));
+      }
+    }
+    return segments;
+  }
+
+  /// <summary>A node + its grouping ancestry (via <see cref="ArtefactNode.DefRef"/>), outermost→leaf, each paired with
+  /// its <see cref="ArtefactNode.Argb"/> colour (null when the node has none).</summary>
+  public static IReadOnlyList<(string Name, int? Argb)> NodeAncestryWithColor(
+    IReadOnlyDictionary<int, ArtefactNode> nodes,
+    int nodeK
+  )
+  {
+    var result = new List<(string, int?)>();
+    int? cursor = nodeK;
+    int guard = 0;
+    while (cursor is int c && nodes.TryGetValue(c, out var n) && guard++ < ANCESTRY_GUARD)
+    {
+      result.Insert(0, (n.Name is { Length: > 0 } nm ? nm : "unnamed", n.Argb));
+      cursor = n.DefRef;
+    }
+    return result;
+  }
+
   /// <summary>A node + its grouping ancestry (via <see cref="ArtefactNode.DefRef"/>), outermost→leaf. Levels have no
   /// parent (single segment); collections/containers nest.</summary>
   public static IReadOnlyList<string> NodeAncestry(IReadOnlyDictionary<int, ArtefactNode> nodes, int nodeK)
