@@ -205,10 +205,7 @@ public static class SgeoDecoder
         var segments = new List<ICurve>(segCount);
         for (int i = 0; i < segCount; i++)
         {
-          int blobLen = r.Count(1); // bytes
-          _ = r.U(); // reserved
-          segments.Add((ICurve)Decode(r.Slice(blobLen)));
-          r.Align8();
+          segments.Add(ReadCurveBlob(ref r));
         }
         return new Polycurve
         {
@@ -386,6 +383,26 @@ public static class SgeoDecoder
         };
       }
 
+      case SgeoPrimitiveType.Region:
+      {
+        bool hasHatchPattern = r.U() != 0;
+        int loopCount = r.Count(8);
+        var boundary = ReadCurveBlob(ref r);
+        var innerLoops = new List<ICurve>(loopCount);
+        for (int i = 0; i < loopCount; i++)
+        {
+          innerLoops.Add(ReadCurveBlob(ref r));
+        }
+        return new Region
+        {
+          boundary = boundary,
+          innerLoops = innerLoops,
+          hasHatchPattern = hasHatchPattern,
+          units = units,
+          displayValue = new(),
+        };
+      }
+
       default:
         throw new SpeckleException($"Unknown SGEO primitive type {(byte)header.PrimitiveType}.");
     }
@@ -406,6 +423,17 @@ public static class SgeoDecoder
       closed = closed,
       units = units,
     };
+  }
+
+  // Reads one nested curve written by SgeoEncoder.AddCurveBlob ([blobLen][reserved][blob][pad-to-8]) — shared by the
+  // Polycurve segments and Region loops.
+  private static ICurve ReadCurveBlob(ref Reader r)
+  {
+    int blobLen = r.Count(1); // bytes
+    _ = r.U(); // reserved
+    var curve = (ICurve)Decode(r.Slice(blobLen));
+    r.Align8();
+    return curve;
   }
 
   private static Point ReadPoint(ref Reader r, string units)

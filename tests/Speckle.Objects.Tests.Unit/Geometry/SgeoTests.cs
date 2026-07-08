@@ -398,6 +398,100 @@ public class SgeoTests
     decoded.volume.Should().Be(6); // derived, recomputed
   }
 
+  [Fact]
+  public void Region_WithHatchAndInnerLoop_RoundTrips()
+  {
+    var region = new Region
+    {
+      boundary = new Polyline
+      {
+        value = [0, 0, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0],
+        closed = true,
+        units = Units.Meters,
+      },
+      innerLoops =
+      [
+        new Polyline
+        {
+          value = [1, 1, 0, 2, 1, 0, 2, 2, 0, 1, 2, 0],
+          closed = true,
+          units = Units.Meters,
+        },
+      ],
+      hasHatchPattern = true,
+      units = Units.Meters,
+      displayValue = new(),
+    };
+
+    var bytes = SgeoEncoder.Encode(region);
+    SgeoDecoder.ReadHeader(bytes).PrimitiveType.Should().Be(SgeoPrimitiveType.Region);
+
+    var decoded = (Region)SgeoDecoder.Decode(bytes);
+    decoded.hasHatchPattern.Should().BeTrue();
+    decoded.boundary.Should().BeOfType<Polyline>();
+    ((Polyline)decoded.boundary).value.Should().Equal(0, 0, 0, 4, 0, 0, 4, 4, 0, 0, 4, 0);
+    decoded.innerLoops.Should().HaveCount(1);
+    ((Polyline)decoded.innerLoops[0]).value.Should().Equal(1, 1, 0, 2, 1, 0, 2, 2, 0, 1, 2, 0);
+  }
+
+  [Fact]
+  public void Region_WithPolycurveBoundary_RoundTrips()
+  {
+    // Realistic hatch: Get3dCurves typically returns a joined Polycurve boundary (Line + Arc segments).
+    var region = new Region
+    {
+      boundary = new Polycurve
+      {
+        segments =
+        [
+          new Line
+          {
+            start = new Point(0, 0, 0, Units.Meters),
+            end = new Point(4, 0, 0, Units.Meters),
+            units = Units.Meters,
+          },
+          new Arc
+          {
+            plane = XYPlane(Units.Meters),
+            startPoint = new Point(4, 0, 0, Units.Meters),
+            midPoint = new Point(2, 2, 0, Units.Meters),
+            endPoint = new Point(0, 0, 0, Units.Meters),
+            units = Units.Meters,
+            domain = Interval.UnitInterval,
+          },
+        ],
+        closed = true,
+        units = Units.Meters,
+      },
+      innerLoops =
+      [
+        new Circle
+        {
+          radius = 0.5,
+          plane = XYPlane(Units.Meters),
+          units = Units.Meters,
+          domain = Interval.UnitInterval,
+        },
+      ],
+      hasHatchPattern = true,
+      units = Units.Meters,
+      displayValue = new(),
+    };
+
+    var bytes = SgeoEncoder.Encode(region);
+    var decoded = (Region)SgeoDecoder.Decode(bytes);
+
+    decoded.boundary.Should().BeOfType<Polycurve>();
+    var pc = (Polycurve)decoded.boundary;
+    pc.segments.Should().HaveCount(2);
+    pc.segments[0].Should().BeOfType<Line>();
+    pc.segments[1].Should().BeOfType<Arc>();
+    ((Line)pc.segments[0]).end.x.Should().Be(4);
+    decoded.innerLoops.Should().HaveCount(1);
+    decoded.innerLoops[0].Should().BeOfType<Circle>();
+    ((Circle)decoded.innerLoops[0]).radius.Should().Be(0.5);
+  }
+
   // ── integrity ─────────────────────────────────────────────────────────────
 
   [Fact]
