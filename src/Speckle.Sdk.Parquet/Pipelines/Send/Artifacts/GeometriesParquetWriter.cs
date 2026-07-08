@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
 using System.Security.Cryptography;
 using Parquet;
@@ -10,7 +9,7 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 /// <summary>
 /// Writes the Speckle 4.0 <c>geometries.parquet</c> artifact client-side: one row per
 /// mesh — <c>(geometryIndex, content, id, type)</c>. <c>geometryIndex</c> is the dense
-/// geometry-namespace <c>K</c> (minted by the caller's geometry <see cref="IdInterner"/>),
+/// geometry-namespace <c>K</c> (minted by the caller's geometry <c>IdInterner</c>),
 /// which the envelope's <c>DISPLAY</c>/<c>DEFINES</c>/<c>HAS_MATERIAL</c> edges reference —
 /// pure int, no <c>applicationId</c> strings. <c>id</c> is the SHA256 of the blob, kept as
 /// a column for READ-TIME shape dedup (the server builder / viewer collapses identical
@@ -114,7 +113,9 @@ public sealed class GeometriesParquetWriter : IDisposable
       new DataField<string>("id"),
       new DataField<string>("type")
     );
-    var fields = _schema.DataFields;
+
+    DataField[] fields = _schema.GetDataFields();
+
     _indexField = fields[0];
     _contentField = fields[1];
     _idField = fields[2];
@@ -338,4 +339,3 @@ public sealed class GeometriesParquetWriter : IDisposable
     }
   }
 }
-#endif

@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Diagnostics;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -73,7 +72,9 @@ public static class MemoryLog
 
     Console.WriteLine();
     Console.WriteLine("[mem] ================== memory report ==================");
-    Console.WriteLine("[mem] workingSet = physical RAM (what a pod memory limit enforces); native = workingSet - gcCommitted");
+    Console.WriteLine(
+      "[mem] workingSet = physical RAM (what a pod memory limit enforces); native = workingSet - gcCommitted"
+    );
     Console.WriteLine(
       "[mem] phase                                          dur     workingSet        peakWS  peakManaged  peakNative"
     );
@@ -103,7 +104,7 @@ public static class MemoryLog
       var last = samples[j - 1];
       Console.WriteLine(
         FormattableString.Invariant(
-          $"[mem] {phase,-44} {last.T - first.T,6:F1}s {first.WorkingSet / MB,6:F0}→{last.WorkingSet / MB,-6:F0}MB {peakWs / MB,6:F0}MB {peakManaged / MB,9:F0}MB {peakNative / MB,8:F0}MB"
+          $"[mem] {phase, -44} {last.T - first.T, 6:F1}s {first.WorkingSet / MB, 6:F0}→{last.WorkingSet / MB, -6:F0}MB {peakWs / MB, 6:F0}MB {peakManaged / MB, 9:F0}MB {peakNative / MB, 8:F0}MB"
         )
       );
       i = j;
@@ -179,8 +180,7 @@ public static class MemoryLog
   private static void Emit(string label, Sample s) =>
     Console.WriteLine(
       FormattableString.Invariant(
-        $"[mem {s.T,7:F1}s] {label,-44} managed={s.Managed / MB,6:F0}MB gcCommitted={s.Committed / MB,6:F0}MB workingSet={s.WorkingSet / MB,6:F0}MB"
+        $"[mem {s.T, 7:F1}s] {label, -44} managed={s.Managed / MB, 6:F0}MB gcCommitted={s.Committed / MB, 6:F0}MB workingSet={s.WorkingSet / MB, 6:F0}MB"
       )
     );
 }
-#endif

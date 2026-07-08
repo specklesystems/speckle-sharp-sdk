@@ -1,14 +1,13 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
 using Speckle.DoubleNumerics;
 using Speckle.Objects.Data;
-using Speckle.Sdk.Common;
 using Speckle.Objects.Other;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.Instances;
+using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
-using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Objects.Utils;
 
@@ -384,4 +383,3 @@ public sealed class ObjectsArtifactReader
     );
   }
 }
-#endif

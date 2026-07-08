@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
 using Speckle.Sdk.Credentials;
@@ -138,4 +137,3 @@ internal sealed record ArtifactFile
   [JsonProperty("url")]
   public string Url { get; init; } = "";
 }
-#endif

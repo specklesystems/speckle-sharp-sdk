@@ -1,6 +1,7 @@
 #if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Objects.Utils;
@@ -44,11 +45,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   private readonly IdInterner _geometryInterner = new();
   private readonly IdInterner _nodeInterner = new();
 
-  public ObjectsArtifactPipeline(
-    string outputDir,
-    string baseName,
-    ISet<string>? excludedTopLevelProperties = null
-  )
+  public ObjectsArtifactPipeline(string outputDir, string baseName, ISet<string>? excludedTopLevelProperties = null)
   {
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName, _scheduler);
     _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler);
@@ -125,10 +122,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     instanceProps = properties;
     typeSubtree = s_emptyDict;
 
-    if (
-      !properties.TryGetValue("Parameters", out var pv)
-      || pv is not IReadOnlyDictionary<string, object?> paramsDict
-    )
+    if (!properties.TryGetValue("Parameters", out var pv) || pv is not IReadOnlyDictionary<string, object?> paramsDict)
     {
       return false;
     }
@@ -245,7 +239,20 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("mat:" + materialKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Material, null, null, null, null, null, argb, opacity, metalness, roughness, null);
+      _envelopeWriter.AddNode(
+        k,
+        NodeKind.Material,
+        null,
+        null,
+        null,
+        null,
+        null,
+        argb,
+        opacity,
+        metalness,
+        roughness,
+        null
+      );
     }
     return k;
   }
@@ -281,7 +288,20 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
       // v5: a collection is a CONTAINER whose `subtype` carries its tag; the IN_COLLECTION rel marks the axis.
-      _envelopeWriter.AddNode(k, NodeKind.Container, name, parentCollectionK, null, null, subtype, null, null, null, null, null);
+      _envelopeWriter.AddNode(
+        k,
+        NodeKind.Container,
+        name,
+        parentCollectionK,
+        null,
+        null,
+        subtype,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
     }
     return k;
   }
@@ -295,7 +315,20 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("cont:" + containerKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Container, name, parentContainerK, null, null, subtype, null, null, null, null, null);
+      _envelopeWriter.AddNode(
+        k,
+        NodeKind.Container,
+        name,
+        parentContainerK,
+        null,
+        null,
+        subtype,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
     }
     return k;
   }
@@ -399,7 +432,17 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   )
   {
     int? objectIndex = objectApplicationId is null ? null : _eavWriter.GetOrAddObject(objectApplicationId);
-    _structuralResultsWriter.AddRow(objectIndex, location, resultType, loadCase, component, station, step, value, valueText);
+    _structuralResultsWriter.AddRow(
+      objectIndex,
+      location,
+      resultType,
+      loadCase,
+      component,
+      station,
+      step,
+      value,
+      valueText
+    );
   }
 
   // ── scene views ──────────────────────────────────────────────────────────────────────

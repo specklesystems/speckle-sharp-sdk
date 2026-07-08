@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
 
 namespace Speckle.Sdk.Pipelines.Receive.Artifacts;
@@ -83,4 +82,3 @@ public static class SceneViewResolver
     return cursor as string ?? cursor?.ToString();
   }
 }
-#endif

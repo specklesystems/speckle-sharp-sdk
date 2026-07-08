@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using Parquet;
 using Parquet.Data;
 using Parquet.Schema;
@@ -44,7 +43,8 @@ public sealed class ParquetTableWriter : IDisposable
     DeleteIfExists(path);
 
     _scheduler = scheduler;
-    _fields = schema.DataFields;
+    _fields = schema.GetDataFields();
+
     _cols = new Col[_fields.Length];
     for (var i = 0; i < _fields.Length; i++)
     {
@@ -178,4 +178,3 @@ public sealed class ParquetTableWriter : IDisposable
     }
   }
 }
-#endif

@@ -300,10 +300,14 @@
           "Parquet.Net": "[5.3.0, )",
           "Speckle.DoubleNumerics": "[4.1.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
-          "Speckle.Sdk.Dependencies": "[1.0.0, )"
+          "Speckle.Sdk.Dependencies": "[1.0.0, )",
+          "Speckle.Sdk.Parquet": "[1.0.0, )"
         }
       },
       "speckle.sdk.dependencies": {
+        "type": "Project"
+      },
+      "speckle.sdk.parquet": {
         "type": "Project"
       },
       "speckle.sdk.testing": {
@@ -718,10 +722,14 @@
           "Parquet.Net": "[5.3.0, )",
           "Speckle.DoubleNumerics": "[4.1.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
-          "Speckle.Sdk.Dependencies": "[1.0.0, )"
+          "Speckle.Sdk.Dependencies": "[1.0.0, )",
+          "Speckle.Sdk.Parquet": "[1.0.0, )"
         }
       },
       "speckle.sdk.dependencies": {
+        "type": "Project"
+      },
+      "speckle.sdk.parquet": {
         "type": "Project"
       },
       "speckle.sdk.testing": {

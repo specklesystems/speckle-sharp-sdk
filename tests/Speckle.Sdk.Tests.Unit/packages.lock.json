@@ -43,6 +43,16 @@
           "Microsoft.SourceLink.Common": "8.0.0"
         }
       },
+      "Parquet.Net": {
+        "type": "Direct",
+        "requested": "[5.3.0, )",
+        "resolved": "5.3.0",
+        "contentHash": "IR+Ek9qOxR9aqUvlCx/5vEYxcr0Rbsx3LERV204rMmb6cJnHJlUmFYHVZRBm4xgaa1S/uGbDQ6t72+5S/beKxg==",
+        "dependencies": {
+          "IronCompress": "1.6.3",
+          "Microsoft.IO.RecyclableMemoryStream": "3.0.1"
+        }
+      },
       "PolySharp": {
         "type": "Direct",
         "requested": "[1.15.0, )",
@@ -317,13 +327,16 @@
           "Microsoft.Data.Sqlite": "[10.0.0, )",
           "Microsoft.Extensions.Logging": "[10.0.0, )",
           "Microsoft.Extensions.ObjectPool": "[10.0.0, )",
-          "Parquet.Net": "[5.3.0, )",
           "Speckle.DoubleNumerics": "[4.1.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
-          "Speckle.Sdk.Dependencies": "[1.0.0, )"
+          "Speckle.Sdk.Dependencies": "[1.0.0, )",
+          "Speckle.Sdk.Parquet": "[1.0.0, )"
         }
       },
       "speckle.sdk.dependencies": {
+        "type": "Project"
+      },
+      "speckle.sdk.parquet": {
         "type": "Project"
       },
       "speckle.sdk.testing": {
@@ -390,16 +403,6 @@
         "contentHash": "EA55cjyNn8eTNWrgrdZJH5QLFp2L43oxl1tlkoYUKIE9pRwL784OWiTXeCV5ApS+AMYEAlt7Fo03A2XfouvHmQ==",
         "dependencies": {
           "Castle.Core": "5.1.1"
-        }
-      },
-      "Parquet.Net": {
-        "type": "CentralTransitive",
-        "requested": "[5.3.0, )",
-        "resolved": "5.3.0",
-        "contentHash": "IR+Ek9qOxR9aqUvlCx/5vEYxcr0Rbsx3LERV204rMmb6cJnHJlUmFYHVZRBm4xgaa1S/uGbDQ6t72+5S/beKxg==",
-        "dependencies": {
-          "IronCompress": "1.6.3",
-          "Microsoft.IO.RecyclableMemoryStream": "3.0.1"
         }
       },
       "Speckle.Newtonsoft.Json": {
@@ -473,6 +476,16 @@
         "dependencies": {
           "Microsoft.Build.Tasks.Git": "8.0.0",
           "Microsoft.SourceLink.Common": "8.0.0"
+        }
+      },
+      "Parquet.Net": {
+        "type": "Direct",
+        "requested": "[5.3.0, )",
+        "resolved": "5.3.0",
+        "contentHash": "IR+Ek9qOxR9aqUvlCx/5vEYxcr0Rbsx3LERV204rMmb6cJnHJlUmFYHVZRBm4xgaa1S/uGbDQ6t72+5S/beKxg==",
+        "dependencies": {
+          "IronCompress": "1.6.3",
+          "Microsoft.IO.RecyclableMemoryStream": "3.0.1"
         }
       },
       "PolySharp": {
@@ -749,13 +762,16 @@
           "Microsoft.Data.Sqlite": "[7.0.5, )",
           "Microsoft.Extensions.Logging": "[8.0.0, )",
           "Microsoft.Extensions.ObjectPool": "[8.0.0, )",
-          "Parquet.Net": "[5.3.0, )",
           "Speckle.DoubleNumerics": "[4.1.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
-          "Speckle.Sdk.Dependencies": "[1.0.0, )"
+          "Speckle.Sdk.Dependencies": "[1.0.0, )",
+          "Speckle.Sdk.Parquet": "[1.0.0, )"
         }
       },
       "speckle.sdk.dependencies": {
+        "type": "Project"
+      },
+      "speckle.sdk.parquet": {
         "type": "Project"
       },
       "speckle.sdk.testing": {
@@ -821,16 +837,6 @@
         "contentHash": "EA55cjyNn8eTNWrgrdZJH5QLFp2L43oxl1tlkoYUKIE9pRwL784OWiTXeCV5ApS+AMYEAlt7Fo03A2XfouvHmQ==",
         "dependencies": {
           "Castle.Core": "5.1.1"
-        }
-      },
-      "Parquet.Net": {
-        "type": "CentralTransitive",
-        "requested": "[5.3.0, )",
-        "resolved": "5.3.0",
-        "contentHash": "IR+Ek9qOxR9aqUvlCx/5vEYxcr0Rbsx3LERV204rMmb6cJnHJlUmFYHVZRBm4xgaa1S/uGbDQ6t72+5S/beKxg==",
-        "dependencies": {
-          "IronCompress": "1.6.3",
-          "Microsoft.IO.RecyclableMemoryStream": "3.0.1"
         }
       },
       "Speckle.Newtonsoft.Json": {

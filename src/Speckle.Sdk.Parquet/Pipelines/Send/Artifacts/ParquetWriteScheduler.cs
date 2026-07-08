@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Collections.Concurrent;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -124,4 +123,3 @@ public sealed class ParquetWriteScheduler : IDisposable
     return int.TryParse(raw, out var n) && n > 0 ? n : DEFAULT_CAPACITY;
   }
 }
-#endif
