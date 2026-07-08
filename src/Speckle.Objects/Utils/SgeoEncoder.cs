@@ -1,4 +1,6 @@
 using System.Buffers.Binary;
+using System.Text;
+using Speckle.Objects.Annotation;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk;
 using Speckle.Sdk.Common;
@@ -36,6 +38,7 @@ public static class SgeoEncoder
       Spiral s => EncodeSpiral(s),
       Box b => EncodeBox(b),
       Region rg => EncodeRegion(rg),
+      Text t => EncodeText(t),
       _ => throw new SpeckleException($"No SGEO encoding for geometry type '{geometry.GetType().Name}'."),
     };
   }
@@ -57,6 +60,7 @@ public static class SgeoEncoder
       Spiral => SgeoPrimitiveType.Spiral,
       Box => SgeoPrimitiveType.Box,
       Region => SgeoPrimitiveType.Region,
+      Text => SgeoPrimitiveType.Text,
       _ => (SgeoPrimitiveType)255,
     };
     return (byte)type != 255;
@@ -296,6 +300,29 @@ public static class SgeoEncoder
     AddDouble(body, b.zSize.start);
     AddDouble(body, b.zSize.end);
     return Assemble(SgeoPrimitiveType.Box, SgeoFlags.None, b.units, body);
+  }
+
+  // Text blob = alignmentH/alignmentV (u32 pair) + height + optional wrap width (HasMaxWidth) + plane + the value
+  // string. screenOriented rides the ScreenOriented header flag. The string is the first non-numeric SGEO body
+  // field: [byteLen][reserved][utf8 bytes][pad-to-8], the same framing AddCurveBlob uses for nested blobs.
+  private static byte[] EncodeText(Text t)
+  {
+    var flags = SgeoFlags.None;
+    if (t.screenOriented) { flags |= SgeoFlags.ScreenOriented; }
+    if (t.maxWidth != null) { flags |= SgeoFlags.HasMaxWidth; }
+
+    byte[] valueBytes = Encoding.UTF8.GetBytes(t.value);
+    var body = new List<byte>(128 + valueBytes.Length);
+    AddUInt32(body, (uint)t.alignmentH);
+    AddUInt32(body, (uint)t.alignmentV);
+    AddDouble(body, t.height);
+    if (t.maxWidth is double maxWidth) { AddDouble(body, maxWidth); }
+    AddPlane(body, t.plane);
+    AddUInt32(body, (uint)valueBytes.Length);
+    AddUInt32(body, 0);
+    body.AddRange(valueBytes);
+    Pad8(body);
+    return Assemble(SgeoPrimitiveType.Text, flags, t.units, body);
   }
 
   // ── assembly + low-level writers ───────────────────────────────────────

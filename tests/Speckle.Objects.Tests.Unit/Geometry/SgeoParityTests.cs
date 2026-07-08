@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Speckle.Objects.Annotation;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Primitive;
 using Speckle.Objects.Utils;
@@ -416,5 +417,57 @@ public class SgeoParityTests
     d.zSize.end.Should().Be(3);
     d.units.Should().Be(M);
     d.volume.Should().BeApproximately(original.volume, Tol); // derived
+  }
+
+  // ── 12 text ───────────────────────────────────────────────────────────────
+  [Fact]
+  public void Text_AllFields_LosesNothing()
+  {
+    var original = new Text
+    {
+      value = "Multi-line\nannotation — ünïcödé ✓",
+      height = 3.25,
+      units = M,
+      screenOriented = false,
+      alignmentH = AlignmentHorizontal.Right,
+      alignmentV = AlignmentVertical.Center,
+      plane = XYPlane(),
+      maxWidth = 42.5,
+    };
+
+    var d = RoundTrip<Text>(original);
+
+    d.value.Should().Be(original.value);
+    d.height.Should().Be(3.25);
+    d.screenOriented.Should().BeFalse();
+    d.alignmentH.Should().Be(AlignmentHorizontal.Right);
+    d.alignmentV.Should().Be(AlignmentVertical.Center);
+    AssertSamePlane(d.plane, original.plane);
+    d.maxWidth.Should().Be(42.5);
+    d.units.Should().Be(M);
+  }
+
+  [Fact]
+  public void Text_ScreenOrientedPixelSized_LosesNothing()
+  {
+    var original = new Text
+    {
+      value = "17px viewer label",
+      height = 17,
+      units = Units.None, // pixel-sized (viewer measurements)
+      screenOriented = true,
+      alignmentH = AlignmentHorizontal.Left,
+      alignmentV = AlignmentVertical.Top,
+      plane = XYPlane(Units.None),
+      maxWidth = null,
+    };
+
+    var d = RoundTrip<Text>(original);
+
+    d.value.Should().Be(original.value);
+    d.height.Should().Be(17);
+    d.screenOriented.Should().BeTrue();
+    d.maxWidth.Should().BeNull();
+    d.units.Should().Be(Units.None);
   }
 }

@@ -1,4 +1,6 @@
 using System.Buffers.Binary;
+using System.Text;
+using Speckle.Objects.Annotation;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk;
@@ -400,6 +402,33 @@ public static class SgeoDecoder
           hasHatchPattern = hasHatchPattern,
           units = units,
           displayValue = new(),
+        };
+      }
+
+      case SgeoPrimitiveType.Text:
+      {
+        var alignmentH = (AlignmentHorizontal)r.U();
+        var alignmentV = (AlignmentVertical)r.U();
+        double height = r.D();
+        double? maxWidth = null;
+        if ((header.Flags & SgeoFlags.HasMaxWidth) != 0)
+        {
+          maxWidth = r.D();
+        }
+        var plane = ReadPlane(ref r, units);
+        int byteLen = r.Count(1); // utf8 bytes
+        _ = r.U(); // reserved
+        string value = Encoding.UTF8.GetString(r.Slice(byteLen).ToArray());
+        return new Text
+        {
+          value = value,
+          height = height,
+          maxWidth = maxWidth,
+          alignmentH = alignmentH,
+          alignmentV = alignmentV,
+          plane = plane,
+          screenOriented = (header.Flags & SgeoFlags.ScreenOriented) != 0,
+          units = units,
         };
       }
 

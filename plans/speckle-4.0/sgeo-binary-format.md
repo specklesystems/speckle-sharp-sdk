@@ -8,7 +8,8 @@
 > Every primitive type in `Speckle.Objects/Geometry` was reviewed. The renderable
 > ones get an SGEO body below. The fidelity types (`Brep`, `BrepX`, `ExtrusionX`,
 > `SubDX`, `SolidX`) are **not** SGEO primitives — see *Fidelity types* at the end.
-> `Surface` (NURBS) and `Region` are **out of scope** for SGEO v1.
+> `Surface` (NURBS) is **out of scope** for SGEO v1. (`Region` and
+> `Objects.Annotation.Text` were added post-v1-spec as codes 11 and 12.)
 
 ## Conventions (apply to every primitive)
 
@@ -57,6 +58,8 @@
 | 8 | ellipse | `Ellipse` |
 | 9 | spiral | `Spiral` |
 | 10 | box | `Box` |
+| 11 | region | `Region` |
+| 12 | text | `Objects.Annotation.Text` |
 
 `Vector`, `Plane`, `Interval`, `ControlPoint` are building blocks embedded in the
 bodies above, never top-level blobs.
@@ -74,6 +77,8 @@ bodies above, never top-level blobs.
 | 6 | has colors | mesh, points |
 | 7 | has sizes | points |
 | 8 | has trimDomain | ellipse |
+| 9 | screen oriented (camera-aligned, plane axes ignored) | text |
+| 10 | has maxWidth (wrap width) | text |
 | others | reserved = 0 | |
 
 ## Primitive bodies (one by one)
@@ -263,6 +268,42 @@ def_off+0x00  u32  spiral_type            (enum ordinal)
 0x70  f64  xSize.start  0x78 f64 xSize.end
 0x80  f64  ySize.start  0x88 f64 ySize.end
 0x90  f64  zSize.start  0x98 f64 zSize.end
+```
+
+### 11 — region (`Region`)
+
+Boundary + inner loops as nested SGEO curve blobs (same `[blobLen][reserved][blob][pad8]`
+framing as polycurve segments). Display meshes ride the DISPLAY rel; hatch
+pattern/rotation/scale ride EAV properties — this blob is the authoritative
+boundary geometry only.
+
+```
+0x10  u32  hasHatchPattern       (0|1)
+0x14  u32  inner_loop_count
+0x18  …    boundary              [u32 blobLen][u32 reserved][nested SGEO blob][pad to 8B]
+   +  …    inner loops           inner_loop_count × the same framing
+```
+
+### 12 — text (`Objects.Annotation.Text`)
+
+Parametric annotation, not tessellated glyphs — consumers lay the string out
+themselves. `screenOriented` rides flag bit 9; `maxWidth` presence rides bit 10.
+`height` is linear units, or pixels when `units_code = 0` (none). The value
+string is the first non-numeric SGEO body field: `[u32 byteLen][u32 reserved]`
+then raw UTF-8 bytes, zero-padded to 8 B (byteLen counts bytes, not chars).
+
+```
+0x10  u32  alignmentH            (0 left, 1 center, 2 right)
+0x14  u32  alignmentV            (0 top, 1 center, 2 bottom)
+0x18  f64  height
+   +  f64  maxWidth              if flag bit10
+   +  f64[3]  plane.origin
+   +  f64[3]  plane.normal
+   +  f64[3]  plane.xdir
+   +  f64[3]  plane.ydir
+   +  u32  value_byte_len        (utf8 bytes)
+   +  u32  reserved = 0
+   +  u8[value_byte_len]  value  utf8, then pad to 8B
 ```
 
 ## Fidelity types — route to `blobs.parquet`, not SGEO
