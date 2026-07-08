@@ -13,11 +13,6 @@
       System.<guid>IAsyncDisposable and any host plugin loading this assembly fails (BadImageFormatException).
     -->
     <CustomAfterMicrosoftCSharpTargets>$(MSBuildThisFileDirectory)ILRepackIncremental.targets</CustomAfterMicrosoftCSharpTargets>
-    <!-- Bundle format spec — generated C# constants/schemas (Rel/NodeKind enums, catalog rows,
-     table column descriptors). Single source of truth in speckle-bundle-spec, cloned as a
-     sibling repo one level up (same convention as the native producers). Compiled into the
-     assembly, so the published package carries the IL — only the SDK's own build needs the
-     sibling. net8.0+ only, alongside the artifact writer that consumes it. -->
   </PropertyGroup>
   <PropertyGroup Label="Nugetspec Package Properties">
     <PackageId>Speckle.Sdk.Parquet</PackageId>
@@ -36,6 +31,12 @@
     </PackageReference>
     <PackageReference Include="Parquet.Net" PrivateAssets="all" />
   </ItemGroup>
+  <!-- 
+    Bundle format spec — generated C# constants/schemas (Rel/NodeKind enums, catalog rows, table column descriptors).
+    Single source of truth in speckle-bundle-spec, cloned as a sibling repo one level up (same convention as the native
+    producers). Compiled into the assembly, so the published package carries the IL — only the SDK's own build needs the
+    sibling.
+  -->
   <ItemGroup>
     <Compile
       Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSpec.cs"
