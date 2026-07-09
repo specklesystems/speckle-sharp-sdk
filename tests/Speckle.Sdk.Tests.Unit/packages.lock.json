@@ -45,11 +45,11 @@
       },
       "Parquet.Net": {
         "type": "Direct",
-        "requested": "[5.4.0, )",
-        "resolved": "5.4.0",
-        "contentHash": "Kje1gf+Z64NtXPUdPFhIciDouEfmbyF70S4RDhssP7g6jSVEc9u7bAq3Batr4uE8Na0pVyz5si8ROsXRLtLXCg==",
+        "requested": "[5.3.0, )",
+        "resolved": "5.3.0",
+        "contentHash": "IR+Ek9qOxR9aqUvlCx/5vEYxcr0Rbsx3LERV204rMmb6cJnHJlUmFYHVZRBm4xgaa1S/uGbDQ6t72+5S/beKxg==",
         "dependencies": {
-          "IronCompress": "1.7.0",
+          "IronCompress": "1.6.3",
           "Microsoft.IO.RecyclableMemoryStream": "3.0.1"
         }
       },
@@ -148,11 +148,11 @@
       },
       "IronCompress": {
         "type": "Transitive",
-        "resolved": "1.7.0",
-        "contentHash": "soOOMriKl0J/p3V2fKuJ7R6n+SBtvpB+mRxmWU3tNeowmtBs32CyEyxHaBPralorsInVRWPFZDDJ46Eg6A9nqQ==",
+        "resolved": "1.6.3",
+        "contentHash": "ygrMPrh20nVW8irdGZpMj9rXnz8WPDNN4fpq9JF1pGNL53Jg484OQOwaD4HaF6mxxIjhzKigRUFopjY/GdDfgg==",
         "dependencies": {
-          "Snappier": "1.2.0",
-          "ZstdSharp.Port": "0.8.6"
+          "Snappier": "1.1.6",
+          "ZstdSharp.Port": "0.8.1"
         }
       },
       "Microsoft.Build.Tasks.Git": {
@@ -244,8 +244,8 @@
       },
       "Snappier": {
         "type": "Transitive",
-        "resolved": "1.2.0",
-        "contentHash": "Lv83i7hQZbl+r0qkO6VrBZ0OHL/R/onAVcCcxgYpT8inhqJ2/f1qkIWT3gWwdcCz4cPHOQrS0uX40cFUQyOS5Q=="
+        "resolved": "1.1.6",
+        "contentHash": "aLJu7Q0mVk0e9QwjJLEh70tXQ0Url8fHITrHXwqF+eq7N20jGMOhkmTXUUjpPim+rCm0I4fARcVBRzJPSipN+w=="
       },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
@@ -317,8 +317,8 @@
       },
       "ZstdSharp.Port": {
         "type": "Transitive",
-        "resolved": "0.8.6",
-        "contentHash": "iP4jVLQoQmUjMU88g1WObiNr6YKZGvh4aOXn3yOJsHqZsflwRsxZPcIBvNXgjXO3vQKSLctXGLTpcBPLnWPS8A=="
+        "resolved": "0.8.1",
+        "contentHash": "19tNz33kn2EkyViFXuxfVn338UJaRmkwBphVqP2dVJIYQUQgFrgG5h061mxkRRg1Ax6r+6WOj1FxaFZ5qaWqqg=="
       },
       "speckle.sdk": {
         "type": "Project",
@@ -480,13 +480,12 @@
       },
       "Parquet.Net": {
         "type": "Direct",
-        "requested": "[5.4.0, )",
-        "resolved": "5.4.0",
-        "contentHash": "Kje1gf+Z64NtXPUdPFhIciDouEfmbyF70S4RDhssP7g6jSVEc9u7bAq3Batr4uE8Na0pVyz5si8ROsXRLtLXCg==",
+        "requested": "[5.3.0, )",
+        "resolved": "5.3.0",
+        "contentHash": "IR+Ek9qOxR9aqUvlCx/5vEYxcr0Rbsx3LERV204rMmb6cJnHJlUmFYHVZRBm4xgaa1S/uGbDQ6t72+5S/beKxg==",
         "dependencies": {
-          "IronCompress": "1.7.0",
-          "Microsoft.IO.RecyclableMemoryStream": "3.0.1",
-          "System.Linq.AsyncEnumerable": "10.0.0"
+          "IronCompress": "1.6.3",
+          "Microsoft.IO.RecyclableMemoryStream": "3.0.1"
         }
       },
       "PolySharp": {
@@ -584,11 +583,11 @@
       },
       "IronCompress": {
         "type": "Transitive",
-        "resolved": "1.7.0",
-        "contentHash": "soOOMriKl0J/p3V2fKuJ7R6n+SBtvpB+mRxmWU3tNeowmtBs32CyEyxHaBPralorsInVRWPFZDDJ46Eg6A9nqQ==",
+        "resolved": "1.6.3",
+        "contentHash": "ygrMPrh20nVW8irdGZpMj9rXnz8WPDNN4fpq9JF1pGNL53Jg484OQOwaD4HaF6mxxIjhzKigRUFopjY/GdDfgg==",
         "dependencies": {
-          "Snappier": "1.2.0",
-          "ZstdSharp.Port": "0.8.6"
+          "Snappier": "1.1.6",
+          "ZstdSharp.Port": "0.8.1"
         }
       },
       "Microsoft.Build.Tasks.Git": {
@@ -680,8 +679,8 @@
       },
       "Snappier": {
         "type": "Transitive",
-        "resolved": "1.2.0",
-        "contentHash": "Lv83i7hQZbl+r0qkO6VrBZ0OHL/R/onAVcCcxgYpT8inhqJ2/f1qkIWT3gWwdcCz4cPHOQrS0uX40cFUQyOS5Q=="
+        "resolved": "1.1.6",
+        "contentHash": "aLJu7Q0mVk0e9QwjJLEh70tXQ0Url8fHITrHXwqF+eq7N20jGMOhkmTXUUjpPim+rCm0I4fARcVBRzJPSipN+w=="
       },
       "SQLitePCLRaw.bundle_e_sqlite3": {
         "type": "Transitive",
@@ -714,11 +713,6 @@
         "type": "Transitive",
         "resolved": "6.0.0",
         "contentHash": "lcyUiXTsETK2ALsZrX+nWuHSIQeazhqPphLfaRxzdGaG93+0kELqpgEHtwWOlQe7+jSFnKwaCAgL4kjeZCQJnw=="
-      },
-      "System.Linq.AsyncEnumerable": {
-        "type": "Transitive",
-        "resolved": "10.0.0",
-        "contentHash": "t1jnw7So3eeZVemma+82w+Y394oPX1bebkr3gY3IzyotP3kKC/JWwGRz2WssoUFODWWvkACT2hXliumgCHu9LQ=="
       },
       "System.Reactive": {
         "type": "Transitive",
@@ -758,8 +752,8 @@
       },
       "ZstdSharp.Port": {
         "type": "Transitive",
-        "resolved": "0.8.6",
-        "contentHash": "iP4jVLQoQmUjMU88g1WObiNr6YKZGvh4aOXn3yOJsHqZsflwRsxZPcIBvNXgjXO3vQKSLctXGLTpcBPLnWPS8A=="
+        "resolved": "0.8.1",
+        "contentHash": "19tNz33kn2EkyViFXuxfVn338UJaRmkwBphVqP2dVJIYQUQgFrgG5h061mxkRRg1Ax6r+6WOj1FxaFZ5qaWqqg=="
       },
       "speckle.sdk": {
         "type": "Project",
