@@ -1,6 +1,7 @@
 #if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Objects.Utils;
@@ -44,11 +45,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   private readonly IdInterner _geometryInterner = new();
   private readonly IdInterner _nodeInterner = new();
 
-  public ObjectsArtifactPipeline(
-    string outputDir,
-    string baseName,
-    ISet<string>? excludedTopLevelProperties = null
-  )
+  public ObjectsArtifactPipeline(string outputDir, string baseName, ISet<string>? excludedTopLevelProperties = null)
   {
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName, _scheduler);
     _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler);
@@ -125,10 +122,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     instanceProps = properties;
     typeSubtree = s_emptyDict;
 
-    if (
-      !properties.TryGetValue("Parameters", out var pv)
-      || pv is not IReadOnlyDictionary<string, object?> paramsDict
-    )
+    if (!properties.TryGetValue("Parameters", out var pv) || pv is not IReadOnlyDictionary<string, object?> paramsDict)
     {
       return false;
     }
@@ -245,7 +239,20 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("mat:" + materialKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Material, null, null, null, null, null, argb, opacity, metalness, roughness, null);
+      _envelopeWriter.AddNode(
+        k,
+        NodeKind.Material,
+        null,
+        null,
+        null,
+        null,
+        null,
+        argb,
+        opacity,
+        metalness,
+        roughness,
+        null
+      );
     }
     return k;
   }
@@ -276,14 +283,33 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// parent collection node (null = top-level, directly under the excluded root) — the parent chain IS the
   /// source hierarchy. <paramref name="subtype"/> is a tag (e.g. "Layer" / "Collection" / source
   /// collectionType) carried in the <c>subtype</c> column for the loader to label it.</summary>
-  public int AddCollection(string collectionKey, string? name, int? parentCollectionK, string? subtype, int? argb = null)
+  public int AddCollection(
+    string collectionKey,
+    string? name,
+    int? parentCollectionK,
+    string? subtype,
+    int? argb = null
+  )
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
       // v5: a collection is a CONTAINER whose `subtype` carries its tag; the IN_COLLECTION rel marks the axis. The
       // optional argb carries the collection's display colour (e.g. a Rhino/AutoCAD layer colour) in the shared
       // node `argb` column — receivers colour the layer from it; null = no colour authored.
-      _envelopeWriter.AddNode(k, NodeKind.Container, name, parentCollectionK, null, null, subtype, argb, null, null, null, null);
+      _envelopeWriter.AddNode(
+        k,
+        NodeKind.Container,
+        name,
+        parentCollectionK,
+        null,
+        null,
+        subtype,
+        argb,
+        null,
+        null,
+        null,
+        null
+      );
     }
     return k;
   }
@@ -297,7 +323,20 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("cont:" + containerKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Container, name, parentContainerK, null, null, subtype, null, null, null, null, null);
+      _envelopeWriter.AddNode(
+        k,
+        NodeKind.Container,
+        name,
+        parentContainerK,
+        null,
+        null,
+        subtype,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
     }
     return k;
   }
@@ -401,7 +440,17 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   )
   {
     int? objectIndex = objectApplicationId is null ? null : _eavWriter.GetOrAddObject(objectApplicationId);
-    _structuralResultsWriter.AddRow(objectIndex, location, resultType, loadCase, component, station, step, value, valueText);
+    _structuralResultsWriter.AddRow(
+      objectIndex,
+      location,
+      resultType,
+      loadCase,
+      component,
+      station,
+      step,
+      value,
+      valueText
+    );
   }
 
   // ── scene views ──────────────────────────────────────────────────────────────────────

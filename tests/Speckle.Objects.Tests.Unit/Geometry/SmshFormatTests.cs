@@ -29,7 +29,9 @@ public class SmshFormatTests
   public void Flags_AreDistinctSingleBits()
   {
     // Bit positions are part of the wire format — locked.
-    ((int)SmshFlags.Quantized).Should().Be(1);   // reserved for future
+    ((int)SmshFlags.Quantized)
+      .Should()
+      .Be(1); // reserved for future
     ((int)SmshFlags.HasNormals).Should().Be(2);
     ((int)SmshFlags.HasUvs).Should().Be(4);
     ((int)SmshFlags.HasColors).Should().Be(8);

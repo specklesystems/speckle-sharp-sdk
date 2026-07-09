@@ -83,7 +83,8 @@ public class GeometriesParquetWriterTests : IDisposable
     scheduler.CompleteAndWait();
 
     shards.Should().HaveCount(3);
-    shards.Select(Path.GetFileName)
+    shards
+      .Select(Path.GetFileName)
       .Should()
       .ContainInOrder("v1.geometries.parquet", "v1.geometries.1.parquet", "v1.geometries.2.parquet");
     shards.Should().OnlyContain(p => File.Exists(p));

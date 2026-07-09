@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using Parquet.Schema;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -111,4 +110,3 @@ public sealed class StructuralResultsWriter : IDisposable
 
   private static DataField S(string name) => new DataField<string>(name);
 }
-#endif

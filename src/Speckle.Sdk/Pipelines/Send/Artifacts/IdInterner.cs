@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
 /// <summary>
@@ -42,4 +41,3 @@ public sealed class IdInterner
     return id;
   }
 }
-#endif

@@ -16,6 +16,7 @@
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="xunit.assert" />
     <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Parquet.Net" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Speckle.Sdk\Speckle.Sdk.csproj" />

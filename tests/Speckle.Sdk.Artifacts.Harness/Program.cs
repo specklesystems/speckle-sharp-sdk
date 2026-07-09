@@ -76,13 +76,8 @@ async Task<int> Run(string[] argv)
       // Caller pinned a version; we still need its rootId. Resolve it via GraphQL by
       // listing the version (cheapest reliable path without an extra single-version query).
       Console.WriteLine($"Resolving rootId for version {opts.SrcVersionId} …");
-      var (vId, rId) = await ResolveVersionRootId(
-        serverUrl,
-        projectId,
-        modelId,
-        opts.SrcVersionId,
-        token
-      ).ConfigureAwait(false);
+      var (vId, rId) = await ResolveVersionRootId(serverUrl, projectId, modelId, opts.SrcVersionId, token)
+        .ConfigureAwait(false);
       rootId = rId;
       Console.WriteLine($"Version {vId} → rootId {rootId}");
     }
@@ -98,14 +93,7 @@ async Task<int> Run(string[] argv)
 
     Console.WriteLine("Deserializing from server …");
     root = await RemoteSource
-      .DeserializeFromServerAsync(
-        serviceProvider,
-        serverUrl,
-        projectId,
-        rootId,
-        token,
-        CancellationToken.None
-      )
+      .DeserializeFromServerAsync(serviceProvider, serverUrl, projectId, rootId, token, CancellationToken.None)
       .ConfigureAwait(false);
     baseName = modelId;
   }
@@ -113,7 +101,8 @@ async Task<int> Run(string[] argv)
   Console.WriteLine($"Deserialized root [{root.speckle_type}] id={root.id}");
 
   // ── produce the bundle on disk ───────────────────────────────────────────────────────
-  var outDir = opts.OutDir ?? Path.Combine(Path.GetTempPath(), $"speckle-artefact-{baseName}-{DateTime.UtcNow:yyyyMMddHHmmss}");
+  var outDir =
+    opts.OutDir ?? Path.Combine(Path.GetTempPath(), $"speckle-artefact-{baseName}-{DateTime.UtcNow:yyyyMMddHHmmss}");
   Console.WriteLine($"Output: {outDir}  (base '{baseName}')");
 
   var stats = GraphArtifactProducer.Produce(root, outDir, baseName);
@@ -133,7 +122,7 @@ async Task<int> Run(string[] argv)
   Console.WriteLine("──────── BUNDLE FILES ────────");
   foreach (var f in Directory.GetFiles(outDir).OrderBy(x => x))
   {
-    Console.WriteLine($"  {Path.GetFileName(f),-40} {new FileInfo(f).Length,12:N0} bytes");
+    Console.WriteLine($"  {Path.GetFileName(f), -40} {new FileInfo(f).Length, 12:N0} bytes");
   }
 
   // ── optionally upload via the v2 envelope-bundle flow ────────────────────────────────
@@ -194,10 +183,7 @@ async Task<(string versionId, string rootId)> ResolveVersionRootId(
 {
   // Reuse the latest-version resolver if no pin; otherwise query the single version.
   using var http = new System.Net.Http.HttpClient();
-  http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
-    "Bearer",
-    token
-  );
+  http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
   const string query =
     @"query Version($projectId: String!, $modelId: String!, $versionId: String!) {
   project(id: $projectId) {
@@ -207,16 +193,19 @@ async Task<(string versionId, string rootId)> ResolveVersionRootId(
   }
 }";
   var payload = System.Text.Json.JsonSerializer.Serialize(
-    new { query, variables = new { projectId, modelId, versionId } }
+    new
+    {
+      query,
+      variables = new
+      {
+        projectId,
+        modelId,
+        versionId,
+      },
+    }
   );
-  using var content = new System.Net.Http.StringContent(
-    payload,
-    System.Text.Encoding.UTF8,
-    "application/json"
-  );
-  using var resp = await http
-    .PostAsync(serverUrl.TrimEnd('/') + "/graphql", content)
-    .ConfigureAwait(false);
+  using var content = new System.Net.Http.StringContent(payload, System.Text.Encoding.UTF8, "application/json");
+  using var resp = await http.PostAsync(serverUrl.TrimEnd('/') + "/graphql", content).ConfigureAwait(false);
   var body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
   if (!resp.IsSuccessStatusCode)
   {
@@ -227,11 +216,7 @@ async Task<(string versionId, string rootId)> ResolveVersionRootId(
   {
     throw new InvalidOperationException($"version query GraphQL errors: {errors}");
   }
-  var v = doc
-    .RootElement.GetProperty("data")
-    .GetProperty("project")
-    .GetProperty("model")
-    .GetProperty("version");
+  var v = doc.RootElement.GetProperty("data").GetProperty("project").GetProperty("model").GetProperty("version");
   return (v.GetProperty("id").GetString()!, v.GetProperty("referencedObject").GetString()!);
 }
 
@@ -297,11 +282,11 @@ static string? RequireEnv(string name)
 static IEnumerable<string> ReadLines(string path)
 {
   Stream raw = File.OpenRead(path);
-  Stream stream = path.EndsWith(".gz", StringComparison.OrdinalIgnoreCase)
-    ? new GZipStream(raw, CompressionMode.Decompress)
+  Stream stream =
+    path.EndsWith(".gz", StringComparison.OrdinalIgnoreCase) ? new GZipStream(raw, CompressionMode.Decompress)
     : path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
       ? new ZipArchive(raw, ZipArchiveMode.Read).Entries[0].Open()
-      : raw;
+    : raw;
   using var reader = new StreamReader(stream);
   string? line;
   while ((line = reader.ReadLine()) is not null)
@@ -322,17 +307,13 @@ static string? DetectRoot(Dictionary<string, string> jsonById)
   }
   var unreferenced = jsonById.Keys.Where(id => !referenced.Contains(id)).ToList();
   var pool = unreferenced.Count > 0 ? unreferenced : jsonById.Keys.ToList();
-  return pool
-    .OrderByDescending(id => LooksLikeCollection(jsonById[id]) ? 1 : 0)
+  return pool.OrderByDescending(id => LooksLikeCollection(jsonById[id]) ? 1 : 0)
     .ThenByDescending(id => jsonById[id].Length)
     .FirstOrDefault();
 }
 
 static IEnumerable<string> CollectionCandidates(Dictionary<string, string> jsonById) =>
-  jsonById
-    .Where(kv => LooksLikeCollection(kv.Value))
-    .OrderByDescending(kv => kv.Value.Length)
-    .Select(kv => kv.Key);
+  jsonById.Where(kv => LooksLikeCollection(kv.Value)).OrderByDescending(kv => kv.Value.Length).Select(kv => kv.Key);
 
 static bool LooksLikeCollection(string json) =>
   json.Contains("Collection", StringComparison.Ordinal)

@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Net.Http.Headers;
 using System.Text;
 using Speckle.InterfaceGenerator;
@@ -20,7 +19,8 @@ public sealed class ArtifactPipelineFactory(ISpeckleHttp httpClientFactory, ISdk
     Account account,
     string outputDir,
     CancellationToken cancellationToken
-  ) => new(projectId, ingestionId, versionId, account, outputDir, httpClientFactory, activityFactory, cancellationToken);
+  ) =>
+    new(projectId, ingestionId, versionId, account, outputDir, httpClientFactory, activityFactory, cancellationToken);
 }
 
 /// <summary>
@@ -232,7 +232,9 @@ public sealed class ArtifactPipeline : IDisposable
       return;
     }
     var body = await ReadBodyAsync(response).ConfigureAwait(false);
-    throw new HttpRequestException($"{operation} failed with {(int)response.StatusCode} ({response.StatusCode}): {body}");
+    throw new HttpRequestException(
+      $"{operation} failed with {(int)response.StatusCode} ({response.StatusCode}): {body}"
+    );
   }
 
   public void Dispose()
@@ -278,4 +280,3 @@ internal record ArtifactsCompleteResponse
   [JsonProperty("versionId")]
   public string? VersionId { get; init; }
 }
-#endif

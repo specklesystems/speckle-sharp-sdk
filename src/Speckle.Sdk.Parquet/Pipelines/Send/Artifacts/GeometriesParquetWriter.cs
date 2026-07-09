@@ -1,4 +1,3 @@
-#if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
 using System.Security.Cryptography;
 using Parquet;
@@ -10,7 +9,7 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 /// <summary>
 /// Writes the Speckle 4.0 <c>geometries.parquet</c> artifact client-side: one row per
 /// mesh — <c>(geometryIndex, content, id, type)</c>. <c>geometryIndex</c> is the dense
-/// geometry-namespace <c>K</c> (minted by the caller's geometry <see cref="IdInterner"/>),
+/// geometry-namespace <c>K</c> (minted by the caller's geometry <c>IdInterner</c>),
 /// which the envelope's <c>DISPLAY</c>/<c>DEFINES</c>/<c>HAS_MATERIAL</c> edges reference —
 /// pure int, no <c>applicationId</c> strings. <c>id</c> is the SHA256 of the blob, kept as
 /// a column for READ-TIME shape dedup (the server builder / viewer collapses identical
@@ -65,7 +64,7 @@ public sealed class GeometriesParquetWriter : IDisposable
   // them in Dispose() would race the scheduler's pending footer write and could corrupt the parquet file.
   // The analyzer can't see the deferred disposal, so its CA2213 here is a false positive. (An in-code
   // suppression can't satisfy both the net8 and net10 analyzers at once — see the editorconfig note.)
-  private Stream _stream = null!; // set by OpenShard(0) in the ctor
+  private Stream _stream = null!; // created + owned on the scheduler thread by OpenShard
   private ParquetWriter _writer = null!;
   private readonly DataField _indexField;
   private readonly DataField _contentField;
@@ -114,7 +113,9 @@ public sealed class GeometriesParquetWriter : IDisposable
       new DataField<string>("id"),
       new DataField<string>("type")
     );
-    var fields = _schema.DataFields;
+
+    DataField[] fields = _schema.GetDataFields();
+
     _indexField = fields[0];
     _contentField = fields[1];
     _idField = fields[2];
@@ -134,30 +135,33 @@ public sealed class GeometriesParquetWriter : IDisposable
       shardIndex == 0 ? $"{_baseName}.geometries.parquet" : $"{_baseName}.geometries.{shardIndex}.parquet"
     );
 
-  // Open a fresh shard file + ParquetWriter (Zstd). Mirrors the original ctor body; called
-  // once for shard 0 and again on each roll. Synchronous create is safe — it writes the
-  // parquet header to a brand-new stream, never touched by the background writer thread.
+  // Create the shard's stream + ParquetWriter (Zstd) on the SCHEDULER, never inline: CreateAsync
+  // awaits disk IO, and blocking it with .GetResult() on a thread carrying a single-threaded context
+  // (the Revit UI thread's DispatcherSynchronizationContext, or the ODA pinned scheduler) deadlocks —
+  // the continuation is posted back to the very thread parked in GetResult(). FIFO ordering puts this
+  // create ahead of the shard's flush/finalize jobs, so _stream/_writer live only on the scheduler thread.
   private void OpenShard(int shardIndex)
   {
     var path = ShardPath(shardIndex);
-    _stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-    _writer = ParquetWriter.CreateAsync(_schema, _stream).GetAwaiter().GetResult();
-    _writer.CompressionMethod = CompressionMethod.Zstd;
     _shardBytes = 0;
     _geometryPaths.Add(path);
-  }
-
-  // Enqueue the footer-write + close of the current shard's writer/stream on the background
-  // thread (FIFO after this shard's row groups), then leave _writer/_stream dangling for the
-  // caller to replace (roll) or for Complete() to stop using.
-  private void FinalizeCurrentShard()
-  {
-    var writer = _writer;
-    var stream = _stream;
     _scheduler.Enqueue(() =>
     {
-      writer.Dispose(); // writes the footer/metadata
-      stream.Dispose();
+      _stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+      _writer = ParquetWriter.CreateAsync(_schema, _stream).GetAwaiter().GetResult();
+      _writer.CompressionMethod = CompressionMethod.Zstd;
+    });
+  }
+
+  // Enqueue this shard's footer-write + close (FIFO after its row groups). _writer/_stream are read
+  // inside the job, not snapshotted here: FIFO puts this after the shard's writes and before the next
+  // OpenShard reassigns the fields, so it disposes exactly this shard's writer/stream.
+  private void FinalizeCurrentShard()
+  {
+    _scheduler.Enqueue(() =>
+    {
+      _writer.Dispose(); // writes the footer/metadata
+      _stream.Dispose();
     });
   }
 
@@ -271,9 +275,8 @@ public sealed class GeometriesParquetWriter : IDisposable
 
   public void Dispose() => Complete();
 
-  // Snapshots the buffered rows into plain arrays and hands the encode/compress/IO to the background
-  // writer (off the ODA pinned thread — see ParquetWriteScheduler). The buffer is freed immediately so
-  // the producer keeps accumulating the next row group while this one is written.
+  // Snapshot the buffered rows into plain arrays so the producer keeps accumulating the next row group,
+  // then hand the encode/compress/IO to the scheduler (which alone touches _writer — see ParquetWriteScheduler).
   private void FlushRowGroup()
   {
     if (_indices.Count == 0)
@@ -291,14 +294,14 @@ public sealed class GeometriesParquetWriter : IDisposable
     _types.Clear();
     _bufferedBytes = 0;
 
-    var writer = _writer;
     var indexField = _indexField;
     var contentField = _contentField;
     var idField = _idField;
     var typeField = _typeField;
     _scheduler.Enqueue(() =>
     {
-      using var rowGroup = writer.CreateRowGroup();
+      // _writer is read here on the scheduler thread (set by OpenShard's job, which FIFO-precedes this).
+      using var rowGroup = _writer.CreateRowGroup();
       rowGroup.WriteColumnAsync(new DataColumn(indexField, indices)).GetAwaiter().GetResult();
       rowGroup.WriteColumnAsync(new DataColumn(contentField, contents)).GetAwaiter().GetResult();
       rowGroup.WriteColumnAsync(new DataColumn(idField, ids)).GetAwaiter().GetResult();
@@ -338,4 +341,3 @@ public sealed class GeometriesParquetWriter : IDisposable
     }
   }
 }
-#endif

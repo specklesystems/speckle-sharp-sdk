@@ -81,59 +81,88 @@ public static class MeshBinaryEncoder
     }
 
     SmshFlags flags = SmshFlags.None;
-    if (hasNormals) { flags |= SmshFlags.HasNormals; }
-    if (hasUvs) { flags |= SmshFlags.HasUvs; }
-    if (hasColors) { flags |= SmshFlags.HasColors; }
+    if (hasNormals)
+    {
+      flags |= SmshFlags.HasNormals;
+    }
+    if (hasUvs)
+    {
+      flags |= SmshFlags.HasUvs;
+    }
+    if (hasColors)
+    {
+      flags |= SmshFlags.HasColors;
+    }
 
-    int total = SmshFormat.HeaderSize
-      + vertCount * 3 * 8       // vertices: 3 × float64
-      + faceIntCount * 4;       // faces: int32
-    if (hasNormals) { total += vertCount * 3 * 8; }
-    if (hasUvs) { total += vertCount * 2 * 8; }
-    if (hasColors) { total += vertCount * 4; }
+    int total =
+      SmshFormat.HeaderSize
+      + vertCount * 3 * 8 // vertices: 3 × float64
+      + faceIntCount * 4; // faces: int32
+    if (hasNormals)
+    {
+      total += vertCount * 3 * 8;
+    }
+    if (hasUvs)
+    {
+      total += vertCount * 2 * 8;
+    }
+    if (hasColors)
+    {
+      total += vertCount * 4;
+    }
 
     var buf = new byte[total];
     var span = buf.AsSpan();
     int offset = 0;
 
     // Header
-    BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(offset, 4), SmshFormat.Magic); offset += 4;
-    BinaryPrimitives.WriteUInt16LittleEndian(span.Slice(offset, 2), SmshFormat.Version1); offset += 2;
-    BinaryPrimitives.WriteUInt16LittleEndian(span.Slice(offset, 2), (ushort)flags); offset += 2;
-    BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(offset, 4), (uint)vertCount); offset += 4;
-    BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(offset, 4), (uint)faceIntCount); offset += 4;
+    BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(offset, 4), SmshFormat.Magic);
+    offset += 4;
+    BinaryPrimitives.WriteUInt16LittleEndian(span.Slice(offset, 2), SmshFormat.Version1);
+    offset += 2;
+    BinaryPrimitives.WriteUInt16LittleEndian(span.Slice(offset, 2), (ushort)flags);
+    offset += 2;
+    BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(offset, 4), (uint)vertCount);
+    offset += 4;
+    BinaryPrimitives.WriteUInt32LittleEndian(span.Slice(offset, 4), (uint)faceIntCount);
+    offset += 4;
 
     // Vertices
     for (int i = 0; i < vertices.Length; i++)
     {
-      WriteDoubleLE(span.Slice(offset, 8), vertices[i]); offset += 8;
+      WriteDoubleLE(span.Slice(offset, 8), vertices[i]);
+      offset += 8;
     }
 
     // Faces (int32 little-endian)
     for (int i = 0; i < faceIntCount; i++)
     {
-      BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset, 4), faces[i]); offset += 4;
+      BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset, 4), faces[i]);
+      offset += 4;
     }
 
     if (hasNormals)
     {
       for (int i = 0; i < normals.Length; i++)
       {
-        WriteDoubleLE(span.Slice(offset, 8), normals[i]); offset += 8;
+        WriteDoubleLE(span.Slice(offset, 8), normals[i]);
+        offset += 8;
       }
     }
     if (hasUvs)
     {
       for (int i = 0; i < uvs.Length; i++)
       {
-        WriteDoubleLE(span.Slice(offset, 8), uvs[i]); offset += 8;
+        WriteDoubleLE(span.Slice(offset, 8), uvs[i]);
+        offset += 8;
       }
     }
     if (hasColors)
     {
       for (int i = 0; i < colors.Length; i++)
       {
-        BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset, 4), colors[i]); offset += 4;
+        BinaryPrimitives.WriteInt32LittleEndian(span.Slice(offset, 4), colors[i]);
+        offset += 4;
       }
     }
 

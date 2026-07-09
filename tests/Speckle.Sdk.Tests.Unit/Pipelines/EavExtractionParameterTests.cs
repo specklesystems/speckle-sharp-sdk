@@ -41,11 +41,7 @@ public sealed class EavExtractionParameterTests
         {
           ["Other"] = new Dictionary<string, object?>
           {
-            ["Type Mark"] = new Dictionary<string, object?>
-            {
-              ["value"] = "W1",
-              ["name"] = "Type Mark",
-            },
+            ["Type Mark"] = new Dictionary<string, object?> { ["value"] = "W1", ["name"] = "Type Mark" },
           },
         },
       },
@@ -67,9 +63,7 @@ public sealed class EavExtractionParameterTests
 
     // type parameter too
     rows.Should()
-      .ContainSingle(r =>
-        r.Path == "properties.Parameters.Type Parameters.Other.Type Mark" && r.ValueText == "W1"
-      );
+      .ContainSingle(r => r.Path == "properties.Parameters.Type Parameters.Other.Type Mark" && r.ValueText == "W1");
   }
 }
 #endif

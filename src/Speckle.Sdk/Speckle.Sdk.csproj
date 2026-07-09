@@ -16,12 +16,6 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <!-- Parquet.Net's netstandard2.0 build forces System.Text.Json 9.x, whose System.* facades put a second
-         System.ObsoleteAttribute into the netstandard2.0 reference closure → CS0419 cref ambiguity in existing
-         XML-doc comments (the [Obsolete] CODE resolves fine; only doc-cref resolution is strict). Benign. -->
-    <NoWarn>$(NoWarn);CS0419</NoWarn>
-  </PropertyGroup>
   <ItemGroup Label="Expose internals to test projects">
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Unit" />
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Integration" />
@@ -30,21 +24,6 @@
   <ItemGroup Label="Package References">
     <PackageReference Include="Speckle.DoubleNumerics" />
     <PackageReference Include="Speckle.Newtonsoft.Json" />
-  </ItemGroup>
-  <ItemGroup Label="Parquet artifact writing (all TFMs — Parquet.Net ships netstandard2.0, so the net48 plugin can produce artifacts too)">
-    <PackageReference Include="Parquet.Net" />
-    <!-- Parquet.Net transitively pulls Snappier, which carries an advisory on every published
-         version (GHSA-pggp-6c3x-2xmx, a Snappy-DECOMPRESSION issue). We write parquet
-         UNCOMPRESSED and never decompress untrusted Snappy in the SDK, so the code path is dead
-         here. Suppress that one advisory (assessed not-applicable) rather than ship a vuln. -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-pggp-6c3x-2xmx" />
-    <!-- Bundle format spec — generated C# constants/schemas (Rel/NodeKind enums, catalog rows,
-         table column descriptors). Single source of truth in speckle-bundle-spec, cloned as a
-         sibling repo one level up (same convention as the native producers). Compiled into the
-         assembly, so the published package carries the IL — only the SDK's own build needs the
-         sibling. net8.0+ only, alongside the artifact writer that consumes it. -->
-    <Compile Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSpec.cs" Link="Generated/BundleSpec.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSchemas.cs" Link="Generated/BundleSchemas.cs" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Microsoft.Extensions.ObjectPool" VersionOverride="10.0.0" />
@@ -72,13 +51,10 @@
     <PackageReference Include="Microsoft.Data.Sqlite" VersionOverride="7.0.5" />
     <!--Pinned exactly to match v2-->
     <PackageReference Include="GraphQL.Client" VersionOverride="6.0.0" />
-    <!-- Parquet.Net's netstandard2.0 build requires System.Text.Json >= 9.0.10 (its net8/net10 builds pull no STJ at
-         all), so the 4.0 artefact writer mandates 9.0.10 here. This supersedes main's 5.0.2 "match DataExchange/Dynamo/v2"
-         pin; 9.0.10 is backward-compatible with the STJ SendPipeline serializer merged from main, and net48 consumers
-         binding-redirect STJ to the host's version at runtime. -->
-    <PackageReference Include="System.Text.Json" VersionOverride="9.0.10" NoWarn="NU1903" />
+    <PackageReference Include="System.Text.Json" NoWarn="NU1903" VersionOverride="5.0.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk.Parquet\Speckle.Sdk.Parquet.csproj" />
   </ItemGroup>
 </Project>
