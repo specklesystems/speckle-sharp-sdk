@@ -86,6 +86,11 @@ public static class GraphArtifactProducer
     // object appId → the geometry appIds of its DISPLAY meshes — lets OBJECT-grained material/colour proxy
     // refs (which name the DataObject, not its mesh — Navis/CAD) bind to the object's display geometry.
     var objectDisplayGeomKeys = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+    // geometry appId → the mesh's embedded RenderMaterial. Old-style sends (pre-proxy Revit/Rhino) attach
+    // the material inline on each display mesh (or its parent element) instead of publishing root-level
+    // renderMaterialProxies — collected during the walk, folded into the material bindings in EmitProxies
+    // (a root-proxy claim wins over this fallback).
+    var embeddedMaterialByGeom = new Dictionary<string, RenderMaterial>(StringComparer.Ordinal);
 
     // Instance-definition source members: appIds in `instanceDefinitionProxies[].objects[]`. These are the
     // definition's content (rendered via instance placements, never directly), NOT atomic scene objects —
@@ -104,11 +109,11 @@ public static class GraphArtifactProducer
     {
       if (defSourceAppIds.Contains(Aid(obj)))
       {
-        EmitDefinitionMember(pipeline, obj, stats, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
+        EmitDefinitionMember(pipeline, obj, stats, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, embeddedMaterialByGeom);
         continue;
       }
 
-      var objK = EmitObject(pipeline, obj, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
+      var objK = EmitObject(pipeline, obj, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, embeddedMaterialByGeom);
 
       // IN_COLLECTION: the object's direct membership in its enclosing scene-tree container (null parent or a
       // non-collection parent — e.g. an object directly under the root — gets no edge).
@@ -125,7 +130,7 @@ public static class GraphArtifactProducer
         {
           continue;
         }
-        var childK = EmitObject(pipeline, child, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys);
+        var childK = EmitObject(pipeline, child, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, embeddedMaterialByGeom);
         pipeline.Subelement(objK, childK, stats.SubelementEdges++);
       }
     }
@@ -135,7 +140,7 @@ public static class GraphArtifactProducer
     var layerGeomKeys = BuildLayerGeomKeys(root, objectDisplayGeomKeys, out var layerDepth);
 
     // 2) Value-nodes + their edges, from the root collection's proxy arrays.
-    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, layerGeomKeys, layerDepth);
+    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, layerGeomKeys, layerDepth, embeddedMaterialByGeom);
 
     stats.Geometries = seenGeometryAppIds.Count;
 
@@ -152,7 +157,8 @@ public static class GraphArtifactProducer
     HashSet<string> seenObjectAppIds,
     HashSet<string> seenGeometryAppIds,
     Dictionary<string, int> instanceNodeByAppId,
-    Dictionary<string, List<string>> objectDisplayGeomKeys
+    Dictionary<string, List<string>> objectDisplayGeomKeys,
+    Dictionary<string, RenderMaterial> embeddedMaterialByGeom
   )
   {
     var appId = Aid(obj);
@@ -187,6 +193,9 @@ public static class GraphArtifactProducer
     var displayValue = GetBaseList(obj, "displayValue").ToList();
     if (displayValue.Count > 0)
     {
+      // Element-level embedded material: some old-style hosts (Revit walls/openings) carry the material on
+      // the ELEMENT while their meshes carry their own — the mesh's wins, the element's fills the gaps.
+      var objMaterial = ReadEmbeddedMaterial(obj);
       int ord = 0;
       foreach (var item in displayValue)
       {
@@ -204,6 +213,10 @@ public static class GraphArtifactProducer
             pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
             stats.DisplayEdges++;
             RecordObjectGeom(objectDisplayGeomKeys, appId, "g:" + gAppId);
+            if ((ReadEmbeddedMaterial(item) ?? objMaterial) is { } rm)
+            {
+              embeddedMaterialByGeom.TryAdd(gAppId, rm);
+            }
           }
         }
       }
@@ -220,6 +233,10 @@ public static class GraphArtifactProducer
         stats.DisplayEdges++;
         stats.MeshAtomics++;
         RecordObjectGeom(objectDisplayGeomKeys, appId, "g:" + appId);
+        if (ReadEmbeddedMaterial(obj) is { } rm)
+        {
+          embeddedMaterialByGeom.TryAdd(appId, rm);
+        }
       }
     }
 
@@ -316,7 +333,8 @@ public static class GraphArtifactProducer
     Stats stats,
     HashSet<string> seenGeometryAppIds,
     Dictionary<string, int> instanceNodeByAppId,
-    Dictionary<string, List<string>> objectDisplayGeomKeys
+    Dictionary<string, List<string>> objectDisplayGeomKeys,
+    Dictionary<string, RenderMaterial> embeddedMaterialByGeom
   )
   {
     var appId = Aid(obj);
@@ -354,6 +372,10 @@ public static class GraphArtifactProducer
     {
       pipeline.AddGeometry(appId, geometry);
       stats.DefinitionGeometries++;
+      if ((ReadEmbeddedMaterial(geometry) ?? ReadEmbeddedMaterial(obj)) is { } rm)
+      {
+        embeddedMaterialByGeom.TryAdd(appId, rm);
+      }
       // Record the definition geometry under its own appId so the ByLayer walk (CollectDescendantGeom) can
       // reach it: block content sits under its SOURCE layer Collection in the tree, and ByLayer colour must
       // bind to this shared geometry-K (fixed across placements) — NOT flood from the instance's layer. The
@@ -382,7 +404,8 @@ public static class GraphArtifactProducer
     Dictionary<string, int> instanceNodeByAppId,
     Dictionary<string, List<string>> objectDisplayGeomKeys,
     Dictionary<string, List<string>> layerGeomKeys,
-    Dictionary<string, int> layerDepth
+    Dictionary<string, int> layerDepth,
+    Dictionary<string, RenderMaterial> embeddedMaterialByGeom
   )
   {
     // DIRECT resolve of a proxy ref to TAGGED appearance targets ("g:<geomAppId>" mesh | "o:<objAppId>"
@@ -513,6 +536,29 @@ public static class GraphArtifactProducer
     }
     var matBindings = BindWithPrecedence(matProxies, out var matSkipped);
     stats.SkippedMaterial += matSkipped;
+
+    // Fallback tier: embedded per-mesh materials, for old-style sends that carry no root proxies (pre-proxy
+    // Revit embeds a RenderMaterial on each display mesh). A proxy claim wins; otherwise the mesh's own
+    // material binds directly. Deduped by material identity so 400 meshes sharing "Concrete - Cast In Situ"
+    // mint one MATERIAL node. NOT placeholder-eligible: an embedded black is an explicit assignment
+    // ("Black Glass"), not the CAD no-material sentinel.
+    var embeddedMatKs = new Dictionary<string, int>(StringComparer.Ordinal);
+    foreach (var (gAppId, rm) in embeddedMaterialByGeom)
+    {
+      var gk = "g:" + gAppId;
+      if (matBindings.ContainsKey(gk))
+      {
+        continue;
+      }
+      var key = rm.applicationId ?? "mat:" + (rm.id ?? rm.diffuse.ToString(CultureInfo.InvariantCulture));
+      if (!embeddedMatKs.TryGetValue(key, out var matK))
+      {
+        matK = pipeline.AddMaterial(key, rm.diffuse, rm.opacity, rm.metalness, rm.roughness);
+        embeddedMatKs[key] = matK;
+        stats.Materials++;
+      }
+      matBindings[gk] = matK;
+    }
 
     // Colors: HAS_COLOR(mesh → colour), per-mesh — same 3-tier resolve + object>layer precedence.
     var colProxies = new List<(int, List<string>)>();
@@ -823,6 +869,15 @@ public static class GraphArtifactProducer
 
   private static bool IsGeometry(Base b) =>
     b.speckle_type.StartsWith("Objects.Geometry.", StringComparison.Ordinal);
+
+  // The inline `renderMaterial` member old-style sends attach to a display mesh (or its parent element) —
+  // dynamic on Mesh, so read via members (typed OR `@`-prefixed detached key).
+  private static RenderMaterial? ReadEmbeddedMaterial(Base host)
+  {
+    var members = host.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
+    return (members.GetValueOrDefault("renderMaterial") ?? members.GetValueOrDefault("@renderMaterial"))
+      as RenderMaterial;
+  }
 
   private static IEnumerable<Base> GetBaseList(Base b, string key)
   {

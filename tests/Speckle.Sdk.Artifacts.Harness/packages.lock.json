@@ -24,11 +24,6 @@
         "resolved": "0.9.6",
         "contentHash": "HKH7tYrYYlCK1ct483hgxERAdVdMtl7gUKW9ijWXxA1UsYR4Z+TrRHYmzZ9qmpu1NnTycSrp005NYM78GDKV1w=="
       },
-      "DuckDB.NET.Bindings.Full": {
-        "type": "Transitive",
-        "resolved": "1.5.3",
-        "contentHash": "3vkxzLkCmPUTRtEBBYrXvl9jOTXJ42uYswsokpysTulOS963ZIcMJRKpcHH2zwa63YI4YchjYvPz0pcR2Helbg=="
-      },
       "GraphQL.Client.Abstractions": {
         "type": "Transitive",
         "resolved": "6.0.0",
@@ -168,11 +163,10 @@
       "speckle.sdk": {
         "type": "Project",
         "dependencies": {
-          "DuckDB.NET.Data.Full": "[1.5.3, )",
           "GraphQL.Client": "[6.0.0, )",
           "Microsoft.Data.Sqlite": "[7.0.5, )",
-          "Microsoft.Extensions.DependencyInjection": "[8.0.0, )",
           "Microsoft.Extensions.Logging": "[8.0.0, )",
+          "Microsoft.Extensions.ObjectPool": "[8.0.0, )",
           "Parquet.Net": "[5.3.0, )",
           "Speckle.DoubleNumerics": "[4.1.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
@@ -181,15 +175,6 @@
       },
       "speckle.sdk.dependencies": {
         "type": "Project"
-      },
-      "DuckDB.NET.Data.Full": {
-        "type": "CentralTransitive",
-        "requested": "[1.5.3, )",
-        "resolved": "1.5.3",
-        "contentHash": "B0E3JH6nM9CeYLzmOIGGTz7R5vAKf10516Jiz7VnWj4kV7uMoh8m5mTB6IxTGFJMG6i6aOANwjwP7ud7kA87+Q==",
-        "dependencies": {
-          "DuckDB.NET.Bindings.Full": "1.5.3"
-        }
       },
       "GraphQL.Client": {
         "type": "CentralTransitive",
@@ -231,6 +216,12 @@
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Microsoft.Extensions.Options": "8.0.0"
         }
+      },
+      "Microsoft.Extensions.ObjectPool": {
+        "type": "CentralTransitive",
+        "requested": "[9.0.4, )",
+        "resolved": "8.0.0",
+        "contentHash": "4pm+XgxSukskwjzDDfSjG4KNUIOdFF2VaqZZDtTzoyQMOVSnlV6ZM8a9aVu5dg9LVZTB//utzSc8fOi0b0Mb2Q=="
       },
       "Parquet.Net": {
         "type": "CentralTransitive",
