@@ -49,6 +49,7 @@ public enum SgeoPrimitiveType
   Spiral = 9,
   Box = 10,
   Region = 11,
+  Text = 12,
 }
 
 /// <summary>SGEO header flags (offset 0x06, stored as a uint16 bitfield).</summary>
@@ -83,6 +84,12 @@ public enum SgeoFlags
 
   /// <summary>ellipse has a trim domain.</summary>
   HasTrimDomain = 1 << 8,
+
+  /// <summary>text is camera-aligned (plane axes ignored).</summary>
+  ScreenOriented = 1 << 9,
+
+  /// <summary>text has a wrap width.</summary>
+  HasMaxWidth = 1 << 10,
 }
 
 /// <summary>The decoded SGEO header, without expanding the body.</summary>
