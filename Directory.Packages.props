@@ -52,8 +52,8 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
     <PackageVersion Include="Open.ChannelExtensions" Version="9.1.0" />
-    <!-- The last version that supports .NET Standard 2.0  -->
-    <PackageVersion Include="Parquet.Net" Version="5.5.0" />
+    <!-- The last version that supports .NET Standard 2.0 is 5.5.0, but it's zstd based write doesn't appear to work properly in .NET Standard 2.0 (compress stream copy not implemented) -->
+    <PackageVersion Include="Parquet.Net" Version="5.4.0" />
     <!-- Pinned due to breaking changes in newer versions -->
     <PackageVersion Include="Polly" Version="[7.2.3,8.0.0]" />
     <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="[1.1.1,]" />
