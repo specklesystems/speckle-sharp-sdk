@@ -22,8 +22,9 @@ public sealed class ParquetTableWriter : IDisposable
   public string Path { get; }
 
 #pragma warning disable CA2213 // disposed on the background writer thread via the Complete() finalize job, not inline
-  private readonly Stream _stream;
-  private readonly ParquetWriter _writer;
+  // Created + owned on the scheduler thread (ctor's enqueued job); read only there — see the ctor for why.
+  private Stream _stream = null!;
+  private ParquetWriter _writer = null!;
 #pragma warning restore CA2213
   private readonly DataField[] _fields;
   private readonly Col[] _cols;
@@ -52,9 +53,17 @@ public sealed class ParquetTableWriter : IDisposable
     }
     _flushRows = flushRows;
 
-    _stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-    _writer = ParquetWriter.CreateAsync(schema, _stream).GetAwaiter().GetResult();
-    _writer.CompressionMethod = CompressionMethod.Zstd;
+    // Create the stream + writer on the SCHEDULER, never inline: CreateAsync awaits disk IO, and
+    // blocking it with .GetResult() on a thread carrying a single-threaded context (the Revit UI
+    // thread's DispatcherSynchronizationContext, or the ODA pinned scheduler) deadlocks — the
+    // continuation is posted back to the very thread parked in GetResult(). FIFO ordering puts this
+    // create ahead of every flush/finalize job, so _stream/_writer live only on the scheduler thread.
+    _scheduler.Enqueue(() =>
+    {
+      _stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+      _writer = ParquetWriter.CreateAsync(schema, _stream).GetAwaiter().GetResult();
+      _writer.CompressionMethod = CompressionMethod.Zstd;
+    });
   }
 
   /// <summary>Appends one row; <paramref name="values"/> are in schema-column order.</summary>
@@ -86,21 +95,19 @@ public sealed class ParquetTableWriter : IDisposable
     FlushRowGroup();
 
     // Footer/close runs on the background thread too, AFTER this file's row-group jobs (FIFO),
-    // so it never blocks the producer and never races the row-group writes.
-    var writer = _writer;
-    var stream = _stream;
+    // so it never blocks the producer and never races the row-group writes. _writer/_stream are
+    // read here inside the job (they're assigned on the scheduler thread by the ctor's create job).
     _scheduler.Enqueue(() =>
     {
-      writer.Dispose(); // footer/metadata
-      stream.Dispose();
+      _writer.Dispose(); // footer/metadata
+      _stream.Dispose();
     });
   }
 
   public void Dispose() => Complete();
 
-  // Snapshots the buffered columns into plain arrays and hands the encode/compress/IO to the
-  // background writer. The producer keeps buffering the next row group immediately; the only thing
-  // that ever touches _writer/_stream after construction is the background thread.
+  // Snapshot the buffered columns into plain arrays so the producer can buffer the next row group
+  // immediately, then hand the encode/compress/IO to the scheduler (which alone touches _writer/_stream).
   private void FlushRowGroup()
   {
     if (_buffered == 0)
@@ -114,11 +121,11 @@ public sealed class ParquetTableWriter : IDisposable
     }
     _buffered = 0;
 
-    var writer = _writer;
     var fields = _fields;
     _scheduler.Enqueue(() =>
     {
-      using var rowGroup = writer.CreateRowGroup();
+      // _writer is read here on the scheduler thread (set by the ctor's create job, which FIFO-precedes this).
+      using var rowGroup = _writer.CreateRowGroup();
       for (var i = 0; i < fields.Length; i++)
       {
         rowGroup.WriteColumnAsync(new DataColumn(fields[i], arrays[i])).GetAwaiter().GetResult();
