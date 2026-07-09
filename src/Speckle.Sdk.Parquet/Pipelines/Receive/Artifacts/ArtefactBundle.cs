@@ -23,6 +23,36 @@ public readonly record struct ArtefactGeometry(byte[] Content, string Type)
 /// <c>"category"</c>, <c>"family"</c>). Tiers are ordered outermost→innermost.</summary>
 public readonly record struct SceneViewTier(string Source, string Ref);
 
+/// <summary>A named camera viewpoint from <c>envelope.camera_views.parquet</c> (Rhino named view, Revit 3D view,
+/// SketchUp scene). Position/target/ortho-height are in <see cref="Units"/> (model units); forward/up are unitless
+/// UNIT vectors; <see cref="Fov"/> is the VERTICAL field of view in DEGREES (perspective only, null for ortho).</summary>
+public sealed record ArtefactCameraView(
+  int View,
+  string? Name,
+  bool IsDefault,
+  int? Ord,
+  double PosX,
+  double PosY,
+  double PosZ,
+  double ForwardX,
+  double ForwardY,
+  double ForwardZ,
+  double UpX,
+  double UpY,
+  double UpZ,
+  double? TargetX,
+  double? TargetY,
+  double? TargetZ,
+  string? Units,
+  bool IsOrtho,
+  double? Fov,
+  double? LensMm,
+  double? OrthoHeight,
+  double? Aspect,
+  double? Near,
+  double? Far
+);
+
 /// <summary>An envelope graph node (Collection/Material/Definition/Instance/Level/…). Columns are sparse — only the
 /// fields relevant to the node's <see cref="Kind"/> are populated.</summary>
 public sealed record ArtefactNode(
@@ -126,6 +156,10 @@ public sealed class ArtefactBundle
   /// <summary>The default scene view's grouping tiers (outermost→innermost), or empty if the bundle has none. Drives
   /// the received layer hierarchy (e.g. Revit: Model → Level → Category → Family).</summary>
   public required IReadOnlyList<SceneViewTier> DefaultSceneView { get; init; }
+
+  /// <summary>Named camera viewpoints (<c>envelope.camera_views.parquet</c>), ordered by <c>ord</c> then
+  /// <c>view</c>; empty if the bundle ships none. Native bakers recreate them as host named views.</summary>
+  public required IReadOnlyList<ArtefactCameraView> CameraViews { get; init; }
 }
 
 /// <summary>Reads the parquet files of an artefact bundle directory into a neutral <see cref="ArtefactBundle"/>.</summary>
@@ -142,6 +176,8 @@ public static class ArtefactBundleReader
       .ConfigureAwait(false);
     var sceneViewsT = await TryReadTableAsync(bundleDir, ".envelope.scene_views.parquet", cancellationToken)
       .ConfigureAwait(false);
+    var cameraViewsT = await TryReadTableAsync(bundleDir, ".envelope.camera_views.parquet", cancellationToken)
+      .ConfigureAwait(false);
 
     var objIdToApp = BuildObjectIds(objectsT);
     var pathById = BuildPaths(pathsT);
@@ -156,6 +192,7 @@ public static class ArtefactBundleReader
       Relations = LoadRelations(relationsT),
       Units = InferUnits(propsByObject),
       DefaultSceneView = LoadDefaultSceneView(sceneViewsT),
+      CameraViews = LoadCameraViews(cameraViewsT),
     };
   }
 
@@ -196,6 +233,71 @@ public static class ArtefactBundleReader
       tiers.Add((ord[i], new SceneViewTier(source[i] ?? "", refs[i] ?? "")));
     }
     return tiers.OrderBy(x => x.Ord).Select(x => x.Tier).ToList();
+  }
+
+  private static IReadOnlyList<ArtefactCameraView> LoadCameraViews(ParquetTable? t)
+  {
+    if (t is null || !t.Has("pos_x"))
+    {
+      return Array.Empty<ArtefactCameraView>();
+    }
+    var view = t.Ints("view");
+    var name = t.Strings("name");
+    var isDefault = t.NullableBools("is_default");
+    var ord = t.NullableInts("ord");
+    var posX = t.NullableDoubles("pos_x");
+    var posY = t.NullableDoubles("pos_y");
+    var posZ = t.NullableDoubles("pos_z");
+    var fwdX = t.NullableDoubles("forward_x");
+    var fwdY = t.NullableDoubles("forward_y");
+    var fwdZ = t.NullableDoubles("forward_z");
+    var upX = t.NullableDoubles("up_x");
+    var upY = t.NullableDoubles("up_y");
+    var upZ = t.NullableDoubles("up_z");
+    var tgtX = t.NullableDoubles("target_x");
+    var tgtY = t.NullableDoubles("target_y");
+    var tgtZ = t.NullableDoubles("target_z");
+    var units = t.Strings("units");
+    var isOrtho = t.NullableBools("is_ortho");
+    var fov = t.NullableDoubles("fov");
+    var lensMm = t.NullableDoubles("lens_mm");
+    var orthoHeight = t.NullableDoubles("ortho_height");
+    var aspect = t.NullableDoubles("aspect");
+    var near = t.NullableDoubles("near");
+    var far = t.NullableDoubles("far");
+    var views = new List<ArtefactCameraView>(view.Length);
+    for (int i = 0; i < view.Length; i++)
+    {
+      views.Add(
+        new ArtefactCameraView(
+          view[i],
+          name[i],
+          isDefault[i] ?? false,
+          ord[i],
+          posX[i] ?? 0,
+          posY[i] ?? 0,
+          posZ[i] ?? 0,
+          fwdX[i] ?? 0,
+          fwdY[i] ?? 0,
+          fwdZ[i] ?? 0,
+          upX[i] ?? 0,
+          upY[i] ?? 0,
+          upZ[i] ?? 1,
+          tgtX[i],
+          tgtY[i],
+          tgtZ[i],
+          units[i],
+          isOrtho[i] ?? false,
+          fov[i],
+          lensMm[i],
+          orthoHeight[i],
+          aspect[i],
+          near[i],
+          far[i]
+        )
+      );
+    }
+    return views.OrderBy(v => v.Ord ?? int.MaxValue).ThenBy(v => v.View).ToList();
   }
 
   private static Dictionary<int, ArtefactGeometry> LoadGeometries(List<ParquetTable> tables)

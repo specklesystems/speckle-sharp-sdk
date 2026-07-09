@@ -90,8 +90,87 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 17, 18, 19, 20, 22)").Should().Be(0L);
     Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
 
-    // No scene views authored ⇒ the table is absent (consumer feature-detects by file presence).
+    // No scene views / camera views authored ⇒ the tables are absent (consumer feature-detects by file presence).
     File.Exists(Path.Combine(_dir, "model.envelope.scene_views.parquet")).Should().BeFalse();
+    File.Exists(Path.Combine(_dir, "model.envelope.camera_views.parquet")).Should().BeFalse();
+  }
+
+  [Fact]
+  public void WritesCameraViews_RoundTrips()
+  {
+    using var scheduler = new ParquetWriteScheduler();
+    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
+    {
+      // A perspective named view (Rhino-style: target + lens) and an ortho one (SketchUp-style: ortho_height).
+      w.AddCameraView(
+        new CameraView
+        {
+          View = 0,
+          Name = "Entrance",
+          IsDefault = true,
+          Ord = 0,
+          PosX = 10,
+          PosY = -5,
+          PosZ = 1.7,
+          ForwardX = 0,
+          ForwardY = 1,
+          ForwardZ = 0,
+          UpX = 0,
+          UpY = 0,
+          UpZ = 1,
+          TargetX = 10,
+          TargetY = 20,
+          TargetZ = 1.7,
+          Units = "m",
+          IsOrtho = false,
+          Fov = 45.0,
+          LensMm = 50.0,
+        }
+      );
+      w.AddCameraView(
+        new CameraView
+        {
+          View = 1,
+          Name = "Plan",
+          IsDefault = false,
+          Ord = 1,
+          PosX = 0,
+          PosY = 0,
+          PosZ = 100,
+          ForwardX = 0,
+          ForwardY = 0,
+          ForwardZ = -1,
+          UpX = 0,
+          UpY = 1,
+          UpZ = 0,
+          Units = "m",
+          IsOrtho = true,
+          OrthoHeight = 42.5,
+        }
+      );
+      w.Complete();
+    }
+    scheduler.CompleteAndWait();
+
+    using var db = new DuckDBConnection("Data Source=:memory:");
+    db.Open();
+    View(db, "camera_views");
+
+    Scalar(db, "SELECT count(*) FROM camera_views").Should().Be(2L);
+    Scalar(db, "SELECT name FROM camera_views WHERE view = 0").Should().Be("Entrance");
+    Scalar(db, "SELECT is_default FROM camera_views WHERE view = 0").Should().Be(true);
+    Scalar(db, "SELECT pos_z FROM camera_views WHERE view = 0").Should().Be(1.7);
+    Scalar(db, "SELECT forward_y FROM camera_views WHERE view = 0").Should().Be(1.0);
+    Scalar(db, "SELECT target_y FROM camera_views WHERE view = 0").Should().Be(20.0);
+    Scalar(db, "SELECT units FROM camera_views WHERE view = 0").Should().Be("m");
+    Scalar(db, "SELECT is_ortho FROM camera_views WHERE view = 0").Should().Be(false);
+    Scalar(db, "SELECT fov FROM camera_views WHERE view = 0").Should().Be(45.0);
+    Scalar(db, "SELECT lens_mm FROM camera_views WHERE view = 0").Should().Be(50.0);
+
+    // Ortho view: no target/fov/lens, carries ortho_height instead.
+    Scalar(db, "SELECT is_ortho FROM camera_views WHERE view = 1").Should().Be(true);
+    Scalar(db, "SELECT ortho_height FROM camera_views WHERE view = 1").Should().Be(42.5);
+    Scalar(db, "SELECT count(*) FROM camera_views WHERE view = 1 AND target_x IS NULL AND fov IS NULL").Should().Be(1L);
   }
 
   [Fact]
