@@ -27,4 +27,8 @@
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\Speckle.Sdk\Speckle.Sdk.csproj" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+    <!-- Direct reference so the baked-in System.Memory assembly version matches the rest of the closure on net48 hosts (see Directory.Packages.props). -->
+    <PackageReference Include="System.Memory" />
+  </ItemGroup>
 </Project>

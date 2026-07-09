@@ -69,6 +69,14 @@
     <PackageVersion Include="SimpleExec" Version="13.0.0" />
     <!-- Pinned due to breaking changes in newer versions -->
     <PackageVersion Include="System.CommandLine" Version="[2.0.0-beta4.22272.1]" />
+    <!--
+    Pinned so EVERY netstandard2.0 SDK assembly bakes the SAME System.Memory reference (4.5.5 = assembly 4.0.1.2),
+    matching what the connectors repo resolves transitively (IronCompress). Without the pin, Speckle.Objects/Speckle.Sdk
+    resolve 4.5.4 (4.0.1.1) while the net48 connectors compile against 4.0.1.2 — on .NET Framework hosts the two
+    ReadOnlySpan identities then differ and any span-typed SDK API throws MissingMethodException at JIT time
+    (seen in Revit 2023 and AutoCAD 2024). Keep in the 4.5.x family: 4.6.x (4.0.5.0) conflicts with third-party plugins.
+    -->
+    <PackageVersion Include="System.Memory" Version="4.5.5" />
     <!-- 9.0.4 is minimum version for .net standard2.0 because it's the first version to include async enumerables in the .NET standard target -->
     <PackageVersion Include="System.Threading.Channels" Version="[9.0.10,]" />
     <PackageVersion Include="Verify.Quibble" Version="2.1.1" />
