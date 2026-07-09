@@ -59,6 +59,10 @@ public sealed class ArtefactRelations
   /// target node). Used to resolve scene-view grouping tiers (e.g. an object's level/model/container) to a layer path.</summary>
   public Dictionary<int, Dictionary<int, int>> ObjectNodeByRel { get; } = new();
   public Dictionary<int, int> MaterialByGeometry { get; } = new();
+
+  /// <summary>HAS_COLOR: geometry → COLOR node. The object's by-object display colour (distinct from a render material);
+  /// resolved back to the owning object via <see cref="ObjectByGeometry"/>, mirroring <see cref="MaterialByGeometry"/>.</summary>
+  public Dictionary<int, int> ColorByGeometry { get; } = new();
   public Dictionary<int, List<int>> DefinesByDefinition { get; } = new();
 
   /// <summary>DEFINES ordinals, index-aligned with <see cref="DefinesByDefinition"/>. The ordinal is the member index
@@ -351,6 +355,9 @@ public static class ArtefactBundleReader
           break;
         case RelKind.HasMaterial:
           sets.MaterialByGeometry[src[i]] = dst[i];
+          break;
+        case RelKind.HasColor:
+          sets.ColorByGeometry[src[i]] = dst[i];
           break;
         case RelKind.Defines:
           sets.Add(sets.DefinesByDefinition, src[i], dst[i]);
