@@ -39,11 +39,7 @@ public static class RemoteSource
   }
 }";
 
-    var payload = new
-    {
-      query,
-      variables = new { projectId, modelId }
-    };
+    var payload = new { query, variables = new { projectId, modelId } };
 
     using var http = new HttpClient();
     http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -51,11 +47,7 @@ public static class RemoteSource
     http.DefaultRequestHeaders.UserAgent.ParseAdd("speckle-backfill-validation/1.0");
 
     var graphqlUrl = serverUrl.TrimEnd('/') + "/graphql";
-    using var content = new StringContent(
-      JsonSerializer.Serialize(payload),
-      Encoding.UTF8,
-      "application/json"
-    );
+    using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
     using var resp = await http.PostAsync(graphqlUrl, content, ct).ConfigureAwait(false);
     var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
@@ -81,9 +73,7 @@ public static class RemoteSource
 
     if (items.GetArrayLength() == 0)
     {
-      throw new InvalidOperationException(
-        $"Model {modelId} in project {projectId} has no versions."
-      );
+      throw new InvalidOperationException($"Model {modelId} in project {projectId} has no versions.");
     }
 
     var first = items[0];

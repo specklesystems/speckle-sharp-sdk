@@ -63,12 +63,12 @@ public static class GraphArtifactProducer
 
     public override string ToString() =>
       $"""
-      objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})  encodeFailures={GeometryEncodeFailures}
-      edges: DISPLAY={DisplayEdges} DISPLAY_INSTANCE={DisplayInstanceEdges} SUBELEMENT={SubelementEdges}
-             DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges}
-      nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections}
-      skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel})
-      """;
+        objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})  encodeFailures={GeometryEncodeFailures}
+        edges: DISPLAY={DisplayEdges} DISPLAY_INSTANCE={DisplayInstanceEdges} SUBELEMENT={SubelementEdges}
+               DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges}
+        nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections}
+        skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel})
+        """;
   }
 
   public static Stats Produce(Base root, string outDir, string baseName)
@@ -109,11 +109,28 @@ public static class GraphArtifactProducer
     {
       if (defSourceAppIds.Contains(Aid(obj)))
       {
-        EmitDefinitionMember(pipeline, obj, stats, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, embeddedMaterialByGeom);
+        EmitDefinitionMember(
+          pipeline,
+          obj,
+          stats,
+          seenGeometryAppIds,
+          instanceNodeByAppId,
+          objectDisplayGeomKeys,
+          embeddedMaterialByGeom
+        );
         continue;
       }
 
-      var objK = EmitObject(pipeline, obj, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, embeddedMaterialByGeom);
+      var objK = EmitObject(
+        pipeline,
+        obj,
+        stats,
+        seenObjectAppIds,
+        seenGeometryAppIds,
+        instanceNodeByAppId,
+        objectDisplayGeomKeys,
+        embeddedMaterialByGeom
+      );
 
       // IN_COLLECTION: the object's direct membership in its enclosing scene-tree container (null parent or a
       // non-collection parent — e.g. an object directly under the root — gets no edge).
@@ -130,7 +147,16 @@ public static class GraphArtifactProducer
         {
           continue;
         }
-        var childK = EmitObject(pipeline, child, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, embeddedMaterialByGeom);
+        var childK = EmitObject(
+          pipeline,
+          child,
+          stats,
+          seenObjectAppIds,
+          seenGeometryAppIds,
+          instanceNodeByAppId,
+          objectDisplayGeomKeys,
+          embeddedMaterialByGeom
+        );
         pipeline.Subelement(objK, childK, stats.SubelementEdges++);
       }
     }
@@ -140,7 +166,18 @@ public static class GraphArtifactProducer
     var layerGeomKeys = BuildLayerGeomKeys(root, objectDisplayGeomKeys, out var layerDepth);
 
     // 2) Value-nodes + their edges, from the root collection's proxy arrays.
-    EmitProxies(pipeline, root, stats, seenObjectAppIds, seenGeometryAppIds, instanceNodeByAppId, objectDisplayGeomKeys, layerGeomKeys, layerDepth, embeddedMaterialByGeom);
+    EmitProxies(
+      pipeline,
+      root,
+      stats,
+      seenObjectAppIds,
+      seenGeometryAppIds,
+      instanceNodeByAppId,
+      objectDisplayGeomKeys,
+      layerGeomKeys,
+      layerDepth,
+      embeddedMaterialByGeom
+    );
 
     stats.Geometries = seenGeometryAppIds.Count;
 
@@ -246,11 +283,7 @@ public static class GraphArtifactProducer
 
   // Records that object `objAppId` renders geometry `geomAppId` — so an OBJECT-grained material/colour ref
   // (proxies that name the DataObject, not its mesh) can bind to the object's display meshes.
-  private static void RecordObjectGeom(
-    Dictionary<string, List<string>> map,
-    string objAppId,
-    string geomAppId
-  )
+  private static void RecordObjectGeom(Dictionary<string, List<string>> map, string objAppId, string geomAppId)
   {
     if (!map.TryGetValue(objAppId, out var list))
     {
@@ -356,8 +389,7 @@ public static class GraphArtifactProducer
     }
     // Prefer a display mesh (encodable) over the parent geometry, which may be an un-encodable Brep/SubD.
     var geometry =
-      GetBaseList(obj, "displayValue").FirstOrDefault(d => d is not InstanceProxy)
-      ?? (IsGeometry(obj) ? obj : null);
+      GetBaseList(obj, "displayValue").FirstOrDefault(d => d is not InstanceProxy) ?? (IsGeometry(obj) ? obj : null);
     if (geometry is null)
     {
       seenGeometryAppIds.Remove(appId);
@@ -633,13 +665,25 @@ public static class GraphArtifactProducer
   // (`displayValue` is the object's own geometry, handled in EmitObject; the proxy arrays live on the root.)
   private static readonly HashSet<string> s_nonContainerMembers = new(StringComparer.Ordinal)
   {
-    "displayValue", "@displayValue", "baseCurves", "@baseCurves",
-    "instanceDefinitionProxies", "@instanceDefinitionProxies",
-    "renderMaterialProxies", "@renderMaterialProxies",
-    "colorProxies", "@colorProxies", "levelProxies", "@levelProxies",
-    "groupProxies", "@groupProxies",
+    "displayValue",
+    "@displayValue",
+    "baseCurves",
+    "@baseCurves",
+    "instanceDefinitionProxies",
+    "@instanceDefinitionProxies",
+    "renderMaterialProxies",
+    "@renderMaterialProxies",
+    "colorProxies",
+    "@colorProxies",
+    "levelProxies",
+    "@levelProxies",
+    "groupProxies",
+    "@groupProxies",
     // non-scene metadata containers (not renderable model objects)
-    "cameras", "@cameras", "views", "@views",
+    "cameras",
+    "@cameras",
+    "views",
+    "@views",
   };
 
   // Yields every LEAF reachable through any container member, with its parent. A leaf is atomic
@@ -684,11 +728,7 @@ public static class GraphArtifactProducer
   // `Layer` collections, ETABS story→category, Tekla category — any Collection in the tree. The parent chain
   // (COLLECTION.def_ref) reconstructs the source hierarchy that flattening loses; the subtype tag
   // (collectionType ?? speckle_type leaf) lets the loader distinguish layer / category / story.
-  private static Dictionary<string, int> BuildCollectionNodes(
-    Base root,
-    ObjectsArtifactPipeline pipeline,
-    Stats stats
-  )
+  private static Dictionary<string, int> BuildCollectionNodes(Base root, ObjectsArtifactPipeline pipeline, Stats stats)
   {
     var map = new Dictionary<string, int>(StringComparer.Ordinal);
     void Walk(Base node, int? parentK)
@@ -805,10 +845,9 @@ public static class GraphArtifactProducer
     string? typeKey
   ) ExtractProperties(Base obj)
   {
-    IReadOnlyDictionary<string, object?> props =
-      obj is DataObject dobj
-        ? dobj.properties
-        : obj.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
+    IReadOnlyDictionary<string, object?> props = obj is DataObject dobj
+      ? dobj.properties
+      : obj.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
 
     var members = obj.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
     // Root-level scalar fields indexed outside `properties` (mirrors the SDK's EavExtraction
@@ -827,8 +866,7 @@ public static class GraphArtifactProducer
     };
 
     var typeKey =
-      members.GetValueOrDefault("typeId") as string
-      ?? (props.TryGetValue("typeId", out var tk) ? tk as string : null);
+      members.GetValueOrDefault("typeId") as string ?? (props.TryGetValue("typeId", out var tk) ? tk as string : null);
 
     return (props, rootScalars, typeKey);
   }
@@ -867,8 +905,7 @@ public static class GraphArtifactProducer
   private static bool IsValueOrDefinitionProxy(Base b) =>
     b is InstanceDefinitionProxy or RenderMaterialProxy or ColorProxy or GroupProxy;
 
-  private static bool IsGeometry(Base b) =>
-    b.speckle_type.StartsWith("Objects.Geometry.", StringComparison.Ordinal);
+  private static bool IsGeometry(Base b) => b.speckle_type.StartsWith("Objects.Geometry.", StringComparison.Ordinal);
 
   // The inline `renderMaterial` member old-style sends attach to a display mesh (or its parent element) —
   // dynamic on Mesh, so read via members (typed OR `@`-prefixed detached key).
@@ -900,8 +937,7 @@ public static class GraphArtifactProducer
 
   // Returns the value only if it's a non-empty enumerable (so an empty typed `elements` falls through to
   // the `@elements` dynamic member).
-  private static object? NonEmpty(object? v) =>
-    v is System.Collections.ICollection c && c.Count == 0 ? null : v;
+  private static object? NonEmpty(object? v) => v is System.Collections.ICollection c && c.Count == 0 ? null : v;
 
   private static IEnumerable<string> AsStringList(object? raw)
   {
@@ -930,9 +966,21 @@ public static class GraphArtifactProducer
   private static double[] Flatten(Matrix4x4 m) =>
     new[]
     {
-      m.M11, m.M12, m.M13, m.M14,
-      m.M21, m.M22, m.M23, m.M24,
-      m.M31, m.M32, m.M33, m.M34,
-      m.M41, m.M42, m.M43, m.M44,
+      m.M11,
+      m.M12,
+      m.M13,
+      m.M14,
+      m.M21,
+      m.M22,
+      m.M23,
+      m.M24,
+      m.M31,
+      m.M32,
+      m.M33,
+      m.M34,
+      m.M41,
+      m.M42,
+      m.M43,
+      m.M44,
     };
 }

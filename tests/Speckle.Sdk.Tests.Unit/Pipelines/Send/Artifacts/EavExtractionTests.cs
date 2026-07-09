@@ -146,7 +146,9 @@ public class EavExtractionTests
   [InlineData("3.25", "number", 3.25)]
   public void TypeInference_MatchesServerBehaviour(string jsonValue, string expectedType, double? expectedNum)
   {
-    var obj = JObject.Parse($$"""{ "speckle_type": "Objects.Data.DataObject", "properties": { "p": {{jsonValue}} } }""");
+    var obj = JObject.Parse(
+      $$"""{ "speckle_type": "Objects.Data.DataObject", "properties": { "p": {{jsonValue}} } }"""
+    );
 
     var rows = EavExtraction.FlattenObjectProperties("o", obj);
     var row = rows.Single(r => r.Path == "properties.p");
@@ -193,9 +195,13 @@ public class EavExtractionTests
 
     // Material Quantities handled via the special extraction with category in path
     rows.Should()
-      .ContainSingle(r => r.Path == "properties.Material Quantities.Structural.Concrete.area" && r.ValueNum == 12.5 && r.Units == "m2");
+      .ContainSingle(r =>
+        r.Path == "properties.Material Quantities.Structural.Concrete.area" && r.ValueNum == 12.5 && r.Units == "m2"
+      );
     rows.Should()
-      .ContainSingle(r => r.Path == "properties.Material Quantities.Structural.Concrete.volume" && r.ValueNum == 2.25 && r.Units == "m3");
+      .ContainSingle(r =>
+        r.Path == "properties.Material Quantities.Structural.Concrete.volume" && r.ValueNum == 2.25 && r.Units == "m3"
+      );
   }
 
   [Fact]

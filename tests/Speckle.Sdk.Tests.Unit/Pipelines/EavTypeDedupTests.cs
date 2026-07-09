@@ -32,7 +32,15 @@ public sealed class EavTypeDedupTests : IDisposable
         t1FlattenCalls++;
         return new[]
         {
-          new EavRow("", "properties.Parameters.Type Parameters.Other.Type Mark", "W1", null, "string", null, "TYPE_MARK"),
+          new EavRow(
+            "",
+            "properties.Parameters.Type Parameters.Other.Type Mark",
+            "W1",
+            null,
+            "string",
+            null,
+            "TYPE_MARK"
+          ),
         };
       }
 
@@ -41,7 +49,19 @@ public sealed class EavTypeDedupTests : IDisposable
       w.AddType(
         "C",
         "T2",
-        () => new[] { new EavRow("", "properties.Parameters.Type Parameters.Other.Type Mark", "W2", null, "string", null, "TYPE_MARK") }
+        () =>
+          new[]
+          {
+            new EavRow(
+              "",
+              "properties.Parameters.Type Parameters.Other.Type Mark",
+              "W2",
+              null,
+              "string",
+              null,
+              "TYPE_MARK"
+            ),
+          }
       );
 
       w.Complete();

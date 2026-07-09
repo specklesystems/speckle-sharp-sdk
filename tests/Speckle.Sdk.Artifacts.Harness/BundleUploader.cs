@@ -35,13 +35,8 @@ public static class BundleUploader
     http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
     // ── 1. create the model ingestion → reserved versionId + ingestionId ─────────────
-    var (ingestionId, reservedVersionId) = await CreateModelIngestionAsync(
-      http,
-      baseUrl,
-      projectId,
-      modelId,
-      ct
-    ).ConfigureAwait(false);
+    var (ingestionId, reservedVersionId) = await CreateModelIngestionAsync(http, baseUrl, projectId, modelId, ct)
+      .ConfigureAwait(false);
     Console.WriteLine($"Ingestion created: {ingestionId}  (reserved versionId {reservedVersionId})");
 
     // ── name files after the reserved versionId: {versionId}.<suffix> ─────────────────
@@ -78,9 +73,7 @@ public static class BundleUploader
     var signRespBody = await signResp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
     if (!signResp.IsSuccessStatusCode)
     {
-      throw new InvalidOperationException(
-        $"sign failed ({(int)signResp.StatusCode}): {signRespBody}"
-      );
+      throw new InvalidOperationException($"sign failed ({(int)signResp.StatusCode}): {signRespBody}");
     }
 
     var uploads = ParseSignResponse(signRespBody);
@@ -97,31 +90,26 @@ public static class BundleUploader
       {
         throw new InvalidOperationException($"sign response missing url for '{filename}'.");
       }
-      var etag = await PutFileAsync(s3Http, presigned.Url, Path.Combine(outDir, filename), ct)
-        .ConfigureAwait(false);
+      var etag = await PutFileAsync(s3Http, presigned.Url, Path.Combine(outDir, filename), ct).ConfigureAwait(false);
       etags[filename] = etag;
-      Console.WriteLine($"  PUT {filename,-36} etag {etag}");
+      Console.WriteLine($"  PUT {filename, -36} etag {etag}");
     }
 
     // ── 4. complete — creates the commit (schemaVersion 3) ────────────────────────────
-    var completeUrl =
-      $"{baseUrl}/api/v2/projects/{projectId}/modelingestion/{ingestionId}/uploads/complete";
+    var completeUrl = $"{baseUrl}/api/v2/projects/{projectId}/modelingestion/{ingestionId}/uploads/complete";
     var completeBody = JsonSerializer.Serialize(
       new
       {
         etags,
         rootId,
-        totalChildrenCount
+        totalChildrenCount,
       }
     );
-    using var completeResp = await PostJsonAsync(http, completeUrl, completeBody, ct)
-      .ConfigureAwait(false);
+    using var completeResp = await PostJsonAsync(http, completeUrl, completeBody, ct).ConfigureAwait(false);
     var completeRespBody = await completeResp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
     if (!completeResp.IsSuccessStatusCode)
     {
-      throw new InvalidOperationException(
-        $"complete failed ({(int)completeResp.StatusCode}): {completeRespBody}"
-      );
+      throw new InvalidOperationException($"complete failed ({(int)completeResp.StatusCode}): {completeRespBody}");
     }
 
     using var completeDoc = JsonDocument.Parse(completeRespBody);
@@ -157,12 +145,8 @@ public static class BundleUploader
         projectId,
         modelId,
         progressMessage = "Artefact bundle upload (harness)",
-        sourceData = new
-        {
-          sourceApplicationSlug = "artefact-harness",
-          sourceApplicationVersion = "v2"
-        }
-      }
+        sourceData = new { sourceApplicationSlug = "artefact-harness", sourceApplicationVersion = "v2" },
+      },
     };
 
     var payload = JsonSerializer.Serialize(new { query = mutation, variables });
@@ -170,9 +154,7 @@ public static class BundleUploader
     var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
     if (!resp.IsSuccessStatusCode)
     {
-      throw new InvalidOperationException(
-        $"createModelIngestion failed ({(int)resp.StatusCode}): {body}"
-      );
+      throw new InvalidOperationException($"createModelIngestion failed ({(int)resp.StatusCode}): {body}");
     }
 
     using var doc = JsonDocument.Parse(body);
@@ -188,10 +170,9 @@ public static class BundleUploader
       .GetProperty("create");
 
     var ingestionId = created.GetProperty("id").GetString()!;
-    var versionId = created.GetProperty("versionId").GetString()
-      ?? throw new InvalidOperationException(
-        "createModelIngestion returned a null versionId (pre-v2 ingestion?)."
-      );
+    var versionId =
+      created.GetProperty("versionId").GetString()
+      ?? throw new InvalidOperationException("createModelIngestion returned a null versionId (pre-v2 ingestion?).");
     return (ingestionId, versionId);
   }
 
@@ -240,21 +221,14 @@ public static class BundleUploader
     }
     if (string.IsNullOrEmpty(etag))
     {
-      throw new InvalidOperationException(
-        $"PUT {Path.GetFileName(filePath)} succeeded but returned no ETag header."
-      );
+      throw new InvalidOperationException($"PUT {Path.GetFileName(filePath)} succeeded but returned no ETag header.");
     }
     // S3 returns the etag quoted (e.g. "\"abc\""); the server compares against the storage
     // metadata eTag verbatim. Send it exactly as received (quotes preserved).
     return etag;
   }
 
-  private static Task<HttpResponseMessage> PostJsonAsync(
-    HttpClient http,
-    string url,
-    string json,
-    CancellationToken ct
-  )
+  private static Task<HttpResponseMessage> PostJsonAsync(HttpClient http, string url, string json, CancellationToken ct)
   {
     var content = new StringContent(json, Encoding.UTF8, "application/json");
     return http.PostAsync(url, content, ct);

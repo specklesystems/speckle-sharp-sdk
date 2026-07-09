@@ -27,11 +27,7 @@ public class ArtifactRoundTripTests
         pipeline.AddProperties(
           "obj-1",
           new Dictionary<string, object?> { ["custom"] = "value" },
-          new[]
-          {
-            new KeyValuePair<string, object?>("name", "Box"),
-            new KeyValuePair<string, object?>("units", "m"),
-          }
+          new[] { new KeyValuePair<string, object?>("name", "Box"), new KeyValuePair<string, object?>("units", "m") }
         );
         var mesh = new Mesh
         {
@@ -86,11 +82,7 @@ public class ArtifactRoundTripTests
         pipeline.AddProperties(
           "solid-1",
           new Dictionary<string, object?>(),
-          new[]
-          {
-            new KeyValuePair<string, object?>("units", "m"),
-            new KeyValuePair<string, object?>("type", "Brep"),
-          }
+          new[] { new KeyValuePair<string, object?>("units", "m"), new KeyValuePair<string, object?>("type", "Brep") }
         );
         int solidK = pipeline.AddRawGeometry("solid-1:solid", solidBytes, "3dm");
         pipeline.Solid(objK, solidK, 0);
@@ -107,7 +99,8 @@ public class ArtifactRoundTripTests
       Convert.FromBase64String(rhinoObj.rawEncoding.contents).Should().Equal(solidBytes);
 
       // Revit (PreferSolids = false): no 3dm, rebuilt as a plain DataObject (meshes only).
-      var rootMeshes = (Collection)await reader.ReadAsync(dir, new ArtifactReceiveOptions(PreferSolids: false), default);
+      var rootMeshes = (Collection)
+        await reader.ReadAsync(dir, new ArtifactReceiveOptions(PreferSolids: false), default);
       Flatten(rootMeshes).OfType<RhinoObject>().Should().BeEmpty();
       Flatten(rootMeshes).OfType<DataObject>().Should().ContainSingle(d => d.applicationId == "solid-1");
     }

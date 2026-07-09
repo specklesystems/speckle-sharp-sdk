@@ -40,14 +40,16 @@ public static class MeshBinaryDecoder
     var verts = new double[vCount * 3];
     for (int i = 0; i < verts.Length; i++)
     {
-      verts[i] = MeshBinaryEncoder.ReadDoubleLE(bytes.Slice(offset, 8)); offset += 8;
+      verts[i] = MeshBinaryEncoder.ReadDoubleLE(bytes.Slice(offset, 8));
+      offset += 8;
     }
 
     // Faces
     var faces = new int[fCount];
     for (int i = 0; i < fCount; i++)
     {
-      faces[i] = BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(offset, 4)); offset += 4;
+      faces[i] = BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(offset, 4));
+      offset += 4;
     }
 
     double[]? normals = null;
@@ -56,7 +58,8 @@ public static class MeshBinaryDecoder
       normals = new double[vCount * 3];
       for (int i = 0; i < normals.Length; i++)
       {
-        normals[i] = MeshBinaryEncoder.ReadDoubleLE(bytes.Slice(offset, 8)); offset += 8;
+        normals[i] = MeshBinaryEncoder.ReadDoubleLE(bytes.Slice(offset, 8));
+        offset += 8;
       }
     }
 
@@ -66,7 +69,8 @@ public static class MeshBinaryDecoder
       uvs = new double[vCount * 2];
       for (int i = 0; i < uvs.Length; i++)
       {
-        uvs[i] = MeshBinaryEncoder.ReadDoubleLE(bytes.Slice(offset, 8)); offset += 8;
+        uvs[i] = MeshBinaryEncoder.ReadDoubleLE(bytes.Slice(offset, 8));
+        offset += 8;
       }
     }
 
@@ -76,7 +80,8 @@ public static class MeshBinaryDecoder
       colors = new int[vCount];
       for (int i = 0; i < vCount; i++)
       {
-        colors[i] = BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(offset, 4)); offset += 4;
+        colors[i] = BinaryPrimitives.ReadInt32LittleEndian(bytes.Slice(offset, 4));
+        offset += 4;
       }
     }
 
