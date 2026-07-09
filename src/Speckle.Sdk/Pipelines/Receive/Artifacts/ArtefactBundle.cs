@@ -12,7 +12,11 @@ public readonly record struct ArtefactGeometry(byte[] Content, string Type)
 {
   /// <summary>True when the blob is a SGEO mesh blob (decode with <c>SgeoDecoder</c>), false for raw encodings (3dm).</summary>
   public bool IsSgeo =>
-    Content.Length >= 4 && Content[0] == (byte)'S' && Content[1] == (byte)'G' && Content[2] == (byte)'E' && Content[3] == (byte)'O';
+    Content.Length >= 4
+    && Content[0] == (byte)'S'
+    && Content[1] == (byte)'G'
+    && Content[2] == (byte)'E'
+    && Content[3] == (byte)'O';
 }
 
 /// <summary>One grouping tier of a scene view (the explorer/layer hierarchy). <see cref="Source"/> is <c>"rel"</c>
@@ -136,8 +140,10 @@ public static class ArtefactBundleReader
     var pathsT = await ReadTableAsync(bundleDir, ".eav.paths.parquet", cancellationToken).ConfigureAwait(false);
     var eavT = await ReadTableAsync(bundleDir, ".eav.eav.parquet", cancellationToken).ConfigureAwait(false);
     var nodesT = await ReadTableAsync(bundleDir, ".envelope.nodes.parquet", cancellationToken).ConfigureAwait(false);
-    var relationsT = await ReadTableAsync(bundleDir, ".envelope.relations.parquet", cancellationToken).ConfigureAwait(false);
-    var sceneViewsT = await TryReadTableAsync(bundleDir, ".envelope.scene_views.parquet", cancellationToken).ConfigureAwait(false);
+    var relationsT = await ReadTableAsync(bundleDir, ".envelope.relations.parquet", cancellationToken)
+      .ConfigureAwait(false);
+    var sceneViewsT = await TryReadTableAsync(bundleDir, ".envelope.scene_views.parquet", cancellationToken)
+      .ConfigureAwait(false);
 
     var objIdToApp = BuildObjectIds(objectsT);
     var pathById = BuildPaths(pathsT);
@@ -161,7 +167,15 @@ public static class ArtefactBundleReader
     RelKind.OnLevel,
     RelKind.InCollection,
     RelKind.InModel,
-    12, 13, 14, 15, 16, 17, 18, 19, 20, // IN_ROOM/IN_SPACE/IN_SYSTEM/IN_NETWORK/IN_LINE/IN_GROUP/IN_ASSEMBLY/…/XREF
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20, // IN_ROOM/IN_SPACE/IN_SYSTEM/IN_NETWORK/IN_LINE/IN_GROUP/IN_ASSEMBLY/…/XREF
   };
 
   private static IReadOnlyList<SceneViewTier> LoadDefaultSceneView(ParquetTable? t)
@@ -231,7 +245,10 @@ public static class ArtefactBundleReader
     return map;
   }
 
-  private static Dictionary<int, Dictionary<string, object?>> BuildProperties(ParquetTable t, Dictionary<int, string> pathById)
+  private static Dictionary<int, Dictionary<string, object?>> BuildProperties(
+    ParquetTable t,
+    Dictionary<int, string> pathById
+  )
   {
     var byObject = new Dictionary<int, Dictionary<string, object?>>();
     if (!t.Has("object_index"))
@@ -245,7 +262,10 @@ public static class ArtefactBundleReader
     var vBool = t.NullableBools("value_boolean");
     for (int i = 0; i < objIdx.Length; i++)
     {
-      object? value = vBool[i].HasValue ? vBool[i] : vDbl[i].HasValue ? vDbl[i] : vStr[i];
+      object? value =
+        vBool[i].HasValue ? vBool[i]
+        : vDbl[i].HasValue ? vDbl[i]
+        : vStr[i];
       if (value is null)
       {
         continue;
@@ -395,7 +415,9 @@ public static class ArtefactBundleReader
   // Optional table (older bundles may lack e.g. scene_views) → null when absent.
   private static async Task<ParquetTable?> TryReadTableAsync(string dir, string suffix, CancellationToken ct)
   {
-    var path = Directory.EnumerateFiles(dir, "*.parquet").FirstOrDefault(p => p.EndsWith(suffix, StringComparison.Ordinal));
+    var path = Directory
+      .EnumerateFiles(dir, "*.parquet")
+      .FirstOrDefault(p => p.EndsWith(suffix, StringComparison.Ordinal));
     return path is null ? null : await ParquetTableReader.ReadAsync(path, ct).ConfigureAwait(false);
   }
 

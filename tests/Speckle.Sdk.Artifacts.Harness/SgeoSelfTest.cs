@@ -87,7 +87,8 @@ internal static class SgeoSelfTest
       Expect(fail, $"knot[{i}]", dv.GetF64(o + i * 8), curve.knots[i]);
     }
     // header(16) + polyline[count+pad(8) + disp pts] + def header[degree+cp+knot+reserved(16) + domain(16)] + cps + weights + knots
-    var expectedLen = 16 + 8 + dispCount * 3 * 8 + 32 + cpCount * 3 * 8 + curve.weights.Count * 8 + curve.knots.Count * 8;
+    var expectedLen =
+      16 + 8 + dispCount * 3 * 8 + 32 + cpCount * 3 * 8 + curve.weights.Count * 8 + curve.knots.Count * 8;
     Expect(fail, "total_len", blob.Length, expectedLen);
 
     Report("Curve", blob.Length, fail);

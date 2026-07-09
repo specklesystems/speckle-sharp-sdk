@@ -151,7 +151,20 @@ public sealed class EnvelopeWriter : IDisposable
   )
   {
     EnsureNotCompleted();
-    _nodes.AddRow(id, (int)kind, name, defRef, transform, units, subtype, argb, opacity, metalness, roughness, elevation);
+    _nodes.AddRow(
+      id,
+      (int)kind,
+      name,
+      defRef,
+      transform,
+      units,
+      subtype,
+      argb,
+      opacity,
+      metalness,
+      roughness,
+      elevation
+    );
   }
 
   /// <summary>Buffers a producer-authored projection (SOT §8); flushed to <c>scene_views.parquet</c> on
@@ -213,11 +226,7 @@ public sealed class EnvelopeWriter : IDisposable
         rt.AddRow(r.Id, r.Name, r.SrcNs, r.DstNs);
       }
     }
-    using var nk = new ParquetTableWriter(
-      P("node_kinds.parquet"),
-      new ParquetSchema(I("kind"), S("name")),
-      _scheduler
-    );
+    using var nk = new ParquetTableWriter(P("node_kinds.parquet"), new ParquetSchema(I("kind"), S("name")), _scheduler);
     foreach (var k in SpecCatalog.NodeKinds)
     {
       nk.AddRow(k.Id, k.Name);

@@ -15,7 +15,9 @@ public static class ParquetTableReader
   public static async Task<ParquetTable> ReadAsync(string path, CancellationToken cancellationToken = default)
   {
     using var stream = File.OpenRead(path);
-    using var reader = await ParquetReader.CreateAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+    using var reader = await ParquetReader
+      .CreateAsync(stream, cancellationToken: cancellationToken)
+      .ConfigureAwait(false);
 
     var fields = reader.Schema.GetDataFields();
     // name -> the per-row-group Data arrays, concatenated at the end.

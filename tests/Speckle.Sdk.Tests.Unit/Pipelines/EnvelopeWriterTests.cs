@@ -20,7 +20,20 @@ public sealed class EnvelopeWriterTests : IDisposable
     using (var w = new EnvelopeWriter(_dir, "model", scheduler))
     {
       w.AddNode(0, NodeKind.Definition, "wall-def", null, null, null, null, null, null, null, null, null);
-      w.AddNode(1, NodeKind.Instance, null, 0, "1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1", "mm", null, null, null, null, null, null);
+      w.AddNode(
+        1,
+        NodeKind.Instance,
+        null,
+        0,
+        "1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1",
+        "mm",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
       w.AddNode(2, NodeKind.Material, null, null, null, null, null, unchecked((int)0xFF8800FFu), 1.0, 0.0, 0.4, null);
       w.AddNode(3, NodeKind.Level, "Level 1", null, null, null, null, null, null, null, null, 3000.0);
 

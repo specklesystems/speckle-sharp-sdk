@@ -31,11 +31,7 @@ public class MeshBinaryBenchmarks
   public void Setup()
   {
     _mesh = BuildSyntheticGridMesh(TriangleCount);
-    _binaryBytes = MeshBinaryEncoder.EncodeToSmsh(
-      _mesh.vertices.ToArray(),
-      _mesh.faces.ToArray(),
-      [], [], []
-    );
+    _binaryBytes = MeshBinaryEncoder.EncodeToSmsh(_mesh.vertices.ToArray(), _mesh.faces.ToArray(), [], [], []);
 
     var serializer = new SpeckleObjectSerializer();
     _legacyJson = serializer.Serialize(_mesh);
@@ -49,11 +45,7 @@ public class MeshBinaryBenchmarks
 
   [Benchmark(Description = "Encode legacy → SMSH bytes")]
   public byte[] EncodeToSmsh() =>
-    MeshBinaryEncoder.EncodeToSmsh(
-      _mesh.vertices.ToArray(),
-      _mesh.faces.ToArray(),
-      [], [], []
-    );
+    MeshBinaryEncoder.EncodeToSmsh(_mesh.vertices.ToArray(), _mesh.faces.ToArray(), [], [], []);
 
   [Benchmark(Description = "Decode SMSH → DecodedMesh")]
   public DecodedMesh DecodeFromSmsh() => MeshBinaryDecoder.Decode(_binaryBytes);
@@ -94,10 +86,19 @@ public class MeshBinaryBenchmarks
         int i1 = i0 + 1;
         int i2 = i0 + (side + 1);
         int i3 = i2 + 1;
-        faces.Add(3); faces.Add(i0); faces.Add(i1); faces.Add(i2);
+        faces.Add(3);
+        faces.Add(i0);
+        faces.Add(i1);
+        faces.Add(i2);
         emitted++;
-        if (emitted >= triangleCount) { break; }
-        faces.Add(3); faces.Add(i1); faces.Add(i3); faces.Add(i2);
+        if (emitted >= triangleCount)
+        {
+          break;
+        }
+        faces.Add(3);
+        faces.Add(i1);
+        faces.Add(i3);
+        faces.Add(i2);
         emitted++;
       }
     }

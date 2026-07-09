@@ -20,7 +20,8 @@ public sealed class ArtifactPipelineFactory(ISpeckleHttp httpClientFactory, ISdk
     Account account,
     string outputDir,
     CancellationToken cancellationToken
-  ) => new(projectId, ingestionId, versionId, account, outputDir, httpClientFactory, activityFactory, cancellationToken);
+  ) =>
+    new(projectId, ingestionId, versionId, account, outputDir, httpClientFactory, activityFactory, cancellationToken);
 }
 
 /// <summary>
@@ -232,7 +233,9 @@ public sealed class ArtifactPipeline : IDisposable
       return;
     }
     var body = await ReadBodyAsync(response).ConfigureAwait(false);
-    throw new HttpRequestException($"{operation} failed with {(int)response.StatusCode} ({response.StatusCode}): {body}");
+    throw new HttpRequestException(
+      $"{operation} failed with {(int)response.StatusCode} ({response.StatusCode}): {body}"
+    );
   }
 
   public void Dispose()

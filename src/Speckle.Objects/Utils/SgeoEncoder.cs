@@ -79,18 +79,53 @@ public static class SgeoEncoder
     bool hasColors = m.colors.Count > 0;
 
     var flags = SgeoFlags.None;
-    if (hasNormals) { flags |= SgeoFlags.HasNormals; }
-    if (hasUvs) { flags |= SgeoFlags.HasUvs; }
-    if (hasColors) { flags |= SgeoFlags.HasColors; }
+    if (hasNormals)
+    {
+      flags |= SgeoFlags.HasNormals;
+    }
+    if (hasUvs)
+    {
+      flags |= SgeoFlags.HasUvs;
+    }
+    if (hasColors)
+    {
+      flags |= SgeoFlags.HasColors;
+    }
 
     var body = new List<byte>(m.vertices.Count * 8 + m.faces.Count * 4 + 16);
     AddUInt32(body, (uint)(m.vertices.Count / 3));
     AddUInt32(body, (uint)m.faces.Count);
-    foreach (var v in m.vertices) { AddDouble(body, v); }
-    foreach (var f in m.faces) { AddInt32(body, f); }
-    if (hasNormals) { Pad8(body); foreach (var n in m.vertexNormals) { AddDouble(body, n); } }
-    if (hasUvs) { Pad8(body); foreach (var t in m.textureCoordinates) { AddDouble(body, t); } }
-    if (hasColors) { foreach (var c in m.colors) { AddInt32(body, c); } }
+    foreach (var v in m.vertices)
+    {
+      AddDouble(body, v);
+    }
+    foreach (var f in m.faces)
+    {
+      AddInt32(body, f);
+    }
+    if (hasNormals)
+    {
+      Pad8(body);
+      foreach (var n in m.vertexNormals)
+      {
+        AddDouble(body, n);
+      }
+    }
+    if (hasUvs)
+    {
+      Pad8(body);
+      foreach (var t in m.textureCoordinates)
+      {
+        AddDouble(body, t);
+      }
+    }
+    if (hasColors)
+    {
+      foreach (var c in m.colors)
+      {
+        AddInt32(body, c);
+      }
+    }
 
     return Assemble(SgeoPrimitiveType.Mesh, flags, m.units, body);
   }
@@ -115,7 +150,10 @@ public static class SgeoEncoder
     var body = new List<byte>(p.value.Count * 8 + 8);
     AddUInt32(body, (uint)(p.value.Count / 3));
     AddUInt32(body, 0);
-    foreach (var v in p.value) { AddDouble(body, v); }
+    foreach (var v in p.value)
+    {
+      AddDouble(body, v);
+    }
     return Assemble(SgeoPrimitiveType.Polyline, flags, p.units, body);
   }
 
@@ -169,9 +207,18 @@ public static class SgeoEncoder
       throw new SpeckleException("Curve.points length must be a multiple of 3.");
     }
     var flags = SgeoFlags.None;
-    if (c.displayValue.closed) { flags |= SgeoFlags.Closed; }
-    if (c.rational) { flags |= SgeoFlags.Rational; }
-    if (c.periodic) { flags |= SgeoFlags.Periodic; }
+    if (c.displayValue.closed)
+    {
+      flags |= SgeoFlags.Closed;
+    }
+    if (c.rational)
+    {
+      flags |= SgeoFlags.Rational;
+    }
+    if (c.periodic)
+    {
+      flags |= SgeoFlags.Periodic;
+    }
 
     var body = new List<byte>(c.displayValue.value.Count * 8 + c.points.Count * 8 + c.knots.Count * 8 + 56);
     AddPolylineBody(body, c.displayValue); // [render] leading displayValue polyline
@@ -181,9 +228,21 @@ public static class SgeoEncoder
     AddUInt32(body, 0);
     AddDouble(body, c.domain?.start ?? 0);
     AddDouble(body, c.domain?.end ?? 1);
-    foreach (var p in c.points) { AddDouble(body, p); }
-    if (c.rational) { foreach (var w in c.weights) { AddDouble(body, w); } }
-    foreach (var k in c.knots) { AddDouble(body, k); }
+    foreach (var p in c.points)
+    {
+      AddDouble(body, p);
+    }
+    if (c.rational)
+    {
+      foreach (var w in c.weights)
+      {
+        AddDouble(body, w);
+      }
+    }
+    foreach (var k in c.knots)
+    {
+      AddDouble(body, k);
+    }
     return Assemble(SgeoPrimitiveType.Curve, flags, c.units, body);
   }
 
@@ -196,7 +255,10 @@ public static class SgeoEncoder
     }
     AddUInt32(body, (uint)(p.value.Count / 3));
     AddUInt32(body, 0);
-    foreach (var v in p.value) { AddDouble(body, v); }
+    foreach (var v in p.value)
+    {
+      AddDouble(body, v);
+    }
     Pad8(body);
   }
 
@@ -240,15 +302,37 @@ public static class SgeoEncoder
     bool hasColors = p.colors.Count > 0;
     bool hasSizes = p.sizes.Count > 0;
     var flags = SgeoFlags.None;
-    if (hasColors) { flags |= SgeoFlags.HasColors; }
-    if (hasSizes) { flags |= SgeoFlags.HasSizes; }
+    if (hasColors)
+    {
+      flags |= SgeoFlags.HasColors;
+    }
+    if (hasSizes)
+    {
+      flags |= SgeoFlags.HasSizes;
+    }
 
     var body = new List<byte>(p.points.Count * 8 + 8);
     AddUInt32(body, (uint)(p.points.Count / 3));
     AddUInt32(body, 0);
-    foreach (var v in p.points) { AddDouble(body, v); }
-    if (hasColors) { foreach (var c in p.colors) { AddInt32(body, c); } }
-    if (hasSizes) { Pad8(body); foreach (var s in p.sizes) { AddDouble(body, s); } }
+    foreach (var v in p.points)
+    {
+      AddDouble(body, v);
+    }
+    if (hasColors)
+    {
+      foreach (var c in p.colors)
+      {
+        AddInt32(body, c);
+      }
+    }
+    if (hasSizes)
+    {
+      Pad8(body);
+      foreach (var s in p.sizes)
+      {
+        AddDouble(body, s);
+      }
+    }
     return Assemble(SgeoPrimitiveType.Points, flags, p.units, body);
   }
 
@@ -308,15 +392,24 @@ public static class SgeoEncoder
   private static byte[] EncodeText(Text t)
   {
     var flags = SgeoFlags.None;
-    if (t.screenOriented) { flags |= SgeoFlags.ScreenOriented; }
-    if (t.maxWidth != null) { flags |= SgeoFlags.HasMaxWidth; }
+    if (t.screenOriented)
+    {
+      flags |= SgeoFlags.ScreenOriented;
+    }
+    if (t.maxWidth != null)
+    {
+      flags |= SgeoFlags.HasMaxWidth;
+    }
 
     byte[] valueBytes = Encoding.UTF8.GetBytes(t.value);
     var body = new List<byte>(128 + valueBytes.Length);
     AddUInt32(body, (uint)t.alignmentH);
     AddUInt32(body, (uint)t.alignmentV);
     AddDouble(body, t.height);
-    if (t.maxWidth is double maxWidth) { AddDouble(body, maxWidth); }
+    if (t.maxWidth is double maxWidth)
+    {
+      AddDouble(body, maxWidth);
+    }
     AddPlane(body, t.plane);
     AddUInt32(body, (uint)valueBytes.Length);
     AddUInt32(body, 0);

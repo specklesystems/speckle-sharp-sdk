@@ -75,7 +75,15 @@ public sealed class EavWriter : IDisposable
     int objectIndex = GetOrAddObject(applicationId);
     foreach (var row in rows)
     {
-      _eav.AddRow(objectIndex, GetOrAddPath(row.Path), row.ValueText, row.ValueNum, Boolean(row), row.Units, row.InternalDefinitionName);
+      _eav.AddRow(
+        objectIndex,
+        GetOrAddPath(row.Path),
+        row.ValueText,
+        row.ValueNum,
+        Boolean(row),
+        row.Units,
+        row.InternalDefinitionName
+      );
     }
   }
 
@@ -109,7 +117,15 @@ public sealed class EavWriter : IDisposable
     {
       foreach (var row in typeRowsFactory())
       {
-        _typeEav.AddRow(typeIndex, GetOrAddPath(row.Path), row.ValueText, row.ValueNum, Boolean(row), row.Units, row.InternalDefinitionName);
+        _typeEav.AddRow(
+          typeIndex,
+          GetOrAddPath(row.Path),
+          row.ValueText,
+          row.ValueNum,
+          Boolean(row),
+          row.Units,
+          row.InternalDefinitionName
+        );
       }
     }
     _objectType.AddRow(GetOrAddObject(applicationId), typeIndex);

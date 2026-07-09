@@ -3,7 +3,7 @@ namespace Speckle.Sdk.Artifacts.Harness;
 public enum InputMode
 {
   Local,
-  Remote
+  Remote,
 }
 
 /// <summary>Parsed CLI options for the harness. See <see cref="Usage"/>.</summary>
@@ -30,8 +30,7 @@ public sealed class Options
   public string? DstProjectId { get; private set; }
   public string? DstModelId { get; private set; }
 
-  public const string Usage =
-    """
+  public const string Usage = """
     usage:
       INPUT (one of):
         --local <ndjsonPath> [--root <id|auto>]

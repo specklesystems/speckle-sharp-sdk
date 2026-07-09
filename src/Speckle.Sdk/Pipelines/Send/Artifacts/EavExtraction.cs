@@ -150,11 +150,7 @@ public static class EavExtraction
     return speckleType.Contains("Collection");
   }
 
-  private static List<EavRow> ExtractDataObject(
-    string objectId,
-    JObject obj,
-    ISet<string>? excludedTopLevelProperties
-  )
+  private static List<EavRow> ExtractDataObject(string objectId, JObject obj, ISet<string>? excludedTopLevelProperties)
   {
     var rows = new List<EavRow>();
 
@@ -226,11 +222,7 @@ public static class EavExtraction
     return rows;
   }
 
-  private static List<EavRow> ExtractCollection(
-    string objectId,
-    JObject obj,
-    ISet<string>? excludedTopLevelProperties
-  )
+  private static List<EavRow> ExtractCollection(string objectId, JObject obj, ISet<string>? excludedTopLevelProperties)
   {
     var rows = new List<EavRow>();
 
@@ -453,13 +445,21 @@ public static class EavExtraction
       return;
     }
     var units = q["units"]?.Type == JTokenType.String ? (string)q["units"]! : null;
-    rows.Add(MakeRow(objectId, $"properties.Material Quantities.{category}.{matName}.{kind}", (JValue)value, units, null));
+    rows.Add(
+      MakeRow(objectId, $"properties.Material Quantities.{category}.{matName}.{kind}", (JValue)value, units, null)
+    );
   }
 
   /// <summary>Check if an object is a parameter: has both `name` and `value` keys.</summary>
   private static bool IsParameter(JObject obj) => obj.ContainsKey("name") && obj.ContainsKey("value");
 
-  private static EavRow MakeRow(string objectId, string path, JValue value, string? units, string? internalDefinitionName)
+  private static EavRow MakeRow(
+    string objectId,
+    string path,
+    JValue value,
+    string? units,
+    string? internalDefinitionName
+  )
   {
     var valueText = ToText(value);
     var inferredType = InferType(value);
@@ -604,8 +604,7 @@ public static class EavExtraction
     WalkPropertiesNative(objectId, properties, "properties", 0, rows, excludedTopLevelProperties);
 
     if (
-      properties.TryGetValue("Material Quantities", out var mq)
-      && mq is IReadOnlyDictionary<string, object?> matQuants
+      properties.TryGetValue("Material Quantities", out var mq) && mq is IReadOnlyDictionary<string, object?> matQuants
     )
     {
       ExtractMaterialQuantitiesNative(objectId, matQuants, rows);
@@ -703,8 +702,7 @@ public static class EavExtraction
             continue;
           }
           string? units = asRecord.TryGetValue("units", out var u) && u is string us ? us : null;
-          string? idn =
-            asRecord.TryGetValue("internalDefinitionName", out var i) && i is string isn ? isn : null;
+          string? idn = asRecord.TryGetValue("internalDefinitionName", out var i) && i is string isn ? isn : null;
           rows.Add(MakeRowNative(objectId, path, paramVal!, units, idn));
           continue;
         }
@@ -773,7 +771,20 @@ public static class EavExtraction
   }
 
   private static bool IsScalar(object? v) =>
-    v is bool or string or sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal;
+    v
+      is bool
+        or string
+        or sbyte
+        or byte
+        or short
+        or ushort
+        or int
+        or uint
+        or long
+        or ulong
+        or float
+        or double
+        or decimal;
 
   private static EavRow MakeRowNative(string objectId, string path, object value, string? units, string? idn)
   {

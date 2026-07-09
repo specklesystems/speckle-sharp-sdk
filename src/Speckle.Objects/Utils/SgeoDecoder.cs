@@ -140,25 +140,40 @@ public static class SgeoDecoder
         int vCount = r.Count(24); // 3 doubles per vertex
         int fCount = r.Count(4);
         var verts = new List<double>(vCount * 3);
-        for (int i = 0; i < vCount * 3; i++) { verts.Add(r.D()); }
+        for (int i = 0; i < vCount * 3; i++)
+        {
+          verts.Add(r.D());
+        }
         var faces = new List<int>(fCount);
-        for (int i = 0; i < fCount; i++) { faces.Add(r.I()); }
+        for (int i = 0; i < fCount; i++)
+        {
+          faces.Add(r.I());
+        }
         var normals = new List<double>();
         if ((header.Flags & SgeoFlags.HasNormals) != 0)
         {
           r.Align8();
-          for (int i = 0; i < vCount * 3; i++) { normals.Add(r.D()); }
+          for (int i = 0; i < vCount * 3; i++)
+          {
+            normals.Add(r.D());
+          }
         }
         var uvs = new List<double>();
         if ((header.Flags & SgeoFlags.HasUvs) != 0)
         {
           r.Align8();
-          for (int i = 0; i < vCount * 2; i++) { uvs.Add(r.D()); }
+          for (int i = 0; i < vCount * 2; i++)
+          {
+            uvs.Add(r.D());
+          }
         }
         var colors = new List<int>();
         if ((header.Flags & SgeoFlags.HasColors) != 0)
         {
-          for (int i = 0; i < vCount; i++) { colors.Add(r.I()); }
+          for (int i = 0; i < vCount; i++)
+          {
+            colors.Add(r.I());
+          }
         }
         return new Mesh
         {
@@ -191,7 +206,10 @@ public static class SgeoDecoder
         int count = r.Count(24); // 3 doubles per point
         _ = r.U(); // reserved
         var value = new List<double>(count * 3);
-        for (int i = 0; i < count * 3; i++) { value.Add(r.D()); }
+        for (int i = 0; i < count * 3; i++)
+        {
+          value.Add(r.D());
+        }
         return new Polyline
         {
           value = value,
@@ -229,18 +247,30 @@ public static class SgeoDecoder
         double de = r.D();
         bool rational = (header.Flags & SgeoFlags.Rational) != 0;
         var points = new List<double>(cpCount * 3);
-        for (int i = 0; i < cpCount * 3; i++) { points.Add(r.D()); }
+        for (int i = 0; i < cpCount * 3; i++)
+        {
+          points.Add(r.D());
+        }
         var weights = new List<double>(cpCount);
         if (rational)
         {
-          for (int i = 0; i < cpCount; i++) { weights.Add(r.D()); }
+          for (int i = 0; i < cpCount; i++)
+          {
+            weights.Add(r.D());
+          }
         }
         else
         {
-          for (int i = 0; i < cpCount; i++) { weights.Add(1.0); }
+          for (int i = 0; i < cpCount; i++)
+          {
+            weights.Add(1.0);
+          }
         }
         var knots = new List<double>(knotCount);
-        for (int i = 0; i < knotCount; i++) { knots.Add(r.D()); }
+        for (int i = 0; i < knotCount; i++)
+        {
+          knots.Add(r.D());
+        }
         return new Curve
         {
           degree = degree,
@@ -295,17 +325,26 @@ public static class SgeoDecoder
         int count = r.Count(24); // 3 doubles per point
         _ = r.U(); // reserved
         var points = new List<double>(count * 3);
-        for (int i = 0; i < count * 3; i++) { points.Add(r.D()); }
+        for (int i = 0; i < count * 3; i++)
+        {
+          points.Add(r.D());
+        }
         var colors = new List<int>();
         if ((header.Flags & SgeoFlags.HasColors) != 0)
         {
-          for (int i = 0; i < count; i++) { colors.Add(r.I()); }
+          for (int i = 0; i < count; i++)
+          {
+            colors.Add(r.I());
+          }
         }
         var sizes = new List<double>();
         if ((header.Flags & SgeoFlags.HasSizes) != 0)
         {
           r.Align8();
-          for (int i = 0; i < count; i++) { sizes.Add(r.D()); }
+          for (int i = 0; i < count; i++)
+          {
+            sizes.Add(r.D());
+          }
         }
         return new Pointcloud
         {
@@ -444,7 +483,10 @@ public static class SgeoDecoder
     int count = r.Count(24); // each point is 3 doubles
     _ = r.U(); // reserved
     var value = new List<double>(count * 3);
-    for (int i = 0; i < count * 3; i++) { value.Add(r.D()); }
+    for (int i = 0; i < count * 3; i++)
+    {
+      value.Add(r.D());
+    }
     r.Align8();
     return new Polyline
     {
@@ -531,7 +573,9 @@ public static class SgeoDecoder
       uint v = U();
       if (v > int.MaxValue || v * elementBytes > _bytes.Length - _offset)
       {
-        throw new SpeckleException($"SGEO element count {v} exceeds the remaining buffer ({_bytes.Length - _offset} bytes).");
+        throw new SpeckleException(
+          $"SGEO element count {v} exceeds the remaining buffer ({_bytes.Length - _offset} bytes)."
+        );
       }
       return (int)v;
     }

@@ -43,8 +43,14 @@
          sibling repo one level up (same convention as the native producers). Compiled into the
          assembly, so the published package carries the IL — only the SDK's own build needs the
          sibling. net8.0+ only, alongside the artifact writer that consumes it. -->
-    <Compile Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSpec.cs" Link="Generated/BundleSpec.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSchemas.cs" Link="Generated/BundleSchemas.cs" />
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSpec.cs"
+      Link="Generated/BundleSpec.cs"
+    />
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSchemas.cs"
+      Link="Generated/BundleSchemas.cs"
+    />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Microsoft.Extensions.ObjectPool" VersionOverride="10.0.0" />
