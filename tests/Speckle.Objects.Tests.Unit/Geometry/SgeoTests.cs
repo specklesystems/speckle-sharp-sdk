@@ -1,5 +1,6 @@
 using System.Text;
 using AwesomeAssertions;
+using Speckle.Objects.Annotation;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Primitive;
 using Speckle.Objects.Utils;
@@ -490,6 +491,98 @@ public class SgeoTests
     decoded.innerLoops.Should().HaveCount(1);
     decoded.innerLoops[0].Should().BeOfType<Circle>();
     ((Circle)decoded.innerLoops[0]).radius.Should().Be(0.5);
+  }
+
+  [Fact]
+  public void Text_RoundTrips()
+  {
+    var text = new Text
+    {
+      value = "Hello, Speckle!",
+      height = 2.5,
+      units = Units.Meters,
+      screenOriented = false,
+      alignmentH = AlignmentHorizontal.Center,
+      alignmentV = AlignmentVertical.Bottom,
+      plane = XYPlane(Units.Meters),
+    };
+
+    var bytes = SgeoEncoder.Encode(text);
+    // 16 header + 8 alignments + 8 height + 96 plane + 8 string framing + 16 padded utf8 ("Hello, Speckle!" = 15B)
+    bytes.Length.Should().Be(152);
+    Magic(bytes).Should().Be("SGEO");
+
+    var header = SgeoDecoder.ReadHeader(bytes);
+    header.PrimitiveType.Should().Be(SgeoPrimitiveType.Text);
+    header.Flags.Should().Be(SgeoFlags.None);
+
+    var decoded = (Text)SgeoDecoder.Decode(bytes);
+    decoded.value.Should().Be("Hello, Speckle!");
+    decoded.height.Should().Be(2.5);
+    decoded.screenOriented.Should().BeFalse();
+    decoded.alignmentH.Should().Be(AlignmentHorizontal.Center);
+    decoded.alignmentV.Should().Be(AlignmentVertical.Bottom);
+    decoded.maxWidth.Should().BeNull();
+    decoded.units.Should().Be(Units.Meters);
+  }
+
+  [Fact]
+  public void Text_WithMaxWidthAndScreenOriented_RoundTrips()
+  {
+    var text = new Text
+    {
+      value = "wrapped billboard",
+      height = 17,
+      units = Units.None, // pixel-sized
+      screenOriented = true,
+      plane = XYPlane(Units.None),
+      maxWidth = 120.5,
+    };
+
+    var bytes = SgeoEncoder.Encode(text);
+    var header = SgeoDecoder.ReadHeader(bytes);
+    header.Flags.Should().HaveFlag(SgeoFlags.ScreenOriented);
+    header.Flags.Should().HaveFlag(SgeoFlags.HasMaxWidth);
+
+    var decoded = (Text)SgeoDecoder.Decode(bytes);
+    decoded.screenOriented.Should().BeTrue();
+    decoded.maxWidth.Should().Be(120.5);
+    decoded.units.Should().Be(Units.None);
+    decoded.alignmentH.Should().Be(AlignmentHorizontal.Left); // enum defaults survive
+    decoded.alignmentV.Should().Be(AlignmentVertical.Top);
+  }
+
+  [Fact]
+  public void Text_UnicodeValue_RoundTrips()
+  {
+    // multi-byte utf8 (13 chars, 24 bytes) — the length prefix counts BYTES, not chars
+    var text = new Text
+    {
+      value = "Ünïcödé ✓ 東京",
+      height = 1,
+      units = Units.Millimeters,
+      screenOriented = false,
+      plane = XYPlane(Units.Millimeters),
+    };
+
+    var decoded = (Text)SgeoDecoder.Decode(SgeoEncoder.Encode(text));
+    decoded.value.Should().Be("Ünïcödé ✓ 東京");
+  }
+
+  [Fact]
+  public void Text_EmptyValue_RoundTrips()
+  {
+    var text = new Text
+    {
+      value = "",
+      height = 1,
+      units = Units.Meters,
+      screenOriented = false,
+      plane = XYPlane(Units.Meters),
+    };
+
+    var decoded = (Text)SgeoDecoder.Decode(SgeoEncoder.Encode(text));
+    decoded.value.Should().Be("");
   }
 
   // ── integrity ─────────────────────────────────────────────────────────────
