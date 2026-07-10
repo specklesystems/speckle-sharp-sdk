@@ -460,6 +460,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// with <see cref="SceneViewKey.Rel"/> / <see cref="SceneViewKey.Eav"/>. Omit keys with no data.</summary>
   public void AddSceneView(SceneView view) => _envelopeWriter.AddSceneView(view);
 
+  // ── camera views ─────────────────────────────────────────────────────────────────────
+
+  /// <summary>Authors one named camera viewpoint (Rhino named view / Revit 3D view / SketchUp scene) into
+  /// <c>envelope.camera_views.parquet</c>. Positions/target in model units, forward/up as unit vectors,
+  /// <see cref="CameraView.Fov"/> vertical DEGREES (perspective only). Add none and the table is absent.</summary>
+  public void AddCameraView(CameraView view) => _envelopeWriter.AddCameraView(view);
+
   /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed
   /// node/relation API (<see cref="AddDefinition"/>, <see cref="AddMaterial"/>, <see cref="Display"/>, …).
   /// Kept (non-<c>[Obsolete]</c>, to avoid breaking the warnings-as-errors build of the parked Navis

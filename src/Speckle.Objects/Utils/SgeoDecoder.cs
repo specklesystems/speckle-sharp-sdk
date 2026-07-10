@@ -276,12 +276,16 @@ public static class SgeoDecoder
         {
           knots.Add(r.D());
         }
+        bool periodic = (header.Flags & SgeoFlags.Periodic) != 0;
         return new Curve
         {
           degree = degree,
-          periodic = (header.Flags & SgeoFlags.Periodic) != 0,
+          periodic = periodic,
           rational = rational,
-          closed = closed,
+          // A periodic NURBS is closed by construction. Older bundles only flagged the display polyline's closure
+          // (see EncodeCurve), losing curve.closed for periodic splines — receivers then skip their periodic
+          // knot/point trimming and bake exploded curves. Deriving it here heals those bundles on receive.
+          closed = closed || periodic,
           points = points,
           weights = weights,
           knots = knots,

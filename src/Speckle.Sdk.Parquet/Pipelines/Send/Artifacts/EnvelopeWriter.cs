@@ -27,6 +27,39 @@ public sealed record SceneViewKey(ProjectionSource Source, string Ref)
 /// keys, so default ≠ only — users can re-pivot or pick a named alternate.</summary>
 public sealed record SceneView(int View, string Name, bool IsDefault, IReadOnlyList<SceneViewKey> Keys);
 
+/// <summary>A named camera viewpoint authored in the source model (Rhino named view, Revit 3D view, SketchUp
+/// scene) — NOT a <see cref="SceneView"/> (which is the explorer grouping). Positions/target/ortho params are
+/// in <paramref name="Units"/> (model units — the consumer scales like geometry); forward/up are unitless UNIT
+/// vectors. <paramref name="Fov"/> is the VERTICAL field of view in DEGREES (perspective only). At most one
+/// view per artefact should be <paramref name="IsDefault"/>. Positional (constructed, not object-initialized)
+/// so net48 consumers of the ILRepack'd netstandard2.0 assembly never touch init-only setters (CS0570).</summary>
+public sealed record CameraView(
+  int View,
+  string? Name,
+  bool IsDefault,
+  int? Ord,
+  double PosX,
+  double PosY,
+  double PosZ,
+  double ForwardX,
+  double ForwardY,
+  double ForwardZ,
+  double UpX,
+  double UpY,
+  double UpZ,
+  double? TargetX = null,
+  double? TargetY = null,
+  double? TargetZ = null,
+  string? Units = null,
+  bool IsOrtho = false,
+  double? Fov = null,
+  double? LensMm = null,
+  double? OrthoHeight = null,
+  double? Aspect = null,
+  double? Near = null,
+  double? Far = null
+);
+
 /// <summary>
 /// Writes the Speckle 4.0 envelope topology artefact as DIRECT Zstd PARQUET (one file per table). The
 /// table SHAPES and the self-describing catalog (<c>rel_types</c>/<c>node_kinds</c>/<c>meta</c>) come from
@@ -39,6 +72,9 @@ public sealed record SceneView(int View, string Name, bool IsDefault, IReadOnlyL
 ///   {base}.envelope.{meta,rel_types,node_kinds}.parquet        -- self-describing catalog (SOT §6)
 ///   {base}.envelope.scene_views.parquet(view, name,           -- producer-authored grouping projections
 ///         is_default, ord, source, ref)                          (SOT §8); absent if none
+///   {base}.envelope.camera_views.parquet(view, name,          -- named camera viewpoints
+///         is_default, ord, pos_*, forward_*, up_*, target_*,     (spec `camera_views`); absent if none
+///         units, is_ortho, fov, lens_mm, ortho_height, aspect, near, far)
 /// </code>
 /// <c>transform</c> is 16 row-major doubles, comma-separated. Not thread-safe: calls are sequential.
 /// </summary>
@@ -58,6 +94,7 @@ public sealed class EnvelopeWriter : IDisposable
   private readonly ParquetTableWriter _nodes;
   private readonly ParquetWriteScheduler _scheduler;
   private readonly List<SceneView> _sceneViews = new();
+  private readonly List<CameraView> _cameraViews = new();
   private bool _completed;
 
   public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
@@ -124,6 +161,14 @@ public sealed class EnvelopeWriter : IDisposable
     _sceneViews.Add(view);
   }
 
+  /// <summary>Buffers a named camera viewpoint; flushed to <c>camera_views.parquet</c> on
+  /// <see cref="Complete"/>. Add none and the table is simply absent (the model ships no viewpoints).</summary>
+  public void AddCameraView(CameraView view)
+  {
+    EnsureNotCompleted();
+    _cameraViews.Add(view);
+  }
+
   /// <summary>Flushes the parquet tables and writes the attach manifest.</summary>
   public void Complete()
   {
@@ -135,6 +180,7 @@ public sealed class EnvelopeWriter : IDisposable
     _relations.Complete();
     _nodes.Complete();
     WriteSceneViews();
+    WriteCameraViews();
   }
 
   public void Dispose()
@@ -202,6 +248,50 @@ public sealed class EnvelopeWriter : IDisposable
         var key = v.Keys[ord];
         sv.AddRow(v.View, v.Name, v.IsDefault, ord, key.Source == ProjectionSource.Rel ? "rel" : "eav", key.Ref);
       }
+    }
+  }
+
+  // Named camera viewpoints — buffered like scene views, written at Complete(), absent (no file) when none.
+  // Shape comes from the generated spec (`camera_views`), row order mirrors the column order there.
+  private void WriteCameraViews()
+  {
+    if (_cameraViews.Count == 0)
+    {
+      return;
+    }
+    using var cv = new ParquetTableWriter(
+      P("camera_views.parquet"),
+      SchemaOf(SpecSchemas.CameraViews),
+      _scheduler
+    );
+    foreach (var v in _cameraViews)
+    {
+      cv.AddRow(
+        v.View,
+        v.Name,
+        v.IsDefault,
+        v.Ord,
+        v.PosX,
+        v.PosY,
+        v.PosZ,
+        v.ForwardX,
+        v.ForwardY,
+        v.ForwardZ,
+        v.UpX,
+        v.UpY,
+        v.UpZ,
+        v.TargetX,
+        v.TargetY,
+        v.TargetZ,
+        v.Units,
+        v.IsOrtho,
+        v.Fov,
+        v.LensMm,
+        v.OrthoHeight,
+        v.Aspect,
+        v.Near,
+        v.Far
+      );
     }
   }
 

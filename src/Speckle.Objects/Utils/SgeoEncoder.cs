@@ -207,7 +207,10 @@ public static class SgeoEncoder
       throw new SpeckleException("Curve.points length must be a multiple of 3.");
     }
     var flags = SgeoFlags.None;
-    if (c.displayValue.closed)
+    // The flag closes BOTH the display polyline and (on decode) the curve itself. Take it from the curve too:
+    // AutoCAD periodic splines are closed curves whose displayValue polyline is often NOT flagged closed — dropping
+    // c.closed here made receivers skip their periodic knot/point trimming and bake exploded splines.
+    if (c.closed || c.displayValue.closed)
     {
       flags |= SgeoFlags.Closed;
     }
