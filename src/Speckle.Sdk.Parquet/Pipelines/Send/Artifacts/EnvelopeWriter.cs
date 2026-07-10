@@ -29,36 +29,36 @@ public sealed record SceneView(int View, string Name, bool IsDefault, IReadOnlyL
 
 /// <summary>A named camera viewpoint authored in the source model (Rhino named view, Revit 3D view, SketchUp
 /// scene) — NOT a <see cref="SceneView"/> (which is the explorer grouping). Positions/target/ortho params are
-/// in <see cref="Units"/> (model units — the consumer scales like geometry); <see cref="ForwardX"/>/… and
-/// <see cref="UpX"/>/… are unitless UNIT vectors. <see cref="Fov"/> is the VERTICAL field of view in DEGREES
-/// (perspective only). At most one view per artefact should be <see cref="IsDefault"/>.</summary>
-public sealed record CameraView
-{
-  public required int View { get; init; }
-  public string? Name { get; init; }
-  public bool IsDefault { get; init; }
-  public int? Ord { get; init; }
-  public required double PosX { get; init; }
-  public required double PosY { get; init; }
-  public required double PosZ { get; init; }
-  public required double ForwardX { get; init; }
-  public required double ForwardY { get; init; }
-  public required double ForwardZ { get; init; }
-  public required double UpX { get; init; }
-  public required double UpY { get; init; }
-  public required double UpZ { get; init; }
-  public double? TargetX { get; init; }
-  public double? TargetY { get; init; }
-  public double? TargetZ { get; init; }
-  public string? Units { get; init; }
-  public bool IsOrtho { get; init; }
-  public double? Fov { get; init; }
-  public double? LensMm { get; init; }
-  public double? OrthoHeight { get; init; }
-  public double? Aspect { get; init; }
-  public double? Near { get; init; }
-  public double? Far { get; init; }
-}
+/// in <paramref name="Units"/> (model units — the consumer scales like geometry); forward/up are unitless UNIT
+/// vectors. <paramref name="Fov"/> is the VERTICAL field of view in DEGREES (perspective only). At most one
+/// view per artefact should be <paramref name="IsDefault"/>. Positional (constructed, not object-initialized)
+/// so net48 consumers of the ILRepack'd netstandard2.0 assembly never touch init-only setters (CS0570).</summary>
+public sealed record CameraView(
+  int View,
+  string? Name,
+  bool IsDefault,
+  int? Ord,
+  double PosX,
+  double PosY,
+  double PosZ,
+  double ForwardX,
+  double ForwardY,
+  double ForwardZ,
+  double UpX,
+  double UpY,
+  double UpZ,
+  double? TargetX = null,
+  double? TargetY = null,
+  double? TargetZ = null,
+  string? Units = null,
+  bool IsOrtho = false,
+  double? Fov = null,
+  double? LensMm = null,
+  double? OrthoHeight = null,
+  double? Aspect = null,
+  double? Near = null,
+  double? Far = null
+);
 
 /// <summary>
 /// Writes the Speckle 4.0 envelope topology artefact as DIRECT Zstd PARQUET (one file per table). The

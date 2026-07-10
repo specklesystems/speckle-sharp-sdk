@@ -103,50 +103,48 @@ public sealed class EnvelopeWriterTests : IDisposable
     {
       // A perspective named view (Rhino-style: target + lens) and an ortho one (SketchUp-style: ortho_height).
       w.AddCameraView(
-        new CameraView
-        {
-          View = 0,
-          Name = "Entrance",
-          IsDefault = true,
-          Ord = 0,
-          PosX = 10,
-          PosY = -5,
-          PosZ = 1.7,
-          ForwardX = 0,
-          ForwardY = 1,
-          ForwardZ = 0,
-          UpX = 0,
-          UpY = 0,
-          UpZ = 1,
-          TargetX = 10,
-          TargetY = 20,
-          TargetZ = 1.7,
-          Units = "m",
-          IsOrtho = false,
-          Fov = 45.0,
-          LensMm = 50.0,
-        }
+        new CameraView(
+          View: 0,
+          Name: "Entrance",
+          IsDefault: true,
+          Ord: 0,
+          PosX: 10,
+          PosY: -5,
+          PosZ: 1.7,
+          ForwardX: 0,
+          ForwardY: 1,
+          ForwardZ: 0,
+          UpX: 0,
+          UpY: 0,
+          UpZ: 1,
+          TargetX: 10,
+          TargetY: 20,
+          TargetZ: 1.7,
+          Units: "m",
+          IsOrtho: false,
+          Fov: 45.0,
+          LensMm: 50.0
+        )
       );
       w.AddCameraView(
-        new CameraView
-        {
-          View = 1,
-          Name = "Plan",
-          IsDefault = false,
-          Ord = 1,
-          PosX = 0,
-          PosY = 0,
-          PosZ = 100,
-          ForwardX = 0,
-          ForwardY = 0,
-          ForwardZ = -1,
-          UpX = 0,
-          UpY = 1,
-          UpZ = 0,
-          Units = "m",
-          IsOrtho = true,
-          OrthoHeight = 42.5,
-        }
+        new CameraView(
+          View: 1,
+          Name: "Plan",
+          IsDefault: false,
+          Ord: 1,
+          PosX: 0,
+          PosY: 0,
+          PosZ: 100,
+          ForwardX: 0,
+          ForwardY: 0,
+          ForwardZ: -1,
+          UpX: 0,
+          UpY: 1,
+          UpZ: 0,
+          Units: "m",
+          IsOrtho: true,
+          OrthoHeight: 42.5
+        )
       );
       w.Complete();
     }
