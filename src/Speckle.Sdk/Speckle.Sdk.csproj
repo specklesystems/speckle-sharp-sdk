@@ -52,6 +52,8 @@
     <!--Pinned exactly to match v2-->
     <PackageReference Include="GraphQL.Client" VersionOverride="6.0.0" />
     <PackageReference Include="System.Text.Json" NoWarn="NU1903" VersionOverride="5.0.2" />
+    <!-- Direct reference so the baked-in System.Memory assembly version matches the rest of the closure on net48 hosts (see Directory.Packages.props). -->
+    <PackageReference Include="System.Memory" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />
