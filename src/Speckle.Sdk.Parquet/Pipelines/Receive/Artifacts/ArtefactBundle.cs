@@ -80,6 +80,11 @@ public sealed class ArtefactRelations
   public Dictionary<int, List<int>> SolidByObject { get; } = new();
   public Dictionary<int, int> CollectionByObject { get; } = new();
 
+  /// <summary>IN_GROUP: object → CONTAINER(Group) nodes. MULTI-valued (unlike <see cref="CollectionByObject"/>,
+  /// which last-wins because it IS the scene tree): groups are a separate, overlapping axis — an object keeps
+  /// its collection and may sit in several (possibly nested) groups.</summary>
+  public Dictionary<int, List<int>> GroupsByObject { get; } = new();
+
   /// <summary>DISPLAY_INSTANCE: object → INSTANCE node. Last-wins map (kept for the Base reconstruction path).</summary>
   public Dictionary<int, int> DisplayInstanceByObject { get; } = new();
 
@@ -207,7 +212,7 @@ public static class ArtefactBundleReader
     14,
     15,
     16,
-    17,
+    RelKind.InGroup,
     18,
     19,
     20, // IN_ROOM/IN_SPACE/IN_SYSTEM/IN_NETWORK/IN_LINE/IN_GROUP/IN_ASSEMBLY/…/XREF
@@ -468,6 +473,9 @@ public static class ArtefactBundleReader
           break;
         case RelKind.InCollection:
           sets.CollectionByObject[src[i]] = dst[i];
+          break;
+        case RelKind.InGroup:
+          sets.Add(sets.GroupsByObject, src[i], dst[i]);
           break;
         case RelKind.DisplayInstance:
           sets.DisplayInstanceByObject[src[i]] = dst[i];

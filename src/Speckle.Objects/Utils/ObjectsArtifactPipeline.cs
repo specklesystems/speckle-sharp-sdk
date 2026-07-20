@@ -400,6 +400,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void InSystem(int objectK, int systemK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InSystem, objectK, systemK, ord);
 
+  /// <summary>object → node(CONTAINER, subtype "Group"): authored scene-group membership (Rhino/AutoCAD
+  /// groups). A SEPARATE axis from <see cref="InCollection"/> (the layer/collection scene-tree, single-valued
+  /// on receive): an object keeps its collection AND its group(s); groups may nest (container parent chain)
+  /// and overlap, so an object may carry several IN_GROUP edges.</summary>
+  public void InGroup(int objectK, int groupK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InGroup, objectK, groupK, ord);
+
   /// <summary>object → object: physical flow connectivity, DIRECTED src→dst by flow (source→target). A
   /// reciprocal pair encodes undirected / unknown flow. Unscoped (ord=0) — see the scoped overload.</summary>
   public void ConnectsTo(int sourceObjectK, int targetObjectK) => ConnectsTo(sourceObjectK, targetObjectK, 0);
