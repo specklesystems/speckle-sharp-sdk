@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
@@ -12,15 +11,16 @@ namespace Speckle.Sdk.Artifacts.Harness;
 /// <summary>
 /// Pulls a model's object graph directly from a remote Speckle server via the SDK's
 /// server-backed deserialize process (no local file, no local account store — the token
-/// is passed explicitly).
+/// is passed explicitly). Registered in the DI container; the deserialize-process factory
+/// is injected via the constructor rather than resolved from a passed-in service provider.
 /// </summary>
-public static class RemoteSource
+public sealed class RemoteSource(IDeserializeProcessFactory deserializeProcessFactory)
 {
   /// <summary>
   /// Resolves the latest version of a model (its id + referencedObject/rootId) via GraphQL.
   /// Mirrors: project(id) -> model(id) -> versions(limit:1){ items { id referencedObject } }.
   /// </summary>
-  public static async Task<(string versionId, string rootId)> ResolveLatestVersionAsync(
+  public async Task<(string versionId, string rootId)> ResolveLatestVersionAsync(
     string serverUrl,
     string projectId,
     string modelId,
@@ -84,11 +84,10 @@ public static class RemoteSource
 
   /// <summary>
   /// Deserializes a root object id into a <see cref="Base"/> graph using the SDK's
-  /// server-backed deserialize process. Follows the exact pattern in
-  /// tests/Speckle.Sdk.Serialization.Testing/Program.cs.
+  /// server-backed deserialize process, via the injected <see cref="IDeserializeProcessFactory"/>.
+  /// Follows the exact pattern in tests/Speckle.Sdk.Serialization.Testing/Program.cs.
   /// </summary>
-  public static async Task<Base> DeserializeFromServerAsync(
-    IServiceProvider serviceProvider,
+  public async Task<Base> DeserializeFromServerAsync(
     string serverUrl,
     string projectId,
     string rootId,
@@ -96,10 +95,9 @@ public static class RemoteSource
     CancellationToken ct
   )
   {
-    var factory = serviceProvider.GetRequiredService<IDeserializeProcessFactory>();
     var progress = new ConsoleProgress();
 
-    var process = factory.CreateDeserializeProcess(
+    var process = deserializeProcessFactory.CreateDeserializeProcess(
       new Uri(serverUrl),
       projectId,
       token,
