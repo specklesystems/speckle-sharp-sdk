@@ -426,7 +426,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   // ── structural results ─────────────────────────────────────────────────────────────────
 
   /// <summary>
-  /// Appends one structural analysis/design result value to <c>{base}.eav.structural-results.parquet</c>
+  /// Appends one structural analysis/design result value to <c>{base}.eav.structural_results.parquet</c>
   /// (see <see cref="StructuralResultsWriter"/>). <b>Object-level</b> results pass the member/joint's
   /// <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned with, so
   /// results join back to it) and leave <paramref name="location"/> null; <b>model-level</b> results (story
