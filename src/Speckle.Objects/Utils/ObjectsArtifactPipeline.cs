@@ -418,6 +418,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void ConnectsTo(int sourceObjectK, int targetObjectK, int scope) =>
     _envelopeWriter.AddRelation(RelKind.ConnectsTo, sourceObjectK, targetObjectK, scope);
 
+  /// <summary>object → object: hosted element → its HOST (door/window → wall, fixture → ceiling/floor/face).
+  /// A DIFFERENT semantic from <see cref="Subelement"/> ownership: a hosted element is PLACED ON its host, not
+  /// a component of it. Precedence matches the producers: a valid owner wins (SUBELEMENT), hosting is the
+  /// fallback. Emit only when BOTH endpoints are sent objects (no dangling edges). Un-retired post-v5 (ENG-8867).</summary>
+  public void HostedOn(int hostedObjectK, int hostObjectK) =>
+    _envelopeWriter.AddRelation(RelKind.HostedOn, hostedObjectK, hostObjectK, 0);
+
   /// <summary>object → object: a room-bounding element → the ROOM object it bounds (which walls/separators form a
   /// room's footprint, for egress / plan analysis). Both are interned objects.</summary>
   public void Bounds(int boundingObjectK, int roomObjectK, int ord) =>
