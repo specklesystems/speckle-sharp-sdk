@@ -22,7 +22,7 @@ namespace Speckle.Sdk.Artifacts.Harness;
 /// descends the <c>elements</c> lineage, so it halts at an atomic object: its <c>displayValue</c> and data
 /// properties are handled here, never walked into.
 /// </summary>
-public sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILogger<GraphArtifactProducer2> logger)
+internal sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILogger<GraphArtifactProducer2> logger)
   : IDisposable
 {
   public void Dispose() => pipeline?.Dispose();
@@ -196,7 +196,7 @@ public sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILo
         else
         {
           var gAppId = Aid(item);
-          if (TryAddGeometry(gAppId, item))
+          if (AddGeometry(gAppId, item))
           {
             pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
             _stats.DisplayEdges++;
@@ -214,7 +214,7 @@ public sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILo
     if (IsGeometry(obj))
     {
       // The leaf is its own geometry; appId interns into both the object and geometry namespaces.
-      if (TryAddGeometry(appId, obj))
+      if (AddGeometry(appId, obj))
       {
         pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
         _stats.DisplayEdges++;
@@ -254,25 +254,11 @@ public sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILo
     return instK;
   }
 
-  private bool TryAddGeometry(string appId, Base geometry)
+  private bool AddGeometry(string appId, Base geometry)
   {
-    try
-    {
-      pipeline.AddGeometry(appId, geometry);
-      _seenGeometryAppIds.Add(appId);
-      return true;
-    }
-#pragma warning disable CA1031 // an unencodable geometry must not abort the migration
-    catch (Exception ex)
-#pragma warning restore CA1031
-    {
-      _stats.GeometryEncodeFailures++;
-      if (_stats.Notes.Count < 20)
-      {
-        _stats.Notes.Add($"encode fail [{geometry.speckle_type}]: {ex.Message}");
-      }
-      return false;
-    }
+    pipeline.AddGeometry(appId, geometry);
+    _seenGeometryAppIds.Add(appId);
+    return true;
   }
 
   // Definition content: a nested instance → INSTANCE node (linked via DEFINES_INSTANCE); otherwise a geometry
@@ -307,27 +293,15 @@ public sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILo
       }
       return;
     }
-    try
+
+    pipeline.AddGeometry(appId, geometry);
+    _stats.DefinitionGeometries++;
+    if ((ReadEmbeddedMaterial(geometry) ?? ReadEmbeddedMaterial(obj)) is { } rm)
     {
-      pipeline.AddGeometry(appId, geometry);
-      _stats.DefinitionGeometries++;
-      if ((ReadEmbeddedMaterial(geometry) ?? ReadEmbeddedMaterial(obj)) is { } rm)
-      {
-        _embeddedMaterialByGeom.TryAdd(appId, rm);
-      }
-      // Shared across placements, so ByLayer colour must bind to this geometry-K, not flood from an instance.
-      _objectDisplayGeomKeys[appId] = new List<string> { "g:" + appId };
+      _embeddedMaterialByGeom.TryAdd(appId, rm);
     }
-#pragma warning disable CA1031 // skip an unencodable definition member, keep migrating
-    catch (Exception ex)
-#pragma warning restore CA1031
-    {
-      _stats.GeometryEncodeFailures++;
-      if (_stats.Notes.Count < 20)
-      {
-        _stats.Notes.Add($"def geom encode fail [{obj.speckle_type}]: {ex.Message}");
-      }
-    }
+    // Shared across placements, so ByLayer colour must bind to this geometry-K, not flood from an instance.
+    _objectDisplayGeomKeys[appId] = new List<string> { "g:" + appId };
   }
 
   // ── proxy / value-node emission ─────────────────────────────────────────────────────
@@ -633,7 +607,9 @@ public sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILo
 
   private static string CollectionSubtype(Collection col)
   {
+#pragma warning disable CS0618 // Type or member is obsolete
     var ct = col.collectionType;
+#pragma warning restore CS0618 // Type or member is obsolete
     return string.IsNullOrEmpty(ct) ? col.speckle_type.Split('.')[^1] : ct;
   }
 
@@ -735,7 +711,7 @@ public sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILo
 
   // ── stats ───────────────────────────────────────────────────────────────────────────
 
-  public sealed class Stats
+  internal sealed class Stats
   {
     public int Objects;
     public int Geometries;
@@ -757,7 +733,6 @@ public sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILo
     public int DefinesInstanceEdges;
     public int MeshAtomics;
     public int InstanceAtomics;
-    public int GeometryEncodeFailures;
 
     // Proxy refs whose target appId isn't in the graph — skipped rather than minting a phantom K.
     public int SkippedDefines;
@@ -769,7 +744,7 @@ public sealed class GraphArtifactProducer2(ObjectsArtifactPipeline pipeline, ILo
 
     public override string ToString() =>
       $"""
-        objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})  encodeFailures={GeometryEncodeFailures}
+        objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})
         edges: DISPLAY={DisplayEdges} DISPLAY_INSTANCE={DisplayInstanceEdges} SUBELEMENT={SubelementEdges}
                DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges}
         nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections}

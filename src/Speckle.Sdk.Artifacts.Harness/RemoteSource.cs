@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.V2;
 using Speckle.Sdk.Serialisation.V2.Receive;
@@ -14,39 +15,40 @@ namespace Speckle.Sdk.Artifacts.Harness;
 /// is passed explicitly). Registered in the DI container; the deserialize-process factory
 /// is injected via the constructor rather than resolved from a passed-in service provider.
 /// </summary>
-public sealed class RemoteSource(IDeserializeProcessFactory deserializeProcessFactory)
+internal sealed class RemoteSource(IDeserializeProcessFactory deserializeProcessFactory, ILogger<RemoteSource> logger)
 {
   /// <summary>
   /// Resolves the latest version of a model (its id + referencedObject/rootId) via GraphQL.
   /// Mirrors: project(id) -> model(id) -> versions(limit:1){ items { id referencedObject } }.
   /// </summary>
   public async Task<(string versionId, string rootId)> ResolveLatestVersionAsync(
-    string serverUrl,
+    Uri serverUrl,
     string projectId,
     string modelId,
     string token,
     CancellationToken ct
   )
   {
-    const string query =
-      @"query LatestVersion($projectId: String!, $modelId: String!) {
-  project(id: $projectId) {
-    model(id: $modelId) {
-      versions(limit: 1) {
-        items { id referencedObject }
+    const string query = """
+      query LatestVersion($projectId: String!, $modelId: String!) {
+        project(id: $projectId) {
+          model(id: $modelId) {
+            versions(limit: 1) {
+              items { id referencedObject }
+            }
+          }
+        }
       }
-    }
-  }
-}";
+      """;
 
     var payload = new { query, variables = new { projectId, modelId } };
 
-    using var http = new HttpClient();
+    using HttpClient http = new();
     http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     // app.speckle.systems is behind Cloudflare, which 403s (code 1010) requests with no User-Agent.
     http.DefaultRequestHeaders.UserAgent.ParseAdd("speckle-backfill-validation/1.0");
 
-    var graphqlUrl = serverUrl.TrimEnd('/') + "/graphql";
+    Uri graphqlUrl = new Uri(serverUrl, "/graphql");
     using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
     using var resp = await http.PostAsync(graphqlUrl, content, ct).ConfigureAwait(false);
@@ -88,17 +90,17 @@ public sealed class RemoteSource(IDeserializeProcessFactory deserializeProcessFa
   /// Follows the exact pattern in tests/Speckle.Sdk.Serialization.Testing/Program.cs.
   /// </summary>
   public async Task<Base> DeserializeFromServerAsync(
-    string serverUrl,
+    Uri serverUrl,
     string projectId,
     string rootId,
     string token,
     CancellationToken ct
   )
   {
-    var progress = new ConsoleProgress();
+    var progress = new LoggerProgress(logger);
 
     var process = deserializeProcessFactory.CreateDeserializeProcess(
-      new Uri(serverUrl),
+      serverUrl,
       projectId,
       token,
       progress,
@@ -111,8 +113,8 @@ public sealed class RemoteSource(IDeserializeProcessFactory deserializeProcessFa
     }
   }
 
-  /// <summary>Minimal debounced progress writer (the SDK testing project's Progress is not referenced here).</summary>
-  private sealed class ConsoleProgress : IProgress<ProgressArgs>
+  /// <summary>Minimal debounced progress reporter that logs download/progress events.</summary>
+  private sealed class LoggerProgress(ILogger logger) : IProgress<ProgressArgs>
   {
     private static readonly TimeSpan Debounce = TimeSpan.FromSeconds(1);
     private DateTime _last = DateTime.UtcNow;
@@ -132,11 +134,11 @@ public sealed class RemoteSource(IDeserializeProcessFactory deserializeProcessFa
       _last = now;
       if (value.ProgressEvent == ProgressEvent.DownloadBytes)
       {
-        Console.WriteLine($"  download bytes: {_bytes:N0}");
+        logger.LogInformation("Download bytes {Bytes}", _bytes);
       }
       else
       {
-        Console.WriteLine($"  {value.ProgressEvent}: {value.Count}/{value.Total}");
+        logger.LogInformation("Progress {ProgressEvent} {Count}/{Total}", value.ProgressEvent, value.Count, value.Total);
       }
     }
   }

@@ -26,9 +26,9 @@ namespace Speckle.Sdk.Artifacts.Harness;
 ///   • color.objects[]           → object namespace
 ///   • level.objects[]           → object namespace
 /// </summary>
-public static class GraphArtifactProducer
+internal static class GraphArtifactProducer
 {
-  public sealed class Stats
+  internal sealed class Stats
   {
     public int Objects;
     public int Geometries;
@@ -50,7 +50,6 @@ public static class GraphArtifactProducer
     public int DefinesInstanceEdges;
     public int MeshAtomics;
     public int InstanceAtomics;
-    public int GeometryEncodeFailures;
 
     // Proxy refs skipped because the target appId is absent from the graph (e.g. level membership to a
     // Revit Room filtered out of the export). Skipped rather than minting a phantom object/geometry K.
@@ -63,7 +62,7 @@ public static class GraphArtifactProducer
 
     public override string ToString() =>
       $"""
-        objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})  encodeFailures={GeometryEncodeFailures}
+        objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})
         edges: DISPLAY={DisplayEdges} DISPLAY_INSTANCE={DisplayInstanceEdges} SUBELEMENT={SubelementEdges}
                DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges}
         nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections}
@@ -245,7 +244,7 @@ public static class GraphArtifactProducer
         else
         {
           var gAppId = GeometryKey(item);
-          if (TryAddGeometry(pipeline, gAppId, item, stats, seenGeometryAppIds))
+          if (TryAddGeometry(pipeline, gAppId, item, seenGeometryAppIds))
           {
             pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
             stats.DisplayEdges++;
@@ -264,7 +263,7 @@ public static class GraphArtifactProducer
     {
       // mesh-atomic: the leaf IS the geometry → DISPLAY(object-K → its own geometry-K). The appId interns
       // into BOTH the object and geometry namespaces (separate counters, no collision).
-      if (TryAddGeometry(pipeline, appId, obj, stats, seenGeometryAppIds))
+      if (TryAddGeometry(pipeline, appId, obj, seenGeometryAppIds))
       {
         pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
         stats.DisplayEdges++;
@@ -317,25 +316,12 @@ public static class GraphArtifactProducer
     ObjectsArtifactPipeline pipeline,
     string appId,
     Base geometry,
-    Stats stats,
     HashSet<string> seenGeometryAppIds
   )
   {
-    try
-    {
-      pipeline.AddGeometry(appId, geometry);
-      seenGeometryAppIds.Add(appId);
-      return true;
-    }
-    catch (Exception ex)
-    {
-      stats.GeometryEncodeFailures++;
-      if (stats.Notes.Count < 20)
-      {
-        stats.Notes.Add($"encode fail [{geometry.speckle_type}]: {ex.Message}");
-      }
-      return false;
-    }
+    pipeline.AddGeometry(appId, geometry);
+    seenGeometryAppIds.Add(appId);
+    return true;
   }
 
   // The union of all appIds referenced by the root's instance-definition proxies — i.e. the definition
@@ -400,29 +386,19 @@ public static class GraphArtifactProducer
       }
       return;
     }
-    try
+
+    pipeline.AddGeometry(appId, geometry);
+    stats.DefinitionGeometries++;
+    if ((ReadEmbeddedMaterial(geometry) ?? ReadEmbeddedMaterial(obj)) is { } rm)
     {
-      pipeline.AddGeometry(appId, geometry);
-      stats.DefinitionGeometries++;
-      if ((ReadEmbeddedMaterial(geometry) ?? ReadEmbeddedMaterial(obj)) is { } rm)
-      {
-        embeddedMaterialByGeom.TryAdd(appId, rm);
-      }
-      // Record the definition geometry under its own appId so the ByLayer walk (CollectDescendantGeom) can
-      // reach it: block content sits under its SOURCE layer Collection in the tree, and ByLayer colour must
-      // bind to this shared geometry-K (fixed across placements) — NOT flood from the instance's layer. The
-      // consumer's appearanceFor prefers colors.get(geomK) over colors.get(objK), so the source-layer colour
-      // wins over the instance's ByBlock fallback. (Tagged g: — materials/colours are geometry-targeted.)
-      objectDisplayGeomKeys[appId] = new List<string> { "g:" + appId };
+      embeddedMaterialByGeom.TryAdd(appId, rm);
     }
-    catch (Exception ex)
-    {
-      stats.GeometryEncodeFailures++;
-      if (stats.Notes.Count < 20)
-      {
-        stats.Notes.Add($"def geom encode fail [{obj.speckle_type}]: {ex.Message}");
-      }
-    }
+    // Record the definition geometry under its own appId so the ByLayer walk (CollectDescendantGeom) can
+    // reach it: block content sits under its SOURCE layer Collection in the tree, and ByLayer colour must
+    // bind to this shared geometry-K (fixed across placements) — NOT flood from the instance's layer. The
+    // consumer's appearanceFor prefers colors.get(geomK) over colors.get(objK), so the source-layer colour
+    // wins over the instance's ByBlock fallback. (Tagged g: — materials/colours are geometry-targeted.)
+    objectDisplayGeomKeys[appId] = new List<string> { "g:" + appId };
   }
 
   // ── proxy / value-node emission ─────────────────────────────────────────────────

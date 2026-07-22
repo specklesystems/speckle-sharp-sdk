@@ -10,7 +10,7 @@ namespace Speckle.Sdk.Artifacts.Harness;
 /// container-time constructor dependencies. This factory supplies them on demand while the logger
 /// is injected from DI.
 /// </summary>
-public sealed class GraphArtifactProducer2Factory(ILogger<GraphArtifactProducer2> logger)
+internal sealed class GraphArtifactProducer2Factory(ILogger<GraphArtifactProducer2> logger)
 {
   /// <summary>
   /// Creates a producer whose pipeline writes the bundle into <paramref name="outputDir"/> under

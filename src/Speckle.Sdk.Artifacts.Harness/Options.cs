@@ -1,13 +1,13 @@
 namespace Speckle.Sdk.Artifacts.Harness;
 
-public enum InputMode
+internal enum InputMode
 {
   Local,
   Remote,
 }
 
 /// <summary>Parsed CLI options for the harness. See <see cref="Usage"/>.</summary>
-public sealed class Options
+internal sealed class Options
 {
   public InputMode Mode { get; private set; } = InputMode.Local;
 

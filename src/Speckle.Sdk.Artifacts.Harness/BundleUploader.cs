@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Speckle.Sdk.Artifacts.Harness;
 
@@ -15,12 +16,12 @@ namespace Speckle.Sdk.Artifacts.Harness;
 /// Endpoint paths derived from server modules/data/rest/upload.ts (router mounted at
 /// API_PATH = '/api', routes literally '/v2/projects/:projectId/modelingestion/:ingestionId/uploads/{sign,complete}').
 /// </summary>
-public static class BundleUploader
+internal sealed class BundleUploader(ILogger<BundleUploader> logger)
 {
-  public sealed record UploadResult(string IngestionId, string VersionId, IReadOnlyList<string> Files);
+  internal sealed record UploadResult(string IngestionId, string VersionId, IReadOnlyList<string> Files);
 
-  public static async Task<UploadResult> UploadAsync(
-    string serverUrl,
+  public async Task<UploadResult> UploadAsync(
+    Uri baseUrl,
     string projectId,
     string modelId,
     string outDir,
@@ -30,14 +31,17 @@ public static class BundleUploader
     CancellationToken ct
   )
   {
-    var baseUrl = serverUrl.TrimEnd('/');
     using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
     http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
     // ── 1. create the model ingestion → reserved versionId + ingestionId ─────────────
     var (ingestionId, reservedVersionId) = await CreateModelIngestionAsync(http, baseUrl, projectId, modelId, ct)
       .ConfigureAwait(false);
-    Console.WriteLine($"Ingestion created: {ingestionId}  (reserved versionId {reservedVersionId})");
+    logger.LogInformation(
+      "Ingestion created {IngestionId} (reserved versionId {ReservedVersionId})",
+      ingestionId,
+      reservedVersionId
+    );
 
     // ── name files after the reserved versionId: {versionId}.<suffix> ─────────────────
     // The producer wrote {modelId}.<suffix> (the versionId isn't known until the ingestion exists), so
@@ -67,7 +71,7 @@ public static class BundleUploader
     }
 
     // ── 2. sign — one presigned PUT per file ──────────────────────────────────────────
-    var signUrl = $"{baseUrl}/api/v2/projects/{projectId}/modelingestion/{ingestionId}/uploads/sign";
+    var signUrl = new Uri(baseUrl, $"/api/v2/projects/{projectId}/modelingestion/{ingestionId}/uploads/sign");
     var signBody = JsonSerializer.Serialize(new { files });
     using var signResp = await PostJsonAsync(http, signUrl, signBody, ct).ConfigureAwait(false);
     var signRespBody = await signResp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
@@ -92,11 +96,11 @@ public static class BundleUploader
       }
       var etag = await PutFileAsync(s3Http, presigned.Url, Path.Combine(outDir, filename), ct).ConfigureAwait(false);
       etags[filename] = etag;
-      Console.WriteLine($"  PUT {filename, -36} etag {etag}");
+      logger.LogInformation("PUT {FileName} etag {ETag}", filename, etag);
     }
 
     // ── 4. complete — creates the commit (schemaVersion 3) ────────────────────────────
-    var completeUrl = $"{baseUrl}/api/v2/projects/{projectId}/modelingestion/{ingestionId}/uploads/complete";
+    var completeUrl = new Uri(baseUrl, $"/api/v2/projects/{projectId}/modelingestion/{ingestionId}/uploads/complete");
     var completeBody = JsonSerializer.Serialize(
       new
       {
@@ -120,23 +124,25 @@ public static class BundleUploader
   // GraphQL: projectMutations.modelIngestionMutations.create(input) → ModelIngestion { id, versionId }
   private static async Task<(string ingestionId, string versionId)> CreateModelIngestionAsync(
     HttpClient http,
-    string baseUrl,
+    Uri baseUrl,
     string projectId,
     string modelId,
     CancellationToken ct
   )
   {
-    const string mutation =
-      @"mutation CreateIngestion($input: ModelIngestionCreateInput!) {
-  projectMutations {
-    modelIngestionMutations {
-      create(input: $input) {
-        id
-        versionId
+    //language=graphql
+    const string MUTATION = """
+      mutation CreateIngestion($input: ModelIngestionCreateInput!) {
+        projectMutations {
+          modelIngestionMutations {
+            create(input: $input) {
+              id
+              versionId
+            }
+          }
+        }
       }
-    }
-  }
-}";
+      """;
 
     var variables = new
     {
@@ -149,8 +155,8 @@ public static class BundleUploader
       },
     };
 
-    var payload = JsonSerializer.Serialize(new { query = mutation, variables });
-    using var resp = await PostJsonAsync(http, $"{baseUrl}/graphql", payload, ct).ConfigureAwait(false);
+    var payload = JsonSerializer.Serialize(new { query = MUTATION, variables });
+    using var resp = await PostJsonAsync(http, new Uri(baseUrl, "/graphql"), payload, ct).ConfigureAwait(false);
     var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
     if (!resp.IsSuccessStatusCode)
     {
@@ -228,7 +234,7 @@ public static class BundleUploader
     return etag;
   }
 
-  private static Task<HttpResponseMessage> PostJsonAsync(HttpClient http, string url, string json, CancellationToken ct)
+  private static Task<HttpResponseMessage> PostJsonAsync(HttpClient http, Uri url, string json, CancellationToken ct)
   {
     var content = new StringContent(json, Encoding.UTF8, "application/json");
     return http.PostAsync(url, content, ct);

@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
@@ -11,13 +13,19 @@ namespace Speckle.Sdk.Artifacts.Harness;
 /// server), produces the parquet bundle on disk, and optionally uploads it via the v2
 /// envelope-bundle flow. Registered in the DI container and resolved from <c>Program</c>.
 /// </summary>
-public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Factory producerFactory)
+internal sealed class Harness(
+  RemoteSource remoteSource,
+  GraphArtifactProducer2Factory producerFactory,
+  BundleUploader bundleUploader,
+  SgeoSelfTest selfTest,
+  ILogger<Harness> logger
+)
 {
   public async Task<int> Execute(string[] argv)
   {
     if (argv.Length == 1 && argv[0] == "--selftest")
     {
-      return SgeoSelfTest.Run();
+      return selfTest.Run();
     }
 
     Options opts;
@@ -27,8 +35,7 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
     }
     catch (ArgumentException ex)
     {
-      Console.Error.WriteLine($"error: {ex.Message}");
-      Console.Error.WriteLine(Options.Usage);
+      logger.LogError("Invalid arguments: {Error}\n{Usage}", ex.Message, Options.Usage);
       return 2;
     }
 
@@ -53,44 +60,44 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
         return 3;
       }
 
-      var serverUrl = opts.SrcServerUrl!;
-      var projectId = opts.SrcProjectId!;
-      var modelId = opts.SrcModelId!;
+      var serverUrl = new Uri(opts.SrcServerUrl.NotNull());
+      var projectId = opts.SrcProjectId.NotNull();
+      var modelId = opts.SrcModelId.NotNull();
 
       string rootId;
       if (opts.SrcVersionId is not null)
       {
         // Caller pinned a version; we still need its rootId. Resolve it via GraphQL by
         // listing the version (cheapest reliable path without an extra single-version query).
-        Console.WriteLine($"Resolving rootId for version {opts.SrcVersionId} …");
+        logger.LogInformation("Resolving rootId for version {VersionId} …", opts.SrcVersionId);
         var (vId, rId) = await ResolveVersionRootId(serverUrl, projectId, modelId, opts.SrcVersionId, token)
           .ConfigureAwait(false);
         rootId = rId;
-        Console.WriteLine($"Version {vId} → rootId {rootId}");
+        logger.LogInformation("Version {VersionId} → rootId {RootId}", vId, rootId);
       }
       else
       {
-        Console.WriteLine($"Resolving latest version of {projectId}/{modelId} …");
+        logger.LogInformation("Resolving latest version of {ProjectId}/{ModelId} …", projectId, modelId);
         var (vId, rId) = await remoteSource
           .ResolveLatestVersionAsync(serverUrl, projectId, modelId, token, CancellationToken.None)
           .ConfigureAwait(false);
         rootId = rId;
-        Console.WriteLine($"Latest version {vId} → rootId {rootId}");
+        logger.LogInformation("Latest version {VersionId} → rootId {RootId}", vId, rootId);
       }
 
-      Console.WriteLine("Deserializing from server …");
+      logger.LogInformation("Deserializing from server …");
       root = await remoteSource
         .DeserializeFromServerAsync(serverUrl, projectId, rootId, token, CancellationToken.None)
         .ConfigureAwait(false);
       baseName = modelId;
     }
 
-    Console.WriteLine($"Deserialized root [{root.speckle_type}] id={root.id}");
+    logger.LogInformation("Deserialized root [{SpeckleType}] id={RootId}", root.speckle_type, root.id);
 
     // ── produce the bundle on disk ───────────────────────────────────────────────────────
     var outDir =
       opts.OutDir ?? Path.Combine(Path.GetTempPath(), $"speckle-artefact-{baseName}-{DateTime.UtcNow:yyyyMMddHHmmss}");
-    Console.WriteLine($"Output: {outDir}  (base '{baseName}')");
+    logger.LogInformation("Output: {OutDir} (base {BaseName})", outDir, baseName);
 
     GraphArtifactProducer2.Stats stats;
     using (var producer = producerFactory.Create(outDir, baseName))
@@ -98,53 +105,44 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
       stats = producer.Produce(root);
     }
 
-    Console.WriteLine();
-    Console.WriteLine("──────── PRODUCE STATS ────────");
-    Console.WriteLine(stats);
-    if (stats.Notes.Count > 0)
+    logger.LogInformation("Produce stats:\n{Stats}", stats);
+    foreach (var note in stats.Notes)
     {
-      Console.WriteLine("notes:");
-      foreach (var n in stats.Notes)
-      {
-        Console.WriteLine($"  • {n}");
-      }
+      logger.LogInformation("Note: {Note}", note);
     }
-    Console.WriteLine();
-    Console.WriteLine("──────── BUNDLE FILES ────────");
     foreach (var f in Directory.GetFiles(outDir).OrderBy(x => x))
     {
-      Console.WriteLine($"  {Path.GetFileName(f), -40} {new FileInfo(f).Length, 12:N0} bytes");
+      logger.LogInformation("Bundle file {FileName} {Bytes} bytes", Path.GetFileName(f), new FileInfo(f).Length);
     }
 
     // ── optionally upload via the v2 envelope-bundle flow ────────────────────────────────
     if (opts.Mode == InputMode.Local && opts.Upload && root.id is null)
     {
-      Console.Error.WriteLine(
-        "error: cannot upload — root.id is null (a locally-built graph that was not deserialised from a hashed source has no id)."
+      logger.LogError(
+        "Cannot upload — root.id is null (a locally-built graph that was not deserialised from a hashed source has no id)."
       );
       return 4;
     }
 
     if (opts.Upload)
     {
-      var dstToken = RequireEnv("SPECKLE_DST_TOKEN");
+      string? dstToken = RequireEnv("SPECKLE_DST_TOKEN");
       if (dstToken is null)
       {
         return 3;
       }
 
-      var rootId = root.id!;
+      string rootId = root.id.NotNull();
       // totalChildrenCount: best-effort = (object count - 1) for the root. Server stores it on
       // the commit; not load-bearing for serving. See README "uncertainties".
       int? totalChildrenCount = stats.Objects > 0 ? Math.Max(0, stats.Objects - 1) : null;
-
-      Console.WriteLine();
-      Console.WriteLine("──────── UPLOAD (v2 envelope bundle) ────────");
-      var result = await BundleUploader
+      Uri url = new(opts.DstServerUrl.NotNull());
+      logger.LogInformation("Uploading (v2 envelope bundle) …");
+      var result = await bundleUploader
         .UploadAsync(
-          opts.DstServerUrl!,
-          opts.DstProjectId!,
-          opts.DstModelId!,
+          url,
+          opts.DstProjectId.NotNull(),
+          opts.DstModelId.NotNull(),
           outDir,
           rootId,
           totalChildrenCount,
@@ -153,11 +151,9 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
         )
         .ConfigureAwait(false);
 
-      var viewerUrl =
-        $"{opts.DstServerUrl!.TrimEnd('/')}/projects/{opts.DstProjectId}/models/{opts.DstModelId}@{result.VersionId}";
-      Console.WriteLine();
-      Console.WriteLine($"UPLOAD OK  versionId={result.VersionId}  files={result.Files.Count}");
-      Console.WriteLine($"Viewer: {viewerUrl}");
+      Uri viewerUrl = new(url, $"/projects/{opts.DstProjectId}/models/{opts.DstModelId}@{result.VersionId}");
+      logger.LogInformation("Upload OK versionId={VersionId} files={FileCount}", result.VersionId, result.Files.Count);
+      logger.LogInformation("Viewer: {ViewerUrl}", viewerUrl);
     }
 
     return 0;
@@ -165,7 +161,7 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
 
   // Resolve a specific version's referencedObject (rootId) via GraphQL.
   private static async Task<(string versionId, string rootId)> ResolveVersionRootId(
-    string serverUrl,
+    Uri serverUrl,
     string projectId,
     string modelId,
     string versionId,
@@ -175,18 +171,19 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
     // Reuse the latest-version resolver if no pin; otherwise query the single version.
     using var http = new System.Net.Http.HttpClient();
     http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-    const string query =
-      @"query Version($projectId: String!, $modelId: String!, $versionId: String!) {
-  project(id: $projectId) {
-    model(id: $modelId) {
-      version(id: $versionId) { id referencedObject }
-    }
-  }
-}";
+    const string QUERY = """
+      query Version($projectId: String!, $modelId: String!, $versionId: String!) {
+        project(id: $projectId) {
+          model(id: $modelId) {
+            version(id: $versionId) { id referencedObject }
+          }
+        }
+      }
+      """;
     var payload = System.Text.Json.JsonSerializer.Serialize(
       new
       {
-        query,
+        query = QUERY,
         variables = new
         {
           projectId,
@@ -195,8 +192,8 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
         },
       }
     );
-    using var content = new System.Net.Http.StringContent(payload, System.Text.Encoding.UTF8, "application/json");
-    using var resp = await http.PostAsync(serverUrl.TrimEnd('/') + "/graphql", content).ConfigureAwait(false);
+    using var content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
+    using var resp = await http.PostAsync(new Uri(serverUrl, "/graphql"), content).ConfigureAwait(false);
     var body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
     if (!resp.IsSuccessStatusCode)
     {
@@ -212,11 +209,11 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
   }
 
   // ── local ndjson → Base graph (existing behaviour) ──────────────────────────────────────
-  private static async Task<(Base? root, string baseName)> LoadLocal(Options opts)
+  private async Task<(Base? root, string baseName)> LoadLocal(Options opts)
   {
-    var ndjsonPath = opts.LocalPath!;
-    var baseName = Path.GetFileName(ndjsonPath).Split('.')[0];
-    Console.WriteLine($"Input : {ndjsonPath}");
+    var ndjsonPath = new FileInfo(opts.LocalPath.NotNull());
+    var baseName = ndjsonPath.Name;
+    logger.LogInformation("Input: {InputPath}", ndjsonPath);
 
     var transport = new MemoryTransport();
     var jsonById = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -238,31 +235,31 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
       jsonById[id] = json;
       lineCount++;
     }
-    Console.WriteLine($"Loaded {lineCount} objects into transport.");
+    logger.LogInformation("Loaded {LineCount} objects into transport", lineCount);
 
     var rootId = opts.LocalRoot == "auto" ? DetectRoot(jsonById) : opts.LocalRoot;
     if (rootId is null || !jsonById.TryGetValue(rootId, out var rootJson))
     {
-      Console.Error.WriteLine($"Root '{rootId}' not found. Available collection-like candidates:");
+      logger.LogError("Root '{RootId}' not found. Available collection-like candidates:", rootId);
       foreach (var c in CollectionCandidates(jsonById).Take(10))
       {
-        Console.Error.WriteLine($"  {c}");
+        logger.LogInformation("Candidate {Candidate}", c);
       }
       return (null, baseName);
     }
-    Console.WriteLine($"Root  : {rootId}");
+    logger.LogInformation("Root: {RootId}", rootId);
 
     var deserializer = new SpeckleObjectDeserializer { ReadTransport = transport };
     var root = await deserializer.DeserializeAsync(rootJson).ConfigureAwait(false);
     return (root, baseName);
   }
 
-  private static string? RequireEnv(string name)
+  private string? RequireEnv(string name)
   {
     var val = Environment.GetEnvironmentVariable(name);
     if (string.IsNullOrWhiteSpace(val))
     {
-      Console.Error.WriteLine($"error: required environment variable {name} is not set.");
+      logger.LogError("Required environment variable {EnvVar} is not set", name);
       return null;
     }
     return val;
@@ -270,19 +267,36 @@ public sealed class Harness(RemoteSource remoteSource, GraphArtifactProducer2Fac
 
   // ── helpers (local mode) ────────────────────────────────────────────────────────────────
 
-  private static IEnumerable<string> ReadLines(string path)
+  private static IEnumerable<string> ReadLines(FileInfo path)
   {
-    Stream raw = File.OpenRead(path);
-    Stream stream =
-      path.EndsWith(".gz", StringComparison.OrdinalIgnoreCase) ? new GZipStream(raw, CompressionMode.Decompress)
-      : path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
-        ? new ZipArchive(raw, ZipArchiveMode.Read).Entries[0].Open()
-      : raw;
-    using var reader = new StreamReader(stream);
-    string? line;
-    while ((line = reader.ReadLine()) is not null)
+    ZipArchive? archive = null;
+    try
     {
-      yield return line;
+      Stream raw = path.OpenRead();
+      Stream stream;
+      switch (path.Extension)
+      {
+        case ".gz":
+          stream = new GZipStream(raw, CompressionMode.Decompress);
+          break;
+        case ".zip":
+          archive = new ZipArchive(raw, ZipArchiveMode.Read);
+          stream = archive.Entries[0].Open();
+          break;
+        default:
+          stream = raw;
+          break;
+      }
+
+      using StreamReader reader = new(stream);
+      while (reader.ReadLine() is { } line)
+      {
+        yield return line;
+      }
+    }
+    finally
+    {
+      archive?.Dispose();
     }
   }
 
