@@ -33,6 +33,12 @@ public sealed class ObjectsArtifactReader
   private const string RenderMaterialProxiesKey = "renderMaterialProxies";
   private const string InstanceDefinitionProxiesKey = "instanceDefinitionProxies";
 
+  // ENG-8947: the v1 (net48) reconstruction path rebuilds the reference-point transform from the bundle meta offset
+  // and lifts it onto the reconstructed root as the metadata dict Speckle.Connectors...RevitShared.RevitHostObjectBuilder
+  // expects (a FEET matrix), so its untouched reference-point composition just works. MUST match
+  // Speckle.Connectors.Common.Operations.RootKeys.REFERENCE_POINT_TRANSFORM; hardcoded here (like the proxy keys).
+  private const string ReferencePointTransformKey = "referencePointTransform";
+
   public async Task<Base> ReadAsync(
     string bundleDir,
     ArtifactReceiveOptions options,
@@ -95,8 +101,60 @@ public sealed class ObjectsArtifactReader
     // ── instance definitions (DEFINITION nodes + DEFINES/DEFINES_INSTANCE) ────────────────────────────
     AttachInstanceDefinitions(nodes, rels, objByGeom, bundle.ObjectAppIds, root);
 
+    // ENG-8947/8808: rebuild the reference-point transform from the bundle meta offset and lift it onto the root so
+    // the v1 Revit host builder can undo/redo it (translation kinds only; the offset is in display units).
+    if (BuildReferencePointRootValue(bundle) is { } refPointRootValue)
+    {
+      root[ReferencePointTransformKey] = refPointRootValue;
+    }
+
     root["units"] = bundle.Units;
     return root;
+  }
+
+  // ENG-8947: rebuild the v1 root reference-point transform from the meta offset. Only the translation kinds carry an
+  // offset; the display-unit offset is converted to feet (the internal unit v1 applies the transform in) and packed as
+  // the 16-value matrix (identity basis + translation) ReferencePointHelper.GetTransformFromRootObject expects.
+  private static Dictionary<string, object>? BuildReferencePointRootValue(ArtefactBundle bundle)
+  {
+    if (bundle.ReferencePointOffset is not { Length: > 0 } offsetCsv)
+    {
+      return null;
+    }
+    var parts = offsetCsv.Split(',');
+    if (parts.Length != 3)
+    {
+      return null;
+    }
+    var o = new double[3];
+    for (int i = 0; i < 3; i++)
+    {
+      if (!double.TryParse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out o[i]))
+      {
+        return null;
+      }
+    }
+    double toFeet = Units.GetConversionFactor(bundle.Units, Units.Feet);
+    var m = new double[]
+    {
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      o[0] * toFeet,
+      o[1] * toFeet,
+      o[2] * toFeet,
+      1,
+    };
+    return new Dictionary<string, object> { ["transform"] = m };
   }
 
   // ── collections (layers) ──────────────────────────────────────────────────────────────────────────────
