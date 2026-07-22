@@ -474,6 +474,14 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <see cref="CameraView.Fov"/> vertical DEGREES (perspective only). Add none and the table is absent.</summary>
   public void AddCameraView(CameraView view) => _envelopeWriter.AddCameraView(view);
 
+  // ── reference point (ENG-8947) ─────────────────────────────────────────────────────────
+
+  /// <summary>Records the applied reference-point re-basing in the bundle <c>meta</c> so it is recoverable
+  /// downstream (federation/georeferencing). <paramref name="kind"/> ∈ <c>projectBasePoint | surveyPoint |
+  /// internalOriginFallback</c> (null = internal origin); <paramref name="offset"/> is <c>"x,y,z"</c> in display
+  /// units — the vector subtracted from world-space output. Call before <see cref="Complete"/>.</summary>
+  public void SetReferencePoint(string? kind, string? offset) => _envelopeWriter.SetReferencePoint(kind, offset);
+
   /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed
   /// node/relation API (<see cref="AddDefinition"/>, <see cref="AddMaterial"/>, <see cref="Display"/>, …).
   /// Kept (non-<c>[Obsolete]</c>, to avoid breaking the warnings-as-errors build of the parked Navis
