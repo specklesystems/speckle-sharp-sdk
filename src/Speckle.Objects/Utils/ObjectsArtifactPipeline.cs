@@ -8,32 +8,20 @@ using Speckle.Sdk.Pipelines.Send.Artifacts;
 namespace Speckle.Objects.Utils;
 
 /// <summary>
-/// Speckle 4.0 producer for the artefact bundle (see <c>notes/topology-envelope-SOT.md</c>),
-/// now PARQUET-ONLY — direct Zstd parquet, one file per table, no DuckDB:
-/// <c>geometries.parquet</c> (SGEO shape blobs, <see cref="GeometriesParquetWriter"/>),
-/// the <c>envelope.*.parquet</c> table set (the topology property graph — relations + value-nodes,
-/// <see cref="EnvelopeWriter"/>), and the <c>eav.*.parquet</c> table set (object set + identity
-/// dictionary + per-object labels, <see cref="EavWriter"/>).
-///
-/// This class owns the three per-namespace identity interners and exposes a typed emit API
-/// so the producer stays string-based while the artefacts store pure dense <c>int32</c>:
-/// <list type="bullet">
-///   <item><b>object</b> namespace — interned by <see cref="EavWriter.GetOrAddObject"/>
-///   (eav is the dictionary home); resolved here via <see cref="InternObject"/>.</item>
-///   <item><b>geometry</b> namespace — <see cref="_geometryInterner"/>; one row per mesh.</item>
-///   <item><b>node</b> namespace — <see cref="_nodeInterner"/> (kind-prefixed keys);
-///   definitions / instances / materials / colours / levels.</item>
-/// </list>
-/// Producing the files is decoupled from uploading: write here, then hand
-/// <see cref="GeometriesPath"/> + <see cref="EnvelopeDbPath"/> + <see cref="EavDbPath"/> to
-/// the uploader (stubbed for the POC).
+/// Speckle 4.0 producer for the artefact bundle (see <c>notes/topology-envelope-SOT.md</c>).
+/// PARQUET-ONLY, one file per table, no DuckDB: <c>geometries.parquet</c> (SGEO blobs,
+/// <see cref="GeometriesParquetWriter"/>), the <c>envelope.*.parquet</c> topology graph
+/// (<see cref="EnvelopeWriter"/>), and the <c>eav.*.parquet</c> tables (<see cref="EavWriter"/>).
+/// Owns the three per-namespace identity interners (object / geometry / node) and exposes a typed
+/// emit API so the producer stays string-based while the artefacts store dense <c>int32</c>. The
+/// object namespace is interned by <see cref="EavWriter.GetOrAddObject"/> (eav is the dictionary home).
+/// Producing is decoupled from uploading: write here, then hand the paths to the uploader.
 /// </summary>
 public sealed class ObjectsArtifactPipeline : IDisposable
 {
-  // One background writer thread shared by all three artefacts. The ODA extraction thread interns +
-  // buffers rows synchronously; every row-group flush + file finalize is handed to this scheduler, so
-  // Parquet's sync-over-async IO never runs on the ODA pinned thread (no deadlock), overlaps extraction,
-  // and is bounded by the scheduler's queue (backpressure). See ParquetWriteScheduler.
+  // One background writer thread shared by all three artefacts. Interning/buffering is synchronous on the
+  // ODA extraction thread; every row-group flush + file finalize is handed to this scheduler, so Parquet's
+  // sync-over-async IO never runs on the ODA pinned thread (no deadlock) and is bounded by its queue.
   private readonly ParquetWriteScheduler _scheduler = new();
   private readonly GeometriesParquetWriter _geometriesWriter;
   private readonly EnvelopeWriter _envelopeWriter;
@@ -41,8 +29,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   private readonly StructuralResultsWriter _structuralResultsWriter;
   private readonly ISet<string> _excludedProperties;
 
-  // Per-namespace interners. The object namespace is owned by the eav writer (it writes the
-  // dictionary), so it is not duplicated here.
+  // Per-namespace interners. The object namespace lives in the eav writer (it writes the dictionary).
   private readonly IdInterner _geometryInterner = new();
   private readonly IdInterner _nodeInterner = new();
 
@@ -55,29 +42,25 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _excludedProperties = excludedTopLevelProperties ?? EavExtraction.DefaultExcludedTopLevelProperties;
   }
 
-  /// <summary>The local path of the produced <c>geometries.parquet</c> file.</summary>
   public string GeometriesPath => _geometriesWriter.GeometriesPath;
 
-  /// <summary>The output directory holding the produced <c>envelope.*.parquet</c> tables
-  /// (relations + nodes). Name kept (<c>...DbPath</c>) for caller compatibility — no DuckDB is written.</summary>
+  /// <summary>Output directory of the <c>envelope.*.parquet</c> tables. Name kept (<c>...DbPath</c>)
+  /// for caller compatibility — no DuckDB is written.</summary>
   public string EnvelopeDbPath => _envelopeWriter.EnvelopeDbPath;
 
-  /// <summary>The output directory holding the produced <c>eav.*.parquet</c> tables.
-  /// Name kept (<c>...DbPath</c>) for caller compatibility — no DuckDB is written.</summary>
+  /// <summary>Output directory of the <c>eav.*.parquet</c> tables. Name kept (<c>...DbPath</c>)
+  /// for caller compatibility — no DuckDB is written.</summary>
   public string EavDbPath => _eavWriter.EavDbPath;
 
   // ── object namespace ──────────────────────────────────────────────────────────────
 
-  /// <summary>Resolves an object's dense <c>K</c> (interns its <paramref name="applicationId"/>
-  /// via the eav dictionary), so the caller can emit its envelope edges with the SAME id eav uses.</summary>
+  /// <summary>Interns <paramref name="applicationId"/> via the eav dictionary to its dense <c>K</c>, so
+  /// the caller emits envelope edges with the SAME id eav uses.</summary>
   public int InternObject(string applicationId) => _eavWriter.GetOrAddObject(applicationId);
 
-  /// <summary>
-  /// Flattens an object's property tree into <c>eav</c> keyed by
-  /// <paramref name="applicationId"/>. <paramref name="properties"/> is the merged-ancestry
-  /// dictionary (geometry excluded by construction); <paramref name="rootScalars"/> are bare
-  /// top-level labels (speckle_type, name, units, …).
-  /// </summary>
+  /// <summary>Flattens an object's property tree into <c>eav</c>. <paramref name="properties"/> is the
+  /// merged-ancestry dictionary (geometry excluded); <paramref name="rootScalars"/> are bare top-level
+  /// labels (speckle_type, name, units, …).</summary>
   public void AddProperties(
     string applicationId,
     IReadOnlyDictionary<string, object?> properties,
@@ -85,7 +68,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     string? typeKey = null
   )
   {
-    // No type key (or nothing type-scoped to split) → flatten everything per-object, as before.
+    // No type key (or nothing type-scoped) → flatten everything per-object.
     if (typeKey is null || !TrySplitTypeParameters(properties, out var instanceProps, out var typeSubtree))
     {
       var rows = new List<EavRow>();
@@ -164,20 +147,16 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
   // ── geometry namespace ────────────────────────────────────────────────────────────
 
-  /// <summary>
-  /// Interns <paramref name="meshApplicationId"/> to a dense geometry <c>K</c>, encoding +
-  /// storing the SGEO blob on first sight, and returns the <c>K</c> (for <c>DISPLAY</c>/
-  /// <c>DEFINES</c>/<c>HAS_MATERIAL</c> edges). Re-encoding is skipped on repeats.
-  /// </summary>
+  /// <summary>Interns <paramref name="meshApplicationId"/> to a dense geometry <c>K</c>, encoding +
+  /// storing the SGEO blob on first sight (skipped on repeats), and returns the <c>K</c>.</summary>
   public int AddGeometry(string meshApplicationId, Base geometry)
   {
     if (_geometryInterner.GetOrAdd(meshApplicationId, out var geometryK))
     {
       if (geometry is Arc a)
       {
-        // V3 frequently sent planes which were not normalized.
-        // Viewer 2.0 just ignored the plane's vectors, instead re-computing them from the origin + start + end end-points
-        // Viewer 3 (SGO) currently will use the plane (TBD if we will in near-future, but atleast we are removing 1 source of invalid arcs)
+        // V3 often sent non-normalized planes; Viewer 2.0 ignored them and recomputed from origin+start+end.
+        // Viewer 3 (SGO) uses the plane, so normalize to remove one source of invalid arcs.
         a.plane.normal.Normalize();
         a.plane.xdir.Normalize();
         a.plane.ydir.Normalize();
@@ -188,13 +167,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     return geometryK;
   }
 
-  /// <summary>
-  /// Interns <paramref name="geometryApplicationId"/> to a dense geometry <c>K</c> and stores the RAW
-  /// <paramref name="content"/> bytes verbatim (no SGEO encoding) with an explicit <paramref name="type"/>
-  /// label on first sight, returning the <c>K</c>. Use for host-native geometry kept losslessly for
-  /// receive — e.g. a Rhino Brep/Extrusion/SubD serialized to a 3dm blob (<c>type = "3dm"</c>) linked via
-  /// the <c>SOLID</c> rel, alongside its <c>DISPLAY</c> meshes added through <see cref="AddGeometry"/>.
-  /// </summary>
+  /// <summary>Interns <paramref name="geometryApplicationId"/> to a dense geometry <c>K</c> and stores the
+  /// RAW <paramref name="content"/> bytes verbatim (no SGEO encoding) with a <paramref name="type"/> label
+  /// on first sight. For host-native geometry kept losslessly for receive — e.g. a Rhino Brep serialized to
+  /// a 3dm blob (<c>type = "3dm"</c>) linked via the <c>SOLID</c> rel.</summary>
   public int AddRawGeometry(string geometryApplicationId, byte[] content, string type)
   {
     if (_geometryInterner.GetOrAdd(geometryApplicationId, out var geometryK))
@@ -204,9 +180,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     return geometryK;
   }
 
-  /// <summary>Resolves the geometry <c>K</c> for an already-added mesh (lookup, no encode) —
-  /// for the post-loop <c>DEFINES</c>/<c>HAS_MATERIAL</c> edges that reference meshes by their
-  /// host applicationId.</summary>
+  /// <summary>Resolves the geometry <c>K</c> for an already-added mesh (lookup, no encode) — for post-loop
+  /// <c>DEFINES</c>/<c>HAS_MATERIAL</c> edges referencing meshes by host applicationId.</summary>
   public int InternGeometryId(string meshApplicationId) => _geometryInterner.GetOrAdd(meshApplicationId);
 
   // ── node namespace (value-entities) ────────────────────────────────────────────────
@@ -288,12 +263,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     return k;
   }
 
-  /// <summary>Interns a scene-tree collection (layer / category / story) node, writing it once. In v5 a
-  /// collection is a CONTAINER node whose <c>subtype</c> carries its tag; the <c>IN_COLLECTION</c> rel marks
-  /// the grouping axis (distinct from IN_MODEL / IN_SYSTEM / …). <paramref name="parentCollectionK"/> is its
-  /// parent collection node (null = top-level, directly under the excluded root) — the parent chain IS the
-  /// source hierarchy. <paramref name="subtype"/> is a tag (e.g. "Layer" / "Collection" / source
-  /// collectionType) carried in the <c>subtype</c> column for the loader to label it.</summary>
+  /// <summary>Interns a scene-tree collection (layer / category / story) node, once. A collection is a
+  /// CONTAINER node whose <c>subtype</c> carries its tag; <c>IN_COLLECTION</c> marks the grouping axis.
+  /// <paramref name="parentCollectionK"/> is the parent collection (null = top-level) — the parent chain IS
+  /// the source hierarchy. <paramref name="subtype"/> tags it (e.g. "Layer") for the loader.</summary>
   public int AddCollection(
     string collectionKey,
     string? name,
@@ -304,9 +277,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
-      // v5: a collection is a CONTAINER whose `subtype` carries its tag; the IN_COLLECTION rel marks the axis. The
-      // optional argb carries the collection's display colour (e.g. a Rhino/AutoCAD layer colour) in the shared
-      // node `argb` column — receivers colour the layer from it; null = no colour authored.
+      // argb carries the collection's display colour (e.g. a Rhino/AutoCAD layer colour) in the shared node
+      // `argb` column; null = no colour authored.
       _envelopeWriter.AddNode(
         k,
         NodeKind.Container,
@@ -325,11 +297,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     return k;
   }
 
-  /// <summary>Interns a CONTAINER (semantic-topology bucket: model / room / system / …) node, writing it
-  /// once. Distinct from <see cref="AddCollection"/> (the authored scene-tree). <paramref name="parentContainerK"/>
-  /// is its parent CONTAINER (null = top-level) — self-nesting for nested links / appended files.
-  /// <paramref name="subtype"/> is the canonical axis tag carried in the <c>subtype</c> column (e.g. "Model");
-  /// use the SAME tag across connectors for the same concept (see the <see cref="RelKind"/> naming convention).</summary>
+  /// <summary>Interns a CONTAINER (semantic-topology bucket: model / room / system / …) node, once. Distinct
+  /// from <see cref="AddCollection"/> (authored scene-tree). <paramref name="parentContainerK"/> is its parent
+  /// CONTAINER (null = top-level; self-nesting for nested links). <paramref name="subtype"/> is the canonical
+  /// axis tag (e.g. "Model") — use the SAME tag across connectors for the same concept.</summary>
   public int AddContainer(string containerKey, string? name, int? parentContainerK, string? subtype)
   {
     if (_nodeInterner.GetOrAdd("cont:" + containerKey, out var k))
@@ -398,16 +369,14 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void InModel(int objectK, int modelK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InModel, objectK, modelK, ord);
 
-  /// <summary>object → object: spatial occupancy — the object's containing ROOM object (furniture/door/window
-  /// → room). Rooms are sent as objects (their geometry is the room volume), so <paramref name="roomK"/> is the
-  /// room's interned object K, not a node.</summary>
+  /// <summary>object → object: spatial occupancy — the object's containing ROOM object. Rooms are sent as
+  /// objects (geometry = room volume), so <paramref name="roomK"/> is the room's interned object K, not a node.</summary>
   public void InRoom(int objectK, int roomK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InRoom, objectK, roomK, ord);
 
-  /// <summary>object → node(CONTAINER, subtype "System"): named logical engineering system membership
-  /// (Revit MEPSystem, IFC IfcDistributionSystem). Also the v5 home of physically-connected NETWORKS —
-  /// a network is a CONTAINER with subtype "Network" reached through this same rel (the IN_NETWORK rel was
-  /// collapsed into IN_SYSTEM).</summary>
+  /// <summary>object → node(CONTAINER, subtype "System"): logical engineering-system membership (Revit
+  /// MEPSystem, IFC IfcDistributionSystem). Also home of NETWORKS — a CONTAINER with subtype "Network"
+  /// reached through this same rel (IN_NETWORK was collapsed into IN_SYSTEM).</summary>
   public void InSystem(int objectK, int systemK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InSystem, objectK, systemK, ord);
 
@@ -415,10 +384,9 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// reciprocal pair encodes undirected / unknown flow. Unscoped (ord=0) — see the scoped overload.</summary>
   public void ConnectsTo(int sourceObjectK, int targetObjectK) => ConnectsTo(sourceObjectK, targetObjectK, 0);
 
-  /// <summary>object → object connectivity with a SCOPE tag (CONNECTS_TO uses <c>ord</c> as a scope, not an
-  /// ordinal — see <c>rel_types.ord_semantics='scope'</c>). <paramref name="scope"/> tags which connectivity
-  /// graph the edge belongs to: an MEP system node K (flow scope), a door/opening object K (room adjacency),
-  /// or 0 (unscoped). Lets one relation table carry several overlapping connectivity graphs.</summary>
+  /// <summary>object → object connectivity with a SCOPE tag: CONNECTS_TO uses <c>ord</c> as a scope, not an
+  /// ordinal (<c>rel_types.ord_semantics='scope'</c>). <paramref name="scope"/> is an MEP system K (flow), a
+  /// door/opening K (room adjacency), or 0 — so one table carries several overlapping connectivity graphs.</summary>
   public void ConnectsTo(int sourceObjectK, int targetObjectK, int scope) =>
     _envelopeWriter.AddRelation(RelKind.ConnectsTo, sourceObjectK, targetObjectK, scope);
 
@@ -429,15 +397,11 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
   // ── structural results ─────────────────────────────────────────────────────────────────
 
-  /// <summary>
-  /// Appends one structural analysis/design result value to <c>{base}.eav.structural-results.parquet</c>
-  /// (see <see cref="StructuralResultsWriter"/>). <b>Object-level</b> results pass the member/joint's
-  /// <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned with, so
-  /// results join back to it) and leave <paramref name="location"/> null; <b>model-level</b> results (story
-  /// drift, modal period, base reaction) pass a null <paramref name="objectApplicationId"/> and identify via
-  /// <paramref name="location"/> (story) and/or <paramref name="step"/> (mode). Numeric results set
-  /// <paramref name="value"/>; non-numeric design verdicts set <paramref name="valueText"/>.
-  /// </summary>
+  /// <summary>Appends one structural result to <c>{base}.eav.structural-results.parquet</c>. <b>Object-level</b>
+  /// results pass <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned
+  /// with, so results join back) and leave <paramref name="location"/> null; <b>model-level</b> results (story
+  /// drift, modal period) pass a null id and identify via <paramref name="location"/> / <paramref name="step"/>.
+  /// Set <paramref name="value"/> for numeric, <paramref name="valueText"/> for design verdicts.</summary>
   public void AddStructuralResult(
     string? objectApplicationId,
     string? location,
@@ -466,33 +430,28 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
   // ── scene views ──────────────────────────────────────────────────────────────────────
 
-  /// <summary>Authors a scene_views projection (SOT §8): the producer's default (and optional named
-  /// alternate) scene-explorer grouping, which the consumer seeds the model-tree grouping from. Build keys
-  /// with <see cref="SceneViewKey.Rel"/> / <see cref="SceneViewKey.Eav"/>. Omit keys with no data.</summary>
+  /// <summary>Authors a scene_views projection (SOT §8): the default (+ optional named) scene-explorer
+  /// grouping the consumer seeds its model-tree from. Build keys with <see cref="SceneViewKey.Rel"/> /
+  /// <see cref="SceneViewKey.Eav"/>.</summary>
   public void AddSceneView(SceneView view) => _envelopeWriter.AddSceneView(view);
 
   // ── camera views ─────────────────────────────────────────────────────────────────────
 
-  /// <summary>Authors one named camera viewpoint (Rhino named view / Revit 3D view / SketchUp scene) into
-  /// <c>envelope.camera_views.parquet</c>. Positions/target in model units, forward/up as unit vectors,
-  /// <see cref="CameraView.Fov"/> vertical DEGREES (perspective only). Add none and the table is absent.</summary>
+  /// <summary>Authors one named camera viewpoint into <c>envelope.camera_views.parquet</c>. Position/target in
+  /// model units, forward/up unit vectors, <see cref="CameraView.Fov"/> vertical DEGREES (perspective only).</summary>
   public void AddCameraView(CameraView view) => _envelopeWriter.AddCameraView(view);
 
-  /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed
-  /// node/relation API (<see cref="AddDefinition"/>, <see cref="AddMaterial"/>, <see cref="Display"/>, …).
-  /// Kept (non-<c>[Obsolete]</c>, to avoid breaking the warnings-as-errors build of the parked Navis
-  /// path) as a throwing stub; it fails loudly only if actually invoked.</summary>
+  /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed node/relation API.
+  /// Kept as a throwing stub (non-<c>[Obsolete]</c>) so the parked Navis path still builds under
+  /// warnings-as-errors; fails loudly only if invoked.</summary>
   public void AddProxy(string type, string dataJson) =>
     throw new NotSupportedException(
       "AddProxy was removed with the proxies(type,json) envelope. Use the typed relations+nodes API."
     );
 
-  /// <summary>
-  /// Enqueues every artefact's final flush + finalize, then BLOCKS until the background writer has
-  /// drained — so all parquet files are fully written and closed on return. The uploader reads
-  /// <see cref="GeometriesPath"/>/<see cref="EnvelopeDbPath"/>/<see cref="EavDbPath"/> only after this.
-  /// Re-throws on this thread if any background write faulted.
-  /// </summary>
+  /// <summary>Enqueues every artefact's final flush + finalize, then BLOCKS until the background writer has
+  /// drained — so all parquet files are written and closed on return. Re-throws if any background write
+  /// faulted.</summary>
   public void Complete()
   {
     _geometriesWriter.Complete();
@@ -502,8 +461,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _scheduler.CompleteAndWait();
   }
 
-  // Cleanup path: enqueue each writer's finalize (best-effort), then drain + join the background
-  // writer so file handles close. Never let one writer's cleanup error escape (it fires during unwind).
+  // Cleanup path: finalize each writer (best-effort), then drain + join so file handles close.
+  // Never let a writer's cleanup error escape (it fires during unwind).
   public void Dispose()
   {
     SafeDispose(_geometriesWriter);

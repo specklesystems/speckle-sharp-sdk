@@ -5,19 +5,14 @@ using Speckle.Sdk;
 using Speckle.Sdk.Artifacts.Harness;
 
 // ── CLI ───────────────────────────────────────────────────────────────────────────────
-// INPUT (pick one):
-//   --local <ndjsonPath> [--root <id|auto>]
-//   --remote <serverUrl> <projectId> <modelId> [--version <versionId>]   (token: SPECKLE_SRC_TOKEN)
-// OUTPUT:
-//   --out <dir>                                  (default: temp dir)
-//   --upload <serverUrl> <projectId> <modelId>   (token: SPECKLE_DST_TOKEN)
-// Both --out and --upload may apply. --upload implies a temp dir if --out is absent.
+// Subcommands (run with --help for full usage):
+//   selftest
+//   local  <ndjsonPath> [--root <id|auto>] [--out <dir>] [--upload <serverUrl> <projectId> <modelId>]
+//   remote <serverUrl> <projectId> <modelId> [--version <id>] [--out <dir>] [--upload ...]
+// Tokens: SPECKLE_SRC_TOKEN (remote source), SPECKLE_DST_TOKEN (upload).
 //
-// Backwards-compat: if the first arg is not a recognised flag, falls back to the legacy
-// positional form `<ndjsonPath> [rootId|auto] [outDir]`.
-//
-// Program.cs is intentionally thin: register the DI container, resolve the Harness, run it.
-// All business logic lives in Harness.Execute.
+// Program.cs is intentionally thin: register the DI container, build the command tree, invoke it.
+// The parsing lives in HarnessCommandLine; the business logic lives in Harness.
 
 var services = new ServiceCollection();
 
@@ -35,5 +30,4 @@ services.AddTransient<Harness>();
 
 await using var serviceProvider = services.BuildServiceProvider();
 
-var harness = serviceProvider.GetRequiredService<Harness>();
-return await harness.Execute(args).ConfigureAwait(false);
+return await HarnessCommandLine.Build(serviceProvider).Parse(args).InvokeAsync().ConfigureAwait(false);

@@ -1,7 +1,6 @@
 using System.IO.Compression;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
-using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
@@ -11,92 +10,81 @@ namespace Speckle.Sdk.Artifacts.Harness;
 /// <summary>
 /// End-to-end artefact-bundle harness: resolves an object graph (local NDJSON OR remote
 /// server), produces the parquet bundle on disk, and optionally uploads it via the v2
-/// envelope-bundle flow. Registered in the DI container and resolved from <c>Program</c>.
+/// envelope-bundle flow. Registered in the DI container; its typed entry points are invoked
+/// by the <see cref="HarnessCommandLine"/> command actions.
 /// </summary>
 internal sealed class Harness(
   RemoteSource remoteSource,
   GraphArtifactProducer2Factory producerFactory,
   BundleUploader bundleUploader,
-  SgeoSelfTest selfTest,
   ILogger<Harness> logger
 )
 {
-  public async Task<int> Execute(string[] argv)
+  /// <summary>Loads a local NDJSON graph and produces (and optionally uploads) the bundle.</summary>
+  public async Task<int> RunLocal(FileInfo ndjson, string root, string? outDir, string[]? upload, CancellationToken ct)
   {
-    if (argv.Length == 1 && argv[0] == "--selftest")
+    var (localRoot, baseName) = await LoadLocal(ndjson, root).ConfigureAwait(false);
+    if (localRoot is null)
     {
-      return selfTest.Run();
+      return 1;
+    }
+    return await ProduceAndUpload(localRoot, baseName, outDir, upload, ct).ConfigureAwait(false);
+  }
+
+  /// <summary>Resolves a graph from a remote server and produces (and optionally uploads) the bundle.</summary>
+  public async Task<int> RunRemote(
+    Uri server,
+    string project,
+    string model,
+    string? version,
+    string? outDir,
+    string[]? upload,
+    CancellationToken ct
+  )
+  {
+    var token = RequireEnv("SPECKLE_SRC_TOKEN");
+    if (token is null)
+    {
+      return 3;
     }
 
-    Options opts;
-    try
+    string rootId;
+    if (version is not null)
     {
-      opts = Options.Parse(argv);
-    }
-    catch (ArgumentException ex)
-    {
-      logger.LogError("Invalid arguments: {Error}\n{Usage}", ex.Message, Options.Usage);
-      return 2;
-    }
-
-    // ── resolve the graph (local file OR remote server) ─────────────────────────────────
-    Base root;
-    string baseName;
-    if (opts.Mode == InputMode.Local)
-    {
-      var (localRoot, localBaseName) = await LoadLocal(opts).ConfigureAwait(false);
-      if (localRoot is null)
-      {
-        return 1;
-      }
-      root = localRoot;
-      baseName = localBaseName;
+      logger.LogInformation("Resolving rootId for version {VersionId} …", version);
+      var (vId, rId) = await ResolveVersionRootId(server, project, model, version, token).ConfigureAwait(false);
+      rootId = rId;
+      logger.LogInformation("Version {VersionId} → rootId {RootId}", vId, rootId);
     }
     else
     {
-      var token = RequireEnv("SPECKLE_SRC_TOKEN");
-      if (token is null)
-      {
-        return 3;
-      }
-
-      var serverUrl = new Uri(opts.SrcServerUrl.NotNull());
-      var projectId = opts.SrcProjectId.NotNull();
-      var modelId = opts.SrcModelId.NotNull();
-
-      string rootId;
-      if (opts.SrcVersionId is not null)
-      {
-        // Caller pinned a version; we still need its rootId. Resolve it via GraphQL by
-        // listing the version (cheapest reliable path without an extra single-version query).
-        logger.LogInformation("Resolving rootId for version {VersionId} …", opts.SrcVersionId);
-        var (vId, rId) = await ResolveVersionRootId(serverUrl, projectId, modelId, opts.SrcVersionId, token)
-          .ConfigureAwait(false);
-        rootId = rId;
-        logger.LogInformation("Version {VersionId} → rootId {RootId}", vId, rootId);
-      }
-      else
-      {
-        logger.LogInformation("Resolving latest version of {ProjectId}/{ModelId} …", projectId, modelId);
-        var (vId, rId) = await remoteSource
-          .ResolveLatestVersionAsync(serverUrl, projectId, modelId, token, CancellationToken.None)
-          .ConfigureAwait(false);
-        rootId = rId;
-        logger.LogInformation("Latest version {VersionId} → rootId {RootId}", vId, rootId);
-      }
-
-      logger.LogInformation("Deserializing from server …");
-      root = await remoteSource
-        .DeserializeFromServerAsync(serverUrl, projectId, rootId, token, CancellationToken.None)
+      logger.LogInformation("Resolving latest version of {ProjectId}/{ModelId} …", project, model);
+      var (vId, rId) = await remoteSource
+        .ResolveLatestVersionAsync(server, project, model, token, ct)
         .ConfigureAwait(false);
-      baseName = modelId;
+      rootId = rId;
+      logger.LogInformation("Latest version {VersionId} → rootId {RootId}", vId, rootId);
     }
 
+    logger.LogInformation("Deserializing from server …");
+    var root = await remoteSource.DeserializeFromServerAsync(server, project, rootId, token, ct).ConfigureAwait(false);
+
+    return await ProduceAndUpload(root, model, outDir, upload, ct).ConfigureAwait(false);
+  }
+
+  // Produce the bundle on disk from a resolved graph, then optionally upload it (when `upload` — the
+  // {serverUrl, projectId, modelId} triple — is supplied).
+  private async Task<int> ProduceAndUpload(
+    Base root,
+    string baseName,
+    string? outDir,
+    string[]? upload,
+    CancellationToken ct
+  )
+  {
     logger.LogInformation("Deserialized root [{SpeckleType}] id={RootId}", root.speckle_type, root.id);
 
-    // ── produce the bundle on disk ───────────────────────────────────────────────────────
-    var outDir =
-      opts.OutDir ?? Path.Combine(Path.GetTempPath(), $"speckle-artefact-{baseName}-{DateTime.UtcNow:yyyyMMddHHmmss}");
+    outDir ??= Path.Combine(Path.GetTempPath(), $"speckle-artefact-{baseName}-{DateTime.UtcNow:yyyyMMddHHmmss}");
     logger.LogInformation("Output: {OutDir} (base {BaseName})", outDir, baseName);
 
     GraphArtifactProducer2.Stats stats;
@@ -115,8 +103,12 @@ internal sealed class Harness(
       logger.LogInformation("Bundle file {FileName} {Bytes} bytes", Path.GetFileName(f), new FileInfo(f).Length);
     }
 
-    // ── optionally upload via the v2 envelope-bundle flow ────────────────────────────────
-    if (opts.Mode == InputMode.Local && opts.Upload && root.id is null)
+    if (upload is null)
+    {
+      return 0;
+    }
+
+    if (root.id is not { } rootObjectId)
     {
       logger.LogError(
         "Cannot upload — root.id is null (a locally-built graph that was not deserialised from a hashed source has no id)."
@@ -124,38 +116,26 @@ internal sealed class Harness(
       return 4;
     }
 
-    if (opts.Upload)
+    var dstToken = RequireEnv("SPECKLE_DST_TOKEN");
+    if (dstToken is null)
     {
-      string? dstToken = RequireEnv("SPECKLE_DST_TOKEN");
-      if (dstToken is null)
-      {
-        return 3;
-      }
-
-      string rootId = root.id.NotNull();
-      // totalChildrenCount: best-effort = (object count - 1) for the root. Server stores it on
-      // the commit; not load-bearing for serving. See README "uncertainties".
-      int? totalChildrenCount = stats.Objects > 0 ? Math.Max(0, stats.Objects - 1) : null;
-      Uri url = new(opts.DstServerUrl.NotNull());
-      logger.LogInformation("Uploading (v2 envelope bundle) …");
-      var result = await bundleUploader
-        .UploadAsync(
-          url,
-          opts.DstProjectId.NotNull(),
-          opts.DstModelId.NotNull(),
-          outDir,
-          rootId,
-          totalChildrenCount,
-          dstToken,
-          CancellationToken.None
-        )
-        .ConfigureAwait(false);
-
-      Uri viewerUrl = new(url, $"/projects/{opts.DstProjectId}/models/{opts.DstModelId}@{result.VersionId}");
-      logger.LogInformation("Upload OK versionId={VersionId} files={FileCount}", result.VersionId, result.Files.Count);
-      logger.LogInformation("Viewer: {ViewerUrl}", viewerUrl);
+      return 3;
     }
 
+    Uri dstServer = new(upload[0]);
+    var dstProject = upload[1];
+    var dstModel = upload[2];
+    // totalChildrenCount: best-effort = (object count - 1) for the root. Server stores it on
+    // the commit; not load-bearing for serving. See README "uncertainties".
+    int? totalChildrenCount = stats.Objects > 0 ? Math.Max(0, stats.Objects - 1) : null;
+    logger.LogInformation("Uploading (v2 envelope bundle) …");
+    var result = await bundleUploader
+      .UploadAsync(dstServer, dstProject, dstModel, outDir, rootObjectId, totalChildrenCount, dstToken, ct)
+      .ConfigureAwait(false);
+
+    Uri viewerUrl = new(dstServer, $"/projects/{dstProject}/models/{dstModel}@{result.VersionId}");
+    logger.LogInformation("Upload OK versionId={VersionId} files={FileCount}", result.VersionId, result.Files.Count);
+    logger.LogInformation("Viewer: {ViewerUrl}", viewerUrl);
     return 0;
   }
 
@@ -209,16 +189,15 @@ internal sealed class Harness(
   }
 
   // ── local ndjson → Base graph (existing behaviour) ──────────────────────────────────────
-  private async Task<(Base? root, string baseName)> LoadLocal(Options opts)
+  private async Task<(Base? root, string baseName)> LoadLocal(FileInfo ndjson, string rootOption)
   {
-    var ndjsonPath = new FileInfo(opts.LocalPath.NotNull());
-    var baseName = ndjsonPath.Name;
-    logger.LogInformation("Input: {InputPath}", ndjsonPath);
+    var baseName = ndjson.Name;
+    logger.LogInformation("Input: {InputPath}", ndjson);
 
     var transport = new MemoryTransport();
     var jsonById = new Dictionary<string, string>(StringComparer.Ordinal);
     var lineCount = 0;
-    foreach (var line in ReadLines(ndjsonPath))
+    foreach (var line in ReadLines(ndjson))
     {
       if (line.Length == 0)
       {
@@ -237,7 +216,7 @@ internal sealed class Harness(
     }
     logger.LogInformation("Loaded {LineCount} objects into transport", lineCount);
 
-    var rootId = opts.LocalRoot == "auto" ? DetectRoot(jsonById) : opts.LocalRoot;
+    var rootId = rootOption == "auto" ? DetectRoot(jsonById) : rootOption;
     if (rootId is null || !jsonById.TryGetValue(rootId, out var rootJson))
     {
       logger.LogError("Root '{RootId}' not found. Available collection-like candidates:", rootId);

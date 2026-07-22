@@ -106,7 +106,7 @@ $runOne = {
   }
 
   & dotnet run -c Release --no-build --project $csproj -- `
-      --remote $srcServer $srcProject $srcModel `
+      remote $srcServer $srcProject $srcModel `
       --upload $dstServer $dstProject $dstModel `
       2>&1 | Out-File -LiteralPath $logf -Encoding utf8
 

@@ -69,7 +69,7 @@
     <PackageVersion Include="Speckle.DoubleNumerics" Version="4.1.0" />
     <PackageVersion Include="SimpleExec" Version="13.0.0" />
     <!-- Pinned due to breaking changes in newer versions -->
-    <PackageVersion Include="System.CommandLine" Version="[2.0.0-beta4.22272.1]" />
+    <PackageVersion Include="System.CommandLine" Version="[2.0.0]" />
     <!--
     Pinned so EVERY netstandard2.0 SDK assembly bakes the SAME System.Memory reference (4.5.5 = assembly 4.0.1.2),
     matching what the connectors repo resolves transitively (IronCompress). Without the pin, Speckle.Objects/Speckle.Sdk
