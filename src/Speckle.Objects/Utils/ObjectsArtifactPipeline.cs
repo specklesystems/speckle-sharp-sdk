@@ -37,8 +37,14 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   private readonly GeometriesParquetWriter _geometriesWriter;
   private readonly EnvelopeWriter _envelopeWriter;
   private readonly EavWriter _eavWriter;
-  private readonly StructuralResultsWriter _structuralResultsWriter;
   private readonly ISet<string> _excludedProperties;
+  private readonly string _outputDir;
+  private readonly string _baseName;
+
+  // Lazily created on the first AddStructuralResult: the structural_results purpose file is OPTIONAL and
+  // feature-detected by file presence, so a bundle with no results must ship NO file — not an empty table
+  // polluting every non-structural connector's bundle catalog.
+  private StructuralResultsWriter? _structuralResultsWriter;
 
   // Per-namespace interners. The object namespace is owned by the eav writer (it writes the
   // dictionary), so it is not duplicated here.
@@ -50,7 +56,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName, _scheduler);
     _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler);
     _eavWriter = new EavWriter(outputDir, baseName, _scheduler);
-    _structuralResultsWriter = new StructuralResultsWriter(outputDir, baseName, _scheduler);
+    _outputDir = outputDir;
+    _baseName = baseName;
     _excludedProperties = excludedTopLevelProperties ?? EavExtraction.DefaultExcludedTopLevelProperties;
   }
 
@@ -447,6 +454,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   )
   {
     int? objectIndex = objectApplicationId is null ? null : _eavWriter.GetOrAddObject(objectApplicationId);
+    _structuralResultsWriter ??= new StructuralResultsWriter(_outputDir, _baseName, _scheduler);
     _structuralResultsWriter.AddRow(
       objectIndex,
       location,
@@ -502,7 +510,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _geometriesWriter.Complete();
     _envelopeWriter.Complete();
     _eavWriter.Complete();
-    _structuralResultsWriter.Complete();
+    _structuralResultsWriter?.Complete(); // absent unless a producer added structural rows
     _scheduler.CompleteAndWait();
   }
 
@@ -513,7 +521,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     SafeDispose(_geometriesWriter);
     SafeDispose(_envelopeWriter);
     SafeDispose(_eavWriter);
-    SafeDispose(_structuralResultsWriter);
+    if (_structuralResultsWriter is not null)
+    {
+      SafeDispose(_structuralResultsWriter);
+    }
     SafeDispose(_scheduler);
   }
 
