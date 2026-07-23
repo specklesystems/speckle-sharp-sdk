@@ -379,8 +379,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void HasMaterial(int geometryK, int materialK) =>
     _envelopeWriter.AddRelation(RelKind.HasMaterial, geometryK, materialK, 0);
 
-  /// <summary>geometry | object → node(COLOR): display colour.</summary>
-  public void HasColor(int srcK, int colorK) => _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, 0);
+  /// <summary>geometry | object → node(COLOR): display colour. The two source namespaces overlap numerically
+  /// (both are dense int spaces from 0), so <paramref name="srcIsObject"/> tags which one <paramref name="srcK"/>
+  /// belongs to in the edge's <c>ord</c> column: 0 = geometry (the default, and what every pre-tag bundle wrote),
+  /// 1 = object. Without the tag a consumer cannot tell an object-sourced instance colour from a geometry-sourced
+  /// one and must guess — dropping colours or applying them to the wrong element [ENG-8822].</summary>
+  public void HasColor(int srcK, int colorK, bool srcIsObject = false) =>
+    _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, srcIsObject ? 1 : 0);
 
   /// <summary>object → node(LEVEL): level membership.</summary>
   public void OnLevel(int objectK, int levelK) => _envelopeWriter.AddRelation(RelKind.OnLevel, objectK, levelK, 0);
