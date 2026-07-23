@@ -1,6 +1,5 @@
 #if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
-using Speckle.Objects.Geometry;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -153,15 +152,6 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_geometryInterner.GetOrAdd(meshApplicationId, out var geometryK))
     {
-      if (geometry is Arc a)
-      {
-        // V3 often sent non-normalized planes; Viewer 2.0 ignored them and recomputed from origin+start+end.
-        // Viewer 3 (SGO) uses the plane, so normalize to remove one source of invalid arcs.
-        a.plane.normal.Normalize();
-        a.plane.xdir.Normalize();
-        a.plane.ydir.Normalize();
-      }
-
       _geometriesWriter.AddGeometry(geometryK, SgeoEncoder.Encode(geometry));
     }
     return geometryK;

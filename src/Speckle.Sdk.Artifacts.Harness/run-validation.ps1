@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
   run-validation.ps1 — fan the artefact-bundle harness across a list of source models,
-  pulling each via --remote from a SRC server and uploading via --upload to a DST server.
+  migrating each from a SRC server to a DST server via the harness `remote` command
+  (pass -LegacyApi to fetch via the REST deserialize API instead of the DuckDB packfile download).
 
   Native PowerShell port of run-validation.sh (same logic). Runs in Windows PowerShell 5.1
   and PowerShell 7+, with no bash / WSL / Git-Bash dependency.
@@ -39,6 +40,7 @@ param(
   [string]$DstModel   = $env:DST_MODEL,
   [int]$Parallel      = $(if ($env:PARALLEL) { [int]$env:PARALLEL } else { 4 }),
   [string]$RefsFile,
+  [switch]$LegacyApi,
   [Parameter(Position = 0, ValueFromRemainingArguments = $true)]
   [string[]]$Refs
 )
@@ -90,7 +92,7 @@ if ($LASTEXITCODE -ne 0) {
 # Per-ref worker (mirrors run_one in the bash version). Runs in a background job so several
 # refs migrate concurrently; tokens are inherited from the parent process environment.
 $runOne = {
-  param($ref, $csproj, $srcServer, $dstServer, $dstProject, $dstModel, $resultsDir)
+  param($ref, $csproj, $srcServer, $dstServer, $dstProject, $dstModel, $resultsDir, $legacyApi)
 
   $srcProject = ($ref -split '/', 2)[0]
   $srcModel   = ($ref -split '/')[-1]
@@ -105,9 +107,13 @@ $runOne = {
     return
   }
 
-  & dotnet run -c Release --no-build --project $csproj -- `
-      remote $srcServer $srcProject $srcModel `
-      --upload $dstServer $dstProject $dstModel `
+  $harnessArgs = @(
+    'remote', $srcServer, $srcProject, $srcModel,
+    '--dest-server', $dstServer, '--dest-project', $dstProject, '--dest-model', $dstModel
+  )
+  if ($legacyApi) { $harnessArgs += '--legacy-api' }
+
+  & dotnet run -c Release --no-build --project $csproj -- $harnessArgs `
       2>&1 | Out-File -LiteralPath $logf -Encoding utf8
 
   if ($LASTEXITCODE -eq 0) {
@@ -139,7 +145,7 @@ try {
       Start-Sleep -Milliseconds 200
     }
     $j = Start-Job -ScriptBlock $runOne -ArgumentList `
-      $ref, $csproj, $SrcServer, $DstServer, $DstProject, $DstModel, $resultsDir
+      $ref, $csproj, $SrcServer, $DstServer, $DstProject, $DstModel, $resultsDir, $LegacyApi.IsPresent
     $jobs.Add($j)
   }
 

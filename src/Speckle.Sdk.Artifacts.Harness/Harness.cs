@@ -1,7 +1,10 @@
+using System.Net.Http.Headers;
 using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Artifacts.Harness.Transports;
+using Speckle.Sdk.Common;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Pipelines.Progress;
 using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Artifacts.Harness;
@@ -31,7 +34,7 @@ internal sealed class Harness(
     return await ProduceAndUpload(localRoot, baseName, outDir, upload, ct).ConfigureAwait(false);
   }
 
-  /// <summary>Loads a graph from a DuckDB packfile and produces (and optionally uploads) the bundle.</summary>
+  /// <summary>Loads a graph from a DuckDB packfile on disk and produces (and optionally uploads) the bundle.</summary>
   public async Task<int> RunPackfile(
     FileInfo packfile,
     string? root,
@@ -41,61 +44,139 @@ internal sealed class Harness(
   )
   {
     logger.LogInformation("Input: {InputPath}", packfile);
-    using var transport = new DuckDbTransport(new PackFileManager(packfile, activityFactory));
-
-    var rootId = root ?? transport.GetRootObjectId();
-    var rootJson = await transport.GetObject(rootId).ConfigureAwait(false);
-    if (rootJson is null)
+    var graph = await LoadPackfileGraph(packfile, root).ConfigureAwait(false);
+    if (graph is null)
     {
-      logger.LogError("Root '{RootId}' not found in packfile.", rootId);
       return 1;
     }
-    logger.LogInformation("Root: {RootId}", rootId);
-
-    var deserializer = new SpeckleObjectDeserializer { ReadTransport = transport };
-    var graph = await deserializer.DeserializeAsync(rootJson).ConfigureAwait(false);
     return await ProduceAndUpload(graph, packfile.Name, outDir, upload, ct).ConfigureAwait(false);
   }
 
-  /// <summary>Resolves a graph from a remote server and produces (and optionally uploads) the bundle.</summary>
+  /// <summary>Migrates a version from a source server to a destination (each part defaulting to the source),
+  /// always uploading the produced bundle. Fetches the source graph by downloading its DuckDB packfile
+  /// (default) or via the legacy REST deserialize (<paramref name="legacyApi"/>).</summary>
   public async Task<int> RunRemote(
     Uri server,
     string project,
     string model,
     string? version,
+    Uri? destServer,
+    string? destProject,
+    string? destModel,
+    bool legacyApi,
     string? outDir,
-    string[]? upload,
     CancellationToken ct
   )
   {
-    var token = RequireEnv("SPECKLE_SRC_TOKEN");
-    if (token is null)
+    var token =
+      Environment.GetEnvironmentVariable("SPECKLE_SRC_TOKEN")
+      ?? Environment
+        .GetEnvironmentVariable("SPECKLE_TOKEN")
+        .NotNull("Expected SPECKLE_TOKEN or SPECKLE_SRC_TOKEN to be set");
+
+    Base? graph = legacyApi
+      ? await LoadFromServerLegacy(server, project, model, version, token, ct).ConfigureAwait(false)
+      : await LoadFromServerPackfile(server, project, model, version, token, ct).ConfigureAwait(false);
+    if (graph is null)
     {
-      return 3;
+      return 1;
     }
 
+    string[] destination = [(destServer ?? server).AbsoluteUri, destProject ?? project, destModel ?? model];
+    return await ProduceAndUpload(graph, model, outDir, destination, ct).ConfigureAwait(false);
+  }
+
+  // Legacy remote fetch: resolve the rootId via GraphQL, then deserialize over the SDK's server-backed process.
+  private async Task<Base> LoadFromServerLegacy(
+    Uri server,
+    string project,
+    string model,
+    string? version,
+    string token,
+    CancellationToken ct
+  )
+  {
     string rootId;
     if (version is not null)
     {
       logger.LogInformation("Resolving rootId for version {VersionId} …", version);
-      var (vId, rId) = await ResolveVersionRootId(server, project, model, version, token).ConfigureAwait(false);
-      rootId = rId;
-      logger.LogInformation("Version {VersionId} → rootId {RootId}", vId, rootId);
+      (_, rootId) = await ResolveVersionRootId(server, project, model, version, token).ConfigureAwait(false);
     }
     else
     {
       logger.LogInformation("Resolving latest version of {ProjectId}/{ModelId} …", project, model);
-      var (vId, rId) = await remoteSource
+      (version, rootId) = await remoteSource
         .ResolveLatestVersionAsync(server, project, model, token, ct)
         .ConfigureAwait(false);
-      rootId = rId;
-      logger.LogInformation("Latest version {VersionId} → rootId {RootId}", vId, rootId);
+      logger.LogInformation("Latest version {VersionId} → rootId {RootId}", version, rootId);
     }
 
     logger.LogInformation("Deserializing from server …");
-    var root = await remoteSource.DeserializeFromServerAsync(server, project, rootId, token, ct).ConfigureAwait(false);
+    return await remoteSource.DeserializeFromServerAsync(server, project, rootId, token, ct).ConfigureAwait(false);
+  }
 
-    return await ProduceAndUpload(root, model, outDir, upload, ct).ConfigureAwait(false);
+  // Default remote fetch: download the version's DuckDB packfile to a temp file, then read it like the
+  // on-disk packfile path.
+  private async Task<Base?> LoadFromServerPackfile(
+    Uri server,
+    string project,
+    string model,
+    string? version,
+    string token,
+    CancellationToken ct
+  )
+  {
+    if (version is null)
+    {
+      logger.LogInformation("Resolving latest version of {ProjectId}/{ModelId} …", project, model);
+      (version, _) = await remoteSource
+        .ResolveLatestVersionAsync(server, project, model, token, ct)
+        .ConfigureAwait(false);
+      logger.LogInformation("Latest version {VersionId}", version);
+    }
+
+    var packfile = new FileInfo(Path.Combine(Path.GetTempPath(), $"speckle-src-{version}.duckdb"));
+    try
+    {
+      using var http = new HttpClient { BaseAddress = server };
+      http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+      // Cloudflare (app.speckle.systems) 403s requests with no User-Agent.
+      http.DefaultRequestHeaders.UserAgent.ParseAdd("speckle-artefact-harness/1.0");
+
+      logger.LogInformation("Downloading packfile for version {VersionId} …", version);
+      await DuckDbHelper
+        .DownloadDuckFile(http, project, model, version, packfile, new Progress<StreamProgressArgs>(), ct)
+        .ConfigureAwait(false);
+      logger.LogInformation("Downloaded {Bytes} bytes", packfile.Length);
+
+      return await LoadPackfileGraph(packfile, null).ConfigureAwait(false);
+    }
+    finally
+    {
+      packfile.Refresh();
+      if (packfile.Exists)
+      {
+        packfile.Delete();
+      }
+    }
+  }
+
+  // Reads a DuckDB packfile into a Base graph. The transport stays alive for the whole deserialize (children
+  // are fetched from it by id).
+  private async Task<Base?> LoadPackfileGraph(FileInfo packfile, string? root)
+  {
+    using var transport = new DuckDbTransport(new PackFileManager(packfile, activityFactory));
+    var rootId = root ?? transport.GetRootObjectId();
+    var rootJson = await transport.GetObject(rootId).ConfigureAwait(false);
+    if (rootJson is null)
+    {
+      logger.LogError("Root '{RootId}' not found in packfile.", rootId);
+      return null;
+    }
+    logger.LogInformation("Root: {RootId}", rootId);
+
+    var deserializer = new SpeckleObjectDeserializer { ReadTransport = transport };
+    return await deserializer.DeserializeAsync(rootJson).ConfigureAwait(false);
   }
 
   // Produce the bundle on disk from a resolved graph, then optionally upload it (when `upload` — the
@@ -143,11 +224,11 @@ internal sealed class Harness(
       return 4;
     }
 
-    var dstToken = RequireEnv("SPECKLE_DST_TOKEN");
-    if (dstToken is null)
-    {
-      return 3;
-    }
+    var dstToken =
+      Environment.GetEnvironmentVariable("SPECKLE_DST_TOKEN")
+      ?? Environment
+        .GetEnvironmentVariable("SPECKLE_TOKEN")
+        .NotNull("Expected either SPECKLE_DST_TOKEN or SPECKLE_TOKEN to be set");
 
     Uri dstServer = new(upload[0]);
     var dstProject = upload[1];
@@ -241,16 +322,5 @@ internal sealed class Harness(
     var deserializer = new SpeckleObjectDeserializer { ReadTransport = transport };
     var root = await deserializer.DeserializeAsync(rootJson).ConfigureAwait(false);
     return (root, baseName);
-  }
-
-  private string? RequireEnv(string name)
-  {
-    var val = Environment.GetEnvironmentVariable(name);
-    if (string.IsNullOrWhiteSpace(val))
-    {
-      logger.LogError("Required environment variable {EnvVar} is not set", name);
-      return null;
-    }
-    return val;
   }
 }

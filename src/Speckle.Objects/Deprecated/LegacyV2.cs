@@ -15,4 +15,6 @@ namespace Speckle.Objects.Deprecated;
 [DeprecatedSpeckleType("Objects.BuiltElements.Revit.Parameter")]
 [DeprecatedSpeckleType("Objects.BuiltElements.Revit.Curve.ModelCurve")]
 [DeprecatedSpeckleType("Objects.BuiltElements.Revit.DirectShape")]
+[DeprecatedSpeckleType("Objects.BuiltElements.NetworkLink")]
+[DeprecatedSpeckleType("Objects.BuiltElements.Revit.FamilyInstance")]
 public class LegacyV2 : Base { }

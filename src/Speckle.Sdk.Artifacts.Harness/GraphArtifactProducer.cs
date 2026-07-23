@@ -72,6 +72,12 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
         continue;
       }
 
+      if (current is RenderMaterial)
+      {
+        //Hack to cover some gaps with v2 commits
+        continue;
+      }
+
       if (current is Collection col)
       {
         // Parent is a Collection except at the root, which is skipped above and never mapped → top-level (null).
@@ -292,7 +298,11 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
 
   private bool AddGeometry(string appId, Base geometry)
   {
-    pipeline.AddGeometry(appId, geometry);
+    var k = pipeline.AddGeometryMigrated(appId, geometry);
+    if (k is null)
+    {
+      return false; // Surface/Vector skipped — no geometry row was written, so emit no edge.
+    }
     _seenGeometryAppIds.Add(appId);
     return true;
   }
@@ -697,7 +707,10 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
     return set;
   }
 
-  private static bool IsGeometry(Base b) => b.speckle_type.StartsWith("Objects.Geometry.", StringComparison.Ordinal);
+  private static bool IsGeometry(Base b)
+  {
+    return b.speckle_type.StartsWith("Objects.Geometry.", StringComparison.Ordinal);
+  }
 
   private static RenderMaterial? ReadEmbeddedMaterial(Base host) =>
     (host["renderMaterial"] ?? host["@renderMaterial"]) as RenderMaterial;

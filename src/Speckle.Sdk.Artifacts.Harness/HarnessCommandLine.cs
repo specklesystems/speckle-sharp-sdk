@@ -53,8 +53,8 @@ internal static class HarnessCommandLine
         await services
           .GetRequiredService<Harness>()
           .RunNdjson(
-            parseResult.GetValue(ndjson)!,
-            parseResult.GetValue(rootOption)!,
+            parseResult.GetRequiredValue(ndjson),
+            parseResult.GetRequiredValue(rootOption),
             parseResult.GetValue(outOption),
             parseResult.GetValue(uploadOption),
             ct
@@ -71,10 +71,7 @@ internal static class HarnessCommandLine
       Description = "Path to the DuckDB packfile.",
       CustomParser = ParseExistingFile,
     };
-    Option<string> rootOption = new("--root")
-    {
-      Description = "Root object id (default: the packfile's root table).",
-    };
+    Option<string> rootOption = new("--root") { Description = "Root object id (default: the packfile's root table)." };
     Option<string> outOption = OutOption();
     Option<string[]> uploadOption = UploadOption();
 
@@ -88,7 +85,7 @@ internal static class HarnessCommandLine
         await services
           .GetRequiredService<Harness>()
           .RunPackfile(
-            parseResult.GetValue(packfile)!,
+            parseResult.GetRequiredValue(packfile),
             parseResult.GetValue(rootOption),
             parseResult.GetValue(outOption),
             parseResult.GetValue(uploadOption),
@@ -101,31 +98,76 @@ internal static class HarnessCommandLine
 
   private static Command BuildRemote(IServiceProvider services)
   {
-    Argument<Uri> server = new("serverUrl") { Description = "Source Speckle server URL.", CustomParser = ParseAbsoluteUri };
+    Argument<Uri> server = new("serverUrl")
+    {
+      Description = "Source Speckle server URL.",
+      CustomParser = ParseAbsoluteUri,
+    };
     Argument<string> project = new("projectId") { Description = "Source project id." };
     Argument<string> model = new("modelId") { Description = "Source model id." };
-    Option<string> versionOption = new("--version") { Description = "Source version id (default: latest)." };
+    Argument<string?> version = new("versionId")
+    {
+      Description = "Source version id (default: latest).",
+      Arity = ArgumentArity.ZeroOrOne,
+    };
+    Option<Uri> destServerOption = new("--dest-server")
+    {
+      Description = "Destination server URL (default: source server).",
+      CustomParser = ParseAbsoluteUri,
+    };
+    Option<string> destProjectOption = new("--dest-project")
+    {
+      Description = "Destination project id (default: source).",
+    };
+    Option<string> destModelOption = new("--dest-model") { Description = "Destination model id (default: source)." };
+    Option<bool> legacyApiOption = new("--legacy-api")
+    {
+      Description = "Fetch the source graph via the REST deserialize API instead of downloading its DuckDB packfile.",
+    };
     Option<string> outOption = OutOption();
-    Option<string[]> uploadOption = UploadOption();
 
-    Command cmd = new("remote", "Migrate a graph from a remote Speckle server (token: SPECKLE_SRC_TOKEN).");
+    Command cmd = new(
+      "remote",
+      "Migrate a version from a source server to a destination, defaulting to the source "
+        + "(tokens: SPECKLE_SRC_TOKEN to read, SPECKLE_DST_TOKEN to upload)."
+    );
     cmd.Arguments.Add(server);
     cmd.Arguments.Add(project);
     cmd.Arguments.Add(model);
-    cmd.Options.Add(versionOption);
+    cmd.Arguments.Add(version);
+    cmd.Options.Add(destServerOption);
+    cmd.Options.Add(destProjectOption);
+    cmd.Options.Add(destModelOption);
+    cmd.Options.Add(legacyApiOption);
     cmd.Options.Add(outOption);
-    cmd.Options.Add(uploadOption);
+
+    // Destination is all-or-nothing: either take every part from the source, or specify all three.
+    cmd.Validators.Add(result =>
+    {
+      var specified =
+        (result.GetResult(destServerOption) is not null ? 1 : 0)
+        + (result.GetResult(destProjectOption) is not null ? 1 : 0)
+        + (result.GetResult(destModelOption) is not null ? 1 : 0);
+      if (specified is not (0 or 3))
+      {
+        result.AddError("--dest-server, --dest-project and --dest-model must be specified together (all or none).");
+      }
+    });
+
     cmd.SetAction(
       async (parseResult, ct) =>
         await services
           .GetRequiredService<Harness>()
           .RunRemote(
-            parseResult.GetValue(server)!,
-            parseResult.GetValue(project)!,
-            parseResult.GetValue(model)!,
-            parseResult.GetValue(versionOption),
+            parseResult.GetRequiredValue(server),
+            parseResult.GetRequiredValue(project),
+            parseResult.GetRequiredValue(model),
+            parseResult.GetValue(version),
+            parseResult.GetValue(destServerOption),
+            parseResult.GetValue(destProjectOption),
+            parseResult.GetValue(destModelOption),
+            parseResult.GetValue(legacyApiOption),
             parseResult.GetValue(outOption),
-            parseResult.GetValue(uploadOption),
             ct
           )
           .ConfigureAwait(false)

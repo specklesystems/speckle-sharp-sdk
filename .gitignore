@@ -27,3 +27,4 @@ coverage.xml
 *.local.sh
 *.local.env
 *.local.ps1
+*.local.run.xml
