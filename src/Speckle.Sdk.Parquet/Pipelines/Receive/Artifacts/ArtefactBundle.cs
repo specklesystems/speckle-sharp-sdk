@@ -97,9 +97,16 @@ public sealed class ArtefactRelations
   public Dictionary<int, Dictionary<int, int>> ObjectNodeByRel { get; } = new();
   public Dictionary<int, int> MaterialByGeometry { get; } = new();
 
-  /// <summary>HAS_COLOR: geometry → COLOR node. The object's by-object display colour (distinct from a render material);
-  /// resolved back to the owning object via <see cref="ObjectByGeometry"/>, mirroring <see cref="MaterialByGeometry"/>.</summary>
+  /// <summary>HAS_COLOR (<c>ord</c>=0): geometry → COLOR node. The object's by-object display colour (distinct from a
+  /// render material); resolved back to the owning object via <see cref="ObjectByGeometry"/>, mirroring
+  /// <see cref="MaterialByGeometry"/>.</summary>
   public Dictionary<int, int> ColorByGeometry { get; } = new();
+
+  /// <summary>HAS_COLOR (<c>ord</c>=1): OBJECT → COLOR node — a colour carried by an object that owns no geometry of
+  /// its own, i.e. a block/instance placement whose members render through its definition. Kept separate from
+  /// <see cref="ColorByGeometry"/> because the two source namespaces overlap numerically; the edge's <c>ord</c> is
+  /// the namespace tag (pre-tag bundles wrote 0, so they all land in ColorByGeometry as before) [ENG-8822].</summary>
+  public Dictionary<int, int> ColorByObject { get; } = new();
   public Dictionary<int, List<int>> DefinesByDefinition { get; } = new();
 
   /// <summary>DEFINES ordinals, index-aligned with <see cref="DefinesByDefinition"/>. The ordinal is the member index
@@ -511,7 +518,15 @@ public static class ArtefactBundleReader
           sets.MaterialByGeometry[src[i]] = dst[i];
           break;
         case RelKind.HasColor:
-          sets.ColorByGeometry[src[i]] = dst[i];
+          // ord tags the src namespace: 1 = object (instance placement), 0/absent = geometry [ENG-8822].
+          if (ord[i] == 1)
+          {
+            sets.ColorByObject[src[i]] = dst[i];
+          }
+          else
+          {
+            sets.ColorByGeometry[src[i]] = dst[i];
+          }
           break;
         case RelKind.Defines:
           sets.Add(sets.DefinesByDefinition, src[i], dst[i]);
