@@ -1,34 +1,60 @@
-using System.IO.Compression;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Artifacts.Harness.Transports;
+using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
-using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Artifacts.Harness;
 
 /// <summary>
-/// End-to-end artefact-bundle harness: resolves an object graph (local NDJSON OR remote
-/// server), produces the parquet bundle on disk, and optionally uploads it via the v2
+/// End-to-end artefact-bundle harness: resolves an object graph (NDJSON dump, DuckDB packfile, or a
+/// remote server), produces the parquet bundle on disk, and optionally uploads it via the v2
 /// envelope-bundle flow. Registered in the DI container; its typed entry points are invoked
 /// by the <see cref="HarnessCommandLine"/> command actions.
 /// </summary>
 internal sealed class Harness(
   RemoteSource remoteSource,
-  GraphArtifactProducer2Factory producerFactory,
+  GraphArtifactProducerFactory producerFactory,
   BundleUploader bundleUploader,
+  ISdkActivityFactory activityFactory,
   ILogger<Harness> logger
 )
 {
-  /// <summary>Loads a local NDJSON graph and produces (and optionally uploads) the bundle.</summary>
-  public async Task<int> RunLocal(FileInfo ndjson, string root, string? outDir, string[]? upload, CancellationToken ct)
+  /// <summary>Loads a graph from an NDJSON dump and produces (and optionally uploads) the bundle.</summary>
+  public async Task<int> RunNdjson(FileInfo ndjson, string root, string? outDir, string[]? upload, CancellationToken ct)
   {
-    var (localRoot, baseName) = await LoadLocal(ndjson, root).ConfigureAwait(false);
+    var (localRoot, baseName) = await LoadNdjson(ndjson, root).ConfigureAwait(false);
     if (localRoot is null)
     {
       return 1;
     }
     return await ProduceAndUpload(localRoot, baseName, outDir, upload, ct).ConfigureAwait(false);
+  }
+
+  /// <summary>Loads a graph from a DuckDB packfile and produces (and optionally uploads) the bundle.</summary>
+  public async Task<int> RunPackfile(
+    FileInfo packfile,
+    string? root,
+    string? outDir,
+    string[]? upload,
+    CancellationToken ct
+  )
+  {
+    logger.LogInformation("Input: {InputPath}", packfile);
+    using var transport = new DuckDbTransport(new PackFileManager(packfile, activityFactory));
+
+    var rootId = root ?? transport.GetRootObjectId();
+    var rootJson = await transport.GetObject(rootId).ConfigureAwait(false);
+    if (rootJson is null)
+    {
+      logger.LogError("Root '{RootId}' not found in packfile.", rootId);
+      return 1;
+    }
+    logger.LogInformation("Root: {RootId}", rootId);
+
+    var deserializer = new SpeckleObjectDeserializer { ReadTransport = transport };
+    var graph = await deserializer.DeserializeAsync(rootJson).ConfigureAwait(false);
+    return await ProduceAndUpload(graph, packfile.Name, outDir, upload, ct).ConfigureAwait(false);
   }
 
   /// <summary>Resolves a graph from a remote server and produces (and optionally uploads) the bundle.</summary>
@@ -87,7 +113,7 @@ internal sealed class Harness(
     outDir ??= Path.Combine(Path.GetTempPath(), $"speckle-artefact-{baseName}-{DateTime.UtcNow:yyyyMMddHHmmss}");
     logger.LogInformation("Output: {OutDir} (base {BaseName})", outDir, baseName);
 
-    GraphArtifactProducer2.Stats stats;
+    GraphArtifactProducer.Stats stats;
     using (var producer = producerFactory.Create(outDir, baseName))
     {
       stats = producer.Produce(root);
@@ -103,7 +129,8 @@ internal sealed class Harness(
       logger.LogInformation("Bundle file {FileName} {Bytes} bytes", Path.GetFileName(f), new FileInfo(f).Length);
     }
 
-    if (upload is null)
+    // An absent multi-value option parses to an empty array (not null), so guard on length.
+    if (upload is null || upload.Length == 0)
     {
       return 0;
     }
@@ -189,38 +216,21 @@ internal sealed class Harness(
   }
 
   // ── local ndjson → Base graph (existing behaviour) ──────────────────────────────────────
-  private async Task<(Base? root, string baseName)> LoadLocal(FileInfo ndjson, string rootOption)
+  private async Task<(Base? root, string baseName)> LoadNdjson(FileInfo ndjson, string rootOption)
   {
     var baseName = ndjson.Name;
     logger.LogInformation("Input: {InputPath}", ndjson);
 
-    var transport = new MemoryTransport();
-    var jsonById = new Dictionary<string, string>(StringComparer.Ordinal);
-    var lineCount = 0;
-    foreach (var line in ReadLines(ndjson))
-    {
-      if (line.Length == 0)
-      {
-        continue;
-      }
-      var parts = line.Split('\t');
-      if (parts.Length < 2)
-      {
-        continue;
-      }
-      var id = parts[0];
-      var json = parts[^1]; // last field is always the payload json
-      transport.SaveObject(id, json);
-      jsonById[id] = json;
-      lineCount++;
-    }
-    logger.LogInformation("Loaded {LineCount} objects into transport", lineCount);
+    var transport = new NDJsonTransport();
+    var count = transport.Initialize(ndjson);
+    logger.LogInformation("Loaded {LineCount} objects into transport", count);
 
-    var rootId = rootOption == "auto" ? DetectRoot(jsonById) : rootOption;
-    if (rootId is null || !jsonById.TryGetValue(rootId, out var rootJson))
+    var rootId = rootOption == "auto" ? transport.DetectRoot() : rootOption;
+    var rootJson = rootId is null ? null : await transport.GetObject(rootId).ConfigureAwait(false);
+    if (rootJson is null)
     {
       logger.LogError("Root '{RootId}' not found. Available collection-like candidates:", rootId);
-      foreach (var c in CollectionCandidates(jsonById).Take(10))
+      foreach (var c in transport.CollectionCandidates().Take(10))
       {
         logger.LogInformation("Candidate {Candidate}", c);
       }
@@ -243,64 +253,4 @@ internal sealed class Harness(
     }
     return val;
   }
-
-  // ── helpers (local mode) ────────────────────────────────────────────────────────────────
-
-  private static IEnumerable<string> ReadLines(FileInfo path)
-  {
-    ZipArchive? archive = null;
-    try
-    {
-      Stream raw = path.OpenRead();
-      Stream stream;
-      switch (path.Extension)
-      {
-        case ".gz":
-          stream = new GZipStream(raw, CompressionMode.Decompress);
-          break;
-        case ".zip":
-          archive = new ZipArchive(raw, ZipArchiveMode.Read);
-          stream = archive.Entries[0].Open();
-          break;
-        default:
-          stream = raw;
-          break;
-      }
-
-      using StreamReader reader = new(stream);
-      while (reader.ReadLine() is { } line)
-      {
-        yield return line;
-      }
-    }
-    finally
-    {
-      archive?.Dispose();
-    }
-  }
-
-  private static string? DetectRoot(Dictionary<string, string> jsonById)
-  {
-    var referenced = new HashSet<string>(StringComparer.Ordinal);
-    foreach (var json in jsonById.Values)
-    {
-      foreach (Match m in Regex.Matches(json, "\"referencedId\":\"([0-9a-fA-F]+)\""))
-      {
-        referenced.Add(m.Groups[1].Value);
-      }
-    }
-    var unreferenced = jsonById.Keys.Where(id => !referenced.Contains(id)).ToList();
-    var pool = unreferenced.Count > 0 ? unreferenced : jsonById.Keys.ToList();
-    return pool.OrderByDescending(id => LooksLikeCollection(jsonById[id]) ? 1 : 0)
-      .ThenByDescending(id => jsonById[id].Length)
-      .FirstOrDefault();
-  }
-
-  private static IEnumerable<string> CollectionCandidates(Dictionary<string, string> jsonById) =>
-    jsonById.Where(kv => LooksLikeCollection(kv.Value)).OrderByDescending(kv => kv.Value.Length).Select(kv => kv.Key);
-
-  private static bool LooksLikeCollection(string json) =>
-    json.Contains("Collection", StringComparison.Ordinal)
-    || json.Contains("instanceDefinitionProxies", StringComparison.Ordinal)
-    || json.Contains("renderMaterialProxies", StringComparison.Ordinal);
 }

@@ -2,6 +2,15 @@
   "version": 2,
   "dependencies": {
     "net8.0": {
+      "DuckDB.NET.Data.Full": {
+        "type": "Direct",
+        "requested": "[1.5.3, )",
+        "resolved": "1.5.3",
+        "contentHash": "B0E3JH6nM9CeYLzmOIGGTz7R5vAKf10516Jiz7VnWj4kV7uMoh8m5mTB6IxTGFJMG6i6aOANwjwP7ud7kA87+Q==",
+        "dependencies": {
+          "DuckDB.NET.Bindings.Full": "1.5.3"
+        }
+      },
       "Microsoft.Extensions.Logging.Console": {
         "type": "Direct",
         "requested": "[10.0.6, )",
@@ -43,6 +52,11 @@
         "requested": "[2.0.0, 2.0.0]",
         "resolved": "2.0.0",
         "contentHash": "Bjklzc5NoxqAGFi7BcGlY2TWAdB06Bq3a5sfRr3ubMRU80Mf98eyq3Y2UgR6xRV0TLznZmfe5T7mUjOunRNcdA=="
+      },
+      "DuckDB.NET.Bindings.Full": {
+        "type": "Transitive",
+        "resolved": "1.5.3",
+        "contentHash": "3vkxzLkCmPUTRtEBBYrXvl9jOTXJ42uYswsokpysTulOS963ZIcMJRKpcHH2zwa63YI4YchjYvPz0pcR2Helbg=="
       },
       "GraphQL.Client.Abstractions": {
         "type": "Transitive",

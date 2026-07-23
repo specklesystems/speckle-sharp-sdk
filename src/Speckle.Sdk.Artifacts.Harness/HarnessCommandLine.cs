@@ -15,7 +15,8 @@ internal static class HarnessCommandLine
   {
     RootCommand root = new("Speckle artefact-bundle migration harness.");
     root.Subcommands.Add(BuildSelfTest(services));
-    root.Subcommands.Add(BuildLocal(services));
+    root.Subcommands.Add(BuildNdjson(services));
+    root.Subcommands.Add(BuildPackfile(services));
     root.Subcommands.Add(BuildRemote(services));
     return root;
   }
@@ -27,7 +28,7 @@ internal static class HarnessCommandLine
     return cmd;
   }
 
-  private static Command BuildLocal(IServiceProvider services)
+  private static Command BuildNdjson(IServiceProvider services)
   {
     Argument<FileInfo> ndjson = new("ndjsonPath")
     {
@@ -42,7 +43,7 @@ internal static class HarnessCommandLine
     Option<string> outOption = OutOption();
     Option<string[]> uploadOption = UploadOption();
 
-    Command cmd = new("local", "Migrate a local NDJSON graph.");
+    Command cmd = new("ndjson", "Migrate a graph from an NDJSON dump.");
     cmd.Arguments.Add(ndjson);
     cmd.Options.Add(rootOption);
     cmd.Options.Add(outOption);
@@ -51,9 +52,44 @@ internal static class HarnessCommandLine
       async (parseResult, ct) =>
         await services
           .GetRequiredService<Harness>()
-          .RunLocal(
+          .RunNdjson(
             parseResult.GetValue(ndjson)!,
             parseResult.GetValue(rootOption)!,
+            parseResult.GetValue(outOption),
+            parseResult.GetValue(uploadOption),
+            ct
+          )
+          .ConfigureAwait(false)
+    );
+    return cmd;
+  }
+
+  private static Command BuildPackfile(IServiceProvider services)
+  {
+    Argument<FileInfo> packfile = new("packfilePath")
+    {
+      Description = "Path to the DuckDB packfile.",
+      CustomParser = ParseExistingFile,
+    };
+    Option<string> rootOption = new("--root")
+    {
+      Description = "Root object id (default: the packfile's root table).",
+    };
+    Option<string> outOption = OutOption();
+    Option<string[]> uploadOption = UploadOption();
+
+    Command cmd = new("packfile", "Migrate a graph from a DuckDB packfile.");
+    cmd.Arguments.Add(packfile);
+    cmd.Options.Add(rootOption);
+    cmd.Options.Add(outOption);
+    cmd.Options.Add(uploadOption);
+    cmd.SetAction(
+      async (parseResult, ct) =>
+        await services
+          .GetRequiredService<Harness>()
+          .RunPackfile(
+            parseResult.GetValue(packfile)!,
+            parseResult.GetValue(rootOption),
             parseResult.GetValue(outOption),
             parseResult.GetValue(uploadOption),
             ct

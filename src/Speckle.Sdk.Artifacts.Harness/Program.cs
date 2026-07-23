@@ -23,7 +23,7 @@ services.AddSpeckleSdk(new("ArtefactHarness", "artefact-harness"), "v3", typeof(
 // harness' log output is visible (harness-only — the SDK is left untouched).
 services.AddLogging(builder => builder.AddSimpleConsole(o => o.SingleLine = true));
 services.AddTransient<RemoteSource>();
-services.AddSingleton<GraphArtifactProducer2Factory>();
+services.AddSingleton<GraphArtifactProducerFactory>();
 services.AddTransient<BundleUploader>();
 services.AddTransient<SgeoSelfTest>();
 services.AddTransient<Harness>();
