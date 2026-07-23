@@ -357,7 +357,10 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
       return;
     }
 
-    pipeline.AddGeometry(appId, geometry);
+    if (pipeline.AddGeometryMigrated(appId, geometry) is null)
+    {
+      return;
+    }
     _stats.DefinitionGeometries++;
     if ((ReadEmbeddedMaterial(geometry) ?? ReadEmbeddedMaterial(obj)) is { } rm)
     {
