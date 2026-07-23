@@ -203,20 +203,53 @@ public static class ArtefactBundleReader
     var pathById = BuildPaths(pathsT);
     var propsByObject = BuildProperties(eavT, pathById);
     var (refPointKind, refPointOffset) = LoadReferencePoint(metaT);
+    var geometries = LoadGeometries(geometriesTables);
+    var relations = LoadRelations(relationsT);
+    RecoverUntaggedObjectColors(relations, geometries, objIdToApp);
 
     return new ArtefactBundle
     {
-      Geometries = LoadGeometries(geometriesTables),
+      Geometries = geometries,
       ObjectAppIds = objIdToApp,
       Properties = propsByObject,
       Nodes = LoadNodes(nodesT),
-      Relations = LoadRelations(relationsT),
+      Relations = relations,
       Units = InferUnits(propsByObject),
       DefaultSceneView = LoadDefaultSceneView(sceneViewsT),
       CameraViews = LoadCameraViews(cameraViewsT),
       ReferencePointKind = refPointKind,
       ReferencePointOffset = refPointOffset,
     };
+  }
+
+  // Compat for bundles written before the ord namespace tag (ENG-8822): an object-sourced HAS_COLOR edge landed in
+  // ColorByGeometry with ord=0, indistinguishable from a geometry-sourced one. Recover it ONLY when the geometry
+  // reading is provably impossible — the src is no geometry K but IS an object K — so a tagged or colliding bundle
+  // is never second-guessed. Untagged edges whose K collides with a real geometry stay unrecovered (they'd be a
+  // coin flip); re-send with a current producer to tag them.
+  private static void RecoverUntaggedObjectColors(
+    ArtefactRelations relations,
+    Dictionary<int, ArtefactGeometry> geometries,
+    Dictionary<int, string> objectAppIds
+  )
+  {
+    List<int>? recovered = null;
+    foreach (var kv in relations.ColorByGeometry)
+    {
+      if (!geometries.ContainsKey(kv.Key) && objectAppIds.ContainsKey(kv.Key))
+      {
+        (recovered ??= new List<int>()).Add(kv.Key);
+      }
+    }
+    if (recovered is null)
+    {
+      return;
+    }
+    foreach (var k in recovered)
+    {
+      relations.ColorByObject[k] = relations.ColorByGeometry[k];
+      relations.ColorByGeometry.Remove(k);
+    }
   }
 
   // ENG-8947: the reference-point provision from meta (single row). Columns are nullable + additive — older
