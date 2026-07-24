@@ -9,7 +9,7 @@ namespace Speckle.Sdk.Artifacts.Harness.Transports;
 /// (tab-separated lines, the payload json being the last field). Reads delegate to an inner
 /// <see cref="MemoryTransport"/>; call <see cref="Initialize"/> to load the file before deserializing.
 /// </summary>
-internal sealed class NDJsonTransport : ITransport
+internal sealed partial class NDJsonTransport : ITransport
 {
   private readonly MemoryTransport _memory = new();
 
@@ -40,7 +40,7 @@ internal sealed class NDJsonTransport : ITransport
     var referenced = new HashSet<string>(StringComparer.Ordinal);
     foreach (var json in _memory.Objects.Values)
     {
-      foreach (Match m in Regex.Matches(json, "\"referencedId\":\"([0-9a-fA-F]+)\""))
+      foreach (Match m in ReferenceIdRegex().Matches(json))
       {
         referenced.Add(m.Groups[1].Value);
       }
@@ -129,5 +129,8 @@ internal sealed class NDJsonTransport : ITransport
   public void EndWrite() => throw new NotImplementedException();
 
   public void SaveObject(string id, string serializedObject) => throw new NotImplementedException();
+
+  [GeneratedRegex("\"referencedId\":\"([0-9a-fA-F]+)\"")]
+  private static partial Regex ReferenceIdRegex();
   #endregion
 }
