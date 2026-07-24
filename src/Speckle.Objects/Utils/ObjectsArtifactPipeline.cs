@@ -25,10 +25,17 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   private readonly GeometriesParquetWriter _geometriesWriter;
   private readonly EnvelopeWriter _envelopeWriter;
   private readonly EavWriter _eavWriter;
-  private readonly StructuralResultsWriter _structuralResultsWriter;
   private readonly ISet<string> _excludedProperties;
+  private readonly string _outputDir;
+  private readonly string _baseName;
 
-  // Per-namespace interners. The object namespace lives in the eav writer (it writes the dictionary).
+  // Lazily created on the first AddStructuralResult: the structural_results purpose file is OPTIONAL and
+  // feature-detected by file presence, so a bundle with no results must ship NO file — not an empty table
+  // polluting every non-structural connector's bundle catalog.
+  private StructuralResultsWriter? _structuralResultsWriter;
+
+  // Per-namespace interners. The object namespace is owned by the eav writer (it writes the
+  // dictionary), so it is not duplicated here.
   private readonly IdInterner _geometryInterner = new();
   private readonly IdInterner _nodeInterner = new();
 
@@ -37,7 +44,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName, _scheduler);
     _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler);
     _eavWriter = new EavWriter(outputDir, baseName, _scheduler);
-    _structuralResultsWriter = new StructuralResultsWriter(outputDir, baseName, _scheduler);
+    _outputDir = outputDir;
+    _baseName = baseName;
     _excludedProperties = excludedTopLevelProperties ?? EavExtraction.DefaultExcludedTopLevelProperties;
   }
 
@@ -344,8 +352,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void HasMaterial(int geometryK, int materialK) =>
     _envelopeWriter.AddRelation(RelKind.HasMaterial, geometryK, materialK, 0);
 
-  /// <summary>geometry | object → node(COLOR): display colour.</summary>
-  public void HasColor(int srcK, int colorK) => _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, 0);
+  /// <summary>geometry | object → node(COLOR): display colour. The two source namespaces overlap numerically
+  /// (both are dense int spaces from 0), so <paramref name="srcIsObject"/> tags which one <paramref name="srcK"/>
+  /// belongs to in the edge's <c>ord</c> column: 0 = geometry (the default, and what every pre-tag bundle wrote),
+  /// 1 = object. Without the tag a consumer cannot tell an object-sourced instance colour from a geometry-sourced
+  /// one and must guess — dropping colours or applying them to the wrong element [ENG-8822].</summary>
+  public void HasColor(int srcK, int colorK, bool srcIsObject = false) =>
+    _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, srcIsObject ? 1 : 0);
 
   /// <summary>object → node(LEVEL): level membership.</summary>
   public void OnLevel(int objectK, int levelK) => _envelopeWriter.AddRelation(RelKind.OnLevel, objectK, levelK, 0);
@@ -370,6 +383,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void InSystem(int objectK, int systemK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.InSystem, objectK, systemK, ord);
 
+  /// <summary>object → node(CONTAINER, subtype "Group"): authored scene-group membership (Rhino/AutoCAD
+  /// groups). A SEPARATE axis from <see cref="InCollection"/> (the layer/collection scene-tree, single-valued
+  /// on receive): an object keeps its collection AND its group(s); groups may nest (container parent chain)
+  /// and overlap, so an object may carry several IN_GROUP edges.</summary>
+  public void InGroup(int objectK, int groupK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InGroup, objectK, groupK, ord);
+
   /// <summary>object → object: physical flow connectivity, DIRECTED src→dst by flow (source→target). A
   /// reciprocal pair encodes undirected / unknown flow. Unscoped (ord=0) — see the scoped overload.</summary>
   public void ConnectsTo(int sourceObjectK, int targetObjectK) => ConnectsTo(sourceObjectK, targetObjectK, 0);
@@ -380,6 +400,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void ConnectsTo(int sourceObjectK, int targetObjectK, int scope) =>
     _envelopeWriter.AddRelation(RelKind.ConnectsTo, sourceObjectK, targetObjectK, scope);
 
+  /// <summary>object → object: hosted element → its HOST (door/window → wall, fixture → ceiling/floor/face).
+  /// A DIFFERENT semantic from <see cref="Subelement"/> ownership: a hosted element is PLACED ON its host, not
+  /// a component of it. Precedence matches the producers: a valid owner wins (SUBELEMENT), hosting is the
+  /// fallback. Emit only when BOTH endpoints are sent objects (no dangling edges). Un-retired post-v5 (ENG-8867).</summary>
+  public void HostedOn(int hostedObjectK, int hostObjectK) =>
+    _envelopeWriter.AddRelation(RelKind.HostedOn, hostedObjectK, hostObjectK, 0);
+
   /// <summary>object → object: a room-bounding element → the ROOM object it bounds (which walls/separators form a
   /// room's footprint, for egress / plan analysis). Both are interned objects.</summary>
   public void Bounds(int boundingObjectK, int roomObjectK, int ord) =>
@@ -387,11 +414,15 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
   // ── structural results ─────────────────────────────────────────────────────────────────
 
-  /// <summary>Appends one structural result to <c>{base}.eav.structural-results.parquet</c>. <b>Object-level</b>
-  /// results pass <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned
-  /// with, so results join back) and leave <paramref name="location"/> null; <b>model-level</b> results (story
-  /// drift, modal period) pass a null id and identify via <paramref name="location"/> / <paramref name="step"/>.
-  /// Set <paramref name="value"/> for numeric, <paramref name="valueText"/> for design verdicts.</summary>
+  /// <summary>
+  /// Appends one structural analysis/design result value to <c>{base}.eav.structural_results.parquet</c>
+  /// (see <see cref="StructuralResultsWriter"/>). <b>Object-level</b> results pass the member/joint's
+  /// <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned with, so
+  /// results join back to it) and leave <paramref name="location"/> null; <b>model-level</b> results (story
+  /// drift, modal period, base reaction) pass a null <paramref name="objectApplicationId"/> and identify via
+  /// <paramref name="location"/> (story) and/or <paramref name="step"/> (mode). Numeric results set
+  /// <paramref name="value"/>; non-numeric design verdicts set <paramref name="valueText"/>.
+  /// </summary>
   public void AddStructuralResult(
     string? objectApplicationId,
     string? location,
@@ -405,6 +436,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   )
   {
     int? objectIndex = objectApplicationId is null ? null : _eavWriter.GetOrAddObject(objectApplicationId);
+    _structuralResultsWriter ??= new StructuralResultsWriter(_outputDir, _baseName, _scheduler);
     _structuralResultsWriter.AddRow(
       objectIndex,
       location,
@@ -431,9 +463,18 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// model units, forward/up unit vectors, <see cref="CameraView.Fov"/> vertical DEGREES (perspective only).</summary>
   public void AddCameraView(CameraView view) => _envelopeWriter.AddCameraView(view);
 
-  /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed node/relation API.
-  /// Kept as a throwing stub (non-<c>[Obsolete]</c>) so the parked Navis path still builds under
-  /// warnings-as-errors; fails loudly only if invoked.</summary>
+  // ── reference point (ENG-8947) ─────────────────────────────────────────────────────────
+
+  /// <summary>Records the applied reference-point re-basing in the bundle <c>meta</c> so it is recoverable
+  /// downstream (federation/georeferencing). <paramref name="kind"/> ∈ <c>projectBasePoint | surveyPoint |
+  /// internalOriginFallback</c> (null = internal origin); <paramref name="offset"/> is <c>"x,y,z"</c> in display
+  /// units — the vector subtracted from world-space output. Call before <see cref="Complete"/>.</summary>
+  public void SetReferencePoint(string? kind, string? offset) => _envelopeWriter.SetReferencePoint(kind, offset);
+
+  /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed
+  /// node/relation API (<see cref="AddDefinition"/>, <see cref="AddMaterial"/>, <see cref="Display"/>, …).
+  /// Kept (non-<c>[Obsolete]</c>, to avoid breaking the warnings-as-errors build of the parked Navis
+  /// path) as a throwing stub; it fails loudly only if actually invoked.</summary>
   public void AddProxy(string type, string dataJson) =>
     throw new NotSupportedException(
       "AddProxy was removed with the proxies(type,json) envelope. Use the typed relations+nodes API."
@@ -447,7 +488,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _geometriesWriter.Complete();
     _envelopeWriter.Complete();
     _eavWriter.Complete();
-    _structuralResultsWriter.Complete();
+    _structuralResultsWriter?.Complete(); // absent unless a producer added structural rows
     _scheduler.CompleteAndWait();
   }
 
@@ -458,7 +499,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     SafeDispose(_geometriesWriter);
     SafeDispose(_envelopeWriter);
     SafeDispose(_eavWriter);
-    SafeDispose(_structuralResultsWriter);
+    if (_structuralResultsWriter is not null)
+    {
+      SafeDispose(_structuralResultsWriter);
+    }
     SafeDispose(_scheduler);
   }
 

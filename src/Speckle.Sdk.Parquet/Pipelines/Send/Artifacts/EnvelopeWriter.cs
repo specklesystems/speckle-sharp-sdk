@@ -97,6 +97,12 @@ public sealed class EnvelopeWriter : IDisposable
   private readonly List<CameraView> _cameraViews = new();
   private bool _completed;
 
+  // ENG-8947: reference-point provision recorded in meta when a producer re-based geometry by a source
+  // reference point. kind ∈ projectBasePoint | surveyPoint | internalOriginFallback; offset "x,y,z" in
+  // display units (the vector subtracted). Both null = internal origin (no re-basing). See SetReferencePoint.
+  private string? _referencePointKind;
+  private string? _referencePointOffset;
+
   public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
   {
     Directory.CreateDirectory(outputDir);
@@ -169,6 +175,18 @@ public sealed class EnvelopeWriter : IDisposable
     _cameraViews.Add(view);
   }
 
+  /// <summary>
+  /// ENG-8947: records the applied reference-point re-basing in <c>meta</c> (written at <see cref="Complete"/>).
+  /// <paramref name="kind"/> ∈ <c>projectBasePoint | surveyPoint | internalOriginFallback</c> (null = internal
+  /// origin); <paramref name="offset"/> is <c>"x,y,z"</c> in display units — the vector subtracted from world-space
+  /// output (null when not a translation re-basing). Call before <see cref="Complete"/>.
+  /// </summary>
+  public void SetReferencePoint(string? kind, string? offset)
+  {
+    _referencePointKind = kind;
+    _referencePointOffset = offset;
+  }
+
   /// <summary>Flushes the parquet tables and writes the attach manifest.</summary>
   public void Complete()
   {
@@ -179,6 +197,7 @@ public sealed class EnvelopeWriter : IDisposable
     _completed = true;
     _relations.Complete();
     _nodes.Complete();
+    WriteMeta();
     WriteSceneViews();
     WriteCameraViews();
   }
@@ -194,20 +213,23 @@ public sealed class EnvelopeWriter : IDisposable
     SafeDispose(_nodes);
   }
 
-  // Self-describing catalog (SOT §6): the rel/kind vocabulary + schema version, written once from the
+  // meta (SOT §6): schema version + producer + the ENG-8947 reference-point provision. Written at Complete()
+  // (not eagerly in the ctor) so producers can record an applied reference-point re-basing via SetReferencePoint
+  // first. reference_point_kind/_offset are null unless set → NULL columns (readers that ignore them are unaffected).
+  private void WriteMeta()
+  {
+    using var meta = new ParquetTableWriter(
+      P("meta.parquet"),
+      new ParquetSchema(I("schema_version"), S("produced_by"), S("reference_point_kind"), S("reference_point_offset")),
+      _scheduler
+    );
+    meta.AddRow(SpecBundle.SchemaVersion, "Speckle.Sdk EnvelopeWriter", _referencePointKind, _referencePointOffset);
+  }
+
+  // Self-describing catalog (SOT §6): the rel/kind vocabulary, written once from the
   // generated spec catalog (live + reserved rows; retired ids are absent and never reused). Tiny.
   private void WriteCatalog()
   {
-    using (
-      var meta = new ParquetTableWriter(
-        P("meta.parquet"),
-        new ParquetSchema(I("schema_version"), S("produced_by")),
-        _scheduler
-      )
-    )
-    {
-      meta.AddRow(SpecBundle.SchemaVersion, "Speckle.Sdk EnvelopeWriter");
-    }
     using (
       var rt = new ParquetTableWriter(
         P("rel_types.parquet"),

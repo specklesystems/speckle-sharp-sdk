@@ -67,7 +67,7 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, $"SELECT elevation FROM nodes WHERE kind = {NodeKind.Level}").Should().Be(3000.0);
 
     // self-describing catalog (SOT §6) — sourced from speckle-bundle-spec (v5: live + reserved rows).
-    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(15L); // 14 live + SOLID (reserved); retired ids absent
+    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(17L); // 16 live + SOLID (reserved); retired ids absent
     Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(6L); // COLLECTION folded into CONTAINER
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DisplayInstance}").Should().Be("DISPLAY_INSTANCE");
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("DEFINES_INSTANCE");
@@ -86,8 +86,14 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.ConnectsTo}").Should().Be("CONNECTS_TO");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.ConnectsTo}").Should().Be("object");
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.Bounds}").Should().Be("BOUNDS");
-    // retired ids (IN_NETWORK 15, IN_SPACE 13, HOSTED_ON 22, …) are absent from the catalog.
-    Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 17, 18, 19, 20, 22)").Should().Be(0L);
+    // IN_GROUP (17) un-retired post-v5: authored scene groups (Rhino/AutoCAD) → CONTAINER(Group).
+    Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.InGroup}").Should().Be("IN_GROUP");
+    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.InGroup}").Should().Be("node");
+    // HOSTED_ON (22) un-retired post-v5: Revit hosting (door/window → wall), object→object (ENG-8867).
+    Scalar(db, "SELECT name FROM rel_types WHERE rel = 22").Should().Be("HOSTED_ON");
+    Scalar(db, "SELECT dst_ns FROM rel_types WHERE rel = 22").Should().Be("object");
+    // retired ids (IN_NETWORK 15, IN_SPACE 13, …) are absent from the catalog.
+    Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 18, 19, 20)").Should().Be(0L);
     Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
 
     // No scene views / camera views authored ⇒ the tables are absent (consumer feature-detects by file presence).

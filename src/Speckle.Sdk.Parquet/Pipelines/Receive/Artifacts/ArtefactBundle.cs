@@ -80,6 +80,11 @@ public sealed class ArtefactRelations
   public Dictionary<int, List<int>> SolidByObject { get; } = new();
   public Dictionary<int, int> CollectionByObject { get; } = new();
 
+  /// <summary>IN_GROUP: object → CONTAINER(Group) nodes. MULTI-valued (unlike <see cref="CollectionByObject"/>,
+  /// which last-wins because it IS the scene tree): groups are a separate, overlapping axis — an object keeps
+  /// its collection and may sit in several (possibly nested) groups.</summary>
+  public Dictionary<int, List<int>> GroupsByObject { get; } = new();
+
   /// <summary>DISPLAY_INSTANCE: object → INSTANCE node. Last-wins map (kept for the Base reconstruction path).</summary>
   public Dictionary<int, int> DisplayInstanceByObject { get; } = new();
 
@@ -92,9 +97,16 @@ public sealed class ArtefactRelations
   public Dictionary<int, Dictionary<int, int>> ObjectNodeByRel { get; } = new();
   public Dictionary<int, int> MaterialByGeometry { get; } = new();
 
-  /// <summary>HAS_COLOR: geometry → COLOR node. The object's by-object display colour (distinct from a render material);
-  /// resolved back to the owning object via <see cref="ObjectByGeometry"/>, mirroring <see cref="MaterialByGeometry"/>.</summary>
+  /// <summary>HAS_COLOR (<c>ord</c>=0): geometry → COLOR node. The object's by-object display colour (distinct from a
+  /// render material); resolved back to the owning object via <see cref="ObjectByGeometry"/>, mirroring
+  /// <see cref="MaterialByGeometry"/>.</summary>
   public Dictionary<int, int> ColorByGeometry { get; } = new();
+
+  /// <summary>HAS_COLOR (<c>ord</c>=1): OBJECT → COLOR node — a colour carried by an object that owns no geometry of
+  /// its own, i.e. a block/instance placement whose members render through its definition. Kept separate from
+  /// <see cref="ColorByGeometry"/> because the two source namespaces overlap numerically; the edge's <c>ord</c> is
+  /// the namespace tag (pre-tag bundles wrote 0, so they all land in ColorByGeometry as before) [ENG-8822].</summary>
+  public Dictionary<int, int> ColorByObject { get; } = new();
   public Dictionary<int, List<int>> DefinesByDefinition { get; } = new();
 
   /// <summary>DEFINES ordinals, index-aligned with <see cref="DefinesByDefinition"/>. The ordinal is the member index
@@ -153,6 +165,13 @@ public sealed class ArtefactBundle
   public required ArtefactRelations Relations { get; init; }
   public required string Units { get; init; }
 
+  /// <summary>ENG-8947 reference-point provision from the bundle <c>meta</c> (null = internal origin / absent).
+  /// <see cref="ReferencePointKind"/> ∈ <c>projectBasePoint | surveyPoint | internalOriginFallback</c>;
+  /// <see cref="ReferencePointOffset"/> is <c>"x,y,z"</c> in <see cref="Units"/> — the vector subtracted from
+  /// world-space output (null for the fallback / non-translation kinds).</summary>
+  public string? ReferencePointKind { get; init; }
+  public string? ReferencePointOffset { get; init; }
+
   /// <summary>The default scene view's grouping tiers (outermost→innermost), or empty if the bundle has none. Drives
   /// the received layer hierarchy (e.g. Revit: Model → Level → Category → Family).</summary>
   public required IReadOnlyList<SceneViewTier> DefaultSceneView { get; init; }
@@ -178,10 +197,12 @@ public static class ArtefactBundleReader
       .ConfigureAwait(false);
     var cameraViewsT = await TryReadTableAsync(bundleDir, ".envelope.camera_views.parquet", cancellationToken)
       .ConfigureAwait(false);
+    var metaT = await TryReadTableAsync(bundleDir, ".envelope.meta.parquet", cancellationToken).ConfigureAwait(false);
 
     var objIdToApp = BuildObjectIds(objectsT);
     var pathById = BuildPaths(pathsT);
     var propsByObject = BuildProperties(eavT, pathById);
+    var (refPointKind, refPointOffset) = LoadReferencePoint(metaT);
 
     return new ArtefactBundle
     {
@@ -193,7 +214,24 @@ public static class ArtefactBundleReader
       Units = InferUnits(propsByObject),
       DefaultSceneView = LoadDefaultSceneView(sceneViewsT),
       CameraViews = LoadCameraViews(cameraViewsT),
+      ReferencePointKind = refPointKind,
+      ReferencePointOffset = refPointOffset,
     };
+  }
+
+  // ENG-8947: the reference-point provision from meta (single row). Columns are nullable + additive — older
+  // bundles without them yield (null, null), i.e. internal origin.
+  private static (string? kind, string? offset) LoadReferencePoint(ParquetTable? t)
+  {
+    if (t is null || !t.Has("reference_point_kind"))
+    {
+      return (null, null);
+    }
+    var kinds = t.Strings("reference_point_kind");
+    var offsets = t.Has("reference_point_offset") ? t.Strings("reference_point_offset") : null;
+    var kind = kinds.Length > 0 ? kinds[0] : null;
+    var offset = offsets is { Length: > 0 } ? offsets[0] : null;
+    return (kind, offset);
   }
 
   // object→node relations (per envelope rel_types) whose target node can form a scene-view grouping tier.
@@ -207,7 +245,7 @@ public static class ArtefactBundleReader
     14,
     15,
     16,
-    17,
+    RelKind.InGroup,
     18,
     19,
     20, // IN_ROOM/IN_SPACE/IN_SYSTEM/IN_NETWORK/IN_LINE/IN_GROUP/IN_ASSEMBLY/…/XREF
@@ -469,6 +507,9 @@ public static class ArtefactBundleReader
         case RelKind.InCollection:
           sets.CollectionByObject[src[i]] = dst[i];
           break;
+        case RelKind.InGroup:
+          sets.Add(sets.GroupsByObject, src[i], dst[i]);
+          break;
         case RelKind.DisplayInstance:
           sets.DisplayInstanceByObject[src[i]] = dst[i];
           sets.DisplayInstanceEdges.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
@@ -477,7 +518,15 @@ public static class ArtefactBundleReader
           sets.MaterialByGeometry[src[i]] = dst[i];
           break;
         case RelKind.HasColor:
-          sets.ColorByGeometry[src[i]] = dst[i];
+          // ord tags the src namespace: 1 = object (instance placement), 0/absent = geometry [ENG-8822].
+          if (ord[i] == 1)
+          {
+            sets.ColorByObject[src[i]] = dst[i];
+          }
+          else
+          {
+            sets.ColorByGeometry[src[i]] = dst[i];
+          }
           break;
         case RelKind.Defines:
           sets.Add(sets.DefinesByDefinition, src[i], dst[i]);

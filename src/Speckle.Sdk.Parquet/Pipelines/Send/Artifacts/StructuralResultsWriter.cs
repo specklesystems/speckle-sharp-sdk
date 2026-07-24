@@ -5,7 +5,7 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 /// <summary>
 /// Speckle 4.0 structural-analysis results writer — direct Zstd Parquet, one table:
 /// <code>
-///   {base}.eav.structural-results.parquet(
+///   {base}.eav.structural_results.parquet(
 ///       object_index, location, result_type, load_case, component, station, step, value, value_text)
 /// </code>
 /// A per-DOMAIN (not per-connector) long/fact table for structural analysis + design results, shared by
@@ -20,8 +20,9 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 /// The axes (<c>load_case</c> / <c>station</c> / <c>step</c> / <c>component</c>) are typed columns, NOT baked
 /// into a property path — so the eav path dictionary stays tiny and results stay queryable/range-able.
 /// <c>value</c> holds numeric results; <c>value_text</c> holds non-numeric design verdicts (e.g. PASS/FAIL).
-/// Other domains (environmental, thermal, …) get their own <c>{base}.eav.{domain}-results.parquet</c> when
-/// they arrive. Not thread-safe: calls are sequential.
+/// Other domains (environmental, thermal, …) get their own <c>{base}.eav.{domain}_results.parquet</c> when
+/// they arrive. The file name is snake_case to match its logical table name (<c>structural_results</c> in
+/// <c>bundle_files</c>) — kebab-case breaks DuckDB view-name lookups. Not thread-safe: calls are sequential.
 /// </summary>
 public sealed class StructuralResultsWriter : IDisposable
 {
@@ -38,7 +39,7 @@ public sealed class StructuralResultsWriter : IDisposable
     BaseName = baseName;
 
     _results = new ParquetTableWriter(
-      System.IO.Path.Combine(outputDir, $"{baseName}.eav.structural-results.parquet"),
+      System.IO.Path.Combine(outputDir, $"{baseName}.eav.structural_results.parquet"),
       new ParquetSchema(
         new DataField<int?>("object_index"),
         S("location"),
