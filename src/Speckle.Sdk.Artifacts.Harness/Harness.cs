@@ -324,7 +324,11 @@ internal sealed class Harness(
   {
     logger.LogInformation("Deserialized root [{SpeckleType}] id={RootId}", root.speckle_type, root.id);
 
-    outDir ??= Path.Combine(Path.GetTempPath(), $"speckle-artefact-{baseName}-{DateTime.UtcNow:yyyyMMddHHmmss}");
+    // Emptied up front: the uploader renames and ships EVERY file in this directory, so anything left over
+    // from a previous run would be uploaded as part of this bundle.
+    outDir = EnsureCleanDirectory(
+      outDir ?? Path.Combine(Path.GetTempPath(), $"speckle-artefact-{baseName}-{DateTime.UtcNow:yyyyMMddHHmmss}")
+    );
     logger.LogInformation("Output: {OutDir} (base {BaseName})", outDir, baseName);
 
     Stats stats;

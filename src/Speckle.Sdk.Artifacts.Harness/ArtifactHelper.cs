@@ -11,9 +11,7 @@ using Speckle.Sdk.Models.Instances;
 namespace Speckle.Sdk.Artifacts.Harness;
 
 /// <summary>
-/// Stateless helpers shared by the v2 and v3 producers — graph-vintage detection, id/key derivation, and the
-/// small readers that tolerate the `@`-prefixed detached form of a member. Holds no run state, so it is safe
-/// as a DI singleton.
+/// Stateless helpers shared by the v2 and v3 producers
 /// </summary>
 internal sealed class ArtifactHelper
 {
@@ -37,7 +35,6 @@ internal sealed class ArtifactHelper
   private static bool IsVersion3(object? version) =>
     version switch
     {
-      int i => i == 3,
       long l => l == 3,
       double d => d is 3,
       string s => s == "3",
@@ -89,7 +86,7 @@ internal sealed class ArtifactHelper
       new("category", obj["category"]),
       new("family", obj["family"]),
       new("type", obj["type"]),
-      new("level", obj["level"]),
+      new("level", ReadLevelScalar(obj)),
     };
 
     var typeKey = obj["typeId"] as string ?? (props.TryGetValue("typeId", out var tk) ? tk as string : null);
@@ -97,12 +94,31 @@ internal sealed class ArtifactHelper
     return (props, rootScalars, typeKey);
   }
 
+  // v2 attached the Level object itself; v3 sends the name. EAV wants the name either way — a Base would be
+  // dropped as a non-scalar.
+  private object? ReadLevelScalar(Base obj) =>
+    ReadV2Level(obj) is { } lvl ? lvl["name"] : obj["level"] ?? obj["@level"];
+
   // ── member readers ──────────────────────────────────────────────────────────────────
 
   public bool IsGeometry(Base b) => b.speckle_type.StartsWith("Objects.Geometry.", StringComparison.Ordinal);
 
   public RenderMaterial? ReadEmbeddedMaterial(Base host) =>
     (host["renderMaterial"] ?? host["@renderMaterial"]) as RenderMaterial;
+
+  /// <summary>The level attached to a v2 buildElement. <c>level</c> was also used for unrelated data, so a
+  /// non-<see cref="Base"/> value reads as null and the caller skips it.</summary>
+  public Base? ReadV2Level(Base host) => (host["level"] ?? host["@level"]) as Base;
+
+  /// <summary>Elevation off a level object. The deserializer only ever yields double or long, so anything
+  /// else (including null) means the level has no usable elevation.</summary>
+  public double? ReadElevation(Base host) =>
+    host["elevation"] switch
+    {
+      double d => d,
+      long l => l,
+      _ => null,
+    };
 
   /// <summary>A detached list may sit under the typed key or the `@`-prefixed dynamic key; takes the first
   /// non-empty one.</summary>

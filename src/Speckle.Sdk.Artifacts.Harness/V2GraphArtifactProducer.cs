@@ -39,6 +39,9 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   // synthetic collection K by cumulative property path ("Level 1/Walls") — dedup + parent-chain building.
   private readonly Dictionary<string, int> _v2CollByPath = new(StringComparer.Ordinal);
 
+  // LEVEL node K by level identity — v2 attached a whole Level object to every element on it.
+  private readonly Dictionary<string, int> _levelKByKey = new(StringComparer.Ordinal);
+
   // pre v2.13 commits did not use Collection objects, so the scene tree has to be synthesized instead.
   private bool _preCollections;
 
@@ -188,6 +191,9 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
           }
         }
       }
+
+      // A displayValue is the best signal for a buildElement, which is what v2 attached levels to.
+      EmitLevelEdge(obj, objK);
       return objK;
     }
 
@@ -218,6 +224,30 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
     _seenGeometryAppIds.Add(appId);
     return true;
+  }
+
+  // ── levels ──────────────────────────────────────────────────────────────────────────
+
+  // v2 had no level proxies: the Level object hung off each element's `level` property, repeated per element.
+  // Best-effort — a level with no usable elevation is skipped rather than migrated at a made-up height.
+  private void EmitLevelEdge(Base obj, int objK)
+  {
+    if (helper.ReadV2Level(obj) is not { } lvl || helper.ReadElevation(lvl) is not { } elevation)
+    {
+      return;
+    }
+
+    var name = lvl["name"] as string;
+    var key = lvl.id ?? lvl.applicationId ?? $"{name}:{elevation}"; // id is the reliable v2 level identity
+    if (!_levelKByKey.TryGetValue(key, out var lvlK))
+    {
+      lvlK = pipeline.AddLevel(key, name, elevation);
+      _levelKByKey[key] = lvlK;
+      _stats.Levels++;
+    }
+
+    pipeline.OnLevel(objK, lvlK);
+    _stats.OnLevelEdges++;
   }
 
   // ── materials ───────────────────────────────────────────────────────────────────────

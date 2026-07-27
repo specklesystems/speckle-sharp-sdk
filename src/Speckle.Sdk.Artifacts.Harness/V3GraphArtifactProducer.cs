@@ -499,7 +499,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         continue;
       }
       var name = lp.value.name;
-      var elevation = lp.value["elevation"] is double d ? d : 0.0; // dynamic member on the level DataObject
+      var elevation = helper.ReadElevation(lp.value) ?? 0.0; // dynamic member on the level DataObject
       var lvlK = pipeline.AddLevel(helper.LevelKey(lp, name), name, elevation);
       _stats.Levels++;
       foreach (var objAppId in lp.objects)

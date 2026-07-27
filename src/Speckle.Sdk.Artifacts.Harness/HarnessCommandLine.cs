@@ -162,7 +162,14 @@ internal static class HarnessCommandLine
     return cmd;
   }
 
-  private static Option<string> OutOption() => new("--out") { Description = "Output directory (default: a temp dir)." };
+  // Bundle output directory. Emptied on startup either way; the produced files are kept when it is given
+  // explicitly, and deleted along with the temp dir when it is not.
+  private static Option<string> OutOption()
+  {
+    Option<string> option = new("--out") { Description = "Output directory (default: a temp dir)." };
+    option.Aliases.Add("--outputPath");
+    return option;
+  }
 
   private static Option<string[]> UploadOption() =>
     new("--upload")
