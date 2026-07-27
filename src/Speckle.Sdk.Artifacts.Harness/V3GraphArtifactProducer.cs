@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Globalization;
-using Speckle.DoubleNumerics;
-using Speckle.Objects.Data;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Utils;
@@ -15,14 +11,18 @@ using Speckle.Sdk.Models.Proxies;
 namespace Speckle.Sdk.Artifacts.Harness;
 
 /// <summary>
-/// Migrates a stored Speckle <see cref="Base"/> graph into the artefact bundle.
+/// Migrates a v3 <see cref="Base"/> graph — one carrying root-level proxies — into the artefact bundle.
 ///
 /// Discovery runs off <see cref="DefaultTraversal"/>, which yields exactly the two node kinds we migrate —
 /// every <see cref="Collection"/> and every ATOMIC object — depth-first, parent before child. Traversal only
 /// descends the <c>elements</c> lineage, so it halts at an atomic object: its <c>displayValue</c> and data
 /// properties are handled here, never walked into.
+///
+/// Appearance (material/colour) is proxy-driven: a proxy naming a mesh or object claims it directly, and a
+/// proxy naming a layer fills whatever is left, deepest layer first.
 /// </summary>
-internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : IDisposable
+internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, ArtifactHelper helper)
+  : IGraphArtifactProducer
 {
   public void Dispose() => pipeline?.Dispose();
 
@@ -41,24 +41,11 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
   // object/geometry appId → its appearance targets ("g:<geomAppId>" mesh | "o:<objAppId>" instance object)
   private readonly Dictionary<string, List<string>> _objectDisplayGeomKeys = new(StringComparer.Ordinal);
 
-  // geometry appId → material embedded on the mesh (v2-style sends).
-  private readonly Dictionary<string, RenderMaterial> _embeddedMaterialByGeom = new(StringComparer.Ordinal);
-
   // definition-member appId → its raw-solid geometry appId ("<appId>:solid")
   private readonly Dictionary<string, string> _defMemberSolidKey = new(StringComparer.Ordinal);
 
-  // pre v2.13 commits did not use Collection objects.
-  private bool _isv2PreCollections;
-
-  // synthetic collection K by cumulative property path ("Level 1/Walls") — dedup + parent-chain building (v2 mode).
-  private readonly Dictionary<string, int> _v2CollByPath = new(StringComparer.Ordinal);
-
-  /// <summary>Walks <paramref name="root"/>, drives the pipeline, and <see cref="ObjectsArtifactPipeline.Complete"/>s
-  /// it. Returns the run stats.</summary>
   public Stats Produce(Base root)
   {
-    _isv2PreCollections = root is not Collection;
-
     IReadOnlySet<string> defSourceAppIds = GetDefinitionAppIds(root);
 
     var traversal = DefaultTraversal.CreateTraversalFunc();
@@ -72,23 +59,17 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
         continue;
       }
 
-      if (current is RenderMaterial)
-      {
-        //Hack to cover some gaps with v2 commits
-        continue;
-      }
-
       if (current is Collection col)
       {
         // Parent is a Collection except at the root, which is skipped above and never mapped → top-level (null).
-        int? parentK = _collectionMap.TryGetValue(Aid(parent.Current), out var pk) ? pk : null;
-        var k = pipeline.AddCollection(CollectionKey(col), col.name, parentK, CollectionSubtype(col));
-        _collectionMap[Aid(col)] = k;
+        int? parentK = _collectionMap.TryGetValue(helper.Aid(parent.Current), out var pk) ? pk : null;
+        var k = pipeline.AddCollection(helper.CollectionKey(col), col.name, parentK, helper.CollectionSubtype(col));
+        _collectionMap[helper.Aid(col)] = k;
         _stats.Collections++;
         continue;
       }
 
-      if (defSourceAppIds.Contains(Aid(current)))
+      if (defSourceAppIds.Contains(helper.Aid(current)))
       {
         EmitDefinitionMember(current);
         continue;
@@ -96,14 +77,7 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
 
       var objK = EmitObject(current);
       _objectKMap[current.id.NotNull()] = objK;
-      if (_isv2PreCollections)
-      {
-        EmitV2HierarchyEdge(tc, objK);
-      }
-      else
-      {
-        EmitHierarchyEdge(tc, objK);
-      }
+      EmitHierarchyEdge(tc, objK);
     }
 
     var layerGeomKeys = BuildLayerGeomKeys(root, out var layerDepth);
@@ -128,7 +102,7 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
       var pc = p.Current;
       if (pc is Collection)
       {
-        if (_collectionMap.TryGetValue(Aid(pc), out var ck))
+        if (_collectionMap.TryGetValue(helper.Aid(pc), out var ck))
         {
           pipeline.InCollection(objK, ck, 0);
           _stats.InCollectionEdges++;
@@ -144,43 +118,11 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
     }
   }
 
-  // Backwards compat pre 2.13 Collections
-  private void EmitV2HierarchyEdge(TraversalContext tc, int objK)
-  {
-    if (tc.Parent is not null && _objectKMap.TryGetValue(tc.Parent.Current.id.NotNull(), out var hostK))
-    {
-      pipeline.Subelement(hostK, objK, _stats.SubelementEdges++);
-    }
-
-    int? parentK = null;
-    var path = "";
-    foreach (var name in tc.GetPropertyPath().Reverse()) // child→root, so reverse to build root→leaf
-    {
-      path = path.Length == 0 ? name : path + "/" + name;
-      if (!_v2CollByPath.TryGetValue(path, out var pathK))
-      {
-        pathK = pipeline.AddCollection(path, name.TrimStart('@'), parentK, "Layer");
-        _v2CollByPath[path] = pathK;
-        _stats.Collections++;
-      }
-      parentK = pathK;
-    }
-    var leafK = parentK; // null when the object sits directly on the root (no property path) → stays top-level
-
-    if (leafK is not { } ck)
-    {
-      throw new InvalidOperationException("Object has no collection");
-    }
-
-    pipeline.InCollection(objK, ck, 0);
-    _stats.InCollectionEdges++;
-  }
-
   // ── object emission ─────────────────────────────────────────────────────────────────
 
   private int EmitObject(Base obj)
   {
-    var appId = Aid(obj);
+    var appId = helper.Aid(obj);
     var objK = pipeline.InternObject(appId);
     if (!_seenObjectAppIds.Add(appId))
     {
@@ -189,7 +131,7 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
 
     _stats.Objects++;
 
-    var (props, rootScalars, typeKey) = ExtractProperties(obj);
+    var (props, rootScalars, typeKey) = helper.ExtractProperties(obj);
     pipeline.AddProperties(appId, props, rootScalars, typeKey);
 
     if (obj is InstanceProxy ip)
@@ -205,8 +147,8 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
 
     // Lossless raw solid (Brep/Extrusion/SubD/SolidX, or a Rhino/Autocad host wrapper): link the native blob via
     // the SOLID rel, in ADDITION to the display meshes below. Receive picks solid vs mesh via PreferSolids.
-    var rawEnc = TryReadRawEncoding(obj);
-    if (rawEnc is not null && IsMigratableSolidFormat(rawEnc.format) && EmitSolidBlob(appId, rawEnc) is int solidK)
+    var rawEnc = helper.TryReadRawEncoding(obj);
+    if (rawEnc is not null && helper.IsMigratableSolidFormat(rawEnc.format) && EmitSolidBlob(appId, rawEnc) is int solidK)
     {
       pipeline.Solid(objK, solidK, 0);
       _stats.Solids++;
@@ -214,11 +156,9 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
     }
     // Checked before the raw-geometry case so a leaf that ships a display mesh (Brep/SubD, extrusions) encodes
     // that mesh rather than its un-encodable self.
-    var displayValue = GetBaseList(obj, "displayValue").ToList();
+    var displayValue = helper.GetBaseList(obj, "displayValue").ToList();
     if (displayValue.Count > 0)
     {
-      // Element-level material fills gaps where a mesh carries none of its own.
-      var objMaterial = ReadEmbeddedMaterial(obj);
       int ord = 0;
       foreach (var item in displayValue)
       {
@@ -230,16 +170,12 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
         }
         else
         {
-          var gAppId = Aid(item);
+          var gAppId = helper.Aid(item);
           if (AddGeometry(gAppId, item))
           {
             pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
             _stats.DisplayEdges++;
             RecordObjectGeom(appId, "g:" + gAppId);
-            if ((ReadEmbeddedMaterial(item) ?? objMaterial) is { } rm)
-            {
-              _embeddedMaterialByGeom.TryAdd(gAppId, rm);
-            }
           }
         }
       }
@@ -253,7 +189,7 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
       return objK;
     }
 
-    if (IsGeometry(obj))
+    if (helper.IsGeometry(obj))
     {
       // The leaf is its own geometry; appId interns into both the object and geometry namespaces.
       if (AddGeometry(appId, obj))
@@ -262,10 +198,6 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
         _stats.DisplayEdges++;
         _stats.MeshAtomics++;
         RecordObjectGeom(appId, "g:" + appId);
-        if (ReadEmbeddedMaterial(obj) is { } rm)
-        {
-          _embeddedMaterialByGeom.TryAdd(appId, rm);
-        }
       }
     }
 
@@ -285,13 +217,13 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
   // Idempotent by appId; also emits the placement's DEFINITION so DEFINES_INSTANCE can resolve.
   private int ResolveInstanceNode(InstanceProxy ip)
   {
-    var key = Aid(ip);
+    var key = helper.Aid(ip);
     if (_instanceNodeByAppId.TryGetValue(key, out var existing))
     {
       return existing;
     }
     var defK = pipeline.AddDefinition(ip.definitionId, ip.definitionId);
-    var instK = pipeline.AddInstance(key, defK, Flatten(ip.transform), ip.units);
+    var instK = pipeline.AddInstance(key, defK, helper.Flatten(ip.transform), ip.units);
     _instanceNodeByAppId[key] = instK;
     return instK;
   }
@@ -311,7 +243,7 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
   // blob under the member's appId (linked via DEFINES), preferring a display mesh over an un-encodable parent.
   private void EmitDefinitionMember(Base obj)
   {
-    var appId = Aid(obj);
+    var appId = helper.Aid(obj);
 
     if (obj is InstanceProxy ip)
     {
@@ -330,9 +262,9 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
 
     // Lossless raw solid for a definition member rides DEFINES (no standalone SOLID edge) alongside its display
     // meshes — the EmitProxies DEFINES pass links it via _defMemberSolidKey (mirrors the Rhino connector).
-    var rawEnc = TryReadRawEncoding(obj);
+    var rawEnc = helper.TryReadRawEncoding(obj);
     var hasSolid =
-      rawEnc is not null && IsMigratableSolidFormat(rawEnc.format) && EmitSolidBlob(appId, rawEnc) is not null;
+      rawEnc is not null && helper.IsMigratableSolidFormat(rawEnc.format) && EmitSolidBlob(appId, rawEnc) is not null;
     if (hasSolid)
     {
       _defMemberSolidKey[appId] = appId + ":solid";
@@ -341,8 +273,8 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
 
     // Don't SGEO-encode a raw-encoded object itself (BrepX/…) — only a genuine display mesh or plain geometry leaf.
     var geometry =
-      GetBaseList(obj, "displayValue").FirstOrDefault(d => d is not InstanceProxy)
-      ?? (obj is not IRawEncodedObject && IsGeometry(obj) ? obj : null);
+      helper.GetBaseList(obj, "displayValue").FirstOrDefault(d => d is not InstanceProxy)
+      ?? (obj is not IRawEncodedObject && helper.IsGeometry(obj) ? obj : null);
     if (geometry is null)
     {
       _seenGeometryAppIds.Remove(appId); // no SGEO mesh under appId; a solid-only member is linked via _defMemberSolidKey
@@ -362,12 +294,23 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
       return;
     }
     _stats.DefinitionGeometries++;
-    if ((ReadEmbeddedMaterial(geometry) ?? ReadEmbeddedMaterial(obj)) is { } rm)
-    {
-      _embeddedMaterialByGeom.TryAdd(appId, rm);
-    }
     // Shared across placements, so ByLayer colour must bind to this geometry-K, not flood from an instance.
     _objectDisplayGeomKeys[appId] = new List<string> { "g:" + appId };
+  }
+
+  // base64-decodes the blob and stores it under "<objAppId>:solid" as a raw (non-SGEO) geometry, returning its K.
+  private int? EmitSolidBlob(string objAppId, RawEncoding enc)
+  {
+    byte[] bytes;
+    try
+    {
+      bytes = Convert.FromBase64String(enc.contents);
+      return pipeline.AddRawGeometry(objAppId + ":solid", bytes, enc.format);
+    }
+    catch (FormatException ex)
+    {
+      throw new InvalidOperationException($"Malformed solid {objAppId}", ex);
+    }
   }
 
   // ── proxy / value-node emission ─────────────────────────────────────────────────────
@@ -444,13 +387,13 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
       return byGeom;
     }
 
-    foreach (var def in GetBaseList(root, "instanceDefinitionProxies"))
+    foreach (var def in helper.GetBaseList(root, "instanceDefinitionProxies"))
     {
       if (def is not InstanceDefinitionProxy idp)
       {
         continue;
       }
-      var defK = pipeline.AddDefinition(DefinitionKey(idp), idp.name);
+      var defK = pipeline.AddDefinition(helper.DefinitionKey(idp), idp.name);
       _stats.Definitions++;
       int o = 0;
       foreach (var memberAppId in idp.objects)
@@ -491,14 +434,14 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
 
     var matProxies = new List<(int, List<string>)>();
     var placeholderMatKs = new HashSet<int>();
-    foreach (var mat in GetBaseList(root, "renderMaterialProxies"))
+    foreach (var mat in helper.GetBaseList(root, "renderMaterialProxies"))
     {
       if (mat is not RenderMaterialProxy rmp)
       {
         continue;
       }
       var v = rmp.value;
-      var matK = pipeline.AddMaterial(MaterialKey(rmp), v.diffuse, v.opacity, v.metalness, v.roughness);
+      var matK = pipeline.AddMaterial(helper.MaterialKey(rmp), v.diffuse, v.opacity, v.metalness, v.roughness);
       matProxies.Add((matK, rmp.objects));
       _stats.Materials++;
       // Pure-black diffuse is the CAD "no material / ByLayer" placeholder; it must yield to a real colour.
@@ -510,28 +453,8 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
     var matBindings = BindWithPrecedence(matProxies, out var matSkipped);
     _stats.SkippedMaterial += matSkipped;
 
-    // Fallback for sends with no root material proxies: bind each mesh's embedded material directly (a proxy
-    // claim wins). Deduped by material identity. An embedded black is explicit, not the CAD placeholder.
-    var embeddedMatKs = new Dictionary<string, int>(StringComparer.Ordinal);
-    foreach (var (gAppId, rm) in _embeddedMaterialByGeom)
-    {
-      var gk = "g:" + gAppId;
-      if (matBindings.ContainsKey(gk))
-      {
-        continue;
-      }
-      var key = rm.applicationId ?? "mat:" + (rm.id ?? rm.diffuse.ToString(CultureInfo.InvariantCulture));
-      if (!embeddedMatKs.TryGetValue(key, out var matK))
-      {
-        matK = pipeline.AddMaterial(key, rm.diffuse, rm.opacity, rm.metalness, rm.roughness);
-        embeddedMatKs[key] = matK;
-        _stats.Materials++;
-      }
-      matBindings[gk] = matK;
-    }
-
     var colProxies = new List<(int, List<string>)>();
-    foreach (var col in GetBaseList(root, "colorProxies"))
+    foreach (var col in helper.GetBaseList(root, "colorProxies"))
     {
       if (col is not ColorProxy cp)
       {
@@ -569,7 +492,7 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
     }
 
     // Refs to elements absent from the export are skipped.
-    foreach (var lvl in GetBaseList(root, "levelProxies"))
+    foreach (var lvl in helper.GetBaseList(root, "levelProxies"))
     {
       if (lvl is not LevelProxy lp)
       {
@@ -577,7 +500,7 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
       }
       var name = lp.value.name;
       var elevation = lp.value["elevation"] is double d ? d : 0.0; // dynamic member on the level DataObject
-      var lvlK = pipeline.AddLevel(LevelKey(lp, name), name, elevation);
+      var lvlK = pipeline.AddLevel(helper.LevelKey(lp, name), name, elevation);
       _stats.Levels++;
       foreach (var objAppId in lp.objects)
       {
@@ -602,7 +525,7 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
     var depths = new Dictionary<string, int>(StringComparer.Ordinal);
     void Walk(Base node, int depth)
     {
-      foreach (var child in GetBaseList(node, "elements"))
+      foreach (var child in helper.GetBaseList(node, "elements"))
       {
         if (child is not Collection)
         {
@@ -612,8 +535,8 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
         CollectDescendantGeom(child, geoms);
         if (geoms.Count > 0)
         {
-          result[Aid(child)] = geoms;
-          depths[Aid(child)] = depth;
+          result[helper.Aid(child)] = geoms;
+          depths[helper.Aid(child)] = depth;
         }
         Walk(child, depth + 1);
       }
@@ -625,67 +548,17 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
 
   private void CollectDescendantGeom(Base collection, List<string> acc)
   {
-    foreach (var child in GetBaseList(collection, "elements"))
+    foreach (var child in helper.GetBaseList(collection, "elements"))
     {
       if (child is Collection)
       {
         CollectDescendantGeom(child, acc);
       }
-      else if (_objectDisplayGeomKeys.TryGetValue(Aid(child), out var gks))
+      else if (_objectDisplayGeomKeys.TryGetValue(helper.Aid(child), out var gks))
       {
         acc.AddRange(gks);
       }
     }
-  }
-
-  // ── property extraction ─────────────────────────────────────────────────────────────
-
-  private static (
-    IReadOnlyDictionary<string, object?> props,
-    IEnumerable<KeyValuePair<string, object?>> rootScalars,
-    string? typeKey
-  ) ExtractProperties(Base obj)
-  {
-    IReadOnlyDictionary<string, object?> props = obj is DataObject dobj
-      ? dobj.properties
-      : obj.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
-
-    // `level` is the level NAME and lives at the top level (not under properties), so it must be listed here.
-    var rootScalars = new List<KeyValuePair<string, object?>>
-    {
-      new("speckle_type", obj.speckle_type),
-      new("name", obj["name"]),
-      new("units", obj["units"]),
-      new("category", obj["category"]),
-      new("family", obj["family"]),
-      new("type", obj["type"]),
-      new("level", obj["level"]),
-    };
-
-    var typeKey = obj["typeId"] as string ?? (props.TryGetValue("typeId", out var tk) ? tk as string : null);
-
-    return (props, rootScalars, typeKey);
-  }
-
-  // ── keys (applicationId-keyed; null → stable per-object key) ─────────────────────────
-
-  private static string Aid(Base b) => b.applicationId ?? "spk:" + b.id;
-
-  private static string CollectionKey(Collection col) => col.applicationId ?? "coll:" + col.id;
-
-  private static string DefinitionKey(InstanceDefinitionProxy idp) => idp.applicationId ?? idp.name;
-
-  private static string MaterialKey(RenderMaterialProxy rmp) =>
-    rmp.applicationId ?? rmp.value.applicationId ?? "mat:" + rmp.value.diffuse.ToString(CultureInfo.InvariantCulture);
-
-  private static string LevelKey(Base lvl, string? name) => lvl.applicationId ?? "lvl:" + (name ?? lvl.id);
-
-  private static string CollectionSubtype(Collection col)
-  {
-#pragma warning disable CS0618 // Type or member is obsolete
-    var ct = col.collectionType;
-#pragma warning restore CS0618 // Type or member is obsolete
-    return string.IsNullOrEmpty(ct) ? col.speckle_type.Split('.')[^1] : ct;
   }
 
   // ── helpers ─────────────────────────────────────────────────────────────────────────
@@ -693,7 +566,7 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
   private HashSet<string> GetDefinitionAppIds(Base root)
   {
     var set = new HashSet<string>(StringComparer.Ordinal);
-    foreach (var def in GetBaseList(root, "instanceDefinitionProxies"))
+    foreach (var def in helper.GetBaseList(root, "instanceDefinitionProxies"))
     {
       if (def is not InstanceDefinitionProxy idp)
       {
@@ -708,132 +581,5 @@ internal sealed class GraphArtifactProducer(ObjectsArtifactPipeline pipeline) : 
       }
     }
     return set;
-  }
-
-  private static bool IsGeometry(Base b)
-  {
-    return b.speckle_type.StartsWith("Objects.Geometry.", StringComparison.Ordinal);
-  }
-
-  private static RenderMaterial? ReadEmbeddedMaterial(Base host) =>
-    (host["renderMaterial"] ?? host["@renderMaterial"]) as RenderMaterial;
-
-  // ── raw-encoded solids (SOLID rel) ───────────────────────────────────────────────────
-
-  // 3dm (Rhino) and sat (Autocad) are the native solid formats we migrate; others (e.g. dwg) are skipped.
-  private static bool IsMigratableSolidFormat(string? format) =>
-    format is RawEncodingFormats.RHINO_3DM or RawEncodingFormats.ACAD_SAT;
-
-  // Reads the lossless raw encoding off a raw-encoded geometry (encodedValue) or a host wrapper (rawEncoding).
-  // Typed casts only — the v3 graph deserializes into these registered SDK types.
-  private static RawEncoding? TryReadRawEncoding(Base obj) =>
-    obj switch
-    {
-      IRawEncodedObject r => r.encodedValue,
-      RhinoObject ro => ro.rawEncoding,
-      AutocadObject ao => ao.rawEncoding,
-      _ => null,
-    };
-
-  // base64-decodes the blob and stores it under "<objAppId>:solid" as a raw (non-SGEO) geometry, returning its K.
-  // A malformed blob is logged and skipped (null) rather than failing the whole migration run.
-  private int? EmitSolidBlob(string objAppId, RawEncoding enc)
-  {
-    byte[] bytes;
-    try
-    {
-      bytes = Convert.FromBase64String(enc.contents);
-      return pipeline.AddRawGeometry(objAppId + ":solid", bytes, enc.format);
-    }
-    catch (FormatException ex)
-    {
-      throw new InvalidOperationException($"Malformed solid {objAppId}", ex);
-    }
-  }
-
-  // A detached list may sit under the typed key or the `@`-prefixed dynamic key; take the first non-empty one.
-  private static IEnumerable<Base> GetBaseList(Base b, string key)
-  {
-    var raw = NonEmpty(b[key]) ?? NonEmpty(b["@" + key]);
-    if (raw is IEnumerable seq and not string)
-    {
-      foreach (var item in seq)
-      {
-        if (item is Base bs)
-        {
-          yield return bs;
-        }
-      }
-    }
-  }
-
-  private static object? NonEmpty(object? v) => v is ICollection c && c.Count == 0 ? null : v;
-
-  private static double[] Flatten(Matrix4x4 m) =>
-    new[]
-    {
-      m.M11,
-      m.M12,
-      m.M13,
-      m.M14,
-      m.M21,
-      m.M22,
-      m.M23,
-      m.M24,
-      m.M31,
-      m.M32,
-      m.M33,
-      m.M34,
-      m.M41,
-      m.M42,
-      m.M43,
-      m.M44,
-    };
-
-  // ── stats ───────────────────────────────────────────────────────────────────────────
-
-  internal sealed class Stats
-  {
-    public int Objects;
-    public int Geometries;
-    public int DisplayEdges;
-    public int DisplayInstanceEdges;
-    public int SubelementEdges;
-    public int Definitions;
-    public int DefinesEdges;
-    public int Materials;
-    public int HasMaterialEdges;
-    public int Colors;
-    public int HasColorEdges;
-    public int Levels;
-    public int OnLevelEdges;
-    public int Collections;
-    public int InCollectionEdges;
-    public int DefinitionGeometries;
-    public int DefinitionInstances;
-    public int DefinesInstanceEdges;
-    public int MeshAtomics;
-    public int InstanceAtomics;
-
-    // Raw (non-SGEO) native solid blobs: SOLID edges on atomic objects, DEFINES-linked solids on def members.
-    public int Solids;
-    public int DefinitionSolids;
-
-    // Proxy refs whose target appId isn't in the graph — skipped rather than minting a phantom K.
-    public int SkippedDefines;
-    public int SkippedMaterial;
-    public int SkippedColor;
-    public int SkippedLevel;
-    public int SkippedDangling => SkippedDefines + SkippedMaterial + SkippedColor + SkippedLevel;
-    public readonly List<string> Notes = new();
-
-    public override string ToString() =>
-      $"""
-        objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})
-        edges: DISPLAY={DisplayEdges} DISPLAY_INSTANCE={DisplayInstanceEdges} SUBELEMENT={SubelementEdges} SOLID={Solids} (defSolid={DefinitionSolids})
-               DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges}
-        nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections}
-        skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel})
-        """;
   }
 }

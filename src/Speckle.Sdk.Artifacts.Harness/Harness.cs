@@ -206,8 +206,8 @@ internal sealed class Harness(
     logger.LogInformation("Deserialized root [{SpeckleType}] id={RootId}", root.speckle_type, root.id);
     logger.LogInformation("Output: {OutDir} (base {BaseName})", outDir, baseName);
 
-    GraphArtifactProducer.Stats stats;
-    using (var producer = producerFactory.Create(outDir, baseName))
+    Stats stats;
+    using (var producer = producerFactory.Create(outDir, baseName, root))
     {
       stats = producer.Produce(root);
     }
@@ -327,8 +327,8 @@ internal sealed class Harness(
     outDir ??= Path.Combine(Path.GetTempPath(), $"speckle-artefact-{baseName}-{DateTime.UtcNow:yyyyMMddHHmmss}");
     logger.LogInformation("Output: {OutDir} (base {BaseName})", outDir, baseName);
 
-    GraphArtifactProducer.Stats stats;
-    using (var producer = producerFactory.Create(outDir, baseName))
+    Stats stats;
+    using (var producer = producerFactory.Create(outDir, baseName, root))
     {
       stats = producer.Produce(root);
     }
