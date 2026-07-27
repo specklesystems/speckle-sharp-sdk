@@ -324,6 +324,8 @@ public sealed class GeometriesParquetWriter : IDisposable
       8 => "ellipse",
       9 => "spiral",
       10 => "box",
+      11 => "region",
+      12 => "text",
       _ => "unknown",
     };
 
