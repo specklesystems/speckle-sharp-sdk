@@ -15,7 +15,6 @@ internal static class HarnessCommandLine
   {
     RootCommand root = new("Speckle artefact-bundle migration harness.");
     root.Subcommands.Add(BuildSelfTest(services));
-    root.Subcommands.Add(BuildNdjson(services));
     root.Subcommands.Add(BuildPackfile(services));
     root.Subcommands.Add(BuildRemote(services));
     return root;
@@ -25,42 +24,6 @@ internal static class HarnessCommandLine
   {
     Command cmd = new("selftest", "Run the SGEO encoder byte-layout self-test.");
     cmd.SetAction(_ => services.GetRequiredService<SgeoSelfTest>().Run());
-    return cmd;
-  }
-
-  private static Command BuildNdjson(IServiceProvider services)
-  {
-    Argument<FileInfo> ndjson = new("ndjsonPath")
-    {
-      Description = "Path to the NDJSON graph file (.ndjson, .gz, or .zip).",
-      CustomParser = ParseExistingFile,
-    };
-    Option<string> rootOption = new("--root")
-    {
-      Description = "Root object id, or 'auto' to detect it.",
-      DefaultValueFactory = _ => "auto",
-    };
-    Option<string> outOption = OutOption();
-    Option<string[]> uploadOption = UploadOption();
-
-    Command cmd = new("ndjson", "Migrate a graph from an NDJSON dump.");
-    cmd.Arguments.Add(ndjson);
-    cmd.Options.Add(rootOption);
-    cmd.Options.Add(outOption);
-    cmd.Options.Add(uploadOption);
-    cmd.SetAction(
-      async (parseResult, ct) =>
-        await services
-          .GetRequiredService<Harness>()
-          .RunNdjson(
-            parseResult.GetRequiredValue(ndjson),
-            parseResult.GetRequiredValue(rootOption),
-            parseResult.GetValue(outOption),
-            parseResult.GetValue(uploadOption),
-            ct
-          )
-          .ConfigureAwait(false)
-    );
     return cmd;
   }
 
@@ -128,7 +91,8 @@ internal static class HarnessCommandLine
 
     Command cmd = new(
       "remote",
-      "Migrate a version from a source server to a destination, defaulting to the source "
+      "Migrate a server version. With no --dest-* the bundle is uploaded onto that same version, in place "
+        + "(token: SPECKLE_TOKEN); with --dest-* it is uploaded as a new version there "
         + "(tokens: SPECKLE_SRC_TOKEN to read, SPECKLE_DST_TOKEN to upload)."
     );
     cmd.Arguments.Add(server);

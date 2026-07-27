@@ -7,9 +7,9 @@ using Speckle.Sdk.Artifacts.Harness;
 // ── CLI ───────────────────────────────────────────────────────────────────────────────
 // Subcommands (run with --help for full usage):
 //   selftest
-//   local  <ndjsonPath> [--root <id|auto>] [--out <dir>] [--upload <serverUrl> <projectId> <modelId>]
-//   remote <serverUrl> <projectId> <modelId> [--version <id>] [--out <dir>] [--upload ...]
-// Tokens: SPECKLE_SRC_TOKEN (remote source), SPECKLE_DST_TOKEN (upload).
+//   packfile <packfilePath> [--root <id>] [--out <dir>] [--upload <serverUrl> <projectId> <modelId>]
+//   remote   <serverUrl> <projectId> <modelId> [versionId] [--dest-* ...] [--legacy-api] [--out <dir>]
+// Tokens: SPECKLE_TOKEN (in-place migration), SPECKLE_SRC_TOKEN (remote source), SPECKLE_DST_TOKEN (upload).
 //
 // Program.cs is intentionally thin: register the DI container, build the command tree, invoke it.
 // The parsing lives in HarnessCommandLine; the business logic lives in Harness.

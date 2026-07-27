@@ -11,8 +11,8 @@ using Speckle.Sdk.Serialisation;
 namespace Speckle.Sdk.Artifacts.Harness;
 
 /// <summary>
-/// End-to-end artefact-bundle harness: resolves an object graph (NDJSON dump, DuckDB packfile, or a
-/// remote server), produces the parquet bundle on disk, and uploads it either ONTO THE SOURCE VERSION
+/// End-to-end artefact-bundle harness: resolves an object graph (a DuckDB packfile, on disk or fetched
+/// from a server), produces the parquet bundle on disk, and uploads it either ONTO THE SOURCE VERSION
 /// (in place, via the bundle-migration API) or as a NEW version on a destination (the v2 envelope-bundle
 /// flow). Registered in the DI container; its typed entry points are invoked by the
 /// <see cref="HarnessCommandLine"/> command actions.
@@ -26,17 +26,6 @@ internal sealed class Harness(
   ILogger<Harness> logger
 )
 {
-  /// <summary>Loads a graph from an NDJSON dump and produces (and optionally uploads) the bundle.</summary>
-  public async Task<int> RunNdjson(FileInfo ndjson, string root, string? outDir, string[]? upload, CancellationToken ct)
-  {
-    var (localRoot, baseName) = await LoadNdjson(ndjson, root).ConfigureAwait(false);
-    if (localRoot is null)
-    {
-      return 1;
-    }
-    return await ProduceAndUpload(localRoot, baseName, outDir, upload, ct).ConfigureAwait(false);
-  }
-
   /// <summary>Loads a graph from a DuckDB packfile on disk and produces (and optionally uploads) the bundle.</summary>
   public async Task<int> RunPackfile(
     FileInfo packfile,
@@ -438,33 +427,5 @@ internal sealed class Harness(
     }
     var v = doc.RootElement.GetProperty("data").GetProperty("project").GetProperty("model").GetProperty("version");
     return (v.GetProperty("id").GetString()!, v.GetProperty("referencedObject").GetString()!);
-  }
-
-  // ── local ndjson → Base graph (existing behaviour) ──────────────────────────────────────
-  private async Task<(Base? root, string baseName)> LoadNdjson(FileInfo ndjson, string rootOption)
-  {
-    var baseName = ndjson.Name;
-    logger.LogInformation("Input: {InputPath}", ndjson);
-
-    var transport = new NDJsonTransport();
-    var count = transport.Initialize(ndjson);
-    logger.LogInformation("Loaded {LineCount} objects into transport", count);
-
-    var rootId = rootOption == "auto" ? transport.DetectRoot() : rootOption;
-    var rootJson = rootId is null ? null : await transport.GetObject(rootId).ConfigureAwait(false);
-    if (rootJson is null)
-    {
-      logger.LogError("Root '{RootId}' not found. Available collection-like candidates:", rootId);
-      foreach (var c in transport.CollectionCandidates().Take(10))
-      {
-        logger.LogInformation("Candidate {Candidate}", c);
-      }
-      return (null, baseName);
-    }
-    logger.LogInformation("Root: {RootId}", rootId);
-
-    var deserializer = new SpeckleObjectDeserializer { ReadTransport = transport };
-    var root = await deserializer.DeserializeAsync(rootJson).ConfigureAwait(false);
-    return (root, baseName);
   }
 }

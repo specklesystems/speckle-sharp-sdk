@@ -13,9 +13,8 @@ directly (see [Build note](#build-note)).
 
 | Command | Purpose |
 | --- | --- |
-| `remote <serverUrl> <projectId> <modelId> [versionId]` | Migrate a server version, source → destination |
-| `ndjson <ndjsonPath>` | Migrate a local NDJSON dump |
-| `packfile <packfilePath>` | Migrate a local DuckDB packfile |
+| `remote <serverUrl> <projectId> <modelId> [versionId]` | Migrate a server version, in place or to a destination |
+| `packfile <packfilePath>` | Migrate a DuckDB packfile on disk |
 | `selftest` | SGEO encoder byte-layout self-test |
 
 ### `remote`
@@ -48,15 +47,11 @@ remote <serverUrl> <projectId> <modelId> [versionId] --dest-server <url> --dest-
 Tokens: `SPECKLE_TOKEN` (migration JWT) for in place; `SPECKLE_SRC_TOKEN`/`SPECKLE_TOKEN` to read and
 `SPECKLE_DST_TOKEN` to upload for the new-version mode.
 
-### `ndjson` / `packfile`
+### `packfile`
 
-Migrate a local file — an NDJSON dump (`.ndjson`/`.gz`/`.zip`) or a `.duckdb` packfile, e.g. an
-artefact pulled from a server's object storage. Options: `--root <id>` (the `ndjson` default
-`auto` detects the root; `packfile` uses its root table), `--out <dir>` (default: a temp dir), and
-`--upload <serverUrl> <projectId> <modelId>` to additionally upload (`SPECKLE_DST_TOKEN`).
-
-`ndjson` loads the whole object closure into memory, so it is memory-hungry on large models;
-`packfile` (and `remote`) stream from DuckDB instead.
+Migrate a `.duckdb` packfile already on disk — e.g. one pulled from a server's object storage. Options:
+`--root <id>` (default: the packfile's own root table), `--out <dir>` (default: a temp dir), and
+`--upload <serverUrl> <projectId> <modelId>` to additionally upload as a new version (`SPECKLE_DST_TOKEN`).
 
 ## Environment variables
 
@@ -84,9 +79,9 @@ dotnet run --project . -- remote https://app.speckle.systems srcProj srcModel \
 dotnet run --project . -- remote https://app.speckle.systems srcProj srcModel 9f8e7d6c5b \
   --dest-server http://localhost:3000 --dest-project dstProj --dest-model dstModel --legacy-api
 
-# Local NDJSON → bundle on disk
-dotnet run --project . -- ndjson ~/Downloads/model.ndjson.gz --out /tmp/bundle
+# Local DuckDB packfile → bundle on disk
+dotnet run --project . -- packfile ./version.duckdb --out /tmp/bundle
 
-# Local DuckDB packfile → derive + upload
+# Local DuckDB packfile → derive + upload as a new version
 dotnet run --project . -- packfile ./version.duckdb --upload http://localhost:3000 dstProj dstModel
 ```
