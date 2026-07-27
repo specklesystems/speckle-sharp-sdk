@@ -20,14 +20,33 @@ directly (see [Build note](#build-note)).
 
 ### `remote`
 
-Fetches the source version (`versionId` optional, default: latest) and **always uploads** the
-produced bundle to the destination. The destination defaults to the source, so with no `--dest-*`
-it writes a new version back onto the source model; override with all three of `--dest-server`,
-`--dest-project`, `--dest-model` (all-or-nothing). By default the source is fetched by downloading
-its DuckDB packfile; `--legacy-api` fetches via the REST deserialize API instead. `--out <dir>`
-sets the staging directory (default: a temp dir).
+Two modes, chosen by whether a destination is given. `--out <dir>` sets the staging directory
+(default: a temp dir) in both.
 
-Tokens: `SPECKLE_SRC_TOKEN` (or `SPECKLE_TOKEN`) to read, `SPECKLE_DST_TOKEN` to upload.
+**In place (no `--dest-*`)** — migrates the given version onto itself via the bundle-migration API:
+the produced bundle is uploaded to that version's artifact prefix and **no new version is created**.
+`versionId` is required (there is no way to resolve "latest" with a migration token). This is the mode
+the server's bundle-migration service invokes.
+
+```
+remote <serverUrl> <projectId> <modelId> <versionId>
+```
+
+The only credential is the per-job **migration JWT** in `SPECKLE_TOKEN`, which authorises the migration
+endpoints and nothing else — so the source packfile is fetched from the presigned URL those endpoints
+return, straight out of object storage. The service owns the surrounding lifecycle (`start` / `complete` /
+`fail`); the harness only signs and uploads, and signals failure by exiting non-zero.
+
+**New version (all three `--dest-*`)** — the previous behaviour: produce, then upload as a NEW version on
+the destination via the v2 model-ingestion flow. `versionId` is optional here (default: latest), and
+`--legacy-api` (REST deserialize instead of the packfile download) applies only to this mode.
+
+```
+remote <serverUrl> <projectId> <modelId> [versionId] --dest-server <url> --dest-project <id> --dest-model <id>
+```
+
+Tokens: `SPECKLE_TOKEN` (migration JWT) for in place; `SPECKLE_SRC_TOKEN`/`SPECKLE_TOKEN` to read and
+`SPECKLE_DST_TOKEN` to upload for the new-version mode.
 
 ### `ndjson` / `packfile`
 
@@ -41,17 +60,23 @@ artefact pulled from a server's object storage. Options: `--root <id>` (the `ndj
 
 ## Environment variables
 
+- `SPECKLE_TOKEN` — the per-job migration JWT for an in-place `remote` migration; also the fallback for
+  the two below.
 - `SPECKLE_SRC_TOKEN` (or `SPECKLE_TOKEN`) — read token for the source server.
-- `SPECKLE_DST_TOKEN` — write token, required for any upload.
+- `SPECKLE_DST_TOKEN` — write token, required for any new-version upload.
 
 Tokens are read only from the environment — never hardcoded, written to a file, or echoed.
 
 ## Examples
 
 ```bash
+# Migrate a version IN PLACE (no new version) — the mode the migration service uses
+export SPECKLE_TOKEN=<per-job migration JWT>
+dotnet run --project . -- remote https://app.speckle.systems srcProj srcModel 9f8e7d6c5b
+
 export SPECKLE_SRC_TOKEN=<src>  SPECKLE_DST_TOKEN=<dst>
 
-# Migrate a server model (latest version) to a destination model
+# Migrate a server model (latest version) to a destination model as a NEW version
 dotnet run --project . -- remote https://app.speckle.systems srcProj srcModel \
   --dest-server http://localhost:3000 --dest-project dstProj --dest-model dstModel
 

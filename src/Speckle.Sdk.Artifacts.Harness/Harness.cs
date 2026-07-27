@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Artifacts.Harness.Transports;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines.Progress;
@@ -11,14 +12,16 @@ namespace Speckle.Sdk.Artifacts.Harness;
 
 /// <summary>
 /// End-to-end artefact-bundle harness: resolves an object graph (NDJSON dump, DuckDB packfile, or a
-/// remote server), produces the parquet bundle on disk, and optionally uploads it via the v2
-/// envelope-bundle flow. Registered in the DI container; its typed entry points are invoked
-/// by the <see cref="HarnessCommandLine"/> command actions.
+/// remote server), produces the parquet bundle on disk, and uploads it either ONTO THE SOURCE VERSION
+/// (in place, via the bundle-migration API) or as a NEW version on a destination (the v2 envelope-bundle
+/// flow). Registered in the DI container; its typed entry points are invoked by the
+/// <see cref="HarnessCommandLine"/> command actions.
 /// </summary>
 internal sealed class Harness(
   RemoteSource remoteSource,
   GraphArtifactProducerFactory producerFactory,
   BundleUploader bundleUploader,
+  BundleMigrationClient migrationClient,
   ISdkActivityFactory activityFactory,
   ILogger<Harness> logger
 )
@@ -52,9 +55,10 @@ internal sealed class Harness(
     return await ProduceAndUpload(graph, packfile.Name, outDir, upload, ct).ConfigureAwait(false);
   }
 
-  /// <summary>Migrates a version from a source server to a destination (each part defaulting to the source),
-  /// always uploading the produced bundle. Fetches the source graph by downloading its DuckDB packfile
-  /// (default) or via the legacy REST deserialize (<paramref name="legacyApi"/>).</summary>
+  /// <summary>Migrates a server version. With no destination the bundle is uploaded ONTO THAT VERSION
+  /// (in place); with a destination it is uploaded as a NEW version there. Fetches the source graph by
+  /// downloading its DuckDB packfile (default) or via the legacy REST deserialize
+  /// (<paramref name="legacyApi"/>, new-version flow only).</summary>
   public async Task<int> RunRemote(
     Uri server,
     string project,
@@ -74,6 +78,12 @@ internal sealed class Harness(
         .GetEnvironmentVariable("SPECKLE_TOKEN")
         .NotNull("Expected SPECKLE_TOKEN or SPECKLE_SRC_TOKEN to be set");
 
+    // No destination → migrate the source version in place. The CLI guarantees a version is supplied here.
+    if (destServer is null && destProject is null && destModel is null)
+    {
+      return await RunInPlace(server, project, model, version.NotNull(), token, outDir, ct).ConfigureAwait(false);
+    }
+
     Base? graph = legacyApi
       ? await LoadFromServerLegacy(server, project, model, version, token, ct).ConfigureAwait(false)
       : await LoadFromServerPackfile(server, project, model, version, token, ct).ConfigureAwait(false);
@@ -84,6 +94,148 @@ internal sealed class Harness(
 
     string[] destination = [(destServer ?? server).AbsoluteUri, destProject ?? project, destModel ?? model];
     return await ProduceAndUpload(graph, model, outDir, destination, ct).ConfigureAwait(false);
+  }
+
+  /// <summary>
+  /// Migrates a version IN PLACE via the bundle-migration API: the produced bundle is uploaded onto the
+  /// existing version's artifact prefix, creating no new version.
+  ///
+  /// <paramref name="token"/> is the per-job migration JWT, the only credential available — it authorises
+  /// the migration endpoints and nothing else (no GraphQL, no objects api), so the source packfile is
+  /// fetched from the presigned url those endpoints hand back. The surrounding lifecycle
+  /// (start / complete / fail) belongs to the migration service; a non-zero exit is its failure signal.
+  /// </summary>
+  private async Task<int> RunInPlace(
+    Uri server,
+    string project,
+    string model,
+    string version,
+    string token,
+    string? outDir,
+    CancellationToken ct
+  )
+  {
+    logger.LogInformation("Migrating {ProjectId}/{ModelId}@{VersionId} in place", project, model, version);
+
+    // Attempts are retried, and the upload list is whatever is sitting in the staging directory — so an
+    // attempt killed before its files were disposed must not leak into this one. Dispose-time cleanup is
+    // best-effort (a kill -9 skips it), so both directories are also emptied up front.
+    var packfileDir = EnsureCleanDirectory(Path.Combine(WorkRoot, "packfiles"));
+    var stagingDir = EnsureCleanDirectory(outDir ?? Path.Combine(WorkRoot, $"bundle-{version}"));
+
+    // The produced filenames aren't known until the bundle exists, and the bundle needs the source — so
+    // ask with no files first, purely for the packfile url.
+    var source = await migrationClient
+      .RequestUploadsAsync(server, project, model, version, [], token, ct)
+      .ConfigureAwait(false);
+
+    var packfile = new FileInfo(Path.Combine(packfileDir, $"{version}.duckdb"));
+    using var packfileHandle = new DisposableFile(packfile, logger);
+
+    // An explicit --out is the caller's to keep; a directory we chose ourselves is ours to clean up.
+    var bundleHandles = new List<DisposableFile>();
+    try
+    {
+      using var bare = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
+
+      logger.LogInformation("Downloading source packfile …");
+      await DuckDbHelper
+        .DownloadFromUrl(bare, new Uri(source.PackfileDownloadUrl), packfile, new Progress<StreamProgressArgs>(), ct)
+        .ConfigureAwait(false);
+      logger.LogInformation("Downloaded {Bytes} bytes", packfile.Length);
+
+      var graph = await LoadPackfileGraph(packfile, null).ConfigureAwait(false);
+      if (graph is null)
+      {
+        return 1;
+      }
+
+      var files = Produce(graph, stagingDir, version);
+      foreach (var file in files)
+      {
+        bundleHandles.Add(
+          new DisposableFile(new FileInfo(Path.Combine(stagingDir, file)), logger, deleteOnDispose: outDir is null)
+        );
+      }
+
+      // Sign as late as possible: the presigned urls are short-lived (1h).
+      var targets = await migrationClient
+        .RequestUploadsAsync(server, project, model, version, files, token, ct)
+        .ConfigureAwait(false);
+
+      foreach (var target in targets.Uploads)
+      {
+        await migrationClient
+          .PutFileAsync(bare, target, Path.Combine(stagingDir, target.FileName), ct)
+          .ConfigureAwait(false);
+      }
+
+      logger.LogInformation(
+        "Migration upload OK versionId={VersionId} files={FileCount}",
+        version,
+        targets.Uploads.Count
+      );
+      return 0;
+    }
+    finally
+    {
+      foreach (var handle in bundleHandles)
+      {
+        handle.Dispose();
+      }
+    }
+  }
+
+  // Everything the harness writes lives under one root it owns, so it can be emptied without touching
+  // anything else in %TEMP%.
+  private static string WorkRoot => Path.Combine(Path.GetTempPath(), "speckle-artefact-harness");
+
+  // Empties a directory of its files (bundles and packfiles are flat) and returns it. Subdirectories are
+  // left alone so that pointing --out at a populated folder can't destroy an unrelated tree.
+  private string EnsureCleanDirectory(string dir)
+  {
+    if (Directory.Exists(dir))
+    {
+      var stale = Directory.GetFiles(dir);
+      foreach (var file in stale)
+      {
+        File.Delete(file);
+      }
+      if (stale.Length > 0)
+      {
+        logger.LogInformation("Removed {StaleCount} pre-existing file(s) from {Directory}", stale.Length, dir);
+      }
+    }
+    Directory.CreateDirectory(dir);
+    return dir;
+  }
+
+  // Produces the bundle into `outDir` under `baseName`, logging the stats, and returns the produced
+  // filenames (basenames).
+  private IReadOnlyList<string> Produce(Base root, string outDir, string baseName)
+  {
+    logger.LogInformation("Deserialized root [{SpeckleType}] id={RootId}", root.speckle_type, root.id);
+    logger.LogInformation("Output: {OutDir} (base {BaseName})", outDir, baseName);
+
+    GraphArtifactProducer.Stats stats;
+    using (var producer = producerFactory.Create(outDir, baseName))
+    {
+      stats = producer.Produce(root);
+    }
+
+    logger.LogInformation("Produce stats:\n{Stats}", stats);
+    foreach (var note in stats.Notes)
+    {
+      logger.LogInformation("Note: {Note}", note);
+    }
+
+    var files = new List<string>();
+    foreach (var f in Directory.GetFiles(outDir).OrderBy(x => x, StringComparer.Ordinal))
+    {
+      logger.LogInformation("Bundle file {FileName} {Bytes} bytes", Path.GetFileName(f), new FileInfo(f).Length);
+      files.Add(Path.GetFileName(f));
+    }
+    return files;
   }
 
   // Legacy remote fetch: resolve the rootId via GraphQL, then deserialize over the SDK's server-backed process.
@@ -135,30 +287,22 @@ internal sealed class Harness(
       logger.LogInformation("Latest version {VersionId}", version);
     }
 
-    var packfile = new FileInfo(Path.Combine(Path.GetTempPath(), $"speckle-src-{version}.duckdb"));
-    try
-    {
-      using var http = new HttpClient { BaseAddress = server };
-      http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-      // Cloudflare (app.speckle.systems) 403s requests with no User-Agent.
-      http.DefaultRequestHeaders.UserAgent.ParseAdd("speckle-artefact-harness/1.0");
+    var packfileDir = EnsureCleanDirectory(Path.Combine(WorkRoot, "packfiles"));
+    var packfile = new FileInfo(Path.Combine(packfileDir, $"{version}.duckdb"));
+    using var packfileHandle = new DisposableFile(packfile, logger);
 
-      logger.LogInformation("Downloading packfile for version {VersionId} …", version);
-      await DuckDbHelper
-        .DownloadDuckFile(http, project, model, version, packfile, new Progress<StreamProgressArgs>(), ct)
-        .ConfigureAwait(false);
-      logger.LogInformation("Downloaded {Bytes} bytes", packfile.Length);
+    using var http = new HttpClient { BaseAddress = server };
+    http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    // Cloudflare (app.speckle.systems) 403s requests with no User-Agent.
+    http.DefaultRequestHeaders.UserAgent.ParseAdd("speckle-artefact-harness/1.0");
 
-      return await LoadPackfileGraph(packfile, null).ConfigureAwait(false);
-    }
-    finally
-    {
-      packfile.Refresh();
-      if (packfile.Exists)
-      {
-        packfile.Delete();
-      }
-    }
+    logger.LogInformation("Downloading packfile for version {VersionId} …", version);
+    await DuckDbHelper
+      .DownloadDuckFile(http, project, model, version, packfile, new Progress<StreamProgressArgs>(), ct)
+      .ConfigureAwait(false);
+    logger.LogInformation("Downloaded {Bytes} bytes", packfile.Length);
+
+    return await LoadPackfileGraph(packfile, null).ConfigureAwait(false);
   }
 
   // Reads a DuckDB packfile into a Base graph. The transport stays alive for the whole deserialize (children

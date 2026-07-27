@@ -4,7 +4,7 @@ namespace Speckle.Sdk.Artifacts.Harness.Transports;
 
 internal static class DuckDbHelper
 {
-  public static async Task DownloadDuckFile(
+  public static Task DownloadDuckFile(
     HttpClient client,
     string projectId,
     string modelId,
@@ -15,7 +15,27 @@ internal static class DuckDbHelper
   )
   {
     Uri url = new($"/api/v1/projects/{projectId}/models/{modelId}/versions/{versionId}/download", UriKind.Relative);
+    return DownloadToFile(client, url, destination, downloadProgress, cancellationToken);
+  }
 
+  /// <summary>Downloads a packfile from a presigned url straight out of object storage. The url carries its
+  /// own auth, so <paramref name="client"/> must be auth-free.</summary>
+  public static Task DownloadFromUrl(
+    HttpClient client,
+    Uri presignedUrl,
+    FileInfo destination,
+    IProgress<StreamProgressArgs> downloadProgress,
+    CancellationToken cancellationToken
+  ) => DownloadToFile(client, presignedUrl, destination, downloadProgress, cancellationToken);
+
+  private static async Task DownloadToFile(
+    HttpClient client,
+    Uri url,
+    FileInfo destination,
+    IProgress<StreamProgressArgs> downloadProgress,
+    CancellationToken cancellationToken
+  )
+  {
     using var response = await client
       .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
       .ConfigureAwait(false);

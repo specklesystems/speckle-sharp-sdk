@@ -142,6 +142,7 @@ internal static class HarnessCommandLine
     cmd.Options.Add(outOption);
 
     // Destination is all-or-nothing: either take every part from the source, or specify all three.
+    // No destination at all means an IN-PLACE migration of the source version, which pins what else is legal.
     cmd.Validators.Add(result =>
     {
       var specified =
@@ -151,6 +152,28 @@ internal static class HarnessCommandLine
       if (specified is not (0 or 3))
       {
         result.AddError("--dest-server, --dest-project and --dest-model must be specified together (all or none).");
+        return;
+      }
+      if (specified is 3)
+      {
+        return;
+      }
+
+      // In-place: the target version must be explicit (there is no GraphQL access to resolve 'latest'
+      // under a migration token), and the legacy fetch needs an api the migration token cannot reach.
+      if (result.GetResult(version) is null)
+      {
+        result.AddError(
+          "versionId is required for an in-place migration; pass a versionId, or "
+            + "--dest-server/--dest-project/--dest-model to create a new version."
+        );
+      }
+      if (result.GetResult(legacyApiOption) is not null)
+      {
+        result.AddError(
+          "--legacy-api cannot be used for an in-place migration; it needs a user-scoped api, "
+            + "so it only applies when creating a new version via --dest-*."
+        );
       }
     });
 

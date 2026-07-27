@@ -25,6 +25,7 @@ services.AddLogging(builder => builder.AddSimpleConsole(o => o.SingleLine = true
 services.AddTransient<RemoteSource>();
 services.AddSingleton<GraphArtifactProducerFactory>();
 services.AddTransient<BundleUploader>();
+services.AddTransient<BundleMigrationClient>();
 services.AddTransient<SgeoSelfTest>();
 services.AddTransient<Harness>();
 
