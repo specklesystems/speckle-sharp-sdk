@@ -212,7 +212,22 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("def:" + definitionKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Definition, name, null, null, null, null, null, null, null, null, null);
+      _envelopeWriter.AddNode(
+        k,
+        NodeKind.Definition,
+        name,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
     }
     return k;
   }
@@ -235,21 +250,45 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         null,
+        null,
+        null,
         null
       );
     }
     return k;
   }
 
-  /// <summary>Interns a MATERIAL value-node (inline render value), writing it once.</summary>
-  public int AddMaterial(string materialKey, int argb, double opacity, double metalness, double roughness)
+  /// <summary>Interns a MATERIAL value-node (inline render value), writing it once. <paramref name="name"/> is the
+  /// authored material name (Rhino/Revit/AutoCAD material table entry) carried in the shared node <c>name</c> column
+  /// so receivers can recreate the host material under its original name instead of a colour-derived placeholder;
+  /// null = unnamed. It is NOT part of the intern key — dedup stays keyed on <paramref name="materialKey"/>.
+  /// <paramref name="emissive"/> is the packed ARGB emissive colour — NULL is the canonical "no emission" in the
+  /// bundle and consumers default it to black; a black RGB is normalized to NULL here, so producers may pass
+  /// <c>RenderMaterial.emissive</c> (black default) naively. <paramref name="ior"/> is the index of refraction
+  /// (null = the host has no IOR concept) — together the remaining universal PBR scalars [ENG-8791].</summary>
+  public int AddMaterial(
+    string materialKey,
+    string? name,
+    int argb,
+    double opacity,
+    double metalness,
+    double roughness,
+    int? emissive = null,
+    double? ior = null
+  )
   {
+    // Black emission IS "no emission" (the alpha byte is meaningless on an emissive colour) — normalize to NULL so
+    // the column has one spelling of "off" and null-RLEs away, regardless of which producer sent it.
+    if (emissive is int e && (e & 0xFFFFFF) == 0)
+    {
+      emissive = null;
+    }
     if (_nodeInterner.GetOrAdd("mat:" + materialKey, out var k))
     {
       _envelopeWriter.AddNode(
         k,
         NodeKind.Material,
-        null,
+        name,
         null,
         null,
         null,
@@ -258,6 +297,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         opacity,
         metalness,
         roughness,
+        emissive,
+        ior,
         null
       );
     }
@@ -269,7 +310,22 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("col:" + argb.ToString(CultureInfo.InvariantCulture), out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Color, null, null, null, null, null, argb, null, null, null, null);
+      _envelopeWriter.AddNode(
+        k,
+        NodeKind.Color,
+        null,
+        null,
+        null,
+        null,
+        null,
+        argb,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      );
     }
     return k;
   }
@@ -279,7 +335,22 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     if (_nodeInterner.GetOrAdd("lvl:" + levelKey, out var k))
     {
-      _envelopeWriter.AddNode(k, NodeKind.Level, name, null, null, null, null, null, null, null, null, elevation);
+      _envelopeWriter.AddNode(
+        k,
+        NodeKind.Level,
+        name,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        elevation
+      );
     }
     return k;
   }
@@ -315,6 +386,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         null,
+        null,
+        null,
         null
       );
     }
@@ -338,6 +411,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         subtype,
+        null,
+        null,
         null,
         null,
         null,

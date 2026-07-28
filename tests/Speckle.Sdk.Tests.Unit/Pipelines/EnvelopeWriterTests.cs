@@ -20,7 +20,7 @@ public sealed class EnvelopeWriterTests : IDisposable
     using var scheduler = new ParquetWriteScheduler();
     using (var w = new EnvelopeWriter(_dir, "model", scheduler))
     {
-      w.AddNode(0, NodeKind.Definition, "wall-def", null, null, null, null, null, null, null, null, null);
+      w.AddNode(0, NodeKind.Definition, "wall-def", null, null, null, null, null, null, null, null, null, null, null);
       w.AddNode(
         1,
         NodeKind.Instance,
@@ -33,10 +33,27 @@ public sealed class EnvelopeWriterTests : IDisposable
         null,
         null,
         null,
+        null,
+        null,
         null
       );
-      w.AddNode(2, NodeKind.Material, null, null, null, null, null, unchecked((int)0xFF8800FFu), 1.0, 0.0, 0.4, null);
-      w.AddNode(3, NodeKind.Level, "Level 1", null, null, null, null, null, null, null, null, 3000.0);
+      w.AddNode(
+        2,
+        NodeKind.Material,
+        null,
+        null,
+        null,
+        null,
+        null,
+        unchecked((int)0xFF8800FFu),
+        1.0,
+        0.0,
+        0.4,
+        unchecked((int)0xFF112233u),
+        1.45,
+        null
+      );
+      w.AddNode(3, NodeKind.Level, "Level 1", null, null, null, null, null, null, null, null, null, null, 3000.0);
 
       w.AddRelation(RelKind.DisplayInstance, 0, 1, 0);
       w.AddRelation(RelKind.Defines, 0, 5, 0);
@@ -65,6 +82,11 @@ public sealed class EnvelopeWriterTests : IDisposable
       .Should()
       .Be("1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1");
     Scalar(db, $"SELECT elevation FROM nodes WHERE kind = {NodeKind.Level}").Should().Be(3000.0);
+    // ENG-8791: the two remaining universal PBR scalars round-trip on MATERIAL nodes.
+    Scalar(db, $"SELECT emissive FROM nodes WHERE kind = {NodeKind.Material}")
+      .Should()
+      .Be(unchecked((int)0xFF112233u));
+    Scalar(db, $"SELECT ior FROM nodes WHERE kind = {NodeKind.Material}").Should().Be(1.45);
 
     // self-describing catalog (SOT §6) — sourced from speckle-bundle-spec (v5: live + reserved rows).
     Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(17L); // 16 live + SOLID (reserved); retired ids absent
