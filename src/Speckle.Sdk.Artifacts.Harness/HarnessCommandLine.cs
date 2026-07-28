@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
-using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Artifacts.Harness;
 
@@ -8,7 +7,7 @@ namespace Speckle.Sdk.Artifacts.Harness;
 /// Builds the harness command tree (System.CommandLine 2.0.0 GA). Each leaf action calls a typed
 /// <see cref="Harness"/> entry point; the action's exit code becomes the process exit code.
 /// </summary>
-internal sealed class HarnessCommandLine(Harness harness, SgeoSelfTest selfTest, ISdkActivityFactory activityFactory)
+internal sealed class HarnessCommandLine(Harness harness, SgeoSelfTest selfTest)
 {
   public RootCommand Build()
   {
