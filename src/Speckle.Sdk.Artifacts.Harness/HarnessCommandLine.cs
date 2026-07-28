@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
-using Speckle.Sdk.Artifacts.Harness.Logging;
 using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Artifacts.Harness;
