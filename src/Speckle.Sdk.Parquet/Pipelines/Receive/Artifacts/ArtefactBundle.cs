@@ -65,7 +65,9 @@ public sealed record ArtefactNode(
   double? Opacity,
   double? Metalness,
   double? Roughness,
-  double? Elevation
+  double? Elevation,
+  int? Emissive = null,
+  double? Ior = null
 );
 
 /// <summary>A relation edge in the envelope graph (<c>rel</c> = <see cref="RelKind"/>, <c>src</c>/<c>dst</c> dense ints).</summary>
@@ -502,6 +504,9 @@ public static class ArtefactBundleReader
     var metalness = t.NullableDoubles("metalness");
     var roughness = t.NullableDoubles("roughness");
     var elevation = t.NullableDoubles("elevation");
+    // emissive/ior joined the nodes table later [ENG-8791] — absent from older bundles, so guard with Has().
+    var emissive = t.Has("emissive") ? t.NullableInts("emissive") : null;
+    var ior = t.Has("ior") ? t.NullableDoubles("ior") : null;
     for (int i = 0; i < id.Length; i++)
     {
       map[id[i]] = new ArtefactNode(
@@ -514,7 +519,9 @@ public static class ArtefactBundleReader
         opacity[i],
         metalness[i],
         roughness[i],
-        elevation[i]
+        elevation[i],
+        emissive?[i],
+        ior?[i]
       );
     }
     return map;

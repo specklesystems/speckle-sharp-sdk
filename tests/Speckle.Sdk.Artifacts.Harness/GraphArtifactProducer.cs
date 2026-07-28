@@ -555,7 +555,16 @@ public static class GraphArtifactProducer
         continue;
       }
       var v = rmp.value;
-      var matK = pipeline.AddMaterial(MaterialKey(rmp), v.diffuse, v.opacity, v.metalness, v.roughness);
+      var matK = pipeline.AddMaterial(
+        MaterialKey(rmp),
+        v.name,
+        v.diffuse,
+        v.opacity,
+        v.metalness,
+        v.roughness,
+        v.emissive,
+        v["ior"] as double?
+      );
       matProxies.Add((matK, rmp.objects));
       stats.Materials++;
       // A pure-black diffuse is the CAD "no material / ByLayer" placeholder — must not override a real
@@ -585,7 +594,7 @@ public static class GraphArtifactProducer
       var key = rm.applicationId ?? "mat:" + (rm.id ?? rm.diffuse.ToString(CultureInfo.InvariantCulture));
       if (!embeddedMatKs.TryGetValue(key, out var matK))
       {
-        matK = pipeline.AddMaterial(key, rm.diffuse, rm.opacity, rm.metalness, rm.roughness);
+        matK = pipeline.AddMaterial(key, rm.name, rm.diffuse, rm.opacity, rm.metalness, rm.roughness, rm.emissive);
         embeddedMatKs[key] = matK;
         stats.Materials++;
       }

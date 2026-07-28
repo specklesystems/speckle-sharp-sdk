@@ -68,7 +68,7 @@ public sealed record CameraView(
 ///   {base}.envelope.relations.parquet(rel, src, dst, ord)      -- typed edges; src/dst namespace = rel
 ///   {base}.envelope.nodes.parquet(id, kind, name, def_ref,     -- shared value-entities; `subtype` is the
 ///         transform, units, subtype, argb, opacity,                CONTAINER discriminator (Model/Collection/…)
-///         metalness, roughness, elevation)
+///         metalness, roughness, emissive, ior, elevation)
 ///   {base}.envelope.{meta,rel_types,node_kinds}.parquet        -- self-describing catalog (SOT §6)
 ///   {base}.envelope.scene_views.parquet(view, name,           -- producer-authored grouping projections
 ///         is_default, ord, source, ref)                          (SOT §8); absent if none
@@ -139,6 +139,8 @@ public sealed class EnvelopeWriter : IDisposable
     double? opacity,
     double? metalness,
     double? roughness,
+    int? emissive,
+    double? ior,
     double? elevation
   )
   {
@@ -155,6 +157,8 @@ public sealed class EnvelopeWriter : IDisposable
       opacity,
       metalness,
       roughness,
+      emissive,
+      ior,
       elevation
     );
   }
@@ -281,11 +285,7 @@ public sealed class EnvelopeWriter : IDisposable
     {
       return;
     }
-    using var cv = new ParquetTableWriter(
-      P("camera_views.parquet"),
-      SchemaOf(SpecSchemas.CameraViews),
-      _scheduler
-    );
+    using var cv = new ParquetTableWriter(P("camera_views.parquet"), SchemaOf(SpecSchemas.CameraViews), _scheduler);
     foreach (var v in _cameraViews)
     {
       cv.AddRow(
