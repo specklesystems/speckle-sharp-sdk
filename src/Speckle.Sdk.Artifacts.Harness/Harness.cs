@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Logging;
+using Speckle.Sdk.Artifacts.Harness.Migration;
 using Speckle.Sdk.Artifacts.Harness.Transports;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;

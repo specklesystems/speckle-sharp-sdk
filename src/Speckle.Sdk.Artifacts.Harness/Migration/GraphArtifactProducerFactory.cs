@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk.Artifacts.Harness;
+namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
 /// <summary>
 /// DI-registered factory for <see cref="IGraphArtifactProducer"/>. The producer's

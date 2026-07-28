@@ -6,7 +6,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;
 
-namespace Speckle.Sdk.Artifacts.Harness;
+namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
 /// <summary>
 /// Migrates a legacy (v2) <see cref="Base"/> graph into the artefact bundle — one with no root-level proxies.

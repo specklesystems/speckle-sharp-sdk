@@ -1,4 +1,4 @@
-﻿namespace Speckle.Sdk.Artifacts.Harness;
+﻿namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
 internal sealed class Stats
 {

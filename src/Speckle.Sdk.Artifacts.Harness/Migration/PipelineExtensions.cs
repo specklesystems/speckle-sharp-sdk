@@ -4,7 +4,7 @@ using Speckle.Objects.Primitive;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk.Artifacts.Harness;
+namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
 internal static class PipelineExtensions
 {

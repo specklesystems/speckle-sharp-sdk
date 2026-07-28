@@ -1,33 +1,44 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
-using Microsoft.Extensions.DependencyInjection;
+using Speckle.Sdk.Artifacts.Harness.Logging;
+using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.Artifacts.Harness;
 
 /// <summary>
-/// Builds the harness command tree (System.CommandLine 2.0.0 GA). Each leaf action resolves the service
-/// it needs from the DI container and calls a typed <see cref="Harness"/> entry point; the action's exit
-/// code becomes the process exit code.
+/// Builds the harness command tree (System.CommandLine 2.0.0 GA). Each leaf action calls a typed
+/// <see cref="Harness"/> entry point; the action's exit code becomes the process exit code.
 /// </summary>
-internal static class HarnessCommandLine
+internal sealed class HarnessCommandLine(Harness harness, SgeoSelfTest selfTest, ISdkActivityFactory activityFactory)
 {
-  public static RootCommand Build(IServiceProvider services)
+  public RootCommand Build()
   {
-    RootCommand root = new("Speckle artefact-bundle migration harness.");
-    root.Subcommands.Add(BuildSelfTest(services));
-    root.Subcommands.Add(BuildPackfile(services));
-    root.Subcommands.Add(BuildRemote(services));
-    return root;
+    using var activity = activityFactory.StartActivityFromEnv();
+    try
+    {
+      RootCommand root = new("Speckle artefact-bundle migration harness.");
+      root.Subcommands.Add(BuildSelfTest());
+      root.Subcommands.Add(BuildPackfile());
+      root.Subcommands.Add(BuildRemote());
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
+      return root;
+    }
+    catch (Exception ex)
+    {
+      activity?.RecordException(ex);
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      throw;
+    }
   }
 
-  private static Command BuildSelfTest(IServiceProvider services)
+  private Command BuildSelfTest()
   {
     Command cmd = new("selftest", "Run the SGEO encoder byte-layout self-test.");
-    cmd.SetAction(_ => services.GetRequiredService<SgeoSelfTest>().Run());
+    cmd.SetAction(_ => selfTest.Run());
     return cmd;
   }
 
-  private static Command BuildPackfile(IServiceProvider services)
+  private Command BuildPackfile()
   {
     Argument<FileInfo> packfile = new("packfilePath")
     {
@@ -45,8 +56,7 @@ internal static class HarnessCommandLine
     cmd.Options.Add(uploadOption);
     cmd.SetAction(
       async (parseResult, ct) =>
-        await services
-          .GetRequiredService<Harness>()
+        await harness
           .RunPackfile(
             parseResult.GetRequiredValue(packfile),
             parseResult.GetValue(rootOption),
@@ -59,7 +69,7 @@ internal static class HarnessCommandLine
     return cmd;
   }
 
-  private static Command BuildRemote(IServiceProvider services)
+  private Command BuildRemote()
   {
     Argument<Uri> server = new("serverUrl")
     {
@@ -143,8 +153,7 @@ internal static class HarnessCommandLine
 
     cmd.SetAction(
       async (parseResult, ct) =>
-        await services
-          .GetRequiredService<Harness>()
+        await harness
           .RunRemote(
             parseResult.GetRequiredValue(server),
             parseResult.GetRequiredValue(project),

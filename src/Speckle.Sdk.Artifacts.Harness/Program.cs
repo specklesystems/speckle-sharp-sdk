@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk;
 using Speckle.Sdk.Artifacts.Harness;
+using Speckle.Sdk.Artifacts.Harness.Logging;
+using Speckle.Sdk.Artifacts.Harness.Migration;
+using Speckle.Sdk.Logging;
 
 // ── CLI ───────────────────────────────────────────────────────────────────────────────
 // Subcommands (run with --help for full usage):
@@ -15,9 +18,10 @@ using Speckle.Sdk.Artifacts.Harness;
 // The parsing lives in HarnessCommandLine; the business logic lives in Harness.
 
 var services = new ServiceCollection();
+const string SLUG = "artefact-harness";
 
 // ── init the Speckle type registry (so the deserializer yields TYPED proxies/meshes) ──
-services.AddSpeckleSdk(new("ArtefactHarness", "artefact-harness"), "v3", typeof(Mesh).Assembly);
+services.AddSpeckleSdk(new("ArtefactHarness", SLUG), "v3", typeof(Mesh).Assembly);
 
 // AddSpeckleSdk wires the logging infrastructure but no output provider; add a console sink here so the
 // harness' log output is visible (harness-only — the SDK is left untouched).
@@ -29,7 +33,12 @@ services.AddTransient<BundleUploader>();
 services.AddTransient<BundleMigrationClient>();
 services.AddTransient<SgeoSelfTest>();
 services.AddTransient<Harness>();
+services.AddTransient<HarnessCommandLine>();
+services.AddSingleton<ISdkActivityFactory, SdkActivityFactory>();
+services.AddOTelLogging(SLUG);
 
 await using var serviceProvider = services.BuildServiceProvider();
 
-return await HarnessCommandLine.Build(serviceProvider).Parse(args).InvokeAsync().ConfigureAwait(false);
+var commandLine = serviceProvider.GetRequiredService<HarnessCommandLine>();
+
+return await commandLine.Build().Parse(args).InvokeAsync().ConfigureAwait(false);

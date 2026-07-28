@@ -8,7 +8,7 @@ using Speckle.Sdk.Models.GraphTraversal;
 using Speckle.Sdk.Models.Instances;
 using Speckle.Sdk.Models.Proxies;
 
-namespace Speckle.Sdk.Artifacts.Harness;
+namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
 /// <summary>
 /// Migrates a v3 <see cref="Base"/> graph — one carrying root-level proxies — into the artefact bundle.
@@ -148,7 +148,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     // Lossless raw solid (Brep/Extrusion/SubD/SolidX, or a Rhino/Autocad host wrapper): link the native blob via
     // the SOLID rel, in ADDITION to the display meshes below. Receive picks solid vs mesh via PreferSolids.
     var rawEnc = helper.TryReadRawEncoding(obj);
-    if (rawEnc is not null && helper.IsMigratableSolidFormat(rawEnc.format) && EmitSolidBlob(appId, rawEnc) is int solidK)
+    if (
+      rawEnc is not null
+      && helper.IsMigratableSolidFormat(rawEnc.format)
+      && EmitSolidBlob(appId, rawEnc) is int solidK
+    )
     {
       pipeline.Solid(objK, solidK, 0);
       _stats.Solids++;

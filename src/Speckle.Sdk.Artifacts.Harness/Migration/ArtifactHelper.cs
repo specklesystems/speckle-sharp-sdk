@@ -8,7 +8,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.Instances;
 
-namespace Speckle.Sdk.Artifacts.Harness;
+namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
 /// <summary>
 /// Stateless helpers shared by the v2 and v3 producers

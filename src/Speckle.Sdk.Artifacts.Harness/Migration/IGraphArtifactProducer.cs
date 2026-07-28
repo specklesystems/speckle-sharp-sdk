@@ -1,6 +1,6 @@
 using Speckle.Sdk.Models;
 
-namespace Speckle.Sdk.Artifacts.Harness;
+namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
 /// <summary>
 /// Migrates a stored Speckle <see cref="Base"/> graph into the artefact bundle. Implemented once per graph
