@@ -262,8 +262,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// authored material name (Rhino/Revit/AutoCAD material table entry) carried in the shared node <c>name</c> column
   /// so receivers can recreate the host material under its original name instead of a colour-derived placeholder;
   /// null = unnamed. It is NOT part of the intern key — dedup stays keyed on <paramref name="materialKey"/>.
-  /// <paramref name="emissive"/> is the packed ARGB emissive colour (null = no emission) and <paramref name="ior"/>
-  /// the index of refraction (null = unset) — the remaining universal PBR scalars [ENG-8791].</summary>
+  /// <paramref name="emissive"/> is the packed ARGB emissive colour — NULL is the canonical "no emission" in the
+  /// bundle and consumers default it to black; a black RGB is normalized to NULL here, so producers may pass
+  /// <c>RenderMaterial.emissive</c> (black default) naively. <paramref name="ior"/> is the index of refraction
+  /// (null = the host has no IOR concept) — together the remaining universal PBR scalars [ENG-8791].</summary>
   public int AddMaterial(
     string materialKey,
     string? name,
@@ -275,6 +277,12 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     double? ior = null
   )
   {
+    // Black emission IS "no emission" (the alpha byte is meaningless on an emissive colour) — normalize to NULL so
+    // the column has one spelling of "off" and null-RLEs away, regardless of which producer sent it.
+    if (emissive is int e && (e & 0xFFFFFF) == 0)
+    {
+      emissive = null;
+    }
     if (_nodeInterner.GetOrAdd("mat:" + materialKey, out var k))
     {
       _envelopeWriter.AddNode(
