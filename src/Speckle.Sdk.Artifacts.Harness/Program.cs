@@ -33,7 +33,7 @@ services.AddTransient<SgeoSelfTest>();
 services.AddTransient<Harness>();
 services.AddTransient<HarnessCommandLine>();
 services.AddSingleton<ISdkActivityFactory, SdkActivityFactory>();
-services.AddOTelLogging(SLUG);
+using IDisposable loggingFlush = services.AddOTelLogging(SLUG);
 
 await using var serviceProvider = services.BuildServiceProvider(
   options: new() { ValidateOnBuild = true, ValidateScopes = true }
