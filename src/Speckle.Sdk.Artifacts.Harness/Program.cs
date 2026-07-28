@@ -25,7 +25,6 @@ services.AddSpeckleSdk(new("ArtefactHarness", SLUG), "v3", typeof(Mesh).Assembly
 
 // AddSpeckleSdk wires the logging infrastructure but no output provider; add a console sink here so the
 // harness' log output is visible (harness-only — the SDK is left untouched).
-services.AddLogging(builder => builder.AddSimpleConsole(o => o.SingleLine = true));
 services.AddTransient<RemoteSource>();
 services.AddSingleton<ArtifactHelper>();
 services.AddSingleton<GraphArtifactProducerFactory>();
