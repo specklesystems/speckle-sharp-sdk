@@ -7,6 +7,7 @@ using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;
 using Speckle.Sdk.Models.Instances;
 using Speckle.Sdk.Models.Proxies;
+using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
@@ -83,6 +84,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     var layerGeomKeys = BuildLayerGeomKeys(root, out var layerDepth);
 
     EmitProxies(root, layerGeomKeys, layerDepth);
+    EmitCameraViews(root);
 
     _stats.Geometries = _seenGeometryAppIds.Count;
     pipeline.Complete();
@@ -285,10 +287,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       if (!hasSolid)
       {
         _stats.SkippedDefines++;
-        if (_stats.Notes.Count < 20)
-        {
-          _stats.Notes.Add($"def member {appId} has no encodable geometry [{obj.speckle_type}]");
-        }
+        _stats.Notes.Add($"def member {appId} has no encodable geometry [{obj.speckle_type}]");
       }
       return;
     }
@@ -561,6 +560,52 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       else if (_objectDisplayGeomKeys.TryGetValue(helper.Aid(child), out var gks))
       {
         acc.AddRange(gks);
+      }
+    }
+  }
+
+  // ── camera views ────────────────────────────────────────────────────────────────────
+
+  // Root-level viewpoints; the traversal only descends `elements`, so they're read directly.
+  // A v3 Camera has no target/fov/lens/ortho data, so those columns stay null.
+  private void EmitCameraViews(Base root)
+  {
+    var ord = 0;
+    foreach (var key in (string[])["views", "cameras"])
+    {
+      foreach (var view in helper.GetBaseList(root, key))
+      {
+        if (view is not Camera cam)
+        {
+          continue;
+        }
+        // Nothing downstream validates unit length, so normalize here and drop what we can't orient.
+        if (!helper.TryNormalize(cam.forward) || !helper.TryNormalize(cam.up))
+        {
+          _stats.Notes.Add($"camera '{cam.name}' skipped: degenerate forward/up vector");
+          continue;
+        }
+
+        pipeline.AddCameraView(
+          new CameraView(
+            View: ord,
+            Name: cam.name,
+            IsDefault: false,
+            Ord: ord,
+            PosX: cam.position.x,
+            PosY: cam.position.y,
+            PosZ: cam.position.z,
+            ForwardX: cam.forward.x,
+            ForwardY: cam.forward.y,
+            ForwardZ: cam.forward.z,
+            UpX: cam.up.x,
+            UpY: cam.up.y,
+            UpZ: cam.up.z,
+            Units: cam.position.units
+          )
+        );
+        _stats.CameraViews++;
+        ord++;
       }
     }
   }

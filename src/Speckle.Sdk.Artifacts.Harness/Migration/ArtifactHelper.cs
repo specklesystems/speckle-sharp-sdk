@@ -103,6 +103,18 @@ internal sealed class ArtifactHelper
 
   public bool IsGeometry(Base b) => b.speckle_type.StartsWith("Objects.Geometry.", StringComparison.Ordinal);
 
+  /// <summary>Normalizes in place; false when there is no direction to normalize to.</summary>
+  public bool TryNormalize(Vector v)
+  {
+    var length = v.Length;
+    if (length is 0 || double.IsNaN(length) || double.IsInfinity(length))
+    {
+      return false;
+    }
+    v.Normalize();
+    return true;
+  }
+
   public RenderMaterial? ReadEmbeddedMaterial(Base host) =>
     (host["renderMaterial"] ?? host["@renderMaterial"]) as RenderMaterial;
 

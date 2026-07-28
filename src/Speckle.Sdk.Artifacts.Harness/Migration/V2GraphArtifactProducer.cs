@@ -1,10 +1,13 @@
 using System.Globalization;
+using Speckle.Objects.Deprecated;
+using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;
+using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
@@ -65,6 +68,11 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         // Traversal should be preventing RenderMaterials from being returned, but since not all v2 commits are aligned
         // with traversal, this covers cases where RenderMaterial is yielded anyway
         continue;
+      }
+
+      if (TryEmitLegacyCameraView(current))
+      {
+        continue; // a viewpoint, not a scene object
       }
 
       if (current is Collection col)
@@ -248,6 +256,72 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
     pipeline.OnLevel(objK, lvlK);
     _stats.OnLevelEdges++;
+  }
+
+  // ── camera views ────────────────────────────────────────────────────────────────────
+
+  // v2 never recorded a lens; the legacy Rhino baker assumed a fixed 50mm perspective, so match it.
+  // Fov is that lens on a 35mm frame: 2*atan((24/2) / 50).
+  private const double LegacyLensMm = 50.0;
+  private static readonly double LegacyFovDegrees = 2.0 * Math.Atan(12.0 / LegacyLensMm) * (180.0 / Math.PI);
+
+  private int _cameraViewOrd;
+
+  /// <summary>True when <paramref name="obj"/> was a view, so the caller stops treating it as a scene
+  /// object. A v2 view lands in the <see cref="LegacyV2"/> catch-all, so its members are only readable
+  /// dynamically.</summary>
+  private bool TryEmitLegacyCameraView(Base obj)
+  {
+    // LegacyV2 is the sink for a dozen legacy types, so the full member set is the only way to spot a view.
+    // `name` and `target` are excluded — both are legitimately null on a valid one.
+    if (
+      obj is not LegacyV2
+      || obj["origin"] is not Point origin
+      || obj["forwardDirection"] is not Vector forward
+      || obj["upDirection"] is not Vector up
+      || obj["isOrthogonal"] is not bool isOrtho
+    )
+    {
+      return false;
+    }
+
+    var name = obj["name"] as string;
+    if (!helper.TryNormalize(forward) || !helper.TryNormalize(up))
+    {
+      _stats.Notes.Add($"view '{name}' skipped: degenerate forward/up vector");
+      return true;
+    }
+
+    var target = obj["target"] as Point;
+    var ord = _cameraViewOrd++;
+
+    pipeline.AddCameraView(
+      new CameraView(
+        View: ord,
+        Name: name,
+        IsDefault: false,
+        Ord: ord,
+        PosX: origin.x,
+        PosY: origin.y,
+        PosZ: origin.z,
+        ForwardX: forward.x,
+        ForwardY: forward.y,
+        ForwardZ: forward.z,
+        UpX: up.x,
+        UpY: up.y,
+        UpZ: up.z,
+        TargetX: target?.x,
+        TargetY: target?.y,
+        TargetZ: target?.z,
+        Units: obj["units"] as string ?? origin.units,
+        IsOrtho: isOrtho,
+        // Both must be null for an ortho view.
+        Fov: isOrtho ? null : LegacyFovDegrees,
+        LensMm: isOrtho ? null : LegacyLensMm
+      )
+    );
+    _stats.CameraViews++;
+    return true;
   }
 
   // ── materials ───────────────────────────────────────────────────────────────────────
