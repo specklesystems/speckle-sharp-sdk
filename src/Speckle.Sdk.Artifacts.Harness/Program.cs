@@ -37,7 +37,9 @@ services.AddTransient<HarnessCommandLine>();
 services.AddSingleton<ISdkActivityFactory, SdkActivityFactory>();
 services.AddOTelLogging(SLUG);
 
-await using var serviceProvider = services.BuildServiceProvider();
+await using var serviceProvider = services.BuildServiceProvider(
+  options: new() { ValidateOnBuild = true, ValidateScopes = true }
+);
 
 var commandLine = serviceProvider.GetRequiredService<HarnessCommandLine>();
 
