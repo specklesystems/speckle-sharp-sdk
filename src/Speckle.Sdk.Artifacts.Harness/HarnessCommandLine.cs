@@ -13,22 +13,11 @@ internal sealed class HarnessCommandLine(Harness harness, SgeoSelfTest selfTest,
 {
   public RootCommand Build()
   {
-    using var activity = activityFactory.StartActivityFromEnv();
-    try
-    {
-      RootCommand root = new("Speckle artefact-bundle migration harness.");
-      root.Subcommands.Add(BuildSelfTest());
-      root.Subcommands.Add(BuildPackfile());
-      root.Subcommands.Add(BuildRemote());
-      activity?.SetStatus(SdkActivityStatusCode.Ok);
-      return root;
-    }
-    catch (Exception ex)
-    {
-      activity?.RecordException(ex);
-      activity?.SetStatus(SdkActivityStatusCode.Error);
-      throw;
-    }
+    RootCommand root = new("Speckle artefact-bundle migration harness.");
+    root.Subcommands.Add(BuildSelfTest());
+    root.Subcommands.Add(BuildPackfile());
+    root.Subcommands.Add(BuildRemote());
+    return root;
   }
 
   private Command BuildSelfTest()

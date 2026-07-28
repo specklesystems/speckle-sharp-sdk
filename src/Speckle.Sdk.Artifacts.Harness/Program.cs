@@ -40,5 +40,18 @@ await using var serviceProvider = services.BuildServiceProvider(
 );
 
 var commandLine = serviceProvider.GetRequiredService<HarnessCommandLine>();
+var activityFactory = serviceProvider.GetRequiredService<ISdkActivityFactory>();
 
-return await commandLine.Build().Parse(args).InvokeAsync().ConfigureAwait(false);
+using var activity = activityFactory.StartActivityFromEnv();
+try
+{
+  int ret = await commandLine.Build().Parse(args).InvokeAsync().ConfigureAwait(false);
+  activity?.SetStatus(SdkActivityStatusCode.Ok);
+  return ret;
+}
+catch (Exception ex)
+{
+  activity?.RecordException(ex);
+  activity?.SetStatus(SdkActivityStatusCode.Error);
+  throw;
+}
