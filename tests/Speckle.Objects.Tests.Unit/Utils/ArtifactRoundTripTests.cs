@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Speckle.Objects.Data;
 using Speckle.Objects.Geometry;
+using Speckle.Objects.Other;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
@@ -38,7 +39,16 @@ public class ArtifactRoundTripTests
         int gK = pipeline.AddGeometry("obj-1:g0", mesh);
         pipeline.Display(objK, gK, 0);
         pipeline.InCollection(objK, collK, 0);
-        int matK = pipeline.AddMaterial("mat-1", unchecked((int)0xFFAABBCC), 1.0, 0.0, 0.5);
+        int matK = pipeline.AddMaterial(
+          "mat-1",
+          "Concrete - Cast In Situ",
+          unchecked((int)0xFFAABBCC),
+          1.0,
+          0.0,
+          0.5,
+          unchecked((int)0xFF102030),
+          1.52
+        );
         pipeline.HasMaterial(gK, matK);
         pipeline.Complete();
       }
@@ -56,9 +66,17 @@ public class ArtifactRoundTripTests
       meshes.Should().HaveCount(1);
       meshes[0].vertices.Should().HaveCount(9); // 3 verts × xyz, round-tripped through SGEO
 
-      var materialProxies = root["renderMaterialProxies"] as List<Base>;
+      // List<object>, not List<Base> — the reader stores proxies the way the v1 deserializer materialises them,
+      // so the host-side RootObjectUnpacker's `root[key] as List<object>` cast succeeds.
+      var materialProxies = root["renderMaterialProxies"] as List<object>;
       materialProxies.Should().NotBeNull();
       materialProxies!.Should().HaveCount(1);
+      // the authored material name must survive the node `name` column, not fall back to the "material" placeholder
+      var roundTripped = materialProxies.OfType<RenderMaterialProxy>().Single().value;
+      roundTripped.name.Should().Be("Concrete - Cast In Situ");
+      // ENG-8791: emissive rides the node `emissive` column; ior comes back as the v1-convention dynamic prop.
+      roundTripped.emissive.Should().Be(unchecked((int)0xFF102030));
+      roundTripped["ior"].Should().Be(1.52);
     }
     finally
     {

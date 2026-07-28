@@ -135,25 +135,7 @@ public sealed class ObjectsArtifactReader
       }
     }
     double toFeet = Units.GetConversionFactor(bundle.Units, Units.Feet);
-    var m = new double[]
-    {
-      1,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      o[0] * toFeet,
-      o[1] * toFeet,
-      o[2] * toFeet,
-      1,
-    };
+    var m = new double[] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, o[0] * toFeet, o[1] * toFeet, o[2] * toFeet, 1 };
     return new Dictionary<string, object> { ["transform"] = m };
   }
 
@@ -217,6 +199,15 @@ public sealed class ObjectsArtifactReader
         roughness = n.Roughness ?? 1.0,
         applicationId = "mat-" + kv.Key,
       };
+      if (n.Emissive is int emissive)
+      {
+        material.emissive = emissive;
+      }
+      if (n.Ior is double ior)
+      {
+        // dynamic prop, matching the v1 RhinoMaterialUnpacker convention so receive converters find it where v1 put it
+        material["ior"] = ior;
+      }
       map[kv.Key] = new RenderMaterialProxy
       {
         value = material,
