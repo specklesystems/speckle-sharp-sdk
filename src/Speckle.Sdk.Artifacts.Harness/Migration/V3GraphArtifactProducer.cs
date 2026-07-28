@@ -444,7 +444,17 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         continue;
       }
       var v = rmp.value;
-      var matK = pipeline.AddMaterial(helper.MaterialKey(rmp), v.diffuse, v.opacity, v.metalness, v.roughness);
+      // emissive is passed naively — the pipeline normalizes a black RGB to the bundle's NULL "no emission".
+      var matK = pipeline.AddMaterial(
+        helper.MaterialKey(rmp),
+        v.name,
+        v.diffuse,
+        v.opacity,
+        v.metalness,
+        v.roughness,
+        v.emissive,
+        helper.ReadDouble(v, "ior") // untyped on RenderMaterial
+      );
       matProxies.Add((matK, rmp.objects));
       _stats.Materials++;
       // Pure-black diffuse is the CAD "no material / ByLayer" placeholder; it must yield to a real colour.
@@ -502,7 +512,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         continue;
       }
       var name = lp.value.name;
-      var elevation = helper.ReadElevation(lp.value) ?? 0.0; // dynamic member on the level DataObject
+      var elevation = helper.ReadDouble(lp.value, "elevation") ?? 0.0; // dynamic member on the level DataObject
       var lvlK = pipeline.AddLevel(helper.LevelKey(lp, name), name, elevation);
       _stats.Levels++;
       foreach (var objAppId in lp.objects)

@@ -122,10 +122,10 @@ internal sealed class ArtifactHelper
   /// non-<see cref="Base"/> value reads as null and the caller skips it.</summary>
   public Base? ReadV2Level(Base host) => (host["level"] ?? host["@level"]) as Base;
 
-  /// <summary>Elevation off a level object. The deserializer only ever yields double or long, so anything
-  /// else (including null) means the level has no usable elevation.</summary>
-  public double? ReadElevation(Base host) =>
-    host["elevation"] switch
+  /// <summary>Reads an untyped numeric member (level elevation, material ior). The deserializer only ever
+  /// yields double or long, so anything else — including null — means the value is absent or unusable.</summary>
+  public double? ReadDouble(Base host, string key) =>
+    host[key] switch
     {
       double d => d,
       long l => l,

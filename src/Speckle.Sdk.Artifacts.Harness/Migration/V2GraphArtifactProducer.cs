@@ -240,7 +240,7 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   // Best-effort — a level with no usable elevation is skipped rather than migrated at a made-up height.
   private void EmitLevelEdge(Base obj, int objK)
   {
-    if (helper.ReadV2Level(obj) is not { } lvl || helper.ReadElevation(lvl) is not { } elevation)
+    if (helper.ReadV2Level(obj) is not { } lvl || helper.ReadDouble(lvl, "elevation") is not { } elevation)
     {
       return;
     }
@@ -336,7 +336,17 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       var key = rm.applicationId ?? "mat:" + (rm.id ?? rm.diffuse.ToString(CultureInfo.InvariantCulture));
       if (!materialKs.TryGetValue(key, out var matK))
       {
-        matK = pipeline.AddMaterial(key, rm.diffuse, rm.opacity, rm.metalness, rm.roughness);
+        // emissive is passed naively — the pipeline normalizes a black RGB to the bundle's NULL "no emission".
+        matK = pipeline.AddMaterial(
+          key,
+          rm.name,
+          rm.diffuse,
+          rm.opacity,
+          rm.metalness,
+          rm.roughness,
+          rm.emissive,
+          helper.ReadDouble(rm, "ior") // untyped on RenderMaterial
+        );
         materialKs[key] = matK;
         _stats.Materials++;
       }
