@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
 
@@ -10,20 +11,27 @@ namespace Speckle.Sdk.Artifacts.Harness;
 /// recoverable at the fixed offset and the trailing def round-trips at
 /// <c>def_off = 0x18 + display_point_count*3*8</c>.
 /// </summary>
-internal static class SgeoSelfTest
+internal sealed class SgeoSelfTest(ILogger<SgeoSelfTest> logger)
 {
   private const string U = "m";
 
-  public static int Run()
+  public int Run()
   {
     var ok = true;
     ok &= CheckCurve();
     ok &= CheckSpiral();
-    Console.WriteLine(ok ? "\nSELFTEST PASS" : "\nSELFTEST FAIL");
+    if (ok)
+    {
+      logger.LogInformation("SELFTEST PASS");
+    }
+    else
+    {
+      logger.LogError("SELFTEST FAIL");
+    }
     return ok ? 0 : 1;
   }
 
-  private static bool CheckCurve()
+  private bool CheckCurve()
   {
     // A degree-3 rational NURBS with a distinct displayValue (4 pts) so we can tell
     // the leading render polyline from the trailing control points.
@@ -95,7 +103,7 @@ internal static class SgeoSelfTest
     return fail.Count == 0;
   }
 
-  private static bool CheckSpiral()
+  private bool CheckSpiral()
   {
     var display = new Polyline
     {
@@ -172,18 +180,18 @@ internal static class SgeoSelfTest
     }
   }
 
-  private static void Report(string name, int len, List<string> fail)
+  private void Report(string name, int len, List<string> fail)
   {
     if (fail.Count == 0)
     {
-      Console.WriteLine($"  {name}: OK ({len}B)");
+      logger.LogInformation("{Name}: OK ({Length}B)", name, len);
     }
     else
     {
-      Console.WriteLine($"  {name}: {fail.Count} MISMATCH ({len}B)");
+      logger.LogError("{Name}: {MismatchCount} MISMATCH ({Length}B)", name, fail.Count, len);
       foreach (var f in fail)
       {
-        Console.WriteLine($"    ✗ {f}");
+        logger.LogError("  ✗ {Mismatch}", f);
       }
     }
   }

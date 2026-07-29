@@ -170,9 +170,8 @@ public static class SgeoEncoder
     return Assemble(SgeoPrimitiveType.Polycurve, flags, pc.units, body);
   }
 
-  // Region blob = hasHatchPattern flag + boundary curve (nested SGEO blob) + N inner-loop curves (nested blobs). The
-  // display meshes and the hatch pattern/rotation/scale are NOT stored here — meshes ride the DISPLAY rel and the
-  // pattern styling rides EAV properties; this blob is the authoritative boundary geometry (host: Hatch/Region).
+  // Region blob = hasHatchPattern flag + boundary curve + inner-loop curves (each a nested SGEO blob). Display
+  // meshes and hatch styling are NOT here — they ride the DISPLAY rel and EAV props; this is the boundary geometry.
   private static byte[] EncodeRegion(Region r)
   {
     var body = new List<byte>(256);
@@ -196,10 +195,8 @@ public static class SgeoEncoder
     Pad8(body);
   }
 
-  // Curve blob = the connector-baked smooth `displayValue` polyline LEADING (render: the viewer has no NURBS
-  // evaluator, and this required polyline is exactly what legacy renders), then the FULL NURBS definition
-  // TRAILING (degree/points/weights/knots — kept for the analytical engine; nothing is dropped). The render
-  // consumer reads the leading polyline at a fixed offset; the def offset is computable from displayCount.
+  // Curve blob = leading displayValue polyline (render — the viewer has no NURBS evaluator) then the trailing
+  // NURBS definition (degree/points/weights/knots, for the analytical engine). Def offset follows from displayCount.
   private static byte[] EncodeCurve(Curve c)
   {
     if (c.points.Count % 3 != 0)
@@ -207,9 +204,8 @@ public static class SgeoEncoder
       throw new SpeckleException("Curve.points length must be a multiple of 3.");
     }
     var flags = SgeoFlags.None;
-    // The flag closes BOTH the display polyline and (on decode) the curve itself. Take it from the curve too:
-    // AutoCAD periodic splines are closed curves whose displayValue polyline is often NOT flagged closed — dropping
-    // c.closed here made receivers skip their periodic knot/point trimming and bake exploded splines.
+    // Take closed from the curve too, not just the display polyline: AutoCAD periodic splines are closed curves
+    // whose displayValue is often not flagged closed, which made receivers bake exploded splines.
     if (c.closed || c.displayValue.closed)
     {
       flags |= SgeoFlags.Closed;
@@ -389,9 +385,8 @@ public static class SgeoEncoder
     return Assemble(SgeoPrimitiveType.Box, SgeoFlags.None, b.units, body);
   }
 
-  // Text blob = alignmentH/alignmentV (u32 pair) + height + optional wrap width (HasMaxWidth) + plane + the value
-  // string. screenOriented rides the ScreenOriented header flag. The string is the first non-numeric SGEO body
-  // field: [byteLen][reserved][utf8 bytes][pad-to-8], the same framing AddCurveBlob uses for nested blobs.
+  // Text blob = alignmentH/alignmentV + height + optional wrap width (HasMaxWidth) + plane + value string; the
+  // string uses the [byteLen][reserved][utf8][pad-to-8] framing (as AddCurveBlob). screenOriented rides a flag.
   private static byte[] EncodeText(Text t)
   {
     var flags = SgeoFlags.None;

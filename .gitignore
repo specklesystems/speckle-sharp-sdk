@@ -22,3 +22,9 @@ tools
 coverage.xml
 
 *.received.*
+
+# Local, secret-bearing launch scripts (API tokens) — never commit
+*.local.sh
+*.local.env
+*.local.ps1
+*.local.run.xml

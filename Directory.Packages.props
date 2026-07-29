@@ -49,6 +49,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.6" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
     <PackageVersion Include="Open.ChannelExtensions" Version="9.1.0" />
@@ -58,6 +59,9 @@
     5.4.0 works, but brings in higher versions of System.Memory that conflict with many third-party plugins
     5.3.0 is the newest version we've found to have good compatibilty. 
     -->
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
     <PackageVersion Include="Parquet.Net" Version="[5.3.0,]" />
     <!-- Pinned due to breaking changes in newer versions -->
     <PackageVersion Include="Polly" Version="[7.2.3,8.0.0]" />
@@ -68,7 +72,7 @@
     <PackageVersion Include="Speckle.DoubleNumerics" Version="4.1.0" />
     <PackageVersion Include="SimpleExec" Version="13.0.0" />
     <!-- Pinned due to breaking changes in newer versions -->
-    <PackageVersion Include="System.CommandLine" Version="[2.0.0-beta4.22272.1]" />
+    <PackageVersion Include="System.CommandLine" Version="[2.0.0]" />
     <!--
     Pinned so EVERY netstandard2.0 SDK assembly bakes the SAME System.Memory reference (4.5.5 = assembly 4.0.1.2),
     matching what the connectors repo resolves transitively (IronCompress). Without the pin, Speckle.Objects/Speckle.Sdk

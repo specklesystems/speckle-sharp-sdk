@@ -33,6 +33,12 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CSPROJ="$SCRIPT_DIR/Speckle.Sdk.Artifacts.Harness.csproj"
 
+# dotnet is a native Windows exe under Git Bash / MSYS; hand it a Windows path (C:\…),
+# not a POSIX one (/c/… or /mnt/c/…) which it cannot resolve. Uses the shell's mount table.
+if command -v cygpath >/dev/null 2>&1; then
+  CSPROJ="$(cygpath -w "$CSPROJ")"
+fi
+
 SRC_SERVER="${SRC_SERVER:-}"
 DST_SERVER="${DST_SERVER:-}"
 DST_PROJECT="${DST_PROJECT:-}"
@@ -79,7 +85,7 @@ fi
 
 # Build once up-front so parallel workers don't race the ILRepack target.
 echo "Building harness (Release) …"
-if ! dotnet build -c Release "$CSPROJ" >/dev/null 2>&1; then
+if !  dotnet build -c Release "$CSPROJ" >/dev/null 2>&1; then
   echo "error: build failed; run 'dotnet build -c Release $CSPROJ' to see why" >&2
   exit 1
 fi
