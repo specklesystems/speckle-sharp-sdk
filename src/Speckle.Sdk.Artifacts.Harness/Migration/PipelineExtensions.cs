@@ -29,7 +29,32 @@ internal static class PipelineExtensions
       geometry["domain"] = Interval.UnitInterval;
     }
 
-    if (geometry is Surface or Vector or Plane or Brep)
+    // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+    if (geometry is Curve { displayValue: null } cd)
+    {
+      //Detecting several models who have curves with no displayValue.
+      //I only expect this from v2, so accepting this as a hack to approximate some form of displayValue
+      cd.displayValue = new Polyline()
+      {
+        value = cd.points,
+        units = cd.units,
+        closed = cd.closed,
+      };
+    }
+
+    if (geometry is Brep b)
+    {
+      //Never considered valid, but some breps may have leaked as displayValues in v2.
+      //Safe to assume v2 breps only have 1 displayValue mesh
+      // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+      if (b.displayValue is null || b.displayValue.Count <= 0)
+      {
+        return null;
+      }
+      geometry = b.displayValue[0];
+    }
+
+    if (geometry is Surface or Vector or Plane or Brep or null)
     {
       return null;
     }
