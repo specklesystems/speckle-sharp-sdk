@@ -3,11 +3,14 @@ using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Artifacts.Harness.Migration;
 using Speckle.Sdk.Artifacts.Harness.Transports;
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines.Progress;
 using Speckle.Sdk.Serialisation;
+using Speckle.Sdk.Serialisation.Utilities;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Artifacts.Harness;
 
@@ -24,27 +27,10 @@ internal sealed class Harness(
   BundleUploader bundleUploader,
   BundleMigrationClient migrationClient,
   ISdkActivityFactory activityFactory,
-  ILogger<Harness> logger
+  ILogger<Harness> logger,
+  IServerTransportFactory serverTransportFactory
 )
 {
-  /// <summary>Loads a graph from a DuckDB packfile on disk and produces (and optionally uploads) the bundle.</summary>
-  public async Task<int> RunPackfile(
-    FileInfo packfile,
-    string? root,
-    string? outDir,
-    string[]? upload,
-    CancellationToken ct
-  )
-  {
-    logger.LogInformation("Input: {InputPath}", packfile);
-    var graph = await LoadPackfileGraph(packfile, root).ConfigureAwait(false);
-    if (graph is null)
-    {
-      return 1;
-    }
-    return await ProduceAndUpload(graph, packfile.Name, outDir, upload, ct).ConfigureAwait(false);
-  }
-
   /// <summary>Migrates a server version. With no destination the bundle is uploaded ONTO THAT VERSION
   /// (in place); with a destination it is uploaded as a NEW version there. Fetches the source graph by
   /// downloading its DuckDB packfile (default) or via the legacy REST deserialize
@@ -62,7 +48,7 @@ internal sealed class Harness(
     CancellationToken ct
   )
   {
-    var token =
+    var authToken =
       Environment.GetEnvironmentVariable("SPECKLE_SRC_TOKEN")
       ?? Environment
         .GetEnvironmentVariable("SPECKLE_TOKEN")
@@ -71,12 +57,12 @@ internal sealed class Harness(
     // No destination → migrate the source version in place. The CLI guarantees a version is supplied here.
     if (destServer is null && destProject is null && destModel is null)
     {
-      return await RunInPlace(server, project, model, version.NotNull(), token, outDir, ct).ConfigureAwait(false);
+      return await RunInPlace(server, project, model, version.NotNull(), authToken, outDir, ct).ConfigureAwait(false);
     }
 
     Base? graph = legacyApi
-      ? await LoadFromServerLegacy(server, project, model, version, token, ct).ConfigureAwait(false)
-      : await LoadFromServerPackfile(server, project, model, version, token, ct).ConfigureAwait(false);
+      ? await LoadFromServerLegacy(server, project, model, version, authToken, ct).ConfigureAwait(false)
+      : await LoadFromServerPackfile(server, project, model, version, authToken, ct).ConfigureAwait(false);
     if (graph is null)
     {
       return 1;
@@ -90,36 +76,36 @@ internal sealed class Harness(
   /// Migrates a version IN PLACE via the bundle-migration API: the produced bundle is uploaded onto the
   /// existing version's artifact prefix, creating no new version.
   ///
-  /// <paramref name="token"/> is the per-job migration JWT, the only credential available — it authorises
+  /// <paramref name="authToken"/> is the per-job migration JWT, the only credential available — it authorises
   /// the migration endpoints and nothing else (no GraphQL, no objects api), so the source packfile is
   /// fetched from the presigned url those endpoints hand back. The surrounding lifecycle
   /// (start / complete / fail) belongs to the migration service; a non-zero exit is its failure signal.
   /// </summary>
   private async Task<int> RunInPlace(
-    Uri server,
-    string project,
-    string model,
-    string version,
-    string token,
-    string? outDir,
+    Uri serverUrl,
+    string projectId,
+    string modelId,
+    string versionId,
+    string authToken,
+    string? outputDirectory,
     CancellationToken ct
   )
   {
-    logger.LogInformation("Migrating {ProjectId}/{ModelId}@{VersionId} in place", project, model, version);
+    logger.LogInformation("Migrating {ProjectId}/{ModelId}@{VersionId} in place", projectId, modelId, versionId);
 
     // Attempts are retried, and the upload list is whatever is sitting in the staging directory — so an
     // attempt killed before its files were disposed must not leak into this one. Dispose-time cleanup is
     // best-effort (a kill -9 skips it), so both directories are also emptied up front.
     var packfileDir = EnsureCleanDirectory(Path.Combine(WorkRoot, "packfiles"));
-    var stagingDir = EnsureCleanDirectory(outDir ?? Path.Combine(WorkRoot, $"bundle-{version}"));
+    var stagingDir = EnsureCleanDirectory(outputDirectory ?? Path.Combine(WorkRoot, $"bundle-{versionId}"));
 
     // The produced filenames aren't known until the bundle exists, and the bundle needs the source — so
     // ask with no files first, purely for the packfile url.
     var source = await migrationClient
-      .RequestUploadsAsync(server, project, model, version, [], token, ct)
+      .RequestUploadsAsync(serverUrl, projectId, modelId, versionId, [], authToken, ct)
       .ConfigureAwait(false);
 
-    var packfile = new FileInfo(Path.Combine(packfileDir, $"{version}.duckdb"));
+    var packfile = new FileInfo(Path.Combine(packfileDir, $"{versionId}.duckdb"));
     using var packfileHandle = new DisposableFile(packfile, logger);
 
     // An explicit --out is the caller's to keep; a directory we chose ourselves is ours to clean up.
@@ -134,23 +120,40 @@ internal sealed class Harness(
         .ConfigureAwait(false);
       logger.LogInformation("Downloaded {Bytes} bytes", packfile.Length);
 
-      var graph = await LoadPackfileGraph(packfile, null).ConfigureAwait(false);
+      using DuckDbTransport duckDbTransport = new DuckDbTransport(new PackFileManager(packfile, activityFactory));
+      string rootObjectId = duckDbTransport.GetRootObjectId();
+
+      ITransport readTransport = await EnsureAllObjects(
+          duckDbTransport,
+          serverUrl,
+          projectId,
+          rootObjectId,
+          authToken,
+          ct
+        )
+        .ConfigureAwait(false);
+
+      var graph = await LoadPackfileGraph(readTransport, rootObjectId).ConfigureAwait(false);
       if (graph is null)
       {
         return 1;
       }
 
-      var files = Produce(graph, stagingDir, version);
+      var files = Produce(graph, stagingDir, versionId);
       foreach (var file in files)
       {
         bundleHandles.Add(
-          new DisposableFile(new FileInfo(Path.Combine(stagingDir, file)), logger, deleteOnDispose: outDir is null)
+          new DisposableFile(
+            new FileInfo(Path.Combine(stagingDir, file)),
+            logger,
+            deleteOnDispose: outputDirectory is null
+          )
         );
       }
 
       // Sign as late as possible: the presigned urls are short-lived (1h).
       var targets = await migrationClient
-        .RequestUploadsAsync(server, project, model, version, files, token, ct)
+        .RequestUploadsAsync(serverUrl, projectId, modelId, versionId, files, authToken, ct)
         .ConfigureAwait(false);
 
       foreach (var target in targets.Uploads)
@@ -162,7 +165,7 @@ internal sealed class Harness(
 
       logger.LogInformation(
         "Migration upload OK versionId={VersionId} files={FileCount}",
-        version,
+        versionId,
         targets.Uploads.Count
       );
       return 0;
@@ -259,55 +262,140 @@ internal sealed class Harness(
 
   // Default remote fetch: download the version's DuckDB packfile to a temp file, then read it like the
   // on-disk packfile path.
-  private async Task<Base?> LoadFromServerPackfile(
-    Uri server,
-    string project,
-    string model,
-    string? version,
-    string token,
+  private async Task<Base> LoadFromServerPackfile(
+    Uri serverUrl,
+    string projectId,
+    string modelId,
+    string? versionId,
+    string authToken,
     CancellationToken ct
   )
   {
-    if (version is null)
+    if (versionId is null)
     {
-      logger.LogInformation("Resolving latest version of {ProjectId}/{ModelId} …", project, model);
-      (version, _) = await remoteSource
-        .ResolveLatestVersionAsync(server, project, model, token, ct)
+      logger.LogInformation("Resolving latest version of {ProjectId}/{ModelId} …", projectId, modelId);
+      (versionId, _) = await remoteSource
+        .ResolveLatestVersionAsync(serverUrl, projectId, modelId, authToken, ct)
         .ConfigureAwait(false);
-      logger.LogInformation("Latest version {VersionId}", version);
+      logger.LogInformation("Latest version {VersionId}", versionId);
     }
 
     var packfileDir = EnsureCleanDirectory(Path.Combine(WorkRoot, "packfiles"));
-    var packfile = new FileInfo(Path.Combine(packfileDir, $"{version}.duckdb"));
+    var packfile = new FileInfo(Path.Combine(packfileDir, $"{versionId}.duckdb"));
     using var packfileHandle = new DisposableFile(packfile, logger);
 
-    using var http = new HttpClient { BaseAddress = server };
-    http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    using var http = new HttpClient { BaseAddress = serverUrl };
+    http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
     // Cloudflare (app.speckle.systems) 403s requests with no User-Agent.
     http.DefaultRequestHeaders.UserAgent.ParseAdd("speckle-artefact-harness/1.0");
 
-    logger.LogInformation("Downloading packfile for version {VersionId} …", version);
+    logger.LogInformation("Downloading packfile for version {VersionId} …", versionId);
     await DuckDbHelper
-      .DownloadDuckFile(http, project, model, version, packfile, new Progress<StreamProgressArgs>(), ct)
+      .DownloadDuckFile(http, projectId, modelId, versionId, packfile, new Progress<StreamProgressArgs>(), ct)
       .ConfigureAwait(false);
     logger.LogInformation("Downloaded {Bytes} bytes", packfile.Length);
 
-    return await LoadPackfileGraph(packfile, null).ConfigureAwait(false);
+    using DuckDbTransport duckDbTransport = new DuckDbTransport(new PackFileManager(packfile, activityFactory));
+    string rootObjectId = duckDbTransport.GetRootObjectId();
+
+    ITransport readTransport = await EnsureAllObjects(
+        duckDbTransport,
+        serverUrl,
+        projectId,
+        rootObjectId,
+        authToken,
+        ct
+      )
+      .ConfigureAwait(false);
+
+    return await LoadPackfileGraph(readTransport, rootObjectId).ConfigureAwait(false);
   }
+
+  /// <summary>
+  /// Most packfiles hold the whole graph, but a few on the server are missing objects. Checks the packfile
+  /// against its own root closure and, only if something is absent, pulls the missing objects from the
+  /// server's REST api into a <see cref="MemoryTransport"/> — nothing is written back to the packfile.
+  /// Returns the transport to read the graph from.
+  /// </summary>
+  private async Task<ITransport> EnsureAllObjects(
+    DuckDbTransport duckDbTransport,
+    Uri serverUrl,
+    string projectId,
+    string rootObjectId,
+    string authToken,
+    CancellationToken ct
+  )
+  {
+    var rootJson = await duckDbTransport
+      .GetObject(rootObjectId)
+      .NotNull($"Packfile does not contain its own root object '{rootObjectId}'")
+      .ConfigureAwait(false);
+
+    var childrenIds = ClosureIds(rootJson, ct);
+    var found = await duckDbTransport.HasObjects(childrenIds).ConfigureAwait(false);
+    var missingCount = found.Count(kvp => !kvp.Value);
+    if (missingCount == 0)
+    {
+      logger.LogInformation("Packfile is complete ({ObjectCount} objects in root closure)", childrenIds.Count);
+      return duckDbTransport;
+    }
+
+    logger.LogWarning(
+      "Packfile is missing {MissingCount} of {ObjectCount} objects — filling from {ServerUrl}",
+      missingCount,
+      childrenIds.Count,
+      serverUrl
+    );
+
+    var memoryTransport = new MemoryTransport { CancellationToken = ct };
+    // Reads hit the packfile first, then whatever we fill; writes land in memory only (the packfile is
+    // read-only). The server must NOT be a read transport here — see AggregateTransport's remarks.
+    AggregateTransport local = new([duckDbTransport, memoryTransport], [memoryTransport]);
+
+    Account account = new()
+    {
+      token = authToken,
+      userInfo = new(),
+      serverInfo = new() { url = serverUrl.ToString().TrimEnd('/') },
+    };
+    using var remote = serverTransportFactory.Create(account, projectId);
+    remote.CancellationToken = ct;
+
+    // Downloads the root, diffs the server's root closure against `local`, and saves only what's absent.
+    await remote.CopyObjectAndChildren(rootObjectId, local).ConfigureAwait(false);
+    logger.LogInformation("Filled {FilledCount} object(s) from {ServerUrl}", memoryTransport.Objects.Count, serverUrl);
+
+    var stillMissing = (await local.HasObjects(childrenIds).ConfigureAwait(false))
+      .Where(kvp => !kvp.Value)
+      .Select(kvp => kvp.Key)
+      .ToList();
+
+    // Anything still absent is absent from both sides, so the graph can't be completed — fail with the ids
+    // rather than let the deserialize die on a bare KeyNotFoundException.
+    if (stillMissing.Count > 0)
+    {
+      throw new TransportException(
+        $"{stillMissing.Count} object(s) are missing from both the packfile and {serverUrl}, "
+          + $"e.g. {string.Join(", ", stillMissing.Take(5))}"
+      );
+    }
+
+    return local;
+  }
+
+  // Every descendant id from an object's closure. Blob refs aren't rows in `objects`, so they're excluded using
+  // the same predicate ServerTransport applies to its own diff.
+  private static List<string> ClosureIds(string json, CancellationToken ct) =>
+    ClosureParser.GetChildrenIds(json, ct).Where(x => !x.Contains("blob:")).ToList();
 
   // Reads a DuckDB packfile into a Base graph. The transport stays alive for the whole deserialize (children
   // are fetched from it by id).
-  private async Task<Base?> LoadPackfileGraph(FileInfo packfile, string? root)
+  private async Task<Base> LoadPackfileGraph(ITransport transport, string rootId)
   {
-    using var transport = new DuckDbTransport(new PackFileManager(packfile, activityFactory));
-    var rootId = root ?? transport.GetRootObjectId();
-    var rootJson = await transport.GetObject(rootId).ConfigureAwait(false);
-    if (rootJson is null)
-    {
-      logger.LogError("Root '{RootId}' not found in packfile.", rootId);
-      return null;
-    }
-    logger.LogInformation("Root: {RootId}", rootId);
+    var rootJson = await transport
+      .GetObject(rootId)
+      .NotNull($"Root '{rootId}' not found in packfile")
+      .ConfigureAwait(false);
 
     var deserializer = new SpeckleObjectDeserializer { ReadTransport = transport };
     return await deserializer.DeserializeAsync(rootJson).ConfigureAwait(false);
