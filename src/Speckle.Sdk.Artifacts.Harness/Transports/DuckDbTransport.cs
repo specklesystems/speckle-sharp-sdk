@@ -22,9 +22,7 @@ internal sealed class DuckDbTransport(PackFileManager packFileManager) : ITransp
 
   public Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
   {
-    //Hack: assume all objects are in the duckdb file, since duckdb files are by nature "complete" snapshots of a model.
-    //This does semi-break the ITransport contract however...
-    return Task.FromResult(objectIds.ToDictionary(x => x, x => true));
+    return Task.FromResult(packFileManager.HasObjects(objectIds));
   }
 
   #region Writes (not implemented)

@@ -82,6 +82,52 @@ internal sealed class PackFileManager(FileInfo file, ISdkActivityFactory activit
     return reader.GetInt64(0);
   }
 
+  public Dictionary<string, bool> HasObjects(IReadOnlyList<string> objectIds)
+  {
+    using ISdkActivity? activity = activityFactory.Start();
+    try
+    {
+      //Default to false so every requested id gets an entry
+      Dictionary<string, bool> results = new(objectIds.Count);
+      foreach (string id in objectIds)
+      {
+        results[id] = false;
+      }
+
+      if (results.Count == 0)
+      {
+        activity?.SetStatus(SdkActivityStatusCode.Ok);
+        return results;
+      }
+
+      using DuckDBCommand command = CurrentContext.Connection.CreateCommand();
+      //Only the `?` placeholder count varies; the ids themselves are bound as parameters
+#pragma warning disable CA2100
+      command.CommandText =
+        $"SELECT id FROM objects WHERE id IN ({string.Join(", ", Enumerable.Repeat("?", objectIds.Count))})";
+#pragma warning restore CA2100
+      foreach (string id in objectIds)
+      {
+        command.Parameters.Add(new(id));
+      }
+
+      using DbDataReader reader = command.ExecuteReader();
+      while (reader.Read())
+      {
+        results[reader.GetString(0)] = true;
+      }
+
+      activity?.SetStatus(SdkActivityStatusCode.Ok);
+      return results;
+    }
+    catch (Exception ex)
+    {
+      activity?.SetStatus(SdkActivityStatusCode.Error);
+      activity?.RecordException(ex);
+      throw;
+    }
+  }
+
   public async IAsyncEnumerable<(string id, string speckle_type, string json)> GetObjectsAsync(
     [EnumeratorCancellation] CancellationToken cancellationToken
   )
