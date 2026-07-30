@@ -18,7 +18,9 @@ internal sealed class PackFileManager(FileInfo file, ISdkActivityFactory activit
   private readonly ConcurrentDictionary<int, ThreadContext> _threadContexts = new();
   private ThreadContext CurrentContext => GetOrCreateContext();
 
-  public string GetObjectData(string id)
+  /// <summary>Returns null when the packfile has no object with this id — callers fall back to another
+  /// transport, so a miss is not exceptional.</summary>
+  public string? GetObjectData(string id)
   {
     using ISdkActivity? activity = activityFactory.Start();
     try
@@ -31,7 +33,8 @@ internal sealed class PackFileManager(FileInfo file, ISdkActivityFactory activit
 
       if (!reader.Read())
       {
-        throw new KeyNotFoundException($"Failed to find object with id {id}");
+        activity?.SetStatus(SdkActivityStatusCode.Ok);
+        return null;
       }
 
       string json = reader.GetString(0);

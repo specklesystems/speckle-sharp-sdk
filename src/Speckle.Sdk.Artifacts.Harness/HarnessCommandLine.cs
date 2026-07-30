@@ -13,7 +13,6 @@ internal sealed class HarnessCommandLine(Harness harness, SgeoSelfTest selfTest)
   {
     RootCommand root = new("Speckle artefact-bundle migration harness.");
     root.Subcommands.Add(BuildSelfTest());
-    root.Subcommands.Add(BuildPackfile());
     root.Subcommands.Add(BuildRemote());
     return root;
   }
@@ -22,37 +21,6 @@ internal sealed class HarnessCommandLine(Harness harness, SgeoSelfTest selfTest)
   {
     Command cmd = new("selftest", "Run the SGEO encoder byte-layout self-test.");
     cmd.SetAction(_ => selfTest.Run());
-    return cmd;
-  }
-
-  private Command BuildPackfile()
-  {
-    Argument<FileInfo> packfile = new("packfilePath")
-    {
-      Description = "Path to the DuckDB packfile.",
-      CustomParser = ParseExistingFile,
-    };
-    Option<string> rootOption = new("--root") { Description = "Root object id (default: the packfile's root table)." };
-    Option<string> outOption = OutOption();
-    Option<string[]> uploadOption = UploadOption();
-
-    Command cmd = new("packfile", "Migrate a graph from a DuckDB packfile.");
-    cmd.Arguments.Add(packfile);
-    cmd.Options.Add(rootOption);
-    cmd.Options.Add(outOption);
-    cmd.Options.Add(uploadOption);
-    cmd.SetAction(
-      async (parseResult, ct) =>
-        await harness
-          .RunPackfile(
-            parseResult.GetRequiredValue(packfile),
-            parseResult.GetValue(rootOption),
-            parseResult.GetValue(outOption),
-            parseResult.GetValue(uploadOption),
-            ct
-          )
-          .ConfigureAwait(false)
-    );
     return cmd;
   }
 
@@ -165,24 +133,6 @@ internal sealed class HarnessCommandLine(Harness harness, SgeoSelfTest selfTest)
     Option<string> option = new("--out") { Description = "Output directory (default: a temp dir)." };
     option.Aliases.Add("--outputPath");
     return option;
-  }
-
-  private static Option<string[]> UploadOption() =>
-    new("--upload")
-    {
-      Description = "Upload the bundle to <serverUrl> <projectId> <modelId> (token: SPECKLE_DST_TOKEN).",
-      Arity = new ArgumentArity(3, 3),
-      AllowMultipleArgumentsPerToken = true,
-    };
-
-  private static FileInfo ParseExistingFile(ArgumentResult result)
-  {
-    var file = new FileInfo(result.Tokens[0].Value);
-    if (!file.Exists)
-    {
-      result.AddError($"File not found: {file.FullName}");
-    }
-    return file;
   }
 
   private static Uri ParseAbsoluteUri(ArgumentResult result)

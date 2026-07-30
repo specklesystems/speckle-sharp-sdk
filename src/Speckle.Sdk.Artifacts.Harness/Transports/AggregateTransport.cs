@@ -1,19 +1,44 @@
-﻿using Speckle.Sdk.Transports;
+using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Artifacts.Harness.Transports;
 
-internal class AggregateTransport(IReadOnlyList<ITransport> ReadTransports, IReadOnlyList<ITransport> WriteTransports)
-  : ITransport
+/// <summary>
+/// Fans reads across <paramref name="readTransports"/> in order (first hit wins) and writes to every
+/// transport in <paramref name="writeTransports"/>.
+///
+/// Read transports must all be LOCAL. <see cref="ServerTransport.CopyObjectAndChildren"/> decides what to
+/// download by asking its target which ids it already has, so an aggregate that can reach the server
+/// answers "all of them" and nothing gets fetched.
+/// </summary>
+internal sealed class AggregateTransport(
+  IReadOnlyList<ITransport> readTransports,
+  IReadOnlyList<ITransport> writeTransports
+) : ITransport
 {
   public string TransportName { get; set; } = nameof(AggregateTransport);
   public Dictionary<string, object> TransportContext { get; } = new();
   public TimeSpan Elapsed { get; } = TimeSpan.Zero;
-  public CancellationToken CancellationToken { get; set; }
   public IProgress<ProgressArgs>? OnProgressAction { get; set; }
+
+  private CancellationToken _cancellationToken;
+
+  public CancellationToken CancellationToken
+  {
+    get => _cancellationToken;
+    set
+    {
+      _cancellationToken = value;
+      // Children read their own token, so storing it here alone would silently disable cancellation.
+      foreach (var t in readTransports.Concat(writeTransports).Distinct())
+      {
+        t.CancellationToken = value;
+      }
+    }
+  }
 
   public void BeginWrite()
   {
-    foreach (var t in WriteTransports)
+    foreach (var t in writeTransports)
     {
       t.BeginWrite();
     }
@@ -21,7 +46,7 @@ internal class AggregateTransport(IReadOnlyList<ITransport> ReadTransports, IRea
 
   public void EndWrite()
   {
-    foreach (var t in WriteTransports)
+    foreach (var t in writeTransports)
     {
       t.EndWrite();
     }
@@ -29,7 +54,7 @@ internal class AggregateTransport(IReadOnlyList<ITransport> ReadTransports, IRea
 
   public void SaveObject(string id, string serializedObject)
   {
-    foreach (var t in WriteTransports)
+    foreach (var t in writeTransports)
     {
       t.SaveObject(id, serializedObject);
     }
@@ -37,17 +62,17 @@ internal class AggregateTransport(IReadOnlyList<ITransport> ReadTransports, IRea
 
   public async Task WriteComplete()
   {
-    foreach (var t in WriteTransports)
+    foreach (var t in writeTransports)
     {
-      await t.WriteComplete();
+      await t.WriteComplete().ConfigureAwait(false);
     }
   }
 
   public async Task<string?> GetObject(string id)
   {
-    foreach (var t in ReadTransports)
+    foreach (var t in readTransports)
     {
-      string? o = await t.GetObject(id);
+      string? o = await t.GetObject(id).ConfigureAwait(false);
       if (o is not null)
       {
         return o;
@@ -55,19 +80,6 @@ internal class AggregateTransport(IReadOnlyList<ITransport> ReadTransports, IRea
     }
 
     return null;
-  }
-
-  public async Task<string> CopyObjectAndChildren(string id, ITransport targetTransport)
-  {
-    foreach (var t in ReadTransports)
-    {
-      string? o = await t.GetObject(id);
-      if (o is not null)
-      {
-        await t.CopyObjectAndChildren(id, targetTransport);
-      }
-    }
-    throw new TransportException($"Requested id {id} was not found within any transports");
   }
 
   public async Task<Dictionary<string, bool>> HasObjects(IReadOnlyList<string> objectIds)
@@ -78,24 +90,33 @@ internal class AggregateTransport(IReadOnlyList<ITransport> ReadTransports, IRea
       ret[objectId] = false;
     }
 
-    List<string> toCheck = objectIds.ToList();
-
-    foreach (var t in ReadTransports)
+    List<string> toCheck = ret.Keys.ToList();
+    foreach (var t in readTransports)
     {
-      var has = await t.HasObjects(toCheck.ToList());
+      if (toCheck.Count == 0)
+      {
+        break;
+      }
 
+      var has = await t.HasObjects(toCheck).ConfigureAwait(false);
       foreach (var o in has)
       {
         if (o.Value)
         {
           ret[o.Key] = true;
-          toCheck.Remove(o.Key);
         }
       }
 
-      toCheck = ret.Where(kvp => !kvp.Value).Select(kvp => kvp.Key).ToList();
+      toCheck = toCheck.Where(id => !ret[id]).ToList();
     }
 
     return ret;
   }
+
+  /// <summary>Not supported — the direction is reversed. Call it on the SOURCE transport, passing this
+  /// aggregate as the target.</summary>
+  public Task<string> CopyObjectAndChildren(string id, ITransport targetTransport) =>
+    throw new NotSupportedException(
+      $"Copy INTO an {nameof(AggregateTransport)}, not out of one: call {nameof(CopyObjectAndChildren)} on the source transport with this aggregate as the target."
+    );
 }
