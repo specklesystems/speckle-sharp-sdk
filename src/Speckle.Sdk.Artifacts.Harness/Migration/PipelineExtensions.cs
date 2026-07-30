@@ -29,7 +29,7 @@ internal static class PipelineExtensions
       geometry["domain"] = Interval.UnitInterval;
     }
 
-    if (geometry is Surface or Vector)
+    if (geometry is Surface or Vector or Plane)
     {
       return null;
     }
