@@ -32,7 +32,7 @@ jobs:
           path: ${{ env.SERVER_DIR }}
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.2xx #Keep aligned with global.json
       #          cache: true
