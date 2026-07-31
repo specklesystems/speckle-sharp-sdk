@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
 using DuckDB.NET.Data;
@@ -90,7 +90,6 @@ internal sealed class PackFileManager(FileInfo file, ISdkActivityFactory activit
     using ISdkActivity? activity = activityFactory.Start();
     try
     {
-      //Default to false so every requested id gets an entry
       Dictionary<string, bool> results = new(objectIds.Count);
       foreach (string id in objectIds)
       {

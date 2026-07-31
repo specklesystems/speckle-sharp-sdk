@@ -526,6 +526,46 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         _stats.OnLevelEdges++;
       }
     }
+
+    // v3 records no group nesting, so every group is top-level — an outer group already lists its inner
+    // groups' members.
+    foreach (var grp in helper.GetBaseList(root, "groupProxies"))
+    {
+      if (grp is not GroupProxy gp)
+      {
+        continue;
+      }
+
+      // Resolved up front so an all-dangling group leaves no edgeless CONTAINER behind.ons.
+      var members = new List<int>();
+      var seen = new HashSet<string>(StringComparer.Ordinal);
+      foreach (var objAppId in gp.objects)
+      {
+        if (!seen.Add(objAppId))
+        {
+          continue; // unpack can visit a block sub-object twice
+        }
+        if (!_seenObjectAppIds.Contains(objAppId))
+        {
+          _stats.SkippedGroup++;
+          continue;
+        }
+        members.Add(pipeline.InternObject(objAppId));
+      }
+
+      if (members.Count == 0)
+      {
+        continue;
+      }
+
+      var grpK = pipeline.AddContainer(helper.GroupKey(gp), gp.name, null, "Group");
+      _stats.Groups++;
+      foreach (var objK in members)
+      {
+        pipeline.InGroup(objK, grpK, 0);
+        _stats.InGroupEdges++;
+      }
+    }
   }
 
   // ── layer geometry resolution (ByLayer material/colour) ─────────────────────────────
