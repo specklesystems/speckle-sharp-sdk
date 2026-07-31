@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using Speckle.DoubleNumerics;
 using Speckle.Objects.Data;
@@ -118,12 +119,11 @@ internal sealed class ArtifactHelper
   public RenderMaterial? ReadEmbeddedMaterial(Base host) =>
     (host["renderMaterial"] ?? host["@renderMaterial"]) as RenderMaterial;
 
-  /// <summary>The level attached to a v2 buildElement. <c>level</c> was also used for unrelated data, so a
-  /// non-<see cref="Base"/> value reads as null and the caller skips it.</summary>
   public Base? ReadV2Level(Base host) => (host["level"] ?? host["@level"]) as Base;
 
-  /// <summary>Reads an untyped numeric member (level elevation, material ior). The deserializer only ever
-  /// yields double or long, so anything else — including null — means the value is absent or unusable.</summary>
+  public Base? ReadV2DisplayStyle(Base host) => (host["displayStyle"] ?? host["@displayStyle"]) as Base;
+
+  /// <summary>Reads a dynamic (untyped) JSON number from the given <paramref name="host"/></summary>
   public double? ReadDouble(Base host, string key) =>
     host[key] switch
     {
@@ -131,6 +131,19 @@ internal sealed class ArtifactHelper
       long l => l,
       _ => null,
     };
+
+  /// <summary>Reads a packed ARGB colour off an untyped member. The deserializer only yields integral JSON
+  /// as long, so anything else — including null — means no colour was authored.</summary>
+  public int? ReadArgb(Base host, string key)
+  {
+    // Accept both spellings of a 32-bit ARGB: the signed int form Color.ToArgb() produces, and the unsigned
+    // form a producer may have written instead. Anything outside that range is not a colour.
+    if (host[key] is not long l || l < int.MinValue || l > uint.MaxValue)
+    {
+      return null;
+    }
+    return unchecked((int)l); // the wrap reinterprets an unsigned ARGB as the signed int the bundle stores
+  }
 
   /// <summary>A detached list may sit under the typed key or the `@`-prefixed dynamic key; takes the first
   /// non-empty one.</summary>
@@ -168,24 +181,7 @@ internal sealed class ArtifactHelper
       _ => null,
     };
 
+  [Pure]
   public double[] Flatten(Matrix4x4 m) =>
-    new[]
-    {
-      m.M11,
-      m.M12,
-      m.M13,
-      m.M14,
-      m.M21,
-      m.M22,
-      m.M23,
-      m.M24,
-      m.M31,
-      m.M32,
-      m.M33,
-      m.M34,
-      m.M41,
-      m.M42,
-      m.M43,
-      m.M44,
-    };
+    [m.M11, m.M12, m.M13, m.M14, m.M21, m.M22, m.M23, m.M24, m.M31, m.M32, m.M33, m.M34, m.M41, m.M42, m.M43, m.M44];
 }

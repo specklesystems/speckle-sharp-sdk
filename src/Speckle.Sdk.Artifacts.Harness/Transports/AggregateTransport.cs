@@ -28,7 +28,7 @@ internal sealed class AggregateTransport(
     set
     {
       _cancellationToken = value;
-      // Children read their own token, so storing it here alone would silently disable cancellation.
+      // Children read their own token; storing it here alone would silently disable cancellation.
       foreach (var t in readTransports.Concat(writeTransports).Distinct())
       {
         t.CancellationToken = value;

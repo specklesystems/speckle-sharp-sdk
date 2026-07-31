@@ -39,6 +39,9 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   // geometry appId → material embedded on the mesh. The only source of materials on a v2 graph.
   private readonly Dictionary<string, RenderMaterial> _embeddedMaterialByGeom = new(StringComparer.Ordinal);
 
+  // distinct argb seen — AddColor interns, so this only keeps _stats.Colors honest.
+  private readonly HashSet<int> _seenColorArgb = new();
+
   // synthetic collection K by cumulative property path ("Level 1/Walls") — dedup + parent-chain building.
   private readonly Dictionary<string, int> _v2CollByPath = new(StringComparer.Ordinal);
 
@@ -197,6 +200,7 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
           {
             _embeddedMaterialByGeom.TryAdd(gAppId, rm);
           }
+          EmitDisplayStyleColor(item, gAppId);
         }
       }
 
@@ -217,6 +221,7 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         {
           _embeddedMaterialByGeom.TryAdd(appId, rm);
         }
+        EmitDisplayStyleColor(obj, appId);
       }
     }
 
@@ -322,6 +327,27 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     );
     _stats.CameraViews++;
     return true;
+  }
+
+  // ── colours ─────────────────────────────────────────────────────────────────────────
+
+  // v2 attached a DisplayStyle to the geometry itself; its colour is the closest v4 equivalent (HAS_COLOR).
+  // linetype / lineweight / name have no v4 equivalent and are dropped. An absent colour emits nothing —
+  // the deleted class's LightGray field default cannot apply to the LegacyV2 the style now deserializes into.
+  private void EmitDisplayStyleColor(Base geometry, string geomAppId)
+  {
+    if (helper.ReadV2DisplayStyle(geometry) is not { } style || helper.ReadArgb(style, "color") is not { } argb)
+    {
+      return;
+    }
+
+    var colK = pipeline.AddColor(argb); // interned by argb, so repeats are free
+    if (_seenColorArgb.Add(argb))
+    {
+      _stats.Colors++;
+    }
+    pipeline.HasColor(pipeline.InternGeometryId(geomAppId), colK);
+    _stats.HasColorEdges++;
   }
 
   // ── materials ───────────────────────────────────────────────────────────────────────
