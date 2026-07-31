@@ -8,6 +8,7 @@ using Speckle.Objects.Other;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.Instances;
+using Speckle.Sdk.Models.Proxies;
 
 namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
@@ -57,6 +58,8 @@ internal sealed class ArtifactHelper
     rmp.applicationId ?? rmp.value.applicationId ?? "mat:" + rmp.value.diffuse.ToString(CultureInfo.InvariantCulture);
 
   public string LevelKey(Base lvl, string? name) => lvl.applicationId ?? "lvl:" + (name ?? lvl.id);
+
+  public string GroupKey(GroupProxy gp) => gp.applicationId ?? "grp:" + gp.id;
 
   public string CollectionSubtype(Collection col)
   {

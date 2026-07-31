@@ -123,6 +123,41 @@ public sealed class EnvelopeWriterTests : IDisposable
     File.Exists(Path.Combine(_dir, "model.envelope.camera_views.parquet")).Should().BeFalse();
   }
 
+  // Groups overlap (unlike single-valued IN_COLLECTION) and migrate flat — def_ref NULL is asserted so
+  // deriving a parent chain later has to be a deliberate change.
+  [Fact]
+  public void WritesGroupContainers_OverlappingMembership_RoundTrips()
+  {
+    using var scheduler = new ParquetWriteScheduler();
+    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
+    {
+      w.AddNode(0, NodeKind.Container, "Group A", null, null, null, "Group", null, null, null, null, null, null, null);
+      // Unnamed Rhino group — a null name must not be back-filled.
+      w.AddNode(1, NodeKind.Container, null, null, null, null, "Group", null, null, null, null, null, null, null);
+
+      w.AddRelation(RelKind.InGroup, 100, 0, 0);
+      w.AddRelation(RelKind.InGroup, 101, 0, 0);
+      w.AddRelation(RelKind.InGroup, 101, 1, 0); // 101 is in both groups
+
+      w.Complete();
+    }
+    scheduler.CompleteAndWait();
+
+    using var db = new DuckDBConnection("Data Source=:memory:");
+    db.Open();
+    View(db, "relations");
+    View(db, "nodes");
+
+    Scalar(db, $"SELECT count(*) FROM nodes WHERE kind = {NodeKind.Container} AND subtype = 'Group'").Should().Be(2L);
+    Scalar(db, $"SELECT count(*) FROM nodes WHERE kind = {NodeKind.Container} AND def_ref IS NOT NULL").Should().Be(0L);
+    Scalar(db, "SELECT count(*) FROM nodes WHERE subtype = 'Group' AND name IS NULL").Should().Be(1L);
+
+    Scalar(db, $"SELECT count(*) FROM relations WHERE rel = {RelKind.InGroup}").Should().Be(3L);
+    Scalar(db, $"SELECT count(*) FROM relations WHERE rel = {RelKind.InGroup} AND src = 101").Should().Be(2L);
+    // ord carries nothing for IN_GROUP (rel_types.ord_semantics IS NULL)
+    Scalar(db, $"SELECT count(*) FROM relations WHERE rel = {RelKind.InGroup} AND ord <> 0").Should().Be(0L);
+  }
+
   [Fact]
   public void WritesCameraViews_RoundTrips()
   {

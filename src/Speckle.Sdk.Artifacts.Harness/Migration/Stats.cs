@@ -17,6 +17,8 @@ internal sealed class Stats
   public int OnLevelEdges;
   public int Collections;
   public int InCollectionEdges;
+  public int Groups;
+  public int InGroupEdges;
   public int DefinitionGeometries;
   public int DefinitionInstances;
   public int DefinesInstanceEdges;
@@ -35,15 +37,16 @@ internal sealed class Stats
   public int SkippedMaterial;
   public int SkippedColor;
   public int SkippedLevel;
-  public int SkippedDangling => SkippedDefines + SkippedMaterial + SkippedColor + SkippedLevel;
+  public int SkippedGroup;
+  public int SkippedDangling => SkippedDefines + SkippedMaterial + SkippedColor + SkippedLevel + SkippedGroup;
   public readonly List<string> Notes = new();
 
   public override string ToString() =>
     $"""
       objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})
       edges: DISPLAY={DisplayEdges} DISPLAY_INSTANCE={DisplayInstanceEdges} SUBELEMENT={SubelementEdges} SOLID={Solids} (defSolid={DefinitionSolids})
-             DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges}
-      nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections} CAMERA_VIEW={CameraViews}
-      skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel})
+             DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges} IN_GROUP={InGroupEdges}
+      nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections} GROUP={Groups} CAMERA_VIEW={CameraViews}
+      skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel} IN_GROUP={SkippedGroup})
       """;
 }
