@@ -103,12 +103,17 @@ public sealed class EnvelopeWriter : IDisposable
   private string? _referencePointKind;
   private string? _referencePointOffset;
 
-  public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
+  // meta.produced_by: the producing host-app slug (e.g. "rhino", "revit") — NOT a writer class name; consumers
+  // (e.g. the SketchUp receiver) branch on it to detect same-app round-trips. Null = un-migrated producer fallback.
+  private readonly string? _producedBy;
+
+  public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler, string? producedBy = null)
   {
     Directory.CreateDirectory(outputDir);
     OutputDir = outputDir;
     BaseName = baseName;
     _scheduler = scheduler;
+    _producedBy = producedBy;
 
     _relations = new ParquetTableWriter(P("relations.parquet"), SchemaOf(SpecSchemas.Relations), scheduler);
     _nodes = new ParquetTableWriter(P("nodes.parquet"), SchemaOf(SpecSchemas.Nodes), scheduler);
@@ -227,7 +232,12 @@ public sealed class EnvelopeWriter : IDisposable
       new ParquetSchema(I("schema_version"), S("produced_by"), S("reference_point_kind"), S("reference_point_offset")),
       _scheduler
     );
-    meta.AddRow(SpecBundle.SchemaVersion, "Speckle.Sdk EnvelopeWriter", _referencePointKind, _referencePointOffset);
+    meta.AddRow(
+      SpecBundle.SchemaVersion,
+      _producedBy ?? "Speckle.Sdk EnvelopeWriter",
+      _referencePointKind,
+      _referencePointOffset
+    );
   }
 
   // Self-describing catalog (SOT §6): the rel/kind vocabulary, written once from the
