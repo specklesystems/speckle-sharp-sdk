@@ -7,6 +7,7 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;
+using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Sdk.Artifacts.Harness.Migration;
@@ -101,13 +102,12 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
 
     EmitEmbeddedMaterials();
+    EmitSceneView();
 
     _stats.Geometries = _seenGeometryAppIds.Count;
     pipeline.Complete();
     return _stats;
   }
-
-  // ── hierarchy edges ─────────────────────────────────────────────────────────────────
 
   private void EmitHierarchyEdge(TraversalContext tc, int objK)
   {
@@ -165,7 +165,11 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     _stats.InCollectionEdges++;
   }
 
-  // ── object emission ─────────────────────────────────────────────────────────────────
+  private void EmitSceneView()
+  {
+    List<SceneViewKey> keys = _stats.InCollectionEdges > 0 ? [SceneViewKey.Rel(RelKind.InCollection)] : [];
+    pipeline.AddDefaultSceneView(keys);
+  }
 
   private int EmitObject(Base obj)
   {
@@ -329,8 +333,6 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     return true;
   }
 
-  // ── colours ─────────────────────────────────────────────────────────────────────────
-
   // v2 attached a DisplayStyle to the geometry itself; its colour is the closest v4 equivalent (HAS_COLOR).
   // linetype / lineweight / name have no v4 equivalent and are dropped. An absent colour emits nothing —
   // the deleted class's LightGray field default cannot apply to the LegacyV2 the style now deserializes into.
@@ -349,8 +351,6 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     pipeline.HasColor(pipeline.InternGeometryId(geomAppId), colK);
     _stats.HasColorEdges++;
   }
-
-  // ── materials ───────────────────────────────────────────────────────────────────────
 
   // Mints one MATERIAL node per distinct embedded material and binds it to the meshes carrying it. Unlike the
   // proxy path there is no placeholder rule — an embedded black is an explicit assignment, not the CAD sentinel.

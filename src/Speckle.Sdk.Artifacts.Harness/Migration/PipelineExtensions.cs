@@ -3,11 +3,20 @@ using Speckle.Objects.Geometry;
 using Speckle.Objects.Primitive;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Sdk.Artifacts.Harness.Migration;
 
 internal static class PipelineExtensions
 {
+  public static void AddDefaultSceneView(this ObjectsArtifactPipeline pipeline, IReadOnlyList<SceneViewKey> keys)
+  {
+    if (keys.Count > 0)
+    {
+      pipeline.AddSceneView(new SceneView(0, "Default", IsDefault: true, keys));
+    }
+  }
+
   public static int? AddGeometryMigrated(this ObjectsArtifactPipeline pipeline, string appId, Base geometry)
   {
     if (geometry is Arc a)

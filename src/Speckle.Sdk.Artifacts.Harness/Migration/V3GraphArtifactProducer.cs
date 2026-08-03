@@ -7,6 +7,7 @@ using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;
 using Speckle.Sdk.Models.Instances;
 using Speckle.Sdk.Models.Proxies;
+using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Sdk.Artifacts.Harness.Migration;
@@ -85,13 +86,12 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
     EmitProxies(root, layerGeomKeys, layerDepth);
     EmitCameraViews(root);
+    EmitSceneView();
 
     _stats.Geometries = _seenGeometryAppIds.Count;
     pipeline.Complete();
     return _stats;
   }
-
-  // ── hierarchy edges ─────────────────────────────────────────────────────────────────
 
   // Every atomic object belongs to its nearest ancestor collection (IN_COLLECTION), regardless of what sits
   // between them. If an object host (e.g. a DataObject carrying `elements`) is one of those in-between nodes,
@@ -119,8 +119,6 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       // keep walking up to reach the enclosing collection
     }
   }
-
-  // ── object emission ─────────────────────────────────────────────────────────────────
 
   private int EmitObject(Base obj)
   {
@@ -315,8 +313,6 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       throw new InvalidOperationException($"Malformed solid {objAppId}", ex);
     }
   }
-
-  // ── proxy / value-node emission ─────────────────────────────────────────────────────
 
   private void EmitProxies(
     Base root,
@@ -568,8 +564,6 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
   }
 
-  // ── layer geometry resolution (ByLayer material/colour) ─────────────────────────────
-
   // collection appId → the display geometry of every object beneath it, with each collection's depth — so a
   // ByLayer proxy (which references a layer) can bind to that layer's meshes.
   private Dictionary<string, List<string>> BuildLayerGeomKeys(Base root, out Dictionary<string, int> layerDepth)
@@ -613,8 +607,6 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       }
     }
   }
-
-  // ── camera views ────────────────────────────────────────────────────────────────────
 
   // Root-level viewpoints; the traversal only descends `elements`, so they're read directly.
   // A v3 Camera has no target/fov/lens/ortho data, so those columns stay null.
@@ -660,7 +652,19 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
   }
 
-  // ── helpers ─────────────────────────────────────────────────────────────────────────
+  private void EmitSceneView()
+  {
+    var keys = new List<SceneViewKey>();
+    if (_stats.InCollectionEdges > 0)
+    {
+      keys.Add(SceneViewKey.Rel(RelKind.InCollection));
+      if (_stats.OnLevelEdges > 0)
+      {
+        keys.Add(SceneViewKey.Rel(RelKind.OnLevel));
+      }
+    }
+    pipeline.AddDefaultSceneView(keys);
+  }
 
   private HashSet<string> GetDefinitionAppIds(Base root)
   {
