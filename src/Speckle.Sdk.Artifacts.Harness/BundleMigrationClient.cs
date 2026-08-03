@@ -51,10 +51,7 @@ internal sealed class BundleMigrationClient(ILogger<BundleMigrationClient> logge
     CancellationToken ct
   )
   {
-    var url = new Uri(
-      server,
-      $"/api/v1/projects/{projectId}/models/{modelId}/versions/{versionId}/migration/uploads"
-    );
+    var url = new Uri(server, $"/api/v1/projects/{projectId}/models/{modelId}/versions/{versionId}/migration/uploads");
 
     using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
     http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -170,9 +167,7 @@ internal sealed class BundleMigrationClient(ILogger<BundleMigrationClient> logge
     if (!resp.IsSuccessStatusCode)
     {
       var errBody = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-      throw new InvalidOperationException(
-        $"PUT {target.FileName} failed ({(int)resp.StatusCode}): {errBody}"
-      );
+      throw new InvalidOperationException($"PUT {target.FileName} failed ({(int)resp.StatusCode}): {errBody}");
     }
     logger.LogInformation("PUT {FileName} {Bytes} bytes", target.FileName, stream.Length);
   }
