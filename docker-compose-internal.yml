@@ -13,8 +13,6 @@ services:
       POSTGRES_PASSWORD: speckle
     volumes:
       - ./.volumes/postgres-data:/var/lib/postgresql
-      - ./setup/db/10-docker_postgres_init.sql:/docker-entrypoint-initdb.d/10-docker_postgres_init.sql
-      - ./setup/db/11-docker_postgres_authentik_init.sql:/docker-entrypoint-initdb.d/11-docker_postgres_authentik_init.sql
     command: postgres -c max_prepared_transactions=150
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U speckle -d speckle"]

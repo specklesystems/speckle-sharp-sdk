@@ -48,6 +48,15 @@ jobs:
         env:
           SPECKLE_SERVER_IMAGE: ${{ env.SPECKLE_SERVER_IMAGE }}
 
+      # `up --wait` only reports that a container is unhealthy, never its output, so a
+      # dependency that dies on startup is otherwise undiagnosable from the run log.
+      - name: 🐛 Dump container state
+        if: failure()
+        run: |
+          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" ps -a
+          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" logs --no-color --tail=200
+        working-directory: ${{ env.SERVER_DIR }}
+
       - name: 📦 Restore .NET Solution
         run: dotnet restore ${{ env.SOLUTION }} --locked-mode
         working-directory: ${{ env.CLIENT_DIR }}
