@@ -5,6 +5,7 @@ using Speckle.Sdk.Artifacts.Harness;
 using Speckle.Sdk.Artifacts.Harness.Logging;
 using Speckle.Sdk.Artifacts.Harness.Migration;
 using Speckle.Sdk.Logging;
+using Speckle.Sdk.Models;
 
 // ── CLI ───────────────────────────────────────────────────────────────────────────────
 // Subcommands (run with --help for full usage):
@@ -20,7 +21,14 @@ var services = new ServiceCollection();
 const string SLUG = "artefact-harness";
 
 // ── init the Speckle type registry (so the deserializer yields TYPED proxies/meshes) ──
-services.AddSpeckleSdk(new("ArtefactHarness", SLUG), "v3", typeof(Mesh).Assembly);
+// SpeckleVersion is passed explicitly: it lands in every produced bundle's meta, and the SDK's default is the
+// truncated 4-part assembly version — the informational version carries the real semver (pre-release label included).
+services.AddSpeckleSdk(
+  new("ArtefactHarness", SLUG),
+  "v3",
+  LoggingConfiguration.GetPackageVersion(typeof(Base).Assembly),
+  typeof(Mesh).Assembly
+);
 
 // AddSpeckleSdk wires the logging infrastructure but no output provider; add a console sink here so the
 // harness' log output is visible (harness-only — the SDK is left untouched).

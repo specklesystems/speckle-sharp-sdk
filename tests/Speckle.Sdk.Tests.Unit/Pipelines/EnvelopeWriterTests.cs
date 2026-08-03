@@ -117,6 +117,14 @@ public sealed class EnvelopeWriterTests : IDisposable
     // retired ids (IN_NETWORK 15, IN_SPACE 13, …) are absent from the catalog.
     Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 18, 19, 20)").Should().Be(0L);
     Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
+    // No SetProducer call ⇒ the provenance columns are NULL (the pre-existing connector path is unaffected).
+    Scalar(
+        db,
+        @"SELECT count(*) FROM meta WHERE host_application_slug IS NULL AND host_application_version IS NULL
+            AND sdk_version IS NULL AND migrated_from_version IS NULL"
+      )
+      .Should()
+      .Be(1L);
 
     // No scene views / camera views authored ⇒ the tables are absent (consumer feature-detects by file presence).
     File.Exists(Path.Combine(_dir, "model.envelope.scene_views.parquet")).Should().BeFalse();
@@ -156,6 +164,30 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, $"SELECT count(*) FROM relations WHERE rel = {RelKind.InGroup} AND src = 101").Should().Be(2L);
     // ord carries nothing for IN_GROUP (rel_types.ord_semantics IS NULL)
     Scalar(db, $"SELECT count(*) FROM relations WHERE rel = {RelKind.InGroup} AND ord <> 0").Should().Be(0L);
+  }
+
+  [Fact]
+  public void WritesProducerProvenance_RoundTrips()
+  {
+    using var scheduler = new ParquetWriteScheduler();
+    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
+    {
+      w.SetProducer("artefact-harness", "v3", "3.1.0-alpha.1", 2);
+      w.Complete();
+    }
+    scheduler.CompleteAndWait();
+
+    using var db = new DuckDBConnection("Data Source=:memory:");
+    db.Open();
+    View(db, "meta");
+
+    Scalar(db, "SELECT host_application_slug FROM meta").Should().Be("artefact-harness");
+    Scalar(db, "SELECT host_application_version FROM meta").Should().Be("v3");
+    Scalar(db, "SELECT sdk_version FROM meta").Should().Be("3.1.0-alpha.1");
+    Scalar(db, "SELECT migrated_from_version FROM meta").Should().Be(2);
+    // Provenance is additive — the catalog columns are untouched.
+    Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
+    Scalar(db, "SELECT produced_by FROM meta").Should().Be("Speckle.Sdk EnvelopeWriter");
   }
 
   [Fact]

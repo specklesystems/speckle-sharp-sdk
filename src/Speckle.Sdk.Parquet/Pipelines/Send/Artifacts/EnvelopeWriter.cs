@@ -69,7 +69,11 @@ public sealed record CameraView(
 ///   {base}.envelope.nodes.parquet(id, kind, name, def_ref,     -- shared value-entities; `subtype` is the
 ///         transform, units, subtype, argb, opacity,                CONTAINER discriminator (Model/Collection/…)
 ///         metalness, roughness, emissive, ior, elevation)
-///   {base}.envelope.{meta,rel_types,node_kinds}.parquet        -- self-describing catalog (SOT §6)
+///   {base}.envelope.{rel_types,node_kinds}.parquet             -- self-describing catalog (SOT §6)
+///   {base}.envelope.meta.parquet(schema_version,               -- catalog + provenance: who produced the
+///         produced_by, reference_point_kind|_offset,              bundle and, when migrated, from which
+///         host_application_slug|_version, sdk_version,            graph vintage
+///         migrated_from_version)
 ///   {base}.envelope.scene_views.parquet(view, name,           -- producer-authored grouping projections
 ///         is_default, ord, source, ref)                          (SOT §8); absent if none
 ///   {base}.envelope.camera_views.parquet(view, name,          -- named camera viewpoints
@@ -102,6 +106,13 @@ public sealed class EnvelopeWriter : IDisposable
   // display units (the vector subtracted). Both null = internal origin (no re-basing). See SetReferencePoint.
   private string? _referencePointKind;
   private string? _referencePointOffset;
+
+  // Producer provenance recorded in meta: which connector/tool + SDK build wrote this bundle, and (for a
+  // migration) the vintage of the source graph. All null unless set → NULL columns. See SetProducer.
+  private string? _hostApplicationSlug;
+  private string? _hostApplicationVersion;
+  private string? _sdkVersion;
+  private int? _migratedFromVersion;
 
   public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
   {
@@ -191,6 +202,26 @@ public sealed class EnvelopeWriter : IDisposable
     _referencePointOffset = offset;
   }
 
+  /// <summary>
+  /// Records the producer of this bundle in <c>meta</c> (written at <see cref="Complete"/>).
+  /// <paramref name="hostApplicationSlug"/>/<paramref name="hostApplicationVersion"/> identify the connector or
+  /// tool (e.g. <c>revit</c>/<c>2024</c>, <c>artefact-harness</c>/<c>v3</c>);
+  /// <paramref name="migratedFromVersion"/> is 2 or 3 when the bundle was migrated from a graph of that vintage,
+  /// null for a native send. Call before <see cref="Complete"/>.
+  /// </summary>
+  public void SetProducer(
+    string? hostApplicationSlug,
+    string? hostApplicationVersion,
+    string? sdkVersion,
+    int? migratedFromVersion
+  )
+  {
+    _hostApplicationSlug = hostApplicationSlug;
+    _hostApplicationVersion = hostApplicationVersion;
+    _sdkVersion = sdkVersion;
+    _migratedFromVersion = migratedFromVersion;
+  }
+
   /// <summary>Flushes the parquet tables and writes the attach manifest.</summary>
   public void Complete()
   {
@@ -217,17 +248,36 @@ public sealed class EnvelopeWriter : IDisposable
     SafeDispose(_nodes);
   }
 
-  // meta (SOT §6): schema version + producer + the ENG-8947 reference-point provision. Written at Complete()
-  // (not eagerly in the ctor) so producers can record an applied reference-point re-basing via SetReferencePoint
-  // first. reference_point_kind/_offset are null unless set → NULL columns (readers that ignore them are unaffected).
+  // meta (SOT §6): schema version + producer + the ENG-8947 reference-point provision + producer provenance.
+  // Written at Complete() (not eagerly in the ctor) so producers can record a reference-point re-basing via
+  // SetReferencePoint and their identity via SetProducer first. Every column past produced_by is null unless
+  // set → NULL columns (readers that ignore them are unaffected).
   private void WriteMeta()
   {
     using var meta = new ParquetTableWriter(
       P("meta.parquet"),
-      new ParquetSchema(I("schema_version"), S("produced_by"), S("reference_point_kind"), S("reference_point_offset")),
+      new ParquetSchema(
+        I("schema_version"),
+        S("produced_by"),
+        S("reference_point_kind"),
+        S("reference_point_offset"),
+        S("host_application_slug"),
+        S("host_application_version"),
+        S("sdk_version"),
+        NI("migrated_from_version")
+      ),
       _scheduler
     );
-    meta.AddRow(SpecBundle.SchemaVersion, "Speckle.Sdk EnvelopeWriter", _referencePointKind, _referencePointOffset);
+    meta.AddRow(
+      SpecBundle.SchemaVersion,
+      "Speckle.Sdk EnvelopeWriter",
+      _referencePointKind,
+      _referencePointOffset,
+      _hostApplicationSlug,
+      _hostApplicationVersion,
+      _sdkVersion,
+      _migratedFromVersion
+    );
   }
 
   // Self-describing catalog (SOT §6): the rel/kind vocabulary, written once from the
@@ -352,6 +402,8 @@ public sealed class EnvelopeWriter : IDisposable
     };
 
   private static DataField I(string name) => new DataField<int>(name);
+
+  private static DataField NI(string name) => new DataField<int?>(name);
 
   private static DataField S(string name) => new DataField<string>(name);
 
