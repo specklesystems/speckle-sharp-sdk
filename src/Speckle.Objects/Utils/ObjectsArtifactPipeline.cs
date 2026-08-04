@@ -554,14 +554,15 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// </summary>
   /// <param name="producer">Producer info</param>
   /// <param name="migratedFromSchemaVersion">The original schema version for model versions migrated from older schema version. <see langword="null"/> for native authored versions</param>
-  public void SetProducer(ISpeckleApplication producer, int? migratedFromVersion = null)
+  /// <remarks>Required before <see cref="Complete"/> — every bundle names its producer.</remarks>
+  public void SetProducer(ISpeckleApplication producer, int? migratedFromSchemaVersion = null)
   {
     _envelopeWriter.SetProducer(
       producer.Slug,
       producer.HostApplicationVersion,
-      producer.SpeckleVersion,
       "Speckle.Sdk (.NET)",
-      migratedFromVersion
+      producer.SpeckleVersion,
+      migratedFromSchemaVersion
     );
   }
 

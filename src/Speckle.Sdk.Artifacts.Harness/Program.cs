@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Objects.Geometry;
 using Speckle.Sdk;
@@ -21,11 +22,12 @@ var services = new ServiceCollection();
 const string SLUG = "artefact-harness";
 
 // ── init the Speckle type registry (so the deserializer yields TYPED proxies/meshes) ──
-// SpeckleVersion is passed explicitly: it lands in every produced bundle's meta, and the SDK's default is the
-// truncated 4-part assembly version — the informational version carries the real semver (pre-release label included).
+// Both versions land in every produced bundle's meta (producer_version / sdk_version), so both are passed
+// explicitly as informational versions: the SDK's own default is the truncated 4-part assembly version, while
+// the informational one carries the real semver (pre-release label included).
 services.AddSpeckleSdk(
   new("ArtefactHarness", SLUG),
-  "v3",
+  LoggingConfiguration.GetPackageVersion(Assembly.GetExecutingAssembly()) ?? "unknown",
   LoggingConfiguration.GetPackageVersion(typeof(Base).Assembly),
   typeof(Mesh).Assembly
 );

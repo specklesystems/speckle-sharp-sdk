@@ -71,9 +71,9 @@ public sealed record CameraView(
 ///         metalness, roughness, emissive, ior, elevation)
 ///   {base}.envelope.{rel_types,node_kinds}.parquet             -- self-describing catalog (SOT §6)
 ///   {base}.envelope.meta.parquet(schema_version,               -- catalog + provenance: who produced the
-///         produced_by, reference_point_kind|_offset,              bundle and, when migrated, from which
-///         host_application_slug|_version, sdk_version,            graph vintage
-///         migrated_from_version)
+///         produced_by, reference_point_kind|_offset,              bundle, with which SDK, and when
+///         producer_version, sdk_name, sdk_version,                migrated, from which graph vintage
+///         migrated_from_schema_version)
 ///   {base}.envelope.scene_views.parquet(view, name,           -- producer-authored grouping projections
 ///         is_default, ord, source, ref)                          (SOT §8); absent if none
 ///   {base}.envelope.camera_views.parquet(view, name,          -- named camera viewpoints
@@ -108,12 +108,12 @@ public sealed class EnvelopeWriter : IDisposable
   private string? _referencePointOffset;
 
   // Producer provenance recorded in meta: which connector/tool + SDK build wrote this bundle, and (for a
-  // migration) the vintage of the source graph. All null unless set → NULL columns. See SetProducer.
-
-  private string? _producerSlug;
+  // migration) the vintage of the source graph. SetProducer is mandatory, so a null _producedBy at
+  // Complete() means the producer never identified itself. See SetProducer.
+  private string? _producedBy;
   private string? _producerVersion;
-  private string? _sdkVersion;
   private string? _sdkName;
+  private string? _sdkVersion;
   private int? _migratedFromSchemaVersion;
 
   public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
@@ -209,19 +209,22 @@ public sealed class EnvelopeWriter : IDisposable
   /// </summary>
   /// <param name="producedBy">slug of the producer of this version</param>
   /// <param name="producerVersion">version of the producer</param>
+  /// <param name="sdkName">name of the SDK the producer authored this version with</param>
+  /// <param name="sdkVersion">version of that SDK</param>
   /// <param name="migratedFromSchemaVersion">The original schema version for model versions migrated from older schema version. <see langword="null"/> for native authored versions</param>
+  /// <remarks>Required before <see cref="Complete"/> — every bundle names its producer.</remarks>
   public void SetProducer(
     string producedBy,
     string producerVersion,
-    string sdkVersion,
     string sdkName,
+    string sdkVersion,
     int? migratedFromSchemaVersion = null
   )
   {
-    _producerSlug = producedBy;
+    _producedBy = producedBy;
     _producerVersion = producerVersion;
-    _sdkVersion = sdkVersion;
     _sdkName = sdkName;
+    _sdkVersion = sdkVersion;
     _migratedFromSchemaVersion = migratedFromSchemaVersion;
   }
 
@@ -231,6 +234,10 @@ public sealed class EnvelopeWriter : IDisposable
     if (_completed)
     {
       return;
+    }
+    if (_producedBy is null)
+    {
+      throw new InvalidOperationException("SetProducer must be called before Complete() — meta names the producer.");
     }
     _completed = true;
     _relations.Complete();
@@ -251,10 +258,10 @@ public sealed class EnvelopeWriter : IDisposable
     SafeDispose(_nodes);
   }
 
-  // meta (SOT §6): schema version + producer + the ENG-8947 reference-point provision + producer provenance.
-  // Written at Complete() (not eagerly in the ctor) so producers can record a reference-point re-basing via
-  // SetReferencePoint and their identity via SetProducer first. Every column past produced_by is null unless
-  // set → NULL columns (readers that ignore them are unaffected).
+  // meta (SOT §6): schema version + producer provenance + the ENG-8947 reference-point provision. Written at
+  // Complete() (not eagerly in the ctor) so producers can record their identity via SetProducer and a
+  // reference-point re-basing via SetReferencePoint first. Only reference_point_* and
+  // migrated_from_schema_version are conditional → NULL columns (readers that ignore them are unaffected).
   private void WriteMeta()
   {
     using var meta = new ParquetTableWriter(
@@ -273,10 +280,9 @@ public sealed class EnvelopeWriter : IDisposable
     );
     meta.AddRow(
       SpecBundle.SchemaVersion,
-      "Speckle.Sdk EnvelopeWriter",
+      _producedBy,
       _referencePointKind,
       _referencePointOffset,
-      _producerSlug,
       _producerVersion,
       _sdkName,
       _sdkVersion,

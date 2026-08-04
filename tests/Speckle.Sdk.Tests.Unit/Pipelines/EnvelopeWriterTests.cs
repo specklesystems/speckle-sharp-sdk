@@ -1,4 +1,4 @@
-#if NET8_0_OR_GREATER
+﻿#if NET8_0_OR_GREATER
 using AwesomeAssertions;
 using DuckDB.NET.Data;
 using Speckle.Sdk.Pipelines;
@@ -18,7 +18,7 @@ public sealed class EnvelopeWriterTests : IDisposable
   public void WritesRelationsAndNodes_RoundTrips()
   {
     using var scheduler = new ParquetWriteScheduler();
-    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
+    using (var w = NewWriter(scheduler))
     {
       w.AddNode(0, NodeKind.Definition, "wall-def", null, null, null, null, null, null, null, null, null, null, null);
       w.AddNode(
@@ -96,7 +96,8 @@ public sealed class EnvelopeWriterTests : IDisposable
     // DEFINES (4) is now geometry-only; DEFINES_INSTANCE (9) carries node→node nesting. rel fixes dst namespace.
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.Defines}").Should().Be("geometry");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("node");
-    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry");
+    // HAS_MATERIAL src broadened to geometry|instance (ENG-8849) — a material can hang off an instance too.
+    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry|instance");
     // IN_MODEL (11) → CONTAINER node; the default-projection top key (SOT §8).
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("IN_MODEL");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("node");
@@ -117,14 +118,6 @@ public sealed class EnvelopeWriterTests : IDisposable
     // retired ids (IN_NETWORK 15, IN_SPACE 13, …) are absent from the catalog.
     Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 18, 19, 20)").Should().Be(0L);
     Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
-    // No SetProducer call ⇒ the provenance columns are NULL (the pre-existing connector path is unaffected).
-    Scalar(
-        db,
-        @"SELECT count(*) FROM meta WHERE host_application_slug IS NULL AND host_application_version IS NULL
-            AND sdk_version IS NULL AND migrated_from_version IS NULL"
-      )
-      .Should()
-      .Be(1L);
 
     // No scene views / camera views authored ⇒ the tables are absent (consumer feature-detects by file presence).
     File.Exists(Path.Combine(_dir, "model.envelope.scene_views.parquet")).Should().BeFalse();
@@ -137,7 +130,7 @@ public sealed class EnvelopeWriterTests : IDisposable
   public void WritesGroupContainers_OverlappingMembership_RoundTrips()
   {
     using var scheduler = new ParquetWriteScheduler();
-    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
+    using (var w = NewWriter(scheduler))
     {
       w.AddNode(0, NodeKind.Container, "Group A", null, null, null, "Group", null, null, null, null, null, null, null);
       // Unnamed Rhino group — a null name must not be back-filled.
@@ -166,13 +159,15 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, $"SELECT count(*) FROM relations WHERE rel = {RelKind.InGroup} AND ord <> 0").Should().Be(0L);
   }
 
+  // Every column is asserted BY NAME: the row is positional, so this is what catches a value landing in the
+  // neighbouring column.
   [Fact]
   public void WritesProducerProvenance_RoundTrips()
   {
     using var scheduler = new ParquetWriteScheduler();
     using (var w = new EnvelopeWriter(_dir, "model", scheduler))
     {
-      w.SetProducer("artefact-harness", "v3", "3.1.0-alpha.1", "Test project", 2);
+      w.SetProducer("artefact-harness", "3.2.0-alpha.5", "Speckle.Sdk (.NET)", "3.1.0-alpha.1", 2);
       w.Complete();
     }
     scheduler.CompleteAndWait();
@@ -182,20 +177,54 @@ public sealed class EnvelopeWriterTests : IDisposable
     View(db, "meta");
 
     Scalar(db, "SELECT produced_by FROM meta").Should().Be("artefact-harness");
-    Scalar(db, "SELECT producer_version FROM meta").Should().Be("v3");
+    Scalar(db, "SELECT producer_version FROM meta").Should().Be("3.2.0-alpha.5");
+    Scalar(db, "SELECT sdk_name FROM meta").Should().Be("Speckle.Sdk (.NET)");
     Scalar(db, "SELECT sdk_version FROM meta").Should().Be("3.1.0-alpha.1");
-    Scalar(db, "SELECT sdk_name FROM meta").Should().Be("Test project");
-    Scalar(db, "SELECT migrated_from_version FROM meta").Should().Be(2);
-    // Provenance is additive — the catalog columns are untouched.
+    Scalar(db, "SELECT migrated_from_schema_version FROM meta").Should().Be(2);
+    // Provenance is additive — the catalog column is untouched.
     Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
-    Scalar(db, "SELECT produced_by FROM meta").Should().Be("Speckle.Sdk EnvelopeWriter");
+  }
+
+  // A native send leaves the migration vintage NULL; the reference point is its own opt-in.
+  [Fact]
+  public void WritesProducerProvenance_NativeSend_LeavesMigratedFromNull()
+  {
+    using var scheduler = new ParquetWriteScheduler();
+    using (var w = NewWriter(scheduler))
+    {
+      w.Complete();
+    }
+    scheduler.CompleteAndWait();
+
+    using var db = new DuckDBConnection("Data Source=:memory:");
+    db.Open();
+    View(db, "meta");
+
+    Scalar(
+        db,
+        @"SELECT count(*) FROM meta WHERE migrated_from_schema_version IS NULL
+            AND reference_point_kind IS NULL AND reference_point_offset IS NULL"
+      )
+      .Should()
+      .Be(1L);
+  }
+
+  [Fact]
+  public void Complete_ThrowsWhenProducerNotSet()
+  {
+    using var scheduler = new ParquetWriteScheduler();
+    using var w = new EnvelopeWriter(_dir, "model", scheduler);
+
+    var act = () => w.Complete();
+
+    act.Should().Throw<InvalidOperationException>().WithMessage("*SetProducer*");
   }
 
   [Fact]
   public void WritesCameraViews_RoundTrips()
   {
     using var scheduler = new ParquetWriteScheduler();
-    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
+    using (var w = NewWriter(scheduler))
     {
       // A perspective named view (Rhino-style: target + lens) and an ortho one (SketchUp-style: ortho_height).
       w.AddCameraView(
@@ -271,7 +300,7 @@ public sealed class EnvelopeWriterTests : IDisposable
   public void WritesSceneViews_RoundTrips()
   {
     using var scheduler = new ParquetWriteScheduler();
-    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
+    using (var w = NewWriter(scheduler))
     {
       // Revit default: IN_MODEL → ON_LEVEL → category (a rel/rel/eav stack), plus a named eav-only alternate.
       w.AddSceneView(
@@ -314,7 +343,7 @@ public sealed class EnvelopeWriterTests : IDisposable
   public void RevitDefaultProjection_PrependsModelTier_OnlyWhenMultiModel(int modelCount, long tiers, long modelAtOrd0)
   {
     using var scheduler = new ParquetWriteScheduler();
-    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
+    using (var w = NewWriter(scheduler))
     {
       w.AddSceneView(new SceneView(0, "Default", IsDefault: true, RevitDefaultKeys(modelCount)));
       w.Complete();
@@ -358,7 +387,7 @@ public sealed class EnvelopeWriterTests : IDisposable
   public void NavisDefaultProjection_GroupsBySourceModel_OnlyWhenFederated(int modelCount, long tiers, long modelAtOrd0)
   {
     using var scheduler = new ParquetWriteScheduler();
-    using (var w = new EnvelopeWriter(_dir, "model", scheduler))
+    using (var w = NewWriter(scheduler))
     {
       var keys = NavisDefaultKeys(modelCount);
       if (keys.Count > 0)
@@ -388,6 +417,14 @@ public sealed class EnvelopeWriterTests : IDisposable
   // Reference impl of the Navis rule — modelCount = pDb.getModels().Count (the appended federation members).
   private static List<SceneViewKey> NavisDefaultKeys(int modelCount) =>
     modelCount > 1 ? new List<SceneViewKey> { SceneViewKey.Rel(RelKind.InModel) } : new List<SceneViewKey>();
+
+  // Complete() requires a producer, so tests that aren't about provenance get a canonical one.
+  private EnvelopeWriter NewWriter(ParquetWriteScheduler scheduler)
+  {
+    var w = new EnvelopeWriter(_dir, "model", scheduler);
+    w.SetProducer("test-connector", "1.2.3", "Speckle.Sdk (.NET)", "3.1.0-alpha.1");
+    return w;
+  }
 
   private void View(DuckDBConnection db, string table) =>
     Exec(db, $"CREATE VIEW {table} AS SELECT * FROM read_parquet('{_dir}/model.envelope.{table}.parquet')");

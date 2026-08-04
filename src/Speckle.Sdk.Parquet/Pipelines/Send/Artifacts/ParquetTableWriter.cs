@@ -73,6 +73,15 @@ public sealed class ParquetTableWriter : IDisposable
     {
       throw new InvalidOperationException("Writer already completed.");
     }
+    // Rows are positional, so a miscount silently shifts every later column (or drops the tail) — fail here
+    // instead of deep in a column's type conversion.
+    if (values.Length != _cols.Length)
+    {
+      throw new ArgumentException(
+        $"{Path}: row has {values.Length} value(s), schema has {_cols.Length} column(s).",
+        nameof(values)
+      );
+    }
     for (var i = 0; i < _cols.Length; i++)
     {
       _cols[i].Add(values[i]);

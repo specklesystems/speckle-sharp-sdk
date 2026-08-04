@@ -3,6 +3,7 @@ using Speckle.Objects.Data;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Utils;
+using Speckle.Sdk;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 
@@ -15,6 +16,15 @@ namespace Speckle.Objects.Tests.Unit.Utils;
 /// </summary>
 public class ArtifactRoundTripTests
 {
+  // Complete() requires a producer — meta names whoever wrote the bundle.
+  private static readonly SpeckleApplication TestProducer = new()
+  {
+    HostApplication = "Test",
+    HostApplicationVersion = "1.2.3",
+    Slug = "test-connector",
+    SpeckleVersion = "3.1.0-alpha.1",
+  };
+
   [Fact]
   public async Task RoundTrip_RebuildsLayersMeshesAndMaterials()
   {
@@ -50,6 +60,7 @@ public class ArtifactRoundTripTests
           1.52
         );
         pipeline.HasMaterial(gK, matK);
+        pipeline.SetProducer(TestProducer);
         pipeline.Complete();
       }
 
@@ -104,6 +115,7 @@ public class ArtifactRoundTripTests
         );
         int solidK = pipeline.AddRawGeometry("solid-1:solid", solidBytes, "3dm");
         pipeline.Solid(objK, solidK, 0);
+        pipeline.SetProducer(TestProducer);
         pipeline.Complete();
       }
 
