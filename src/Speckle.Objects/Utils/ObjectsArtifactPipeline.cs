@@ -43,7 +43,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public ObjectsArtifactPipeline(
     string outputDir,
     string baseName,
-    SpeckleApplication producer,
+    ISpeckleApplication producer,
     ISet<string>? excludedTopLevelProperties = null
   )
   {

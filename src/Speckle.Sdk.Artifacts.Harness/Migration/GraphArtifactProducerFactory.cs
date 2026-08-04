@@ -25,7 +25,7 @@ internal sealed class GraphArtifactProducerFactory(
   public IGraphArtifactProducer Create(string outputDir, string baseName, Base root)
   {
     Directory.CreateDirectory(outputDir);
-    var pipeline = new ObjectsArtifactPipeline(outputDir, baseName);
+    var pipeline = new ObjectsArtifactPipeline(outputDir, baseName, application);
 
     var isV3 = helper.IsV3(root);
     logger.LogInformation("Detected {GraphVersion} graph [{SpeckleType}]", isV3 ? "v3" : "v2", root.speckle_type);

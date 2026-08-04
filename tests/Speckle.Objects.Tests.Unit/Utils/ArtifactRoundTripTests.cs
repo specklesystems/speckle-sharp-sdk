@@ -31,7 +31,7 @@ public class ArtifactRoundTripTests
     var dir = Path.Combine(Path.GetTempPath(), "SpeckleArtifactRoundTrip", Guid.NewGuid().ToString("N"));
     try
     {
-      using (var pipeline = new ObjectsArtifactPipeline(dir, "rt"))
+      using (var pipeline = new ObjectsArtifactPipeline(dir, "rt", TestProducer))
       {
         int collK = pipeline.AddCollection("layer-1", "Layer 1", null, "Layer");
         int objK = pipeline.InternObject("obj-1");
