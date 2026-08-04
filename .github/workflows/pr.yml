@@ -16,6 +16,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # Speckle.Sdk.Parquet compiles the spec's generated C# (BundleSpec.cs / BundleSchemas.cs / BundleCols.cs)
+      # from a sibling speckle-bundle-spec checkout one level up ($(MSBuildThisFileDirectory)../../../speckle-bundle-spec).
+      # BUNDLE_SPEC_TOKEN: fine-grained PAT with Contents:Read on specklesystems/speckle-bundle-spec —
+      # the default GITHUB_TOKEN cannot clone a second private repo.
+      - name: Checkout speckle-bundle-spec
+        uses: actions/checkout@v7
+        with:
+          repository: specklesystems/speckle-bundle-spec
+          # Pin: speckle-bundle-spec main as of 2026-08-04 (merge of spec PR #12 — BundleCols.cs codegen).
+          # Bump deliberately, together with SDK code that supports the new catalog.
+          ref: ecbbd270fae06b00ee08e1b1022a08dd3f170c8f
+          token: ${{ secrets.BUNDLE_SPEC_TOKEN }}
+          path: speckle-bundle-spec
+          persist-credentials: false
+
+      # actions/checkout cannot write outside $GITHUB_WORKSPACE, but the csproj expects the spec one
+      # level up from the SDK checkout — move it there (also keeps it out of `csharpier check .`).
+      - name: Move speckle-bundle-spec to sibling location
+        run: mv speckle-bundle-spec "$GITHUB_WORKSPACE/../speckle-bundle-spec"
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
@@ -54,12 +74,14 @@ jobs:
     with:
       docker-compose-file: "docker-compose-internal.yml"
       use-internal-image: true
-    secrets: 
+    secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      
+      BUNDLE_SPEC_TOKEN: ${{ secrets.BUNDLE_SPEC_TOKEN }}
+
   integration-test-public:
     uses: "./.github/workflows/integration-test.yml"
     with:
       docker-compose-file: "docker-compose.yml"
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      BUNDLE_SPEC_TOKEN: ${{ secrets.BUNDLE_SPEC_TOKEN }}

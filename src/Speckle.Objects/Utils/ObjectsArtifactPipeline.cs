@@ -40,10 +40,16 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   private readonly IdInterner _geometryInterner = new();
   private readonly IdInterner _nodeInterner = new();
 
-  public ObjectsArtifactPipeline(string outputDir, string baseName, ISet<string>? excludedTopLevelProperties = null)
+  public ObjectsArtifactPipeline(
+    string outputDir,
+    string baseName,
+    SpeckleApplication producer,
+    ISet<string>? excludedTopLevelProperties = null
+  )
   {
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName, _scheduler);
     _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler);
+    SetProducer(producer);
     _eavWriter = new EavWriter(outputDir, baseName, _scheduler);
     _outputDir = outputDir;
     _baseName = baseName;

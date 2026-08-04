@@ -73,7 +73,7 @@ public sealed class ObjectsArtifactReader
       bundle.Properties.TryGetValue(objK, out var props);
       props ??= new Dictionary<string, object?>();
 
-      Base built;
+      Base? built;
       if (
         rels.DisplayInstanceByObject.TryGetValue(objK, out int instNodeK)
         && nodes.TryGetValue(instNodeK, out var instNode)
@@ -84,6 +84,16 @@ public sealed class ObjectsArtifactReader
       else
       {
         built = BuildGeometryObject(appId, objK, props, bundle.Geometries, rels, options);
+      }
+
+      if (built is null)
+      {
+        // Non-geometric object (no DISPLAY edges, no accepted SOLID) — e.g. a Level/Room emitted only for its
+        // properties + ON_LEVEL/IN_ROOM edges (RevitArtifactRootObjectBuilder.EmitObject's early-return for
+        // conversions that aren't a DataObject). The non-artefact v1 path never hands these to the converter either
+        // — they travel as LevelProxy/room metadata, not tree objects — so skip instead of fabricating an
+        // empty-displayValue DataObject the v1 converter has no path for.
+        continue;
       }
 
       // place into its collection (layer); fall back to the root.
@@ -99,7 +109,7 @@ public sealed class ObjectsArtifactReader
     AttachMaterials(rels, objByGeom, bundle.ObjectAppIds, materialByNode, root);
 
     // ── instance definitions (DEFINITION nodes + DEFINES/DEFINES_INSTANCE) ────────────────────────────
-    AttachInstanceDefinitions(nodes, rels, objByGeom, bundle.ObjectAppIds, root);
+    AttachInstanceDefinitions(nodes, rels, objByGeom, bundle.ObjectAppIds, bundle.Geometries, root);
 
     // ENG-8947/8808: rebuild the reference-point transform from the bundle meta offset and lift it onto the root so
     // the v1 Revit host builder can undo/redo it (translation kinds only; the offset is in display units).
@@ -264,14 +274,28 @@ public sealed class ObjectsArtifactReader
     };
   }
 
+  // Builds an InstanceDefinitionProxy per DEFINITION node. A DEFINES member is a real object only when one
+  // independently displays that geometry — the exception, not the rule: shared block/family geometry is normally
+  // referenced ONLY via DEFINES, with no owning scene object at all (the direct-bake path never needs one either, it
+  // decodes geometry straight by index). Members without an owner are synthesized instead — a DataObject wrapping the
+  // decoded geometry, or an InstanceProxy for a DEFINES_INSTANCE nested placement — and added to the root graph so
+  // the v1 unpacker's traversal can find them by applicationId. Mirrors
+  // RhinoHostObjectArtefactBuilder.BuildDefinitions' depth-first nested-block handling.
   private static void AttachInstanceDefinitions(
     Dictionary<int, ArtefactNode> nodes,
     ArtefactRelations rels,
     Dictionary<int, int> objByGeom,
     Dictionary<int, string> objIdToApp,
-    Base root
+    Dictionary<int, ArtefactGeometry> geometries,
+    Collection root
   )
   {
+    // RevitFamilyBaker bakes definitions deepest-first (OrderByDescending(maxDepth)) so a parent can reference an
+    // already-baked child via PlaceNestedInstance — mirrors RhinoInstanceUnpacker/GrasshopperBlockPacker's send-side
+    // depth tracking. A definition reachable via multiple nesting paths takes the deepest (never bake a shared child
+    // before every parent that nests it has been accounted for).
+    var depthByDefNode = ComputeDefinitionDepths(nodes, rels);
+
     // List<object> so RootObjectUnpacker's `root[key] as List<object>` cast succeeds (see note in AttachMaterials).
     var proxies = new List<object>();
     foreach (var kv in nodes)
@@ -282,18 +306,55 @@ public sealed class ObjectsArtifactReader
       }
       int defNodeK = kv.Key;
       var members = new List<string>();
-      // DEFINES def -> geometry; map geometry back to its owning object's applicationId.
+      // DEFINES def -> geometry; prefer the owning object's applicationId, else synthesize a member wrapping the
+      // decoded geometry directly.
       if (rels.DefinesByDefinition.TryGetValue(defNodeK, out var geomKs))
       {
         foreach (var geomK in geomKs)
         {
-          if (
-            objByGeom.TryGetValue(geomK, out int objK)
-            && objIdToApp.TryGetValue(objK, out var appId)
-            && !members.Contains(appId)
-          )
+          if (objByGeom.TryGetValue(geomK, out int objK) && objIdToApp.TryGetValue(objK, out var appId))
           {
-            members.Add(appId);
+            if (!members.Contains(appId))
+            {
+              members.Add(appId);
+            }
+            continue;
+          }
+          if (geometries.TryGetValue(geomK, out var g) && TryDecode(g) is { } geom)
+          {
+            string geoAppId = "def-geo-" + geomK.ToString(CultureInfo.InvariantCulture);
+            if (!members.Contains(geoAppId))
+            {
+              geom.applicationId = geoAppId;
+              root.elements.Add(
+                new DataObject
+                {
+                  name = "geometry",
+                  displayValue = new List<Base> { geom },
+                  properties = new Dictionary<string, object?>(),
+                  applicationId = geoAppId,
+                  id = geoAppId,
+                }
+              );
+              members.Add(geoAppId);
+            }
+          }
+        }
+      }
+      // DEFINES_INSTANCE def -> INSTANCE node: a nested block/family placement inside this definition.
+      if (rels.DefinesInstanceByDefinition.TryGetValue(defNodeK, out var nestedInstNodeKs))
+      {
+        foreach (var instNodeK in nestedInstNodeKs)
+        {
+          if (!nodes.TryGetValue(instNodeK, out var nestedInstNode))
+          {
+            continue;
+          }
+          string nestedAppId = "nested-inst-" + instNodeK.ToString(CultureInfo.InvariantCulture);
+          root.elements.Add(BuildInstanceProxy(nestedAppId, nestedInstNode));
+          if (!members.Contains(nestedAppId))
+          {
+            members.Add(nestedAppId);
           }
         }
       }
@@ -304,7 +365,8 @@ public sealed class ObjectsArtifactReader
           id = "def-" + defNodeK,
           name = kv.Value.Name ?? ("Definition " + defNodeK),
           objects = members,
-          maxDepth = 0,
+          // TryGetValue, not GetValueOrDefault: the latter is unavailable on netstandard2.0 (the net48 plugin build).
+          maxDepth = depthByDefNode.TryGetValue(defNodeK, out int defDepth) ? defDepth : 0,
         }
       );
     }
@@ -314,8 +376,54 @@ public sealed class ObjectsArtifactReader
     }
   }
 
+  // Depth-from-scene-root per DEFINITION node: 0 for one placed directly (DISPLAY_INSTANCE), +1 per level of
+  // DEFINES_INSTANCE nesting below. A definition reachable via several paths takes the deepest — RevitFamilyBaker
+  // bakes highest-maxDepth first and must never bake a shared child before all its parents are accounted for.
+  // Cycle-guarded per DFS branch; anything unreachable from a top-level placement falls back to 0.
+  private static Dictionary<int, int> ComputeDefinitionDepths(
+    Dictionary<int, ArtefactNode> nodes,
+    ArtefactRelations rels
+  )
+  {
+    var depth = new Dictionary<int, int>();
+
+    void Propagate(int defNodeK, int d, HashSet<int> onStack)
+    {
+      if (!onStack.Add(defNodeK))
+      {
+        return; // cycle — never re-enter an ancestor of itself
+      }
+      if (!depth.TryGetValue(defNodeK, out var existing) || existing < d)
+      {
+        depth[defNodeK] = d;
+        if (rels.DefinesInstanceByDefinition.TryGetValue(defNodeK, out var nestedInstNodeKs))
+        {
+          foreach (var instNodeK in nestedInstNodeKs)
+          {
+            if (nodes.TryGetValue(instNodeK, out var nestedInst) && nestedInst.DefRef is int childDefNodeK)
+            {
+              Propagate(childDefNodeK, d + 1, onStack);
+            }
+          }
+        }
+      }
+      onStack.Remove(defNodeK);
+    }
+
+    foreach (var edge in rels.DisplayInstanceEdges)
+    {
+      if (nodes.TryGetValue(edge.Dst, out var instNode) && instNode.DefRef is int defNodeK)
+      {
+        Propagate(defNodeK, 0, new HashSet<int>());
+      }
+    }
+    return depth;
+  }
+
   // ── per-object geometry build ───────────────────────────────────────────────────────────────────────
-  private Base BuildGeometryObject(
+  // Returns null for a non-geometric object (no DISPLAY edges, no accepted SOLID) — the caller skips it entirely
+  // rather than adding an empty-displayValue DataObject the v1 converter pipeline can't handle.
+  private Base? BuildGeometryObject(
     string appId,
     int objK,
     Dictionary<string, object?> props,
@@ -370,6 +478,14 @@ public sealed class ObjectsArtifactReader
           };
         }
       }
+    }
+
+    if (displays.Count == 0)
+    {
+      // No DISPLAY geometry and no accepted SOLID: a non-geometric element (Level/Room/etc.) recorded only for its
+      // properties/relationship edges, or a definition-source object whose geometry is wired via DEFINES rather than
+      // DISPLAY. Mirrors RevitHostObjectArtefactBuilder.BakeAtomic's skip for the same category of object.
+      return null;
     }
 
     return new DataObject

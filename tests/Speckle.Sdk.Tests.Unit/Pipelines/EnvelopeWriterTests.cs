@@ -98,6 +98,8 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("node");
     // HAS_MATERIAL src broadened to geometry|instance (ENG-8849) — a material can hang off an instance too.
     Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry|instance");
+    // ENG-8849 (spec d485e68): HAS_MATERIAL src broadened to geometry|instance — instances can carry material overrides.
+    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry|instance");
     // IN_MODEL (11) → CONTAINER node; the default-projection top key (SOT §8).
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("IN_MODEL");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("node");

@@ -1,6 +1,8 @@
 using Parquet;
 using Parquet.Data;
 using Parquet.Schema;
+using SpecArrow = Speckle.Bundle.Spec.ArrowType;
+using SpecColumn = Speckle.Bundle.Spec.ColumnSpec;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
@@ -32,6 +34,22 @@ public sealed class ParquetTableWriter : IDisposable
   private readonly ParquetWriteScheduler _scheduler;
   private int _buffered;
   private bool _completed;
+
+  /// <summary>Creates a writer whose shape comes straight from the generated bundle-spec column descriptors
+  /// (e.g. <c>BundleSchemas.Nodes</c>) — the single source of truth for spec'd tables. Pass the matching
+  /// generated <c>BundleCols.*.ColumnCount</c> as <paramref name="specColumnCount"/>: both files are emitted
+  /// by the same spec codegen run, so a mismatch means a stale or partially-synced spec checkout and throws
+  /// here, at construction, before a single row can be written misaligned. NOTE this is also the only ctor
+  /// usable from OUTSIDE this assembly — the ILRepack internalizes Parquet.Net, so the
+  /// <see cref="ParquetSchema"/> overload's parameter type is renamed in the shipped assembly.</summary>
+  public ParquetTableWriter(
+    string path,
+    SpecColumn[] spec,
+    int specColumnCount,
+    ParquetWriteScheduler scheduler,
+    int flushRows = DEFAULT_ROWGROUP_ROWS
+  )
+    : this(path, SchemaOf(spec, specColumnCount, path), scheduler, flushRows) { }
 
   public ParquetTableWriter(
     string path,
@@ -66,19 +84,22 @@ public sealed class ParquetTableWriter : IDisposable
     });
   }
 
-  /// <summary>Appends one row; <paramref name="values"/> are in schema-column order.</summary>
+  /// <summary>Appends one row; <paramref name="values"/> are in schema-column order. The value count must
+  /// match the schema exactly — a mismatch means the schema (typically spec-generated) and this call site
+  /// have drifted (e.g. a spec bump inserted a column the caller doesn't supply yet), which would otherwise
+  /// silently misalign every row, so it throws instead.</summary>
   public void AddRow(params object?[] values)
   {
     if (_completed)
     {
       throw new InvalidOperationException("Writer already completed.");
     }
-    // Rows are positional, so a miscount silently shifts every later column (or drops the tail) — fail here
-    // instead of deep in a column's type conversion.
     if (values.Length != _cols.Length)
     {
       throw new ArgumentException(
-        $"{Path}: row has {values.Length} value(s), schema has {_cols.Length} column(s).",
+        $"Row arity mismatch for '{Path}': got {values.Length} value(s) for a {_cols.Length}-column schema "
+          + $"({string.Join(", ", _fields.Select(f => f.Name))}). The schema and this AddRow call site have "
+          + "drifted — update the caller to supply exactly one value per column, in schema order.",
         nameof(values)
       );
     }
@@ -141,6 +162,38 @@ public sealed class ParquetTableWriter : IDisposable
       }
     });
   }
+
+  // Build a Parquet.Net schema from the generated spec column descriptors (the single source of truth
+  // for table shapes). DDL nullability → DataField<T> (required) vs DataField<T?> (nullable).
+  private static ParquetSchema SchemaOf(SpecColumn[] spec, int specColumnCount, string path)
+  {
+    if (spec.Length != specColumnCount)
+    {
+      throw new InvalidOperationException(
+        $"Generated spec drift for '{path}': BundleSchemas declares {spec.Length} column(s) but the "
+          + $"BundleCols ColumnCount passed is {specColumnCount}. The two generated files come from the "
+          + "same codegen run — regenerate speckle-bundle-spec (npm run generate) and re-sync the checkout."
+      );
+    }
+    var fields = new Field[spec.Length];
+    for (var i = 0; i < spec.Length; i++)
+    {
+      fields[i] = ToField(spec[i]);
+    }
+    return new ParquetSchema(fields);
+  }
+
+  private static DataField ToField(SpecColumn c) =>
+    c.Type switch
+    {
+      SpecArrow.Int32 => c.Nullable ? new DataField<int?>(c.Name) : new DataField<int>(c.Name),
+      SpecArrow.Int64 => c.Nullable ? new DataField<long?>(c.Name) : new DataField<long>(c.Name),
+      SpecArrow.Float64 => c.Nullable ? new DataField<double?>(c.Name) : new DataField<double>(c.Name),
+      SpecArrow.Boolean => c.Nullable ? new DataField<bool?>(c.Name) : new DataField<bool>(c.Name),
+      SpecArrow.Utf8 => new DataField<string>(c.Name),
+      SpecArrow.Binary => new DataField<byte[]>(c.Name),
+      _ => throw new NotSupportedException($"Unmapped ArrowType {c.Type} for column {c.Name}"),
+    };
 
   private static Col MakeCol(DataField f)
   {

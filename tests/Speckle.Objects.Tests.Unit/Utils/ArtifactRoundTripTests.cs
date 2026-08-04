@@ -128,11 +128,13 @@ public class ArtifactRoundTripTests
       rhinoObj.rawEncoding!.format.Should().Be("3dm");
       Convert.FromBase64String(rhinoObj.rawEncoding.contents).Should().Equal(solidBytes);
 
-      // Revit (PreferSolids = false): no 3dm, rebuilt as a plain DataObject (meshes only).
+      // Revit (PreferSolids = false): the 3dm blob is not accepted and the object has no DISPLAY meshes — since
+      // #520 the reader skips such objects entirely rather than fabricating an empty-displayValue DataObject the
+      // v1 converter pipeline has no path for (see BuildGeometryObject's null return).
       var rootMeshes = (Collection)
         await reader.ReadAsync(dir, new ArtifactReceiveOptions(PreferSolids: false), default);
       Flatten(rootMeshes).OfType<RhinoObject>().Should().BeEmpty();
-      Flatten(rootMeshes).OfType<DataObject>().Should().ContainSingle(d => d.applicationId == "solid-1");
+      Flatten(rootMeshes).Where(b => b.applicationId == "solid-1").Should().BeEmpty();
     }
     finally
     {

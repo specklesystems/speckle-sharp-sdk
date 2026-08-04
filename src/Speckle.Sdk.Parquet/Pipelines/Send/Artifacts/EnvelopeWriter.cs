@@ -1,9 +1,8 @@
 using System.Globalization;
 using Parquet.Schema;
-using SpecArrow = Speckle.Bundle.Spec.ArrowType;
 using SpecBundle = Speckle.Bundle.Spec.BundleSpec;
 using SpecCatalog = Speckle.Bundle.Spec.Catalog;
-using SpecColumn = Speckle.Bundle.Spec.ColumnSpec;
+using SpecCols = Speckle.Bundle.Spec.BundleCols;
 using SpecSchemas = Speckle.Bundle.Spec.BundleSchemas;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -107,9 +106,6 @@ public sealed class EnvelopeWriter : IDisposable
   private string? _referencePointKind;
   private string? _referencePointOffset;
 
-  // Producer provenance recorded in meta: which connector/tool + SDK build wrote this bundle, and (for a
-  // migration) the vintage of the source graph. SetProducer is mandatory, so a null _producedBy at
-  // Complete() means the producer never identified itself. See SetProducer.
   private string? _producedBy;
   private string? _producerVersion;
   private string? _sdkName;
@@ -123,8 +119,16 @@ public sealed class EnvelopeWriter : IDisposable
     BaseName = baseName;
     _scheduler = scheduler;
 
-    _relations = new ParquetTableWriter(P("relations.parquet"), SchemaOf(SpecSchemas.Relations), scheduler);
-    _nodes = new ParquetTableWriter(P("nodes.parquet"), SchemaOf(SpecSchemas.Nodes), scheduler);
+    // Spec-schema'd tables carry their generated BundleCols ColumnCount so a spec bump that outruns
+    // this writer (or a stale sibling spec checkout) fails at construction / first AddRow — never by
+    // silently writing misaligned rows (the Jul 29 empty-nodes incident mode).
+    _relations = new ParquetTableWriter(
+      P("relations.parquet"),
+      SpecSchemas.Relations,
+      SpecCols.Relations.ColumnCount,
+      scheduler
+    );
+    _nodes = new ParquetTableWriter(P("nodes.parquet"), SpecSchemas.Nodes, SpecCols.Nodes.ColumnCount, scheduler);
 
     WriteCatalog();
   }
@@ -345,7 +349,12 @@ public sealed class EnvelopeWriter : IDisposable
     {
       return;
     }
-    using var cv = new ParquetTableWriter(P("camera_views.parquet"), SchemaOf(SpecSchemas.CameraViews), _scheduler);
+    using var cv = new ParquetTableWriter(
+      P("camera_views.parquet"),
+      SpecSchemas.CameraViews,
+      SpecCols.CameraViews.ColumnCount,
+      _scheduler
+    );
     foreach (var v in _cameraViews)
     {
       cv.AddRow(
@@ -386,30 +395,6 @@ public sealed class EnvelopeWriter : IDisposable
       throw new InvalidOperationException("Writer already completed.");
     }
   }
-
-  // Build a Parquet.Net schema from the generated spec column descriptors (the single source of truth
-  // for table shapes). DDL nullability → DataField<T> (required) vs DataField<T?> (nullable).
-  private static ParquetSchema SchemaOf(SpecColumn[] cols)
-  {
-    var fields = new Field[cols.Length];
-    for (var i = 0; i < cols.Length; i++)
-    {
-      fields[i] = ToField(cols[i]);
-    }
-    return new ParquetSchema(fields);
-  }
-
-  private static DataField ToField(SpecColumn c) =>
-    c.Type switch
-    {
-      SpecArrow.Int32 => c.Nullable ? new DataField<int?>(c.Name) : new DataField<int>(c.Name),
-      SpecArrow.Int64 => c.Nullable ? new DataField<long?>(c.Name) : new DataField<long>(c.Name),
-      SpecArrow.Float64 => c.Nullable ? new DataField<double?>(c.Name) : new DataField<double>(c.Name),
-      SpecArrow.Boolean => c.Nullable ? new DataField<bool?>(c.Name) : new DataField<bool>(c.Name),
-      SpecArrow.Utf8 => new DataField<string>(c.Name),
-      SpecArrow.Binary => new DataField<byte[]>(c.Name),
-      _ => throw new NotSupportedException($"Unmapped ArrowType {c.Type} for column {c.Name}"),
-    };
 
   private static DataField I(string name) => new DataField<int>(name);
 

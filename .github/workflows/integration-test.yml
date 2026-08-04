@@ -12,6 +12,10 @@ on:
     secrets:
       CODECOV_TOKEN:
         required: true
+      # Fine-grained PAT with Contents:Read on specklesystems/speckle-bundle-spec (private) —
+      # needed to check out the sibling spec repo Speckle.Sdk.Parquet compiles from.
+      BUNDLE_SPEC_TOKEN:
+        required: true
 jobs:
   integration-test:
     env:
@@ -20,6 +24,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      # Speckle.Sdk.Parquet compiles the spec's generated C# from a sibling speckle-bundle-spec
+      # checkout one level up ($(MSBuildThisFileDirectory)../../../speckle-bundle-spec).
+      - name: Checkout speckle-bundle-spec
+        uses: actions/checkout@v7
+        with:
+          repository: specklesystems/speckle-bundle-spec
+          # Pin: speckle-bundle-spec main as of 2026-08-04 (merge of spec PR #12 — BundleCols.cs codegen).
+          # Keep aligned with the pin in pr.yml.
+          ref: ecbbd270fae06b00ee08e1b1022a08dd3f170c8f
+          token: ${{ secrets.BUNDLE_SPEC_TOKEN }}
+          path: speckle-bundle-spec
+          persist-credentials: false
+
+      # actions/checkout cannot write outside $GITHUB_WORKSPACE; the csproj expects the spec one level up.
+      - name: Move speckle-bundle-spec to sibling location
+        run: mv speckle-bundle-spec "$GITHUB_WORKSPACE/../speckle-bundle-spec"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
