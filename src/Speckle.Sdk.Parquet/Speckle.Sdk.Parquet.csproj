@@ -46,5 +46,11 @@
       Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSchemas.cs"
       Link="Generated/BundleSchemas.cs"
     />
+    <!-- Per-table column-index constants (BundleCols.Nodes.Argb, ….ColumnCount) — produced by the
+         speckle-bundle-spec codegen (PR in flight there); requires a sibling checkout that has it. -->
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleCols.cs"
+      Link="Generated/BundleCols.cs"
+    />
   </ItemGroup>
 </Project>
