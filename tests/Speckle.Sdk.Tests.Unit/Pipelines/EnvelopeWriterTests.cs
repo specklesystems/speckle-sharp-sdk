@@ -172,7 +172,7 @@ public sealed class EnvelopeWriterTests : IDisposable
     using var scheduler = new ParquetWriteScheduler();
     using (var w = new EnvelopeWriter(_dir, "model", scheduler))
     {
-      w.SetProducer("artefact-harness", "v3", "3.1.0-alpha.1", 2);
+      w.SetProducer("artefact-harness", "v3", "3.1.0-alpha.1", "Test project", 2);
       w.Complete();
     }
     scheduler.CompleteAndWait();
@@ -181,9 +181,10 @@ public sealed class EnvelopeWriterTests : IDisposable
     db.Open();
     View(db, "meta");
 
-    Scalar(db, "SELECT host_application_slug FROM meta").Should().Be("artefact-harness");
-    Scalar(db, "SELECT host_application_version FROM meta").Should().Be("v3");
+    Scalar(db, "SELECT produced_by FROM meta").Should().Be("artefact-harness");
+    Scalar(db, "SELECT producer_version FROM meta").Should().Be("v3");
     Scalar(db, "SELECT sdk_version FROM meta").Should().Be("3.1.0-alpha.1");
+    Scalar(db, "SELECT sdk_name FROM meta").Should().Be("Test project");
     Scalar(db, "SELECT migrated_from_version FROM meta").Should().Be(2);
     // Provenance is additive — the catalog columns are untouched.
     Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);

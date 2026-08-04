@@ -109,10 +109,12 @@ public sealed class EnvelopeWriter : IDisposable
 
   // Producer provenance recorded in meta: which connector/tool + SDK build wrote this bundle, and (for a
   // migration) the vintage of the source graph. All null unless set → NULL columns. See SetProducer.
-  private string? _hostApplicationSlug;
-  private string? _hostApplicationVersion;
+
+  private string? _producerSlug;
+  private string? _producerVersion;
   private string? _sdkVersion;
-  private int? _migratedFromVersion;
+  private string? _sdkName;
+  private int? _migratedFromSchemaVersion;
 
   public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
   {
@@ -203,23 +205,24 @@ public sealed class EnvelopeWriter : IDisposable
   }
 
   /// <summary>
-  /// Records the producer of this bundle in <c>meta</c> (written at <see cref="Complete"/>).
-  /// <paramref name="hostApplicationSlug"/>/<paramref name="hostApplicationVersion"/> identify the connector or
-  /// tool (e.g. <c>revit</c>/<c>2024</c>, <c>artefact-harness</c>/<c>v3</c>);
-  /// <paramref name="migratedFromVersion"/> is 2 or 3 when the bundle was migrated from a graph of that vintage,
-  /// null for a native send. Call before <see cref="Complete"/>.
+  /// Records the producer information of this bundle in the <c>meta</c> file.
   /// </summary>
+  /// <param name="producedBy">slug of the producer of this version</param>
+  /// <param name="producerVersion">version of the producer</param>
+  /// <param name="migratedFromSchemaVersion">The original schema version for model versions migrated from older schema version. <see langword="null"/> for native authored versions</param>
   public void SetProducer(
-    string? hostApplicationSlug,
-    string? hostApplicationVersion,
-    string? sdkVersion,
-    int? migratedFromVersion
+    string producedBy,
+    string producerVersion,
+    string sdkVersion,
+    string sdkName,
+    int? migratedFromSchemaVersion = null
   )
   {
-    _hostApplicationSlug = hostApplicationSlug;
-    _hostApplicationVersion = hostApplicationVersion;
+    _producerSlug = producedBy;
+    _producerVersion = producerVersion;
     _sdkVersion = sdkVersion;
-    _migratedFromVersion = migratedFromVersion;
+    _sdkName = sdkName;
+    _migratedFromSchemaVersion = migratedFromSchemaVersion;
   }
 
   /// <summary>Flushes the parquet tables and writes the attach manifest.</summary>
@@ -261,10 +264,10 @@ public sealed class EnvelopeWriter : IDisposable
         S("produced_by"),
         S("reference_point_kind"),
         S("reference_point_offset"),
-        S("host_application_slug"),
-        S("host_application_version"),
+        S("producer_version"),
+        S("sdk_name"),
         S("sdk_version"),
-        NI("migrated_from_version")
+        NI("migrated_from_schema_version")
       ),
       _scheduler
     );
@@ -273,10 +276,11 @@ public sealed class EnvelopeWriter : IDisposable
       "Speckle.Sdk EnvelopeWriter",
       _referencePointKind,
       _referencePointOffset,
-      _hostApplicationSlug,
-      _hostApplicationVersion,
+      _producerSlug,
+      _producerVersion,
+      _sdkName,
       _sdkVersion,
-      _migratedFromVersion
+      _migratedFromSchemaVersion
     );
   }
 

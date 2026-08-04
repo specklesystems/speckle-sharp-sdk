@@ -1,5 +1,6 @@
 #if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
+using Speckle.Sdk;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -548,15 +549,21 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
   // ── producer provenance ────────────────────────────────────────────────────────────────
 
-  /// <summary>Records the producer of this bundle in the <c>meta</c> table: the connector/tool slug and version,
-  /// the SDK build behind it, and — for a migrated bundle — the source graph's vintage
-  /// (<paramref name="migratedFromVersion"/> 2 or 3; null for a native send). Call before <see cref="Complete"/>.</summary>
-  public void SetProducer(
-    string? hostApplicationSlug,
-    string? hostApplicationVersion,
-    string? sdkVersion,
-    int? migratedFromVersion
-  ) => _envelopeWriter.SetProducer(hostApplicationSlug, hostApplicationVersion, sdkVersion, migratedFromVersion);
+  /// <summary>
+  /// Records the producer information of this bundle in the <c>meta</c> file.
+  /// </summary>
+  /// <param name="producer">Producer info</param>
+  /// <param name="migratedFromSchemaVersion">The original schema version for model versions migrated from older schema version. <see langword="null"/> for native authored versions</param>
+  public void SetProducer(ISpeckleApplication producer, int? migratedFromVersion = null)
+  {
+    _envelopeWriter.SetProducer(
+      producer.Slug,
+      producer.HostApplicationVersion,
+      producer.SpeckleVersion,
+      "Speckle.Sdk (.NET)",
+      migratedFromVersion
+    );
+  }
 
   /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed
   /// node/relation API (<see cref="AddDefinition"/>, <see cref="AddMaterial"/>, <see cref="Display"/>, …).

@@ -30,14 +30,7 @@ internal sealed class GraphArtifactProducerFactory(
     var isV3 = helper.IsV3(root);
     logger.LogInformation("Detected {GraphVersion} graph [{SpeckleType}]", isV3 ? "v3" : "v2", root.speckle_type);
 
-    // Provenance into the bundle's meta: this harness as the producer, and the detected vintage as what the
-    // bundle was migrated FROM — the pair needed to trace a bad bundle back to the run that wrote it.
-    pipeline.SetProducer(
-      application.Slug,
-      application.HostApplicationVersion,
-      application.SpeckleVersion,
-      isV3 ? 3 : 2
-    );
+    pipeline.SetProducer(application, isV3 ? 3 : 2);
 
     return isV3 ? new V3GraphArtifactProducer(pipeline, helper) : new V2GraphArtifactProducer(pipeline, helper);
   }
