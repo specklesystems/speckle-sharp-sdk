@@ -39,10 +39,17 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   private readonly IdInterner _geometryInterner = new();
   private readonly IdInterner _nodeInterner = new();
 
-  public ObjectsArtifactPipeline(string outputDir, string baseName, ISet<string>? excludedTopLevelProperties = null)
+  // producedBy: the producing host-app slug (e.g. "rhino") written to meta.produced_by — connectors pass
+  // ISpeckleApplication.Slug; null falls back to a generic writer label for un-migrated producers.
+  public ObjectsArtifactPipeline(
+    string outputDir,
+    string baseName,
+    ISet<string>? excludedTopLevelProperties = null,
+    string? producedBy = null
+  )
   {
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName, _scheduler);
-    _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler);
+    _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler, producedBy);
     _eavWriter = new EavWriter(outputDir, baseName, _scheduler);
     _outputDir = outputDir;
     _baseName = baseName;

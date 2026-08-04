@@ -365,8 +365,7 @@ public sealed class ObjectsArtifactReader
           id = "def-" + defNodeK,
           name = kv.Value.Name ?? ("Definition " + defNodeK),
           objects = members,
-          // TryGetValue rather than GetValueOrDefault: this project also targets netstandard2.0,
-          // which has no Dictionary.GetValueOrDefault.
+          // TryGetValue, not GetValueOrDefault: the latter is unavailable on netstandard2.0 (the net48 plugin build).
           maxDepth = depthByDefNode.TryGetValue(defNodeK, out int defDepth) ? defDepth : 0,
         }
       );
