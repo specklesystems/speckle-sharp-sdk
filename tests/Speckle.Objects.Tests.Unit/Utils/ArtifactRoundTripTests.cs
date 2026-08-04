@@ -22,7 +22,7 @@ public class ArtifactRoundTripTests
     HostApplication = "Test",
     HostApplicationVersion = "1.2.3",
     Slug = "test-connector",
-    SpeckleVersion = "3.1.0-alpha.1",
+    SpeckleVersion = "999.1.0-alpha.1",
   };
 
   [Fact]
@@ -105,7 +105,7 @@ public class ArtifactRoundTripTests
     var solidBytes = new byte[] { 9, 8, 7, 6, 5, 4 };
     try
     {
-      using (var pipeline = new ObjectsArtifactPipeline(dir, "rt"))
+      using (var pipeline = new ObjectsArtifactPipeline(dir, "rt", TestProducer))
       {
         int objK = pipeline.InternObject("solid-1");
         pipeline.AddProperties(
@@ -115,7 +115,6 @@ public class ArtifactRoundTripTests
         );
         int solidK = pipeline.AddRawGeometry("solid-1:solid", solidBytes, "3dm");
         pipeline.Solid(objK, solidK, 0);
-        pipeline.SetProducer(TestProducer);
         pipeline.Complete();
       }
 
