@@ -96,7 +96,8 @@ public sealed class EnvelopeWriterTests : IDisposable
     // DEFINES (4) is now geometry-only; DEFINES_INSTANCE (9) carries node→node nesting. rel fixes dst namespace.
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.Defines}").Should().Be("geometry");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("node");
-    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry");
+    // ENG-8849 (spec d485e68): HAS_MATERIAL src broadened to geometry|instance — instances can carry material overrides.
+    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry|instance");
     // IN_MODEL (11) → CONTAINER node; the default-projection top key (SOT §8).
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("IN_MODEL");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("node");
