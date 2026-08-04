@@ -138,7 +138,12 @@ internal sealed class RemoteSource(IDeserializeProcessFactory deserializeProcess
       }
       else
       {
-        logger.LogInformation("Progress {ProgressEvent} {Count}/{Total}", value.ProgressEvent, value.Count, value.Total);
+        logger.LogInformation(
+          "Progress {ProgressEvent} {Count}/{Total}",
+          value.ProgressEvent,
+          value.Count,
+          value.Total
+        );
       }
     }
   }
