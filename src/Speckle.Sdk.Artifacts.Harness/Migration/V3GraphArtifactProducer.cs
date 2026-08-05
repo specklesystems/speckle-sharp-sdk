@@ -52,6 +52,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   // objKs that already received a lineage SUBELEMENT — the host-derived pass must not duplicate them.
   private readonly HashSet<int> _lineageSubelementChildKs = new();
 
+  // Root-child collections detected as the federation tier, retagged CONTAINER(subtype=Model) instead of
+  // COLLECTION; their appId → container K.
+  private HashSet<string> _modelCollectionAppIds = new(StringComparer.Ordinal);
+  private readonly Dictionary<string, int> _modelContainerByAppId = new(StringComparer.Ordinal);
+
   // INSTANCE-node K by appId, shared between atomic instance leaves and nested-instance definition members.
   private readonly Dictionary<string, int> _instanceNodeByAppId = new(StringComparer.Ordinal);
 
@@ -64,6 +69,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   public Stats Produce(Base root)
   {
     IReadOnlySet<string> defSourceAppIds = GetDefinitionAppIds(root);
+    _modelCollectionAppIds = DetectRevitModelCollections(root);
 
     var traversal = DefaultTraversal.CreateTraversalFunc();
     foreach (var tc in traversal.Traverse(root))
@@ -78,6 +84,16 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
       if (current is Collection col)
       {
+        if (_modelCollectionAppIds.Contains(helper.Aid(col)))
+        {
+          // Federation tier: a source model is a CONTAINER, not a collection — its child collections become
+          // top-level (flat containers, as the v4 Revit builder writes them).
+          var mk = pipeline.AddContainer(helper.CollectionKey(col), col.name, null, "Model");
+          _modelContainerByAppId[helper.Aid(col)] = mk;
+          _stats.Models++;
+          continue;
+        }
+
         // Parent is a Collection except at the root, which is skipped above and never mapped → top-level (null).
         int? parentK = _collectionMap.TryGetValue(helper.Aid(parent.Current), out var pk) ? pk : null;
         var k = pipeline.AddCollection(helper.CollectionKey(col), col.name, parentK, helper.CollectionSubtype(col));
@@ -115,19 +131,34 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private void EmitHierarchyEdge(TraversalContext tc, int objK)
   {
     var hostFound = false;
+    var collectionFound = false;
     for (var p = tc.Parent; p is not null; p = p.Parent)
     {
       var pc = p.Current;
       if (pc is Collection)
       {
-        if (_collectionMap.TryGetValue(helper.Aid(pc), out var ck))
+        if (_modelContainerByAppId.TryGetValue(helper.Aid(pc), out var mk))
         {
-          pipeline.InCollection(objK, ck, 0);
-          _stats.InCollectionEdges++;
+          pipeline.InModel(objK, mk, 0);
+          _stats.InModelEdges++;
+          return; // model containers sit directly under the root
         }
-        return; // nearest collection reached; membership resolved
+        if (!collectionFound)
+        {
+          collectionFound = true;
+          if (_collectionMap.TryGetValue(helper.Aid(pc), out var ck))
+          {
+            pipeline.InCollection(objK, ck, 0);
+            _stats.InCollectionEdges++;
+          }
+          if (_modelCollectionAppIds.Count == 0)
+          {
+            return; // no federation tier; nearest collection resolved membership
+          }
+        }
+        continue; // keep climbing to the model tier
       }
-      if (!hostFound && _objectKMap.TryGetValue(pc.id.NotNull(), out var hostK))
+      if (!hostFound && !collectionFound && _objectKMap.TryGetValue(pc.id.NotNull(), out var hostK))
       {
         pipeline.Subelement(hostK, objK, _stats.SubelementEdges++);
         _lineageSubelementChildKs.Add(objK);
@@ -652,6 +683,57 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
   }
 
+  // v3 Revit federated sends (SendCollectionManager nested mode) put one collection per source model under
+  // the root: the host model named exactly like the root, links named by file. The collections carry no
+  // marker, so require both signals — the host wrapper by name, and a sibling whose elements bear the
+  // _t{hash} appId suffix that only linked (transformed) documents produce. Non-federated sends stay untouched.
+  private HashSet<string> DetectRevitModelCollections(Base root)
+  {
+    var result = new HashSet<string>(StringComparer.Ordinal);
+    if (root is not Collection rootCol || string.IsNullOrEmpty(rootCol.name))
+    {
+      return result;
+    }
+
+    var children = rootCol.elements.OfType<Collection>().ToList();
+    var main = children.FirstOrDefault(c => c.name == rootCol.name);
+    if (main is null)
+    {
+      return result;
+    }
+
+    var links = children
+      .Where(c => !ReferenceEquals(c, main) && c.name != "definitionGeometry" && HasTransformSuffixedDescendant(c))
+      .ToList();
+    if (links.Count == 0)
+    {
+      return result;
+    }
+
+    result.Add(helper.Aid(main));
+    foreach (var link in links)
+    {
+      result.Add(helper.Aid(link));
+    }
+    return result;
+  }
+
+  private static bool HasTransformSuffixedDescendant(Collection col)
+  {
+    foreach (var el in col.elements)
+    {
+      if (el.applicationId is { } aid && TryGetTransformSuffix(aid, out _))
+      {
+        return true;
+      }
+      if (el is Collection sub && HasTransformSuffixedDescendant(sub))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
   // Matches the v3 connector's linked-model appId suffix: {UniqueId}_t{8 lowercase hex}
   // (LinkedModelHandler.GetTransformHash).
   private static bool TryGetTransformSuffix(string appId, out string suffix)
@@ -781,6 +863,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private void EmitSceneView()
   {
     var keys = new List<SceneViewKey>();
+    // Model tier only when the send actually federates >1 source model (mirrors the v4 Revit builder).
+    if (_modelContainerByAppId.Count > 1)
+    {
+      keys.Add(SceneViewKey.Rel(RelKind.InModel));
+    }
     if (_stats.InCollectionEdges > 0)
     {
       keys.Add(SceneViewKey.Rel(RelKind.InCollection));
