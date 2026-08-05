@@ -37,6 +37,21 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private readonly HashSet<string> _seenObjectAppIds = new(StringComparer.Ordinal);
   private readonly HashSet<string> _seenGeometryAppIds = new(StringComparer.Ordinal);
 
+  // Revit room/host refs stashed during traversal, resolved after it when _seenObjectAppIds is complete.
+  private readonly record struct TopologyRefs(
+    string ElementAppId,
+    string? Room,
+    string? Space,
+    string? FromRoom,
+    string? ToRoom,
+    string? Parent
+  );
+
+  private readonly List<TopologyRefs> _topologyRefs = new();
+
+  // objKs that already received a lineage SUBELEMENT — the host-derived pass must not duplicate them.
+  private readonly HashSet<int> _lineageSubelementChildKs = new();
+
   // INSTANCE-node K by appId, shared between atomic instance leaves and nested-instance definition members.
   private readonly Dictionary<string, int> _instanceNodeByAppId = new(StringComparer.Ordinal);
 
@@ -85,6 +100,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     var layerGeomKeys = BuildLayerGeomKeys(root, out var layerDepth);
 
     EmitProxies(root, layerGeomKeys, layerDepth);
+    EmitRevitTopology();
     EmitCameraViews(root);
     EmitSceneView();
 
@@ -114,6 +130,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       if (!hostFound && _objectKMap.TryGetValue(pc.id.NotNull(), out var hostK))
       {
         pipeline.Subelement(hostK, objK, _stats.SubelementEdges++);
+        _lineageSubelementChildKs.Add(objK);
         hostFound = true;
       }
       // keep walking up to reach the enclosing collection
@@ -133,6 +150,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
     var (props, rootScalars, typeKey) = helper.ExtractProperties(obj);
     pipeline.AddProperties(appId, props, rootScalars, typeKey);
+    StashTopologyRefs(appId, props);
 
     if (obj is InstanceProxy ip)
     {
@@ -562,6 +580,114 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         _stats.InGroupEdges++;
       }
     }
+  }
+
+  // Revit v3 recorded room/host topology as flat property keys holding bare Element.UniqueIds
+  // (ClassPropertiesExtractor, FamilyInstance only). Stashed here, resolved post-traversal.
+  private void StashTopologyRefs(string appId, IReadOnlyDictionary<string, object?> props)
+  {
+    string? Str(string key) => props.TryGetValue(key, out var v) && v is string { Length: > 0 } s ? s : null;
+
+    var room = Str("roomApplicationId");
+    var space = Str("spaceApplicationId");
+    var fromRoom = Str("fromRoomApplicationId");
+    var toRoom = Str("toRoomApplicationId");
+    var parent = Str("parentApplicationId");
+    if (room is null && space is null && fromRoom is null && toRoom is null && parent is null)
+    {
+      return;
+    }
+    _topologyRefs.Add(new TopologyRefs(appId, room, space, fromRoom, toRoom, parent));
+  }
+
+  // Mirrors big-truck's EmitElementTopology: room ?? space → IN_ROOM, from/to rooms → one CONNECTS_TO scoped
+  // by the opening's K, host parent → SUBELEMENT unless the lineage already provided one.
+  private void EmitRevitTopology()
+  {
+    foreach (var t in _topologyRefs)
+    {
+      var elementK = pipeline.InternObject(t.ElementAppId);
+
+      if (t.Parent is not null && !_lineageSubelementChildKs.Contains(elementK))
+      {
+        if (TryResolveRef(t.Parent, t.ElementAppId, out var parent) && parent != t.ElementAppId)
+        {
+          pipeline.Subelement(pipeline.InternObject(parent), elementK, 0);
+          _stats.HostSubelementEdges++;
+        }
+        else
+        {
+          _stats.SkippedHostParent++;
+        }
+      }
+
+      var roomRef = t.Room ?? t.Space;
+      if (roomRef is not null)
+      {
+        if (TryResolveRef(roomRef, t.ElementAppId, out var room))
+        {
+          pipeline.InRoom(elementK, pipeline.InternObject(room), 0);
+          _stats.InRoomEdges++;
+        }
+        else
+        {
+          _stats.SkippedRoom++;
+        }
+      }
+
+      if (t.FromRoom is not null && t.ToRoom is not null)
+      {
+        if (
+          TryResolveRef(t.FromRoom, t.ElementAppId, out var from) && TryResolveRef(t.ToRoom, t.ElementAppId, out var to)
+        )
+        {
+          pipeline.ConnectsTo(pipeline.InternObject(from), pipeline.InternObject(to), elementK);
+          _stats.ConnectsToEdges++;
+        }
+        else
+        {
+          _stats.SkippedConnects++;
+        }
+      }
+    }
+  }
+
+  // Matches the v3 connector's linked-model appId suffix: {UniqueId}_t{8 lowercase hex}
+  // (LinkedModelHandler.GetTransformHash).
+  private static bool TryGetTransformSuffix(string appId, out string suffix)
+  {
+    suffix = "";
+    if (appId.Length <= 10 || appId[^10] != '_' || appId[^9] != 't')
+    {
+      return false;
+    }
+    for (var i = appId.Length - 8; i < appId.Length; i++)
+    {
+      if (appId[i] is not ((>= '0' and <= '9') or (>= 'a' and <= 'f')))
+      {
+        return false;
+      }
+    }
+    suffix = appId[^10..];
+    return true;
+  }
+
+  // Bare refs resolve exact first, else within the referrer's transform scope — the connector wrote refs as
+  // bare UniqueIds while suffixing sent appIds, and referrer + target share a document, hence a suffix.
+  private bool TryResolveRef(string bareRef, string referrerAppId, out string resolved)
+  {
+    if (_seenObjectAppIds.Contains(bareRef))
+    {
+      resolved = bareRef;
+      return true;
+    }
+    if (TryGetTransformSuffix(referrerAppId, out var suffix) && _seenObjectAppIds.Contains(bareRef + suffix))
+    {
+      resolved = bareRef + suffix;
+      return true;
+    }
+    resolved = "";
+    return false;
   }
 
   // collection appId → the display geometry of every object beneath it, with each collection's depth — so a
