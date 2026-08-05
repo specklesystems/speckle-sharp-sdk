@@ -37,6 +37,10 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private readonly HashSet<string> _seenObjectAppIds = new(StringComparer.Ordinal);
   private readonly HashSet<string> _seenGeometryAppIds = new(StringComparer.Ordinal);
 
+  // Supports Revit linked models: the v3 connector suffixed every linked element's appId with a per-placement
+  // hash, while proxies and properties kept referencing the bare UniqueId (see TryGetLinkedModelSuffix).
+  private readonly HashSet<string> _linkedModelSuffixes = new(StringComparer.Ordinal);
+
   // Revit room/host refs stashed during traversal, resolved after it when _seenObjectAppIds is complete.
   private readonly record struct TopologyRefs(
     string ElementAppId,
@@ -178,6 +182,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
 
     _stats.Objects++;
+
+    if (TryGetLinkedModelSuffix(appId, out var suffix))
+    {
+      _linkedModelSuffixes.Add(suffix);
+    }
 
     var (props, rootScalars, typeKey) = helper.ExtractProperties(obj);
     pipeline.AddProperties(appId, props, rootScalars, typeKey);
@@ -562,13 +571,17 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       _stats.Levels++;
       foreach (var objAppId in lp.objects)
       {
-        if (!_seenObjectAppIds.Contains(objAppId))
+        var resolvedAny = false;
+        foreach (var resolved in ResolveMemberRefs(objAppId))
+        {
+          pipeline.OnLevel(pipeline.InternObject(resolved), lvlK);
+          _stats.OnLevelEdges++;
+          resolvedAny = true;
+        }
+        if (!resolvedAny)
         {
           _stats.SkippedLevel++;
-          continue;
         }
-        pipeline.OnLevel(pipeline.InternObject(objAppId), lvlK);
-        _stats.OnLevelEdges++;
       }
     }
 
@@ -590,12 +603,16 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         {
           continue; // unpack can visit a block sub-object twice
         }
-        if (!_seenObjectAppIds.Contains(objAppId))
+        var resolvedAny = false;
+        foreach (var resolved in ResolveMemberRefs(objAppId))
+        {
+          members.Add(pipeline.InternObject(resolved));
+          resolvedAny = true;
+        }
+        if (!resolvedAny)
         {
           _stats.SkippedGroup++;
-          continue;
         }
-        members.Add(pipeline.InternObject(objAppId));
       }
 
       if (members.Count == 0)
@@ -685,8 +702,8 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
   // v3 Revit federated sends (SendCollectionManager nested mode) put one collection per source model under
   // the root: the host model named exactly like the root, links named by file. The collections carry no
-  // marker, so require both signals — the host wrapper by name, and a sibling whose elements bear the
-  // _t{hash} appId suffix that only linked (transformed) documents produce. Non-federated sends stay untouched.
+  // marker, so require both signals — the host wrapper by name, and a sibling holding linked-model elements.
+  // Non-federated sends stay untouched.
   private HashSet<string> DetectRevitModelCollections(Base root)
   {
     var result = new HashSet<string>(StringComparer.Ordinal);
@@ -703,7 +720,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
 
     var links = children
-      .Where(c => !ReferenceEquals(c, main) && c.name != "definitionGeometry" && HasTransformSuffixedDescendant(c))
+      .Where(c => !ReferenceEquals(c, main) && c.name != "definitionGeometry" && HasLinkedModelElements(c))
       .ToList();
     if (links.Count == 0)
     {
@@ -718,15 +735,15 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     return result;
   }
 
-  private static bool HasTransformSuffixedDescendant(Collection col)
+  private static bool HasLinkedModelElements(Collection col)
   {
     foreach (var el in col.elements)
     {
-      if (el.applicationId is { } aid && TryGetTransformSuffix(aid, out _))
+      if (el.applicationId is { } aid && TryGetLinkedModelSuffix(aid, out _))
       {
         return true;
       }
-      if (el is Collection sub && HasTransformSuffixedDescendant(sub))
+      if (el is Collection sub && HasLinkedModelElements(sub))
       {
         return true;
       }
@@ -734,9 +751,10 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     return false;
   }
 
-  // Matches the v3 connector's linked-model appId suffix: {UniqueId}_t{8 lowercase hex}
+  // The v3 Revit connector kept one appId per placement of a linked model by suffixing the element's
+  // UniqueId with a hash of the link's placement transform: {UniqueId}_t{8 lowercase hex}
   // (LinkedModelHandler.GetTransformHash).
-  private static bool TryGetTransformSuffix(string appId, out string suffix)
+  private static bool TryGetLinkedModelSuffix(string appId, out string suffix)
   {
     suffix = "";
     if (appId.Length <= 10 || appId[^10] != '_' || appId[^9] != 't')
@@ -754,16 +772,34 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     return true;
   }
 
-  // Bare refs resolve exact first, else within the referrer's transform scope — the connector wrote refs as
-  // bare UniqueIds while suffixing sent appIds, and referrer + target share a document, hence a suffix.
-  private bool TryResolveRef(string bareRef, string referrerAppId, out string resolved)
+  // An exact match covers everything except Revit linked models, whose objects were sent suffixed while
+  // proxies reference the bare UniqueId — there a bare ref matches once per placement of the link.
+  private IEnumerable<string> ResolveMemberRefs(string bareRef)
+  {
+    if (_seenObjectAppIds.Contains(bareRef))
+    {
+      yield return bareRef;
+      yield break;
+    }
+    foreach (var suffix in _linkedModelSuffixes)
+    {
+      if (_seenObjectAppIds.Contains(bareRef + suffix))
+      {
+        yield return bareRef + suffix;
+      }
+    }
+  }
+
+  // A Revit element and the room/host its properties reference live in the same document, so on a
+  // linked-model send both carry the same suffix — a missed bare ref is re-tried with the element's own.
+  private bool TryResolveRef(string bareRef, string elementAppId, out string resolved)
   {
     if (_seenObjectAppIds.Contains(bareRef))
     {
       resolved = bareRef;
       return true;
     }
-    if (TryGetTransformSuffix(referrerAppId, out var suffix) && _seenObjectAppIds.Contains(bareRef + suffix))
+    if (TryGetLinkedModelSuffix(elementAppId, out var suffix) && _seenObjectAppIds.Contains(bareRef + suffix))
     {
       resolved = bareRef + suffix;
       return true;
