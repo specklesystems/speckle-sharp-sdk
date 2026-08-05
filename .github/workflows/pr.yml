@@ -66,7 +66,7 @@ jobs:
       use-internal-image: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      BUNDLE_SPEC_TOKEN: ${{ secrets.BUNDLE_SPEC_TOKEN }}
+      BUNDLE_SPEC_TOKEN: ${{ secrets.CONNECTORS_GH_TOKEN }}
 
   integration-test-public:
     uses: "./.github/workflows/integration-test.yml"
@@ -74,4 +74,4 @@ jobs:
       docker-compose-file: "docker-compose.yml"
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      BUNDLE_SPEC_TOKEN: ${{ secrets.BUNDLE_SPEC_TOKEN }}
+      BUNDLE_SPEC_TOKEN: ${{ secrets.CONNECTORS_GH_TOKEN }}

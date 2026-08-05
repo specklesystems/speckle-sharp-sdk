@@ -12,8 +12,6 @@ on:
     secrets:
       CODECOV_TOKEN:
         required: true
-      # Fine-grained PAT with Contents:Read on specklesystems/speckle-bundle-spec (private) —
-      # needed to check out the sibling spec repo Speckle.Sdk.Parquet compiles from.
       BUNDLE_SPEC_TOKEN:
         required: true
 jobs:
@@ -28,7 +26,7 @@ jobs:
       - name: Checkout Bundle Spec Repo
         uses: ./.github/actions/checkout-bundle-spec
         with:
-          token: ${{ secrets.CONNECTORS_GH_TOKEN }}
+          token: ${{ secrets.BUNDLE_SPEC_TOKEN }}
 
       # actions/checkout cannot write outside $GITHUB_WORKSPACE; the csproj expects the spec one level up.
       - name: Move speckle-bundle-spec to sibling location
