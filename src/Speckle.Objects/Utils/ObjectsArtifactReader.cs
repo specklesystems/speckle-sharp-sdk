@@ -64,28 +64,41 @@ public sealed class ObjectsArtifactReader
     // reverse map geometryK -> owning objectK (from DISPLAY), used to attribute HAS_MATERIAL to objects.
     var objByGeom = rels.ObjectByGeometry();
 
+    // ENG-9101: group by Src once so an object with several placements (e.g. a Revit railing -> many balusters)
+    // yields one InstanceProxy per edge instead of the last one winning (DisplayInstanceByObject is a last-wins map).
+    var placementsByObject = rels.DisplayInstanceEdges.GroupBy(e => e.Src).ToDictionary(g => g.Key, g => g.ToList());
+
     // ── build each object, wiring DISPLAY/SOLID/IN_COLLECTION/DISPLAY_INSTANCE ─────────────────────────
     foreach (var kv in bundle.ObjectAppIds)
     {
       cancellationToken.ThrowIfCancellationRequested();
       int objK = kv.Key;
       string appId = kv.Value;
+
+      var host =
+        rels.CollectionByObject.TryGetValue(objK, out int collNodeK) && layerByNode.TryGetValue(collNodeK, out var layer)
+          ? layer.elements
+          : root.elements;
+
+      if (placementsByObject.TryGetValue(objK, out var placements))
+      {
+        // one InstanceProxy per placement edge; only the first keeps the object's own appId, the rest get a
+        // synthetic suffix so none collide (they're independent placements, not the same instance).
+        for (int i = 0; i < placements.Count; i++)
+        {
+          if (!nodes.TryGetValue(placements[i].Dst, out var instNode))
+          {
+            continue;
+          }
+          string placementAppId = i == 0 ? appId : $"{appId}-instance-{i}";
+          host.Add(BuildInstanceProxy(placementAppId, instNode));
+        }
+        continue;
+      }
+
       bundle.Properties.TryGetValue(objK, out var props);
       props ??= new Dictionary<string, object?>();
-
-      Base? built;
-      if (
-        rels.DisplayInstanceByObject.TryGetValue(objK, out int instNodeK)
-        && nodes.TryGetValue(instNodeK, out var instNode)
-      )
-      {
-        built = BuildInstanceProxy(appId, instNode);
-      }
-      else
-      {
-        built = BuildGeometryObject(appId, objK, props, bundle.Geometries, rels, options);
-      }
-
+      var built = BuildGeometryObject(appId, objK, props, bundle.Geometries, rels, options);
       if (built is null)
       {
         // Non-geometric object (no DISPLAY edges, no accepted SOLID) — e.g. a Level/Room emitted only for its
@@ -96,12 +109,6 @@ public sealed class ObjectsArtifactReader
         continue;
       }
 
-      // place into its collection (layer); fall back to the root.
-      var host =
-        rels.CollectionByObject.TryGetValue(objK, out int collNodeK)
-        && layerByNode.TryGetValue(collNodeK, out var layer)
-          ? layer.elements
-          : root.elements;
       host.Add(built);
     }
 
