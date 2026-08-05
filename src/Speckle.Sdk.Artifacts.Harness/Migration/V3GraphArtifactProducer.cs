@@ -37,6 +37,30 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private readonly HashSet<string> _seenObjectAppIds = new(StringComparer.Ordinal);
   private readonly HashSet<string> _seenGeometryAppIds = new(StringComparer.Ordinal);
 
+  // Supports Revit linked models: the v3 connector suffixed every linked element's appId with a per-placement
+  // hash, while proxies and properties kept referencing the bare UniqueId (see TryGetLinkedModelSuffix).
+  private readonly HashSet<string> _linkedModelSuffixes = new(StringComparer.Ordinal);
+
+  // Revit room/host refs stashed during traversal, resolved after it when _seenObjectAppIds is complete.
+  private readonly record struct TopologyRefs(
+    string ElementAppId,
+    string? Room,
+    string? Space,
+    string? FromRoom,
+    string? ToRoom,
+    string? Parent
+  );
+
+  private readonly List<TopologyRefs> _topologyRefs = new();
+
+  // objKs that already received a lineage SUBELEMENT — the host-derived pass must not duplicate them.
+  private readonly HashSet<int> _lineageSubelementChildKs = new();
+
+  // Root-child collections detected as the federation tier, retagged CONTAINER(subtype=Model) instead of
+  // COLLECTION; their appId → container K.
+  private HashSet<string> _modelCollectionAppIds = new(StringComparer.Ordinal);
+  private readonly Dictionary<string, int> _modelContainerByAppId = new(StringComparer.Ordinal);
+
   // INSTANCE-node K by appId, shared between atomic instance leaves and nested-instance definition members.
   private readonly Dictionary<string, int> _instanceNodeByAppId = new(StringComparer.Ordinal);
 
@@ -49,6 +73,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   public Stats Produce(Base root)
   {
     IReadOnlySet<string> defSourceAppIds = GetDefinitionAppIds(root);
+    _modelCollectionAppIds = DetectRevitModelCollections(root);
 
     var traversal = DefaultTraversal.CreateTraversalFunc();
     foreach (var tc in traversal.Traverse(root))
@@ -63,6 +88,16 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
       if (current is Collection col)
       {
+        if (_modelCollectionAppIds.Contains(helper.Aid(col)))
+        {
+          // Federation tier: a source model is a CONTAINER, not a collection — its child collections become
+          // top-level (flat containers, as the v4 Revit builder writes them).
+          var mk = pipeline.AddContainer(helper.CollectionKey(col), col.name, null, "Model");
+          _modelContainerByAppId[helper.Aid(col)] = mk;
+          _stats.Models++;
+          continue;
+        }
+
         // Parent is a Collection except at the root, which is skipped above and never mapped → top-level (null).
         int? parentK = _collectionMap.TryGetValue(helper.Aid(parent.Current), out var pk) ? pk : null;
         var k = pipeline.AddCollection(helper.CollectionKey(col), col.name, parentK, helper.CollectionSubtype(col));
@@ -85,6 +120,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     var layerGeomKeys = BuildLayerGeomKeys(root, out var layerDepth);
 
     EmitProxies(root, layerGeomKeys, layerDepth);
+    EmitRevitTopology();
     EmitCameraViews(root);
     EmitSceneView();
 
@@ -99,21 +135,37 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private void EmitHierarchyEdge(TraversalContext tc, int objK)
   {
     var hostFound = false;
+    var collectionFound = false;
     for (var p = tc.Parent; p is not null; p = p.Parent)
     {
       var pc = p.Current;
       if (pc is Collection)
       {
-        if (_collectionMap.TryGetValue(helper.Aid(pc), out var ck))
+        if (_modelContainerByAppId.TryGetValue(helper.Aid(pc), out var mk))
         {
-          pipeline.InCollection(objK, ck, 0);
-          _stats.InCollectionEdges++;
+          pipeline.InModel(objK, mk, 0);
+          _stats.InModelEdges++;
+          return; // model containers sit directly under the root
         }
-        return; // nearest collection reached; membership resolved
+        if (!collectionFound)
+        {
+          collectionFound = true;
+          if (_collectionMap.TryGetValue(helper.Aid(pc), out var ck))
+          {
+            pipeline.InCollection(objK, ck, 0);
+            _stats.InCollectionEdges++;
+          }
+          if (_modelCollectionAppIds.Count == 0)
+          {
+            return; // no federation tier; nearest collection resolved membership
+          }
+        }
+        continue; // keep climbing to the model tier
       }
-      if (!hostFound && _objectKMap.TryGetValue(pc.id.NotNull(), out var hostK))
+      if (!hostFound && !collectionFound && _objectKMap.TryGetValue(pc.id.NotNull(), out var hostK))
       {
         pipeline.Subelement(hostK, objK, _stats.SubelementEdges++);
+        _lineageSubelementChildKs.Add(objK);
         hostFound = true;
       }
       // keep walking up to reach the enclosing collection
@@ -131,8 +183,14 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
     _stats.Objects++;
 
+    if (TryGetLinkedModelSuffix(appId, out var suffix))
+    {
+      _linkedModelSuffixes.Add(suffix);
+    }
+
     var (props, rootScalars, typeKey) = helper.ExtractProperties(obj);
     pipeline.AddProperties(appId, props, rootScalars, typeKey);
+    StashTopologyRefs(appId, props);
 
     if (obj is InstanceProxy ip)
     {
@@ -513,13 +571,17 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       _stats.Levels++;
       foreach (var objAppId in lp.objects)
       {
-        if (!_seenObjectAppIds.Contains(objAppId))
+        var resolvedAny = false;
+        foreach (var resolved in ResolveMemberRefs(objAppId))
+        {
+          pipeline.OnLevel(pipeline.InternObject(resolved), lvlK);
+          _stats.OnLevelEdges++;
+          resolvedAny = true;
+        }
+        if (!resolvedAny)
         {
           _stats.SkippedLevel++;
-          continue;
         }
-        pipeline.OnLevel(pipeline.InternObject(objAppId), lvlK);
-        _stats.OnLevelEdges++;
       }
     }
 
@@ -541,12 +603,16 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         {
           continue; // unpack can visit a block sub-object twice
         }
-        if (!_seenObjectAppIds.Contains(objAppId))
+        var resolvedAny = false;
+        foreach (var resolved in ResolveMemberRefs(objAppId))
+        {
+          members.Add(pipeline.InternObject(resolved));
+          resolvedAny = true;
+        }
+        if (!resolvedAny)
         {
           _stats.SkippedGroup++;
-          continue;
         }
-        members.Add(pipeline.InternObject(objAppId));
       }
 
       if (members.Count == 0)
@@ -562,6 +628,184 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         _stats.InGroupEdges++;
       }
     }
+  }
+
+  // Revit v3 recorded room/host topology as flat property keys holding bare Element.UniqueIds
+  // (ClassPropertiesExtractor, FamilyInstance only). Stashed here, resolved post-traversal.
+  private void StashTopologyRefs(string appId, IReadOnlyDictionary<string, object?> props)
+  {
+    string? Str(string key) => props.TryGetValue(key, out var v) && v is string { Length: > 0 } s ? s : null;
+
+    var room = Str("roomApplicationId");
+    var space = Str("spaceApplicationId");
+    var fromRoom = Str("fromRoomApplicationId");
+    var toRoom = Str("toRoomApplicationId");
+    var parent = Str("parentApplicationId");
+    if (room is null && space is null && fromRoom is null && toRoom is null && parent is null)
+    {
+      return;
+    }
+    _topologyRefs.Add(new TopologyRefs(appId, room, space, fromRoom, toRoom, parent));
+  }
+
+  // Mirrors big-truck's EmitElementTopology: room ?? space → IN_ROOM, from/to rooms → one CONNECTS_TO scoped
+  // by the opening's K, host parent → SUBELEMENT unless the lineage already provided one.
+  private void EmitRevitTopology()
+  {
+    foreach (var t in _topologyRefs)
+    {
+      var elementK = pipeline.InternObject(t.ElementAppId);
+
+      if (t.Parent is not null && !_lineageSubelementChildKs.Contains(elementK))
+      {
+        if (TryResolveRef(t.Parent, t.ElementAppId, out var parent) && parent != t.ElementAppId)
+        {
+          pipeline.Subelement(pipeline.InternObject(parent), elementK, 0);
+          _stats.HostSubelementEdges++;
+        }
+        else
+        {
+          _stats.SkippedHostParent++;
+        }
+      }
+
+      var roomRef = t.Room ?? t.Space;
+      if (roomRef is not null)
+      {
+        if (TryResolveRef(roomRef, t.ElementAppId, out var room))
+        {
+          pipeline.InRoom(elementK, pipeline.InternObject(room), 0);
+          _stats.InRoomEdges++;
+        }
+        else
+        {
+          _stats.SkippedRoom++;
+        }
+      }
+
+      if (t.FromRoom is not null && t.ToRoom is not null)
+      {
+        if (
+          TryResolveRef(t.FromRoom, t.ElementAppId, out var from) && TryResolveRef(t.ToRoom, t.ElementAppId, out var to)
+        )
+        {
+          pipeline.ConnectsTo(pipeline.InternObject(from), pipeline.InternObject(to), elementK);
+          _stats.ConnectsToEdges++;
+        }
+        else
+        {
+          _stats.SkippedConnects++;
+        }
+      }
+    }
+  }
+
+  // v3 Revit federated sends (SendCollectionManager nested mode) put one collection per source model under
+  // the root: the host model named exactly like the root, links named by file. The collections carry no
+  // marker, so require both signals — the host wrapper by name, and a sibling holding linked-model elements.
+  // Non-federated sends stay untouched.
+  private HashSet<string> DetectRevitModelCollections(Base root)
+  {
+    var result = new HashSet<string>(StringComparer.Ordinal);
+    if (root is not Collection rootCol || string.IsNullOrEmpty(rootCol.name))
+    {
+      return result;
+    }
+
+    var children = rootCol.elements.OfType<Collection>().ToList();
+    var main = children.FirstOrDefault(c => c.name == rootCol.name);
+    if (main is null)
+    {
+      return result;
+    }
+
+    var links = children
+      .Where(c => !ReferenceEquals(c, main) && c.name != "definitionGeometry" && HasLinkedModelElements(c))
+      .ToList();
+    if (links.Count == 0)
+    {
+      return result;
+    }
+
+    result.Add(helper.Aid(main));
+    foreach (var link in links)
+    {
+      result.Add(helper.Aid(link));
+    }
+    return result;
+  }
+
+  private static bool HasLinkedModelElements(Collection col)
+  {
+    foreach (var el in col.elements)
+    {
+      if (el.applicationId is { } aid && TryGetLinkedModelSuffix(aid, out _))
+      {
+        return true;
+      }
+      if (el is Collection sub && HasLinkedModelElements(sub))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // The v3 Revit connector kept one appId per placement of a linked model by suffixing the element's
+  // UniqueId with a hash of the link's placement transform: {UniqueId}_t{8 lowercase hex}
+  // (LinkedModelHandler.GetTransformHash).
+  private static bool TryGetLinkedModelSuffix(string appId, out string suffix)
+  {
+    suffix = "";
+    if (appId.Length <= 10 || appId[^10] != '_' || appId[^9] != 't')
+    {
+      return false;
+    }
+    for (var i = appId.Length - 8; i < appId.Length; i++)
+    {
+      if (appId[i] is not ((>= '0' and <= '9') or (>= 'a' and <= 'f')))
+      {
+        return false;
+      }
+    }
+    suffix = appId[^10..];
+    return true;
+  }
+
+  // An exact match covers everything except Revit linked models, whose objects were sent suffixed while
+  // proxies reference the bare UniqueId — there a bare ref matches once per placement of the link.
+  private IEnumerable<string> ResolveMemberRefs(string bareRef)
+  {
+    if (_seenObjectAppIds.Contains(bareRef))
+    {
+      yield return bareRef;
+      yield break;
+    }
+    foreach (var suffix in _linkedModelSuffixes)
+    {
+      if (_seenObjectAppIds.Contains(bareRef + suffix))
+      {
+        yield return bareRef + suffix;
+      }
+    }
+  }
+
+  // A Revit element and the room/host its properties reference live in the same document, so on a
+  // linked-model send both carry the same suffix — a missed bare ref is re-tried with the element's own.
+  private bool TryResolveRef(string bareRef, string elementAppId, out string resolved)
+  {
+    if (_seenObjectAppIds.Contains(bareRef))
+    {
+      resolved = bareRef;
+      return true;
+    }
+    if (TryGetLinkedModelSuffix(elementAppId, out var suffix) && _seenObjectAppIds.Contains(bareRef + suffix))
+    {
+      resolved = bareRef + suffix;
+      return true;
+    }
+    resolved = "";
+    return false;
   }
 
   // collection appId → the display geometry of every object beneath it, with each collection's depth — so a
@@ -655,6 +899,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private void EmitSceneView()
   {
     var keys = new List<SceneViewKey>();
+    // Model tier only when the send actually federates >1 source model (mirrors the v4 Revit builder).
+    if (_modelContainerByAppId.Count > 1)
+    {
+      keys.Add(SceneViewKey.Rel(RelKind.InModel));
+    }
     if (_stats.InCollectionEdges > 0)
     {
       keys.Add(SceneViewKey.Rel(RelKind.InCollection));
