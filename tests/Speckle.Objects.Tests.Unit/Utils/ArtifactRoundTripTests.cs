@@ -3,6 +3,7 @@ using Speckle.Objects.Data;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Utils;
+using Speckle.Sdk;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 
@@ -15,13 +16,22 @@ namespace Speckle.Objects.Tests.Unit.Utils;
 /// </summary>
 public class ArtifactRoundTripTests
 {
+  // Complete() requires a producer — meta names whoever wrote the bundle.
+  private static readonly SpeckleApplication TestProducer = new()
+  {
+    HostApplication = "Test",
+    HostApplicationVersion = "1.2.3",
+    Slug = "test-connector",
+    SpeckleVersion = "999.1.0-alpha.1",
+  };
+
   [Fact]
   public async Task RoundTrip_RebuildsLayersMeshesAndMaterials()
   {
     var dir = Path.Combine(Path.GetTempPath(), "SpeckleArtifactRoundTrip", Guid.NewGuid().ToString("N"));
     try
     {
-      using (var pipeline = new ObjectsArtifactPipeline(dir, "rt"))
+      using (var pipeline = new ObjectsArtifactPipeline(dir, "rt", TestProducer))
       {
         int collK = pipeline.AddCollection("layer-1", "Layer 1", null, "Layer");
         int objK = pipeline.InternObject("obj-1");
@@ -50,6 +60,7 @@ public class ArtifactRoundTripTests
           1.52
         );
         pipeline.HasMaterial(gK, matK);
+        pipeline.SetProducer(TestProducer);
         pipeline.Complete();
       }
 
@@ -94,7 +105,7 @@ public class ArtifactRoundTripTests
     var solidBytes = new byte[] { 9, 8, 7, 6, 5, 4 };
     try
     {
-      using (var pipeline = new ObjectsArtifactPipeline(dir, "rt"))
+      using (var pipeline = new ObjectsArtifactPipeline(dir, "rt", TestProducer))
       {
         int objK = pipeline.InternObject("solid-1");
         pipeline.AddProperties(

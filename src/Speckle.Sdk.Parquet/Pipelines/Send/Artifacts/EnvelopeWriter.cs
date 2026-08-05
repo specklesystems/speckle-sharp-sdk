@@ -68,7 +68,11 @@ public sealed record CameraView(
 ///   {base}.envelope.nodes.parquet(id, kind, name, def_ref,     -- shared value-entities; `subtype` is the
 ///         transform, units, subtype, argb, opacity,                CONTAINER discriminator (Model/Collection/…)
 ///         metalness, roughness, emissive, ior, elevation)
-///   {base}.envelope.{meta,rel_types,node_kinds}.parquet        -- self-describing catalog (SOT §6)
+///   {base}.envelope.{rel_types,node_kinds}.parquet             -- self-describing catalog (SOT §6)
+///   {base}.envelope.meta.parquet(schema_version,               -- catalog + provenance: who produced the
+///         produced_by, reference_point_kind|_offset,              bundle, with which SDK, and when
+///         producer_version, sdk_name, sdk_version,                migrated, from which graph vintage
+///         migrated_from_schema_version)
 ///   {base}.envelope.scene_views.parquet(view, name,           -- producer-authored grouping projections
 ///         is_default, ord, source, ref)                          (SOT §8); absent if none
 ///   {base}.envelope.camera_views.parquet(view, name,          -- named camera viewpoints
@@ -102,17 +106,18 @@ public sealed class EnvelopeWriter : IDisposable
   private string? _referencePointKind;
   private string? _referencePointOffset;
 
-  // meta.produced_by: the producing host-app slug (e.g. "rhino", "revit") — NOT a writer class name; consumers
-  // (e.g. the SketchUp receiver) branch on it to detect same-app round-trips. Null = un-migrated producer fallback.
-  private readonly string? _producedBy;
+  private string? _producedBy;
+  private string? _producerVersion;
+  private string? _sdkName;
+  private string? _sdkVersion;
+  private int? _migratedFromSchemaVersion;
 
-  public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler, string? producedBy = null)
+  public EnvelopeWriter(string outputDir, string baseName, ParquetWriteScheduler scheduler)
   {
     Directory.CreateDirectory(outputDir);
     OutputDir = outputDir;
     BaseName = baseName;
     _scheduler = scheduler;
-    _producedBy = producedBy;
 
     // Spec-schema'd tables carry their generated BundleCols ColumnCount so a spec bump that outruns
     // this writer (or a stale sibling spec checkout) fails at construction / first AddRow — never by
@@ -203,12 +208,40 @@ public sealed class EnvelopeWriter : IDisposable
     _referencePointOffset = offset;
   }
 
+  /// <summary>
+  /// Records the producer information of this bundle in the <c>meta</c> file.
+  /// </summary>
+  /// <param name="producedBy">slug of the producer of this version</param>
+  /// <param name="producerVersion">version of the producer</param>
+  /// <param name="sdkName">name of the SDK the producer authored this version with</param>
+  /// <param name="sdkVersion">version of that SDK</param>
+  /// <param name="migratedFromSchemaVersion">The original schema version for model versions migrated from older schema version. <see langword="null"/> for native authored versions</param>
+  /// <remarks>Required before <see cref="Complete"/> — every bundle names its producer.</remarks>
+  public void SetProducer(
+    string producedBy,
+    string producerVersion,
+    string sdkName,
+    string sdkVersion,
+    int? migratedFromSchemaVersion = null
+  )
+  {
+    _producedBy = producedBy;
+    _producerVersion = producerVersion;
+    _sdkName = sdkName;
+    _sdkVersion = sdkVersion;
+    _migratedFromSchemaVersion = migratedFromSchemaVersion;
+  }
+
   /// <summary>Flushes the parquet tables and writes the attach manifest.</summary>
   public void Complete()
   {
     if (_completed)
     {
       return;
+    }
+    if (_producedBy is null)
+    {
+      throw new InvalidOperationException("SetProducer must be called before Complete() — meta names the producer.");
     }
     _completed = true;
     _relations.Complete();
@@ -229,21 +262,35 @@ public sealed class EnvelopeWriter : IDisposable
     SafeDispose(_nodes);
   }
 
-  // meta (SOT §6): schema version + producer + the ENG-8947 reference-point provision. Written at Complete()
-  // (not eagerly in the ctor) so producers can record an applied reference-point re-basing via SetReferencePoint
-  // first. reference_point_kind/_offset are null unless set → NULL columns (readers that ignore them are unaffected).
+  // meta (SOT §6): schema version + producer provenance + the ENG-8947 reference-point provision. Written at
+  // Complete() (not eagerly in the ctor) so producers can record their identity via SetProducer and a
+  // reference-point re-basing via SetReferencePoint first. Only reference_point_* and
+  // migrated_from_schema_version are conditional → NULL columns (readers that ignore them are unaffected).
   private void WriteMeta()
   {
     using var meta = new ParquetTableWriter(
       P("meta.parquet"),
-      new ParquetSchema(I("schema_version"), S("produced_by"), S("reference_point_kind"), S("reference_point_offset")),
+      new ParquetSchema(
+        I("schema_version"),
+        S("produced_by"),
+        S("reference_point_kind"),
+        S("reference_point_offset"),
+        S("producer_version"),
+        S("sdk_name"),
+        S("sdk_version"),
+        NI("migrated_from_schema_version")
+      ),
       _scheduler
     );
     meta.AddRow(
       SpecBundle.SchemaVersion,
-      _producedBy ?? "Speckle.Sdk EnvelopeWriter",
+      _producedBy,
       _referencePointKind,
-      _referencePointOffset
+      _referencePointOffset,
+      _producerVersion,
+      _sdkName,
+      _sdkVersion,
+      _migratedFromSchemaVersion
     );
   }
 
@@ -350,6 +397,8 @@ public sealed class EnvelopeWriter : IDisposable
   }
 
   private static DataField I(string name) => new DataField<int>(name);
+
+  private static DataField NI(string name) => new DataField<int?>(name);
 
   private static DataField S(string name) => new DataField<string>(name);
 

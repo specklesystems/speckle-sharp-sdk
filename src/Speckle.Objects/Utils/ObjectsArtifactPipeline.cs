@@ -1,5 +1,6 @@
 #if NETSTANDARD2_0 || NET8_0_OR_GREATER
 using System.Globalization;
+using Speckle.Sdk;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -39,17 +40,16 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   private readonly IdInterner _geometryInterner = new();
   private readonly IdInterner _nodeInterner = new();
 
-  // producedBy: the producing host-app slug (e.g. "rhino") written to meta.produced_by — connectors pass
-  // ISpeckleApplication.Slug; null falls back to a generic writer label for un-migrated producers.
   public ObjectsArtifactPipeline(
     string outputDir,
     string baseName,
-    ISet<string>? excludedTopLevelProperties = null,
-    string? producedBy = null
+    ISpeckleApplication producer,
+    ISet<string>? excludedTopLevelProperties = null
   )
   {
     _geometriesWriter = new GeometriesParquetWriter(outputDir, baseName, _scheduler);
-    _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler, producedBy);
+    _envelopeWriter = new EnvelopeWriter(outputDir, baseName, _scheduler);
+    SetProducer(producer);
     _eavWriter = new EavWriter(outputDir, baseName, _scheduler);
     _outputDir = outputDir;
     _baseName = baseName;
@@ -65,8 +65,6 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <summary>Output directory of the <c>eav.*.parquet</c> tables. Name kept (<c>...DbPath</c>)
   /// for caller compatibility — no DuckDB is written.</summary>
   public string EavDbPath => _eavWriter.EavDbPath;
-
-  // ── object namespace ──────────────────────────────────────────────────────────────
 
   /// <summary>Interns <paramref name="applicationId"/> via the eav dictionary to its dense <c>K</c>, so
   /// the caller emits envelope edges with the SAME id eav uses.</summary>
@@ -159,8 +157,6 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
   private static readonly IReadOnlyDictionary<string, object?> s_emptyDict = new Dictionary<string, object?>();
 
-  // ── geometry namespace ────────────────────────────────────────────────────────────
-
   /// <summary>Interns <paramref name="meshApplicationId"/> to a dense geometry <c>K</c>, encoding +
   /// storing the SGEO blob on first sight (skipped on repeats), and returns the <c>K</c>.</summary>
   public int AddGeometry(string meshApplicationId, Base geometry)
@@ -188,8 +184,6 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <summary>Resolves the geometry <c>K</c> for an already-added mesh (lookup, no encode) — for post-loop
   /// <c>DEFINES</c>/<c>HAS_MATERIAL</c> edges referencing meshes by host applicationId.</summary>
   public int InternGeometryId(string meshApplicationId) => _geometryInterner.GetOrAdd(meshApplicationId);
-
-  // ── node namespace (value-entities) ────────────────────────────────────────────────
 
   /// <summary>Interns a DEFINITION node (instance-definition / block), writing it once.</summary>
   public int AddDefinition(string definitionKey, string? name)
@@ -532,26 +526,37 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     );
   }
 
-  // ── scene views ──────────────────────────────────────────────────────────────────────
-
   /// <summary>Authors a scene_views projection (SOT §8): the default (+ optional named) scene-explorer
   /// grouping the consumer seeds its model-tree from. Build keys with <see cref="SceneViewKey.Rel"/> /
   /// <see cref="SceneViewKey.Eav"/>.</summary>
   public void AddSceneView(SceneView view) => _envelopeWriter.AddSceneView(view);
 
-  // ── camera views ─────────────────────────────────────────────────────────────────────
-
   /// <summary>Authors one named camera viewpoint into <c>envelope.camera_views.parquet</c>. Position/target in
   /// model units, forward/up unit vectors, <see cref="CameraView.Fov"/> vertical DEGREES (perspective only).</summary>
   public void AddCameraView(CameraView view) => _envelopeWriter.AddCameraView(view);
-
-  // ── reference point (ENG-8947) ─────────────────────────────────────────────────────────
 
   /// <summary>Records the applied reference-point re-basing in the bundle <c>meta</c> so it is recoverable
   /// downstream (federation/georeferencing). <paramref name="kind"/> ∈ <c>projectBasePoint | surveyPoint |
   /// internalOriginFallback</c> (null = internal origin); <paramref name="offset"/> is <c>"x,y,z"</c> in display
   /// units — the vector subtracted from world-space output. Call before <see cref="Complete"/>.</summary>
   public void SetReferencePoint(string? kind, string? offset) => _envelopeWriter.SetReferencePoint(kind, offset);
+
+  /// <summary>
+  /// Records the producer information of this bundle in the <c>meta</c> file.
+  /// </summary>
+  /// <param name="producer">Producer info</param>
+  /// <param name="migratedFromSchemaVersion">The original schema version for model versions migrated from older schema version. <see langword="null"/> for native authored versions</param>
+  /// <remarks>Required before <see cref="Complete"/> — every bundle names its producer.</remarks>
+  public void SetProducer(ISpeckleApplication producer, int? migratedFromSchemaVersion = null)
+  {
+    _envelopeWriter.SetProducer(
+      producer.Slug,
+      producer.HostApplicationVersion,
+      "Speckle.Sdk (.NET)",
+      producer.SpeckleVersion,
+      migratedFromSchemaVersion
+    );
+  }
 
   /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed
   /// node/relation API (<see cref="AddDefinition"/>, <see cref="AddMaterial"/>, <see cref="Display"/>, …).

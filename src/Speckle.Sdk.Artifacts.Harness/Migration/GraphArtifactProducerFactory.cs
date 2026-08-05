@@ -11,7 +11,11 @@ namespace Speckle.Sdk.Artifacts.Harness.Migration;
 /// container-time constructor dependencies. The implementation is chosen per graph, by vintage: see
 /// <see cref="ArtifactHelper.IsV3"/>.
 /// </summary>
-internal sealed class GraphArtifactProducerFactory(ArtifactHelper helper, ILogger<GraphArtifactProducerFactory> logger)
+internal sealed class GraphArtifactProducerFactory(
+  ArtifactHelper helper,
+  ISpeckleApplication application,
+  ILogger<GraphArtifactProducerFactory> logger
+)
 {
   /// <summary>
   /// Creates the producer matching <paramref name="root"/>'s vintage, writing the bundle into
@@ -21,10 +25,12 @@ internal sealed class GraphArtifactProducerFactory(ArtifactHelper helper, ILogge
   public IGraphArtifactProducer Create(string outputDir, string baseName, Base root)
   {
     Directory.CreateDirectory(outputDir);
-    var pipeline = new ObjectsArtifactPipeline(outputDir, baseName);
+    var pipeline = new ObjectsArtifactPipeline(outputDir, baseName, application);
 
     var isV3 = helper.IsV3(root);
     logger.LogInformation("Detected {GraphVersion} graph [{SpeckleType}]", isV3 ? "v3" : "v2", root.speckle_type);
+
+    pipeline.SetProducer(application, isV3 ? 3 : 2);
 
     return isV3 ? new V3GraphArtifactProducer(pipeline, helper) : new V2GraphArtifactProducer(pipeline, helper);
   }
