@@ -24,6 +24,9 @@
     <File Path=".github/workflows/pr.yml" />
     <File Path=".github/workflows/release.yml" />
   </Folder>
+  <Folder Name="/config/workflows/checkout-bundle-spec/">
+    <File Path=".github/actions/checkout-bundle-spec/action.yml" />
+  </Folder>
   <Folder Name="/performance/">
     <Project Path="tests/Speckle.Sdk.Serialization.Testing/Speckle.Sdk.Serialization.Testing.csproj" />
     <Project Path="tests/Speckle.Sdk.Tests.Performance/Speckle.Sdk.Tests.Performance.csproj" />
