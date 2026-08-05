@@ -76,7 +76,8 @@ public sealed class ObjectsArtifactReader
       string appId = kv.Value;
 
       var host =
-        rels.CollectionByObject.TryGetValue(objK, out int collNodeK) && layerByNode.TryGetValue(collNodeK, out var layer)
+        rels.CollectionByObject.TryGetValue(objK, out int collNodeK)
+        && layerByNode.TryGetValue(collNodeK, out var layer)
           ? layer.elements
           : root.elements;
 
