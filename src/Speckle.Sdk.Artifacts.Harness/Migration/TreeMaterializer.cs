@@ -26,7 +26,11 @@ internal static class TreeMaterializer
   /// <summary>Maps an already-parsed bundle into the tree (no IO). <paramref name="preferSolids"/>=true rebuilds
   /// objects carrying raw 3dm SOLID blobs as <c>RhinoObject</c> with <c>rawEncoding</c>; false (default) rebuilds
   /// every object from its DISPLAY meshes only — the shape script/SDK consumers traverse.</summary>
-  public static Base Materialize(ArtefactBundle bundle, bool preferSolids = false, CancellationToken cancellationToken = default)
+  public static Base Materialize(
+    ArtefactBundle bundle,
+    bool preferSolids = false,
+    CancellationToken cancellationToken = default
+  )
   {
     var root = new ObjectsArtifactReader().Build(bundle, new ArtifactReceiveOptions(preferSolids), cancellationToken);
     root["version"] = 4;
