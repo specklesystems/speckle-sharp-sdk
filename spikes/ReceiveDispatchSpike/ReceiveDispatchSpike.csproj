@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- SPIKE(wayfinder ticket 07) — THROWAWAY console runner. Not in the solution; run `dotnet run`
+       from this directory. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- throwaway spike: repo analyzers off -->
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <AnalysisMode>None</AnalysisMode>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <RunAnalyzers>false</RunAnalyzers>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Speckle.Objects/Speckle.Objects.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+</Project>

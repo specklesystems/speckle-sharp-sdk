@@ -16,5 +16,9 @@ public partial class Operations(
   ISdkActivityFactory activityFactory,
   ISdkMetricsFactory metricsFactory,
   ISerializeProcessFactory serializeProcessFactory,
-  IDeserializeProcessFactory deserializeProcessFactory
+  IDeserializeProcessFactory deserializeProcessFactory,
+  // SPIKE(wayfinder ticket 07) — THROWAWAY: bundle dispatch deps. Materializer is optional so pure-Sdk
+  // consumers (no Speckle.Objects) still resolve; they fail loud only when handed a crafted id.
+  Speckle.Sdk.Pipelines.Receive.Artifacts.IArtifactDownloader? artifactDownloader = null,
+  Speckle.Sdk.Pipelines.Receive.Artifacts.IArtifactGraphMaterializer? artifactGraphMaterializer = null
 ) : IOperations;

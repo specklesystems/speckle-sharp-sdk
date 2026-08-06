@@ -28,6 +28,14 @@ public partial class Operations
     DeserializeProcessOptions? options = null
   )
   {
+    // SPIKE(wayfinder ticket 07) — THROWAWAY: front-door dispatch. A crafted resource id in place of an
+    // object hash routes to the artefact-bundle rail; everything below stays the legacy v1 path.
+    if (Pipelines.Receive.Artifacts.CraftedResourceId.TryParse(objectId, out var craftedId))
+    {
+      return await ReceiveViaArtifactsSpike(url, streamId, craftedId, authorizationToken, cancellationToken)
+        .ConfigureAwait(false);
+    }
+
     using var receiveActivity = activityFactory.Start("Operations.Receive");
     receiveActivity?.SetTag("speckle.url", url);
     receiveActivity?.SetTag("speckle.projectId", streamId);
@@ -93,6 +101,16 @@ public partial class Operations
     CancellationToken cancellationToken = default
   )
   {
+    // SPIKE(wayfinder ticket 07) — THROWAWAY: fail loud, don't 404 cryptically. Bundle-over-ITransport is
+    // deliberately unsupported (research 03 §3: the contract is per-hashed-object JSON; bundles have neither).
+    if (Pipelines.Receive.Artifacts.CraftedResourceId.TryParse(objectId, out _))
+    {
+      throw new NotSupportedException(
+        $"'{objectId}' is a bundle resource identifier, not an object id. This version has no legacy object "
+          + "graph; transport-based Receive cannot serve it. Use Receive2 (server receive) instead."
+      );
+    }
+
     using var receiveActivity = activityFactory.Start("Operations.Receive");
     metricsFactory.CreateCounter<long>("Receive").Add(1);
 
