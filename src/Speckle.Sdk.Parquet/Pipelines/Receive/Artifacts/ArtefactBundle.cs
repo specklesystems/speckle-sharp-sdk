@@ -215,8 +215,7 @@ public static class ArtefactBundleReader
       .ConfigureAwait(false);
     var metaT = await TryReadTableAsync(bundleDir, ".envelope.meta.parquet", cancellationToken).ConfigureAwait(false);
     // Type-scoped params (ENG-9136) — additive tables, absent from bundles predating type splitting.
-    var typeEavT = await TryReadTableAsync(bundleDir, ".eav.type_eav.parquet", cancellationToken)
-      .ConfigureAwait(false);
+    var typeEavT = await TryReadTableAsync(bundleDir, ".eav.type_eav.parquet", cancellationToken).ConfigureAwait(false);
     var objectTypeT = await TryReadTableAsync(bundleDir, ".eav.object_type.parquet", cancellationToken)
       .ConfigureAwait(false);
 
