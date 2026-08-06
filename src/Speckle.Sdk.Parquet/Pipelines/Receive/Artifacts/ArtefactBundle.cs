@@ -99,6 +99,12 @@ public sealed class ArtefactRelations
   public Dictionary<int, Dictionary<int, int>> ObjectNodeByRel { get; } = new();
   public Dictionary<int, int> MaterialByGeometry { get; } = new();
 
+  /// <summary>HAS_MATERIAL (<c>ord</c>=1): node(INSTANCE) → MATERIAL node — a material painted directly onto a
+  /// block placement (e.g. Rhino's <c>MaterialFromObject</c> set on the instance itself), distinct from a
+  /// geometry-sourced material. The geometry and instance-node K-spaces overlap numerically, so the edge's
+  /// <c>ord</c> tags which one <c>src</c> belongs to — mirroring <see cref="ColorByObject"/>'s tag [ENG-8849].</summary>
+  public Dictionary<int, int> MaterialByInstance { get; } = new();
+
   /// <summary>HAS_COLOR (<c>ord</c>=0): geometry → COLOR node. The object's by-object display colour (distinct from a
   /// render material); resolved back to the owning object via <see cref="ObjectByGeometry"/>, mirroring
   /// <see cref="MaterialByGeometry"/>.</summary>
@@ -181,6 +187,14 @@ public sealed class ArtefactBundle
   /// <summary>Named camera viewpoints (<c>envelope.camera_views.parquet</c>), ordered by <c>ord</c> then
   /// <c>view</c>; empty if the bundle ships none. Native bakers recreate them as host named views.</summary>
   public required IReadOnlyList<ArtefactCameraView> CameraViews { get; init; }
+
+  /// <summary>Type-scoped properties (Revit Type Parameters / System Type Parameters, deduped once per type by
+  /// <c>ObjectsArtifactPipeline.TrySplitTypeParameters</c>) resolved to each instance object that references a
+  /// type via <c>eav.object_type</c> [ENG-9136]. Every object of the same type shares the SAME dictionary
+  /// instance, so a model with many instances of few types parses each type's properties once, not per instance.
+  /// Empty when the bundle ships no type tables (non-Revit sources, or bundles written before type splitting).</summary>
+  public IReadOnlyDictionary<int, Dictionary<string, object?>> TypePropertiesByObject { get; init; } =
+    new Dictionary<int, Dictionary<string, object?>>();
 }
 
 /// <summary>Reads the parquet files of an artefact bundle directory into a neutral <see cref="ArtefactBundle"/>.</summary>
@@ -200,10 +214,15 @@ public static class ArtefactBundleReader
     var cameraViewsT = await TryReadTableAsync(bundleDir, ".envelope.camera_views.parquet", cancellationToken)
       .ConfigureAwait(false);
     var metaT = await TryReadTableAsync(bundleDir, ".envelope.meta.parquet", cancellationToken).ConfigureAwait(false);
+    // Type-scoped params (ENG-9136) — additive tables, absent from bundles predating type splitting.
+    var typeEavT = await TryReadTableAsync(bundleDir, ".eav.type_eav.parquet", cancellationToken)
+      .ConfigureAwait(false);
+    var objectTypeT = await TryReadTableAsync(bundleDir, ".eav.object_type.parquet", cancellationToken)
+      .ConfigureAwait(false);
 
     var objIdToApp = BuildObjectIds(objectsT);
     var pathById = BuildPaths(pathsT);
-    var propsByObject = BuildProperties(eavT, pathById);
+    var propsByObject = BuildProperties(eavT, pathById, "object_index");
     var (refPointKind, refPointOffset) = LoadReferencePoint(metaT);
     var geometries = LoadGeometries(geometriesTables);
     var relations = LoadRelations(relationsT);
@@ -221,7 +240,36 @@ public static class ArtefactBundleReader
       CameraViews = LoadCameraViews(cameraViewsT),
       ReferencePointKind = refPointKind,
       ReferencePointOffset = refPointOffset,
+      TypePropertiesByObject = LoadTypeProperties(typeEavT, objectTypeT, pathById),
     };
+  }
+
+  // ENG-9136: type_eav has the identical (index, path_index, value_*) row shape as eav, keyed by type_index
+  // instead of object_index — BuildProperties parses it the same way. object_type is the weak ref (object_index →
+  // type_index); joining it here means every object of one type shares the SAME parsed dictionary instance, so a
+  // model with many instances of few types costs one parse per type, not one per instance.
+  private static Dictionary<int, Dictionary<string, object?>> LoadTypeProperties(
+    ParquetTable? typeEavT,
+    ParquetTable? objectTypeT,
+    Dictionary<int, string> pathById
+  )
+  {
+    var byObject = new Dictionary<int, Dictionary<string, object?>>();
+    if (typeEavT is null || objectTypeT is null || !objectTypeT.Has("object_index"))
+    {
+      return byObject;
+    }
+    var propsByType = BuildProperties(typeEavT, pathById, "type_index");
+    var objIdx = objectTypeT.Ints("object_index");
+    var typeIdx = objectTypeT.Ints("type_index");
+    for (int i = 0; i < objIdx.Length; i++)
+    {
+      if (propsByType.TryGetValue(typeIdx[i], out var props))
+      {
+        byObject[objIdx[i]] = props;
+      }
+    }
+    return byObject;
   }
 
   // Compat for bundles written before the ord namespace tag (ENG-8822): an object-sourced HAS_COLOR edge landed in
@@ -418,22 +466,25 @@ public static class ArtefactBundleReader
     return map;
   }
 
+  // keyColumn is "object_index" for the instance-scoped eav table, or "type_index" for the type-scoped
+  // type_eav table (ENG-9136) — both share the identical (key, path_index, value_*) row shape.
   private static Dictionary<int, Dictionary<string, object?>> BuildProperties(
     ParquetTable t,
-    Dictionary<int, string> pathById
+    Dictionary<int, string> pathById,
+    string keyColumn
   )
   {
-    var byObject = new Dictionary<int, Dictionary<string, object?>>();
-    if (!t.Has("object_index"))
+    var byKey = new Dictionary<int, Dictionary<string, object?>>();
+    if (!t.Has(keyColumn))
     {
-      return byObject;
+      return byKey;
     }
-    var objIdx = t.Ints("object_index");
+    var keyIdx = t.Ints(keyColumn);
     var pathIdx = t.Ints("path_index");
     var vStr = t.Strings("value_string");
     var vDbl = t.NullableDoubles("value_double");
     var vBool = t.NullableBools("value_boolean");
-    for (int i = 0; i < objIdx.Length; i++)
+    for (int i = 0; i < keyIdx.Length; i++)
     {
       object? value =
         vBool[i].HasValue ? vBool[i]
@@ -448,14 +499,14 @@ public static class ArtefactBundleReader
       {
         continue;
       }
-      if (!byObject.TryGetValue(objIdx[i], out var dict))
+      if (!byKey.TryGetValue(keyIdx[i], out var dict))
       {
         dict = new Dictionary<string, object?>();
-        byObject[objIdx[i]] = dict;
+        byKey[keyIdx[i]] = dict;
       }
       SetNested(dict, path, value);
     }
-    return byObject;
+    return byKey;
   }
 
   private static void SetNested(Dictionary<string, object?> root, string path, object? value)
@@ -555,7 +606,16 @@ public static class ArtefactBundleReader
           sets.DisplayInstanceEdges.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
           break;
         case RelKind.HasMaterial:
-          sets.MaterialByGeometry[src[i]] = dst[i];
+          // ord tags the src namespace: 1 = INSTANCE node (a placement-painted material), 0/absent = geometry
+          // [ENG-8849], mirroring HAS_COLOR's ord tag.
+          if (ord[i] == 1)
+          {
+            sets.MaterialByInstance[src[i]] = dst[i];
+          }
+          else
+          {
+            sets.MaterialByGeometry[src[i]] = dst[i];
+          }
           break;
         case RelKind.HasColor:
           // ord tags the src namespace: 1 = object (instance placement), 0/absent = geometry [ENG-8822].
