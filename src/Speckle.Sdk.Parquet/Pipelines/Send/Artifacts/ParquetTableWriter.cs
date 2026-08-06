@@ -24,9 +24,11 @@ public sealed class ParquetTableWriter : IDisposable
   public string Path { get; }
 
 #pragma warning disable CA2213 // disposed on the background writer thread via the Complete() finalize job, not inline
+#pragma warning disable IDE0370 // the '!' IS required (CS8625 without it): assignment happens on the scheduler thread, invisible to flow analysis
   // Created + owned on the scheduler thread (ctor's enqueued job); read only there — see the ctor for why.
   private Stream _stream = null!;
   private ParquetWriter _writer = null!;
+#pragma warning restore IDE0370
 #pragma warning restore CA2213
   private readonly DataField[] _fields;
   private readonly Col[] _cols;
