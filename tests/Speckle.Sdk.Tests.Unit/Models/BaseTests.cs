@@ -1,18 +1,11 @@
 using AwesomeAssertions;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Tests.Unit.Models;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class BaseTests
 {
-  public BaseTests()
-  {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(BaseTests).Assembly);
-  }
-
   [Fact]
   public void CanGetSetDynamicItemProp()
   {

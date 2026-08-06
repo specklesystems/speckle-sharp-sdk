@@ -43,7 +43,7 @@
     <!-- Keep at exactly 7.0.5 for side by side with V2 -->
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="[7.0.5,)" />
     <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.4" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.6" />
     <PackageVersion Include="Moq" Version="4.20.72" />
@@ -62,10 +62,10 @@
     <!-- 9.0.4 is minimum version for .net standard2.0 because it's the first version to include async enumerables in the .NET standard target -->
     <PackageVersion Include="System.Threading.Channels" Version="[9.0.4,]" />
     <PackageVersion Include="Verify.Quibble" Version="2.1.1" />
-    <PackageVersion Include="Verify.Xunit" Version="31.12.5" />
+    <PackageVersion Include="Verify.XunitV3" Version="31.19.1" />
     <PackageVersion Include="System.Text.Json" Version="10.0.7" />
-    <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.assert" Version="2.9.3" />
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.v3.assert" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <GlobalPackageReference Include="PolySharp" Version="1.15.0" />
     <!-- Will need to test how 10 behaves... -->

@@ -66,8 +66,7 @@ public static class ServiceRegistration
     {
       allAssembles.Add(currentAssembly);
     }
-    TypeLoader.Reset();
-    TypeLoader.Initialize(allAssembles.ToArray());
+    TypeLoader.ReInitialize(allAssembles.ToArray());
     serviceCollection.AddLogging();
 
     serviceCollection.AddSingleton<ISpeckleApplication>(

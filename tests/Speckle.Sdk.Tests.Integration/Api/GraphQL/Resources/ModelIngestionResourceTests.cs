@@ -19,9 +19,9 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
   private Model _model;
   private IOperations _operations;
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
@@ -40,10 +40,10 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
       "Starting processing",
       new(".NET test runner", "0.0.0", null, null)
     );
-    ModelIngestion ingest = await Sut.Create(createInput);
+    ModelIngestion ingest = await Sut.Create(createInput, TestContext.Current.CancellationToken);
 
     var errorInput = new ModelIngestionFailedInput(ingest.id, _project.id, "A bad thing happened", "Over hear!");
-    var res = await Sut.FailWithError(errorInput);
+    var res = await Sut.FailWithError(errorInput, TestContext.Current.CancellationToken);
     Assert.Equal(ingest.id, res.id);
   }
 
@@ -56,7 +56,7 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
       "Starting processing",
       new(".NET test runner", "0.0.0", null, null)
     );
-    ModelIngestion ingest = await Sut.Create(createInput);
+    ModelIngestion ingest = await Sut.Create(createInput, TestContext.Current.CancellationToken);
 
     await Update(null, "None");
     await Update(0.1, "0.1");
@@ -67,7 +67,7 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
     async Task Update(double? progress, string message)
     {
       var updateInput = new ModelIngestionUpdateInput(ingest.id, _project.id, message, progress);
-      var res = await Sut.UpdateProgress(updateInput);
+      var res = await Sut.UpdateProgress(updateInput, TestContext.Current.CancellationToken);
 
       Assert.Equal(message, res.statusData.progressMessage);
       Assert.False(res.cancellationRequested);
@@ -84,14 +84,14 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
       "Starting processing",
       new(".NET test runner", "0.0.0", null, null)
     );
-    ModelIngestion ingest = await Sut.Create(createInput);
+    ModelIngestion ingest = await Sut.Create(createInput, TestContext.Current.CancellationToken);
 
     var input = new ModelIngestionCancelledInput(
       ingest.id,
       _project.id,
       cancellationMessage: "This was cancelled for testing purposes"
     );
-    var res = await Sut.FailWithCancel(input);
+    var res = await Sut.FailWithCancel(input, TestContext.Current.CancellationToken);
     Assert.Equal(ingest.id, res.id);
   }
 
@@ -104,14 +104,14 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
       "Starting processing",
       new(".NET test runner", "0.0.0", null, null)
     );
-    ModelIngestion ingest = await Sut.Create(createInput);
+    ModelIngestion ingest = await Sut.Create(createInput, TestContext.Current.CancellationToken);
 
     var input = new ModelIngestionInvalidInput(
       ingest.id,
       _project.id,
       validationMessage: "The users input was invalid"
     );
-    var res = await Sut.FailWithInvalid(input);
+    var res = await Sut.FailWithInvalid(input, TestContext.Current.CancellationToken);
     Assert.Equal(ingest.id, res.id);
   }
 
@@ -124,7 +124,7 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
       "Starting processing",
       new(".NET test runner", "0.0.0", null, null)
     );
-    ModelIngestion ingest = await Sut.Create(createInput);
+    ModelIngestion ingest = await Sut.Create(createInput, TestContext.Current.CancellationToken);
 
     Base myObject = Fixtures.GenerateNestedObject();
     var sendResult = await _operations.Send2(
@@ -140,16 +140,20 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
           $"{x.Count} / {x.Total}",
           x.Total == null ? null : x.Count / x.Total
         );
-        _ = Sut.UpdateProgress(updateInput).Result;
+        _ = Sut.UpdateProgress(updateInput, TestContext.Current.CancellationToken).Result;
       }),
       CancellationToken.None,
       new(true, true)
     );
 
     ModelIngestionSuccessInput finish = new(ingest.id, _project.id, sendResult.RootId, "yay!");
-    string versionId = await Sut.Complete(finish);
-    Version version = await _testUser.Version.Get(versionId, _project.id);
-    ModelIngestion finalIngestion = await _testUser.Ingestion.Get(ingest.id, _project.id);
+    string versionId = await Sut.Complete(finish, TestContext.Current.CancellationToken);
+    Version version = await _testUser.Version.Get(versionId, _project.id, TestContext.Current.CancellationToken);
+    ModelIngestion finalIngestion = await _testUser.Ingestion.Get(
+      ingest.id,
+      _project.id,
+      TestContext.Current.CancellationToken
+    );
     Assert.Equal(version.id, versionId);
     Assert.Equal(sendResult.RootId, version.referencedObject);
     Assert.Equal(finalIngestion.statusData.versionId, versionId);
@@ -164,9 +168,9 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
       "Starting processing",
       new(".NET test runner", "0.0.0", null, null)
     );
-    ModelIngestion ingest = await Sut.Create(createInput);
+    ModelIngestion ingest = await Sut.Create(createInput, TestContext.Current.CancellationToken);
 
-    ModelIngestion res = await Sut.Get(ingest.id, _project.id);
+    ModelIngestion res = await Sut.Get(ingest.id, _project.id, TestContext.Current.CancellationToken);
     Assert.Equal(ingest.id, res.id);
     Assert.Equal(ingest.statusData.status, res.statusData.status);
     Assert.Equal(ingest.statusData.versionId, res.statusData.versionId);
@@ -187,8 +191,11 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
       "Starting processing",
       new(".NET test runner", "0.0.0", null, null)
     );
-    var ingestion = await Sut.Create(createInput);
-    var res = await Sut.Requeue(new(ingestion.id, _project.id, "we'll try and requeue this ingestion"));
+    var ingestion = await Sut.Create(createInput, TestContext.Current.CancellationToken);
+    var res = await Sut.Requeue(
+      new(ingestion.id, _project.id, "we'll try and requeue this ingestion"),
+      TestContext.Current.CancellationToken
+    );
 
     Assert.Equal(ingestion.id, res.id);
     Assert.Equal(ModelIngestionStatus.queued, res.statusData.status);
@@ -205,9 +212,10 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
       "Starting processing",
       new(".NET test runner", "0.0.0", null, null)
     );
-    var ingestion = await Sut.Create(createInput);
+    var ingestion = await Sut.Create(createInput, TestContext.Current.CancellationToken);
     var res = await Sut.StartProcessing(
-      new(ingestion.id, _project.id, "", new SourceDataInput("what", "happens", "now", 0))
+      new(ingestion.id, _project.id, "", new SourceDataInput("what", "happens", "now", 0)),
+      TestContext.Current.CancellationToken
     );
 
     Assert.Equal(ingestion.id, res.id);

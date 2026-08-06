@@ -1,20 +1,15 @@
 ﻿using AwesomeAssertions;
 using Speckle.Newtonsoft.Json;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class ChunkingTests
 {
   public static IEnumerable<object[]> TestCases()
   {
-    // Initialize type loader
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(IgnoreTest).Assembly);
-
     // Return test data as a collection of objects for xUnit
     yield return [CreateDynamicTestCase(10, 100), 10];
     yield return [CreateDynamicTestCase(0.5, 100), 1];

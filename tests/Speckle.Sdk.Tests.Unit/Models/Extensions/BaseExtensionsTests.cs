@@ -1,19 +1,12 @@
 using AwesomeAssertions;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.Extensions;
 
 namespace Speckle.Sdk.Tests.Unit.Models.Extensions;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class BaseExtensionsTests
 {
-  public BaseExtensionsTests()
-  {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(TestBase).Assembly);
-  }
-
   [Theory]
   [InlineData("myDynamicProp")]
   [InlineData("elements")]

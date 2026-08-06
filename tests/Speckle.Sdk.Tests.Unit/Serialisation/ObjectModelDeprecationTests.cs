@@ -5,37 +5,29 @@ using Speckle.Sdk.Serialisation.Deprecated;
 
 namespace Speckle.Sdk.Tests.Unit.Serialisation
 {
-  [Collection(nameof(RequiresTypeLoaderCollection))]
   public class TypeLoaderTests
   {
-    // Constructor replaces the [SetUp] functionality in NUnit
-    public TypeLoaderTests()
-    {
-      TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(MySpeckleBase).Assembly);
-    }
-
-    [Fact] // Replaces [Test]
+    [Fact]
     public void TestThatTypeWithoutAttributeFails()
     {
-      // Record.Exception is the xUnit alternative of Assert.Throws
       var exception = Record.Exception(() => TypeLoader.ParseType(typeof(string)));
 
-      exception.Should().NotBeNull(); // Shouldly assertion
-      exception.Should().BeOfType<InvalidOperationException>(); // Ensure it's the correct exception type
+      exception.Should().NotBeNull();
+      exception.Should().BeOfType<InvalidOperationException>();
     }
 
-    [Fact] // Replaces [Test]
+    [Fact]
     public void TestThatTypeWithoutMultipleAttributes()
     {
       string destinationType = $"Speckle.Core.Serialisation.{nameof(MySpeckleBase)}";
 
       var result = TypeLoader.GetAtomicType(destinationType);
-      result.Should().Be<MySpeckleBase>(); // Shouldly assertion replaces Assert.That
+      result.Should().Be<MySpeckleBase>();
 
       destinationType = $"Speckle.Core.Serialisation.Deprecated.{nameof(MySpeckleBase)}";
 
       result = TypeLoader.GetAtomicType(destinationType);
-      result.Should().Be<MySpeckleBase>(); // Shouldly assertion replaces Assert.That
+      result.Should().Be<MySpeckleBase>();
     }
   }
 }

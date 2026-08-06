@@ -1,19 +1,12 @@
 using System.Collections;
 using AwesomeAssertions;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Models.GraphTraversal;
 
 namespace Speckle.Sdk.Tests.Unit.Models.GraphTraversal;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public class GraphTraversalTests
 {
-  public GraphTraversalTests()
-  {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(TraversalMock).Assembly);
-  }
-
   private static IEnumerable<TraversalContext> Traverse(Base testCase, params ITraversalRule[] rules)
   {
     var sut = new Sdk.Models.GraphTraversal.GraphTraversal(rules);

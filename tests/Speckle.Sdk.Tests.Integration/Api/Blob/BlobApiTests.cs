@@ -14,7 +14,7 @@ public class BlobApiTests : IAsyncLifetime
   private IClient _client;
   private Project _project;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     var account = await Fixtures.SeedUser().ConfigureAwait(false);
@@ -40,7 +40,7 @@ public class BlobApiTests : IAsyncLifetime
     var preDiff = await _blobApi.HasBlobs(_project.id, [id], CancellationToken.None);
     await _blobApi.UploadBlobs(_project.id, [(id, filePath)], null, CancellationToken.None);
     var postDiff = await _blobApi.HasBlobs(_project.id, [id], CancellationToken.None);
-    var res = await _blobApi.DownloadBlob(_project.id, id);
+    var res = await _blobApi.DownloadBlob(_project.id, id, cancellationToken: TestContext.Current.CancellationToken);
 
     //assert
     preDiff.Should().BeEquivalentTo([id]);
@@ -49,14 +49,15 @@ public class BlobApiTests : IAsyncLifetime
     file.Name.Should().StartWith(id[..Models.Blob.LocalHashPrefixLength]);
     file.Directory?.FullName.Should().Be(SpecklePathProvider.BlobStoragePath());
 
-    string[] lines = await File.ReadAllLinesAsync(res);
+    string[] lines = await File.ReadAllLinesAsync(res, TestContext.Current.CancellationToken);
     lines[0].Should().Be(PAYLOAD);
     lines.Length.Should().Be(1);
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client.Dispose();
-    return Task.CompletedTask;
+    _blobApi.Dispose();
+    return ValueTask.CompletedTask;
   }
 }

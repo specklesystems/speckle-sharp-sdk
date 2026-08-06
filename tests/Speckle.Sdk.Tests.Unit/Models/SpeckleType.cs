@@ -1,19 +1,11 @@
 using AwesomeAssertions;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Models.TestModels;
 
 namespace Speckle.Sdk.Tests.Unit.Models
 {
-  [Collection(nameof(RequiresTypeLoaderCollection))]
   public class SpeckleTypeTests
   {
-    public SpeckleTypeTests()
-    {
-      // Setup logic during test class initialization
-      TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(Foo).Assembly);
-    }
-
     [Theory]
     [MemberData(nameof(Cases))]
     public void SpeckleTypeIsProperlyBuilt(Base foo, string expectedType) => foo.speckle_type.Should().Be(expectedType);

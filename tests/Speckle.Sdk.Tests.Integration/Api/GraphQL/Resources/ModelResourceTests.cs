@@ -14,7 +14,7 @@ public class ModelResourceTests : IAsyncLifetime
   private Project _project;
   private Model _model;
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     // Runs instead of [SetUp] in NUnit
     _testUser = await Fixtures.SeedUserWithClient();
@@ -22,10 +22,10 @@ public class ModelResourceTests : IAsyncLifetime
     _model = await _testUser.Model.Create(new("Test Model", "", _project.id));
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     // Perform any cleanup, if needed
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
   [Theory]
@@ -37,7 +37,7 @@ public class ModelResourceTests : IAsyncLifetime
     CreateModelInput input = new(name, description, _project.id);
 
     // Act
-    Model result = await Sut.Create(input);
+    Model result = await Sut.Create(input, TestContext.Current.CancellationToken);
 
     // Assert
     result.Should().NotBeNull();
@@ -50,7 +50,7 @@ public class ModelResourceTests : IAsyncLifetime
   public async Task ModelGet()
   {
     // Act
-    Model result = await Sut.Get(_model.id, _project.id);
+    Model result = await Sut.Get(_model.id, _project.id, TestContext.Current.CancellationToken);
 
     // Assert
     result.id.Should().Be(_model.id);
@@ -64,7 +64,7 @@ public class ModelResourceTests : IAsyncLifetime
   public async Task GetModels()
   {
     // Act
-    var result = await Sut.GetModels(_project.id);
+    var result = await Sut.GetModels(_project.id, cancellationToken: TestContext.Current.CancellationToken);
 
     // Assert
     result.items.Count.Should().Be(1);
@@ -76,7 +76,10 @@ public class ModelResourceTests : IAsyncLifetime
   public async Task Project_GetModels()
   {
     // Act
-    var result = await _testUser.Project.GetWithModels(_project.id);
+    var result = await _testUser.Project.GetWithModels(
+      _project.id,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     // Assert
     result.id.Should().Be(_project.id);
@@ -95,7 +98,7 @@ public class ModelResourceTests : IAsyncLifetime
     var input = new UpdateModelInput(_model.id, NEW_NAME, NEW_DESCRIPTION, _project.id);
 
     // Act
-    Model updatedModel = await Sut.Update(input);
+    Model updatedModel = await Sut.Update(input, TestContext.Current.CancellationToken);
 
     // Assert
     updatedModel.id.Should().Be(_model.id);
@@ -111,24 +114,27 @@ public class ModelResourceTests : IAsyncLifetime
     var input = new DeleteModelInput(_model.id, _project.id);
 
     // Act
-    await Sut.Delete(input);
+    await Sut.Delete(input, TestContext.Current.CancellationToken);
 
     // Assert: Ensure fetching the deleted model throws an exception
     var getEx = await FluentActions
-      .Invoking(() => Sut.Get(_model.id, _project.id))
+      .Invoking(() => Sut.Get(_model.id, _project.id, TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
     getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
 
     // Assert: Ensure deleting the non-existing model again throws an exception
-    var delEx = await FluentActions.Invoking(() => Sut.Delete(input)).Should().ThrowAsync<AggregateException>();
+    var delEx = await FluentActions
+      .Invoking(() => Sut.Delete(input, TestContext.Current.CancellationToken))
+      .Should()
+      .ThrowAsync<AggregateException>();
     getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
   }
 
   [Fact]
   public async Task TestUserHasModelPermissions()
   {
-    var ownerResult = await Sut.GetPermissions(_project.id, _model.id);
+    var ownerResult = await Sut.GetPermissions(_project.id, _model.id, TestContext.Current.CancellationToken);
     ownerResult.canUpdate.authorized.Should().Be(true);
     ownerResult.canCreateVersion.authorized.Should().Be(true);
     ownerResult.canDelete.authorized.Should().Be(true);
@@ -136,7 +142,7 @@ public class ModelResourceTests : IAsyncLifetime
     // Test with another user
     var guest = await Fixtures.SeedUserWithClient();
 
-    var guestResult = await guest.Model.GetPermissions(_project.id, _model.id);
+    var guestResult = await guest.Model.GetPermissions(_project.id, _model.id, TestContext.Current.CancellationToken);
     guestResult.canUpdate.authorized.Should().Be(false);
     guestResult.canCreateVersion.authorized.Should().Be(false);
     guestResult.canDelete.authorized.Should().Be(false);
@@ -146,7 +152,7 @@ public class ModelResourceTests : IAsyncLifetime
   [Trait("Server", "Internal")]
   public async Task TestCanCreateModelIngestion_InternalServer()
   {
-    var ownerResult = await Sut.CanCreateModelIngestion(_project.id, _model.id);
+    var ownerResult = await Sut.CanCreateModelIngestion(_project.id, _model.id, TestContext.Current.CancellationToken);
     ownerResult.authorized.Should().Be(true);
   }
 
@@ -155,7 +161,7 @@ public class ModelResourceTests : IAsyncLifetime
   public async Task TestCanCreateModelIngestion_PublicServer_Throws()
   {
     var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
-      await Sut.CanCreateModelIngestion(_project.id, _model.id)
+      await Sut.CanCreateModelIngestion(_project.id, _model.id, TestContext.Current.CancellationToken)
     );
     ex.InnerExceptions.Should().HaveCount(1);
     ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLInvalidQueryException>();

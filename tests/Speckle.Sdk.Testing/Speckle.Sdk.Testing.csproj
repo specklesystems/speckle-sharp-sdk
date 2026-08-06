@@ -6,7 +6,7 @@
   <ItemGroup>
     <PackageReference Include="Moq" />
     <PackageReference Include="Verify.Quibble" />
-    <PackageReference Include="Verify.Xunit" />
+    <PackageReference Include="Verify.XunitV3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Speckle.Sdk\Speckle.Sdk.csproj" />

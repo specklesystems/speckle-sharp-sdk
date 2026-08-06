@@ -13,14 +13,14 @@ public class ProjectInviteResourceExceptionalTests : IAsyncLifetime
   private ProjectInviteResource Sut => _testUser.ProjectInvite;
 
   // Replacing OneTimeSetUp with IAsyncLifetime's InitializeAsync
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new ProjectCreateInput("test", null, null));
   }
 
   // Implementing IAsyncLifetime's DisposeAsync (optional if no cleanup is needed)
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 
   [Theory]
   [InlineData(null, null, null, null)]

@@ -2,21 +2,18 @@ using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Common;
-using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Unit.Host;
 using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-[Collection(nameof(RequiresTypeLoaderCollection))]
 public sealed class SendReceiveLocal : IDisposable
 {
   private readonly IOperations _operations;
 
   public SendReceiveLocal()
   {
-    TypeLoader.ReInitialize(typeof(Base).Assembly, typeof(Point).Assembly);
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     _operations = serviceProvider.GetRequiredService<IOperations>();
   }
@@ -43,12 +40,20 @@ public sealed class SendReceiveLocal : IDisposable
     }
 
     using SQLiteTransport localTransport = new();
-    (var objId01, var references) = await _operations.Send(myObject, localTransport, false);
+    (var objId01, var references) = await _operations.Send(
+      myObject,
+      localTransport,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     objId01.Should().NotBeNull();
     references.Count.Should().Be(NUM_OBJECTS);
 
-    var commitPulled = await _operations.Receive(objId01.NotNull());
+    var commitPulled = await _operations.Receive(
+      objId01.NotNull(),
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     ((List<object>)commitPulled["@items"].NotNull())[0].Should().BeOfType<Point>();
     ((List<object>)commitPulled["@items"].NotNull()).Count.Should().Be(NUM_OBJECTS);
@@ -69,9 +74,14 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    (var objId01, _) = await _operations.Send(myObject, _sut, false);
+    (var objId01, _) = await _operations.Send(
+      myObject,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
-    var commitPulled = await _operations.Receive(objId01);
+    var commitPulled = await _operations.Receive(objId01, cancellationToken: TestContext.Current.CancellationToken);
     List<object> items = (List<object>)commitPulled["@items"].NotNull();
     items.Should().AllSatisfy(x => x.Should().BeOfType<Point>());
     items.Count.Should().Be(NUM_OBJECTS);
@@ -92,11 +102,16 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    (var objId01, _) = await _operations.Send(myObject, _sut, false);
+    (var objId01, _) = await _operations.Send(
+      myObject,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     objId01.Should().NotBeNull();
 
-    var objsPulled = await _operations.Receive(objId01);
+    var objsPulled = await _operations.Receive(objId01, cancellationToken: TestContext.Current.CancellationToken);
     ((List<object>)objsPulled["@items"].NotNull()).Count.Should().Be(30);
   }
 
@@ -115,11 +130,16 @@ public sealed class SendReceiveLocal : IDisposable
     myObject["@dictionary"] = myDic;
     myObject["@list"] = myList;
 
-    (var _objId01, _) = await _operations.Send(myObject, _sut, false);
+    (var _objId01, _) = await _operations.Send(
+      myObject,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     _objId01.Should().NotBeNull();
 
-    var objsPulled = await _operations.Receive(_objId01);
+    var objsPulled = await _operations.Receive(_objId01, cancellationToken: TestContext.Current.CancellationToken);
     ((List<object>)((Dictionary<string, object>)objsPulled["@dictionary"].NotNull())["a"]).First().Should().Be(1);
     ((List<object>)objsPulled["@list"].NotNull()).Last().Should().Be("ciao");
   }
@@ -150,11 +170,16 @@ public sealed class SendReceiveLocal : IDisposable
       ((List<Base>)((dynamic)obj)["@LayerC"]).Add(new Point(i, i, i + rand.NextDouble()) { applicationId = i + "baz" });
     }
 
-    (var objId01, _) = await _operations.Send(obj, _sut, false);
+    (var objId01, _) = await _operations.Send(
+      obj,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     objId01.Should().NotBeNull();
 
-    var objPulled = await _operations.Receive(objId01);
+    var objPulled = await _operations.Receive(objId01, cancellationToken: TestContext.Current.CancellationToken);
 
     objPulled.Should().BeOfType<Base>();
 
@@ -186,7 +211,12 @@ public sealed class SendReceiveLocal : IDisposable
       );
     }
 
-    (var commitId02, _) = await _operations.Send(myObject, _sut, false);
+    (var commitId02, _) = await _operations.Send(
+      myObject,
+      _sut,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     ProgressArgs? progress = null;
     await _operations.Receive(
@@ -194,7 +224,8 @@ public sealed class SendReceiveLocal : IDisposable
       onProgressAction: new UnitTestProgress<ProgressArgs>(x =>
       {
         progress = x;
-      })
+      }),
+      cancellationToken: TestContext.Current.CancellationToken
     );
     progress.Should().NotBeNull();
   }
@@ -206,10 +237,25 @@ public sealed class SendReceiveLocal : IDisposable
     @base["test"] = "the best";
 
     SQLiteTransport myLocalTransport = new();
-    var sendResult = await _operations.Send(@base, myLocalTransport, false);
-    await _operations.Send(@base, myLocalTransport, false);
+    var sendResult = await _operations.Send(
+      @base,
+      myLocalTransport,
+      false,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
+    await _operations.Send(@base, myLocalTransport, false, cancellationToken: TestContext.Current.CancellationToken);
 
-    _ = await _operations.Receive(sendResult.rootObjId, null, myLocalTransport);
-    await _operations.Receive(sendResult.rootObjId, null, myLocalTransport);
+    _ = await _operations.Receive(
+      sendResult.rootObjId,
+      null,
+      myLocalTransport,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
+    await _operations.Receive(
+      sendResult.rootObjId,
+      null,
+      myLocalTransport,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
   }
 }

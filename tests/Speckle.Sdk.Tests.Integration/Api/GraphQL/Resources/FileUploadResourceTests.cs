@@ -15,7 +15,7 @@ public class FileUploadResourceTests : IAsyncLifetime
   private FileInfo _payload;
   private const string PAYLOAD_CONTENTS = "Hello World!";
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     var serviceProvider = TestServiceSetup.GetServiceProvider();
     var account = await Fixtures.SeedUser().ConfigureAwait(false);
@@ -31,14 +31,14 @@ public class FileUploadResourceTests : IAsyncLifetime
     _payload = new FileInfo(filePath);
   }
 
-  public Task DisposeAsync()
+  public ValueTask DisposeAsync()
   {
     _client.Dispose();
     if (File.Exists(_payload.FullName))
     {
       File.Delete(_payload.FullName);
     }
-    return Task.CompletedTask;
+    return ValueTask.CompletedTask;
   }
 
   [Fact]
@@ -46,7 +46,7 @@ public class FileUploadResourceTests : IAsyncLifetime
   {
     var input = new GenerateFileUploadUrlInput(_project.id, "foo.txt");
 
-    var res = await Sut.GenerateUploadUrl(input);
+    var res = await Sut.GenerateUploadUrl(input, TestContext.Current.CancellationToken);
     res.fileId.Should().HaveLength(10);
 
     //Just check the url path is expected. The query string will contain signatures and dates...
@@ -62,11 +62,11 @@ public class FileUploadResourceTests : IAsyncLifetime
   {
     //act
     var input = new GenerateFileUploadUrlInput(_project.id, _payload.Name);
-    var res = await Sut.GenerateUploadUrl(input);
-    _ = await Sut.UploadFile(_payload.FullName, res.url);
+    var res = await Sut.GenerateUploadUrl(input, TestContext.Current.CancellationToken);
+    _ = await Sut.UploadFile(_payload.FullName, res.url, cancellationToken: TestContext.Current.CancellationToken);
 
     string temp = Path.GetTempFileName();
-    await Sut.DownloadFile(_project.id, res.fileId, temp);
+    await Sut.DownloadFile(_project.id, res.fileId, temp, cancellationToken: TestContext.Current.CancellationToken);
 
     //assert
     File.ReadAllLines(temp).Should().BeEquivalentTo([PAYLOAD_CONTENTS]);
@@ -78,14 +78,31 @@ public class FileUploadResourceTests : IAsyncLifetime
   public async Task StartAndFinishJobFail(bool testSuccessCase)
   {
     //assemble
-    Model model = await _client.Model.Create(new("test model", null, _project.id));
-    var uploadUrl = await Sut.GenerateUploadUrl(new GenerateFileUploadUrlInput(_project.id, _payload.Name));
-    string etag = await Sut.UploadFile(_payload.FullName, uploadUrl.url);
+    Model model = await _client.Model.Create(
+      new("test model", null, _project.id),
+      TestContext.Current.CancellationToken
+    );
+    var uploadUrl = await Sut.GenerateUploadUrl(
+      new GenerateFileUploadUrlInput(_project.id, _payload.Name),
+      TestContext.Current.CancellationToken
+    );
+    string etag = await Sut.UploadFile(
+      _payload.FullName,
+      uploadUrl.url,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
     FileImportResult fakeResult = new(100, 100, 100, "integrationTests", "some value");
 
     //act
-    FileImport job = await Sut.StartFileImportJob(new(_project.id, model.id, uploadUrl.fileId, etag));
-    var prePendingJobs = await Sut.GetModelFileImportJobs(_project.id, model.id);
+    FileImport job = await Sut.StartFileImportJob(
+      new(_project.id, model.id, uploadUrl.fileId, etag),
+      TestContext.Current.CancellationToken
+    );
+    var prePendingJobs = await Sut.GetModelFileImportJobs(
+      _project.id,
+      model.id,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     FileImportInputBase input;
     if (testSuccessCase)
@@ -112,7 +129,11 @@ public class FileUploadResourceTests : IAsyncLifetime
 
     bool res = await Sut.FinishFileImportJob(input, CancellationToken.None);
 
-    var postPendingJobs = await Sut.GetModelFileImportJobs(_project.id, model.id);
+    var postPendingJobs = await Sut.GetModelFileImportJobs(
+      _project.id,
+      model.id,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     //assert
     prePendingJobs.items.Should().HaveCount(1);

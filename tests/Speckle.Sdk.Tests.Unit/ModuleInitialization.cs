@@ -2,7 +2,7 @@
 
 namespace Speckle.Sdk.Tests.Unit;
 
-public static class SpeckleVerify
+public static class ModuleInitialization
 {
   private static bool _initialized;
 
@@ -14,7 +14,8 @@ public static class SpeckleVerify
       return;
     }
 
-    global::Speckle.Sdk.Testing.SpeckleVerify.Initialize();
+    Testing.SpeckleVerify.Initialize();
+    _ = TestServiceSetup.GetServiceProvider(); //Force type loader initialization
     _initialized = true;
   }
 }

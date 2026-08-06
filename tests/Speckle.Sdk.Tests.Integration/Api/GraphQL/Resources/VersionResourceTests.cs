@@ -16,9 +16,13 @@ public class VersionResourceTests : IAsyncLifetime
   private Model _model2;
   private Version _version;
 
-  public Task DisposeAsync() => Task.CompletedTask;
+  public ValueTask DisposeAsync()
+  {
+    _testUser.Dispose();
+    return ValueTask.CompletedTask;
+  }
 
-  public async Task InitializeAsync()
+  public async ValueTask InitializeAsync()
   {
     _testUser = await Fixtures.SeedUserWithClient();
     _project = await _testUser.Project.Create(new("Test project", "", null));
@@ -31,7 +35,7 @@ public class VersionResourceTests : IAsyncLifetime
   [Fact]
   public async Task VersionGet()
   {
-    Version result = await Sut.Get(_version.id, _project.id);
+    Version result = await Sut.Get(_version.id, _project.id, TestContext.Current.CancellationToken);
 
     result.id.Should().Be(_version.id);
     result.message.Should().Be(_version.message);
@@ -40,7 +44,11 @@ public class VersionResourceTests : IAsyncLifetime
   [Fact]
   public async Task VersionsGet()
   {
-    ResourceCollection<Version> result = await Sut.GetVersions(_model1.id, _project.id);
+    ResourceCollection<Version> result = await Sut.GetVersions(
+      _model1.id,
+      _project.id,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     result.items.Count.Should().Be(1);
     result.totalCount.Should().Be(1);
@@ -51,13 +59,17 @@ public class VersionResourceTests : IAsyncLifetime
   public async Task VersionReceived()
   {
     MarkReceivedVersionInput input = new(_version.id, _project.id, "Integration test");
-    await Sut.Received(input);
+    await Sut.Received(input, TestContext.Current.CancellationToken);
   }
 
   [Fact]
   public async Task ModelGetWithVersions()
   {
-    var result = await _testUser.Model.GetWithVersions(_model1.id, _project.id);
+    var result = await _testUser.Model.GetWithVersions(
+      _model1.id,
+      _project.id,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     result.id.Should().Be(_model1.id);
     result.versions.items.Count.Should().Be(1);
@@ -71,7 +83,7 @@ public class VersionResourceTests : IAsyncLifetime
     const string NEW_MESSAGE = "MY new version message";
 
     UpdateVersionInput input = new(_version.id, _project.id, NEW_MESSAGE);
-    Version updatedVersion = await Sut.Update(input);
+    Version updatedVersion = await Sut.Update(input, TestContext.Current.CancellationToken);
 
     updatedVersion.id.Should().Be(_version.id);
     updatedVersion.message.Should().Be(NEW_MESSAGE);
@@ -82,11 +94,11 @@ public class VersionResourceTests : IAsyncLifetime
   public async Task VersionMoveToModel()
   {
     MoveVersionsInput input = new(_project.id, _model2.name, [_version.id]);
-    string id = await Sut.MoveToModel(input);
+    string id = await Sut.MoveToModel(input, TestContext.Current.CancellationToken);
 
     id.Should().Be(_model2.id);
 
-    Version movedVersion = await Sut.Get(_version.id, _project.id);
+    Version movedVersion = await Sut.Get(_version.id, _project.id, TestContext.Current.CancellationToken);
 
     movedVersion.id.Should().Be(_version.id);
     movedVersion.message.Should().Be(_version.message);
@@ -98,16 +110,16 @@ public class VersionResourceTests : IAsyncLifetime
   {
     DeleteVersionsInput input = new([_version.id], _project.id);
 
-    await Sut.Delete(input);
+    await Sut.Delete(input, TestContext.Current.CancellationToken);
 
     var getEx = await FluentActions
-      .Invoking(async () => await Sut.Get(_version.id, _project.id))
+      .Invoking(async () => await Sut.Get(_version.id, _project.id, TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
     getEx.WithInnerExceptionExactly<SpeckleGraphQLException>();
 
     var delEx = await FluentActions
-      .Invoking(async () => await Sut.Delete(input))
+      .Invoking(async () => await Sut.Delete(input, TestContext.Current.CancellationToken))
       .Should()
       .ThrowAsync<AggregateException>();
     delEx.WithInnerExceptionExactly<SpeckleGraphQLException>();

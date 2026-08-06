@@ -20,7 +20,7 @@ public class OtherUserResourceTests
   [Fact]
   public async Task OtherUserGet_Should_ReturnCorrectUser()
   {
-    var res = await Sut.Get(_testData.userInfo.id);
+    var res = await Sut.Get(_testData.userInfo.id, TestContext.Current.CancellationToken);
 
     res.Should().NotBeNull();
     res!.name.Should().Be(_testData.userInfo.name);
@@ -29,7 +29,7 @@ public class OtherUserResourceTests
   [Fact]
   public async Task OtherUserGet_NonExistentUser_Should_ReturnNull()
   {
-    var result = await Sut.Get("AnIdThatDoesntExist");
+    var result = await Sut.Get("AnIdThatDoesntExist", TestContext.Current.CancellationToken);
 
     result.Should().BeNull();
   }
@@ -37,7 +37,11 @@ public class OtherUserResourceTests
   [Fact]
   public async Task UserSearch_Should_ReturnMatchingUser()
   {
-    var res = await Sut.UserSearch(_testData.userInfo.email, 25);
+    var res = await Sut.UserSearch(
+      _testData.userInfo.email,
+      25,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     res.items.Should().ContainSingle();
     res.items[0].id.Should().Be(_testData.userInfo.id);
@@ -46,7 +50,11 @@ public class OtherUserResourceTests
   [Fact]
   public async Task UserSearch_NonExistentUser_Should_ReturnEmptyList()
   {
-    var res = await Sut.UserSearch("idontexist@example.com", 25);
+    var res = await Sut.UserSearch(
+      "idontexist@example.com",
+      25,
+      cancellationToken: TestContext.Current.CancellationToken
+    );
 
     res.items.Should().BeEmpty();
   }

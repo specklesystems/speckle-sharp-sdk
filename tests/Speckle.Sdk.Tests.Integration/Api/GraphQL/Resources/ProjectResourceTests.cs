@@ -40,7 +40,7 @@ public class ProjectResourceTests
     var input = new ProjectCreateInput(name, description, visibility);
 
     // Act
-    var result = await Sut.Create(input);
+    var result = await Sut.Create(input, TestContext.Current.CancellationToken);
 
     // Assert
     result.Should().NotBeNull();
@@ -54,7 +54,7 @@ public class ProjectResourceTests
   public async Task ProjectGet_Should_ReturnCorrectProject()
   {
     // Act
-    var result = await Sut.Get(_testProject.id);
+    var result = await Sut.Get(_testProject.id, TestContext.Current.CancellationToken);
 
     // Assert
     result.id.Should().Be(_testProject.id);
@@ -74,7 +74,8 @@ public class ProjectResourceTests
 
     // Act
     var newProject = await Sut.Update(
-      new ProjectUpdateInput(_testProject.id, NEW_NAME, NEW_DESCRIPTION, null, NEW_VISIBILITY)
+      new ProjectUpdateInput(_testProject.id, NEW_NAME, NEW_DESCRIPTION, null, NEW_VISIBILITY),
+      TestContext.Current.CancellationToken
     );
 
     // Assert
@@ -88,32 +89,40 @@ public class ProjectResourceTests
   public async Task ProjectDelete_Should_DeleteProjectSuccessfully()
   {
     // Arrange
-    var toDelete = await Sut.Create(new ProjectCreateInput("Delete me", null, null));
+    var toDelete = await Sut.Create(
+      new ProjectCreateInput("Delete me", null, null),
+      TestContext.Current.CancellationToken
+    );
 
     // Act
-    await Sut.Delete(toDelete.id);
+    await Sut.Delete(toDelete.id, TestContext.Current.CancellationToken);
 
     // Assert
-    await FluentActions.Invoking(async () => await Sut.Get(toDelete.id)).Should().ThrowAsync<Exception>();
+    await FluentActions
+      .Invoking(async () => await Sut.Get(toDelete.id, TestContext.Current.CancellationToken))
+      .Should()
+      .ThrowAsync<Exception>();
   }
 
   [Fact]
   public async Task TestUserHasProjectPermissions()
   {
     var privateProject = await _testUser.Project.Create(
-      new ProjectCreateInput("asdfasdf", "desc", ProjectVisibility.Private)
+      new ProjectCreateInput("asdfasdf", "desc", ProjectVisibility.Private),
+      TestContext.Current.CancellationToken
     );
 
-    var resp = await Sut.GetPermissions(privateProject.id);
+    var resp = await Sut.GetPermissions(privateProject.id, TestContext.Current.CancellationToken);
     resp.canCreateModel.authorized.Should().Be(true);
     resp.canDelete.authorized.Should().Be(true);
     resp.canLoad.authorized.Should().Be(true);
 
     var publicProject = await _testUser.Project.Create(
-      new ProjectCreateInput("asdfasdf", "desc", ProjectVisibility.Public)
+      new ProjectCreateInput("asdfasdf", "desc", ProjectVisibility.Public),
+      TestContext.Current.CancellationToken
     );
 
-    var res = await Sut.GetPermissions(publicProject.id);
+    var res = await Sut.GetPermissions(publicProject.id, TestContext.Current.CancellationToken);
     res.canCreateModel.authorized.Should().Be(true);
     res.canDelete.authorized.Should().Be(true);
     res.canLoad.authorized.Should().Be(true);
@@ -121,7 +130,7 @@ public class ProjectResourceTests
     // Test with another user
     var guest = await Fixtures.SeedUserWithClient();
 
-    var guestResult = await guest.Project.GetPermissions(publicProject.id);
+    var guestResult = await guest.Project.GetPermissions(publicProject.id, TestContext.Current.CancellationToken);
     guestResult.canCreateModel.authorized.Should().Be(false);
     guestResult.canDelete.authorized.Should().Be(false);
     guestResult.canLoad.authorized.Should().Be(false);
