@@ -424,9 +424,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void DefinesInstance(int definitionK, int instanceK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.DefinesInstance, definitionK, instanceK, ord);
 
-  /// <summary>geometry → node(MATERIAL): per-mesh render material.</summary>
-  public void HasMaterial(int geometryK, int materialK) =>
-    _envelopeWriter.AddRelation(RelKind.HasMaterial, geometryK, materialK, 0);
+  /// <summary>geometry | node(INSTANCE) → node(MATERIAL): per-mesh render material, or (<paramref name="srcIsInstance"/>)
+  /// a material painted directly onto a block placement that owns no geometry of its own. The geometry and
+  /// instance-node K-spaces overlap numerically, so <paramref name="srcIsInstance"/> tags which one
+  /// <paramref name="srcK"/> belongs to in the edge's <c>ord</c> column — mirroring <see cref="HasColor"/>'s
+  /// <c>srcIsObject</c> tag [ENG-8849].</summary>
+  public void HasMaterial(int srcK, int materialK, bool srcIsInstance = false) =>
+    _envelopeWriter.AddRelation(RelKind.HasMaterial, srcK, materialK, srcIsInstance ? 1 : 0);
 
   /// <summary>geometry | object → node(COLOR): display colour. The two source namespaces overlap numerically
   /// (both are dense int spaces from 0), so <paramref name="srcIsObject"/> tags which one <paramref name="srcK"/>
