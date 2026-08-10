@@ -64,6 +64,10 @@ public static class ParquetTableReader
     {
       total += c.Length;
     }
+    // SPIKE(ticket-17, local-only): Parquet.NET hands back nullable-element arrays (double?[]) where
+    // f.ClrType is the bare type (double) — Array.Copy across that pair throws ArrayTypeMismatch on any
+    // bundle big enough for >1 row group. Allocate with the chunks' real element type instead.
+    elementType = chunks[0].GetType().GetElementType() ?? elementType;
     var result = Array.CreateInstance(elementType, total);
     int offset = 0;
     foreach (var c in chunks)

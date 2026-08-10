@@ -48,11 +48,10 @@ internal sealed class Harness(
     CancellationToken ct
   )
   {
+    // SPIKE(ticket-17, local-only): unset/empty token ⇒ anonymous — public-project reads work only
+    // with the Authorization header fully absent (server 403s empty/invalid bearers).
     var authToken =
-      Environment.GetEnvironmentVariable("SPECKLE_SRC_TOKEN")
-      ?? Environment
-        .GetEnvironmentVariable("SPECKLE_TOKEN")
-        .NotNull("Expected SPECKLE_TOKEN or SPECKLE_SRC_TOKEN to be set");
+      Environment.GetEnvironmentVariable("SPECKLE_SRC_TOKEN") ?? Environment.GetEnvironmentVariable("SPECKLE_TOKEN") ?? "";
 
     // No destination → migrate the source version in place. The CLI guarantees a version is supplied here.
     if (destServer is null && destProject is null && destModel is null)
@@ -68,7 +67,11 @@ internal sealed class Harness(
       return 1;
     }
 
-    string[] destination = [(destServer ?? server).AbsoluteUri, destProject ?? project, destModel ?? model];
+    // SPIKE(ticket-17, local-only): HARNESS_NO_UPLOAD=1 stops after Produce (fixture manufacture).
+    string[]? destination =
+      Environment.GetEnvironmentVariable("HARNESS_NO_UPLOAD") == "1"
+        ? null
+        : [(destServer ?? server).AbsoluteUri, destProject ?? project, destModel ?? model];
     return await ProduceAndUpload(graph, model, outDir, destination, ct).ConfigureAwait(false);
   }
 
@@ -484,7 +487,12 @@ internal sealed class Harness(
   {
     // Reuse the latest-version resolver if no pin; otherwise query the single version.
     using var http = new System.Net.Http.HttpClient();
-    http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+    // SPIKE(ticket-17, local-only): anonymous when token empty; UA required through Cloudflare.
+    if (!string.IsNullOrEmpty(token))
+    {
+      http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+    }
+    http.DefaultRequestHeaders.UserAgent.ParseAdd("speckle-backfill-validation/1.0");
     const string QUERY = """
       query Version($projectId: String!, $modelId: String!, $versionId: String!) {
         project(id: $projectId) {

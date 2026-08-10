@@ -44,7 +44,11 @@ internal sealed class RemoteSource(IDeserializeProcessFactory deserializeProcess
     var payload = new { query, variables = new { projectId, modelId } };
 
     using HttpClient http = new();
-    http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    // SPIKE(ticket-17, local-only): anonymous when token empty (public-project reads).
+    if (!string.IsNullOrEmpty(token))
+    {
+      http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
     // app.speckle.systems is behind Cloudflare, which 403s (code 1010) requests with no User-Agent.
     http.DefaultRequestHeaders.UserAgent.ParseAdd("speckle-backfill-validation/1.0");
 
