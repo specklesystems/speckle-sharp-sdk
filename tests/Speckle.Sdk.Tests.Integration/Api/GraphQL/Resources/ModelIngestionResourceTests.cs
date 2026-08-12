@@ -147,7 +147,9 @@ public sealed class ModelIngestionResourceTests : IAsyncLifetime
     );
 
     ModelIngestionSuccessInput finish = new(ingest.id, _project.id, sendResult.RootId, "yay!");
+#pragma warning disable CS0618 // deliberately exercising the obsolete completeWithVersion path (ENG-9221)
     string versionId = await Sut.Complete(finish);
+#pragma warning restore CS0618
     Version version = await _testUser.Version.Get(versionId, _project.id);
     ModelIngestion finalIngestion = await _testUser.Ingestion.Get(ingest.id, _project.id);
     Assert.Equal(version.id, versionId);

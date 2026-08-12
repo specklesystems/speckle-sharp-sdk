@@ -301,6 +301,9 @@ public sealed class ModelIngestionResource
   /// <param name="cancellationToken"></param>
   /// <returns>The version id</returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete(
+    "The completeWithVersion mutation bypasses the v2 REST uploads/complete seam, so the resulting version is not viewer-consumable in the bundle era (ENG-9221). Complete ingestions via the v2 REST uploads/complete flow (Speckle.Sdk.Pipelines.Send.Artifacts.ArtifactPipeline) instead."
+  )]
   public async Task<string> Complete(ModelIngestionSuccessInput input, CancellationToken cancellationToken = default)
   {
     //language=graphql
