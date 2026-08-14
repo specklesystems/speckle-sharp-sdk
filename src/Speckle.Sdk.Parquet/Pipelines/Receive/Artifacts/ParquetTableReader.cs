@@ -94,7 +94,7 @@ public sealed class ParquetTable
   {
     _columns = columns;
     RowCount = rowCount;
-    ColumnNames = columnOrder ?? new List<string>(columns.Keys);
+    ColumnNames = columnOrder ?? [.. columns.Keys];
   }
 
   public int RowCount { get; }
