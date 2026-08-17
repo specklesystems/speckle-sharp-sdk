@@ -48,7 +48,7 @@ public static class ParquetTableReader
     {
       columns[f.Name] = Concat(parts[f.Name], f.ClrType);
     }
-    return new ParquetTable(columns, rowCount);
+    return new ParquetTable(columns, rowCount, Array.ConvertAll(fields, f => f.Name));
   }
 
   // Concatenates the per-row-group column arrays into one array of the column's element type. The element type is
@@ -90,13 +90,24 @@ public sealed class ParquetTable
 {
   private readonly Dictionary<string, Array> _columns;
 
-  public ParquetTable(Dictionary<string, Array> columns, int rowCount)
+  public ParquetTable(Dictionary<string, Array> columns, int rowCount, IReadOnlyList<string>? columnOrder = null)
   {
     _columns = columns;
     RowCount = rowCount;
+    ColumnNames = columnOrder ?? [.. columns.Keys];
   }
 
   public int RowCount { get; }
+
+  /// <summary>Column names in file order — for reading a table whose schema isn't known up front.</summary>
+  public IReadOnlyList<string> ColumnNames { get; }
+
+  /// <summary>
+  /// The element type of a column's array (<c>string</c>, <c>int?</c>, <c>double?</c>, …), or null if there is no
+  /// such column. Lets a caller pick the right accessor for a column it didn't know about at compile time.
+  /// </summary>
+  public Type? ColumnType(string column) =>
+    _columns.TryGetValue(column, out var values) ? values.GetType().GetElementType() : null;
 
   public bool Has(string column) => _columns.ContainsKey(column);
 
