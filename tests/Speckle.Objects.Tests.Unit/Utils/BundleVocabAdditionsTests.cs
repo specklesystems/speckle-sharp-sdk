@@ -74,10 +74,7 @@ public class BundleVocabAdditionsTests
         pipeline.ObjectHasColor(topObjK, colK);
 
         // Model-scoped attributes: the full reference-point transform + a document fact.
-        pipeline.AddModelProperty(
-          "referencePoint.transform",
-          "1,0,0,30.5,0,1,0,12.2,0,0,1,0,0,0,0,1"
-        );
+        pipeline.AddModelProperty("referencePoint.transform", "1,0,0,30.5,0,1,0,12.2,0,0,1,0,0,0,0,1");
         pipeline.AddModelProperty("referencePoint.kind", "projectBasePoint");
         pipeline.AddModelProperty("projectInformation.buildingHeight", 42.5, "m");
         pipeline.AddModelProperty("projectInformation.isMetric", true);
@@ -95,7 +92,14 @@ public class BundleVocabAdditionsTests
           setDescription: "Hydraulic pipe data"
         );
         pipeline.AddPropertySetDefinition("Pipe Data", "ps_hash1", "Service", "SERVICE_BUCKET", "Text", "Supply");
-        pipeline.AddPropertySetDefinition("Pipe Data", "ps_hash1", "Insulated", null, "TrueFalse", defaultBoolean: false);
+        pipeline.AddPropertySetDefinition(
+          "Pipe Data",
+          "ps_hash1",
+          "Insulated",
+          null,
+          "TrueFalse",
+          defaultBoolean: false
+        );
 
         pipeline.Complete();
       }

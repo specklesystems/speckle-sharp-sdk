@@ -59,7 +59,8 @@ public sealed class PropertySetDefinitionsWriter : IDisposable
     {
       throw new InvalidOperationException("Writer already completed.");
     }
-    int defaults = (defaultString is not null ? 1 : 0) + (defaultDouble is not null ? 1 : 0) + (defaultBoolean is not null ? 1 : 0);
+    int defaults =
+      (defaultString is not null ? 1 : 0) + (defaultDouble is not null ? 1 : 0) + (defaultBoolean is not null ? 1 : 0);
     if (defaults > 1)
     {
       throw new ArgumentException(
