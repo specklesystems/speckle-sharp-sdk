@@ -6,6 +6,7 @@ namespace Speckle.Sdk.Models;
 /// Helpers that adapt the file-backed <see cref="Blob"/> to in-memory byte buffers
 /// without modifying the core Blob type.
 /// </summary>
+[Obsolete(Blob.BLOB_DEPRECATION_MESSAGE)]
 public static class BlobExtensions
 {
   /// <summary>
@@ -15,7 +16,7 @@ public static class BlobExtensions
   /// </summary>
   public static Blob FromBytes(byte[] bytes, string tempDir, string suffix = ".smsh")
   {
-    _ = bytes.NotNull();
+    bytes.NotNull();
     if (string.IsNullOrEmpty(tempDir))
     {
       throw new ArgumentException("tempDir must not be empty", nameof(tempDir));

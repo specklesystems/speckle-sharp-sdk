@@ -2,7 +2,7 @@
 
 public sealed class ProjectCollaborator
 {
-  public string id { get; init; }
-  public string role { get; init; }
-  public LimitedUser user { get; init; }
+  public required string id { get; init; }
+  public required string role { get; init; }
+  public required LimitedUser user { get; init; }
 }

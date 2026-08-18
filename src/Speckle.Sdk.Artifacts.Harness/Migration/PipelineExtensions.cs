@@ -51,6 +51,7 @@ internal static class PipelineExtensions
       };
     }
 
+#pragma warning disable CS0618 // Type or member is obsolete
     if (geometry is Brep b)
     {
       //Never considered valid, but some breps may have leaked as displayValues in v2.
@@ -67,6 +68,7 @@ internal static class PipelineExtensions
     {
       return null;
     }
+#pragma warning restore CS0618 // Type or member is obsolete
 
     return pipeline.AddGeometry(appId, geometry);
   }

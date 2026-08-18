@@ -30,7 +30,10 @@ public sealed class SpeckleObjectDeserializer
   /// <summary>
   /// The sync transport. This transport will be used synchronously.
   /// </summary>
+#nullable disable
   public ITransport ReadTransport { get; set; }
+
+#nullable restore
 
   public IProgress<ProgressArgs>? OnProgressAction { get; set; }
 

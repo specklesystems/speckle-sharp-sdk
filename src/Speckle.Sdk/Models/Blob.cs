@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Models;
@@ -6,23 +7,30 @@ namespace Speckle.Sdk.Models;
 [SpeckleType("Speckle.Core.Models.Blob")]
 public class Blob : Base
 {
+  internal const string BLOB_DEPRECATION_MESSAGE = "Blobs are deprecated";
+
   [JsonIgnore]
   public static int LocalHashPrefixLength => 20;
 
   private string _filePath;
-  private string _hash;
+  private string? _hash;
   private bool _isHashExpired = true;
 
+  [Obsolete(BLOB_DEPRECATION_MESSAGE)]
   public Blob() { }
 
+  [Obsolete(BLOB_DEPRECATION_MESSAGE)]
+  [SetsRequiredMembers]
   public Blob(string filePath)
   {
     this.filePath = filePath;
   }
 
-  public string filePath
+  public required string filePath
   {
     get => _filePath;
+    [MemberNotNull(nameof(_filePath))]
+    [MemberNotNull(nameof(originalPath))]
     set
     {
       originalPath ??= value;
