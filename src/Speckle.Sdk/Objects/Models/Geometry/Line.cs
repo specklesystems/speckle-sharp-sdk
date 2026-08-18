@@ -69,6 +69,7 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
     return res;
   }
 
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public List<double> ToList()
   {
     var list = new List<double>();
@@ -82,6 +83,7 @@ public class Line : Base, ICurve, IHasBoundingBox, ITransformable<Line>
     return list;
   }
 
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public static Line FromList(IReadOnlyList<double> list)
   {
     var units = Units.GetUnitFromEncoding(list[^1]);

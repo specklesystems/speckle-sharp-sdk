@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Objects.Other;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Common;
@@ -9,6 +10,11 @@ namespace Speckle.Objects.Geometry;
 /// A curve that is comprised of multiple curves connected.
 /// </summary>
 [SpeckleType("Objects.Geometry.Polycurve")]
+[SuppressMessage(
+  "Usage",
+  "CA2225:Operator overloads have named alternates",
+  Justification = "The implicit cast should really be removed"
+)]
 public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
 {
   /// <summary>
@@ -120,6 +126,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   /// Returns the values of this <see cref="Polycurve"/> as a list of numbers
   /// </summary>
   /// <returns>A list of values representing the polycurve.</returns>
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public List<double> ToList()
   {
     var list = new List<double>();
@@ -143,6 +150,7 @@ public class Polycurve : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   /// </summary>
   /// <param name="list">The list of values representing this polycurve</param>
   /// <returns>A new <see cref="Polycurve"/> with the provided values.</returns>
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public static Polycurve FromList(List<double> list)
   {
     var temp = list.GetRange(6, (int)list[5]);

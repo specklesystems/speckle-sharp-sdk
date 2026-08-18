@@ -120,6 +120,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
   /// This is only used for serialisation purposes.
   /// </summary>
   /// <returns>A list of numbers representing the <see cref="Arc"/>'s value</returns>
+  [Obsolete("Numerical encoding is deprecated along with Brep class")]
   public List<double> ToList()
   {
     var list = new List<double>();
@@ -146,6 +147,7 @@ public class Arc : Base, IHasBoundingBox, ICurve, ITransformable<Arc>
   /// <remarks>The input list should be the result of having called <see cref="Arc.ToList"/></remarks>
   /// <param name="list">A list of numbers</param>
   /// <returns>A new <see cref="Arc"/> with the values assigned from the list.</returns>
+  [Obsolete("Numerical encoding is deprecated along with Brep class")]
   public static Arc FromList(List<double> list)
   {
     string units = Units.GetUnitFromEncoding(list[^1]);

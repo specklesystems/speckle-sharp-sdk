@@ -90,6 +90,7 @@ public class Polyline : Base, ICurve, IHasArea, IHasBoundingBox, ITransformable
   /// Returns the values of this <see cref="Polyline"/> as a list of numbers
   /// </summary>
   /// <returns>A list of values representing the polyline.</returns>
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public List<double> ToList()
   {
     var list = new List<double>();

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Newtonsoft.Json;
 using Speckle.Objects.Primitive;
 using Speckle.Sdk.Models;
@@ -7,7 +8,9 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents an edge of the <see cref="Brep"/>.
 /// </summary>
+[Obsolete(Brep.DEPRECATION_MESSAGE)]
 [SpeckleType("Objects.Geometry.BrepEdge")]
+[SuppressMessage("Performance", "CA1819:Properties should not return arrays", Justification = "Deprecated")]
 public class BrepEdge : Base
 {
   [JsonIgnore]

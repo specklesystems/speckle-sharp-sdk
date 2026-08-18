@@ -45,6 +45,7 @@ public class Ellipse : Base, ICurve, IHasArea
   /// <inheritdoc />
   public double area { get; set; }
 
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public List<double> ToList()
   {
     var list = new List<double>();
@@ -61,6 +62,7 @@ public class Ellipse : Base, ICurve, IHasArea
     return list;
   }
 
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public static Ellipse FromList(List<double> list)
   {
     var ellipse = new Ellipse

@@ -15,20 +15,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
-  <PropertyGroup Label="Analyers">
-    <NoWarn>
-      $(NoWarn);
-      CA1819;CA1008;CA2225;
-    </NoWarn>
-  </PropertyGroup>
-  <ItemGroup Label="Expose internals to test projects">
-    <InternalsVisibleTo Include="Speckle.Objects.Tests.Unit" />
-  </ItemGroup>
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\Speckle.Sdk\Speckle.Sdk.csproj" />
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
-    <!-- Direct reference so the baked-in System.Memory assembly version matches the rest of the closure on net48 hosts (see Directory.Packages.props). -->
-    <PackageReference Include="System.Memory" />
   </ItemGroup>
 </Project>
