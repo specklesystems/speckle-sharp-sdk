@@ -158,7 +158,8 @@ public sealed class EnvelopeWriter : IDisposable
     double? roughness,
     int? emissive,
     double? ior,
-    double? elevation
+    double? elevation,
+    string? ghTopology = null
   )
   {
     EnsureNotCompleted();
@@ -176,7 +177,8 @@ public sealed class EnvelopeWriter : IDisposable
       roughness,
       emissive,
       ior,
-      elevation
+      elevation,
+      ghTopology
     );
   }
 

@@ -28,6 +28,10 @@ public static class RelKind
   public const byte ConnectsTo = (byte)SpecRel.CONNECTS_TO;
   public const byte HostedOn = (byte)SpecRel.HOSTED_ON;
   public const byte Bounds = (byte)SpecRel.BOUNDS;
+  public const byte Places = (byte)SpecRel.PLACES;
+  public const byte DefinesMember = (byte)SpecRel.DEFINES_MEMBER;
+  public const byte ObjectHasMaterial = (byte)SpecRel.OBJECT_HAS_MATERIAL;
+  public const byte ObjectHasColor = (byte)SpecRel.OBJECT_HAS_COLOR;
 }
 
 /// <summary>Value-node kinds in the envelope <c>nodes</c> table — a thin facade over the generated

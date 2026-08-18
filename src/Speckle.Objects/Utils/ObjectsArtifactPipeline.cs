@@ -35,6 +35,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   // polluting every non-structural connector's bundle catalog.
   private StructuralResultsWriter? _structuralResultsWriter;
 
+  // Same lazy-optional contract as structural_results: no rows → no file.
+  private ModelEavWriter? _modelEavWriter;
+  private PropertySetDefinitionsWriter? _propertySetDefinitionsWriter;
+
   // Per-namespace interners. The object namespace is owned by the eav writer (it writes the
   // dictionary), so it is not duplicated here.
   private readonly IdInterner _geometryInterner = new();
@@ -492,6 +496,35 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void Bounds(int boundingObjectK, int roomObjectK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Bounds, boundingObjectK, roomObjectK, ord);
 
+  /// <summary>object(definition member) → node(INSTANCE): the association-only object↔placement map (rel 24
+  /// PLACES). Ties a render-edge-less definition-member object to its nested placement so its properties and
+  /// <see cref="InCollection"/> membership stay reachable — replaces the <c>@speckle.instance_k</c> eav stamp.
+  /// NEVER a render root: that is <see cref="DisplayInstance"/>, whose every edge is drawn in world space.</summary>
+  public void Places(int memberObjectK, int instanceK) =>
+    _envelopeWriter.AddRelation(RelKind.Places, memberObjectK, instanceK, 0);
+
+  /// <summary>node(DEFINITION) → object(member): definition membership on the OBJECT plane, where nothing is
+  /// deduped (rel 25 DEFINES_MEMBER). <paramref name="memberOrd"/> is the MEMBER ordinal shared with the
+  /// member's <see cref="Defines"/> rows — joining (definition, ord) recovers each member's geometry even when
+  /// content-hash dedup collapses identical meshes across definitions. Replaces the <c>@speckle.geometry_k</c>
+  /// eav stamp; instance-members join via <see cref="Places"/> instead.</summary>
+  public void DefinesMember(int definitionK, int memberObjectK, int memberOrd) =>
+    _envelopeWriter.AddRelation(RelKind.DefinesMember, definitionK, memberObjectK, memberOrd);
+
+  /// <summary>object → node(MATERIAL): placement paint on the object plane (rel 26, successor of
+  /// <see cref="HasMaterial"/> with <c>srcIsInstance</c>). FILL semantics: geometry-level HAS_MATERIAL always
+  /// wins; the object's material fills definition geometry with no material of its own, resolved down the
+  /// placement chain (a nested member object reaches its placement via <see cref="Places"/>).</summary>
+  public void ObjectHasMaterial(int objectK, int materialK) =>
+    _envelopeWriter.AddRelation(RelKind.ObjectHasMaterial, objectK, materialK, 0);
+
+  /// <summary>object → node(COLOR): object-plane colour (rel 27, successor of <see cref="HasColor"/> with
+  /// <c>srcIsObject</c>). OVERRIDE semantics — deliberately the INVERSE of <see cref="ObjectHasMaterial"/>:
+  /// material is intrinsic (geometry owns, object fills), colour is presentational (object OVERRIDES,
+  /// geometry-level HAS_COLOR is the default) [spec #16].</summary>
+  public void ObjectHasColor(int objectK, int colorK) =>
+    _envelopeWriter.AddRelation(RelKind.ObjectHasColor, objectK, colorK, 0);
+
   // ── structural results ─────────────────────────────────────────────────────────────────
 
   /// <summary>
@@ -527,6 +560,88 @@ public sealed class ObjectsArtifactPipeline : IDisposable
       step,
       value,
       valueText
+    );
+  }
+
+  // ── model / property-set definitions (optional purpose files) ──────────────────────────
+
+  /// <summary>Appends one MODEL/document-scoped attribute to the optional <c>{base}.eav.model.parquet</c>
+  /// (see <see cref="ModelEavWriter"/>) — facts of the model itself (project information, the full
+  /// reference-point transform, document settings) that have no owning object. <paramref name="value"/> is
+  /// coalesced into exactly one typed column (bool / numeric / string); null values write no row. A bundle
+  /// where this is never called ships no file.</summary>
+  public void AddModelProperty(string path, object? value, string? unit = null)
+  {
+    if (string.IsNullOrEmpty(path) || value is null)
+    {
+      return;
+    }
+    string? s = null;
+    double? d = null;
+    bool? b = null;
+    switch (value)
+    {
+      case bool bv:
+        b = bv;
+        break;
+      case string sv:
+        s = sv;
+        break;
+      case sbyte or byte or short or ushort or int or uint or long or ulong or float or double or decimal:
+        d = Convert.ToDouble(value, CultureInfo.InvariantCulture);
+        break;
+      default:
+        s = Convert.ToString(value, CultureInfo.InvariantCulture);
+        break;
+    }
+    if (d is { } dv && (double.IsNaN(dv) || double.IsInfinity(dv)))
+    {
+      return; // eav convention: finite numerics only
+    }
+    if (s is null && d is null && b is null)
+    {
+      return;
+    }
+    _modelEavWriter ??= new ModelEavWriter(_outputDir, _baseName, _scheduler);
+    _modelEavWriter.AddRow(path, s, d, b, unit);
+  }
+
+  /// <summary>Appends one field row of an AEC/Civil3D property-set DEFINITION to the optional
+  /// <c>{base}.eav.property_set_definitions.parquet</c> (see <see cref="PropertySetDefinitionsWriter"/>) —
+  /// the schema only; values stay per-object in eav under <c>properties.Property Sets.{set}.{field}</c> and
+  /// attachment is derived from those value paths. <paramref name="setKey"/> is the definition's content hash
+  /// (SET-level identity); <paramref name="fieldBucketId"/> is THE rebind join key — the same string the value
+  /// rows ship in <c>eav.internal_definition_name</c> (null ⇒ consumers match <paramref name="fieldName"/>
+  /// against the value path leaf). Call once per field, in authored field order (row order is field order).</summary>
+  public void AddPropertySetDefinition(
+    string setName,
+    string setKey,
+    string fieldName,
+    string? fieldBucketId,
+    string? dataType,
+    string? defaultString = null,
+    double? defaultDouble = null,
+    bool? defaultBoolean = null,
+    string? unit = null,
+    string? description = null,
+    string? setDescription = null,
+    string? appliesTo = null
+  )
+  {
+    _propertySetDefinitionsWriter ??= new PropertySetDefinitionsWriter(_outputDir, _baseName, _scheduler);
+    _propertySetDefinitionsWriter.AddRow(
+      setName,
+      setKey,
+      setDescription,
+      fieldName,
+      fieldBucketId,
+      dataType,
+      defaultString,
+      defaultDouble,
+      defaultBoolean,
+      unit,
+      description,
+      appliesTo
     );
   }
 
@@ -580,6 +695,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _envelopeWriter.Complete();
     _eavWriter.Complete();
     _structuralResultsWriter?.Complete(); // absent unless a producer added structural rows
+    _modelEavWriter?.Complete(); // absent unless a producer added model-scoped rows
+    _propertySetDefinitionsWriter?.Complete(); // absent unless a producer shipped set schemas
     _scheduler.CompleteAndWait();
   }
 
@@ -593,6 +710,14 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     if (_structuralResultsWriter is not null)
     {
       SafeDispose(_structuralResultsWriter);
+    }
+    if (_modelEavWriter is not null)
+    {
+      SafeDispose(_modelEavWriter);
+    }
+    if (_propertySetDefinitionsWriter is not null)
+    {
+      SafeDispose(_propertySetDefinitionsWriter);
     }
     SafeDispose(_scheduler);
   }

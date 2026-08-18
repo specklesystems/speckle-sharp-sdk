@@ -56,7 +56,7 @@ public class ParquetTableWriterTests : IDisposable
       .Throw<ArgumentException>()
       .WithMessage($"*{path}*")
       .WithMessage("*12 value(s)*")
-      .WithMessage("*14-column*")
+      .WithMessage($"*{BundleCols.Nodes.ColumnCount}-column*")
       .WithMessage("*emissive, ior*");
   }
 
@@ -70,7 +70,10 @@ public class ParquetTableWriterTests : IDisposable
     var row = NodeRow(0);
     var act = () => writer.AddRow([.. row, "surplus"]);
 
-    act.Should().Throw<ArgumentException>().WithMessage("*15 value(s)*").WithMessage("*14-column*");
+    act.Should()
+      .Throw<ArgumentException>()
+      .WithMessage($"*{BundleCols.Nodes.ColumnCount + 1} value(s)*")
+      .WithMessage($"*{BundleCols.Nodes.ColumnCount}-column*");
   }
 
   [Fact]
