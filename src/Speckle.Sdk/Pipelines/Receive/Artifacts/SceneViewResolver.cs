@@ -44,7 +44,26 @@ public static class SceneViewResolver
   /// tiers, so a host can colour layers, not just name them. eav tiers carry no node → null colour.</summary>
   public static IReadOnlyList<(string Name, int? Argb)> SegmentsWithColor(ArtefactBundle bundle, int objK)
   {
-    var segments = new List<(string, int?)>();
+    var appearance = SegmentsWithAppearance(bundle, objK);
+    var segments = new List<(string, int?)>(appearance.Count);
+    foreach (var (name, argb, _) in appearance)
+    {
+      segments.Add((name, argb));
+    }
+    return segments;
+  }
+
+  /// <summary>Like <see cref="SegmentsWithColor"/> but resolves each node ("rel") segment's full appearance: colour
+  /// prefers the node's NODE_HAS_COLOR edge (its COLOR node's argb) over the legacy argb stamped directly on the
+  /// container row (pre-vocab bundles), and the segment carries its node K so a host can look up NODE_HAS_MATERIAL
+  /// (<see cref="ArtefactRelations.MaterialByNode"/>) against whatever material it baked. eav tiers carry no node →
+  /// null colour and null node K.</summary>
+  public static IReadOnlyList<(string Name, int? Argb, int? NodeK)> SegmentsWithAppearance(
+    ArtefactBundle bundle,
+    int objK
+  )
+  {
+    var segments = new List<(string, int?, int?)>();
     foreach (var tier in bundle.DefaultSceneView)
     {
       if (tier.Source == "rel")
@@ -55,12 +74,12 @@ public static class SceneViewResolver
           && map.TryGetValue(objK, out int nodeK)
         )
         {
-          segments.AddRange(NodeAncestryWithColor(bundle.Nodes, nodeK));
+          segments.AddRange(NodeAncestryWithAppearance(bundle, nodeK));
         }
       }
       else if (tier.Source == "eav" && ResolveEav(bundle.Properties, objK, tier.Ref) is { Length: > 0 } val)
       {
-        segments.Add((val, null));
+        segments.Add((val, null, null));
       }
     }
     return segments;
@@ -79,6 +98,30 @@ public static class SceneViewResolver
     while (cursor is int c && nodes.TryGetValue(c, out var n) && guard++ < ANCESTRY_GUARD)
     {
       result.Insert(0, (n.Name is { Length: > 0 } nm ? nm : "unnamed", n.Argb));
+      cursor = n.DefRef;
+    }
+    return result;
+  }
+
+  /// <summary>A node + its grouping ancestry, outermost→leaf, each with its resolved colour (NODE_HAS_COLOR edge
+  /// first, the node's own argb as the pre-vocab fallback) and its node K (for NODE_HAS_MATERIAL lookups).</summary>
+  public static IReadOnlyList<(string Name, int? Argb, int? NodeK)> NodeAncestryWithAppearance(
+    ArtefactBundle bundle,
+    int nodeK
+  )
+  {
+    var result = new List<(string, int?, int?)>();
+    int? cursor = nodeK;
+    int guard = 0;
+    while (cursor is int c && bundle.Nodes.TryGetValue(c, out var n) && guard++ < ANCESTRY_GUARD)
+    {
+      int? argb =
+        bundle.Relations.ColorByNode.TryGetValue(c, out int colorK)
+        && bundle.Nodes.TryGetValue(colorK, out var colorNode)
+        && colorNode.Kind == NodeKind.Color
+          ? colorNode.Argb
+          : n.Argb;
+      result.Insert(0, (n.Name is { Length: > 0 } nm ? nm : "unnamed", argb, c));
       cursor = n.DefRef;
     }
     return result;
