@@ -519,8 +519,9 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _envelopeWriter.AddRelation(RelKind.ObjectHasMaterial, objectK, materialK, 0);
 
   /// <summary>object → node(COLOR): object-plane colour (rel 27, successor of <see cref="HasColor"/> with
-  /// <c>srcIsObject</c>). FILL semantics matching <see cref="ObjectHasMaterial"/>: geometry-level HAS_COLOR
-  /// wins; the object colour applies where the geometry carries none (CAD ByBlock-style inheritance).</summary>
+  /// <c>srcIsObject</c>). OVERRIDE semantics — deliberately the INVERSE of <see cref="ObjectHasMaterial"/>:
+  /// material is intrinsic (geometry owns, object fills), colour is presentational (object OVERRIDES,
+  /// geometry-level HAS_COLOR is the default) [spec #16].</summary>
   public void ObjectHasColor(int objectK, int colorK) =>
     _envelopeWriter.AddRelation(RelKind.ObjectHasColor, objectK, colorK, 0);
 
