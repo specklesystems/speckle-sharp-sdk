@@ -145,6 +145,14 @@ public sealed class ArtefactRelations
   /// resolved down the placement chain (member object → placement via <see cref="PlacesByObject"/>).</summary>
   public Dictionary<int, int> MaterialByObject { get; } = new();
 
+  /// <summary>NODE_HAS_MATERIAL (28): node → MATERIAL node — container appearance (e.g. a CONTAINER's
+  /// authored material). Node-plane sibling of <see cref="MaterialByObject"/>.</summary>
+  public Dictionary<int, int> MaterialByNode { get; } = new();
+
+  /// <summary>NODE_HAS_COLOR (29): node → COLOR node — container display colour (e.g. a layer/tag colour
+  /// as a first-class COLOR node rather than the CONTAINER argb overload).</summary>
+  public Dictionary<int, int> ColorByNode { get; } = new();
+
   private Dictionary<int, List<ArtefactEdge>>? _displayByObject;
 
   /// <summary>The DISPLAY edges (object → mesh geometry) for one object, or null. Lazily indexed.</summary>
@@ -775,6 +783,12 @@ public static class ArtefactBundleReader
         case RelKind.ObjectHasColor:
           // Same consumer home as the legacy ord=1-tagged HAS_COLOR object src — one map, two vintages.
           sets.ColorByObject[src[i]] = dst[i];
+          break;
+        case RelKind.NodeHasMaterial:
+          sets.MaterialByNode[src[i]] = dst[i];
+          break;
+        case RelKind.NodeHasColor:
+          sets.ColorByNode[src[i]] = dst[i];
           break;
         default:
           break;
