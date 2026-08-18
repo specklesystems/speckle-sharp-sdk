@@ -525,6 +525,16 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void ObjectHasColor(int objectK, int colorK) =>
     _envelopeWriter.AddRelation(RelKind.ObjectHasColor, objectK, colorK, 0);
 
+  /// <summary>node → node(MATERIAL): container appearance (rel 28, NODE_HAS_MATERIAL) — e.g. a
+  /// CONTAINER's authored material.</summary>
+  public void NodeHasMaterial(int nodeK, int materialK) =>
+    _envelopeWriter.AddRelation(RelKind.NodeHasMaterial, nodeK, materialK, 0);
+
+  /// <summary>node → node(COLOR): container display colour (rel 29, NODE_HAS_COLOR) — e.g. a layer/tag
+  /// colour as a first-class COLOR node instead of the CONTAINER argb overload.</summary>
+  public void NodeHasColor(int nodeK, int colorK) =>
+    _envelopeWriter.AddRelation(RelKind.NodeHasColor, nodeK, colorK, 0);
+
   // ── structural results ─────────────────────────────────────────────────────────────────
 
   /// <summary>
