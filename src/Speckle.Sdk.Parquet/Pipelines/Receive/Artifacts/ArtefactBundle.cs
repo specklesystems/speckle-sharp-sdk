@@ -180,16 +180,20 @@ public sealed class ArtefactRelations
 /// <summary>One field row of an AEC/Civil3D property-set DEFINITION from the optional
 /// <c>eav.property_set_definitions.parquet</c> — the set's SCHEMA only; values live per-object in eav under
 /// <c>properties.Property Sets.{set}.{field}</c> and attachment is derived from those value paths.
-/// <see cref="FieldId"/> joins <c>eav.internal_definition_name</c>; <see cref="SetKey"/> is the definition's
-/// content hash (identity under same-name collisions).</summary>
+/// <see cref="FieldBucketId"/> is THE rebind join key — the same string the value rows ship in
+/// <c>eav.internal_definition_name</c> (null ⇒ match <see cref="FieldName"/> against the value path leaf);
+/// <see cref="SetKey"/> is the definition's content hash (SET-level identity under same-name collisions).
+/// List order is authored field order (row order in the file).</summary>
 public sealed record ArtefactPropertySetField(
   string SetName,
   string SetKey,
+  string? SetDescription,
   string FieldName,
-  int? FieldId,
+  string? FieldBucketId,
   string? DataType,
   string? DefaultString,
   double? DefaultDouble,
+  bool? DefaultBoolean,
   string? Unit,
   string? Description,
   string? AppliesTo
@@ -392,11 +396,13 @@ public static class ArtefactBundleReader
     }
     var setName = t.Strings("set_name");
     var setKey = t.Strings("set_key");
+    var setDescription = t.Strings("set_description");
     var fieldName = t.Strings("field_name");
-    var fieldId = t.NullableInts("field_id");
+    var fieldBucketId = t.Strings("field_bucket_id");
     var dataType = t.Strings("data_type");
     var defStr = t.Strings("default_string");
     var defDbl = t.NullableDoubles("default_double");
+    var defBool = t.NullableBools("default_boolean");
     var unit = t.Strings("unit");
     var description = t.Strings("description");
     var appliesTo = t.Strings("applies_to");
@@ -407,11 +413,13 @@ public static class ArtefactBundleReader
         new ArtefactPropertySetField(
           setName[i] ?? "",
           setKey[i] ?? "",
+          setDescription[i],
           fieldName[i] ?? "",
-          fieldId[i],
+          fieldBucketId[i],
           dataType[i],
           defStr[i],
           defDbl[i],
+          defBool[i],
           unit[i],
           description[i],
           appliesTo[i]

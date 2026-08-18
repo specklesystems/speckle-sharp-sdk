@@ -82,9 +82,20 @@ public class BundleVocabAdditionsTests
         pipeline.AddModelProperty("projectInformation.buildingHeight", 42.5, "m");
         pipeline.AddModelProperty("projectInformation.isMetric", true);
 
-        // One property-set schema, two fields.
-        pipeline.AddPropertySetDefinition("Pipe Data", "ps_hash1", "Slope", 17, "Real", null, 0.0, "%", "Design slope");
-        pipeline.AddPropertySetDefinition("Pipe Data", "ps_hash1", "Service", 18, "Text", "Supply", null);
+        // One property-set schema, three fields in authored order (row order IS field order).
+        pipeline.AddPropertySetDefinition(
+          "Pipe Data",
+          "ps_hash1",
+          "Slope",
+          "SLOPE_BUCKET",
+          "Real",
+          defaultDouble: 0.0,
+          unit: "%",
+          description: "Design slope",
+          setDescription: "Hydraulic pipe data"
+        );
+        pipeline.AddPropertySetDefinition("Pipe Data", "ps_hash1", "Service", "SERVICE_BUCKET", "Text", "Supply");
+        pipeline.AddPropertySetDefinition("Pipe Data", "ps_hash1", "Insulated", null, "TrueFalse", defaultBoolean: false);
 
         pipeline.Complete();
       }
@@ -114,17 +125,23 @@ public class BundleVocabAdditionsTests
       projInfo["buildingHeight"].Should().Be(42.5);
       projInfo["isMetric"].Should().Be(true);
 
-      // Property-set schema rows.
-      bundle.PropertySetDefinitions.Should().HaveCount(2);
-      var slope = bundle.PropertySetDefinitions.Single(f => f.FieldName == "Slope");
+      // Property-set schema rows: field_bucket_id is the rebind join key; row order is authored field order.
+      bundle.PropertySetDefinitions.Should().HaveCount(3);
+      bundle.PropertySetDefinitions.Select(f => f.FieldName).Should().Equal("Slope", "Service", "Insulated");
+      var slope = bundle.PropertySetDefinitions[0];
       slope.SetName.Should().Be("Pipe Data");
       slope.SetKey.Should().Be("ps_hash1");
-      slope.FieldId.Should().Be(17);
+      slope.SetDescription.Should().Be("Hydraulic pipe data");
+      slope.FieldBucketId.Should().Be("SLOPE_BUCKET");
       slope.DataType.Should().Be("Real");
       slope.DefaultDouble.Should().Be(0.0);
       slope.Unit.Should().Be("%");
-      var service = bundle.PropertySetDefinitions.Single(f => f.FieldName == "Service");
+      var service = bundle.PropertySetDefinitions[1];
+      service.FieldBucketId.Should().Be("SERVICE_BUCKET");
       service.DefaultString.Should().Be("Supply");
+      var insulated = bundle.PropertySetDefinitions[2];
+      insulated.FieldBucketId.Should().BeNull();
+      insulated.DefaultBoolean.Should().Be(false);
     }
     finally
     {

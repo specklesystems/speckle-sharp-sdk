@@ -608,18 +608,22 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <summary>Appends one field row of an AEC/Civil3D property-set DEFINITION to the optional
   /// <c>{base}.eav.property_set_definitions.parquet</c> (see <see cref="PropertySetDefinitionsWriter"/>) —
   /// the schema only; values stay per-object in eav under <c>properties.Property Sets.{set}.{field}</c> and
-  /// attachment is derived from those value paths. <paramref name="setKey"/> is the definition's content hash;
-  /// <paramref name="fieldId"/> joins <c>eav.internal_definition_name</c>.</summary>
+  /// attachment is derived from those value paths. <paramref name="setKey"/> is the definition's content hash
+  /// (SET-level identity); <paramref name="fieldBucketId"/> is THE rebind join key — the same string the value
+  /// rows ship in <c>eav.internal_definition_name</c> (null ⇒ consumers match <paramref name="fieldName"/>
+  /// against the value path leaf). Call once per field, in authored field order (row order is field order).</summary>
   public void AddPropertySetDefinition(
     string setName,
     string setKey,
     string fieldName,
-    int? fieldId,
+    string? fieldBucketId,
     string? dataType,
     string? defaultString = null,
     double? defaultDouble = null,
+    bool? defaultBoolean = null,
     string? unit = null,
     string? description = null,
+    string? setDescription = null,
     string? appliesTo = null
   )
   {
@@ -627,11 +631,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _propertySetDefinitionsWriter.AddRow(
       setName,
       setKey,
+      setDescription,
       fieldName,
-      fieldId,
+      fieldBucketId,
       dataType,
       defaultString,
       defaultDouble,
+      defaultBoolean,
       unit,
       description,
       appliesTo
