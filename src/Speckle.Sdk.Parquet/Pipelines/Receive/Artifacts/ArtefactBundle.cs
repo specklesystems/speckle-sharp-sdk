@@ -124,6 +124,27 @@ public sealed class ArtefactRelations
   public Dictionary<int, List<int>> DefinesOrdByDefinition { get; } = new();
   public Dictionary<int, List<int>> DefinesInstanceByDefinition { get; } = new();
 
+  /// <summary>PLACES (24): definition-member object → its INSTANCE node. Association ONLY — never a render
+  /// root (that is DISPLAY_INSTANCE). Ties a render-edge-less member object to its nested placement so its
+  /// properties/IN_COLLECTION stay reachable; successor of the <c>@speckle.instance_k</c> eav stamp.</summary>
+  public Dictionary<int, int> PlacesByObject { get; } = new();
+
+  /// <summary>DEFINES_MEMBER (25): DEFINITION node → member objects, on the object plane where nothing is
+  /// deduped. Ordinals (index-aligned in <see cref="MemberOrdByDefinition"/>) are MEMBER ordinals shared with
+  /// <see cref="DefinesOrdByDefinition"/> — join (definition, ord) to recover a member's geometry unambiguously
+  /// even when content-hash dedup shares one geometry K across definitions; successor of the
+  /// <c>@speckle.geometry_k</c> eav stamp.</summary>
+  public Dictionary<int, List<int>> MemberObjectsByDefinition { get; } = new();
+
+  /// <summary>DEFINES_MEMBER ordinals, index-aligned with <see cref="MemberObjectsByDefinition"/>.</summary>
+  public Dictionary<int, List<int>> MemberOrdByDefinition { get; } = new();
+
+  /// <summary>OBJECT_HAS_MATERIAL (26): object → MATERIAL node — placement paint on the object plane
+  /// (successor of the ord=1-tagged HAS_MATERIAL instance src). FILL semantics: geometry-level
+  /// <see cref="MaterialByGeometry"/> always wins; this fills definition geometry with no material of its own,
+  /// resolved down the placement chain (member object → placement via <see cref="PlacesByObject"/>).</summary>
+  public Dictionary<int, int> MaterialByObject { get; } = new();
+
   private Dictionary<int, List<ArtefactEdge>>? _displayByObject;
 
   /// <summary>The DISPLAY edges (object → mesh geometry) for one object, or null. Lazily indexed.</summary>
@@ -155,6 +176,24 @@ public sealed class ArtefactRelations
     list.Add(value);
   }
 }
+
+/// <summary>One field row of an AEC/Civil3D property-set DEFINITION from the optional
+/// <c>eav.property_set_definitions.parquet</c> — the set's SCHEMA only; values live per-object in eav under
+/// <c>properties.Property Sets.{set}.{field}</c> and attachment is derived from those value paths.
+/// <see cref="FieldId"/> joins <c>eav.internal_definition_name</c>; <see cref="SetKey"/> is the definition's
+/// content hash (identity under same-name collisions).</summary>
+public sealed record ArtefactPropertySetField(
+  string SetName,
+  string SetKey,
+  string FieldName,
+  int? FieldId,
+  string? DataType,
+  string? DefaultString,
+  double? DefaultDouble,
+  string? Unit,
+  string? Description,
+  string? AppliesTo
+);
 
 /// <summary>
 /// The neutral, host-agnostic parse of a Speckle 4.0 artefact bundle (the directory of
@@ -188,6 +227,17 @@ public sealed class ArtefactBundle
   /// <c>view</c>; empty if the bundle ships none. Native bakers recreate them as host named views.</summary>
   public required IReadOnlyList<ArtefactCameraView> CameraViews { get; init; }
 
+  /// <summary>MODEL/document-scoped attributes from the optional <c>eav.model.parquet</c> (object-less eav:
+  /// project information, the full reference-point transform, document settings), nested by dotted path like
+  /// <see cref="Properties"/>. Empty when the bundle ships no model file.</summary>
+  public IReadOnlyDictionary<string, object?> ModelProperties { get; init; } = new Dictionary<string, object?>();
+
+  /// <summary>AEC property-set definitions from the optional <c>eav.property_set_definitions.parquet</c>, one
+  /// row per (set, field); empty when absent. Receivers recreate host set definitions from these, falling back
+  /// to synthesizing minimal ones from the value rows when the file is missing.</summary>
+  public IReadOnlyList<ArtefactPropertySetField> PropertySetDefinitions { get; init; } =
+    Array.Empty<ArtefactPropertySetField>();
+
   /// <summary>Type-scoped properties (Revit Type Parameters / System Type Parameters, deduped once per type by
   /// <c>ObjectsArtifactPipeline.TrySplitTypeParameters</c>) resolved to each instance object that references a
   /// type via <c>eav.object_type</c> [ENG-9136]. Every object of the same type shares the SAME dictionary
@@ -218,6 +268,10 @@ public static class ArtefactBundleReader
     var typeEavT = await TryReadTableAsync(bundleDir, ".eav.type_eav.parquet", cancellationToken).ConfigureAwait(false);
     var objectTypeT = await TryReadTableAsync(bundleDir, ".eav.object_type.parquet", cancellationToken)
       .ConfigureAwait(false);
+    // Optional purpose files — absent from bundles predating them (feature-detect by presence).
+    var modelT = await TryReadTableAsync(bundleDir, ".eav.model.parquet", cancellationToken).ConfigureAwait(false);
+    var psetDefsT = await TryReadTableAsync(bundleDir, ".eav.property_set_definitions.parquet", cancellationToken)
+      .ConfigureAwait(false);
 
     var objIdToApp = BuildObjectIds(objectsT);
     var pathById = BuildPaths(pathsT);
@@ -240,6 +294,8 @@ public static class ArtefactBundleReader
       ReferencePointKind = refPointKind,
       ReferencePointOffset = refPointOffset,
       TypePropertiesByObject = LoadTypeProperties(typeEavT, objectTypeT, pathById),
+      ModelProperties = LoadModelProperties(modelT),
+      PropertySetDefinitions = LoadPropertySetDefinitions(psetDefsT),
     };
   }
 
@@ -299,6 +355,70 @@ public static class ArtefactBundleReader
       relations.ColorByObject[k] = relations.ColorByGeometry[k];
       relations.ColorByGeometry.Remove(k);
     }
+  }
+
+  // Model-scoped attributes (object-less eav): same coalesce as BuildProperties, path inlined per row.
+  private static Dictionary<string, object?> LoadModelProperties(ParquetTable? t)
+  {
+    var dict = new Dictionary<string, object?>();
+    if (t is null || !t.Has("path"))
+    {
+      return dict;
+    }
+    var path = t.Strings("path");
+    var vStr = t.Strings("value_string");
+    var vDbl = t.NullableDoubles("value_double");
+    var vBool = t.NullableBools("value_boolean");
+    for (int i = 0; i < path.Length; i++)
+    {
+      object? value =
+        vBool[i].HasValue ? vBool[i]
+        : vDbl[i].HasValue ? vDbl[i]
+        : vStr[i];
+      if (value is null || path[i] is not { Length: > 0 } p)
+      {
+        continue;
+      }
+      SetNested(dict, p, value);
+    }
+    return dict;
+  }
+
+  private static IReadOnlyList<ArtefactPropertySetField> LoadPropertySetDefinitions(ParquetTable? t)
+  {
+    if (t is null || !t.Has("set_name"))
+    {
+      return Array.Empty<ArtefactPropertySetField>();
+    }
+    var setName = t.Strings("set_name");
+    var setKey = t.Strings("set_key");
+    var fieldName = t.Strings("field_name");
+    var fieldId = t.NullableInts("field_id");
+    var dataType = t.Strings("data_type");
+    var defStr = t.Strings("default_string");
+    var defDbl = t.NullableDoubles("default_double");
+    var unit = t.Strings("unit");
+    var description = t.Strings("description");
+    var appliesTo = t.Strings("applies_to");
+    var rows = new List<ArtefactPropertySetField>(setName.Length);
+    for (int i = 0; i < setName.Length; i++)
+    {
+      rows.Add(
+        new ArtefactPropertySetField(
+          setName[i] ?? "",
+          setKey[i] ?? "",
+          fieldName[i] ?? "",
+          fieldId[i],
+          dataType[i],
+          defStr[i],
+          defDbl[i],
+          unit[i],
+          description[i],
+          appliesTo[i]
+        )
+      );
+    }
+    return rows;
   }
 
   // ENG-8947: the reference-point provision from meta (single row). Columns are nullable + additive — older
@@ -633,6 +753,20 @@ public static class ArtefactBundleReader
           break;
         case RelKind.DefinesInstance:
           sets.Add(sets.DefinesInstanceByDefinition, src[i], dst[i]);
+          break;
+        case RelKind.Places:
+          sets.PlacesByObject[src[i]] = dst[i];
+          break;
+        case RelKind.DefinesMember:
+          sets.Add(sets.MemberObjectsByDefinition, src[i], dst[i]);
+          sets.Add(sets.MemberOrdByDefinition, src[i], ord[i]);
+          break;
+        case RelKind.ObjectHasMaterial:
+          sets.MaterialByObject[src[i]] = dst[i];
+          break;
+        case RelKind.ObjectHasColor:
+          // Same consumer home as the legacy ord=1-tagged HAS_COLOR object src — one map, two vintages.
+          sets.ColorByObject[src[i]] = dst[i];
           break;
         default:
           break;

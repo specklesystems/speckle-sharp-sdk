@@ -88,18 +88,25 @@ public sealed class EnvelopeWriterTests : IDisposable
       .Be(unchecked((int)0xFF112233u));
     Scalar(db, $"SELECT ior FROM nodes WHERE kind = {NodeKind.Material}").Should().Be(1.45);
 
-    // self-describing catalog (SOT §6) — sourced from speckle-bundle-spec (v5: live + reserved rows).
-    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be(17L); // 16 live + SOLID (reserved); retired ids absent
+    // self-describing catalog (SOT §6) — sourced from speckle-bundle-spec (live + reserved rows; retired absent).
+    // Count derives from the generated catalog so a spec vocabulary change never dead-reckons here again.
+    Scalar(db, "SELECT count(*) FROM rel_types").Should().Be((long)Speckle.Bundle.Spec.Catalog.RelTypes.Length);
     Scalar(db, "SELECT count(*) FROM node_kinds").Should().Be(6L); // COLLECTION folded into CONTAINER
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DisplayInstance}").Should().Be("DISPLAY_INSTANCE");
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("DEFINES_INSTANCE");
     // DEFINES (4) is now geometry-only; DEFINES_INSTANCE (9) carries node→node nesting. rel fixes dst namespace.
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.Defines}").Should().Be("geometry");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.DefinesInstance}").Should().Be("node");
-    // HAS_MATERIAL src broadened to geometry|instance (ENG-8849) — a material can hang off an instance too.
-    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry|instance");
-    // ENG-8849 (spec d485e68): HAS_MATERIAL src broadened to geometry|instance — instances can carry material overrides.
-    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry|instance");
+    // HAS_MATERIAL src is geometry-only again (union removed post-v5): placement paint moved to
+    // OBJECT_HAS_MATERIAL (26); the ord=1-tag era is a read-side fallback, not the vocabulary.
+    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry");
+    Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.Places}").Should().Be("PLACES");
+    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.DefinesMember}").Should().Be("node");
+    Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.DefinesMember}").Should().Be("object");
+    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.ObjectHasMaterial}").Should().Be("object");
+    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.ObjectHasColor}").Should().Be("object");
+    // Post-v5 union removal: HAS_MATERIAL src is geometry-only; instance paint is OBJECT_HAS_MATERIAL (26).
+    Scalar(db, $"SELECT src_ns FROM rel_types WHERE rel = {RelKind.HasMaterial}").Should().Be("geometry");
     // IN_MODEL (11) → CONTAINER node; the default-projection top key (SOT §8).
     Scalar(db, $"SELECT name FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("IN_MODEL");
     Scalar(db, $"SELECT dst_ns FROM rel_types WHERE rel = {RelKind.InModel}").Should().Be("node");
@@ -118,7 +125,8 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, "SELECT name FROM rel_types WHERE rel = 22").Should().Be("HOSTED_ON");
     Scalar(db, "SELECT dst_ns FROM rel_types WHERE rel = 22").Should().Be("object");
     // retired ids (IN_NETWORK 15, IN_SPACE 13, …) are absent from the catalog.
-    Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 18, 19, 20)").Should().Be(0L);
+    // 18 (IN_ASSEMBLY) was un-retired upstream and ships again; the rest stay retired-in-place.
+    Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 19, 20)").Should().Be(0L);
     Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
 
     // No scene views / camera views authored ⇒ the tables are absent (consumer feature-detects by file presence).
