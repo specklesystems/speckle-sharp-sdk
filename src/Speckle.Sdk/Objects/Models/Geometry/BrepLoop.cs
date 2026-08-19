@@ -6,6 +6,7 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents a UV Trim Closed Loop on one of the <see cref="Brep"/>'s surfaces.
 /// </summary>
+[Obsolete(Brep.DEPRECATION_MESSAGE)]
 [SpeckleType("Objects.Geometry.BrepLoop")]
 public class BrepLoop : Base
 {

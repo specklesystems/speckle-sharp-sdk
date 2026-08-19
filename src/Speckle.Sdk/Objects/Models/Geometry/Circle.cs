@@ -47,6 +47,7 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
   /// Returns the coordinates of this <see cref="Circle"/> as a list of numbers
   /// </summary>
   /// <returns>A list of values representing the <see cref="Circle"/></returns>
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public List<double> ToList()
   {
     var list = new List<double>();
@@ -67,6 +68,7 @@ public class Circle : Base, ICurve, IHasArea, IHasBoundingBox
   /// </summary>
   /// <param name="list">The list of values representing this <see cref="Circle"/></param>
   /// <returns>A new <see cref="Circle"/> with the provided values.</returns>
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public static Circle FromList(List<double> list)
   {
     var circle = new Circle

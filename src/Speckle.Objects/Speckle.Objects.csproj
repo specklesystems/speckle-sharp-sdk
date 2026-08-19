@@ -15,20 +15,30 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
-  <PropertyGroup Label="Analyers">
-    <NoWarn>
-      $(NoWarn);
-      CA1819;CA1008;CA2225;
-    </NoWarn>
-  </PropertyGroup>
-  <ItemGroup Label="Expose internals to test projects">
-    <InternalsVisibleTo Include="Speckle.Objects.Tests.Unit" />
-  </ItemGroup>
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\Speckle.Sdk\Speckle.Sdk.csproj" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
-    <!-- Direct reference so the baked-in System.Memory assembly version matches the rest of the closure on net48 hosts (see Directory.Packages.props). -->
-    <PackageReference Include="System.Memory" />
+  <ItemGroup Label="Pack the migration README instead of the repo-root one">
+    <None Remove="..\..\README.md" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+  <!-- The shell must depend on Speckle.Sdk with an EXACT version pin so mixed-version graphs can't
+       form (a consumer resolving Speckle.Objects X alongside Speckle.Sdk Y gets NU1107 at restore).
+       Stock pack emits a lower-bound-only range, so rewrite the version that
+       _GetProjectReferenceVersions collected before GenerateNuspec consumes it. -->
+  <Target
+    Name="_SpecklePinSdkDependencyExactly"
+    AfterTargets="_GetProjectReferenceVersions"
+    BeforeTargets="GenerateNuspec"
+  >
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Condition="'%(Filename)' == 'Speckle.Sdk'">
+        <ProjectVersion>[%(_ProjectReferencesWithVersions.ProjectVersion)]</ProjectVersion>
+      </_ProjectReferencesWithVersions>
+    </ItemGroup>
+    <Error
+      Condition="'@(_ProjectReferencesWithVersions)' == ''"
+      Text="Speckle.Objects pack: NuGet pack internals changed and the exact Speckle.Sdk version pin was not applied. Do not ship this package."
+    />
+  </Target>
 </Project>

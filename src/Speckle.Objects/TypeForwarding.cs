@@ -1,0 +1,110 @@
+﻿using System.Runtime.CompilerServices;
+using Speckle.Objects;
+using Speckle.Objects.Annotation;
+using Speckle.Objects.Data;
+using Speckle.Objects.Deprecated;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Geometry.Autocad;
+using Speckle.Objects.Other;
+using Speckle.Objects.Primitive;
+using Speckle.Objects.Utils;
+
+#pragma warning disable CS0618 // Type or member is obsolete
+// Speckle.Objects
+[assembly: TypeForwardedTo(typeof(IHasBoundingBox))]
+[assembly: TypeForwardedTo(typeof(IHasArea))]
+[assembly: TypeForwardedTo(typeof(IHasVolume))]
+[assembly: TypeForwardedTo(typeof(ICurve))]
+[assembly: TypeForwardedTo(typeof(ITransformable))]
+[assembly: TypeForwardedTo(typeof(ITransformable<>))]
+[assembly: TypeForwardedTo(typeof(IDisplayValue<>))]
+[assembly: TypeForwardedTo(typeof(IDataObject))]
+[assembly: TypeForwardedTo(typeof(IRevitObject))]
+[assembly: TypeForwardedTo(typeof(ICivilObject))]
+[assembly: TypeForwardedTo(typeof(IAutocadObject))]
+[assembly: TypeForwardedTo(typeof(ITeklaObject))]
+[assembly: TypeForwardedTo(typeof(ICsiObject))]
+[assembly: TypeForwardedTo(typeof(ITsdObject))]
+[assembly: TypeForwardedTo(typeof(IGisObject))]
+[assembly: TypeForwardedTo(typeof(IArchicadObject))]
+[assembly: TypeForwardedTo(typeof(INavisworksObject))]
+[assembly: TypeForwardedTo(typeof(IRhinoObject))]
+[assembly: TypeForwardedTo(typeof(IMicrostationObject))]
+[assembly: TypeForwardedTo(typeof(CurveTypeEncoding))]
+[assembly: TypeForwardedTo(typeof(CurveArrayEncodingExtensions))]
+
+// Speckle.Objects.Annotation
+[assembly: TypeForwardedTo(typeof(Text))]
+[assembly: TypeForwardedTo(typeof(AlignmentHorizontal))]
+[assembly: TypeForwardedTo(typeof(AlignmentVertical))]
+
+// Speckle.Objects.Data
+[assembly: TypeForwardedTo(typeof(ArcgisObject))]
+[assembly: TypeForwardedTo(typeof(ArchicadObject))]
+[assembly: TypeForwardedTo(typeof(AutocadObject))]
+[assembly: TypeForwardedTo(typeof(Civil3dObject))]
+[assembly: TypeForwardedTo(typeof(DataObject))]
+[assembly: TypeForwardedTo(typeof(EtabsObject))]
+[assembly: TypeForwardedTo(typeof(MicrostationObject))]
+[assembly: TypeForwardedTo(typeof(NavisworksObject))]
+[assembly: TypeForwardedTo(typeof(RevitObject))]
+[assembly: TypeForwardedTo(typeof(RhinoObject))]
+[assembly: TypeForwardedTo(typeof(TeklaObject))]
+[assembly: TypeForwardedTo(typeof(TsdObject))]
+
+// Speckle.Objects.Deprecated
+[assembly: TypeForwardedTo(typeof(LegacyV2))]
+
+// Speckle.Objects.Geometry
+[assembly: TypeForwardedTo(typeof(Arc))]
+[assembly: TypeForwardedTo(typeof(Box))]
+[assembly: TypeForwardedTo(typeof(Brep))]
+[assembly: TypeForwardedTo(typeof(BrepOrientation))]
+[assembly: TypeForwardedTo(typeof(BrepLoopType))]
+[assembly: TypeForwardedTo(typeof(BrepTrimType))]
+[assembly: TypeForwardedTo(typeof(BrepEdge))]
+[assembly: TypeForwardedTo(typeof(BrepFace))]
+[assembly: TypeForwardedTo(typeof(BrepLoop))]
+[assembly: TypeForwardedTo(typeof(BrepTrim))]
+[assembly: TypeForwardedTo(typeof(IRawEncodedObject))]
+[assembly: TypeForwardedTo(typeof(RawEncodedObject))]
+[assembly: TypeForwardedTo(typeof(BrepX))]
+[assembly: TypeForwardedTo(typeof(ExtrusionX))]
+[assembly: TypeForwardedTo(typeof(SubDX))]
+[assembly: TypeForwardedTo(typeof(SolidX))]
+[assembly: TypeForwardedTo(typeof(Circle))]
+[assembly: TypeForwardedTo(typeof(ControlPoint))]
+[assembly: TypeForwardedTo(typeof(Curve))]
+[assembly: TypeForwardedTo(typeof(Ellipse))]
+[assembly: TypeForwardedTo(typeof(Line))]
+[assembly: TypeForwardedTo(typeof(Mesh))]
+[assembly: TypeForwardedTo(typeof(Plane))]
+[assembly: TypeForwardedTo(typeof(Point))]
+[assembly: TypeForwardedTo(typeof(Pointcloud))]
+[assembly: TypeForwardedTo(typeof(Polycurve))]
+[assembly: TypeForwardedTo(typeof(Polyline))]
+[assembly: TypeForwardedTo(typeof(PolylineExtensions))]
+[assembly: TypeForwardedTo(typeof(Region))]
+[assembly: TypeForwardedTo(typeof(Spiral))]
+[assembly: TypeForwardedTo(typeof(SpiralType))]
+[assembly: TypeForwardedTo(typeof(Surface))]
+[assembly: TypeForwardedTo(typeof(Vector))]
+
+// Speckle.Objects.Geometry.Autocad
+[assembly: TypeForwardedTo(typeof(AutocadPolycurve))]
+[assembly: TypeForwardedTo(typeof(AutocadPolyType))]
+
+// Speckle.Objects.Other
+[assembly: TypeForwardedTo(typeof(Camera))]
+[assembly: TypeForwardedTo(typeof(LevelProxy))]
+[assembly: TypeForwardedTo(typeof(RawEncoding))]
+[assembly: TypeForwardedTo(typeof(RawEncodingFormats))]
+[assembly: TypeForwardedTo(typeof(RenderMaterial))]
+[assembly: TypeForwardedTo(typeof(RenderMaterialProxy))]
+[assembly: TypeForwardedTo(typeof(Transform))]
+
+// Speckle.Objects.Primitive
+[assembly: TypeForwardedTo(typeof(Interval))]
+
+// Speckle.Objects.Utils
+[assembly: TypeForwardedTo(typeof(MeshTriangulationHelper))]

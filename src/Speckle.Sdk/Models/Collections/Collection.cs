@@ -41,7 +41,7 @@ public class Collection : Base
   [Obsolete(
     "Note: Claire and Dim would propose we deprecate this prop. Do not use, please! Let's have a discussion about subclassing for your needs if nothing exists already."
   )]
-  public string collectionType { get; set; }
+  public string? collectionType { get; set; }
 
   /// <summary>
   /// The elements contained in this <see cref="Collection"/>.

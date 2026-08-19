@@ -2,6 +2,7 @@ using Speckle.Objects.Geometry;
 
 namespace Speckle.Objects;
 
+[Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
 public static class CurveTypeEncoding
 {
   public const double Arc = 0;
@@ -18,6 +19,9 @@ public static class CurveTypeEncoding
 /// </summary>
 public static class CurveArrayEncodingExtensions
 {
+  internal const string OBSOLETE_MESSAGE = "Numerical encoding is deprecated along with Brep class";
+
+  [Obsolete(OBSOLETE_MESSAGE)]
   public static List<double> ToArray(IReadOnlyCollection<ICurve> curves)
   {
     var list = new List<double>();
@@ -54,6 +58,7 @@ public static class CurveArrayEncodingExtensions
     return list;
   }
 
+  [Obsolete(OBSOLETE_MESSAGE)]
   public static List<ICurve> FromArray(List<double> list)
   {
     var curves = new List<ICurve>();

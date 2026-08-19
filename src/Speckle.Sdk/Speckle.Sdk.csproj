@@ -9,7 +9,6 @@
     <PackageId>Speckle.Sdk</PackageId>
     <Description>The .NET SDK for Speckle</Description>
     <PackageTags>$(PackageTags) core sdk</PackageTags>
-    <NoWarn>$(NoWarn);CS8618</NoWarn>
   </PropertyGroup>
   <PropertyGroup Label="Nuget Package Properties">
     <IsPackable>true</IsPackable>
@@ -58,5 +57,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />
     <ProjectReference Include="..\Speckle.Sdk.Parquet\Speckle.Sdk.Parquet.csproj" />
+  </ItemGroup>
+  <ItemGroup Label="Packaged MSBuild guard against pre-merge Speckle.Objects">
+    <!-- buildTransitive\ reaches transitive PackageReference consumers; build\ covers direct/legacy ones. -->
+    <None Include="buildTransitive\Speckle.Sdk.targets" Pack="true" PackagePath="build\;buildTransitive\" />
   </ItemGroup>
 </Project>

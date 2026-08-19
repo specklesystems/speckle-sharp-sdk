@@ -10,9 +10,12 @@ namespace Speckle.Objects.Geometry;
 /// <summary>
 /// Represents a "Boundary Representation" Solid
 /// </summary>
+[Obsolete(DEPRECATION_MESSAGE)]
 [SpeckleType("Objects.Geometry.Brep")]
 public class Brep : Base, IHasArea, IHasVolume, IHasBoundingBox, ITransformable<Brep>, IDisplayValue<List<Mesh>>
 {
+  internal const string DEPRECATION_MESSAGE = "Replaced by raw encoding system";
+
   /// <summary>
   /// The unit's this object's coordinates are in.
   /// </summary>

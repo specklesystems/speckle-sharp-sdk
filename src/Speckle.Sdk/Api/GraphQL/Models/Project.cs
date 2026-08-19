@@ -4,30 +4,30 @@ namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public class Project
 {
-  public bool allowPublicComments { get; init; }
-  public DateTime createdAt { get; init; }
-  public string? description { get; init; }
-  public string id { get; init; }
-  public string name { get; init; }
-  public string? role { get; init; }
-  public List<string> sourceApps { get; init; }
-  public DateTime updatedAt { get; init; }
-  public ProjectVisibility visibility { get; init; }
-  public string? workspaceId { get; init; }
+  public required bool allowPublicComments { get; init; }
+  public required DateTime createdAt { get; init; }
+  public required string? description { get; init; }
+  public required string id { get; init; }
+  public required string name { get; init; }
+  public required string? role { get; init; }
+  public required List<string> sourceApps { get; init; }
+  public required DateTime updatedAt { get; init; }
+  public required ProjectVisibility visibility { get; init; }
+  public required string? workspaceId { get; init; }
 }
 
 public sealed class ProjectWithModels : Project
 {
-  public ResourceCollection<Model> models { get; init; }
+  public required ResourceCollection<Model> models { get; init; }
 }
 
 public sealed class ProjectWithTeam : Project
 {
-  public List<PendingStreamCollaborator> invitedTeam { get; init; }
-  public List<ProjectCollaborator> team { get; init; }
+  public required List<PendingStreamCollaborator> invitedTeam { get; init; }
+  public required List<ProjectCollaborator> team { get; init; }
 }
 
 public sealed class ProjectWithPermissions : Project
 {
-  public ProjectPermissionChecks permissions { get; init; }
+  public required ProjectPermissionChecks permissions { get; init; }
 }

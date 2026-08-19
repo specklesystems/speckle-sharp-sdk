@@ -289,12 +289,6 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
-      "speckle.objects": {
-        "type": "Project",
-        "dependencies": {
-          "Speckle.Sdk": "[1.0.0, )"
-        }
-      },
       "speckle.sdk": {
         "type": "Project",
         "dependencies": {

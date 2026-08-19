@@ -278,14 +278,8 @@
         "type": "Project",
         "dependencies": {
           "Newtonsoft.Json.Schema": "[4.0.1, )",
-          "Speckle.Objects": "[1.0.0, )",
+          "Speckle.Sdk": "[1.0.0, )",
           "System.CommandLine": "[2.0.0-beta4.22272.1, 2.0.0-beta4.22272.1]"
-        }
-      },
-      "speckle.objects": {
-        "type": "Project",
-        "dependencies": {
-          "Speckle.Sdk": "[1.0.0, )"
         }
       },
       "speckle.sdk": {

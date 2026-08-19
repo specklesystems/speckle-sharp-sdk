@@ -80,17 +80,17 @@ public static class SgeoDecoder
     }
     string units = Units.GetUnitFromEncoding(header.UnitsCode);
     var r = new Reader(bytes, SgeoFormat.HeaderSize);
-    int vCount = (int)r.U();
-    int fCount = (int)r.U();
+    int vCount = (int)r.ReadUInt32();
+    int fCount = (int)r.ReadUInt32();
     var verts = new double[vCount * 3];
     for (int i = 0; i < verts.Length; i++)
     {
-      verts[i] = r.D();
+      verts[i] = r.ReadDouble();
     }
     var faces = new int[fCount];
     for (int i = 0; i < fCount; i++)
     {
-      faces[i] = r.I();
+      faces[i] = r.ReadInt32();
     }
     // skip normals + uvs (same order as Decode) so the colour cursor lands correctly.
     if ((header.Flags & SgeoFlags.HasNormals) != 0)
@@ -98,7 +98,7 @@ public static class SgeoDecoder
       r.Align8();
       for (int i = 0; i < vCount * 3; i++)
       {
-        r.D();
+        r.ReadDouble();
       }
     }
     if ((header.Flags & SgeoFlags.HasUvs) != 0)
@@ -106,7 +106,7 @@ public static class SgeoDecoder
       r.Align8();
       for (int i = 0; i < vCount * 2; i++)
       {
-        r.D();
+        r.ReadDouble();
       }
     }
     int[] colors = Array.Empty<int>();
@@ -115,7 +115,7 @@ public static class SgeoDecoder
       colors = new int[vCount];
       for (int i = 0; i < vCount; i++)
       {
-        colors[i] = r.I();
+        colors[i] = r.ReadInt32();
       }
     }
     mesh = new SgeoMesh(verts, faces, colors, units);
@@ -142,17 +142,17 @@ public static class SgeoDecoder
     {
       case SgeoPrimitiveType.Mesh:
       {
-        int vCount = r.Count(24); // 3 doubles per vertex
+        int vCount = r.Count(sizeof(double) * 3); // 3 doubles per vertex
         int fCount = r.Count(4);
         var verts = new List<double>(vCount * 3);
         for (int i = 0; i < vCount * 3; i++)
         {
-          verts.Add(r.D());
+          verts.Add(r.ReadDouble());
         }
         var faces = new List<int>(fCount);
         for (int i = 0; i < fCount; i++)
         {
-          faces.Add(r.I());
+          faces.Add(r.ReadInt32());
         }
         var normals = new List<double>();
         if ((header.Flags & SgeoFlags.HasNormals) != 0)
@@ -160,7 +160,7 @@ public static class SgeoDecoder
           r.Align8();
           for (int i = 0; i < vCount * 3; i++)
           {
-            normals.Add(r.D());
+            normals.Add(r.ReadDouble());
           }
         }
         var uvs = new List<double>();
@@ -169,7 +169,7 @@ public static class SgeoDecoder
           r.Align8();
           for (int i = 0; i < vCount * 2; i++)
           {
-            uvs.Add(r.D());
+            uvs.Add(r.ReadDouble());
           }
         }
         var colors = new List<int>();
@@ -177,7 +177,7 @@ public static class SgeoDecoder
         {
           for (int i = 0; i < vCount; i++)
           {
-            colors.Add(r.I());
+            colors.Add(r.ReadInt32());
           }
         }
         return new Mesh
@@ -193,8 +193,8 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Line:
       {
-        double ds = r.D();
-        double de = r.D();
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
         var start = ReadPoint(ref r, units);
         var end = ReadPoint(ref r, units);
         return new Line
@@ -209,11 +209,11 @@ public static class SgeoDecoder
       case SgeoPrimitiveType.Polyline:
       {
         int count = r.Count(24); // 3 doubles per point
-        _ = r.U(); // reserved
+        _ = r.ReadUInt32(); // reserved
         var value = new List<double>(count * 3);
         for (int i = 0; i < count * 3; i++)
         {
-          value.Add(r.D());
+          value.Add(r.ReadDouble());
         }
         return new Polyline
         {
@@ -226,7 +226,7 @@ public static class SgeoDecoder
       case SgeoPrimitiveType.Polycurve:
       {
         int segCount = r.Count(8); // each segment is at least a header + framing
-        _ = r.U(); // reserved
+        _ = r.ReadUInt32(); // reserved
         var segments = new List<ICurve>(segCount);
         for (int i = 0; i < segCount; i++)
         {
@@ -244,24 +244,24 @@ public static class SgeoDecoder
       {
         bool closed = (header.Flags & SgeoFlags.Closed) != 0;
         var display = ReadPolylineBody(ref r, units, closed); // [render] leading displayValue polyline (see encoder)
-        int degree = (int)r.U(); // [analytical] trailing NURBS definition
+        int degree = (int)r.ReadUInt32(); // [analytical] trailing NURBS definition
         int cpCount = r.Count(24); // control points: 3 doubles each
         int knotCount = r.Count(8);
-        _ = r.U(); // reserved
-        double ds = r.D();
-        double de = r.D();
+        _ = r.ReadUInt32(); // reserved
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
         bool rational = (header.Flags & SgeoFlags.Rational) != 0;
         var points = new List<double>(cpCount * 3);
         for (int i = 0; i < cpCount * 3; i++)
         {
-          points.Add(r.D());
+          points.Add(r.ReadDouble());
         }
         var weights = new List<double>(cpCount);
         if (rational)
         {
           for (int i = 0; i < cpCount; i++)
           {
-            weights.Add(r.D());
+            weights.Add(r.ReadDouble());
           }
         }
         else
@@ -274,7 +274,7 @@ public static class SgeoDecoder
         var knots = new List<double>(knotCount);
         for (int i = 0; i < knotCount; i++)
         {
-          knots.Add(r.D());
+          knots.Add(r.ReadDouble());
         }
         bool periodic = (header.Flags & SgeoFlags.Periodic) != 0;
         return new Curve
@@ -301,8 +301,8 @@ public static class SgeoDecoder
         var startPoint = ReadPoint(ref r, units);
         var midPoint = ReadPoint(ref r, units);
         var endPoint = ReadPoint(ref r, units);
-        double ds = r.D();
-        double de = r.D();
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
         return new Arc
         {
           plane = plane,
@@ -316,9 +316,9 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Circle:
       {
-        double radius = r.D();
-        double ds = r.D();
-        double de = r.D();
+        double radius = r.ReadDouble();
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
         var plane = ReadPlane(ref r, units);
         return new Circle
         {
@@ -332,18 +332,18 @@ public static class SgeoDecoder
       case SgeoPrimitiveType.Points:
       {
         int count = r.Count(24); // 3 doubles per point
-        _ = r.U(); // reserved
+        _ = r.ReadUInt32(); // reserved
         var points = new List<double>(count * 3);
         for (int i = 0; i < count * 3; i++)
         {
-          points.Add(r.D());
+          points.Add(r.ReadDouble());
         }
         var colors = new List<int>();
         if ((header.Flags & SgeoFlags.HasColors) != 0)
         {
           for (int i = 0; i < count; i++)
           {
-            colors.Add(r.I());
+            colors.Add(r.ReadInt32());
           }
         }
         var sizes = new List<double>();
@@ -352,7 +352,7 @@ public static class SgeoDecoder
           r.Align8();
           for (int i = 0; i < count; i++)
           {
-            sizes.Add(r.D());
+            sizes.Add(r.ReadDouble());
           }
         }
         return new Pointcloud
@@ -366,15 +366,15 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Ellipse:
       {
-        double firstRadius = r.D();
-        double secondRadius = r.D();
-        double ds = r.D();
-        double de = r.D();
+        double firstRadius = r.ReadDouble();
+        double secondRadius = r.ReadDouble();
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
         var plane = ReadPlane(ref r, units);
         Interval? trim = null;
         if ((header.Flags & SgeoFlags.HasTrimDomain) != 0)
         {
-          trim = new Interval { start = r.D(), end = r.D() };
+          trim = new Interval { start = r.ReadDouble(), end = r.ReadDouble() };
         }
         return new Ellipse
         {
@@ -391,16 +391,16 @@ public static class SgeoDecoder
       {
         bool closed = (header.Flags & SgeoFlags.Closed) != 0;
         var display = ReadPolylineBody(ref r, units, closed); // [render] leading displayValue polyline (see encoder)
-        var spiralType = (SpiralType)r.U(); // [analytical] trailing spiral definition
-        _ = r.U(); // reserved
+        var spiralType = (SpiralType)r.ReadUInt32(); // [analytical] trailing spiral definition
+        _ = r.ReadUInt32(); // reserved
         var startPoint = ReadPoint(ref r, units);
         var endPoint = ReadPoint(ref r, units);
         var plane = ReadPlane(ref r, units);
-        double turns = r.D();
+        double turns = r.ReadDouble();
         var pitchAxis = ReadVector(ref r, units);
-        double pitch = r.D();
-        double ds = r.D();
-        double de = r.D();
+        double pitch = r.ReadDouble();
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
         return new Spiral
         {
           startPoint = startPoint,
@@ -420,9 +420,9 @@ public static class SgeoDecoder
       case SgeoPrimitiveType.Box:
       {
         var plane = ReadPlane(ref r, units);
-        var xSize = new Interval { start = r.D(), end = r.D() };
-        var ySize = new Interval { start = r.D(), end = r.D() };
-        var zSize = new Interval { start = r.D(), end = r.D() };
+        var xSize = new Interval { start = r.ReadDouble(), end = r.ReadDouble() };
+        var ySize = new Interval { start = r.ReadDouble(), end = r.ReadDouble() };
+        var zSize = new Interval { start = r.ReadDouble(), end = r.ReadDouble() };
         return new Box
         {
           plane = plane,
@@ -435,7 +435,7 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Region:
       {
-        bool hasHatchPattern = r.U() != 0;
+        bool hasHatchPattern = r.ReadUInt32() != 0;
         int loopCount = r.Count(8);
         var boundary = ReadCurveBlob(ref r);
         var innerLoops = new List<ICurve>(loopCount);
@@ -455,17 +455,17 @@ public static class SgeoDecoder
 
       case SgeoPrimitiveType.Text:
       {
-        var alignmentH = (AlignmentHorizontal)r.U();
-        var alignmentV = (AlignmentVertical)r.U();
-        double height = r.D();
+        var alignmentH = (AlignmentHorizontal)r.ReadUInt32();
+        var alignmentV = (AlignmentVertical)r.ReadUInt32();
+        double height = r.ReadDouble();
         double? maxWidth = null;
         if ((header.Flags & SgeoFlags.HasMaxWidth) != 0)
         {
-          maxWidth = r.D();
+          maxWidth = r.ReadDouble();
         }
         var plane = ReadPlane(ref r, units);
         int byteLen = r.Count(1); // utf8 bytes
-        _ = r.U(); // reserved
+        _ = r.ReadUInt32(); // reserved
         string value = Encoding.UTF8.GetString(r.Slice(byteLen).ToArray());
         return new Text
         {
@@ -490,11 +490,11 @@ public static class SgeoDecoder
   private static Polyline ReadPolylineBody(ref Reader r, string units, bool closed)
   {
     int count = r.Count(24); // each point is 3 doubles
-    _ = r.U(); // reserved
+    _ = r.ReadUInt32(); // reserved
     var value = new List<double>(count * 3);
     for (int i = 0; i < count * 3; i++)
     {
-      value.Add(r.D());
+      value.Add(r.ReadDouble());
     }
     r.Align8();
     return new Polyline
@@ -510,7 +510,7 @@ public static class SgeoDecoder
   private static ICurve ReadCurveBlob(ref Reader r)
   {
     int blobLen = r.Count(1); // bytes
-    _ = r.U(); // reserved
+    _ = r.ReadUInt32(); // reserved
     var curve = (ICurve)Decode(r.Slice(blobLen));
     r.Align8();
     return curve;
@@ -518,17 +518,17 @@ public static class SgeoDecoder
 
   private static Point ReadPoint(ref Reader r, string units)
   {
-    double x = r.D();
-    double y = r.D();
-    double z = r.D();
+    double x = r.ReadDouble();
+    double y = r.ReadDouble();
+    double z = r.ReadDouble();
     return new Point(x, y, z, units);
   }
 
   private static Vector ReadVector(ref Reader r, string units)
   {
-    double x = r.D();
-    double y = r.D();
-    double z = r.D();
+    double x = r.ReadDouble();
+    double y = r.ReadDouble();
+    double z = r.ReadDouble();
     return new Vector(x, y, z, units);
   }
 
@@ -554,24 +554,30 @@ public static class SgeoDecoder
       _offset = offset;
     }
 
-    public double D()
+    public double ReadDouble()
     {
-      double v = MeshBinaryEncoder.ReadDoubleLE(_bytes.Slice(_offset, 8));
-      _offset += 8;
+      var src = _bytes.Slice(_offset, sizeof(double));
+#if NET5_0_OR_GREATER
+      double v = BinaryPrimitives.ReadDoubleLittleEndian(src);
+#else
+      long bits = BinaryPrimitives.ReadInt64LittleEndian(src);
+      double v = BitConverter.Int64BitsToDouble(bits);
+#endif
+      _offset += sizeof(double);
       return v;
     }
 
-    public int I()
+    public int ReadInt32()
     {
-      int v = BinaryPrimitives.ReadInt32LittleEndian(_bytes.Slice(_offset, 4));
-      _offset += 4;
+      int v = BinaryPrimitives.ReadInt32LittleEndian(_bytes.Slice(_offset, sizeof(int)));
+      _offset += sizeof(int);
       return v;
     }
 
-    public uint U()
+    public uint ReadUInt32()
     {
-      uint v = BinaryPrimitives.ReadUInt32LittleEndian(_bytes.Slice(_offset, 4));
-      _offset += 4;
+      uint v = BinaryPrimitives.ReadUInt32LittleEndian(_bytes.Slice(_offset, sizeof(uint)));
+      _offset += sizeof(uint);
       return v;
     }
 
@@ -579,7 +585,7 @@ public static class SgeoDecoder
     // misaligned blob from driving a giant allocation → OutOfMemoryException, which callers can't treat as recoverable.
     public int Count(int elementBytes)
     {
-      uint v = U();
+      uint v = ReadUInt32();
       if (v > int.MaxValue || v * elementBytes > _bytes.Length - _offset)
       {
         throw new SpeckleException(

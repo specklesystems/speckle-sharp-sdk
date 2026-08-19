@@ -121,6 +121,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   /// <remarks>
   /// This is currently only used for encoding optimization in curves in breps!
   /// </remarks>
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public List<double> ToList()
   {
     var list = new List<double>();
@@ -154,6 +155,7 @@ public class Curve : Base, ICurve, IHasBoundingBox, IHasArea, ITransformable<Cur
   /// <remarks>
   /// This is currently being used only for deserialization of Brep curves!
   /// </remarks>
+  [Obsolete(CurveArrayEncodingExtensions.OBSOLETE_MESSAGE)]
   public static Curve FromList(List<double> list)
   {
     if ((int)list[0] != list.Count - 1)

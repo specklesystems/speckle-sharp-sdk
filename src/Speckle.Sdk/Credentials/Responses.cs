@@ -23,9 +23,11 @@ public sealed class TokenExchangeResponse
 
 public sealed class UserInfo
 {
+#nullable disable
   public string id { get; init; }
   public string name { get; init; }
   public string email { get; init; }
+#nullable restore
   public string? company { get; init; }
   public string? avatar { get; init; }
 }

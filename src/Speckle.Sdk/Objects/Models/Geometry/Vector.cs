@@ -10,6 +10,11 @@ namespace Speckle.Objects.Geometry;
 /// A 3-dimensional vector
 /// </summary>
 [SpeckleType("Objects.Geometry.Vector")]
+[SuppressMessage(
+  "Usage",
+  "CA2225:Operator overloads have named alternates",
+  Justification = "Maths functions should be avoided anyway"
+)]
 public class Vector : Base, IHasBoundingBox, ITransformable<Vector>
 {
   /// <inheritdoc/>
