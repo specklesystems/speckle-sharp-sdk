@@ -1,0 +1,68 @@
+<Project>
+  <!--
+    Shipped inside the Speckle.Sdk nupkg (build/ and buildTransitive/). Fails a consumer's build
+    with one actionable error when a pre-merge Speckle.Objects package (a real object-model
+    assembly rather than the post-merge type-forwarding shell) is anywhere in the resolved
+    dependency graph, instead of letting them hit a wall of CS0433 duplicate-type errors.
+
+    The threshold is a hardcoded constant, not stamped from $(Version) at pack time: nuspec token
+    replacement never touches .targets content, and PR CI packs at the default Version 1.0.0 which
+    would bake in a dead guard. Set it once, to the first release tag that ships the merged
+    package, and never move it again.
+  -->
+  <PropertyGroup>
+    <!-- TODO: confirm against the actual first merged release tag before tagging (last pre-merge release is 2026.6.0). -->
+    <_SpeckleObjectsFirstMergedVersion>2026.7.0</_SpeckleObjectsFirstMergedVersion>
+  </PropertyGroup>
+
+  <!--
+    ResolvePackageAssets stamps NuGetPackageId/NuGetPackageVersion on every asset in the graph,
+    transitive packages included, and only runs in per-TFM inner builds (no double-fire). On
+    pipelines without it (packages.config, non-SDK-style projects) this target simply never runs;
+    those consumers surface the mix as duplicate-type compile errors instead.
+  -->
+  <Target
+    Name="_SpeckleSdkGuardPreMergeObjects"
+    AfterTargets="ResolvePackageAssets"
+    Condition="'$(DesignTimeBuild)' != 'true' and '$(SpeckleSdkDisableObjectsGuard)' != 'true'"
+  >
+    <ItemGroup>
+      <_SpeckleObjectsAssets
+        Include="@(ResolvedCompileFileDefinitions);@(RuntimeCopyLocalItems)"
+        Condition="'%(NuGetPackageId)' == 'Speckle.Objects'"
+      />
+    </ItemGroup>
+    <!-- The empty-set check matters: batching over zero items still evaluates the condition once
+         with empty metadata, and VersionLessThan('') is an evaluation error.
+         1.0.0 is the default local-dev pack version of the post-merge shell, never a published
+         pre-merge release. -->
+    <ItemGroup Condition="'@(_SpeckleObjectsAssets)' != ''">
+      <_SpecklePreMergeObjects
+        Include="@(_SpeckleObjectsAssets)"
+        Condition="'%(_SpeckleObjectsAssets.NuGetPackageVersion)' != '' and '%(_SpeckleObjectsAssets.NuGetPackageVersion)' != '1.0.0' and $([MSBuild]::VersionLessThan('%(_SpeckleObjectsAssets.NuGetPackageVersion)', '$(_SpeckleObjectsFirstMergedVersion)'))"
+      />
+    </ItemGroup>
+    <Error
+      Condition="'@(_SpecklePreMergeObjects)' != ''"
+      Code="SPKSDK001"
+      Text="Speckle.Objects @(_SpecklePreMergeObjects->'%(NuGetPackageVersion)'->Distinct()) is a pre-merge package and cannot be used with Speckle.Sdk $(_SpeckleObjectsFirstMergedVersion) or newer (Speckle.Objects was merged into Speckle.Sdk). Update ALL Speckle.* package references in this project - and any packages that pull them in transitively - to one matching version, then remove the now-redundant Speckle.Objects reference; its types live in Speckle.Sdk."
+    />
+    <!-- The shell's exact pin on Speckle.Sdk only downgrades to warning NU1608 when a direct
+         Speckle.Sdk reference overrides it (nearest-wins), so enforce version lockstep here too. -->
+    <ItemGroup Condition="'@(_SpeckleObjectsAssets)' != ''">
+      <_SpeckleSdkAssets
+        Include="@(ResolvedCompileFileDefinitions);@(RuntimeCopyLocalItems)"
+        Condition="'%(NuGetPackageId)' == 'Speckle.Sdk'"
+      />
+    </ItemGroup>
+    <PropertyGroup Condition="'@(_SpeckleObjectsAssets)' != '' and '@(_SpecklePreMergeObjects)' == ''">
+      <_SpeckleObjectsResolvedVersion>@(_SpeckleObjectsAssets->'%(NuGetPackageVersion)'->Distinct())</_SpeckleObjectsResolvedVersion>
+      <_SpeckleSdkResolvedVersion>@(_SpeckleSdkAssets->'%(NuGetPackageVersion)'->Distinct())</_SpeckleSdkResolvedVersion>
+    </PropertyGroup>
+    <Error
+      Condition="'$(_SpeckleObjectsResolvedVersion)' != '' and '$(_SpeckleSdkResolvedVersion)' != '' and '$(_SpeckleObjectsResolvedVersion)' != '$(_SpeckleSdkResolvedVersion)'"
+      Code="SPKSDK002"
+      Text="Speckle.Objects $(_SpeckleObjectsResolvedVersion) and Speckle.Sdk $(_SpeckleSdkResolvedVersion) resolved to different versions; the Speckle.Objects type-forwarding shell must match Speckle.Sdk exactly. Update ALL Speckle.* package references to one matching version, or remove the now-redundant Speckle.Objects reference; its types live in Speckle.Sdk."
+    />
+  </Target>
+</Project>

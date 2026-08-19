@@ -58,4 +58,8 @@
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />
     <ProjectReference Include="..\Speckle.Sdk.Parquet\Speckle.Sdk.Parquet.csproj" />
   </ItemGroup>
+  <ItemGroup Label="Packaged MSBuild guard against pre-merge Speckle.Objects">
+    <!-- buildTransitive\ reaches transitive PackageReference consumers; build\ covers direct/legacy ones. -->
+    <None Include="buildTransitive\Speckle.Sdk.targets" Pack="true" PackagePath="build\;buildTransitive\" />
+  </ItemGroup>
 </Project>
