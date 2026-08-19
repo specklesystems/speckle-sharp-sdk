@@ -664,12 +664,6 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// model units, forward/up unit vectors, <see cref="CameraView.Fov"/> vertical DEGREES (perspective only).</summary>
   public void AddCameraView(CameraView view) => _envelopeWriter.AddCameraView(view);
 
-  /// <summary>Records the applied reference-point re-basing in the bundle <c>meta</c> so it is recoverable
-  /// downstream (federation/georeferencing). <paramref name="kind"/> ∈ <c>projectBasePoint | surveyPoint |
-  /// internalOriginFallback</c> (null = internal origin); <paramref name="offset"/> is <c>"x,y,z"</c> in display
-  /// units — the vector subtracted from world-space output. Call before <see cref="Complete"/>.</summary>
-  public void SetReferencePoint(string? kind, string? offset) => _envelopeWriter.SetReferencePoint(kind, offset);
-
   /// <summary>
   /// Records the producer information of this bundle in the <c>meta</c> file.
   /// </summary>

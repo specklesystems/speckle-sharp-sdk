@@ -224,13 +224,6 @@ public sealed class ArtefactBundle
   public required ArtefactRelations Relations { get; init; }
   public required string Units { get; init; }
 
-  /// <summary>ENG-8947 reference-point provision from the bundle <c>meta</c> (null = internal origin / absent).
-  /// <see cref="ReferencePointKind"/> ∈ <c>projectBasePoint | surveyPoint | internalOriginFallback</c>;
-  /// <see cref="ReferencePointOffset"/> is <c>"x,y,z"</c> in <see cref="Units"/> — the vector subtracted from
-  /// world-space output (null for the fallback / non-translation kinds).</summary>
-  public string? ReferencePointKind { get; init; }
-  public string? ReferencePointOffset { get; init; }
-
   /// <summary>The default scene view's grouping tiers (outermost→innermost), or empty if the bundle has none. Drives
   /// the received layer hierarchy (e.g. Revit: Model → Level → Category → Family).</summary>
   public required IReadOnlyList<SceneViewTier> DefaultSceneView { get; init; }
@@ -275,7 +268,6 @@ public static class ArtefactBundleReader
       .ConfigureAwait(false);
     var cameraViewsT = await TryReadTableAsync(bundleDir, ".envelope.camera_views.parquet", cancellationToken)
       .ConfigureAwait(false);
-    var metaT = await TryReadTableAsync(bundleDir, ".envelope.meta.parquet", cancellationToken).ConfigureAwait(false);
     // Type-scoped params (ENG-9136) — additive tables, absent from bundles predating type splitting.
     var typeEavT = await TryReadTableAsync(bundleDir, ".eav.type_eav.parquet", cancellationToken).ConfigureAwait(false);
     var objectTypeT = await TryReadTableAsync(bundleDir, ".eav.object_type.parquet", cancellationToken)
@@ -288,7 +280,6 @@ public static class ArtefactBundleReader
     var objIdToApp = BuildObjectIds(objectsT);
     var pathById = BuildPaths(pathsT);
     var propsByObject = BuildProperties(eavT, pathById, "object_index");
-    var (refPointKind, refPointOffset) = LoadReferencePoint(metaT);
     var geometries = LoadGeometries(geometriesTables);
     var relations = LoadRelations(relationsT);
     RecoverUntaggedObjectColors(relations, geometries, objIdToApp);
@@ -303,8 +294,6 @@ public static class ArtefactBundleReader
       Units = InferUnits(propsByObject),
       DefaultSceneView = LoadDefaultSceneView(sceneViewsT),
       CameraViews = LoadCameraViews(cameraViewsT),
-      ReferencePointKind = refPointKind,
-      ReferencePointOffset = refPointOffset,
       TypePropertiesByObject = LoadTypeProperties(typeEavT, objectTypeT, pathById),
       ModelProperties = LoadModelProperties(modelT),
       PropertySetDefinitions = LoadPropertySetDefinitions(psetDefsT),
@@ -439,19 +428,6 @@ public static class ArtefactBundleReader
 
   // ENG-8947: the reference-point provision from meta (single row). Columns are nullable + additive — older
   // bundles without them yield (null, null), i.e. internal origin.
-  private static (string? kind, string? offset) LoadReferencePoint(ParquetTable? t)
-  {
-    if (t is null || !t.Has("reference_point_kind"))
-    {
-      return (null, null);
-    }
-    var kinds = t.Strings("reference_point_kind");
-    var offsets = t.Has("reference_point_offset") ? t.Strings("reference_point_offset") : null;
-    var kind = kinds.Length > 0 ? kinds[0] : null;
-    var offset = offsets is { Length: > 0 } ? offsets[0] : null;
-    return (kind, offset);
-  }
-
   // object→node relations (per envelope rel_types) whose target node can form a scene-view grouping tier.
   private static readonly HashSet<int> s_objectNodeRels = new()
   {

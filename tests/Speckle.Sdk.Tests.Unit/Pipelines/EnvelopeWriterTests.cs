@@ -210,13 +210,7 @@ public sealed class EnvelopeWriterTests : IDisposable
     db.Open();
     View(db, "meta");
 
-    Scalar(
-        db,
-        @"SELECT count(*) FROM meta WHERE migrated_from_schema_version IS NULL
-            AND reference_point_kind IS NULL AND reference_point_offset IS NULL"
-      )
-      .Should()
-      .Be(1L);
+    Scalar(db, "SELECT count(*) FROM meta WHERE migrated_from_schema_version IS NULL").Should().Be(1L);
   }
 
   [Fact]
