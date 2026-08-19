@@ -130,30 +130,57 @@ public sealed class ObjectsArtifactReader
     return root;
   }
 
-  // ENG-8947: rebuild the v1 root reference-point transform from the meta offset. Only the translation kinds carry an
-  // offset; the display-unit offset is converted to feet (the internal unit v1 applies the transform in) and packed as
-  // the 16-value matrix (identity basis + translation) ReferencePointHelper.GetTransformFromRootObject expects.
+  // ENG-8947: rebuild the v1 root reference-point transform from the eav.model record
+  // (referencePoint.kind/.transform/.units — the former meta.reference_point_* columns are removed from the
+  // spec). transform is the FULL rigid transform, 16 row-major doubles in referencePoint.units (InstanceProxy
+  // layout, translation at 3/7/11); re-emitted here in the legacy root layout
+  // ReferencePointHelper.GetTransformFromRootObject expects (basis columns first, translation at 12–14,
+  // internal feet — the unit v1 applies the transform in).
   private static Dictionary<string, object>? BuildReferencePointRootValue(ArtefactBundle bundle)
   {
-    if (bundle.ReferencePointOffset is not { Length: > 0 } offsetCsv)
+    if (
+      !bundle.ModelProperties.TryGetValue("referencePoint", out var rpObj)
+      || rpObj is not Dictionary<string, object?> rp
+      || !rp.TryGetValue("transform", out var tObj)
+      || tObj is not string transformCsv
+    )
     {
       return null;
     }
-    var parts = offsetCsv.Split(',');
-    if (parts.Length != 3)
+    var parts = transformCsv.Split(',');
+    if (parts.Length != 16)
     {
       return null;
     }
-    var o = new double[3];
-    for (int i = 0; i < 3; i++)
+    var d = new double[16];
+    for (int i = 0; i < 16; i++)
     {
-      if (!double.TryParse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out o[i]))
+      if (!double.TryParse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out d[i]))
       {
         return null;
       }
     }
-    double toFeet = Units.GetConversionFactor(bundle.Units, Units.Feet);
-    var m = new double[] { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, o[0] * toFeet, o[1] * toFeet, o[2] * toFeet, 1 };
+    string units = rp.TryGetValue("units", out var uObj) && uObj is string u && u.Length > 0 ? u : bundle.Units;
+    double toFeet = Units.GetConversionFactor(units, Units.Feet);
+    var m = new double[]
+    {
+      d[0],
+      d[4],
+      d[8],
+      0,
+      d[1],
+      d[5],
+      d[9],
+      0,
+      d[2],
+      d[6],
+      d[10],
+      0,
+      d[3] * toFeet,
+      d[7] * toFeet,
+      d[11] * toFeet,
+      1,
+    };
     return new Dictionary<string, object> { ["transform"] = m };
   }
 
