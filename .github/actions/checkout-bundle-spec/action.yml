@@ -13,7 +13,7 @@ runs:
       uses: actions/checkout@v7
       with:
         repository: specklesystems/speckle-bundle-spec
-        ref: 0bc4769c9f475b8bce94ea5d76c1f1a91c56bee8
+        ref: 3932569cb833ad2e597e4927d8490585dc4e49c6
         token: ${{ inputs.token }}
         path: speckle-bundle-spec
         persist-credentials: false

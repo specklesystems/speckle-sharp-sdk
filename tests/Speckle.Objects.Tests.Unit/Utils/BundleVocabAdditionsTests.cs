@@ -73,6 +73,11 @@ public class BundleVocabAdditionsTests
         int colK = pipeline.AddColor(unchecked((int)0xFFE03A2F));
         pipeline.ObjectHasColor(topObjK, colK);
 
+        // Container appearance (rels 28/29): a CONTAINER node carrying material + colour.
+        int tagK = pipeline.AddContainer("tag:Interiors", "Interiors", null, "Collection");
+        pipeline.NodeHasMaterial(tagK, matK);
+        pipeline.NodeHasColor(tagK, colK);
+
         // Model-scoped attributes: the full reference-point transform + a document fact.
         pipeline.AddModelProperty("referencePoint.transform", "1,0,0,30.5,0,1,0,12.2,0,0,1,0,0,0,0,1");
         pipeline.AddModelProperty("referencePoint.kind", "projectBasePoint");
@@ -117,6 +122,8 @@ public class BundleVocabAdditionsTests
 
       // Object-plane appearance landed in the object-keyed maps.
       rels.MaterialByObject.Should().HaveCount(1);
+      rels.MaterialByNode.Should().HaveCount(1);
+      rels.ColorByNode.Should().HaveCount(1);
       rels.ColorByObject.Should().HaveCount(1);
       rels.MaterialByGeometry.Should().BeEmpty();
       rels.ColorByGeometry.Should().BeEmpty();

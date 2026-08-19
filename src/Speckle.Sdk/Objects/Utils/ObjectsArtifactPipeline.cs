@@ -525,6 +525,16 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void ObjectHasColor(int objectK, int colorK) =>
     _envelopeWriter.AddRelation(RelKind.ObjectHasColor, objectK, colorK, 0);
 
+  /// <summary>node → node(MATERIAL): container appearance (rel 28, NODE_HAS_MATERIAL) — e.g. a
+  /// CONTAINER's authored material.</summary>
+  public void NodeHasMaterial(int nodeK, int materialK) =>
+    _envelopeWriter.AddRelation(RelKind.NodeHasMaterial, nodeK, materialK, 0);
+
+  /// <summary>node → node(COLOR): container display colour (rel 29, NODE_HAS_COLOR) — e.g. a layer/tag
+  /// colour as a first-class COLOR node instead of the CONTAINER argb overload.</summary>
+  public void NodeHasColor(int nodeK, int colorK) =>
+    _envelopeWriter.AddRelation(RelKind.NodeHasColor, nodeK, colorK, 0);
+
   // ── structural results ─────────────────────────────────────────────────────────────────
 
   /// <summary>
@@ -653,12 +663,6 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <summary>Authors one named camera viewpoint into <c>envelope.camera_views.parquet</c>. Position/target in
   /// model units, forward/up unit vectors, <see cref="CameraView.Fov"/> vertical DEGREES (perspective only).</summary>
   public void AddCameraView(CameraView view) => _envelopeWriter.AddCameraView(view);
-
-  /// <summary>Records the applied reference-point re-basing in the bundle <c>meta</c> so it is recoverable
-  /// downstream (federation/georeferencing). <paramref name="kind"/> ∈ <c>projectBasePoint | surveyPoint |
-  /// internalOriginFallback</c> (null = internal origin); <paramref name="offset"/> is <c>"x,y,z"</c> in display
-  /// units — the vector subtracted from world-space output. Call before <see cref="Complete"/>.</summary>
-  public void SetReferencePoint(string? kind, string? offset) => _envelopeWriter.SetReferencePoint(kind, offset);
 
   /// <summary>
   /// Records the producer information of this bundle in the <c>meta</c> file.

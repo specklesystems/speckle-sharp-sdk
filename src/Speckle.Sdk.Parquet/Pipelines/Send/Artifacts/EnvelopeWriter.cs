@@ -70,9 +70,8 @@ public sealed record CameraView(
 ///         metalness, roughness, emissive, ior, elevation)
 ///   {base}.envelope.{rel_types,node_kinds}.parquet             -- self-describing catalog (SOT §6)
 ///   {base}.envelope.meta.parquet(schema_version,               -- catalog + provenance: who produced the
-///         produced_by, reference_point_kind|_offset,              bundle, with which SDK, and when
-///         producer_version, sdk_name, sdk_version,                migrated, from which graph vintage
-///         migrated_from_schema_version)
+///         produced_by, producer_version, sdk_name,                bundle, with which SDK, and when
+///         sdk_version, migrated_from_schema_version)              migrated, from which graph vintage
 ///   {base}.envelope.scene_views.parquet(view, name,           -- producer-authored grouping projections
 ///         is_default, ord, source, ref)                          (SOT §8); absent if none
 ///   {base}.envelope.camera_views.parquet(view, name,          -- named camera viewpoints
@@ -99,12 +98,6 @@ public sealed class EnvelopeWriter : IDisposable
   private readonly List<SceneView> _sceneViews = new();
   private readonly List<CameraView> _cameraViews = new();
   private bool _completed;
-
-  // ENG-8947: reference-point provision recorded in meta when a producer re-based geometry by a source
-  // reference point. kind ∈ projectBasePoint | surveyPoint | internalOriginFallback; offset "x,y,z" in
-  // display units (the vector subtracted). Both null = internal origin (no re-basing). See SetReferencePoint.
-  private string? _referencePointKind;
-  private string? _referencePointOffset;
 
   private string? _producedBy;
   private string? _producerVersion;
@@ -199,18 +192,6 @@ public sealed class EnvelopeWriter : IDisposable
   }
 
   /// <summary>
-  /// ENG-8947: records the applied reference-point re-basing in <c>meta</c> (written at <see cref="Complete"/>).
-  /// <paramref name="kind"/> ∈ <c>projectBasePoint | surveyPoint | internalOriginFallback</c> (null = internal
-  /// origin); <paramref name="offset"/> is <c>"x,y,z"</c> in display units — the vector subtracted from world-space
-  /// output (null when not a translation re-basing). Call before <see cref="Complete"/>.
-  /// </summary>
-  public void SetReferencePoint(string? kind, string? offset)
-  {
-    _referencePointKind = kind;
-    _referencePointOffset = offset;
-  }
-
-  /// <summary>
   /// Records the producer information of this bundle in the <c>meta</c> file.
   /// </summary>
   /// <param name="producedBy">slug of the producer of this version</param>
@@ -264,10 +245,10 @@ public sealed class EnvelopeWriter : IDisposable
     SafeDispose(_nodes);
   }
 
-  // meta (SOT §6): schema version + producer provenance + the ENG-8947 reference-point provision. Written at
-  // Complete() (not eagerly in the ctor) so producers can record their identity via SetProducer and a
-  // reference-point re-basing via SetReferencePoint first. Only reference_point_* and
-  // migrated_from_schema_version are conditional → NULL columns (readers that ignore them are unaffected).
+  // meta (SOT §6): schema version + producer provenance. Written at Complete() (not eagerly in the ctor) so
+  // producers can record their identity via SetProducer first. The reference-point record does NOT live here —
+  // it rides eav.model as referencePoint.* rows (the former meta.reference_point_* columns are removed from the
+  // spec; the xyz-only offsets lost rotation and meta is the wrong home for model data).
   private void WriteMeta()
   {
     using var meta = new ParquetTableWriter(
@@ -275,8 +256,6 @@ public sealed class EnvelopeWriter : IDisposable
       new ParquetSchema(
         I("schema_version"),
         S("produced_by"),
-        S("reference_point_kind"),
-        S("reference_point_offset"),
         S("producer_version"),
         S("sdk_name"),
         S("sdk_version"),
@@ -287,8 +266,6 @@ public sealed class EnvelopeWriter : IDisposable
     meta.AddRow(
       SpecBundle.SchemaVersion,
       _producedBy,
-      _referencePointKind,
-      _referencePointOffset,
       _producerVersion,
       _sdkName,
       _sdkVersion,
