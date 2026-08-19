@@ -130,13 +130,12 @@ public sealed class ObjectsArtifactReader
     return root;
   }
 
-  // ENG-8947: rebuild the v1 root reference-point transform from the meta offset. Only the translation kinds carry an
-  // offset; the display-unit offset is converted to feet (the internal unit v1 applies the transform in) and packed as
-  // the 16-value matrix (identity basis + translation) ReferencePointHelper.GetTransformFromRootObject expects.
-  // The reference-point record rides eav.model (referencePoint.kind/.transform/.units — the former
-  // meta.reference_point_* columns are removed from the spec). transform is the FULL rigid transform,
-  // 16 row-major doubles in referencePoint.units (InstanceProxy layout, translation at 3/7/11); re-emitted
-  // here in the legacy root layout (basis columns first, translation at 12–14, internal feet).
+  // ENG-8947: rebuild the v1 root reference-point transform from the eav.model record
+  // (referencePoint.kind/.transform/.units — the former meta.reference_point_* columns are removed from the
+  // spec). transform is the FULL rigid transform, 16 row-major doubles in referencePoint.units (InstanceProxy
+  // layout, translation at 3/7/11); re-emitted here in the legacy root layout
+  // ReferencePointHelper.GetTransformFromRootObject expects (basis columns first, translation at 12–14,
+  // internal feet — the unit v1 applies the transform in).
   private static Dictionary<string, object>? BuildReferencePointRootValue(ArtefactBundle bundle)
   {
     if (
@@ -165,10 +164,22 @@ public sealed class ObjectsArtifactReader
     double toFeet = Units.GetConversionFactor(units, Units.Feet);
     var m = new double[]
     {
-      d[0], d[4], d[8], 0,
-      d[1], d[5], d[9], 0,
-      d[2], d[6], d[10], 0,
-      d[3] * toFeet, d[7] * toFeet, d[11] * toFeet, 1,
+      d[0],
+      d[4],
+      d[8],
+      0,
+      d[1],
+      d[5],
+      d[9],
+      0,
+      d[2],
+      d[6],
+      d[10],
+      0,
+      d[3] * toFeet,
+      d[7] * toFeet,
+      d[11] * toFeet,
+      1,
     };
     return new Dictionary<string, object> { ["transform"] = m };
   }
