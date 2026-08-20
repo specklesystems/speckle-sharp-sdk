@@ -341,10 +341,19 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// CONTAINER node whose <c>subtype</c> carries its tag; <c>IN_COLLECTION</c> marks the grouping axis.
   /// <paramref name="parentCollectionK"/> is the parent collection (null = top-level) — the parent chain IS
   /// the source hierarchy. <paramref name="subtype"/> tags it (e.g. "Layer") for the loader.</summary>
-  public int AddCollection(string collectionKey, string? name, int? parentCollectionK, string? subtype)
+
+  public int AddCollection(
+    string collectionKey,
+    string? name,
+    int? parentCollectionK,
+    string? subtype,
+    string? ghTopology = null
+  )
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
+      // ghTopology carries Grasshopper's data-tree paths for this collection
+      // (nodes.gh_topology) so a tree survives a round trip; null for every other producer.
       _envelopeWriter.AddNode(
         k,
         NodeKind.Container,
@@ -359,7 +368,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         null,
-        null
+        null,
+        ghTopology
       );
     }
     return k;
