@@ -17,4 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk\Speckle.Sdk.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Speckle.Sdk.Artifacts.Harness.Tests" />
+  </ItemGroup>
 </Project>

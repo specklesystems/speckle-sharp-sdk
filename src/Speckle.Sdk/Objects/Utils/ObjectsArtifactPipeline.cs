@@ -341,18 +341,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// CONTAINER node whose <c>subtype</c> carries its tag; <c>IN_COLLECTION</c> marks the grouping axis.
   /// <paramref name="parentCollectionK"/> is the parent collection (null = top-level) — the parent chain IS
   /// the source hierarchy. <paramref name="subtype"/> tags it (e.g. "Layer") for the loader.</summary>
-  public int AddCollection(
-    string collectionKey,
-    string? name,
-    int? parentCollectionK,
-    string? subtype,
-    int? argb = null
-  )
+  public int AddCollection(string collectionKey, string? name, int? parentCollectionK, string? subtype)
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
-      // argb carries the collection's display colour (e.g. a Rhino/AutoCAD layer colour) in the shared node
-      // `argb` column; null = no colour authored.
       _envelopeWriter.AddNode(
         k,
         NodeKind.Container,
@@ -361,7 +353,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         subtype,
-        argb,
+        null,
         null,
         null,
         null,
