@@ -65,8 +65,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   // INSTANCE-node K by appId, shared between atomic instance leaves and nested-instance definition members.
   private readonly Dictionary<string, int> _instanceNodeByAppId = new(StringComparer.Ordinal);
 
-  // object/geometry appId → its appearance targets ("g:<geomAppId>" mesh | "o:<objAppId>" instance object)
-  private readonly Dictionary<string, List<string>> _objectDisplayGeomKeys = new(StringComparer.Ordinal);
+  // object appId → its display geometry appIds
+  private readonly Dictionary<string, List<string>> _objectDisplayGeoms = new(StringComparer.Ordinal);
+
+  // InstanceProxy atomics: appearance bound to these appIds rides the object plane (rels 26/27).
+  private readonly HashSet<string> _instanceObjectAppIds = new(StringComparer.Ordinal);
 
   // definition-member appId → its raw-solid geometry appId ("<appId>:solid")
   private readonly Dictionary<string, string> _defMemberSolidKey = new(StringComparer.Ordinal);
@@ -198,7 +201,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       _stats.DisplayInstanceEdges++;
       _stats.InstanceAtomics++;
       // ByBlock: the placed definition geometry is shared, so appearance rides on the instance object.
-      RecordObjectGeom(appId, "o:" + appId);
+      _instanceObjectAppIds.Add(appId);
       return objK;
     }
 
@@ -213,7 +216,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     {
       pipeline.Solid(objK, solidK, 0);
       _stats.Solids++;
-      // Deliberately NOT recorded in _objectDisplayGeomKeys — materials/colours bind to display meshes, not the solid.
+      // Deliberately NOT recorded in _objectDisplayGeoms — materials/colours bind to display meshes, not the solid.
     }
     // Checked before the raw-geometry case so a leaf that ships a display mesh (Brep/SubD, extrusions) encodes
     // that mesh rather than its un-encodable self.
@@ -236,7 +239,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
           {
             pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
             _stats.DisplayEdges++;
-            RecordObjectGeom(appId, "g:" + gAppId);
+            RecordObjectGeom(appId, gAppId);
           }
         }
       }
@@ -258,7 +261,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
         _stats.DisplayEdges++;
         _stats.MeshAtomics++;
-        RecordObjectGeom(appId, "g:" + appId);
+        RecordObjectGeom(appId, appId);
       }
     }
 
@@ -267,10 +270,10 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
   private void RecordObjectGeom(string objAppId, string geomAppId)
   {
-    if (!_objectDisplayGeomKeys.TryGetValue(objAppId, out var list))
+    if (!_objectDisplayGeoms.TryGetValue(objAppId, out var list))
     {
       list = new List<string>();
-      _objectDisplayGeomKeys[objAppId] = list;
+      _objectDisplayGeoms[objAppId] = list;
     }
     list.Add(geomAppId);
   }
@@ -353,7 +356,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
     _stats.DefinitionGeometries++;
     // Shared across placements; a proxy ref to the member binds to this geometry-K.
-    _objectDisplayGeomKeys[appId] = new List<string> { "g:" + appId };
+    _objectDisplayGeoms[appId] = new List<string> { appId };
   }
 
   // base64-decodes the blob and stores it under "<objAppId>:solid" as a raw (non-SGEO) geometry, returning its K.
@@ -373,8 +376,8 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
   private void EmitProxies(Base root)
   {
-    // Binds value-nodes to the plane each v3 proxy ref addressed: display geometry ("g:"), an instance
-    // object ("o:"), or a collection/container node. First claim wins per target; planes never cross.
+    // Binds value-nodes to the plane each v3 proxy ref addressed: an instance object, display geometry,
+    // or a collection/container node. First claim wins per target; planes never cross.
     (Dictionary<string, int> ByGeometry, Dictionary<string, int> ByObject, Dictionary<int, int> ByNode) BindByPlane(
       List<(int nodeK, List<string> refs)> proxies,
       out int skipped
@@ -388,11 +391,15 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       {
         foreach (var r in refs)
         {
-          if (_objectDisplayGeomKeys.TryGetValue(r, out var targets))
+          if (_instanceObjectAppIds.Contains(r))
           {
-            foreach (var t in targets)
+            byObject.TryAdd(r, nodeK);
+          }
+          else if (_objectDisplayGeoms.TryGetValue(r, out var geoms))
+          {
+            foreach (var g in geoms)
             {
-              (t[0] == 'o' ? byObject : byGeometry).TryAdd(t[2..], nodeK);
+              byGeometry.TryAdd(g, nodeK);
             }
           }
           else if (_seenGeometryAppIds.Contains(r))
