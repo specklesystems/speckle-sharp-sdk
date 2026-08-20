@@ -341,7 +341,6 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// CONTAINER node whose <c>subtype</c> carries its tag; <c>IN_COLLECTION</c> marks the grouping axis.
   /// <paramref name="parentCollectionK"/> is the parent collection (null = top-level) — the parent chain IS
   /// the source hierarchy. <paramref name="subtype"/> tags it (e.g. "Layer") for the loader.</summary>
-
   public int AddCollection(
     string collectionKey,
     string? name,
