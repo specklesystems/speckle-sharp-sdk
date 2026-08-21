@@ -542,9 +542,12 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// Appends one structural analysis/design result value to <c>{base}.eav.structural_results.parquet</c>
   /// (see <see cref="StructuralResultsWriter"/>). <b>Object-level</b> results pass the member/joint's
   /// <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned with, so
-  /// results join back to it) and leave <paramref name="location"/> null; <b>model-level</b> results (story
-  /// drift, modal period, base reaction) pass a null <paramref name="objectApplicationId"/> and identify via
-  /// <paramref name="location"/> (story) and/or <paramref name="step"/> (mode). Numeric results set
+  /// results join back to it) and leave <paramref name="location"/> null; <b>group-level</b> results
+  /// (pier/spandrel forces) pass <paramref name="elementName"/> — a named group of walls, NOT an interned
+  /// object — with <paramref name="location"/> = story; <b>model/story-level</b> results (story drift,
+  /// modal period, base reaction) pass neither and identify via <paramref name="location"/> (story) and/or
+  /// <paramref name="step"/> (mode). <paramref name="positionLabel"/> is a categorical position/direction
+  /// (Top/Bottom, X/Y) — distinct from the numeric member <paramref name="station"/>. Numeric results set
   /// <paramref name="value"/>; non-numeric design verdicts set <paramref name="valueText"/>.
   /// </summary>
   public void AddStructuralResult(
@@ -556,17 +559,21 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     double? station,
     int? step,
     double? value,
-    string? valueText = null
+    string? valueText = null,
+    string? elementName = null,
+    string? positionLabel = null
   )
   {
     int? objectIndex = objectApplicationId is null ? null : _eavWriter.GetOrAddObject(objectApplicationId);
     _structuralResultsWriter ??= new StructuralResultsWriter(_outputDir, _baseName, _scheduler);
     _structuralResultsWriter.AddRow(
       objectIndex,
+      elementName,
       location,
       resultType,
       loadCase,
       component,
+      positionLabel,
       station,
       step,
       value,
