@@ -72,7 +72,12 @@ public class V3GraphArtifactProducerGhTopologyTests
       // Mirrors the real GH shape: root → tree collection → nested tree collection → objects.
       var inner = MakeCollection("Stacked Tower", "0-1", UnitMesh("m1"));
       var outer = MakeCollection("Sub-Collection 1", "0-1 0;0-1", UnitMesh("m2"), inner);
-      var root = new Collection { name = "root", applicationId = "root", elements = { outer } };
+      var root = new Collection
+      {
+        name = "root",
+        applicationId = "root",
+        elements = { outer },
+      };
 
       var stats = Migrate(root, dir);
 
@@ -99,8 +104,18 @@ public class V3GraphArtifactProducerGhTopologyTests
     {
       // GH writes an explicit null on collections without an authored tree; other producers omit the key.
       var explicitNull = MakeCollection("L1", null, UnitMesh("m1"));
-      var noKey = new Collection { name = "L2", applicationId = "L2", elements = { UnitMesh("m2") } };
-      var root = new Collection { name = "root", applicationId = "root", elements = { explicitNull, noKey } };
+      var noKey = new Collection
+      {
+        name = "L2",
+        applicationId = "L2",
+        elements = { UnitMesh("m2") },
+      };
+      var root = new Collection
+      {
+        name = "root",
+        applicationId = "root",
+        elements = { explicitNull, noKey },
+      };
 
       var stats = Migrate(root, dir);
 
@@ -127,7 +142,12 @@ public class V3GraphArtifactProducerGhTopologyTests
     {
       var col = MakeCollection("odd", null, UnitMesh("m1"));
       col["topology"] = 42L;
-      var root = new Collection { name = "root", applicationId = "root", elements = { col } };
+      var root = new Collection
+      {
+        name = "root",
+        applicationId = "root",
+        elements = { col },
+      };
 
       var stats = Migrate(root, dir);
 
