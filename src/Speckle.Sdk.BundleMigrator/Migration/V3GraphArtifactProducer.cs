@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Globalization;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Utils;
@@ -79,6 +81,9 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private Base? _analysisResults;
   private readonly Dictionary<string, string> _objectAppIdByName = new(StringComparer.Ordinal);
 
+  // First non-empty per-object units, in emission order — matches ArtefactBundle.InferUnits on read.
+  private string? _graphUnits;
+
   public Stats Produce(Base root)
   {
     IReadOnlySet<string> defSourceAppIds = GetDefinitionAppIds(root);
@@ -131,6 +136,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     EmitRevitTopology();
     EmitCameraViews(root);
     EmitStructuralResults(root);
+    EmitReferencePoint(root);
     EmitSceneView();
 
     _stats.Geometries = _seenGeometryAppIds.Count;
@@ -200,6 +206,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     if (TryGetLinkedModelSuffix(appId, out var suffix))
     {
       _linkedModelSuffixes.Add(suffix);
+    }
+
+    if (_graphUnits is null && obj["units"] is string { Length: > 0 } objUnits)
+    {
+      _graphUnits = objUnits;
     }
 
     var (props, rootScalars, typeKey) = helper.ExtractProperties(obj);
@@ -873,6 +884,106 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     {
       migrator.MigrateResults(_analysisResults, _objectAppIdByName);
     }
+  }
+
+  // Re-emits the v3 Revit root `referencePointTransform` (translation at 12–14, internal feet) as the spec's
+  // referencePoint.* rows — the inverse of ObjectsArtifactReader.BuildReferencePointRootValue. No kind row: v3 never recorded it.
+  private void EmitReferencePoint(Base root)
+  {
+    var raw = root["referencePointTransform"] ?? root["@referencePointTransform"];
+    if (raw is null)
+    {
+      return; // internal-origin send: no rows
+    }
+    if (ReadReferencePointMatrix(raw) is not { } m)
+    {
+      _stats.Notes.Add("root referencePointTransform skipped: not a 16-double rigid transform");
+      return;
+    }
+
+    var units = _graphUnits;
+    double toDisplay;
+    if (units is not null && Units.IsUnitSupported(units))
+    {
+      toDisplay = Units.GetConversionFactor(Units.Feet, units);
+    }
+    else
+    {
+      // No convertible display units in the graph — the explicit units row keeps the value self-describing.
+      _stats.Notes.Add($"referencePoint kept in ft: graph units '{units ?? "none"}' unsupported");
+      units = Units.Feet;
+      toDisplay = 1;
+    }
+
+    double[] d =
+    [
+      m[0],
+      m[4],
+      m[8],
+      m[12] * toDisplay,
+      m[1],
+      m[5],
+      m[9],
+      m[13] * toDisplay,
+      m[2],
+      m[6],
+      m[10],
+      m[14] * toDisplay,
+      0,
+      0,
+      0,
+      1,
+    ];
+    pipeline.AddModelProperty(
+      "referencePoint.transform",
+      string.Join(",", d.Select(v => v.ToString("R", CultureInfo.InvariantCulture)))
+    );
+    pipeline.AddModelProperty("referencePoint.units", units);
+    _stats.ReferencePoints++;
+  }
+
+  private const double MatrixTolerance = 1e-9;
+
+  // { "transform": [16 numbers] } with the affine padding the v3 writer always emits (0 at 3/7/11, 1 at 15);
+  // anything else is not ReferencePointHelper.CreateTransformDataForRootObject's output.
+  private static double[]? ReadReferencePointMatrix(object raw)
+  {
+    if (
+      raw is not Dictionary<string, object?> data
+      || !data.TryGetValue("transform", out var t)
+      || t is string
+      || t is not IEnumerable values
+    )
+    {
+      return null;
+    }
+    var m = new List<double>(16);
+    foreach (var v in values)
+    {
+      double? item = v switch
+      {
+        double dbl => dbl,
+        long l => l,
+        int i => i,
+        _ => null,
+      };
+      if (item is not { } dv || !double.IsFinite(dv) || m.Count == 16)
+      {
+        return null;
+      }
+      m.Add(dv);
+    }
+    if (
+      m.Count != 16
+      || Math.Abs(m[3]) > MatrixTolerance
+      || Math.Abs(m[7]) > MatrixTolerance
+      || Math.Abs(m[11]) > MatrixTolerance
+      || Math.Abs(m[15] - 1) > MatrixTolerance
+    )
+    {
+      return null;
+    }
+    return m.ToArray();
   }
 
   private void EmitSceneView()
