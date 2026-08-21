@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Utils;
@@ -148,6 +150,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     EmitCameraViews(root);
     EmitStructuralResults(root);
     EmitReferencePoint(root);
+    EmitPropertySetDefinitions(root);
     EmitSceneView();
 
     _stats.Geometries = _seenGeometryAppIds.Count;
@@ -1013,6 +1016,91 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
     return m.ToArray();
   }
+
+  // v3 Civil3D root `propertySetDefinitions` → eav.property_set_definitions rows, one per field in dict
+  // (authored) order. Values already ride eav at properties.Property Sets.*; attachment derives from those paths.
+  private void EmitPropertySetDefinitions(Base root)
+  {
+    var raw = root["propertySetDefinitions"] ?? root["@propertySetDefinitions"];
+    if (raw is null)
+    {
+      return;
+    }
+    if (raw is not Dictionary<string, object?> sets)
+    {
+      _stats.Notes.Add("root propertySetDefinitions skipped: not a dictionary");
+      return;
+    }
+
+    foreach (var (setName, setValue) in sets)
+    {
+      if (
+        setValue is not Dictionary<string, object?> set
+        || set.GetValueOrDefault("propertyDefinitions") is not Dictionary<string, object?> { Count: > 0 } fieldDefs
+      )
+      {
+        _stats.Notes.Add($"property set '{setName}' skipped: no field definitions");
+        continue;
+      }
+
+      var setKey = ComputePropertySetKey(setName, fieldDefs);
+      var emitted = 0;
+      foreach (var (fieldName, fieldValue) in fieldDefs)
+      {
+        if (fieldValue is not Dictionary<string, object?> fd)
+        {
+          _stats.Notes.Add($"property set '{setName}' field '{fieldName}' skipped: not a definition");
+          continue;
+        }
+        var (defaultString, defaultDouble, defaultBoolean) = SplitPropertyDefault(fd.GetValueOrDefault("defaultValue"));
+        pipeline.AddPropertySetDefinition(
+          setName,
+          setKey,
+          fieldName,
+          fieldBucketId: null, // not recorded by v3; consumers fall back to matching fieldName
+          fd.GetValueOrDefault("dataType") as string,
+          defaultString,
+          defaultDouble,
+          defaultBoolean,
+          fd.GetValueOrDefault("units") as string,
+          fd.GetValueOrDefault("description") as string
+        );
+        emitted++;
+      }
+      if (emitted > 0)
+      {
+        _stats.PropertySets++;
+        _stats.PropertySetFields += emitted;
+      }
+    }
+  }
+
+  // Must stay byte-identical with PropertySetDefinitionLadder.ComputeSetKey (speckle-sharp-connectors) and
+  // dwgextract: sha256_hex_uppercase(setName + "\n" + join("\n", field|dataType|unit) in field order).
+  private static string ComputePropertySetKey(string setName, Dictionary<string, object?> fieldDefs)
+  {
+    var parts = new List<string> { setName };
+    foreach (var (fieldName, fieldValue) in fieldDefs)
+    {
+      if (fieldValue is Dictionary<string, object?> fd)
+      {
+        parts.Add(
+          $"{fieldName}|{fd.GetValueOrDefault("dataType") as string}|{fd.GetValueOrDefault("units") as string}"
+        );
+      }
+    }
+    return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n", parts))));
+  }
+
+  // The file's exactly-one-of defaults rule, split the way the native v4 send does.
+  private static (string? S, double? D, bool? B) SplitPropertyDefault(object? value) =>
+    value switch
+    {
+      null => (null, null, null),
+      bool b => (null, null, b),
+      IConvertible c and not string => (null, Convert.ToDouble(c, CultureInfo.InvariantCulture), null),
+      _ => (value.ToString() is { Length: > 0 } s ? s : null, null, null),
+    };
 
   private void EmitSceneView()
   {
