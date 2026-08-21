@@ -70,6 +70,12 @@ internal static class PipelineExtensions
     }
 #pragma warning restore CS0618 // Type or member is obsolete
 
+    // Vertex- or face-less meshes are not handled properly by the datgen (writes NaN into viewer.idx, which culls the WHOLE scene.)
+    if (geometry is Mesh { vertices.Count: 0 } or Mesh { faces.Count: 0 })
+    {
+      return null;
+    }
+
     return pipeline.AddGeometry(appId, geometry);
   }
 
