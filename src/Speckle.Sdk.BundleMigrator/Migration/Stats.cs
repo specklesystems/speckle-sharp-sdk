@@ -48,6 +48,9 @@ internal sealed class Stats
   // Named viewpoints migrated from the source graph's `views`.
   public int CameraViews;
 
+  // Root `referencePointTransform` re-emitted as referencePoint.* eav.model rows (ENG-9060).
+  public int ReferencePoints;
+
   // v3 CSi root `analysisResults` flattened into structural_results, unit scalars into eav.model (ENG-9076).
   public int StructuralResultRows;
   public int StructuralElmFallbacks; // element name didn't resolve to a sent object; its raw name rides `location`
@@ -83,6 +86,7 @@ internal sealed class Stats
              IN_ROOM={InRoomEdges} CONNECTS_TO={ConnectsToEdges} SUBELEMENT(host)={HostSubelementEdges} IN_MODEL={InModelEdges}
       nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections} GROUP={Groups} CAMERA_VIEW={CameraViews} MODEL={Models}
       structuralResults: rows={StructuralResultRows} elmFallback={StructuralElmFallbacks} skippedTypes={SkippedResultTypes} unitRows={ModelUnitRows}
+      referencePoints={ReferencePoints}
       skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel} IN_GROUP={SkippedGroup} IN_ROOM={SkippedRoom} CONNECTS_TO={SkippedConnects} SUBELEMENT(host)={SkippedHostParent})  byBlockColorProxies={ByBlockColorProxies}
       """;
 }
