@@ -228,7 +228,7 @@ public class V3GraphArtifactProducerReferencePointTests
   }
 
   [Fact]
-  public void UnsupportedGraphUnits_FailsMigration()
+  public async Task UnsupportedGraphUnits_KeptInFeetWithNote()
   {
     var dir = TempDir();
     try
@@ -253,9 +253,14 @@ public class V3GraphArtifactProducerReferencePointTests
         1L,
       ]);
 
-      var act = () => Migrate(root, dir);
+      var stats = Migrate(root, dir);
+      var refPoint = await ReadReferencePoint(dir);
 
-      act.Should().Throw<InvalidOperationException>().WithMessage("*display units*banana*");
+      var d = ParseCsv((string)refPoint["transform"]!);
+      (d[3], d[7], d[11]).Should().Be((1.0, 2.0, 3.0)); // unscaled
+      refPoint["units"].Should().Be("ft");
+      stats.ReferencePoints.Should().Be(1);
+      stats.Notes.Should().Contain(n => n.Contains("kept in ft"));
     }
     finally
     {
