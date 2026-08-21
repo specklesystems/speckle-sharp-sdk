@@ -1,4 +1,4 @@
-﻿namespace Speckle.Sdk.BundleMigrator.Migration;
+namespace Speckle.Sdk.BundleMigrator.Migration;
 
 internal sealed class Stats
 {
