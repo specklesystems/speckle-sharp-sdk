@@ -901,18 +901,13 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       return;
     }
 
-    var units = _graphUnits;
-    double toDisplay;
-    if (units is not null && Units.IsUnitSupported(units))
+    if (_graphUnits is not { } units || !Units.IsUnitSupported(units))
     {
-      toDisplay = Units.GetConversionFactor(Units.Feet, units);
+      throw new InvalidOperationException(
+        $"referencePointTransform present but the graph carries no supported display units ('{_graphUnits ?? "none"}')"
+      );
     }
-    else
-    {
-      _stats.Notes.Add($"referencePoint kept in ft: graph units '{units ?? "none"}' unsupported");
-      units = Units.Feet;
-      toDisplay = 1;
-    }
+    double toDisplay = Units.GetConversionFactor(Units.Feet, units);
 
     double[] d =
     [

@@ -228,6 +228,45 @@ public class V3GraphArtifactProducerReferencePointTests
   }
 
   [Fact]
+  public void UnsupportedGraphUnits_FailsMigration()
+  {
+    var dir = TempDir();
+    try
+    {
+      var root = RootWithMesh("banana");
+      root["referencePointTransform"] = RefPointValue([
+        1L,
+        0L,
+        0L,
+        0L,
+        0L,
+        1L,
+        0L,
+        0L,
+        0L,
+        0L,
+        1L,
+        0L,
+        1.0,
+        2.0,
+        3.0,
+        1L,
+      ]);
+
+      var act = () => Migrate(root, dir);
+
+      act.Should().Throw<InvalidOperationException>().WithMessage("*display units*banana*");
+    }
+    finally
+    {
+      if (Directory.Exists(dir))
+      {
+        Directory.Delete(dir, true);
+      }
+    }
+  }
+
+  [Fact]
   public async Task RoundTrip_ReaderRebuildsOriginalV3Matrix()
   {
     var dir = TempDir();
