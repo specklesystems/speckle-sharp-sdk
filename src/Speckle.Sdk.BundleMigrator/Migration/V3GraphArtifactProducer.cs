@@ -115,9 +115,20 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
         // Parent is a Collection except at the root, which is skipped above and never mapped → top-level (null).
         int? parentK = _collectionMap.TryGetValue(helper.Aid(parent.Current), out var pk) ? pk : null;
-        var k = pipeline.AddCollection(helper.CollectionKey(col), col.name, parentK, helper.CollectionSubtype(col));
+        var ghTopology = ReadGhTopology(col);
+        var k = pipeline.AddCollection(
+          helper.CollectionKey(col),
+          col.name,
+          parentK,
+          helper.CollectionSubtype(col),
+          ghTopology
+        );
         _collectionMap[helper.Aid(col)] = k;
         _stats.Collections++;
+        if (ghTopology is not null)
+        {
+          _stats.GhTopologies++;
+        }
         continue;
       }
 
@@ -142,6 +153,23 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     _stats.Geometries = _seenGeometryAppIds.Count;
     pipeline.Complete();
     return _stats;
+  }
+
+  // v3 Grasshopper carries its data-tree paths as a dynamic `topology` string on each collection
+  // (SpeckleCollectionWrapper.Topology); the bundle carries it verbatim as nodes.gh_topology.
+  // The connector writes an explicit null on collections without an authored tree.
+  private string? ReadGhTopology(Collection col)
+  {
+    var raw = col["topology"] ?? col["@topology"];
+    if (raw is string s && !string.IsNullOrWhiteSpace(s))
+    {
+      return s;
+    }
+    if (raw is not null and not string)
+    {
+      _stats.Notes.Add($"collection '{col.name}' topology skipped: not a string");
+    }
+    return null;
   }
 
   // Every atomic object belongs to its nearest ancestor collection (IN_COLLECTION), regardless of what sits
