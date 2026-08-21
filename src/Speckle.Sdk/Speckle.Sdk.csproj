@@ -19,7 +19,7 @@
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Unit" />
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Integration" />
     <InternalsVisibleTo Include="Speckle.Sdk.Serialization.Tests" />
-    <InternalsVisibleTo Include="Speckle.Sdk.Artifacts.Harness.Tests" />
+    <InternalsVisibleTo Include="Speckle.Sdk.BundleMigrator.Tests" />
   </ItemGroup>
   <ItemGroup Label="Package References">
     <PackageReference Include="Speckle.DoubleNumerics" />

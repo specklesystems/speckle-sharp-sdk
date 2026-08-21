@@ -1,4 +1,4 @@
-using Parquet.Schema;
+using Speckle.Bundle.Spec;
 
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
@@ -6,16 +6,19 @@ namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 /// Speckle 4.0 structural-analysis results writer — direct Zstd Parquet, one table:
 /// <code>
 ///   {base}.eav.structural_results.parquet(
-///       object_index, location, result_type, load_case, component, station, step, value, value_text)
+///       object_index, element_name, location, result_type, load_case, component,
+///       position_label, station, step, value, value_text)
 /// </code>
 /// A per-DOMAIN (not per-connector) long/fact table for structural analysis + design results, shared by
-/// ETABS/CSi and TSD (and future SAP/Robot). One row per leaf value.
+/// ETABS/CSi and TSD (and future SAP/Robot). One row per leaf value. Three identity shapes:
 /// <list type="bullet">
-///   <item><b>Object-level</b> results (frame forces, joint reactions, pier/spandrel forces) set
-///   <c>object_index</c> — the SAME dense K the object was interned with in <c>eav.objects</c> — so results
-///   join straight back to the member/joint.</item>
-///   <item><b>Model-level</b> results (story drift/force, modal period, base reaction) leave
-///   <c>object_index</c> null and identify themselves via <c>location</c> (story) and/or <c>step</c> (mode).</item>
+///   <item><b>Object-level</b> results (frame forces, joint reactions) set <c>object_index</c> — the SAME
+///   dense K the object was interned with in <c>eav.objects</c> — so results join straight back to the
+///   member/joint.</item>
+///   <item><b>Group-level</b> results (pier/spandrel forces) set <c>element_name</c> — a named group of
+///   walls, NOT an interned object — with <c>location</c> = story.</item>
+///   <item><b>Model/story-level</b> results (story drift/force, modal period, base reaction) leave both
+///   null and identify themselves via <c>location</c> (story) and/or <c>step</c> (mode).</item>
 /// </list>
 /// The axes (<c>load_case</c> / <c>station</c> / <c>step</c> / <c>component</c>) are typed columns, NOT baked
 /// into a property path — so the eav path dictionary stays tiny and results stay queryable/range-able.
@@ -40,33 +43,28 @@ public sealed class StructuralResultsWriter : IDisposable
 
     _results = new ParquetTableWriter(
       System.IO.Path.Combine(outputDir, $"{baseName}.eav.structural_results.parquet"),
-      new ParquetSchema(
-        new DataField<int?>("object_index"),
-        S("location"),
-        S("result_type"),
-        S("load_case"),
-        S("component"),
-        new DataField<double?>("station"),
-        new DataField<int?>("step"),
-        new DataField<double?>("value"),
-        S("value_text")
-      ),
+      BundleSchemas.StructuralResults,
+      BundleCols.StructuralResults.ColumnCount,
       scheduler
     );
   }
 
   /// <summary>
-  /// Appends one result row. Object-level → pass the object's <paramref name="objectIndex"/> (leave
-  /// <paramref name="location"/> null); model-level → pass null <paramref name="objectIndex"/> with a
-  /// <paramref name="location"/> and/or <paramref name="step"/>. Numeric results set <paramref name="value"/>;
-  /// non-numeric (design verdicts) set <paramref name="valueText"/>.
+  /// Appends one result row. Object-level → pass the object's <paramref name="objectIndex"/>; group-level →
+  /// pass <paramref name="elementName"/> (pier/spandrel name) with <paramref name="location"/> = story;
+  /// model/story-level → pass a <paramref name="location"/> and/or <paramref name="step"/> only.
+  /// <paramref name="positionLabel"/> is a categorical position (Top/Bottom, X/Y), distinct from the numeric
+  /// <paramref name="station"/>. Numeric results set <paramref name="value"/>; non-numeric (design verdicts)
+  /// set <paramref name="valueText"/>.
   /// </summary>
   public void AddRow(
     int? objectIndex,
+    string? elementName,
     string? location,
     string resultType,
     string loadCase,
     string component,
+    string? positionLabel,
     double? station,
     int? step,
     double? value,
@@ -77,7 +75,19 @@ public sealed class StructuralResultsWriter : IDisposable
     {
       throw new InvalidOperationException("Writer already completed.");
     }
-    _results.AddRow(objectIndex, location, resultType, loadCase, component, station, step, value, valueText);
+    _results.AddRow(
+      objectIndex,
+      elementName,
+      location,
+      resultType,
+      loadCase,
+      component,
+      positionLabel,
+      station,
+      step,
+      value,
+      valueText
+    );
   }
 
   public void Complete()
@@ -108,6 +118,4 @@ public sealed class StructuralResultsWriter : IDisposable
       // Intentionally ignored.
     }
   }
-
-  private static DataField S(string name) => new DataField<string>(name);
 }

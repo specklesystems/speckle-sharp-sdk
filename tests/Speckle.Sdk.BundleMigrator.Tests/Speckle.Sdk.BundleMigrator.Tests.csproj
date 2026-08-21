@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="altcover" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <!-- Reads the structural_results parquet back — parquet is a file format, so the public package can
+         verify files the ILRepack-internalized writer produced. -->
+    <PackageReference Include="Parquet.Net" />
+    <PackageReference Include="xunit.assert" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Speckle.Sdk.BundleMigrator\Speckle.Sdk.BundleMigrator.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk.Testing\Speckle.Sdk.Testing.csproj" />
+  </ItemGroup>
+</Project>
