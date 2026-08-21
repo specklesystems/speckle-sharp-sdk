@@ -48,6 +48,7 @@
   </Folder>
   <Folder Name="/tests/unit/">
     <Project Path="tests/Speckle.Objects.Tests.Unit/Speckle.Objects.Tests.Unit.csproj" />
+    <Project Path="tests/Speckle.Sdk.Artifacts.Harness.Tests/Speckle.Sdk.Artifacts.Harness.Tests.csproj" />
     <Project Path="tests/Speckle.Sdk.Serialization.Tests/Speckle.Sdk.Serialization.Tests.csproj" />
     <Project Path="tests/Speckle.Sdk.Tests.Unit/Speckle.Sdk.Tests.Unit.csproj" />
   </Folder>

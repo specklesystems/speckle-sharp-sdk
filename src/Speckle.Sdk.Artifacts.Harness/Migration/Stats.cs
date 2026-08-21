@@ -11,8 +11,15 @@ internal sealed class Stats
   public int DefinesEdges;
   public int Materials;
   public int HasMaterialEdges;
+  public int ObjectHasMaterialEdges;
+  public int NodeHasMaterialEdges;
   public int Colors;
   public int HasColorEdges;
+  public int ObjectHasColorEdges;
+  public int NodeHasColorEdges;
+
+  // AutoCAD ByBlock placeholder colour proxies (source="block"), deliberately unbound.
+  public int ByBlockColorProxies;
   public int Levels;
   public int OnLevelEdges;
   public int Collections;
@@ -66,8 +73,9 @@ internal sealed class Stats
       objects={Objects} (meshAtomic={MeshAtomics} instAtomic={InstanceAtomics})  geometries={Geometries} (defGeom={DefinitionGeometries})
       edges: DISPLAY={DisplayEdges} DISPLAY_INSTANCE={DisplayInstanceEdges} SUBELEMENT={SubelementEdges} SOLID={Solids} (defSolid={DefinitionSolids})
              DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges} IN_GROUP={InGroupEdges}
+             OBJECT_HAS_MATERIAL={ObjectHasMaterialEdges} OBJECT_HAS_COLOR={ObjectHasColorEdges} NODE_HAS_MATERIAL={NodeHasMaterialEdges} NODE_HAS_COLOR={NodeHasColorEdges}
              IN_ROOM={InRoomEdges} CONNECTS_TO={ConnectsToEdges} SUBELEMENT(host)={HostSubelementEdges} IN_MODEL={InModelEdges}
       nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections} GROUP={Groups} CAMERA_VIEW={CameraViews} MODEL={Models}
-      skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel} IN_GROUP={SkippedGroup} IN_ROOM={SkippedRoom} CONNECTS_TO={SkippedConnects} SUBELEMENT(host)={SkippedHostParent})
+      skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel} IN_GROUP={SkippedGroup} IN_ROOM={SkippedRoom} CONNECTS_TO={SkippedConnects} SUBELEMENT(host)={SkippedHostParent})  byBlockColorProxies={ByBlockColorProxies}
       """;
 }

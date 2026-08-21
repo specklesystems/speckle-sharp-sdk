@@ -20,8 +20,9 @@ namespace Speckle.Sdk.Artifacts.Harness.Migration;
 /// descends the <c>elements</c> lineage, so it halts at an atomic object: its <c>displayValue</c> and data
 /// properties are handled here, never walked into.
 ///
-/// Appearance (material/colour) is proxy-driven: a proxy naming a mesh or object claims it directly, and a
-/// proxy naming a layer fills whatever is left, deepest layer first.
+/// Appearance (material/colour) is proxy-driven and preserved on the plane v3 addressed: a mesh ref becomes a
+/// geometry-sourced HAS_MATERIAL/HAS_COLOR, an instance-object ref an OBJECT_HAS_* edge, and a layer ref a
+/// NODE_HAS_* edge on the collection node — consumers resolve inheritance via the spec's precedence ladders.
 /// </summary>
 internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, ArtifactHelper helper)
   : IGraphArtifactProducer
@@ -64,8 +65,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   // INSTANCE-node K by appId, shared between atomic instance leaves and nested-instance definition members.
   private readonly Dictionary<string, int> _instanceNodeByAppId = new(StringComparer.Ordinal);
 
-  // object/geometry appId → its appearance targets ("g:<geomAppId>" mesh | "o:<objAppId>" instance object)
-  private readonly Dictionary<string, List<string>> _objectDisplayGeomKeys = new(StringComparer.Ordinal);
+  // object appId → its display geometry appIds
+  private readonly Dictionary<string, List<string>> _objectDisplayGeoms = new(StringComparer.Ordinal);
+
+  // InstanceProxy atomics: appearance bound to these appIds rides the object plane (rels 26/27).
+  private readonly HashSet<string> _instanceObjectAppIds = new(StringComparer.Ordinal);
 
   // definition-member appId → its raw-solid geometry appId ("<appId>:solid")
   private readonly Dictionary<string, string> _defMemberSolidKey = new(StringComparer.Ordinal);
@@ -117,9 +121,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       EmitHierarchyEdge(tc, objK);
     }
 
-    var layerGeomKeys = BuildLayerGeomKeys(root, out var layerDepth);
-
-    EmitProxies(root, layerGeomKeys, layerDepth);
+    EmitProxies(root);
     EmitRevitTopology();
     EmitCameraViews(root);
     EmitSceneView();
@@ -199,7 +201,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       _stats.DisplayInstanceEdges++;
       _stats.InstanceAtomics++;
       // ByBlock: the placed definition geometry is shared, so appearance rides on the instance object.
-      RecordObjectGeom(appId, "o:" + appId);
+      _instanceObjectAppIds.Add(appId);
       return objK;
     }
 
@@ -214,7 +216,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     {
       pipeline.Solid(objK, solidK, 0);
       _stats.Solids++;
-      // Deliberately NOT recorded in _objectDisplayGeomKeys — materials/colours bind to display meshes, not the solid.
+      // Deliberately NOT recorded in _objectDisplayGeoms — materials/colours bind to display meshes, not the solid.
     }
     // Checked before the raw-geometry case so a leaf that ships a display mesh (Brep/SubD, extrusions) encodes
     // that mesh rather than its un-encodable self.
@@ -237,7 +239,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
           {
             pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
             _stats.DisplayEdges++;
-            RecordObjectGeom(appId, "g:" + gAppId);
+            RecordObjectGeom(appId, gAppId);
           }
         }
       }
@@ -259,7 +261,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
         _stats.DisplayEdges++;
         _stats.MeshAtomics++;
-        RecordObjectGeom(appId, "g:" + appId);
+        RecordObjectGeom(appId, appId);
       }
     }
 
@@ -268,10 +270,10 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
   private void RecordObjectGeom(string objAppId, string geomAppId)
   {
-    if (!_objectDisplayGeomKeys.TryGetValue(objAppId, out var list))
+    if (!_objectDisplayGeoms.TryGetValue(objAppId, out var list))
     {
       list = new List<string>();
-      _objectDisplayGeomKeys[objAppId] = list;
+      _objectDisplayGeoms[objAppId] = list;
     }
     list.Add(geomAppId);
   }
@@ -353,8 +355,8 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       return;
     }
     _stats.DefinitionGeometries++;
-    // Shared across placements, so ByLayer colour must bind to this geometry-K, not flood from an instance.
-    _objectDisplayGeomKeys[appId] = new List<string> { "g:" + appId };
+    // Shared across placements; a proxy ref to the member binds to this geometry-K.
+    _objectDisplayGeoms[appId] = new List<string> { appId };
   }
 
   // base64-decodes the blob and stores it under "<objAppId>:solid" as a raw (non-SGEO) geometry, returning its K.
@@ -372,76 +374,49 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
   }
 
-  private void EmitProxies(
-    Base root,
-    Dictionary<string, List<string>> layerGeomKeys,
-    Dictionary<string, int> layerDepth
-  )
+  private void EmitProxies(Base root)
   {
-    // A proxy ref resolved to its tagged appearance targets ("g:" mesh | "o:" instance object).
-    IReadOnlyList<string> DirectGeomKeys(string refAppId)
+    // Binds value-nodes to the plane each v3 proxy ref addressed: an instance object, display geometry,
+    // or a collection/container node. First claim wins per target; planes never cross.
+    (Dictionary<string, int> ByGeometry, Dictionary<string, int> ByObject, Dictionary<int, int> ByNode) BindByPlane(
+      List<(int nodeK, List<string> refs)> proxies,
+      out int skipped
+    )
     {
-      if (_objectDisplayGeomKeys.TryGetValue(refAppId, out var og))
-      {
-        return og;
-      }
-      if (_seenGeometryAppIds.Contains(refAppId))
-      {
-        return new[] { "g:" + refAppId };
-      }
-      return Array.Empty<string>();
-    }
-
-    // Binds value-nodes to geometry. A direct (mesh/object) ref claims a geometry; a Layer ref then fills only
-    // what's unclaimed, and among nested layers the deepest wins (else a parent layer floods its sub-layers).
-    Dictionary<string, int> BindWithPrecedence(List<(int nodeK, List<string> refs)> proxies, out int skipped)
-    {
-      var byGeom = new Dictionary<string, int>(StringComparer.Ordinal);
-      var skip = 0;
+      var byGeometry = new Dictionary<string, int>(StringComparer.Ordinal);
+      var byObject = new Dictionary<string, int>(StringComparer.Ordinal);
+      var byNode = new Dictionary<int, int>();
+      skipped = 0;
       foreach (var (nodeK, refs) in proxies)
       {
         foreach (var r in refs)
         {
-          var direct = DirectGeomKeys(r);
-          if (direct.Count == 0 && !layerGeomKeys.ContainsKey(r))
+          if (_instanceObjectAppIds.Contains(r))
           {
-            skip++;
+            byObject.TryAdd(r, nodeK);
           }
-          foreach (var gk in direct)
+          else if (_objectDisplayGeoms.TryGetValue(r, out var geoms))
           {
-            byGeom.TryAdd(gk, nodeK);
+            foreach (var g in geoms)
+            {
+              byGeometry.TryAdd(g, nodeK);
+            }
+          }
+          else if (_seenGeometryAppIds.Contains(r))
+          {
+            byGeometry.TryAdd(r, nodeK);
+          }
+          else if (_collectionMap.TryGetValue(r, out var collK) || _modelContainerByAppId.TryGetValue(r, out collK))
+          {
+            byNode.TryAdd(collK, nodeK);
+          }
+          else
+          {
+            skipped++;
           }
         }
       }
-      var layerCandidate = new Dictionary<string, (int depth, int nodeK)>(StringComparer.Ordinal);
-      foreach (var (nodeK, refs) in proxies)
-      {
-        foreach (var r in refs)
-        {
-          if (!layerGeomKeys.TryGetValue(r, out var lg))
-          {
-            continue;
-          }
-          var depth = layerDepth.GetValueOrDefault(r, 0);
-          foreach (var gk in lg)
-          {
-            if (byGeom.ContainsKey(gk))
-            {
-              continue; // a direct ref already claimed it
-            }
-            if (!layerCandidate.TryGetValue(gk, out var cur) || depth > cur.depth)
-            {
-              layerCandidate[gk] = (depth, nodeK);
-            }
-          }
-        }
-      }
-      foreach (var (gk, (_, nodeK)) in layerCandidate)
-      {
-        byGeom[gk] = nodeK;
-      }
-      skipped = skip;
-      return byGeom;
+      return (byGeometry, byObject, byNode);
     }
 
     foreach (var def in helper.GetBaseList(root, "instanceDefinitionProxies"))
@@ -517,7 +492,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         placeholderMatKs.Add(matK);
       }
     }
-    var matBindings = BindWithPrecedence(matProxies, out var matSkipped);
+    var matBind = BindByPlane(matProxies, out var matSkipped);
     _stats.SkippedMaterial += matSkipped;
 
     var colProxies = new List<(int, List<string>)>();
@@ -527,35 +502,60 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       {
         continue;
       }
+      // AutoCAD ByBlock placeholder (value=-1): binding it would paint shared definition geometry white.
+      if (cp["source"] is "block")
+      {
+        _stats.ByBlockColorProxies++;
+        continue;
+      }
       colProxies.Add((pipeline.AddColor(cp.value), cp.objects));
       _stats.Colors++;
     }
-    var colBindings = BindWithPrecedence(colProxies, out var colSkipped);
+    var colBind = BindByPlane(colProxies, out var colSkipped);
     _stats.SkippedColor += colSkipped;
 
-    foreach (var (target, matK) in matBindings)
+    // Placeholder black yields to a real display colour on the same target, per plane.
+    foreach (var (gAppId, matK) in matBind.ByGeometry)
     {
-      if (target[0] != 'g')
-      {
-        continue; // instances carry no per-mesh material
-      }
-      // Placeholder black yields to a real display colour on the same mesh.
-      if (placeholderMatKs.Contains(matK) && colBindings.ContainsKey(target))
+      if (placeholderMatKs.Contains(matK) && colBind.ByGeometry.ContainsKey(gAppId))
       {
         continue;
       }
-      pipeline.HasMaterial(pipeline.InternGeometryId(target[2..]), matK);
+      pipeline.HasMaterial(pipeline.InternGeometryId(gAppId), matK);
       _stats.HasMaterialEdges++;
     }
-    // Geometry-targeted only: an object-target would collide with a geometry-target at the same numeric K.
-    foreach (var (target, colK) in colBindings)
+    foreach (var (objAppId, matK) in matBind.ByObject)
     {
-      if (target[0] == 'o')
+      if (placeholderMatKs.Contains(matK) && colBind.ByObject.ContainsKey(objAppId))
       {
         continue;
       }
-      pipeline.HasColor(pipeline.InternGeometryId(target[2..]), colK);
+      pipeline.ObjectHasMaterial(pipeline.InternObject(objAppId), matK);
+      _stats.ObjectHasMaterialEdges++;
+    }
+    foreach (var (collK, matK) in matBind.ByNode)
+    {
+      if (placeholderMatKs.Contains(matK) && colBind.ByNode.ContainsKey(collK))
+      {
+        continue;
+      }
+      pipeline.NodeHasMaterial(collK, matK);
+      _stats.NodeHasMaterialEdges++;
+    }
+    foreach (var (gAppId, colK) in colBind.ByGeometry)
+    {
+      pipeline.HasColor(pipeline.InternGeometryId(gAppId), colK);
       _stats.HasColorEdges++;
+    }
+    foreach (var (objAppId, colK) in colBind.ByObject)
+    {
+      pipeline.ObjectHasColor(pipeline.InternObject(objAppId), colK);
+      _stats.ObjectHasColorEdges++;
+    }
+    foreach (var (collK, colK) in colBind.ByNode)
+    {
+      pipeline.NodeHasColor(collK, colK);
+      _stats.NodeHasColorEdges++;
     }
 
     // Refs to elements absent from the export are skipped.
@@ -806,50 +806,6 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
     resolved = "";
     return false;
-  }
-
-  // collection appId → the display geometry of every object beneath it, with each collection's depth — so a
-  // ByLayer proxy (which references a layer) can bind to that layer's meshes.
-  private Dictionary<string, List<string>> BuildLayerGeomKeys(Base root, out Dictionary<string, int> layerDepth)
-  {
-    var result = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-    var depths = new Dictionary<string, int>(StringComparer.Ordinal);
-    void Walk(Base node, int depth)
-    {
-      foreach (var child in helper.GetBaseList(node, "elements"))
-      {
-        if (child is not Collection)
-        {
-          continue;
-        }
-        var geoms = new List<string>();
-        CollectDescendantGeom(child, geoms);
-        if (geoms.Count > 0)
-        {
-          result[helper.Aid(child)] = geoms;
-          depths[helper.Aid(child)] = depth;
-        }
-        Walk(child, depth + 1);
-      }
-    }
-    Walk(root, 0);
-    layerDepth = depths;
-    return result;
-  }
-
-  private void CollectDescendantGeom(Base collection, List<string> acc)
-  {
-    foreach (var child in helper.GetBaseList(collection, "elements"))
-    {
-      if (child is Collection)
-      {
-        CollectDescendantGeom(child, acc);
-      }
-      else if (_objectDisplayGeomKeys.TryGetValue(helper.Aid(child), out var gks))
-      {
-        acc.AddRange(gks);
-      }
-    }
   }
 
   // Root-level viewpoints; the traversal only descends `elements`, so they're read directly.

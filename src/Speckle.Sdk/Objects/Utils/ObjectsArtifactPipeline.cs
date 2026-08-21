@@ -346,15 +346,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     string? name,
     int? parentCollectionK,
     string? subtype,
-    int? argb = null,
     string? ghTopology = null
   )
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
-      // argb carries the collection's display colour (e.g. a Rhino/AutoCAD layer colour) in the shared node
-      // `argb` column; null = no colour authored. ghTopology carries Grasshopper's data-tree paths for this
-      // collection (nodes.gh_topology) so a tree survives a round trip; null for every other producer.
+      // ghTopology carries Grasshopper's data-tree paths for this collection
+      // (nodes.gh_topology) so a tree survives a round trip; null for every other producer.
       _envelopeWriter.AddNode(
         k,
         NodeKind.Container,
@@ -363,7 +361,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         subtype,
-        argb,
+        null,
         null,
         null,
         null,
