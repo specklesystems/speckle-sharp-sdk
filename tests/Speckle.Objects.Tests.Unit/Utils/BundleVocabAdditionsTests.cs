@@ -78,9 +78,10 @@ public class BundleVocabAdditionsTests
         pipeline.NodeHasMaterial(tagK, matK);
         pipeline.NodeHasColor(tagK, colK);
 
-        // Model-scoped attributes: the full reference-point transform + a document fact.
-        pipeline.AddModelProperty("referencePoint.transform", "1,0,0,30.5,0,1,0,12.2,0,0,1,0,0,0,0,1");
-        pipeline.AddModelProperty("referencePoint.kind", "projectBasePoint");
+        // Model-scoped attributes: the model placement record + a document fact.
+        pipeline.AddModelProperty("modelPlacement.transform", "1,0,0,30.5,0,1,0,12.2,0,0,1,0,0,0,0,1");
+        pipeline.AddModelProperty("modelPlacement.default", "projectBasePoint");
+        pipeline.AddModelProperty("modelPlacement.appliedToGeometry", true);
         pipeline.AddModelProperty("projectInformation.buildingHeight", 42.5, "m");
         pipeline.AddModelProperty("projectInformation.isMetric", true);
 
@@ -129,9 +130,10 @@ public class BundleVocabAdditionsTests
       rels.ColorByGeometry.Should().BeEmpty();
 
       // Model file: nested by dotted path, values coalesced per type.
-      var refPoint = (Dictionary<string, object?>)bundle.ModelProperties["referencePoint"]!;
-      refPoint["transform"].Should().Be("1,0,0,30.5,0,1,0,12.2,0,0,1,0,0,0,0,1");
-      refPoint["kind"].Should().Be("projectBasePoint");
+      var placement = (Dictionary<string, object?>)bundle.ModelProperties["modelPlacement"]!;
+      placement["transform"].Should().Be("1,0,0,30.5,0,1,0,12.2,0,0,1,0,0,0,0,1");
+      placement["default"].Should().Be("projectBasePoint");
+      placement["appliedToGeometry"].Should().Be(true);
       var projInfo = (Dictionary<string, object?>)bundle.ModelProperties["projectInformation"]!;
       projInfo["buildingHeight"].Should().Be(42.5);
       projInfo["isMetric"].Should().Be(true);

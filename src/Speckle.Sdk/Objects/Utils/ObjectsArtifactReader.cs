@@ -119,8 +119,8 @@ public sealed class ObjectsArtifactReader
     // ── instance definitions (DEFINITION nodes + DEFINES/DEFINES_INSTANCE) ────────────────────────────
     AttachInstanceDefinitions(nodes, rels, objByGeom, bundle.ObjectAppIds, bundle.Geometries, root);
 
-    // ENG-8947/8808: rebuild the reference-point transform from the bundle meta offset and lift it onto the root so
-    // the v1 Revit host builder can undo/redo it (translation kinds only; the offset is in display units).
+    // ENG-8947/8808: when the sender baked its selected datum into stored geometry, lift the stored → internal
+    // correction onto the root so the v1 Revit host builder can undo it.
     if (BuildReferencePointRootValue(bundle) is { } refPointRootValue)
     {
       root[ReferencePointTransformKey] = refPointRootValue;
@@ -130,18 +130,20 @@ public sealed class ObjectsArtifactReader
     return root;
   }
 
-  // ENG-8947: rebuild the v1 root reference-point transform from the eav.model record
-  // (referencePoint.kind/.transform/.units — the former meta.reference_point_* columns are removed from the
-  // spec). transform is the FULL rigid transform, 16 row-major doubles in referencePoint.units (InstanceProxy
-  // layout, translation at 3/7/11); re-emitted here in the legacy root layout
-  // ReferencePointHelper.GetTransformFromRootObject expects (basis columns first, translation at 12–14,
-  // internal feet — the unit v1 applies the transform in).
+  // ENG-8947 / ENG-9099: rebuild the v1 root reference-point transform from the eav.model modelPlacement record.
+  // Only a bundle whose sender APPLIED its selected datum to stored geometry (modelPlacement.appliedToGeometry =
+  // true) carries one: modelPlacement.transform is INTERNAL → datum as 16 row-major doubles in
+  // modelPlacement.units (InstanceProxy layout, translation at 3/7/11), so its rigid inverse is the stored →
+  // internal correction v1 expects. Re-emitted in the legacy root layout ReferencePointHelper.GetTransformFromRootObject
+  // reads (basis columns first, translation at 12–14, internal feet — the unit v1 applies the transform in).
   private static Dictionary<string, object>? BuildReferencePointRootValue(ArtefactBundle bundle)
   {
     if (
-      !bundle.ModelProperties.TryGetValue("referencePoint", out var rpObj)
-      || rpObj is not Dictionary<string, object?> rp
-      || !rp.TryGetValue("transform", out var tObj)
+      !bundle.ModelProperties.TryGetValue("modelPlacement", out var placementObj)
+      || placementObj is not Dictionary<string, object?> placement
+      || !placement.TryGetValue("appliedToGeometry", out var appliedObj)
+      || appliedObj is not true
+      || !placement.TryGetValue("transform", out var tObj)
       || tObj is not string transformCsv
     )
     {
@@ -160,25 +162,30 @@ public sealed class ObjectsArtifactReader
         return null;
       }
     }
-    string units = rp.TryGetValue("units", out var uObj) && uObj is string u && u.Length > 0 ? u : bundle.Units;
+    string units = placement.TryGetValue("units", out var uObj) && uObj is string u && u.Length > 0 ? u : bundle.Units;
     double toFeet = Units.GetConversionFactor(units, Units.Feet);
+    // Rigid inverse: R⁻¹ = Rᵀ, t⁻¹ = -Rᵀ·t. Rows of R (d0 d1 d2 | d4 d5 d6 | d8 d9 d10) become the basis
+    // COLUMNS of the inverse, which is exactly the legacy layout's column-first order.
+    double tx = d[3] * toFeet,
+      ty = d[7] * toFeet,
+      tz = d[11] * toFeet;
     var m = new double[]
     {
       d[0],
-      d[4],
-      d[8],
-      0,
       d[1],
-      d[5],
-      d[9],
-      0,
       d[2],
+      0,
+      d[4],
+      d[5],
       d[6],
+      0,
+      d[8],
+      d[9],
       d[10],
       0,
-      d[3] * toFeet,
-      d[7] * toFeet,
-      d[11] * toFeet,
+      -(d[0] * tx + d[4] * ty + d[8] * tz),
+      -(d[1] * tx + d[5] * ty + d[9] * tz),
+      -(d[2] * tx + d[6] * ty + d[10] * tz),
       1,
     };
     return new Dictionary<string, object> { ["transform"] = m };

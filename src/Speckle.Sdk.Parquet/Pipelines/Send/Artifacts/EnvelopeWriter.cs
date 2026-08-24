@@ -247,7 +247,7 @@ public sealed class EnvelopeWriter : IDisposable
 
   // meta (SOT §6): schema version + producer provenance. Written at Complete() (not eagerly in the ctor) so
   // producers can record their identity via SetProducer first. The reference-point record does NOT live here —
-  // it rides eav.model as referencePoint.* rows (the former meta.reference_point_* columns are removed from the
+  // it rides eav.model as modelPlacement.* rows (the former meta.reference_point_* columns are removed from the
   // spec; the xyz-only offsets lost rotation and meta is the wrong home for model data).
   private void WriteMeta()
   {
