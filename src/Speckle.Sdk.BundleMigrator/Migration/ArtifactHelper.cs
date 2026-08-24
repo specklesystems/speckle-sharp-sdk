@@ -75,7 +75,7 @@ internal sealed class ArtifactHelper
     IReadOnlyDictionary<string, object?> props,
     IEnumerable<KeyValuePair<string, object?>> rootScalars,
     string? typeKey
-  ) ExtractProperties(Base obj)
+  ) ExtractProperties(Base obj, string linkedModelSuffix = "")
   {
     IReadOnlyDictionary<string, object?> props = obj is DataObject dobj
       ? dobj.properties
@@ -93,9 +93,25 @@ internal sealed class ArtifactHelper
       new("level", ReadLevelScalar(obj)),
     };
 
-    var typeKey = obj["typeId"] as string ?? (props.TryGetValue("typeId", out var tk) ? tk as string : null);
+    return (props, rootScalars, DeriveTypeKey(obj, linkedModelSuffix));
+  }
 
-    return (props, rootScalars, typeKey);
+  // v3 Revit ships no type id; the only universal discriminator is the display triple at the object root,
+  // document-scoped by the linked-placement suffix. "none" is v3's no-type sentinel — those stay inline in eav.
+  // The key is write-only intra-bundle identity, so any deterministic string is fine and "|" needs no escaping.
+  private static string? DeriveTypeKey(Base obj, string linkedModelSuffix)
+  {
+    if (
+      obj["family"] is not string { Length: > 0 } family
+      || family == "none"
+      || obj["type"] is not string { Length: > 0 } type
+      || type == "none"
+    )
+    {
+      return null;
+    }
+    var category = obj["category"] as string ?? "";
+    return $"{linkedModelSuffix}|{category}|{family}|{type}";
   }
 
   // v2 attached the Level object itself; v3 sends the name. EAV wants the name either way — a Base would be

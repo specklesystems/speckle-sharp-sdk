@@ -46,6 +46,10 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   // hash, while proxies and properties kept referencing the bare UniqueId (see TryGetLinkedModelSuffix).
   private readonly HashSet<string> _linkedModelSuffixes = new(StringComparer.Ordinal);
 
+  // Distinct Revit type keys passed to AddProperties (ENG-9009). Candidates only: an object whose Parameters
+  // carry no type subtree emits no types row, so the actual table can hold fewer.
+  private readonly HashSet<string> _typeKeys = new(StringComparer.Ordinal);
+
   // Revit room/host refs stashed during traversal, resolved after it when _seenObjectAppIds is complete.
   private readonly record struct TopologyRefs(
     string ElementAppId,
@@ -154,6 +158,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     EmitSceneView();
 
     _stats.Geometries = _seenGeometryAppIds.Count;
+    _stats.RevitTypeKeys = _typeKeys.Count;
     pipeline.Complete();
     return _stats;
   }
@@ -244,7 +249,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       _graphUnits = objUnits;
     }
 
-    var (props, rootScalars, typeKey) = helper.ExtractProperties(obj);
+    var (props, rootScalars, typeKey) = helper.ExtractProperties(obj, suffix);
+    if (typeKey is not null)
+    {
+      _typeKeys.Add(typeKey);
+    }
     pipeline.AddProperties(appId, props, rootScalars, typeKey);
     StashTopologyRefs(appId, props);
 
