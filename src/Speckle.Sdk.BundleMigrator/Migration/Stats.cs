@@ -24,6 +24,9 @@ internal sealed class Stats
   public int OnLevelEdges;
   public int Collections;
   public int InCollectionEdges;
+
+  // Grasshopper data-tree topology strings carried onto collection nodes (nodes.gh_topology).
+  public int GhTopologies;
   public int Groups;
   public int InGroupEdges;
   public int DefinitionGeometries;
@@ -50,6 +53,10 @@ internal sealed class Stats
 
   // Root `referencePointTransform` re-emitted as referencePoint.* eav.model rows (ENG-9060).
   public int ReferencePoints;
+
+  // v3 Civil3D root `propertySetDefinitions` re-emitted as eav.property_set_definitions rows (ENG-9062).
+  public int PropertySets;
+  public int PropertySetFields;
 
   // v3 CSi root `analysisResults` flattened into structural_results, unit scalars into eav.model (ENG-9076).
   public int StructuralResultRows;
@@ -84,9 +91,9 @@ internal sealed class Stats
              DEFINES={DefinesEdges} DEFINES_INSTANCE={DefinesInstanceEdges} HAS_MATERIAL={HasMaterialEdges} HAS_COLOR={HasColorEdges} ON_LEVEL={OnLevelEdges} IN_COLLECTION={InCollectionEdges} IN_GROUP={InGroupEdges}
              OBJECT_HAS_MATERIAL={ObjectHasMaterialEdges} OBJECT_HAS_COLOR={ObjectHasColorEdges} NODE_HAS_MATERIAL={NodeHasMaterialEdges} NODE_HAS_COLOR={NodeHasColorEdges}
              IN_ROOM={InRoomEdges} CONNECTS_TO={ConnectsToEdges} SUBELEMENT(host)={HostSubelementEdges} IN_MODEL={InModelEdges}
-      nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections} GROUP={Groups} CAMERA_VIEW={CameraViews} MODEL={Models}
+      nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections} (ghTopology={GhTopologies}) GROUP={Groups} CAMERA_VIEW={CameraViews} MODEL={Models}
       structuralResults: rows={StructuralResultRows} elmFallback={StructuralElmFallbacks} skippedTypes={SkippedResultTypes} unitRows={ModelUnitRows}
-      referencePoints={ReferencePoints}
+      referencePoints={ReferencePoints}  propertySets={PropertySets} (fields={PropertySetFields})
       skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel} IN_GROUP={SkippedGroup} IN_ROOM={SkippedRoom} CONNECTS_TO={SkippedConnects} SUBELEMENT(host)={SkippedHostParent})  byBlockColorProxies={ByBlockColorProxies}
       """;
 }
