@@ -381,8 +381,10 @@ public static class EavExtraction
         continue;
       }
 
-      // Skip Structure — handled separately
-      if (depth == 0 && key == "Structure")
+      // Skip Structure — handled separately at the top of `properties`. The legacy home under Type Parameters
+      // (v3 payloads, which the migrator still reads) is skipped outright: its `{material} ({layerId})` keys mint
+      // one path per material name, which is why the walk never emitted it.
+      if (key == "Structure" && (depth == 0 || prefix.EndsWith(".Type Parameters")))
       {
         continue;
       }
@@ -746,9 +748,9 @@ public static class EavExtraction
         }
 
         // Parity with the JObject walk's special-cases.
-        if (depth == 0 && key == "Structure")
+        if (key == "Structure" && (depth == 0 || prefix.EndsWith(".Type Parameters", StringComparison.Ordinal)))
         {
-          continue; // handled separately
+          continue; // handled separately at the top of `properties`; legacy Type Parameters home stays dropped
         }
         if (key == "Material Quantities")
         {
