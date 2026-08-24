@@ -156,6 +156,12 @@ public static class EavExtraction
       ExtractMaterialQuantities(objectId, matQuants, rows);
     }
 
+    // 3b. Structure (Revit) — the compound layer buildup, same deal
+    if (props?["Structure"] is JObject structure)
+    {
+      ExtractCompoundStructure(objectId, structure, rows);
+    }
+
     // 4. LocationPoint — Revit's per-element placement (X/Y/Z world coords)
     if (obj["location"] is JObject loc)
     {
@@ -375,8 +381,8 @@ public static class EavExtraction
         continue;
       }
 
-      // Skip Structure layer definitions under Type Parameters
-      if (key == "Structure" && prefix.EndsWith(".Type Parameters"))
+      // Skip Structure — handled separately
+      if (depth == 0 && key == "Structure")
       {
         continue;
       }
@@ -434,6 +440,47 @@ public static class EavExtraction
     rows.Add(
       MakeRow(objectId, $"properties.Material Quantities.{category}.{matName}.{kind}", (JValue)value, units, null)
     );
+  }
+
+  /// <summary>
+  /// Compound-structure layer rows from Revit's `Structure` dict — the layer buildup of a wall / floor /
+  /// roof / ceiling type [ENG-9338].
+  /// Path: `properties.Structure.{ordinal}.{material|function|thickness}`, thickness carrying the layer's
+  /// units on the row itself. Layer ordinal is the dict key, which the producer owns.
+  /// </summary>
+  private static void ExtractCompoundStructure(string objectId, JObject structure, List<EavRow> rows)
+  {
+    foreach (var layer in structure.Properties())
+    {
+      if (layer.Value is not JObject fields)
+      {
+        continue;
+      }
+      var units = fields["units"]?.Type == JTokenType.String ? (string)fields["units"]! : null;
+
+      AppendLayerField(objectId, layer.Name, fields, "material", null, rows);
+      AppendLayerField(objectId, layer.Name, fields, "function", null, rows);
+      AppendLayerField(objectId, layer.Name, fields, "thickness", units, rows);
+    }
+  }
+
+  // A layer with no assigned material has a null `material` and simply emits no row for it — the layer still
+  // ships its function and thickness, and the send does not fail.
+  private static void AppendLayerField(
+    string objectId,
+    string ordinal,
+    JObject fields,
+    string field,
+    string? units,
+    List<EavRow> rows
+  )
+  {
+    var value = fields[field];
+    if (value == null || value.Type == JTokenType.Null || value is JObject or JArray)
+    {
+      return;
+    }
+    rows.Add(MakeRow(objectId, $"properties.Structure.{ordinal}.{field}", (JValue)value, units, null));
   }
 
   /// <summary>Check if an object is a parameter: has both `name` and `value` keys.</summary>
@@ -595,6 +642,11 @@ public static class EavExtraction
     {
       ExtractMaterialQuantitiesNative(objectId, matQuants, rows);
     }
+
+    if (properties.TryGetValue("Structure", out var st) && st is IReadOnlyDictionary<string, object?> structure)
+    {
+      ExtractCompoundStructureNative(objectId, structure, rows);
+    }
   }
 
   /// <summary>
@@ -694,9 +746,9 @@ public static class EavExtraction
         }
 
         // Parity with the JObject walk's special-cases.
-        if (key == "Structure" && prefix.EndsWith(".Type Parameters", StringComparison.Ordinal))
+        if (depth == 0 && key == "Structure")
         {
-          continue;
+          continue; // handled separately
         }
         if (key == "Material Quantities")
         {
@@ -713,6 +765,46 @@ public static class EavExtraction
       }
       // non-scalar, non-dictionary (arrays, etc.) → skipped, as in the JObject walk.
     }
+  }
+
+  /// <summary>
+  /// Native-dictionary twin of <see cref="ExtractCompoundStructure"/> — same paths, same ordinal-key
+  /// contract, same units-on-the-thickness-row shape [ENG-9338].
+  /// </summary>
+  private static void ExtractCompoundStructureNative(
+    string objectId,
+    IReadOnlyDictionary<string, object?> structure,
+    ICollection<EavRow> rows
+  )
+  {
+    foreach (var layer in structure)
+    {
+      if (layer.Value is null || !TryAsStringKeyedRecord(layer.Value, out var fields))
+      {
+        continue;
+      }
+      string? units = fields.TryGetValue("units", out var u) && u is string us ? us : null;
+
+      AppendLayerFieldNative(objectId, layer.Key, fields, "material", null, rows);
+      AppendLayerFieldNative(objectId, layer.Key, fields, "function", null, rows);
+      AppendLayerFieldNative(objectId, layer.Key, fields, "thickness", units, rows);
+    }
+  }
+
+  private static void AppendLayerFieldNative(
+    string objectId,
+    string ordinal,
+    IReadOnlyDictionary<string, object?> fields,
+    string field,
+    string? units,
+    ICollection<EavRow> rows
+  )
+  {
+    if (!fields.TryGetValue(field, out var value) || !IsScalar(value))
+    {
+      return;
+    }
+    rows.Add(MakeRowNative(objectId, $"properties.Structure.{ordinal}.{field}", value!, units, null));
   }
 
   private static void ExtractMaterialQuantitiesNative(

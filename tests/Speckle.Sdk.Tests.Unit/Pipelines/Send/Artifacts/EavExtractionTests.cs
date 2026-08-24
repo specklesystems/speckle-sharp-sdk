@@ -166,15 +166,16 @@ public class EavExtractionTests
   }
 
   [Fact]
-  public void StructureUnderTypeParameters_AndMaterialQuantities_AreSkippedInWalk()
+  public void StructureAndMaterialQuantities_AreSkippedInWalk_AndReEmittedByTheirHandlers()
   {
     var obj = JObject.Parse(
       """
       {
         "speckle_type": "Objects.Data.DataObject",
         "properties": {
-          "Type Parameters": {
-            "Structure": { "layerCount": 3 }
+          "Structure": {
+            "0": { "material": "Brick", "function": "Finish1", "thickness": 0.1, "units": "m" },
+            "1": { "material": null, "function": "Membrane", "thickness": 0.002, "units": "m" }
           },
           "Material Quantities": {
             "Concrete": {
@@ -190,8 +191,21 @@ public class EavExtractionTests
 
     var rows = EavExtraction.FlattenObjectProperties("o", obj);
 
-    // Structure skipped in walk
-    rows.Should().NotContain(r => r.Path.Contains("Structure"));
+    // Structure skipped in the generic walk, re-emitted by its handler under ordinal-keyed paths so layer
+    // order survives [ENG-9338].
+    rows.Should().ContainSingle(r => r.Path == "properties.Structure.0.material" && r.ValueText == "Brick");
+    rows.Should().ContainSingle(r => r.Path == "properties.Structure.0.function" && r.ValueText == "Finish1");
+    rows.Should()
+      .ContainSingle(r => r.Path == "properties.Structure.0.thickness" && r.ValueNum == 0.1 && r.Units == "m");
+
+    // A layer with no assigned material keeps its slot; only the material row is absent.
+    rows.Should().NotContain(r => r.Path == "properties.Structure.1.material");
+    rows.Should().ContainSingle(r => r.Path == "properties.Structure.1.function" && r.ValueText == "Membrane");
+    rows.Should()
+      .ContainSingle(r => r.Path == "properties.Structure.1.thickness" && r.ValueNum == 0.002 && r.Units == "m");
+
+    // No leakage from the generic walk: `units` is carried on the thickness row, never as its own row.
+    rows.Should().NotContain(r => r.Path.EndsWith("Structure.0.units", StringComparison.Ordinal));
 
     // Material Quantities handled via the special extraction with category in path
     rows.Should()
