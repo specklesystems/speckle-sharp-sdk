@@ -58,6 +58,9 @@ internal sealed class Stats
   public int PropertySets;
   public int PropertySetFields;
 
+  // Distinct Revit type keys ({linkSuffix}|{category}|{family}|{type}) candidates for types/type_eav (ENG-9009).
+  public int RevitTypeKeys;
+
   // v3 CSi root `analysisResults` flattened into structural_results, unit scalars into eav.model (ENG-9076).
   public int StructuralResultRows;
   public int StructuralElmFallbacks; // element name didn't resolve to a sent object; its raw name rides `location`
@@ -93,7 +96,7 @@ internal sealed class Stats
              IN_ROOM={InRoomEdges} CONNECTS_TO={ConnectsToEdges} SUBELEMENT(host)={HostSubelementEdges} IN_MODEL={InModelEdges}
       nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections} (ghTopology={GhTopologies}) GROUP={Groups} CAMERA_VIEW={CameraViews} MODEL={Models}
       structuralResults: rows={StructuralResultRows} elmFallback={StructuralElmFallbacks} skippedTypes={SkippedResultTypes} unitRows={ModelUnitRows}
-      referencePoints={ReferencePoints}  propertySets={PropertySets} (fields={PropertySetFields})
+      referencePoints={ReferencePoints}  propertySets={PropertySets} (fields={PropertySetFields})  revitTypeKeys={RevitTypeKeys}
       skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel} IN_GROUP={SkippedGroup} IN_ROOM={SkippedRoom} CONNECTS_TO={SkippedConnects} SUBELEMENT(host)={SkippedHostParent})  byBlockColorProxies={ByBlockColorProxies}
       """;
 }
