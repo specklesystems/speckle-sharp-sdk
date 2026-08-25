@@ -220,7 +220,7 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       {
         pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
         _stats.DisplayEdges++;
-        _stats.MeshAtomics++;
+        _stats.StandaloneMeshes++;
         if (helper.ReadEmbeddedMaterial(obj) is { } rm)
         {
           _embeddedMaterialByGeom.TryAdd(appId, rm);

@@ -42,6 +42,9 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private readonly HashSet<string> _seenObjectAppIds = new(StringComparer.Ordinal);
   private readonly HashSet<string> _seenGeometryAppIds = new(StringComparer.Ordinal);
 
+  // Definition members: appIds listed in any instanceDefinitionProxies[].objects.
+  private IReadOnlySet<string> _defSourceAppIds = new HashSet<string>(StringComparer.Ordinal);
+
   // Supports Revit linked models: the v3 connector suffixed every linked element's appId with a per-placement
   // hash, while proxies and properties kept referencing the bare UniqueId (see TryGetLinkedModelSuffix).
   private readonly HashSet<string> _linkedModelSuffixes = new(StringComparer.Ordinal);
@@ -70,17 +73,14 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   private HashSet<string> _modelCollectionAppIds = new(StringComparer.Ordinal);
   private readonly Dictionary<string, int> _modelContainerByAppId = new(StringComparer.Ordinal);
 
-  // INSTANCE-node K by appId, shared between atomic instance leaves and nested-instance definition members.
+  // INSTANCE-node K by appId, for standalone placements and nested-instance definition members alike.
   private readonly Dictionary<string, int> _instanceNodeByAppId = new(StringComparer.Ordinal);
 
-  // object appId → its display geometry appIds
+  // object appId → the geometry appIds its appearance binds to: raw solid first (when present), then display meshes.
   private readonly Dictionary<string, List<string>> _objectDisplayGeoms = new(StringComparer.Ordinal);
 
-  // InstanceProxy atomics: appearance bound to these appIds rides the object plane (rels 26/27).
+  // Instance objects (standalone placements and nested-instance members): appearance rides the object plane (rels 26/27).
   private readonly HashSet<string> _instanceObjectAppIds = new(StringComparer.Ordinal);
-
-  // definition-member appId → its raw-solid geometry appId ("<appId>:solid")
-  private readonly Dictionary<string, string> _defMemberSolidKey = new(StringComparer.Ordinal);
 
   // v3 CSi root `analysisResults` (ENG-9076). CSi results key objects by NAME, so when it's present the
   // traversal also collects name → appId (last wins, mirroring big-truck's nameToAppId).
@@ -92,7 +92,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
   public Stats Produce(Base root)
   {
-    IReadOnlySet<string> defSourceAppIds = GetDefinitionAppIds(root);
+    _defSourceAppIds = GetDefinitionAppIds(root);
     _modelCollectionAppIds = DetectRevitModelCollections(root);
     _analysisResults = (root["analysisResults"] ?? root["@analysisResults"]) as Base;
 
@@ -138,13 +138,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         continue;
       }
 
-      if (defSourceAppIds.Contains(helper.Aid(current)))
-      {
-        EmitDefinitionMember(current);
-        continue;
-      }
-
-      var objK = EmitObject(current);
+      var objK = EmitElement(current);
       _objectKMap[current.id.NotNull()] = objK;
       EmitHierarchyEdge(tc, objK);
     }
@@ -152,6 +146,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     EmitProxies(root);
     EmitRevitTopology();
     EmitCameraViews(root);
+    EmitModelProperties(root); // first, so the derived referencePoint.* / units.* rows below win on read
     EmitStructuralResults(root);
     EmitReferencePoint(root);
     EmitPropertySetDefinitions(root);
@@ -180,7 +175,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     return null;
   }
 
-  // Every atomic object belongs to its nearest ancestor collection (IN_COLLECTION), regardless of what sits
+  // Every object belongs to its nearest ancestor collection (IN_COLLECTION), regardless of what sits
   // between them. If an object host (e.g. a DataObject carrying `elements`) is one of those in-between nodes,
   // it also gets a host→hosted SUBELEMENT to the nearest such host.
   private void EmitHierarchyEdge(TraversalContext tc, int objK)
@@ -223,7 +218,10 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
   }
 
-  private int EmitObject(Base obj)
+  // One leaf object. A definition member gets the same object row, eav and geometry as a standalone object but no
+  // render edge (DISPLAY / SOLID / DISPLAY_INSTANCE): it renders through its definition's placements, and the
+  // DEFINES pass joins it to its geometry by member ordinal.
+  private int EmitElement(Base obj)
   {
     var appId = helper.Aid(obj);
     var objK = pipeline.InternObject(appId);
@@ -231,7 +229,81 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     {
       return objK; // shared reference, same K
     }
+    EmitProperties(obj, appId);
+    var isMember = _defSourceAppIds.Contains(appId);
 
+    if (obj is InstanceProxy ip)
+    {
+      var instK = ResolveInstanceNode(ip);
+      if (isMember)
+      {
+        _stats.DefinitionInstances++; // linked by the DEFINES pass (DEFINES_INSTANCE + PLACES)
+      }
+      else
+      {
+        pipeline.DisplayInstance(objK, instK, 0);
+        _stats.DisplayInstanceEdges++;
+        _stats.StandalonePlacements++;
+      }
+      // ByBlock: the placed definition geometry is shared, so appearance rides on the instance object.
+      _instanceObjectAppIds.Add(appId);
+      return objK;
+    }
+
+    var solidOrd = 0;
+    EmitSolid(objK, appId, appId, obj, isMember, ref solidOrd);
+
+    // Checked before the raw-geometry case so a leaf that ships a display mesh (Brep/SubD, extrusions) encodes
+    // that mesh rather than its un-encodable self.
+    var displayValue = helper.GetBaseList(obj, "displayValue").ToList();
+    if (displayValue.Count > 0)
+    {
+      int ord = 0;
+      foreach (var item in displayValue)
+      {
+        if (item is InstanceProxy dip)
+        {
+          if (!isMember)
+          {
+            pipeline.DisplayInstance(objK, ResolveInstanceNode(dip), ord++);
+            _stats.DisplayInstanceEdges++;
+          }
+          continue;
+        }
+        var gAppId = helper.Aid(item);
+        // v3 Grasshopper nested BrepX/ExtrusionX/SubDX in displayValue: its solid rides the owning object.
+        EmitSolid(objK, appId, gAppId, item, isMember, ref solidOrd);
+        if (!AddGeometry(gAppId, item))
+        {
+          continue;
+        }
+        RecordObjectGeom(appId, gAppId);
+        if (!isMember)
+        {
+          pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
+          _stats.DisplayEdges++;
+        }
+      }
+    }
+    // A display-less raw-encoded object (BrepX with an empty displayValue) has no SGEO encoding — don't feed it to
+    // SgeoEncoder.
+    else if (obj is not IRawEncodedObject && helper.IsGeometry(obj) && AddGeometry(appId, obj))
+    {
+      // The leaf is its own geometry; appId interns into both the object and geometry namespaces.
+      RecordObjectGeom(appId, appId);
+      if (!isMember)
+      {
+        pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
+        _stats.DisplayEdges++;
+        _stats.StandaloneMeshes++;
+      }
+    }
+    return objK;
+  }
+
+  // The object's eav rows plus the per-object bookkeeping (name map, linked-model suffix, graph units, topology refs).
+  private void EmitProperties(Base obj, string appId)
+  {
     _stats.Objects++;
 
     if (_analysisResults is not null && obj["name"] is string name)
@@ -256,79 +328,26 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     }
     pipeline.AddProperties(appId, props, rootScalars, typeKey);
     StashTopologyRefs(appId, props);
+  }
 
-    if (obj is InstanceProxy ip)
-    {
-      var instK = ResolveInstanceNode(ip);
-      pipeline.DisplayInstance(objK, instK, 0);
-      _stats.DisplayInstanceEdges++;
-      _stats.InstanceAtomics++;
-      // ByBlock: the placed definition geometry is shared, so appearance rides on the instance object.
-      _instanceObjectAppIds.Add(appId);
-      return objK;
-    }
+  private static string SolidKey(string objAppId) => objAppId + ":solid";
 
-    // Lossless raw solid (Brep/Extrusion/SubD/SolidX, or a Rhino/Autocad host wrapper): link the native blob via
-    // the SOLID rel, in ADDITION to the display meshes below. Receive picks solid vs mesh via PreferSolids.
-    var rawEnc = helper.TryReadRawEncoding(obj);
-    if (
-      rawEnc is not null
-      && helper.IsMigratableSolidFormat(rawEnc.format)
-      && EmitSolidBlob(appId, rawEnc) is int solidK
-    )
+  // The lossless raw solid of `source`, if it has a migratable one, alongside the display meshes (receive picks via
+  // PreferSolids). SOLID edge for a standalone object, none for a definition member (its solid rides DEFINES); recorded
+  // on the owner's appearance list ahead of the matching mesh so appearance binds to it too.
+  private void EmitSolid(int objK, string ownerAppId, string geomAppId, Base source, bool isMember, ref int solidOrd)
+  {
+    var enc = helper.TryReadRawEncoding(source);
+    if (enc is null || !helper.IsMigratableSolidFormat(enc.format) || EmitSolidBlob(geomAppId, enc) is not int solidK)
     {
-      pipeline.Solid(objK, solidK, 0);
-      _stats.Solids++;
-      // Deliberately NOT recorded in _objectDisplayGeoms — materials/colours bind to display meshes, not the solid.
+      return;
     }
-    // Checked before the raw-geometry case so a leaf that ships a display mesh (Brep/SubD, extrusions) encodes
-    // that mesh rather than its un-encodable self.
-    var displayValue = helper.GetBaseList(obj, "displayValue").ToList();
-    if (displayValue.Count > 0)
+    _stats.Solids++;
+    if (!isMember)
     {
-      int ord = 0;
-      foreach (var item in displayValue)
-      {
-        if (item is InstanceProxy dip)
-        {
-          var dInstK = ResolveInstanceNode(dip);
-          pipeline.DisplayInstance(objK, dInstK, ord++);
-          _stats.DisplayInstanceEdges++;
-        }
-        else
-        {
-          var gAppId = helper.Aid(item);
-          if (AddGeometry(gAppId, item))
-          {
-            pipeline.Display(objK, pipeline.InternGeometryId(gAppId), ord++);
-            _stats.DisplayEdges++;
-            RecordObjectGeom(appId, gAppId);
-          }
-        }
-      }
-      return objK;
+      pipeline.Solid(objK, solidK, solidOrd++);
     }
-
-    // A display-less raw-encoded object (e.g. a BrepX with an empty displayValue) has no SGEO encoding; its solid
-    // blob is already captured above, so don't fall through and feed it to SgeoEncoder (which would throw).
-    if (obj is IRawEncodedObject)
-    {
-      return objK;
-    }
-
-    if (helper.IsGeometry(obj))
-    {
-      // The leaf is its own geometry; appId interns into both the object and geometry namespaces.
-      if (AddGeometry(appId, obj))
-      {
-        pipeline.Display(objK, pipeline.InternGeometryId(appId), 0);
-        _stats.DisplayEdges++;
-        _stats.MeshAtomics++;
-        RecordObjectGeom(appId, appId);
-      }
-    }
-
-    return objK;
+    RecordObjectGeom(ownerAppId, SolidKey(geomAppId));
   }
 
   private void RecordObjectGeom(string objAppId, string geomAppId)
@@ -366,70 +385,14 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     return true;
   }
 
-  // Definition content: a nested instance → INSTANCE node (linked via DEFINES_INSTANCE); otherwise a geometry
-  // blob under the member's appId (linked via DEFINES), preferring a display mesh over an un-encodable parent.
-  private void EmitDefinitionMember(Base obj)
-  {
-    var appId = helper.Aid(obj);
-
-    if (obj is InstanceProxy ip)
-    {
-      if (!_instanceNodeByAppId.ContainsKey(appId))
-      {
-        ResolveInstanceNode(ip);
-        _stats.DefinitionInstances++;
-      }
-      return;
-    }
-
-    if (!_seenGeometryAppIds.Add(appId))
-    {
-      return;
-    }
-
-    // Lossless raw solid for a definition member rides DEFINES (no standalone SOLID edge) alongside its display
-    // meshes — the EmitProxies DEFINES pass links it via _defMemberSolidKey (mirrors the Rhino connector).
-    var rawEnc = helper.TryReadRawEncoding(obj);
-    var hasSolid =
-      rawEnc is not null && helper.IsMigratableSolidFormat(rawEnc.format) && EmitSolidBlob(appId, rawEnc) is not null;
-    if (hasSolid)
-    {
-      _defMemberSolidKey[appId] = appId + ":solid";
-      _stats.DefinitionSolids++;
-    }
-
-    // Don't SGEO-encode a raw-encoded object itself (BrepX/…) — only a genuine display mesh or plain geometry leaf.
-    var geometry =
-      helper.GetBaseList(obj, "displayValue").FirstOrDefault(d => d is not InstanceProxy)
-      ?? (obj is not IRawEncodedObject && helper.IsGeometry(obj) ? obj : null);
-    if (geometry is null)
-    {
-      _seenGeometryAppIds.Remove(appId); // no SGEO mesh under appId; a solid-only member is linked via _defMemberSolidKey
-      if (!hasSolid)
-      {
-        _stats.SkippedDefines++;
-        _stats.Notes.Add($"def member {appId} has no encodable geometry [{obj.speckle_type}]");
-      }
-      return;
-    }
-
-    if (pipeline.AddGeometryMigrated(appId, geometry) is null)
-    {
-      return;
-    }
-    _stats.DefinitionGeometries++;
-    // Shared across placements; a proxy ref to the member binds to this geometry-K.
-    _objectDisplayGeoms[appId] = new List<string> { appId };
-  }
-
-  // base64-decodes the blob and stores it under "<objAppId>:solid" as a raw (non-SGEO) geometry, returning its K.
+  // base64-decodes the blob and stores it under SolidKey(objAppId) as a raw (non-SGEO) geometry, returning its K.
   private int? EmitSolidBlob(string objAppId, RawEncoding enc)
   {
     byte[] bytes;
     try
     {
       bytes = Convert.FromBase64String(enc.contents);
-      return pipeline.AddRawGeometry(objAppId + ":solid", bytes, enc.format);
+      return pipeline.AddRawGeometry(SolidKey(objAppId), bytes, enc.format);
     }
     catch (FormatException ex)
     {
@@ -490,40 +453,36 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       }
       var defK = pipeline.AddDefinition(helper.DefinitionKey(idp), idp.name);
       _stats.Definitions++;
-      int o = 0;
-      foreach (var memberAppId in idp.objects)
+      // One member-ordinal space per definition: a member's DEFINES / DEFINES_INSTANCE / DEFINES_MEMBER rows all carry
+      // its index in the proxy's list — the (definition, ord) join receive uses.
+      for (var o = 0; o < idp.objects.Count; o++)
       {
+        var memberAppId = idp.objects[o];
         if (_instanceNodeByAppId.TryGetValue(memberAppId, out var instK))
         {
-          pipeline.DefinesInstance(defK, instK, o++);
+          pipeline.DefinesInstance(defK, instK, o);
           _stats.DefinesInstanceEdges++;
+          // An instance nested in a standalone object's displayValue has an INSTANCE node but no object of its own.
+          if (_seenObjectAppIds.Contains(memberAppId))
+          {
+            EmitMemberJoin(defK, memberAppId, o, instK);
+          }
+          continue;
         }
-        else
+
+        // Solid first, then meshes, all under the member ordinal so receive groups them and prefers the solid.
+        if (!_objectDisplayGeoms.TryGetValue(memberAppId, out var memberGeoms))
         {
-          // Solid and display mesh both DEFINES under the same member ordinal (solid first) so receive can
-          // group them and prefer the solid.
-          var any = false;
-          if (_defMemberSolidKey.TryGetValue(memberAppId, out var solidKey))
-          {
-            pipeline.Defines(defK, pipeline.InternGeometryId(solidKey), o);
-            _stats.DefinesEdges++;
-            any = true;
-          }
-          if (_seenGeometryAppIds.Contains(memberAppId))
-          {
-            pipeline.Defines(defK, pipeline.InternGeometryId(memberAppId), o);
-            _stats.DefinesEdges++;
-            any = true;
-          }
-          if (any)
-          {
-            o++;
-          }
-          else
-          {
-            _stats.SkippedDefines++;
-          }
+          _stats.SkippedDefines++;
+          _stats.Notes.Add($"def member {memberAppId} has no geometry in the graph");
+          continue;
         }
+        foreach (var g in memberGeoms)
+        {
+          pipeline.Defines(defK, pipeline.InternGeometryId(g), o);
+          _stats.DefinesEdges++;
+        }
+        EmitMemberJoin(defK, memberAppId, o, instK: null);
       }
     }
 
@@ -665,6 +624,10 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         if (!seen.Add(objAppId))
         {
           continue; // unpack can visit a block sub-object twice
+        }
+        if (_defSourceAppIds.Contains(objAppId))
+        {
+          continue; // definition members carry no group membership (as native)
         }
         var resolvedAny = false;
         foreach (var resolved in ResolveMemberRefs(objAppId))
@@ -837,6 +800,19 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
 
   // An exact match covers everything except Revit linked models, whose objects were sent suffixed while
   // proxies reference the bare UniqueId — there a bare ref matches once per placement of the link.
+  // DEFINES_MEMBER (def → member object) on the member ordinal, plus PLACES for a nested instance.
+  private void EmitMemberJoin(int defK, string memberAppId, int memberOrd, int? instK)
+  {
+    var memberK = pipeline.InternObject(memberAppId);
+    pipeline.DefinesMember(defK, memberK, memberOrd);
+    _stats.DefinesMemberEdges++;
+    if (instK is int placementK)
+    {
+      pipeline.Places(memberK, placementK);
+      _stats.PlacesEdges++;
+    }
+  }
+
   private IEnumerable<string> ResolveMemberRefs(string bareRef)
   {
     if (_seenObjectAppIds.Contains(bareRef))
@@ -981,6 +957,102 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     pipeline.AddModelProperty("referencePoint.units", units);
     _stats.ReferencePoints++;
   }
+
+  // v3 Grasshopper RootCollection.properties → eav.model rows, flattened exactly like the GH 4.0 Publish
+  // (bare dotted paths, one row per scalar leaf) so the 4.0 Load nests them back unchanged.
+  private void EmitModelProperties(Base root)
+  {
+    if (root is RootCollection { properties: { Count: > 0 } props })
+    {
+      EmitModelPropertyRows(props, null, 0);
+    }
+  }
+
+  private const int ModelPropertyMaxDepth = 10;
+
+  private void EmitModelPropertyRows(IReadOnlyDictionary<string, object?> props, string? prefix, int depth)
+  {
+    if (depth >= ModelPropertyMaxDepth)
+    {
+      return;
+    }
+    foreach (var (key, value) in props)
+    {
+      var path = prefix is null ? key : $"{prefix}.{key}";
+      if (TryAsStringKeyedRecord(value, out var nested))
+      {
+        EmitModelPropertyRows(nested, path, depth + 1);
+      }
+      else if (IsScalar(value))
+      {
+        pipeline.AddModelProperty(path, value);
+        _stats.ModelPropertyRows++;
+      }
+      else if (value is IEnumerable list and not string)
+      {
+        var joined = string.Join(",", list.Cast<object?>().Where(IsScalar).Select(ScalarText));
+        if (joined.Length > 0)
+        {
+          pipeline.AddModelProperty(path, joined);
+          _stats.ModelPropertyRows++;
+        }
+      }
+      else if (value is not null)
+      {
+        _stats.SkippedModelProperties++;
+        _stats.Notes.Add($"model property '{path}' skipped: {value.GetType().Name} has no eav.model column");
+      }
+    }
+  }
+
+  private static bool TryAsStringKeyedRecord(object? value, out IReadOnlyDictionary<string, object?> record)
+  {
+    switch (value)
+    {
+      case IReadOnlyDictionary<string, object?> r:
+        record = r;
+        return true;
+      case IDictionary d:
+        var map = new Dictionary<string, object?>(d.Count, StringComparer.Ordinal);
+        foreach (DictionaryEntry e in d)
+        {
+          if (e.Key is string k)
+          {
+            map[k] = e.Value;
+          }
+        }
+        record = map;
+        return true;
+      default:
+        record = null!;
+        return false;
+    }
+  }
+
+  private static bool IsScalar(object? v) =>
+    v
+      is bool
+        or string
+        or sbyte
+        or byte
+        or short
+        or ushort
+        or int
+        or uint
+        or long
+        or ulong
+        or float
+        or double
+        or decimal;
+
+  private static string ScalarText(object? v) =>
+    v switch
+    {
+      bool b => b ? "true" : "false",
+      string s => s,
+      IFormattable f => f.ToString("R", CultureInfo.InvariantCulture),
+      _ => "",
+    };
 
   private const double MatrixTolerance = 1e-9;
 

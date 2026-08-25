@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Speckle.DoubleNumerics;
+using Speckle.Objects.Data;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Other;
 using Speckle.Objects.Utils;
@@ -209,6 +210,186 @@ public class V3GraphArtifactProducerAppearanceTests
       stats.HasMaterialEdges.Should().Be(0);
       stats.ObjectHasMaterialEdges.Should().Be(0);
       stats.NodeHasMaterialEdges.Should().Be(0);
+    }
+    finally
+    {
+      if (Directory.Exists(dir))
+      {
+        Directory.Delete(dir, true);
+      }
+    }
+  }
+
+  private static RhinoObject SolidObject(string appId, bool withMesh = true) =>
+    new()
+    {
+      name = appId,
+      type = "Brep",
+      units = "m",
+      applicationId = appId,
+      id = appId,
+      rawEncoding = new RawEncoding
+      {
+        format = RawEncodingFormats.RHINO_3DM,
+        contents = Convert.ToBase64String(new byte[] { 1, 2, 3 }),
+      },
+      displayValue = withMesh ? new List<Base> { MeshAt(appId + "-mesh") } : new List<Base>(),
+      properties = new Dictionary<string, object?>(),
+    };
+
+  private static InstanceDefinitionProxy Definition(string defId, params string[] memberIds) =>
+    new()
+    {
+      applicationId = defId,
+      id = defId,
+      name = defId,
+      maxDepth = 1,
+      objects = memberIds.ToList(),
+    };
+
+  [Fact]
+  public async Task DefinitionMemberSolid_GetsMaterialAndColour_AlongsideItsMesh()
+  {
+    var dir = Path.Combine(Path.GetTempPath(), "SpeckleV3Appearance", Guid.NewGuid().ToString("N"));
+    try
+    {
+      var root = new Collection
+      {
+        name = "root",
+        applicationId = "root",
+        elements = { SolidObject("member1"), Block("block1", "def1") },
+      };
+      root["instanceDefinitionProxies"] = new List<object> { Definition("def1", "member1") };
+      root["renderMaterialProxies"] = new List<object>
+      {
+        MaterialProxy("steel", unchecked((int)0xFF2244CC), new List<string> { "member1" }),
+      };
+      root["colorProxies"] = new List<object> { Color(Red, new List<string> { "member1" }) };
+
+      var stats = Migrate(root, dir);
+      var bundle = await ArtefactBundleReader.ReadAsync(dir, default);
+      var rels = bundle.Relations;
+
+      // The member's raw solid AND its display mesh both carry the material and the colour.
+      rels.MaterialByGeometry.Should().HaveCount(2);
+      rels.MaterialByGeometry.Keys.Select(k => bundle.Geometries[k].Type).Should().BeEquivalentTo("3dm", "mesh");
+      rels.ColorByGeometry.Keys.Should().BeEquivalentTo(rels.MaterialByGeometry.Keys);
+
+      stats.HasMaterialEdges.Should().Be(2);
+      stats.HasColorEdges.Should().Be(2);
+      stats.SkippedMaterial.Should().Be(0);
+      stats.SkippedColor.Should().Be(0);
+    }
+    finally
+    {
+      if (Directory.Exists(dir))
+      {
+        Directory.Delete(dir, true);
+      }
+    }
+  }
+
+  [Fact]
+  public async Task SolidOnlyDefinitionMember_MaterialBindsToTheSolid()
+  {
+    var dir = Path.Combine(Path.GetTempPath(), "SpeckleV3Appearance", Guid.NewGuid().ToString("N"));
+    try
+    {
+      var root = new Collection
+      {
+        name = "root",
+        applicationId = "root",
+        elements = { SolidObject("member1", withMesh: false), Block("block1", "def1") },
+      };
+      root["instanceDefinitionProxies"] = new List<object> { Definition("def1", "member1") };
+      root["renderMaterialProxies"] = new List<object>
+      {
+        MaterialProxy("steel", unchecked((int)0xFF2244CC), new List<string> { "member1" }),
+      };
+
+      var stats = Migrate(root, dir);
+      var bundle = await ArtefactBundleReader.ReadAsync(dir, default);
+      var rels = bundle.Relations;
+
+      var (solidK, _) = rels.MaterialByGeometry.Should().ContainSingle().Subject;
+      bundle.Geometries[solidK].Type.Should().Be("3dm");
+      stats.HasMaterialEdges.Should().Be(1);
+      stats.SkippedMaterial.Should().Be(0); // previously silently skipped: the member had no appearance target
+    }
+    finally
+    {
+      if (Directory.Exists(dir))
+      {
+        Directory.Delete(dir, true);
+      }
+    }
+  }
+
+  [Fact]
+  public async Task StandaloneSolid_GetsMaterial_AlongsideItsMesh()
+  {
+    var dir = Path.Combine(Path.GetTempPath(), "SpeckleV3Appearance", Guid.NewGuid().ToString("N"));
+    try
+    {
+      // Not referenced by any definition proxy → standalone object: SOLID edge, and the solid is a material target too.
+      var root = new Collection
+      {
+        name = "root",
+        applicationId = "root",
+        elements = { SolidObject("brep1") },
+      };
+      root["renderMaterialProxies"] = new List<object>
+      {
+        MaterialProxy("steel", unchecked((int)0xFF2244CC), new List<string> { "brep1" }),
+      };
+
+      var stats = Migrate(root, dir);
+      var bundle = await ArtefactBundleReader.ReadAsync(dir, default);
+      var rels = bundle.Relations;
+
+      rels.MaterialByGeometry.Should().HaveCount(2);
+      rels.MaterialByGeometry.Keys.Select(k => bundle.Geometries[k].Type).Should().BeEquivalentTo("3dm", "mesh");
+      stats.HasMaterialEdges.Should().Be(2);
+      stats.Solids.Should().Be(1);
+    }
+    finally
+    {
+      if (Directory.Exists(dir))
+      {
+        Directory.Delete(dir, true);
+      }
+    }
+  }
+
+  [Fact]
+  public async Task PlaceholderBlackMaterial_YieldsToColour_OnBothSolidAndMesh()
+  {
+    var dir = Path.Combine(Path.GetTempPath(), "SpeckleV3Appearance", Guid.NewGuid().ToString("N"));
+    try
+    {
+      var root = new Collection
+      {
+        name = "root",
+        applicationId = "root",
+        elements = { SolidObject("member1"), Block("block1", "def1") },
+      };
+      root["instanceDefinitionProxies"] = new List<object> { Definition("def1", "member1") };
+      root["renderMaterialProxies"] = new List<object>
+      {
+        MaterialProxy("noMaterial", Black, new List<string> { "member1" }),
+      };
+      root["colorProxies"] = new List<object> { Color(Red, new List<string> { "member1" }) };
+
+      var stats = Migrate(root, dir);
+      var bundle = await ArtefactBundleReader.ReadAsync(dir, default);
+      var rels = bundle.Relations;
+
+      // The placeholder yields to the real colour on BOTH targets — no mesh/solid appearance split.
+      rels.MaterialByGeometry.Should().BeEmpty();
+      rels.ColorByGeometry.Should().HaveCount(2);
+      rels.ColorByGeometry.Keys.Select(k => bundle.Geometries[k].Type).Should().BeEquivalentTo("3dm", "mesh");
+      stats.HasMaterialEdges.Should().Be(0);
+      stats.HasColorEdges.Should().Be(2);
     }
     finally
     {
