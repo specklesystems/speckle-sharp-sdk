@@ -249,22 +249,8 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       return objK;
     }
 
-    // Lossless raw solid alongside the display meshes (receive picks via PreferSolids); recorded first so appearance
-    // binds to it too.
-    var rawEnc = helper.TryReadRawEncoding(obj);
-    if (
-      rawEnc is not null
-      && helper.IsMigratableSolidFormat(rawEnc.format)
-      && EmitSolidBlob(appId, rawEnc) is int solidK
-    )
-    {
-      _stats.Solids++;
-      if (!isMember)
-      {
-        pipeline.Solid(objK, solidK, 0);
-      }
-      RecordObjectGeom(appId, SolidKey(appId));
-    }
+    var solidOrd = 0;
+    EmitSolid(objK, appId, appId, obj, isMember, ref solidOrd);
 
     // Checked before the raw-geometry case so a leaf that ships a display mesh (Brep/SubD, extrusions) encodes
     // that mesh rather than its un-encodable self.
@@ -284,6 +270,8 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
           continue;
         }
         var gAppId = helper.Aid(item);
+        // v3 Grasshopper nested BrepX/ExtrusionX/SubDX in displayValue: its solid rides the owning object.
+        EmitSolid(objK, appId, gAppId, item, isMember, ref solidOrd);
         if (!AddGeometry(gAppId, item))
         {
           continue;
@@ -342,6 +330,24 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   }
 
   private static string SolidKey(string objAppId) => objAppId + ":solid";
+
+  // The lossless raw solid of `source`, if it has a migratable one, alongside the display meshes (receive picks via
+  // PreferSolids). SOLID edge for a standalone object, none for a definition member (its solid rides DEFINES); recorded
+  // on the owner's appearance list ahead of the matching mesh so appearance binds to it too.
+  private void EmitSolid(int objK, string ownerAppId, string geomAppId, Base source, bool isMember, ref int solidOrd)
+  {
+    var enc = helper.TryReadRawEncoding(source);
+    if (enc is null || !helper.IsMigratableSolidFormat(enc.format) || EmitSolidBlob(geomAppId, enc) is not int solidK)
+    {
+      return;
+    }
+    _stats.Solids++;
+    if (!isMember)
+    {
+      pipeline.Solid(objK, solidK, solidOrd++);
+    }
+    RecordObjectGeom(ownerAppId, SolidKey(geomAppId));
+  }
 
   private void RecordObjectGeom(string objAppId, string geomAppId)
   {

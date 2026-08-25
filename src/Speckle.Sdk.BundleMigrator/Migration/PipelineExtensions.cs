@@ -19,6 +19,21 @@ internal static class PipelineExtensions
 
   public static int? AddGeometryMigrated(this ObjectsArtifactPipeline pipeline, string appId, Base geometry)
   {
+#pragma warning disable CS0618 // Type or member is obsolete
+    // A v2 Brep that leaked into displayValue, or a v3 Grasshopper BrepX/ExtrusionX/SubDX nested there: only its
+    // (single) display mesh is encodable here — the caller emits the raw solid. Recurse so the mesh is checked too.
+    var displayMeshes = geometry switch
+    {
+      Brep b => b.displayValue,
+      RawEncodedObject x => x.displayValue,
+      _ => null,
+    };
+#pragma warning restore CS0618
+    if (displayMeshes is not null)
+    {
+      return displayMeshes.Count > 0 ? pipeline.AddGeometryMigrated(appId, displayMeshes[0]) : null;
+    }
+
     if (geometry is Arc a)
     {
       // V3 often sent non-normalized planes; Viewer 2.0 ignored them and recomputed from origin+start+end.
@@ -51,24 +66,10 @@ internal static class PipelineExtensions
       };
     }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-    if (geometry is Brep b)
-    {
-      //Never considered valid, but some breps may have leaked as displayValues in v2.
-      //Safe to assume v2 breps only have 1 displayValue mesh
-      // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-      if (b.displayValue is null || b.displayValue.Count <= 0)
-      {
-        return null;
-      }
-      geometry = b.displayValue[0];
-    }
-
-    if (geometry is Surface or Vector or Plane or Brep or null)
+    if (geometry is Surface or Vector or Plane)
     {
       return null;
     }
-#pragma warning restore CS0618 // Type or member is obsolete
 
     // Vertex- or face-less meshes are not handled properly by the datgen (writes NaN into viewer.idx, which culls the WHOLE scene.)
     if (geometry is Mesh { vertices.Count: 0 } or Mesh { faces.Count: 0 })
