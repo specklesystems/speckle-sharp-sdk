@@ -1,4 +1,4 @@
-﻿using Speckle.Objects;
+using Speckle.Objects;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Primitive;
 using Speckle.Objects.Utils;
@@ -22,17 +22,12 @@ internal static class PipelineExtensions
 #pragma warning disable CS0618 // Type or member is obsolete
     // A v2 Brep that leaked into displayValue, or a v3 Grasshopper BrepX/ExtrusionX/SubDX nested there: only its
     // (single) display mesh is encodable here — the caller emits the raw solid. Recurse so the mesh is checked too.
-    var displayMeshes = geometry switch
+    if (geometry is Brep or RawEncodedObject)
     {
-      Brep b => b.displayValue,
-      RawEncodedObject x => x.displayValue,
-      _ => null,
-    };
-#pragma warning restore CS0618
-    if (displayMeshes is not null)
-    {
-      return displayMeshes.Count > 0 ? pipeline.AddGeometryMigrated(appId, displayMeshes[0]) : null;
+      List<Mesh>? displayMeshes = ((IDisplayValue<List<Mesh>?>)geometry).displayValue;
+      return displayMeshes is { Count: > 0 } ? pipeline.AddGeometryMigrated(appId, displayMeshes[0]) : null;
     }
+#pragma warning restore CS0618
 
     if (geometry is Arc a)
     {
