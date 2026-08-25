@@ -157,7 +157,7 @@ public static class EavExtraction
     }
 
     // 3b. Structure (Revit) — the compound layer buildup, same deal
-    if (props?["Structure"] is JObject structure)
+    if (props?["Structure"] is JObject structure && IsCompoundStructure(structure))
     {
       ExtractCompoundStructure(objectId, structure, rows);
     }
@@ -384,7 +384,7 @@ public static class EavExtraction
       // Skip Structure — handled separately at the top of `properties`. The legacy home under Type Parameters
       // (v3 payloads, which the migrator still reads) is skipped outright: its `{material} ({layerId})` keys mint
       // one path per material name, which is why the walk never emitted it.
-      if (key == "Structure" && (depth == 0 || prefix.EndsWith(".Type Parameters")))
+      if (key == "Structure" && ((depth == 0 && IsCompoundStructure(asRecord)) || prefix.EndsWith(".Type Parameters")))
       {
         continue;
       }
@@ -450,6 +450,25 @@ public static class EavExtraction
   /// Path: `properties.Structure.{ordinal}.{material|function|thickness}`, thickness carrying the layer's
   /// units on the row itself. Layer ordinal is the dict key, which the producer owns.
   /// </summary>
+  /// <summary>
+  /// Whether a top-level <c>Structure</c> record really is a Revit layer buildup. <c>Structure</c> is a common
+  /// word and this flattener is source-agnostic — a Navisworks tab, a Civil 3D property set or a structural
+  /// app's property group could carry the same name. Matching on the name alone would drop that subtree from
+  /// eav and hand it to a handler that would emit nothing from it. Every layer record carries
+  /// <c>function</c> and <c>thickness</c>, so require that.
+  /// </summary>
+  private static bool IsCompoundStructure(JObject structure)
+  {
+    foreach (var layer in structure.Properties())
+    {
+      if (layer.Value is not JObject fields || fields["function"] == null || fields["thickness"] == null)
+      {
+        return false;
+      }
+    }
+    return structure.Count > 0;
+  }
+
   private static void ExtractCompoundStructure(string objectId, JObject structure, List<EavRow> rows)
   {
     foreach (var layer in structure.Properties())
@@ -645,7 +664,11 @@ public static class EavExtraction
       ExtractMaterialQuantitiesNative(objectId, matQuants, rows);
     }
 
-    if (properties.TryGetValue("Structure", out var st) && st is IReadOnlyDictionary<string, object?> structure)
+    if (
+      properties.TryGetValue("Structure", out var st)
+      && TryAsStringKeyedRecord(st ?? s_emptyRecord, out var structure)
+      && IsCompoundStructureNative(structure)
+    )
     {
       ExtractCompoundStructureNative(objectId, structure, rows);
     }
@@ -748,7 +771,13 @@ public static class EavExtraction
         }
 
         // Parity with the JObject walk's special-cases.
-        if (key == "Structure" && (depth == 0 || prefix.EndsWith(".Type Parameters", StringComparison.Ordinal)))
+        if (
+          key == "Structure"
+          && (
+            (depth == 0 && IsCompoundStructureNative(asRecord))
+            || prefix.EndsWith(".Type Parameters", StringComparison.Ordinal)
+          )
+        )
         {
           continue; // handled separately at the top of `properties`; legacy Type Parameters home stays dropped
         }
@@ -773,6 +802,26 @@ public static class EavExtraction
   /// Native-dictionary twin of <see cref="ExtractCompoundStructure"/> — same paths, same ordinal-key
   /// contract, same units-on-the-thickness-row shape [ENG-9338].
   /// </summary>
+  /// <summary>Native twin of <see cref="IsCompoundStructure"/>.</summary>
+  private static bool IsCompoundStructureNative(IReadOnlyDictionary<string, object?> structure)
+  {
+    var count = 0;
+    foreach (var layer in structure)
+    {
+      if (
+        layer.Value is null
+        || !TryAsStringKeyedRecord(layer.Value, out var fields)
+        || !fields.ContainsKey("function")
+        || !fields.ContainsKey("thickness")
+      )
+      {
+        return false;
+      }
+      count++;
+    }
+    return count > 0;
+  }
+
   private static void ExtractCompoundStructureNative(
     string objectId,
     IReadOnlyDictionary<string, object?> structure,
