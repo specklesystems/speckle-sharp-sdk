@@ -51,10 +51,18 @@ public static class ParquetTableReader
     return new ParquetTable(columns, rowCount, Array.ConvertAll(fields, f => f.Name));
   }
 
-  // Concatenates the per-row-group column arrays into one array of the column's element type. The element type is
-  // the field's CLR type (nullable for optional columns), so Array.Copy preserves null slots.
-  private static Array Concat(List<Array> chunks, Type elementType)
+  // Concatenates the per-row-group column arrays into one array. The element type is taken from the chunks
+  // themselves, NOT from DataField.ClrType: Parquet.Net reports the non-nullable type for optional columns
+  // (int for an optional int32) while ReadColumnAsync hands back int?[], and Array.Copy from int?[] into an
+  // int[] throws ArrayTypeMismatchException. Only multi-row-group files (large models) reach the copy. A file
+  // with no row groups at all (an optional table written empty) has no chunk to take the type from, so the
+  // schema type is used for the zero-length result — element type is immaterial when there are no elements.
+  private static Array Concat(List<Array> chunks, Type emptyElementType)
   {
+    if (chunks.Count == 0)
+    {
+      return Array.CreateInstance(emptyElementType, 0);
+    }
     if (chunks.Count == 1)
     {
       return chunks[0];
@@ -64,6 +72,9 @@ public static class ParquetTableReader
     {
       total += c.Length;
     }
+    var elementType =
+      chunks[0].GetType().GetElementType()
+      ?? throw new InvalidOperationException($"Row-group column data is not an array: {chunks[0].GetType()}");
     var result = Array.CreateInstance(elementType, total);
     int offset = 0;
     foreach (var c in chunks)
