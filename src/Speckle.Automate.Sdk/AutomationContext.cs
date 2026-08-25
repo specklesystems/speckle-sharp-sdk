@@ -64,6 +64,9 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
       );
     }
 
+    // Automate's function-author surface still hands out a Base tree; its bundle-era successor is a separate effort
+    // (atlas spec 2026-08-big-truck-dev-compat, Out of Scope §Automate). Until then it rides the compat projection.
+#pragma warning disable CS0618 // Receive2 is obsolete
     Base rootObject = await operations
       .Receive2(
         SpeckleClient.ServerUrl,
@@ -74,6 +77,7 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
         cancellationToken
       )
       .ConfigureAwait(false);
+#pragma warning restore CS0618
 
     await SpeckleClient
       .Version.Received(new(version.id, AutomationRunData.ProjectId, "automate_function"), cancellationToken)
