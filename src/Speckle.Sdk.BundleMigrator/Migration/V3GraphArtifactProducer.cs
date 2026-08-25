@@ -146,6 +146,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     EmitProxies(root);
     EmitRevitTopology();
     EmitCameraViews(root);
+    EmitModelProperties(root); // first, so the derived referencePoint.* / units.* rows below win on read
     EmitStructuralResults(root);
     EmitReferencePoint(root);
     EmitPropertySetDefinitions(root);
@@ -956,6 +957,102 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     pipeline.AddModelProperty("referencePoint.units", units);
     _stats.ReferencePoints++;
   }
+
+  // v3 Grasshopper RootCollection.properties → eav.model rows, flattened exactly like the GH 4.0 Publish
+  // (bare dotted paths, one row per scalar leaf) so the 4.0 Load nests them back unchanged.
+  private void EmitModelProperties(Base root)
+  {
+    if (root is RootCollection { properties: { Count: > 0 } props })
+    {
+      EmitModelPropertyRows(props, null, 0);
+    }
+  }
+
+  private const int ModelPropertyMaxDepth = 10;
+
+  private void EmitModelPropertyRows(IReadOnlyDictionary<string, object?> props, string? prefix, int depth)
+  {
+    if (depth >= ModelPropertyMaxDepth)
+    {
+      return;
+    }
+    foreach (var (key, value) in props)
+    {
+      var path = prefix is null ? key : $"{prefix}.{key}";
+      if (TryAsStringKeyedRecord(value, out var nested))
+      {
+        EmitModelPropertyRows(nested, path, depth + 1);
+      }
+      else if (IsScalar(value))
+      {
+        pipeline.AddModelProperty(path, value);
+        _stats.ModelPropertyRows++;
+      }
+      else if (value is IEnumerable list and not string)
+      {
+        var joined = string.Join(",", list.Cast<object?>().Where(IsScalar).Select(ScalarText));
+        if (joined.Length > 0)
+        {
+          pipeline.AddModelProperty(path, joined);
+          _stats.ModelPropertyRows++;
+        }
+      }
+      else if (value is not null)
+      {
+        _stats.SkippedModelProperties++;
+        _stats.Notes.Add($"model property '{path}' skipped: {value.GetType().Name} has no eav.model column");
+      }
+    }
+  }
+
+  private static bool TryAsStringKeyedRecord(object? value, out IReadOnlyDictionary<string, object?> record)
+  {
+    switch (value)
+    {
+      case IReadOnlyDictionary<string, object?> r:
+        record = r;
+        return true;
+      case IDictionary d:
+        var map = new Dictionary<string, object?>(d.Count, StringComparer.Ordinal);
+        foreach (DictionaryEntry e in d)
+        {
+          if (e.Key is string k)
+          {
+            map[k] = e.Value;
+          }
+        }
+        record = map;
+        return true;
+      default:
+        record = null!;
+        return false;
+    }
+  }
+
+  private static bool IsScalar(object? v) =>
+    v
+      is bool
+        or string
+        or sbyte
+        or byte
+        or short
+        or ushort
+        or int
+        or uint
+        or long
+        or ulong
+        or float
+        or double
+        or decimal;
+
+  private static string ScalarText(object? v) =>
+    v switch
+    {
+      bool b => b ? "true" : "false",
+      string s => s,
+      IFormattable f => f.ToString("R", CultureInfo.InvariantCulture),
+      _ => "",
+    };
 
   private const double MatrixTolerance = 1e-9;
 

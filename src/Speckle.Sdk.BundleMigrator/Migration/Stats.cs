@@ -54,6 +54,10 @@ internal sealed class Stats
   // Root `referencePointTransform` re-emitted as referencePoint.* eav.model rows (ENG-9060).
   public int ReferencePoints;
 
+  // v3 Grasshopper RootCollection.properties re-emitted as eav.model rows (ENG-9388).
+  public int ModelPropertyRows;
+  public int SkippedModelProperties; // non-scalar leaves (e.g. a Plane) — named in Notes
+
   // v3 Civil3D root `propertySetDefinitions` re-emitted as eav.property_set_definitions rows (ENG-9062).
   public int PropertySets;
   public int PropertySetFields;
@@ -96,7 +100,7 @@ internal sealed class Stats
              IN_ROOM={InRoomEdges} CONNECTS_TO={ConnectsToEdges} SUBELEMENT(host)={HostSubelementEdges} IN_MODEL={InModelEdges}
       nodes: DEFINITION={Definitions} INSTANCE(def)={DefinitionInstances} MATERIAL={Materials} COLOR={Colors} LEVEL={Levels} COLLECTION={Collections} (ghTopology={GhTopologies}) GROUP={Groups} CAMERA_VIEW={CameraViews} MODEL={Models}
       structuralResults: rows={StructuralResultRows} elmFallback={StructuralElmFallbacks} skippedTypes={SkippedResultTypes} unitRows={ModelUnitRows}
-      referencePoints={ReferencePoints}  propertySets={PropertySets} (fields={PropertySetFields})  revitTypeKeys={RevitTypeKeys}
+      referencePoints={ReferencePoints}  modelPropertyRows={ModelPropertyRows} (skipped={SkippedModelProperties})  propertySets={PropertySets} (fields={PropertySetFields})  revitTypeKeys={RevitTypeKeys}
       skipped (ref not in graph): {SkippedDangling}  (DEFINES={SkippedDefines} HAS_MATERIAL={SkippedMaterial} HAS_COLOR={SkippedColor} ON_LEVEL={SkippedLevel} IN_GROUP={SkippedGroup} IN_ROOM={SkippedRoom} CONNECTS_TO={SkippedConnects} SUBELEMENT(host)={SkippedHostParent})  byBlockColorProxies={ByBlockColorProxies}
       """;
 }
