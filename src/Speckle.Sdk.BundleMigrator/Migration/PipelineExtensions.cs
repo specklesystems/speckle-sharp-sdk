@@ -61,7 +61,17 @@ internal static class PipelineExtensions
       };
     }
 
-    if (geometry is Surface or Vector or Plane)
+    if (geometry is Curve { points: null })
+    {
+      return null;
+    }
+
+    if (geometry is Arc { startPoint: null } or Arc { endPoint: null })
+    {
+      return null;
+    }
+
+    if (geometry is Surface or Vector or Plane or Spiral)
     {
       return null;
     }

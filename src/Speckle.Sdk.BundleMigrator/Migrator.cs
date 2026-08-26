@@ -398,7 +398,9 @@ internal sealed class Migrator(
       .ConfigureAwait(false);
 
     var deserializer = new SpeckleObjectDeserializer { ReadTransport = transport };
-    return await deserializer.DeserializeAsync(rootJson).ConfigureAwait(false);
+    return await LargeStackRunner
+      .Run(() => deserializer.DeserializeAsync(rootJson).AsTask(), "packfile-deserialize")
+      .ConfigureAwait(false);
   }
 
   // Produce the bundle on disk from a resolved graph, then optionally upload it (when `upload` — the
