@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
-using Speckle.Objects.Utils;
 using Speckle.Sdk.Bundles;
-using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
@@ -30,7 +28,10 @@ public partial class Operations
   {
     var url = ModelUrl.Parse(new Uri(modelUrl, UriKind.Absolute));
     string versionId =
-      url.VersionId ?? await ResolveLatestVersionId(url, authorizationToken, cancellationToken).ConfigureAwait(false);
+      url.VersionId
+      ?? await bundleReceiver
+        .ResolveLatestVersionIdAsync(url, authorizationToken, cancellationToken)
+        .ConfigureAwait(false);
     return await Receive3(
         url.Server,
         url.ProjectId,
@@ -41,25 +42,6 @@ public partial class Operations
         cancellationToken
       )
       .ConfigureAwait(false);
-  }
-
-  private async Task<string> ResolveLatestVersionId(ModelUrl url, string? authorizationToken, CancellationToken ct)
-  {
-    var account = new Account
-    {
-      token = authorizationToken ?? string.Empty,
-      serverInfo = new() { url = url.Server.ToString() },
-      userInfo = new(),
-    };
-    using var client = clientFactory.Create(account);
-    var model = await client
-      .Model.GetWithVersions(url.ModelId, url.ProjectId, versionsLimit: 1, cancellationToken: ct)
-      .ConfigureAwait(false);
-    if (model.versions.items.Count == 0)
-    {
-      throw new SpeckleException($"Model '{url.ModelId}' in project '{url.ProjectId}' has no versions yet.");
-    }
-    return model.versions.items[0].id;
   }
 
   /// <summary>
@@ -104,15 +86,8 @@ public partial class Operations
 
     try
     {
-      var model = await DownloadBundleModel(
-          url,
-          projectId,
-          modelId,
-          versionId,
-          authorizationToken,
-          options,
-          cancellationToken
-        )
+      var model = await bundleReceiver
+        .ReceiveAsync(url, projectId, modelId, versionId, authorizationToken, options, cancellationToken)
         .ConfigureAwait(false);
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return model;
@@ -444,31 +419,16 @@ public partial class Operations
         );
       }
 
-      using var model = await DownloadBundleModel(
+      var root = await bundleReceiver
+        .ReceiveAsBaseAsync(
           url,
           reference.ProjectId,
           reference.ModelId,
           reference.VersionId,
           authorizationToken,
-          ReceiveOptions.Default,
           cancellationToken
         )
         .ConfigureAwait(false);
-
-      // The Base projection walks nested property dictionaries and decodes every mesh: re-read the downloaded files
-      // in the eager profile. This is the lossy compat path; its memory cost is the reason Receive2 is obsolete.
-      var eager = await ArtefactBundleReader
-        .ReadAsync(model.Directory, ArtefactReadOptions.Eager, cancellationToken)
-        .ConfigureAwait(false);
-      var root = new ObjectsArtifactReader().Build(
-        eager,
-        new ArtifactReceiveOptions(PreferSolids: false),
-        cancellationToken
-      );
-
-      // Vintage marker: lets consumers (and the migrator's IsV3 check) tell a materialized tree from a genuine
-      // v2/v3 graph. Same convention as BundleMigrator's TreeMaterializer.
-      root["version"] = 4;
 
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return root;
@@ -482,90 +442,6 @@ public partial class Operations
       receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
       receiveActivity?.RecordException(ex);
       throw;
-    }
-  }
-
-  /// <summary>Downloads the bundle into a scratch directory and parses it. The returned <see cref="Model"/> owns the
-  /// directory; on any failure the directory is removed here.</summary>
-  private async Task<Model> DownloadBundleModel(
-    Uri url,
-    string projectId,
-    string modelId,
-    string versionId,
-    string? authorizationToken,
-    ReceiveOptions options,
-    CancellationToken cancellationToken
-  )
-  {
-    // ArtifactDownloader only reads token + serverInfo.url off the account.
-    var account = new Account
-    {
-      token = authorizationToken ?? string.Empty,
-      serverInfo = new() { url = url.ToString() },
-      userInfo = new(),
-    };
-
-    string bundleDir = Path.Combine(
-      SpecklePathProvider.UserApplicationDataPath(),
-      "Speckle",
-      "BundleReceive",
-      Guid.NewGuid().ToString("N")
-    );
-    try
-    {
-      var files = await artifactDownloader
-        .DownloadBundleAsync(
-          account,
-          projectId,
-          modelId,
-          versionId,
-          bundleDir,
-          options.ShouldDownload,
-          cancellationToken
-        )
-        .ConfigureAwait(false);
-
-      if (files.Count == 0)
-      {
-        // Never fall back to the legacy object path from here: a caller on this rail asked for the bundle, and for
-        // a bundle-only version there is no legacy graph anyway.
-        throw new SpeckleException(
-          $"Version '{versionId}' (model '{modelId}', project '{projectId}') has no artefact bundle on the server at "
-            + $"'{url}'. Either the server does not serve the /api/v2 artifacts endpoint yet, the token cannot read the "
-            + "project, or the bundle has not been produced for this version."
-        );
-      }
-
-      // Geometry stays on disk until Model.Geometries is touched — it is the bulk of every bundle — and properties
-      // stay columnar (PropertyTable) so memory tracks the parquet size, not a dictionary per nesting level.
-      var bundle = await ArtefactBundleReader
-        .ReadAsync(bundleDir, ArtefactReadOptions.Columnar, cancellationToken)
-        .ConfigureAwait(false);
-      return new Model(projectId, modelId, versionId, bundleDir, files, bundle, options.IncludeGeometry, logger);
-    }
-    catch
-    {
-      TryDeleteDirectory(bundleDir);
-      throw;
-    }
-  }
-
-  private void TryDeleteDirectory(string dir)
-  {
-    try
-    {
-      if (Directory.Exists(dir))
-      {
-        Directory.Delete(dir, true);
-      }
-    }
-    catch (IOException ex)
-    {
-      logger.LogWarning(ex, "Could not clean up bundle scratch directory {bundleDir}", dir);
-    }
-    catch (UnauthorizedAccessException ex)
-    {
-      logger.LogWarning(ex, "Could not clean up bundle scratch directory {bundleDir}", dir);
     }
   }
 }

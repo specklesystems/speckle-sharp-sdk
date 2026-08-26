@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Bundles;
 using Speckle.Sdk.Logging;
-using Speckle.Sdk.Pipelines.Receive.Artifacts;
 using Speckle.Sdk.Serialisation.V2;
 
 namespace Speckle.Sdk.Api;
@@ -18,6 +18,6 @@ public partial class Operations(
   ISdkMetricsFactory metricsFactory,
   ISerializeProcessFactory serializeProcessFactory,
   IDeserializeProcessFactory deserializeProcessFactory,
-  IArtifactDownloader artifactDownloader,
-  IClientFactory clientFactory
+  IBundleReceiver bundleReceiver,
+  IBundleSender bundleSender
 ) : IOperations;

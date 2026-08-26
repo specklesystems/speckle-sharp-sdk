@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Speckle.Newtonsoft.Json.Linq;
+using Speckle.Sdk.Bundles;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -11,6 +12,83 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  /// <summary>
+  /// Publishes a bundle as a new version — the Speckle 2026.9.0 send path. Creates the ingestion (the server
+  /// pre-allocates the version id), finishes the <paramref name="builder"/> and re-keys its files to that id, uploads
+  /// them over the <c>/api/v2</c> artifacts rail, and returns. The version becomes visible when the server finishes
+  /// ingesting; subscribe on <see cref="SendResult.IngestionId"/> for that.
+  /// </summary>
+  /// <remarks>
+  /// The version's <c>referencedObject</c> is the bundle reference (<c>bundle.&lt;projectId&gt;.&lt;modelId&gt;.&lt;versionId&gt;</c>),
+  /// which is what <see cref="Receive2"/> dispatches on. On any failure the ingestion is marked failed (or cancelled)
+  /// on the server before the exception propagates. The builder is finished by this call and cannot be reused.
+  /// </remarks>
+  /// <exception cref="SpeckleException">The server did not pre-allocate a version id (it predates the v2 data endpoints).</exception>
+  public async Task<SendResult> Send3(
+    Uri url,
+    string projectId,
+    string modelId,
+    BundleBuilder builder,
+    string? authorizationToken,
+    SendOptions? options,
+    CancellationToken cancellationToken
+  )
+  {
+    using var sendActivity = activityFactory.Start("Operations.Send3");
+    metricsFactory.CreateCounter<long>("Send").Add(1);
+    try
+    {
+      var result = await bundleSender
+        .SendAsync(
+          url,
+          projectId,
+          modelId,
+          builder,
+          authorizationToken,
+          options ?? SendOptions.Default,
+          cancellationToken
+        )
+        .ConfigureAwait(false);
+      sendActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return result;
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      sendActivity?.SetStatus(SdkActivityStatusCode.Error);
+      sendActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  /// <summary>
+  /// <see cref="Send3(Uri, string, string, BundleBuilder, string?, SendOptions?, CancellationToken)"/> addressed by a
+  /// model url — <c>{server}/projects/{projectId}/models/{modelId}</c>. A <c>@versionId</c> suffix is rejected: a send
+  /// always creates a new version.
+  /// </summary>
+  /// <exception cref="ArgumentException"><paramref name="modelUrl"/> is not a model url, or pins a version.</exception>
+  public Task<SendResult> Send3(
+    string modelUrl,
+    BundleBuilder builder,
+    string? authorizationToken,
+    SendOptions? options,
+    CancellationToken cancellationToken
+  )
+  {
+    var url = ModelUrl.Parse(new Uri(modelUrl, UriKind.Absolute));
+    if (url.HasVersion)
+    {
+      throw new ArgumentException(
+        $"'{modelUrl}' pins version '{url.VersionId}'; a send creates a new version, so pass the model url without @versionId.",
+        nameof(modelUrl)
+      );
+    }
+    return Send3(url.Server, url.ProjectId, url.ModelId, builder, authorizationToken, options, cancellationToken);
+  }
+
   /// <summary>
   /// Sends a Speckle Object to the provided URL and Caches the results
   /// </summary>
