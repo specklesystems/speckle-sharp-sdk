@@ -145,4 +145,43 @@ public sealed class OperationsReceiveBundleDispatchTests
     Assert.False(attr.IsError);
     Assert.Contains("Receive3", attr.Message, StringComparison.Ordinal);
   }
+
+  [Fact]
+  public async Task Receive3_ByUrl_PinnedVersion_NoGraphQL()
+  {
+    var (operations, downloader) = Build();
+    downloader
+      .Setup(d =>
+        d.DownloadBundleAsync(
+          It.IsAny<Account>(),
+          "proj",
+          "model",
+          "ver",
+          It.IsAny<string>(),
+          It.IsAny<Func<string, bool>?>(),
+          It.IsAny<CancellationToken>()
+        )
+      )
+      .ReturnsAsync(Array.Empty<string>());
+
+    await Assert.ThrowsAsync<SpeckleException>(() =>
+      operations.Receive3(
+        "https://example.speckle.invalid/projects/proj/models/model@ver",
+        "tok",
+        null,
+        CancellationToken.None
+      )
+    );
+    downloader.VerifyAll();
+  }
+
+  [Fact]
+  public async Task Receive3_ByUrl_NotAModelUrl_Throws()
+  {
+    var (operations, downloader) = Build();
+    await Assert.ThrowsAsync<ArgumentException>(() =>
+      operations.Receive3("https://example.speckle.invalid/streams/abc", "tok", null, CancellationToken.None)
+    );
+    downloader.VerifyNoOtherCalls();
+  }
 }

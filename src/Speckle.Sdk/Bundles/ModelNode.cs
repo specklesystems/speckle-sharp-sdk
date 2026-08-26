@@ -102,8 +102,13 @@ public sealed class ModelDefinition : ModelNode
   /// <summary>Every placement of this definition.</summary>
   public IReadOnlyList<ModelInstance> Placements => _model.PlacementsOfDefinition(K);
 
-  /// <summary>Member objects (<c>DEFINES_MEMBER</c>) — the property carriers behind the definition's geometry.</summary>
+  /// <summary>Member objects (<c>DEFINES_MEMBER</c>): objects authored <i>inside</i> the definition (Rhino/SketchUp nested
+  /// block contents). Empty for Revit-shaped bundles, where a definition is deduplicated geometry only and the
+  /// properties live on the placing objects — see <see cref="Objects"/>.</summary>
   public IReadOnlyList<ModelObject> Members => _model.MembersOfDefinition(K);
+
+  /// <summary>Objects rendered through this definition (the reverse of <see cref="ModelObject.Definitions"/>).</summary>
+  public IReadOnlyList<ModelObject> Objects => _model.ObjectsOfDefinition(K);
 }
 
 /// <summary>One placement of a <see cref="ModelDefinition"/> (<c>INSTANCE</c>): a transform plus the definition it places.</summary>
@@ -122,13 +127,6 @@ public sealed class ModelInstance : ModelNode
 
   /// <summary>The definition this placement instantiates.</summary>
   public ModelDefinition? Definition => _model.NodeOrNull(_node.DefRef) as ModelDefinition;
-
-  /// <summary>Material: <c>NODE_HAS_MATERIAL</c>, else the legacy placement-painted <c>HAS_MATERIAL</c> (instance src).</summary>
-  public override ModelMaterial? Material =>
-    base.Material
-    ?? (
-      _model.Bundle.Relations.MaterialByInstance.TryGetValue(K, out int im) ? _model.Node(im) as ModelMaterial : null
-    );
 
   internal static IReadOnlyList<double>? ParseTransform(string? csv)
   {

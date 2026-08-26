@@ -107,6 +107,10 @@ public sealed class ArtefactRelations
   /// <summary>IN_ASSEMBLY (18): member object → containing assembly object (ord = member order).</summary>
   public List<ArtefactEdge> InAssembly { get; } = new();
 
+  /// <summary>Relation numbers present in the bundle that this SDK's vocabulary doesn't know (a newer bundle spec).
+  /// Their edges are dropped; consumers should surface this rather than silently miss data.</summary>
+  public HashSet<int> UnknownRels { get; } = new();
+
   /// <summary>DISPLAY_INSTANCE: object → INSTANCE node. Last-wins map (kept for the Base reconstruction path).</summary>
   public Dictionary<int, int> DisplayInstanceByObject { get; } = new();
 
@@ -713,13 +717,10 @@ public static class ArtefactBundleReader
     var metalness = t.NullableDoubles("metalness");
     var roughness = t.NullableDoubles("roughness");
     var elevation = t.NullableDoubles("elevation");
-    // emissive/ior joined the nodes table later [ENG-8791] — absent from older bundles, so guard with Has().
-    var emissive = t.Has("emissive") ? t.NullableInts("emissive") : null;
-    var ior = t.Has("ior") ? t.NullableDoubles("ior") : null;
-    // gh_topology joined later too — same Has() guard for bundles written before it existed.
-    var ghTopology = t.Has("gh_topology") ? t.Strings("gh_topology") : null;
-    // subtype (CONTAINER flavour: Layer / Category / Group / Model …) — Has() guard for the same reason.
-    var subtype = t.Has("subtype") ? t.Strings("subtype") : null;
+    var emissive = t.NullableInts("emissive");
+    var ior = t.NullableDoubles("ior");
+    var ghTopology = t.Strings("gh_topology");
+    var subtype = t.Strings("subtype");
     for (int i = 0; i < id.Length; i++)
     {
       map[id[i]] = new ArtefactNode(
@@ -733,10 +734,10 @@ public static class ArtefactBundleReader
         metalness[i],
         roughness[i],
         elevation[i],
-        emissive?[i],
-        ior?[i],
-        ghTopology?[i],
-        subtype?[i]
+        emissive[i],
+        ior[i],
+        ghTopology[i],
+        subtype[i]
       );
     }
     return map;
@@ -837,7 +838,12 @@ public static class ArtefactBundleReader
         case RelKind.NodeHasColor:
           sets.ColorByNode[src[i]] = dst[i];
           break;
+        case RelKind.OnLevel:
+        case RelKind.InModel:
+        case RelKind.InSystem:
+          break; // object→node rels: grouped into ObjectNodeByRel below
         default:
+          sets.UnknownRels.Add(rel[i]);
           break;
       }
 

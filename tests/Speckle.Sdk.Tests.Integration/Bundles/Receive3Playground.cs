@@ -1,14 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
-using Speckle.Sdk.Credentials;
 using Xunit.Abstractions;
 using Model = Speckle.Sdk.Bundles.Model;
-using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Tests.Integration.Bundles;
 
 /// <summary>
-/// Manual playground for <see cref="Operations.Receive3"/> against a real server. Set <see cref="MODEL_URL"/> and
+/// Manual playground for <see cref="Operations.Receive3(string, string?, Speckle.Sdk.Bundles.ReceiveOptions?, CancellationToken)"/> against a real server. Set <see cref="MODEL_URL"/> and
 /// <see cref="TOKEN"/> below (don't commit them), then run/debug this test. Left empty, the test returns immediately
 /// (green in CI).
 /// <code>
@@ -33,49 +31,14 @@ public sealed class Receive3Playground(ITestOutputHelper output)
       return;
     }
 
-    // ── 1. parse the model url ──────────────────────────────────────────────────────────────────────────
-    var (server, projectId, modelId, versionId) = ParseModelUrl(modelUrl);
-    output.WriteLine($"server={server} project={projectId} model={modelId} version={versionId ?? "(latest)"}");
-
     var services = new ServiceCollection();
     services.AddSpeckleSdk(new("Playground", "playground"), "v3");
     await using var provider = services.BuildServiceProvider();
 
-    var account = new Account
-    {
-      token = token,
-      serverInfo = new() { url = server.ToString() },
-      userInfo = new(),
-    };
-    var client = provider.GetRequiredService<IClientFactory>().Create(account);
-
-    // ── 2. resolve the version via GraphQL ──────────────────────────────────────────────────────────────
-    Version version;
-    if (versionId is null)
-    {
-      var model = await client.Model.GetWithVersions(modelId, projectId, versionsLimit: 1);
-      version = model.versions.items.Single();
-      versionId = version.id;
-    }
-    else
-    {
-      version = await client.Version.Get(versionId, projectId);
-    }
-    output.WriteLine(
-      $"version {version.id} referencedObject={version.referencedObject} createdAt={version.createdAt:u}"
-    );
-
-    // ── 3. receive the bundle ───────────────────────────────────────────────────────────────────────────
+    // ── receive by url (latest version unless the url pins one with @versionId) ──────────────────────────
     var operations = provider.GetRequiredService<IOperations>();
-    using Model received = await operations.Receive3(
-      server,
-      projectId,
-      modelId,
-      versionId,
-      token,
-      null,
-      CancellationToken.None
-    );
+    using Model received = await operations.Receive3(modelUrl, token, options: null, CancellationToken.None);
+    output.WriteLine($"project={received.ProjectId} model={received.ModelId} version={received.VersionId}");
 
     // ── 4. poke around — good place for a breakpoint ────────────────────────────────────────────────────
     output.WriteLine($"units={received.Units} objects={received.Objects.Count} files={received.Files.Count}");
@@ -111,30 +74,5 @@ public sealed class Receive3Playground(ITestOutputHelper output)
     }
 
     Assert.NotEmpty(received.Objects);
-  }
-
-  /// <summary>Accepts <c>{server}/projects/{p}/models/{m}</c> with optional <c>@{versionId}</c> on the model id.</summary>
-  private static (Uri Server, string ProjectId, string ModelId, string? VersionId) ParseModelUrl(string url)
-  {
-    var uri = new Uri(url);
-    string[] segments = uri.AbsolutePath.Trim('/').Split('/');
-    int p = Array.IndexOf(segments, "projects");
-    int m = Array.IndexOf(segments, "models");
-    if (p < 0 || m < 0 || p + 1 >= segments.Length || m + 1 >= segments.Length)
-    {
-      throw new ArgumentException(
-        $"Not a model url: {url}. Expected .../projects/{{projectId}}/models/{{modelId}}[@versionId]"
-      );
-    }
-
-    string modelPart = segments[m + 1];
-    string? versionId = null;
-    int at = modelPart.IndexOf('@');
-    if (at >= 0)
-    {
-      versionId = modelPart[(at + 1)..];
-      modelPart = modelPart[..at];
-    }
-    return (new Uri(uri.GetLeftPart(UriPartial.Authority)), segments[p + 1], modelPart, versionId);
   }
 }
