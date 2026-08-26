@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
@@ -38,6 +39,7 @@ public sealed class BundleBuilder : IDisposable
   private readonly Dictionary<string, BundleMaterial> _materials = new(StringComparer.Ordinal);
   private readonly Dictionary<int, BundleColor> _colors = new();
   private readonly Dictionary<string, BundleLevel> _levels = new(StringComparer.Ordinal);
+  private readonly Dictionary<string, BundleGeometry> _geometries = new(StringComparer.Ordinal);
   private readonly List<SceneView> _sceneViews = new();
   private bool _built;
   private bool _disposed;
@@ -112,8 +114,10 @@ public sealed class BundleBuilder : IDisposable
   // ── objects ───────────────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>
-  /// Adds an object (the property carrier a host element becomes) and writes its properties. Interns on
-  /// <paramref name="applicationId"/>: a repeat returns the existing handle and writes nothing.
+  /// Gets or adds an object (the property carrier a host element becomes) and writes its properties. Interns on
+  /// <paramref name="applicationId"/>. An object may be referenced before it is described — <c>GetOrAddObject(id, null, null)</c>
+  /// yields a handle to point edges at (a joint a frame connects to, a group member) and a later call carrying
+  /// properties fills it in; properties can be written once.
   /// </summary>
   /// <param name="collection">Where it sits in the authored scene tree (<c>IN_COLLECTION</c>); null for objects that
   /// are grouped some other way (Revit: model + level + property tiers).</param>
@@ -137,31 +141,64 @@ public sealed class BundleBuilder : IDisposable
     IEnumerable<KeyValuePair<string, object?>>? rootScalars = null
   )
   {
-    if (_objects.TryGetValue(applicationId, out var existing))
-    {
-      return existing;
-    }
-    int k = Pipeline.InternObject(applicationId);
-    var scalars = new List<KeyValuePair<string, object?>>
-    {
-      new("speckle_type", speckleType),
-      new("name", name),
-      new("units", units ?? Units),
-      new("type", sourceType),
-    };
-    if (rootScalars is not null)
-    {
-      scalars.AddRange(rootScalars);
-    }
-    Pipeline.AddProperties(applicationId, properties ?? s_noProperties, scalars, typeKey);
+    bool describes =
+      properties is not null
+      || name is not null
+      || speckleType is not null
+      || sourceType is not null
+      || units is not null
+      || typeKey is not null
+      || rootScalars is not null;
 
-    var obj = new BundleObject(this, k, applicationId, name);
-    _objects[applicationId] = obj;
+    if (!_objects.TryGetValue(applicationId, out var obj))
+    {
+      obj = new BundleObject(this, Pipeline.InternObject(applicationId), applicationId);
+      _objects[applicationId] = obj;
+    }
+    if (describes)
+    {
+      if (obj.PropertiesWritten)
+      {
+        throw new InvalidOperationException(
+          $"Object '{applicationId}' already has its properties written; they can be written once. "
+            + "Reference an existing object with GetOrAddObject(id, null, null)."
+        );
+      }
+      var scalars = new List<KeyValuePair<string, object?>>
+      {
+        new("speckle_type", speckleType),
+        new("name", name),
+        new("units", units ?? Units),
+        new("type", sourceType),
+      };
+      if (rootScalars is not null)
+      {
+        scalars.AddRange(rootScalars);
+      }
+      Pipeline.AddProperties(applicationId, properties ?? s_noProperties, scalars, typeKey);
+      obj.MarkDescribed(name);
+    }
     if (collection is not null)
     {
       obj.Collection = collection;
     }
     return obj;
+  }
+
+  /// <summary>Object handle by application id, if it has been added.</summary>
+  public bool TryGetObject(string applicationId, [NotNullWhen(true)] out BundleObject? obj) =>
+    _objects.TryGetValue(applicationId, out obj);
+
+  /// <summary>Geometry handle by the key it was added under (explicit <c>geometryKey</c>, or the generated
+  /// <c>{applicationId}:g{n}</c>), for post-loop edges that reference meshes by key — e.g. a definition that shares a
+  /// mesh already written for an object.</summary>
+  public bool TryGetGeometry(string geometryKey, [NotNullWhen(true)] out BundleGeometry? geometry) =>
+    _geometries.TryGetValue(geometryKey, out geometry);
+
+  internal BundleGeometry RegisterGeometry(string key, BundleGeometry geometry)
+  {
+    _geometries[key] = geometry;
+    return geometry;
   }
 
   private static readonly IReadOnlyDictionary<string, object?> s_noProperties = new Dictionary<string, object?>();
