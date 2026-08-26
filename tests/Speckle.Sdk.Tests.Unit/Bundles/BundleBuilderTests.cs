@@ -46,7 +46,7 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var walls = b.GetOrAddCollection(["Level 1", "Walls"], subtype: "Category");
+      var walls = b.GetOrAddContainerPath(["Level 1", "Walls"], subtype: "Category");
       var wall = b.GetOrAddObject(
         "wall-1",
         walls,
@@ -89,7 +89,7 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var layer = b.GetOrAddCollection(["Layer 1"], "Layer");
+      var layer = b.GetOrAddContainerPath(["Layer 1"], "Layer");
       var concrete = b.GetOrAddMaterial("mat-1", "Concrete", unchecked((int)0xFF808080), roughness: 0.8);
       var red = b.GetOrAddColor(unchecked((int)0xFFFF0000));
       var l1 = b.GetOrAddLevel("L1", "Level 1", 3.0);
@@ -143,7 +143,7 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var layer = b.GetOrAddCollection(["Blocks"], "Layer");
+      var layer = b.GetOrAddContainerPath(["Blocks"], "Layer");
       var chairDef = b.GetOrAddDefinition(
         "def-chair",
         "Chair",
@@ -232,7 +232,7 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var layer = b.GetOrAddCollection(["L"]);
+      var layer = b.GetOrAddContainerPath(["L"]);
       // a frame connects to a joint that is only described later (CSi pattern)
       var frame = b.GetOrAddObject("frame-1", layer, null, name: "Frame");
       var joint = b.GetOrAddObject("joint-1", null, null); // reference only
@@ -264,7 +264,7 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var layer = b.GetOrAddCollection(["L"]);
+      var layer = b.GetOrAddContainerPath(["L"]);
       var assembly = b.GetOrAddObject("asm", layer, null, name: "Assembly");
       var c2 = b.GetOrAddObject("c2", layer, null, name: "C2");
       var c0 = b.GetOrAddObject("c0", layer, null, name: "C0");
@@ -285,7 +285,7 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var layer = b.GetOrAddCollection(["Blocks"], "Layer");
+      var layer = b.GetOrAddContainerPath(["Blocks"], "Layer");
       var steel = b.GetOrAddMaterial("steel", "Steel", unchecked((int)0xFF9999AA));
 
       // Rhino-shaped: the block's contents are objects with their own layer + properties + geometry
@@ -331,7 +331,7 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var layer = b.GetOrAddCollection(["L"]);
+      var layer = b.GetOrAddContainerPath(["L"]);
       // Revit-shaped: an element's mesh is written under the element; the family symbol references the same blob
       var element = b.GetOrAddObject("el-1", layer, null, name: "Element");
       element.AddGeometry(Tri(), geometryKey: "mesh-A");
@@ -353,7 +353,7 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var leaf = b.GetOrAddCollection(["Tree", "{0;1}"], "Collection", ghTopology: "{0;1}");
+      var leaf = b.GetOrAddContainerPath(["Tree", "{0;1}"], "Collection", ghTopology: "{0;1}");
       b.GetOrAddObject("o", leaf, null);
     });
 
@@ -381,8 +381,8 @@ public sealed class BundleBuilderTests : IDisposable
   public void Relation_CannotBeRetracted()
   {
     using var b = new BundleBuilder(s_app, "m", _dir);
-    var a = b.GetOrAddCollection(["A"]);
-    var c = b.GetOrAddCollection(["C"]);
+    var a = b.GetOrAddContainerPath(["A"]);
+    var c = b.GetOrAddContainerPath(["C"]);
     var o = b.GetOrAddObject("o", a, null);
     Assert.Throws<InvalidOperationException>(() => o.Collection = c);
     o.Collection = a; // idempotent
