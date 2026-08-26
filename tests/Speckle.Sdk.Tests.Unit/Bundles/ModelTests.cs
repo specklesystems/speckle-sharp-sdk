@@ -369,7 +369,8 @@ public sealed class ModelTests : IDisposable
     using var model = await BuildModel();
     var wall = model.ObjectByApplicationId("wall-1")!;
 
-    Assert.Empty(model.Bundle.Properties); // nothing nested was built
+    Assert.Throws<InvalidOperationException>(() => model.Bundle.Properties); // nested access fails loud in columnar mode
+    Assert.Throws<InvalidOperationException>(() => model.Bundle.TypePropertiesByObject);
     Assert.NotNull(model.Bundle.PropertyTable);
     Assert.Equal(0.5, wall.GetDouble("Constraints.Base Offset"));
     Assert.Equal("W-01", wall.GetString("Identity Data.Mark"));

@@ -269,6 +269,17 @@ public readonly struct PropertyView : IReadOnlyDictionary<string, object?>
 
   public static PropertyView Empty => new(PropertyTable.Empty, 0, 0, null);
 
+  /// <summary>
+  /// The subtree under a dotted <paramref name="prefix"/> as a view with the prefix stripped from keys — the same rows,
+  /// shorter keys, no allocation. Composes: <c>view.Under("Parameters").Under("Dimensions")</c>. A prefix that is
+  /// itself a leaf, or matches nothing, yields an empty view.
+  /// </summary>
+  public PropertyView Under(string prefix) =>
+    prefix.Length == 0 ? this : new PropertyView(_table, _start, _count, (_prefix ?? "") + prefix + ".");
+
+  /// <summary>The prefix this view is scoped to (without the trailing dot), or null for the full row range.</summary>
+  public string? Prefix => _prefix is null ? null : _prefix.Substring(0, _prefix.Length - 1);
+
   private int Row(string key) => _table.FindRow(_start, _count, _table.PathId(_prefix is null ? key : _prefix + key));
 
   private bool Included(int row, out string key)

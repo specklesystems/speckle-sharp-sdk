@@ -54,8 +54,7 @@ public sealed class ModelObject
 
   /// <summary>Type-level properties (family/type/definition parameters) resolved for this object, flat and path-keyed.
   /// Empty when the producer wrote no type tables.</summary>
-  public IReadOnlyDictionary<string, object?> TypeProperties =>
-    TypeK >= 0 ? _model.TypeProperties_.Under(TypeK, PROPERTIES_ROOT) : PropertyView.Empty;
+  public IReadOnlyDictionary<string, object?> TypeProperties => _model.Bundle.TypeProperties(K).Under(PROPERTIES_ROOT);
 
   /// <summary>Property lookup by dotted path. Instance properties win over type properties, then root scalars; null when absent.</summary>
   public object? this[string path] =>

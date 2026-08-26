@@ -80,6 +80,42 @@ public sealed class PropertyTableTests : IDisposable
     Assert.Throws<KeyNotFoundException>(() => under["nope"]);
   }
 
+  [Fact]
+  public async Task Under_ComposesAndStripsPrefix()
+  {
+    WriteBundle();
+    var bundle = await ArtefactBundleReader.ReadAsync(_dir, ArtefactReadOptions.Columnar, CancellationToken.None);
+    var all = bundle.PropertyTable![2];
+
+    var props = all.Under("properties");
+    Assert.Equal("properties", props.Prefix);
+    var a = props.Under("A");
+    Assert.Equal("properties.A", a.Prefix);
+    Assert.Equal(["flag", "x"], a.Keys.OrderBy(k => k, StringComparer.Ordinal));
+    Assert.Equal(2.0, a.GetDouble("x"));
+    Assert.True(a.GetBool("flag"));
+    Assert.Equal(2, a.Count);
+
+    Assert.Empty(props.Under("label")); // a leaf, not a subtree
+    Assert.Empty(props.Under("nope"));
+    Assert.False(a.ContainsKey("label"));
+  }
+
+  [Fact]
+  public async Task Columnar_NestedAccessorsThrow_EagerUnaffected()
+  {
+    WriteBundle();
+    var columnar = await ArtefactBundleReader.ReadAsync(_dir, ArtefactReadOptions.Columnar, CancellationToken.None);
+    var ex = Assert.Throws<InvalidOperationException>(() => columnar.Properties);
+    Assert.Contains("PropertyTable", ex.Message, StringComparison.Ordinal);
+    Assert.Throws<InvalidOperationException>(() => columnar.TypePropertiesByObject);
+    Assert.Empty(columnar.TypeProperties(0)); // no type tables in this bundle → empty view, not a throw
+
+    var eager = await ArtefactBundleReader.ReadAsync(_dir, ArtefactReadOptions.Eager, CancellationToken.None);
+    Assert.Equal(5, eager.Properties.Count);
+    Assert.Null(eager.PropertyTable);
+  }
+
   private static SortedDictionary<string, string?> Flatten(Dictionary<string, object?> nested)
   {
     var flat = new SortedDictionary<string, string?>(StringComparer.Ordinal);

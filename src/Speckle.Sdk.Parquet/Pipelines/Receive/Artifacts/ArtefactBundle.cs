@@ -269,7 +269,31 @@ public sealed class ArtefactBundle
 
   public required Dictionary<int, ArtefactGeometry> Geometries { get; init; }
   public required Dictionary<int, string> ObjectAppIds { get; init; }
-  public required Dictionary<int, Dictionary<string, object?>> Properties { get; init; }
+  private readonly Dictionary<int, Dictionary<string, object?>> _properties = new();
+  private readonly IReadOnlyDictionary<int, Dictionary<string, object?>> _typePropertiesByObject =
+    new Dictionary<int, Dictionary<string, object?>>();
+
+  /// <summary>Instance properties as nested dictionaries (eager profile). In the columnar profile this throws —
+  /// read <see cref="PropertyTable"/> instead — so a consumer that wasn't migrated fails loud rather than baking
+  /// objects with no properties.</summary>
+  /// <exception cref="InvalidOperationException">The bundle was read with <see cref="ArtefactReadOptions.ColumnarProperties"/>.</exception>
+  public required Dictionary<int, Dictionary<string, object?>> Properties
+  {
+    get => PropertyTable is null ? _properties : throw ColumnarOnly(nameof(Properties), nameof(PropertyTable));
+    init => _properties = value;
+  }
+
+  /// <summary>Type properties for a given object in the columnar profile: the shared per-type row range, as a view
+  /// (<c>properties.</c> root included). Empty when the object has no type or the bundle no type tables.</summary>
+  public PropertyView TypeProperties(int objectK) =>
+    TypePropertyTable is { } t && TypeIndexByObject.TryGetValue(objectK, out int typeK) ? t[typeK] : PropertyView.Empty;
+
+  private static InvalidOperationException ColumnarOnly(string member, string instead) =>
+    new(
+      $"ArtefactBundle.{member} is not populated for a bundle read with ArtefactReadOptions.ColumnarProperties; "
+        + $"read {instead} (PropertyView / GetString / GetDouble / Under) instead."
+    );
+
   public required Dictionary<int, ArtefactNode> Nodes { get; init; }
   public required ArtefactRelations Relations { get; init; }
   public required string Units { get; init; }
@@ -298,8 +322,14 @@ public sealed class ArtefactBundle
   /// type via <c>eav.object_type</c> [ENG-9136]. Every object of the same type shares the SAME dictionary
   /// instance, so a model with many instances of few types parses each type's properties once, not per instance.
   /// Empty when the bundle ships no type tables (non-Revit sources, or bundles written before type splitting).</summary>
-  public IReadOnlyDictionary<int, Dictionary<string, object?>> TypePropertiesByObject { get; init; } =
-    new Dictionary<int, Dictionary<string, object?>>();
+  public IReadOnlyDictionary<int, Dictionary<string, object?>> TypePropertiesByObject
+  {
+    get =>
+      PropertyTable is null
+        ? _typePropertiesByObject
+        : throw ColumnarOnly(nameof(TypePropertiesByObject), nameof(TypeProperties) + "(objectK)");
+    init => _typePropertiesByObject = value;
+  }
 }
 
 /// <summary>Reads the parquet files of an artefact bundle directory into a neutral <see cref="ArtefactBundle"/>.</summary>
