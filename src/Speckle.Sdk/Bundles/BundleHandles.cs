@@ -309,7 +309,8 @@ public sealed class BundleObject
 {
   private readonly BundleBuilder _builder;
   private readonly List<BundleGeometry> _geometries = new();
-  private int _ord;
+  private int _displayOrd;
+  private int _solidOrd;
   private int _placementOrd;
   private BundleContainer? _collection;
   private BundleContainer? _model;
@@ -375,10 +376,11 @@ public sealed class BundleObject
 
   // ── geometry ──────────────────────────────────────────────────────────────────────────────────────────
 
-  /// <summary>Render geometry (<c>DISPLAY</c>), SGEO-encoded now. Ordinal = call order.</summary>
+  /// <summary>Render geometry (<c>DISPLAY</c>), SGEO-encoded now. Ordinal = call order, counted per relation:
+  /// an object's first display mesh is ord 0 whether or not a solid preceded it.</summary>
   public BundleGeometry AddGeometry(Base geometry, string? geometryKey = null)
   {
-    int ord = _ord++;
+    int ord = _displayOrd++;
     string key = geometryKey ?? $"{ApplicationId}:g{ord}";
     int gK = _builder.Pipeline.AddGeometry(key, geometry);
     _builder.Pipeline.Display(K, gK, ord);
@@ -391,7 +393,7 @@ public sealed class BundleObject
   /// host that can import them bakes the real solid instead of the display mesh.</summary>
   public BundleGeometry AddRawGeometry(byte[] content, string type, string? geometryKey = null)
   {
-    int ord = _ord++;
+    int ord = _solidOrd++;
     string key = geometryKey ?? $"{ApplicationId}:raw{ord}";
     int gK = _builder.Pipeline.AddRawGeometry(key, content, type);
     _builder.Pipeline.Solid(K, gK, ord);

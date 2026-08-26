@@ -42,6 +42,23 @@ public sealed class BundleBuilderTests : IDisposable
   }
 
   [Fact]
+  public void Solid_And_Display_Ordinals_Count_Per_Relation()
+  {
+    // What the pre-BundleBuilder Rhino pipeline wrote: an object's solid is SOLID ord 0 and its first display mesh is
+    // DISPLAY ord 0 — the two relations never share a counter.
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    var o = b.GetOrAddObject("pipe-1");
+    o.SetProperties(new Dictionary<string, object?>(), "pipe");
+    var solid = o.AddRawGeometry([1, 2, 3], "3dm");
+    var display = o.AddGeometry(Tri());
+    var display2 = o.AddGeometry(Tri(1));
+
+    Assert.Equal(0, solid.Ord);
+    Assert.Equal(0, display.Ord);
+    Assert.Equal(1, display2.Ord);
+  }
+
+  [Fact]
   public async Task Objects_Properties_Collections_RoundTrip()
   {
     using var model = await BuildAndRead(b =>
