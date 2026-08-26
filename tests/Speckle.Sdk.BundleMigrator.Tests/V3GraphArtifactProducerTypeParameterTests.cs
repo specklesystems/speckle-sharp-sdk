@@ -246,4 +246,30 @@ public class V3GraphArtifactProducerTypeParameterTests
       }
     }
   }
+
+  [Fact]
+  public async Task NullProperties_MigratesRootScalarsOnly()
+  {
+    var dir = TempDir();
+    try
+    {
+      var obj = RevitObject("n1", "Basic Wall", "Generic - 200mm");
+      obj.properties = null!; // v3 payloads can carry `"properties": null`
+
+      var stats = Migrate(Root(obj), dir);
+      var bundle = await ArtefactBundleReader.ReadAsync(dir, default);
+
+      stats.Objects.Should().Be(1);
+      var props = bundle.Properties[ObjIdx(bundle, "n1")];
+      props["family"].Should().Be("Basic Wall");
+      props.Should().NotContainKey("properties");
+    }
+    finally
+    {
+      if (Directory.Exists(dir))
+      {
+        Directory.Delete(dir, true);
+      }
+    }
+  }
 }

@@ -77,8 +77,9 @@ internal sealed class ArtifactHelper
     string? typeKey
   ) ExtractProperties(Base obj, string linkedModelSuffix = "")
   {
+    // `properties` is non-nullable on DataObject, but v3 payloads with `"properties": null` deserialize to null.
     IReadOnlyDictionary<string, object?> props = obj is DataObject dobj
-      ? dobj.properties
+      ? (IReadOnlyDictionary<string, object?>?)dobj.properties ?? s_emptyProperties
       : obj.GetMembers(DynamicBaseMemberType.Instance | DynamicBaseMemberType.Dynamic);
 
     // `level` is the level NAME and lives at the top level (not under properties), so it must be listed here.
@@ -95,6 +96,8 @@ internal sealed class ArtifactHelper
 
     return (props, rootScalars, DeriveTypeKey(obj, linkedModelSuffix));
   }
+
+  private static readonly IReadOnlyDictionary<string, object?> s_emptyProperties = new Dictionary<string, object?>();
 
   // v3 Revit ships no type id; the only universal discriminator is the display triple at the object root,
   // document-scoped by the linked-placement suffix. "none" is v3's no-type sentinel — those stay inline in eav.
