@@ -78,7 +78,12 @@ public sealed class BundleBuilder : IDisposable
   /// parent-linked. Each segment is keyed by its full path, so two branches sharing a name stay distinct.</summary>
   /// <param name="subtype">Tag for the leaf (and any newly created ancestors): <c>"Layer"</c>, <c>"Category"</c>,
   /// <c>"Collection"</c> …</param>
-  public BundleCollection GetOrAddCollection(IReadOnlyList<string> path, string subtype = "Collection")
+  /// <param name="ghTopology">Grasshopper data-tree topology for the leaf (<c>nodes.gh_topology</c>); null otherwise.</param>
+  public BundleCollection GetOrAddCollection(
+    IReadOnlyList<string> path,
+    string subtype = "Collection",
+    string? ghTopology = null
+  )
   {
     if (path.Count == 0)
     {
@@ -89,14 +94,21 @@ public sealed class BundleBuilder : IDisposable
     foreach (var segment in path)
     {
       key = key.Length == 0 ? segment : key + "/" + segment;
-      parent = GetOrAddContainer(key, segment, parent, subtype);
+      bool leaf = ReferenceEquals(segment, path[path.Count - 1]);
+      parent = GetOrAddContainer(key, segment, parent, subtype, leaf ? ghTopology : null);
     }
     return parent!;
   }
 
   /// <summary>Gets or creates one CONTAINER by explicit key — for containers that aren't a name path: a federated
   /// <c>Model</c>, a <c>Group</c>, an MEP <c>System</c>/<c>Network</c>.</summary>
-  public BundleCollection GetOrAddContainer(string key, string? name, BundleCollection? parent, string subtype)
+  public BundleCollection GetOrAddContainer(
+    string key,
+    string? name,
+    BundleCollection? parent,
+    string subtype,
+    string? ghTopology = null
+  )
   {
     if (_collections.TryGetValue(key, out var existing))
     {
@@ -105,7 +117,7 @@ public sealed class BundleBuilder : IDisposable
       Same(key, existing.Parent?.Key, parent?.Key, "parent");
       return existing;
     }
-    int k = Pipeline.AddContainer(key, name, parent?.K, subtype);
+    int k = Pipeline.AddCollection(key, name, parent?.K, subtype, ghTopology);
     var c = new BundleCollection(this, k, key, name, subtype, parent);
     _collections[key] = c;
     return c;
