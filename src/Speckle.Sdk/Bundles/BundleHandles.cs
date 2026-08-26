@@ -166,20 +166,77 @@ public sealed class BundleDefinition : BundleNode
     return new BundleInstance(Builder, instK, definition);
   }
 
-  /// <summary>Declares <paramref name="member"/> an authored member of this definition (<c>DEFINES_MEMBER</c>, ordinal
-  /// shared with the member's geometry); a nested-block member also gets <c>PLACES</c> to its placement.</summary>
-  public void AddMember(BundleObject member, int? memberOrd = null, BundleInstance? placement = null)
+  /// <summary>
+  /// An authored member of this definition that owns its own geometry (Rhino / AutoCAD block contents): the member's
+  /// object row carries its layer and properties, its geometry renders ONLY through placements of this definition —
+  /// so it gets <c>DEFINES</c> + <c>DEFINES_MEMBER</c> on one member ordinal and no <c>DISPLAY</c> edge of its own.
+  /// Returns the geometry handles (set <see cref="BundleGeometry.Material"/> on them as usual).
+  /// </summary>
+  public IReadOnlyList<BundleGeometry> AddMember(BundleObject member, IEnumerable<Base> geometry, int? memberOrd = null)
   {
-    Builder.Pipeline.DefinesMember(K, member.K, memberOrd ?? _memberOrd++);
-    if (placement is not null)
+    int ord = memberOrd ?? NextMemberOrdinal();
+    Builder.Pipeline.DefinesMember(K, member.K, ord);
+    var handles = new List<BundleGeometry>();
+    int i = 0;
+    foreach (var g in geometry)
     {
-      Builder.Pipeline.Places(member.K, placement.K);
+      string key = $"{member.ApplicationId}:g{i++}";
+      int gK = Builder.Pipeline.AddGeometry(key, g);
+      Builder.Pipeline.Defines(K, gK, ord);
+      handles.Add(Builder.RegisterGeometry(key, new BundleGeometry(Builder, gK, ord)));
     }
+    Bump(ord);
+    return handles;
   }
 
-  /// <summary>Next member ordinal — hand it to both <see cref="AddGeometry"/> and <see cref="AddMember"/> so a member's
-  /// geometry and its object row join on the same ordinal.</summary>
+  /// <summary>A member's raw host geometry (a 3dm solid) alongside its display meshes — same member ordinal, so a
+  /// receiver can pick the solid over its shadow. Call after <see cref="AddMember(BundleObject, IEnumerable{Base}, int?)"/>
+  /// with the ordinal it returned via <see cref="BundleGeometry.Ord"/>.</summary>
+  public BundleGeometry AddMemberRawGeometry(BundleObject member, byte[] content, string type, int memberOrd)
+  {
+    string key = $"{member.ApplicationId}:raw{memberOrd}";
+    int gK = Builder.Pipeline.AddRawGeometry(key, content, type);
+    Builder.Pipeline.Defines(K, gK, memberOrd);
+    return Builder.RegisterGeometry(key, new BundleGeometry(Builder, gK, memberOrd));
+  }
+
+  /// <summary>A member that is itself a placement of another definition (a block inside a block): <c>INSTANCE</c> +
+  /// <c>DEFINES_INSTANCE</c> + <c>DEFINES_MEMBER</c> + <c>PLACES</c> (member → its placement), no <c>DISPLAY_INSTANCE</c>.</summary>
+  public BundleInstance AddMemberPlacement(
+    BundleObject member,
+    BundleDefinition nested,
+    IReadOnlyList<double> transform,
+    string? units = null,
+    int? memberOrd = null
+  )
+  {
+    int ord = memberOrd ?? NextMemberOrdinal();
+    int instK = Builder.Pipeline.AddInstance(member.ApplicationId, nested.K, transform, units ?? Builder.Units);
+    Builder.Pipeline.DefinesInstance(K, instK, ord);
+    Builder.Pipeline.DefinesMember(K, member.K, ord);
+    Builder.Pipeline.Places(member.K, instK);
+    Bump(ord);
+    return new BundleInstance(Builder, instK, nested);
+  }
+
+  /// <summary>References geometry already written elsewhere (Revit: a family's mesh added under an element, shared by
+  /// the symbol) as this definition's geometry (<c>DEFINES</c>), without re-encoding.</summary>
+  public void AddExistingGeometry(BundleGeometry geometry, int? memberOrd = null)
+  {
+    int ord = memberOrd ?? NextMemberOrdinal();
+    Builder.Pipeline.Defines(K, geometry.K, ord);
+    Bump(ord);
+  }
+
+  /// <summary>The next unused member ordinal. The (definition, ordinal) pair joins a member's object row to its
+  /// geometry, which is what survives content-hash geometry dedup.</summary>
   public int NextMemberOrdinal() => Math.Max(_geometryOrd, _memberOrd);
+
+  private void Bump(int ord)
+  {
+    _memberOrd = Math.Max(_memberOrd, ord + 1);
+    _geometryOrd = Math.Max(_geometryOrd, ord + 1);
+  }
 }
 
 /// <summary>An INSTANCE node: one placement of a <see cref="BundleDefinition"/>.</summary>
@@ -262,19 +319,27 @@ public sealed class BundleObject
   private BundleObject? _host;
   private BundleObject? _room;
 
-  internal BundleObject(BundleBuilder builder, int k, string applicationId, string? name)
+  internal BundleObject(BundleBuilder builder, int k, string applicationId)
   {
     _builder = builder;
     K = k;
     ApplicationId = applicationId;
-    Name = name;
   }
 
   /// <summary>Dense object index inside this bundle.</summary>
   public int K { get; }
 
   public string ApplicationId { get; }
-  public string? Name { get; }
+  public string? Name { get; private set; }
+
+  /// <summary>Whether properties (and root scalars) have been written for this object.</summary>
+  public bool PropertiesWritten { get; private set; }
+
+  internal void MarkDescribed(string? name)
+  {
+    PropertiesWritten = true;
+    Name = name;
+  }
 
   public IReadOnlyList<BundleGeometry> Geometries => _geometries;
 
@@ -284,9 +349,10 @@ public sealed class BundleObject
   public BundleGeometry AddGeometry(Base geometry, string? geometryKey = null)
   {
     int ord = _ord++;
-    int gK = _builder.Pipeline.AddGeometry(geometryKey ?? $"{ApplicationId}:g{ord}", geometry);
+    string key = geometryKey ?? $"{ApplicationId}:g{ord}";
+    int gK = _builder.Pipeline.AddGeometry(key, geometry);
     _builder.Pipeline.Display(K, gK, ord);
-    var g = new BundleGeometry(_builder, gK, ord);
+    var g = _builder.RegisterGeometry(key, new BundleGeometry(_builder, gK, ord));
     _geometries.Add(g);
     return g;
   }
@@ -296,9 +362,10 @@ public sealed class BundleObject
   public BundleGeometry AddRawGeometry(byte[] content, string type, string? geometryKey = null)
   {
     int ord = _ord++;
-    int gK = _builder.Pipeline.AddRawGeometry(geometryKey ?? $"{ApplicationId}:raw{ord}", content, type);
+    string key = geometryKey ?? $"{ApplicationId}:raw{ord}";
+    int gK = _builder.Pipeline.AddRawGeometry(key, content, type);
     _builder.Pipeline.Solid(K, gK, ord);
-    var g = new BundleGeometry(_builder, gK, ord);
+    var g = _builder.RegisterGeometry(key, new BundleGeometry(_builder, gK, ord));
     _geometries.Add(g);
     return g;
   }
@@ -372,14 +439,41 @@ public sealed class BundleObject
 
   // ── object → object ───────────────────────────────────────────────────────────────────────────────────
 
-  /// <summary>Owning element (<c>SUBELEMENT</c>): this object is a component of <c>Parent</c>.</summary>
+  /// <summary>Owning element (<c>SUBELEMENT</c>): this object is a component of <c>Parent</c>. Sugar for
+  /// <c>value.AddChild(this)</c> with the next child ordinal.</summary>
   public BundleObject? Parent
   {
     get => _parent;
-    set => Set(ref _parent, value, k => _builder.Pipeline.Subelement(k, K, value!._childOrd++));
+    set
+    {
+      if (value is not null && !ReferenceEquals(_parent, value))
+      {
+        value.AddChild(this);
+      }
+    }
   }
 
   private int _childOrd;
+
+  /// <summary>Declares <paramref name="child"/> a component of this object (<c>SUBELEMENT</c>). <paramref name="ord"/>
+  /// is the child's position; null = next.</summary>
+  public void AddChild(BundleObject child, int? ord = null)
+  {
+    if (child._parent is not null)
+    {
+      if (ReferenceEquals(child._parent, this))
+      {
+        return;
+      }
+      throw new InvalidOperationException(
+        $"Object '{child.ApplicationId}' already has parent '{child._parent.ApplicationId}'; a bundle edge cannot be retracted."
+      );
+    }
+    int o = ord ?? _childOrd;
+    _childOrd = Math.Max(_childOrd, o + 1);
+    child._parent = this;
+    _builder.Pipeline.Subelement(K, child.K, o);
+  }
 
   /// <summary>Host (<c>HOSTED_ON</c>): the wall a door is placed on. Not ownership.</summary>
   public BundleObject? Host

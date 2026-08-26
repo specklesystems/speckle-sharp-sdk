@@ -159,15 +159,13 @@ public sealed class BundleBuilderTests : IDisposable
 
       // a Rhino-style member object with its own properties, joined to the definition geometry by ordinal
       var tableDef = b.GetOrAddDefinition("def-table", "Table");
-      int ord = tableDef.NextMemberOrdinal();
-      tableDef.AddGeometry(Tri(5), memberOrd: ord);
       var top = b.GetOrAddObject(
         "table-top",
         layer,
         new Dictionary<string, object?> { ["material"] = "oak" },
         name: "Top"
       );
-      tableDef.AddMember(top, ord);
+      tableDef.AddMember(top, [Tri(5)]);
       b.GetOrAddObject("table-1", layer, null, name: "Table 1").Place(tableDef, t);
     });
 
@@ -227,6 +225,127 @@ public sealed class BundleBuilderTests : IDisposable
     Assert.Equal(42.0, model.Properties["projectInformation.number"]);
     Assert.Equal("Front", Assert.Single(model.CameraViews).Name);
     Assert.Contains(model.Files, f => f.EndsWith(".eav.structural_results.parquet", StringComparison.Ordinal));
+  }
+
+  [Fact]
+  public async Task ForwardReference_ThenDescribe_WritesOnce()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddCollection(["L"]);
+      // a frame connects to a joint that is only described later (CSi pattern)
+      var frame = b.GetOrAddObject("frame-1", layer, null, name: "Frame");
+      var joint = b.GetOrAddObject("joint-1", null, null); // reference only
+      frame.ConnectTo(joint);
+      Assert.False(joint.PropertiesWritten);
+
+      var described = b.GetOrAddObject(
+        "joint-1",
+        layer,
+        new Dictionary<string, object?> { ["z"] = 3.0 },
+        name: "Joint 1"
+      );
+      Assert.Same(joint, described);
+      Assert.True(joint.PropertiesWritten);
+      Assert.Equal("Joint 1", joint.Name);
+      Assert.Throws<InvalidOperationException>(() => b.GetOrAddObject("joint-1", null, null, name: "again"));
+      Assert.Same(joint, b.GetOrAddObject("joint-1", null, null)); // bare reference still fine
+    });
+
+    var joint = model.ObjectByApplicationId("joint-1")!;
+    Assert.Equal("Joint 1", joint.Name);
+    Assert.Equal(3.0, joint.GetDouble("z"));
+    Assert.Equal(["L"], joint.CollectionPath);
+    Assert.Equal([joint], model.ObjectByApplicationId("frame-1")!.ConnectedTo);
+  }
+
+  [Fact]
+  public async Task Children_ExplicitOrdinals()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddCollection(["L"]);
+      var assembly = b.GetOrAddObject("asm", layer, null, name: "Assembly");
+      var c2 = b.GetOrAddObject("c2", layer, null, name: "C2");
+      var c0 = b.GetOrAddObject("c0", layer, null, name: "C0");
+      var c1 = b.GetOrAddObject("c1", layer, null, name: "C1");
+      assembly.AddChild(c2, ord: 2);
+      assembly.AddChild(c0, ord: 0);
+      c1.Parent = assembly; // next ordinal after the explicit ones → 3; ordering below is by ordinal
+      Assert.Throws<InvalidOperationException>(() => b.GetOrAddObject("other", layer, null).AddChild(c0));
+    });
+
+    var asm = model.ObjectByApplicationId("asm")!;
+    Assert.Equal(["c0", "c2", "c1"], asm.Children.Select(c => c.ApplicationId));
+    Assert.Same(asm, model.ObjectByApplicationId("c1")!.Parent);
+  }
+
+  [Fact]
+  public async Task Definition_MembersOwnGeometry_RenderOnlyThroughPlacements()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddCollection(["Blocks"], "Layer");
+      var steel = b.GetOrAddMaterial("steel", "Steel", unchecked((int)0xFF9999AA));
+
+      // Rhino-shaped: the block's contents are objects with their own layer + properties + geometry
+      var chairDef = b.GetOrAddDefinition("def-chair", "Chair");
+      var seat = b.GetOrAddObject("seat", layer, new Dictionary<string, object?> { ["part"] = "seat" }, name: "Seat");
+      foreach (var g in chairDef.AddMember(seat, [Tri()]))
+      {
+        g.Material = steel;
+      }
+      var leg = b.GetOrAddObject("leg", layer, new Dictionary<string, object?> { ["part"] = "leg" }, name: "Leg");
+      var legGeometry = chairDef.AddMember(leg, [Tri(1), Tri(2)]);
+      Assert.Equal(legGeometry[0].Ord, legGeometry[1].Ord); // one member, one ordinal, two meshes
+
+      // a block inside the block
+      var boltDef = b.GetOrAddDefinition("def-bolt", "Bolt", d => d.AddGeometry(Tri(9)));
+      var bolt = b.GetOrAddObject("bolt-in-chair", layer, null, name: "Bolt");
+      double[] t = [1, 0, 0, 0.1, 0, 1, 0, 0.2, 0, 0, 1, 0, 0, 0, 0, 1];
+      chairDef.AddMemberPlacement(bolt, boltDef, t);
+
+      double[] place = [1, 0, 0, 10, 0, 1, 0, 20, 0, 0, 1, 0, 0, 0, 0, 1];
+      b.GetOrAddObject("chair-1", layer, null, name: "Chair 1").Place(chairDef, place);
+    });
+
+    var seat = model.ObjectByApplicationId("seat")!;
+    Assert.Empty(seat.Geometries); // no DISPLAY of its own — it renders through the placement
+    Assert.Equal("seat", seat.GetString("part"));
+    Assert.Equal(["Blocks"], seat.CollectionPath);
+
+    var chair = model.ObjectByApplicationId("chair-1")!;
+    var def = chair.Definition!;
+    Assert.Equal(["seat", "leg", "bolt-in-chair"], def.Members.Select(m => m.ApplicationId));
+    Assert.Equal(4, chair.Geometries.Count); // seat + 2 leg + nested bolt, all placed
+    Assert.All(chair.Geometries, g => Assert.NotNull(g.Transform));
+    Assert.Equal("Steel", chair.Geometries[0].Material!.Name);
+
+    var bolt = model.ObjectByApplicationId("bolt-in-chair")!;
+    var placement = Assert.Single(bolt.Placements); // PLACES → its nested INSTANCE
+    Assert.Equal("Bolt", placement.Definition!.Name);
+  }
+
+  [Fact]
+  public async Task Definition_ExistingGeometry_SharedByKey()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddCollection(["L"]);
+      // Revit-shaped: an element's mesh is written under the element; the family symbol references the same blob
+      var element = b.GetOrAddObject("el-1", layer, null, name: "Element");
+      element.AddGeometry(Tri(), geometryKey: "mesh-A");
+      var symbol = b.GetOrAddDefinition("sym", "Symbol");
+      Assert.True(b.TryGetGeometry("mesh-A", out var shared));
+      symbol.AddExistingGeometry(shared);
+      b.GetOrAddObject("inst-1", layer, null).Place(symbol, [1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+      Assert.False(b.TryGetGeometry("nope", out _));
+    });
+
+    var element = model.ObjectByApplicationId("el-1")!;
+    var inst = model.ObjectByApplicationId("inst-1")!;
+    Assert.Equal(element.Geometries[0].K, Assert.Single(inst.Geometries).K); // one blob, two routes
+    Assert.Single(model.Geometries);
   }
 
   [Fact]
