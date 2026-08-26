@@ -37,7 +37,7 @@ Six parquet files (no manifest — see banner):
 |---|---|---|
 | `{base}.envelope.relations.parquet` | `rel:int, src:int, dst:int, ord:int` | typed edges; `src`/`dst` namespace is fixed by `rel` |
 | `{base}.envelope.nodes.parquet`     | `id:int, kind:int, name:string?, def_ref:int?, transform:string?, units:string?, argb:int?, opacity:double?, metalness:double?, roughness:double?, elevation:double?` | shared value-entities |
-| `{base}.envelope.meta.parquet`      | `schema_version:int, produced_by:string` | catalog |
+| `{base}.envelope.meta.parquet`      | `schema_version:string (semver), produced_by, producer_version, sdk_name, sdk_version:string, migrated_from_schema_version:int?` | catalog |
 | `{base}.envelope.rel_types.parquet` | `rel:int, name:string, src_ns:string, dst_ns:string` | catalog: what each `rel` means + its namespaces |
 | `{base}.envelope.node_kinds.parquet`| `kind:int, name:string` | catalog |
 | ~~`{base}.envelope.manifest.sql`~~ | — | *removed — not produced/served* |

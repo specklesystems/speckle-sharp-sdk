@@ -69,7 +69,7 @@ public sealed record CameraView(
 ///         transform, units, subtype, argb, opacity,                CONTAINER discriminator (Model/Collection/…)
 ///         metalness, roughness, emissive, ior, elevation)
 ///   {base}.envelope.{rel_types,node_kinds}.parquet             -- self-describing catalog (SOT §6)
-///   {base}.envelope.meta.parquet(schema_version,               -- catalog + provenance: who produced the
+///   {base}.envelope.meta.parquet(schema_version (semver str), -- catalog + provenance: who produced the
 ///         produced_by, producer_version, sdk_name,                bundle, with which SDK, and when
 ///         sdk_version, migrated_from_schema_version)              migrated, from which graph vintage
 ///   {base}.envelope.scene_views.parquet(view, name,           -- producer-authored grouping projections
@@ -245,7 +245,9 @@ public sealed class EnvelopeWriter : IDisposable
     SafeDispose(_nodes);
   }
 
-  // meta (SOT §6): schema version + producer provenance. Written at Complete() (not eagerly in the ctor) so
+  // meta (SOT §6): schema version + producer provenance. schema_version is the spec's semver STRING (== the
+  // speckle-bundle-spec package version, spec PR #25) — one value names the vocabulary, so readers must treat the
+  // column as text; migrated_from_schema_version stays int (legacy graph vintage). Written at Complete() (not eagerly in the ctor) so
   // producers can record their identity via SetProducer first. The reference-point record does NOT live here —
   // it rides eav.model as referencePoint.* rows (the former meta.reference_point_* columns are removed from the
   // spec; the xyz-only offsets lost rotation and meta is the wrong home for model data).
@@ -254,7 +256,7 @@ public sealed class EnvelopeWriter : IDisposable
     using var meta = new ParquetTableWriter(
       P("meta.parquet"),
       new ParquetSchema(
-        I("schema_version"),
+        S("schema_version"),
         S("produced_by"),
         S("producer_version"),
         S("sdk_name"),
