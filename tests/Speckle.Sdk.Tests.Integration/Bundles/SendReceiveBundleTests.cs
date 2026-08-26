@@ -50,10 +50,10 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
     SendResult sent;
     using (var b = new BundleBuilder(s_app, "m"))
     {
-      var walls = b.Collection(["Level 1", "Walls"], subtype: "Category");
-      var concrete = b.Material("mat-concrete", "Concrete", unchecked((int)0xFF808080), roughness: 0.8);
-      var l1 = b.Level("L1", "Level 1", 0);
-      var wall = b.Object(
+      var walls = b.GetOrAddCollection(["Level 1", "Walls"], subtype: "Category");
+      var concrete = b.GetOrAddMaterial("mat-concrete", "Concrete", unchecked((int)0xFF808080), roughness: 0.8);
+      var l1 = b.GetOrAddLevel("L1", "Level 1", 0);
+      var wall = b.GetOrAddObject(
         "wall-1",
         walls,
         new Dictionary<string, object?>
@@ -74,7 +74,7 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
         }
       ).Material = concrete;
       wall.Level = l1;
-      var door = b.Object("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
+      var door = b.GetOrAddObject("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
       door.Host = wall;
       door.Parent = wall;
       b.ModelProperty("projectInformation.number", 42.0);

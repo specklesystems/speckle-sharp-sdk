@@ -72,15 +72,16 @@ public sealed record ArtefactNode(
   string? Subtype = null
 );
 
-/// <summary>A relation edge in the envelope graph (<c>rel</c> = <see cref="RelKind"/>, <c>src</c>/<c>dst</c> dense ints).</summary>
-public readonly record struct ArtefactEdge(int Src, int Dst, int Ord);
+/// <summary>One row of <c>envelope.relations</c>: (src, dst, ord) for a rel the reader has already grouped by — the
+/// collection you hold it in tells you which rel. Ks are dense ints in the rel's src/dst namespaces.</summary>
+public readonly record struct RelationRow(int Src, int Dst, int Ord);
 
 /// <summary>Envelope relations grouped by kind for direct lookup. The three dense-int namespaces are object
 /// (<c>eav.object_index</c>), geometry (<c>geometryIndex</c>) and node (<c>nodes.id</c>); each relation maps between
 /// two of them (e.g. DISPLAY src=object dst=geometry; IN_COLLECTION src=object dst=node).</summary>
 public sealed class ArtefactRelations
 {
-  public List<ArtefactEdge> Display { get; } = new();
+  public List<RelationRow> Display { get; } = new();
   public Dictionary<int, List<int>> SolidByObject { get; } = new();
   public Dictionary<int, int> CollectionByObject { get; } = new();
 
@@ -90,22 +91,22 @@ public sealed class ArtefactRelations
   public Dictionary<int, List<int>> GroupsByObject { get; } = new();
 
   /// <summary>SUBELEMENT (3): parent object → child object edges (ownership; ord = child order).</summary>
-  public List<ArtefactEdge> Subelement { get; } = new();
+  public List<RelationRow> Subelement { get; } = new();
 
   /// <summary>HOSTED_ON (22): hosted object → host object edges (a door placed on a wall — not ownership).</summary>
-  public List<ArtefactEdge> HostedOn { get; } = new();
+  public List<RelationRow> HostedOn { get; } = new();
 
   /// <summary>CONNECTS_TO (21): source object → target object edges (MEP connectivity; ord = scope).</summary>
-  public List<ArtefactEdge> ConnectsTo { get; } = new();
+  public List<RelationRow> ConnectsTo { get; } = new();
 
   /// <summary>BOUNDS (23): bounding object → room object edges (ord = boundary order).</summary>
-  public List<ArtefactEdge> Bounds { get; } = new();
+  public List<RelationRow> Bounds { get; } = new();
 
   /// <summary>IN_ROOM (12): object → containing room OBJECT (rooms are objects, not nodes).</summary>
-  public List<ArtefactEdge> InRoom { get; } = new();
+  public List<RelationRow> InRoom { get; } = new();
 
   /// <summary>IN_ASSEMBLY (18): member object → containing assembly object (ord = member order).</summary>
-  public List<ArtefactEdge> InAssembly { get; } = new();
+  public List<RelationRow> InAssembly { get; } = new();
 
   /// <summary>Relation numbers present in the bundle that this SDK's vocabulary doesn't know (a newer bundle spec).
   /// Their edges are dropped; consumers should surface this rather than silently miss data.</summary>
@@ -116,7 +117,7 @@ public sealed class ArtefactRelations
 
   /// <summary>All DISPLAY_INSTANCE edges (object → INSTANCE node). An object may place several instances (e.g. a Revit
   /// railing → many balusters), so the native baker iterates these rather than the last-wins map above.</summary>
-  public List<ArtefactEdge> DisplayInstanceEdges { get; } = new();
+  public List<RelationRow> DisplayInstanceEdges { get; } = new();
 
   /// <summary>For object→node relations (ON_LEVEL=7, IN_COLLECTION=10, IN_MODEL=11, IN_ROOM=12, …): rel → (object →
   /// target node). Used to resolve scene-view grouping tiers (e.g. an object's level/model/container) to a layer path.</summary>
@@ -177,10 +178,10 @@ public sealed class ArtefactRelations
   /// as a first-class COLOR node rather than the CONTAINER argb overload).</summary>
   public Dictionary<int, int> ColorByNode { get; } = new();
 
-  private Dictionary<int, List<ArtefactEdge>>? _displayByObject;
+  private Dictionary<int, List<RelationRow>>? _displayByObject;
 
   /// <summary>The DISPLAY edges (object → mesh geometry) for one object, or null. Lazily indexed.</summary>
-  public List<ArtefactEdge>? DisplayByObject(int objK)
+  public List<RelationRow>? DisplayByObject(int objK)
   {
     _displayByObject ??= Display.GroupBy(e => e.Src).ToDictionary(g => g.Key, g => g.ToList());
     return _displayByObject.TryGetValue(objK, out var list) ? list : null;
@@ -852,7 +853,7 @@ public static class ArtefactBundleReader
       switch (rel[i])
       {
         case RelKind.Display:
-          sets.Display.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          sets.Display.Add(new RelationRow(src[i], dst[i], ord[i]));
           break;
         case RelKind.Solid:
           sets.Add(sets.SolidByObject, src[i], dst[i]);
@@ -865,7 +866,7 @@ public static class ArtefactBundleReader
           break;
         case RelKind.DisplayInstance:
           sets.DisplayInstanceByObject[src[i]] = dst[i];
-          sets.DisplayInstanceEdges.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          sets.DisplayInstanceEdges.Add(new RelationRow(src[i], dst[i], ord[i]));
           break;
         case RelKind.HasMaterial:
           // ord tags the src namespace: 1 = INSTANCE node (a placement-painted material), 0/absent = geometry
@@ -901,22 +902,22 @@ public static class ArtefactBundleReader
           sets.PlacesByObject[src[i]] = dst[i];
           break;
         case RelKind.Subelement:
-          sets.Subelement.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          sets.Subelement.Add(new RelationRow(src[i], dst[i], ord[i]));
           break;
         case RelKind.HostedOn:
-          sets.HostedOn.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          sets.HostedOn.Add(new RelationRow(src[i], dst[i], ord[i]));
           break;
         case RelKind.ConnectsTo:
-          sets.ConnectsTo.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          sets.ConnectsTo.Add(new RelationRow(src[i], dst[i], ord[i]));
           break;
         case RelKind.Bounds:
-          sets.Bounds.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          sets.Bounds.Add(new RelationRow(src[i], dst[i], ord[i]));
           break;
         case RelKind.InRoom:
-          sets.InRoom.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          sets.InRoom.Add(new RelationRow(src[i], dst[i], ord[i]));
           break;
         case RelKind.InAssembly:
-          sets.InAssembly.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          sets.InAssembly.Add(new RelationRow(src[i], dst[i], ord[i]));
           break;
         case RelKind.DefinesMember:
           sets.Add(sets.MemberObjectsByDefinition, src[i], dst[i]);
