@@ -55,16 +55,17 @@ public sealed class BundleSender(
       .ConfigureAwait(false);
     activity?.SetTag("speckle.ingestionId", ingestion.id);
 
-    if (ingestion.versionId is not { Length: > 0 } versionId)
-    {
-      throw new SpeckleException(
-        $"The server at '{account.serverInfo.url}' did not pre-allocate a version id for the ingestion; the Speckle 2026.9.0 bundle "
-          + "upload requires a server with the /api/v2 data endpoints."
-      );
-    }
-
     try
     {
+      if (ingestion.versionId is not { Length: > 0 } versionId)
+      {
+        // inside the try so the ingestion we just opened is marked failed rather than left pending until timeout
+        throw new SpeckleException(
+          $"The server at '{account.serverInfo.url}' did not pre-allocate a version id for the ingestion; the "
+            + "Speckle 2026.9.0 bundle upload requires a server with the /api/v2 data endpoints."
+        );
+      }
+
       // Build under the temporary basename, then re-key the files to the version id the server just allocated:
       // the v2 upload signs and keys every file by its basename.
       BundleFiles files = builder.Build().RenameTo(versionId);

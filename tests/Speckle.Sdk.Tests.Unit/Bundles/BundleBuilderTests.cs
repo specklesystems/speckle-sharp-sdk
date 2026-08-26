@@ -403,6 +403,33 @@ public sealed class BundleBuilderTests : IDisposable
     var o = b.GetOrAddObject("o", a, null);
     Assert.Throws<InvalidOperationException>(() => o.Collection = c);
     o.Collection = a; // idempotent
+    // clearing is a retraction too — otherwise "= null; = c" would write a second IN_COLLECTION edge
+    Assert.Throws<InvalidOperationException>(() => o.Collection = null);
+  }
+
+  [Fact]
+  public void Relation_NullBeforeAnyEdge_IsANoOp()
+  {
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    var o = b.GetOrAddObject("o");
+    o.Collection = null;
+    o.Collection = b.GetOrAddContainerPath(["A"]);
+    Assert.Equal("A", o.Collection!.Name);
+  }
+
+  [Fact]
+  public async Task Collections_RepeatedSegmentName_GhTopologyOnlyOnTheLeaf()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var leaf = b.GetOrAddContainerPath(["Mesh", "Mesh"], "Collection", ghTopology: "{0;1}");
+      b.GetOrAddObject("o", leaf, null);
+    });
+
+    var o = model.ObjectByApplicationId("o")!;
+    Assert.Equal("{0;1}", o.Collection!.GhTopology);
+    Assert.Null(o.Collection.Parent!.GhTopology);
+    Assert.Null(o.Collection.Parent.Parent);
   }
 
   public void Dispose()

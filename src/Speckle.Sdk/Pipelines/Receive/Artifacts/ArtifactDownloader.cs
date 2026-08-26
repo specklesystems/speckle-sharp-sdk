@@ -64,6 +64,12 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
       {
         continue;
       }
+      // The listing comes from the server: a name that is anything but a bare filename ("../x", "C:\\x") would
+      // escape the receive directory through Path.Combine. Never trust it.
+      if (!IsBareFileName(file.Name))
+      {
+        throw new SpeckleException($"Artifact listing contains an invalid file name '{file.Name}'.");
+      }
       string path = Path.Combine(destDir, file.Name);
       await DownloadFileAsync(s3Client, file.Name, file.Url, path, cancellationToken).ConfigureAwait(false);
       paths.Add(path);
@@ -97,6 +103,17 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
     var parsed = JsonConvert.DeserializeObject<ArtifactsListResponse>(json);
     return parsed?.Files ?? new List<ArtifactFile>();
   }
+
+  /// <summary>A name the listing may address a file by: one path segment — no separators of either platform, no
+  /// drive/rooting — regardless of the OS this runs on (the same server serves Windows and macOS hosts).</summary>
+  internal static bool IsBareFileName(string? name) =>
+    name is { Length: > 0 }
+    && name != "."
+    && name != ".."
+    && name.IndexOfAny(s_pathSeparators) < 0
+    && !Path.IsPathRooted(name);
+
+  private static readonly char[] s_pathSeparators = ['/', '\\', ':'];
 
   private static async Task DownloadFileAsync(
     HttpClient client,

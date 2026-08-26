@@ -95,10 +95,11 @@ public sealed class BundleBuilder : IDisposable
     }
     BundleContainer? parent = null;
     string key = "";
-    foreach (var segment in path)
+    for (int i = 0; i < path.Count; i++)
     {
+      string segment = path[i];
       key = key.Length == 0 ? segment : key + "/" + segment;
-      bool leaf = ReferenceEquals(segment, path[path.Count - 1]);
+      bool leaf = i == path.Count - 1; // by position: a repeated segment name ("Mesh"/"Mesh") is not two leaves
       parent = GetOrAddContainer(key, segment, parent, subtype, leaf ? ghTopology : null);
     }
     return parent!;

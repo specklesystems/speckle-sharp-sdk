@@ -387,11 +387,6 @@ public static class ArtefactBundleReader
       columnar && typeEavT is not null ? PropertyTable.Load(typeEavT, pathsT, "type_index") : null;
     var geometries = LoadGeometries(geometriesTables);
     var relations = LoadRelations(relationsT);
-    if (loadGeometry)
-    {
-      RecoverUntaggedObjectColors(relations, geometries, objIdToApp);
-    }
-
     return new ArtefactBundle
     {
       Geometries = geometries,
@@ -439,36 +434,6 @@ public static class ArtefactBundleReader
       }
     }
     return byObject;
-  }
-
-  // Compat for bundles written before the ord namespace tag (ENG-8822): an object-sourced HAS_COLOR edge landed in
-  // ColorByGeometry with ord=0, indistinguishable from a geometry-sourced one. Recover it ONLY when the geometry
-  // reading is provably impossible — the src is no geometry K but IS an object K — so a tagged or colliding bundle
-  // is never second-guessed. Untagged edges whose K collides with a real geometry stay unrecovered (they'd be a
-  // coin flip); re-send with a current producer to tag them.
-  private static void RecoverUntaggedObjectColors(
-    ArtefactRelations relations,
-    Dictionary<int, ArtefactGeometry> geometries,
-    Dictionary<int, string> objectAppIds
-  )
-  {
-    List<int>? recovered = null;
-    foreach (var kv in relations.ColorByGeometry)
-    {
-      if (!geometries.ContainsKey(kv.Key) && objectAppIds.ContainsKey(kv.Key))
-      {
-        (recovered ??= new List<int>()).Add(kv.Key);
-      }
-    }
-    if (recovered is null)
-    {
-      return;
-    }
-    foreach (var k in recovered)
-    {
-      relations.ColorByObject[k] = relations.ColorByGeometry[k];
-      relations.ColorByGeometry.Remove(k);
-    }
   }
 
   // Model-scoped attributes (object-less eav): same coalesce as BuildProperties, path inlined per row.

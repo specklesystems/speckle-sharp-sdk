@@ -532,14 +532,19 @@ public sealed class BundleObject
   private static void Set<T>(ref T? field, T? value, Action<int> emit)
     where T : class
   {
-    if (value is null || ReferenceEquals(field, value))
+    if (ReferenceEquals(field, value))
     {
-      field = value;
       return;
     }
     if (field is not null)
     {
+      // The edge is on disk already: neither clearing (null) nor pointing elsewhere can take it back, and letting
+      // null through would let a second assignment write a second edge for a single-valued relation.
       throw new InvalidOperationException("This relation was already set; a bundle edge cannot be retracted.");
+    }
+    if (value is null)
+    {
+      return;
     }
     field = value;
     emit(KOf(value));
