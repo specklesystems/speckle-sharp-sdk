@@ -17,10 +17,12 @@ namespace Speckle.Sdk.Bundles;
 /// <code>
 /// using var b = new BundleBuilder(app, units: "m");
 /// var walls = b.GetOrAddCollection(["Level 1", "Walls"], subtype: "Category");
-/// var wall  = b.GetOrAddObject("wall-1", walls, properties, name: "Basic Wall", speckleType: "Objects.Data.DataObject");
+/// var wall  = b.GetOrAddObject("wall-1");
+/// wall.SetProperties(properties, name: "Basic Wall", speckleType: "Objects.Data.DataObject");
+/// wall.Collection = walls;
 /// wall.AddGeometry(mesh).Material = b.GetOrAddMaterial("concrete", "Concrete", 0xFF808080, 1, 0, 0.8);
 /// wall.Level = b.GetOrAddLevel("L1", "Level 1", 0);
-/// var chair = b.GetOrAddObject("chair-1", walls, null, name: "Chair");
+/// var chair = b.GetOrAddObject("chair-1");
 /// chair.Place(b.GetOrAddDefinition("def-chair", "Chair", d => d.AddGeometry(chairMesh)), transform, "m");
 /// BundleFiles files = b.Build();
 /// </code>
@@ -126,75 +128,43 @@ public sealed class BundleBuilder : IDisposable
   // ── objects ───────────────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>
-  /// Gets or adds an object (the property carrier a host element becomes) and writes its properties. Interns on
-  /// <paramref name="applicationId"/>. An object may be referenced before it is described — <c>GetOrAddObject(id, null, null)</c>
-  /// yields a handle to point edges at (a joint a frame connects to, a group member) and a later call carrying
-  /// properties fills it in; properties can be written once.
+  /// Gets or adds an object (the property carrier a host element becomes) by <paramref name="applicationId"/> — a
+  /// handle only, nothing written yet. Describe it with <see cref="BundleObject.SetProperties"/>; point edges at it
+  /// before or after (a joint a frame connects to may be described later).
   /// </summary>
-  /// <param name="collection">Where it sits in the authored scene tree (<c>IN_COLLECTION</c>); null for objects that
-  /// are grouped some other way (Revit: model + level + property tiers).</param>
-  /// <param name="properties">The nested property tree (<c>properties.*</c> in the bundle); null for none.</param>
-  /// <param name="name">Root <c>name</c> scalar.</param>
-  /// <param name="speckleType">Root <c>speckle_type</c> scalar — what the v3 graph would have carried.</param>
-  /// <param name="sourceType">Root <c>type</c> scalar — the host's own type (Rhino ObjectType, Revit category …).</param>
-  /// <param name="units">Root <c>units</c>; the builder's <see cref="Units"/> when null.</param>
-  /// <param name="typeKey">Stable per-type identity (Revit type element UniqueId). When set, <c>Type Parameters</c> /
-  /// <c>System Type Parameters</c> under <c>properties.Parameters</c> are deduplicated into the type tables.</param>
-  /// <param name="rootScalars">Any further root scalars (Revit: <c>category</c>, <c>family</c>).</param>
-  public BundleObject GetOrAddObject(
-    string applicationId,
-    BundleCollection? collection,
-    IReadOnlyDictionary<string, object?>? properties,
-    string? name = null,
-    string? speckleType = null,
-    string? sourceType = null,
-    string? units = null,
-    string? typeKey = null,
-    IEnumerable<KeyValuePair<string, object?>>? rootScalars = null
-  )
+  public BundleObject GetOrAddObject(string applicationId)
   {
-    bool describes =
-      properties is not null
-      || name is not null
-      || speckleType is not null
-      || sourceType is not null
-      || units is not null
-      || typeKey is not null
-      || rootScalars is not null;
-
     if (!_objects.TryGetValue(applicationId, out var obj))
     {
       obj = new BundleObject(this, Pipeline.InternObject(applicationId), applicationId);
       _objects[applicationId] = obj;
     }
-    if (describes)
-    {
-      if (obj.PropertiesWritten)
-      {
-        throw new InvalidOperationException(
-          $"Object '{applicationId}' already has its properties written; they can be written once. "
-            + "Reference an existing object with GetOrAddObject(id, null, null)."
-        );
-      }
-      var scalars = new List<KeyValuePair<string, object?>>
-      {
-        new("speckle_type", speckleType),
-        new("name", name),
-        new("units", units ?? Units),
-        new("type", sourceType),
-      };
-      if (rootScalars is not null)
-      {
-        scalars.AddRange(rootScalars);
-      }
-      Pipeline.AddProperties(applicationId, properties ?? s_noProperties, scalars, typeKey);
-      obj.MarkDescribed(name);
-    }
-    if (collection is not null)
-    {
-      obj.Collection = collection;
-    }
     return obj;
+  }
+
+  internal void WriteProperties(
+    BundleObject obj,
+    IReadOnlyDictionary<string, object?>? properties,
+    string? name,
+    string? speckleType,
+    string? sourceType,
+    string? units,
+    string? typeKey,
+    IEnumerable<KeyValuePair<string, object?>>? rootScalars
+  )
+  {
+    var scalars = new List<KeyValuePair<string, object?>>
+    {
+      new("speckle_type", speckleType),
+      new("name", name),
+      new("units", units ?? Units),
+      new("type", sourceType),
+    };
+    if (rootScalars is not null)
+    {
+      scalars.AddRange(rootScalars);
+    }
+    Pipeline.AddProperties(obj.ApplicationId, properties ?? s_noProperties, scalars, typeKey);
   }
 
   /// <summary>Object handle by application id, if it has been added.</summary>

@@ -332,13 +332,41 @@ public sealed class BundleObject
   public string ApplicationId { get; }
   public string? Name { get; private set; }
 
-  /// <summary>Whether properties (and root scalars) have been written for this object.</summary>
+  /// <summary>Whether <see cref="SetProperties"/> has been called.</summary>
   public bool PropertiesWritten { get; private set; }
 
-  internal void MarkDescribed(string? name)
+  /// <summary>
+  /// Writes the object's properties and root scalars — once. <paramref name="properties"/> is the nested tree
+  /// (<c>properties.*</c> in the bundle); the root scalars are what every producer stamps beside it.
+  /// </summary>
+  /// <param name="name">Root <c>name</c>.</param>
+  /// <param name="speckleType">Root <c>speckle_type</c> — what the v3 graph would have carried.</param>
+  /// <param name="sourceType">Root <c>type</c> — the host's own type (Rhino ObjectType, Revit category …).</param>
+  /// <param name="units">Root <c>units</c>; the builder's <see cref="BundleBuilder.Units"/> when null.</param>
+  /// <param name="typeKey">Stable per-type identity (Revit type element UniqueId). When set, <c>Type Parameters</c> /
+  /// <c>System Type Parameters</c> under <c>properties.Parameters</c> are deduplicated into the type tables.</param>
+  /// <param name="rootScalars">Any further root scalars (Revit: <c>category</c>, <c>family</c>).</param>
+  /// <exception cref="InvalidOperationException">Properties were already written for this object.</exception>
+  public BundleObject SetProperties(
+    IReadOnlyDictionary<string, object?>? properties,
+    string? name = null,
+    string? speckleType = null,
+    string? sourceType = null,
+    string? units = null,
+    string? typeKey = null,
+    IEnumerable<KeyValuePair<string, object?>>? rootScalars = null
+  )
   {
+    if (PropertiesWritten)
+    {
+      throw new InvalidOperationException(
+        $"Properties for '{ApplicationId}' were already written; an object's properties are written once."
+      );
+    }
+    _builder.WriteProperties(this, properties, name, speckleType, sourceType, units, typeKey, rootScalars);
     PropertiesWritten = true;
     Name = name;
+    return this;
   }
 
   public IReadOnlyList<BundleGeometry> Geometries => _geometries;
