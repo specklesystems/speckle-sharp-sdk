@@ -68,7 +68,8 @@ public sealed record ArtefactNode(
   double? Elevation,
   int? Emissive = null,
   double? Ior = null,
-  string? GhTopology = null
+  string? GhTopology = null,
+  string? Subtype = null
 );
 
 /// <summary>A relation edge in the envelope graph (<c>rel</c> = <see cref="RelKind"/>, <c>src</c>/<c>dst</c> dense ints).</summary>
@@ -87,6 +88,24 @@ public sealed class ArtefactRelations
   /// which last-wins because it IS the scene tree): groups are a separate, overlapping axis — an object keeps
   /// its collection and may sit in several (possibly nested) groups.</summary>
   public Dictionary<int, List<int>> GroupsByObject { get; } = new();
+
+  /// <summary>SUBELEMENT (3): parent object → child object edges (ownership; ord = child order).</summary>
+  public List<ArtefactEdge> Subelement { get; } = new();
+
+  /// <summary>HOSTED_ON (22): hosted object → host object edges (a door placed on a wall — not ownership).</summary>
+  public List<ArtefactEdge> HostedOn { get; } = new();
+
+  /// <summary>CONNECTS_TO (21): source object → target object edges (MEP connectivity; ord = scope).</summary>
+  public List<ArtefactEdge> ConnectsTo { get; } = new();
+
+  /// <summary>BOUNDS (23): bounding object → room object edges (ord = boundary order).</summary>
+  public List<ArtefactEdge> Bounds { get; } = new();
+
+  /// <summary>IN_ROOM (12): object → containing room OBJECT (rooms are objects, not nodes).</summary>
+  public List<ArtefactEdge> InRoom { get; } = new();
+
+  /// <summary>IN_ASSEMBLY (18): member object → containing assembly object (ord = member order).</summary>
+  public List<ArtefactEdge> InAssembly { get; } = new();
 
   /// <summary>DISPLAY_INSTANCE: object → INSTANCE node. Last-wins map (kept for the Base reconstruction path).</summary>
   public Dictionary<int, int> DisplayInstanceByObject { get; } = new();
@@ -256,9 +275,25 @@ public sealed class ArtefactBundle
 /// <summary>Reads the parquet files of an artefact bundle directory into a neutral <see cref="ArtefactBundle"/>.</summary>
 public static class ArtefactBundleReader
 {
-  public static async Task<ArtefactBundle> ReadAsync(string bundleDir, CancellationToken cancellationToken)
+  public static Task<ArtefactBundle> ReadAsync(string bundleDir, CancellationToken cancellationToken) =>
+    ReadAsync(bundleDir, loadGeometry: true, cancellationToken);
+
+  /// <summary>
+  /// As <see cref="ReadAsync(string, CancellationToken)"/>; with <paramref name="loadGeometry"/> false the geometry
+  /// shards are not opened and <see cref="ArtefactBundle.Geometries"/> comes back empty — load them later with
+  /// <see cref="ReadGeometriesAsync"/>. Geometry is the bulk of a bundle, so a properties-only consumer saves most of
+  /// the parse time and memory. One compat step is skipped in that mode: the pre-ENG-8822 untagged object-colour
+  /// recovery, which needs to know which Ks are geometries.
+  /// </summary>
+  public static async Task<ArtefactBundle> ReadAsync(
+    string bundleDir,
+    bool loadGeometry,
+    CancellationToken cancellationToken
+  )
   {
-    var geometriesTables = await ReadShardsAsync(bundleDir, cancellationToken).ConfigureAwait(false);
+    var geometriesTables = loadGeometry
+      ? await ReadShardsAsync(bundleDir, cancellationToken).ConfigureAwait(false)
+      : new List<ParquetTable>();
     var objectsT = await ReadTableAsync(bundleDir, ".eav.objects.parquet", cancellationToken).ConfigureAwait(false);
     var pathsT = await ReadTableAsync(bundleDir, ".eav.paths.parquet", cancellationToken).ConfigureAwait(false);
     var eavT = await ReadTableAsync(bundleDir, ".eav.eav.parquet", cancellationToken).ConfigureAwait(false);
@@ -283,7 +318,10 @@ public static class ArtefactBundleReader
     var propsByObject = BuildProperties(eavT, pathById, "object_index");
     var geometries = LoadGeometries(geometriesTables);
     var relations = LoadRelations(relationsT);
-    RecoverUntaggedObjectColors(relations, geometries, objIdToApp);
+    if (loadGeometry)
+    {
+      RecoverUntaggedObjectColors(relations, geometries, objIdToApp);
+    }
 
     return new ArtefactBundle
     {
@@ -533,6 +571,14 @@ public static class ArtefactBundleReader
     return views.OrderBy(v => v.Ord ?? int.MaxValue).ThenBy(v => v.View).ToList();
   }
 
+  /// <summary>Reads only the geometry shards (<c>*.geometries*.parquet</c>) of a bundle directory, keyed by dense
+  /// geometry index. The deferred half of <see cref="ReadAsync(string, bool, CancellationToken)"/>.</summary>
+  /// <exception cref="FileNotFoundException">The directory holds no geometry shard.</exception>
+  public static async Task<Dictionary<int, ArtefactGeometry>> ReadGeometriesAsync(
+    string bundleDir,
+    CancellationToken cancellationToken
+  ) => LoadGeometries(await ReadShardsAsync(bundleDir, cancellationToken).ConfigureAwait(false));
+
   private static Dictionary<int, ArtefactGeometry> LoadGeometries(List<ParquetTable> tables)
   {
     var map = new Dictionary<int, ArtefactGeometry>();
@@ -672,6 +718,8 @@ public static class ArtefactBundleReader
     var ior = t.Has("ior") ? t.NullableDoubles("ior") : null;
     // gh_topology joined later too — same Has() guard for bundles written before it existed.
     var ghTopology = t.Has("gh_topology") ? t.Strings("gh_topology") : null;
+    // subtype (CONTAINER flavour: Layer / Category / Group / Model …) — Has() guard for the same reason.
+    var subtype = t.Has("subtype") ? t.Strings("subtype") : null;
     for (int i = 0; i < id.Length; i++)
     {
       map[id[i]] = new ArtefactNode(
@@ -687,7 +735,8 @@ public static class ArtefactBundleReader
         elevation[i],
         emissive?[i],
         ior?[i],
-        ghTopology?[i]
+        ghTopology?[i],
+        subtype?[i]
       );
     }
     return map;
@@ -752,6 +801,24 @@ public static class ArtefactBundleReader
           break;
         case RelKind.Places:
           sets.PlacesByObject[src[i]] = dst[i];
+          break;
+        case RelKind.Subelement:
+          sets.Subelement.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          break;
+        case RelKind.HostedOn:
+          sets.HostedOn.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          break;
+        case RelKind.ConnectsTo:
+          sets.ConnectsTo.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          break;
+        case RelKind.Bounds:
+          sets.Bounds.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          break;
+        case RelKind.InRoom:
+          sets.InRoom.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
+          break;
+        case RelKind.InAssembly:
+          sets.InAssembly.Add(new ArtefactEdge(src[i], dst[i], ord[i]));
           break;
         case RelKind.DefinesMember:
           sets.Add(sets.MemberObjectsByDefinition, src[i], dst[i]);

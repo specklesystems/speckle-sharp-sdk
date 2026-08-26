@@ -1,4 +1,7 @@
 using Microsoft.Extensions.Logging;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Bundles;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
@@ -10,6 +13,73 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  /// <summary>
+  /// Receives a version of a model — the Speckle 2026.9.0 read path. Addresses the version by id, downloads its
+  /// artefact bundle via the <c>/api/v2</c> artifacts rail and returns a <see cref="Model"/>: objects with their
+  /// instance- and type-level properties, ready to query with LINQ, plus the raw bundle graph underneath. Nothing is
+  /// projected or dropped.
+  /// </summary>
+  /// <remarks>
+  /// Works for every version the server has a bundle for — natively published ones and legacy versions the server
+  /// has converted. The returned <see cref="Model"/> keeps the bundle files on disk until it is disposed, so wrap it
+  /// in <c>using</c>.
+  /// <para><b>Memory.</b> Objects, properties, nodes and relations are parsed fully into memory up front; geometry is
+  /// parsed only when <see cref="Model.Geometries"/> is first accessed (and not downloaded at all with
+  /// <see cref="ReceiveOptions.IncludeGeometry"/> false). This is the in-process path: it suits models whose
+  /// property tables fit comfortably in RAM. For very large models — or for questions that only touch a slice of
+  /// the data — use the SQL query API (the separate <c>Speckle.Sdk.Query</c> package), which streams over the same
+  /// parquet files on disk instead of loading them.</para>
+  /// </remarks>
+  /// <param name="options">What to download; <see langword="null"/> = <see cref="ReceiveOptions.Default"/> (viewer
+  /// artefacts skipped).</param>
+  /// <exception cref="SpeckleException">The server returned no artefact files for this version (no bundle exists yet,
+  /// the server predates the /api/v2 artifacts endpoint, or the token cannot read the project).</exception>
+  /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
+  public async Task<Model> Receive3(
+    Uri url,
+    string projectId,
+    string modelId,
+    string versionId,
+    string? authorizationToken,
+    ReceiveOptions? options,
+    CancellationToken cancellationToken
+  )
+  {
+    options ??= ReceiveOptions.Default;
+    using var receiveActivity = activityFactory.Start("Operations.Receive3");
+    receiveActivity?.SetTag("speckle.url", url);
+    receiveActivity?.SetTag("speckle.projectId", projectId);
+    receiveActivity?.SetTag("speckle.modelId", modelId);
+    receiveActivity?.SetTag("speckle.versionId", versionId);
+    metricsFactory.CreateCounter<long>("Receive").Add(1);
+
+    try
+    {
+      var model = await DownloadBundleModel(
+          url,
+          projectId,
+          modelId,
+          versionId,
+          authorizationToken,
+          options,
+          cancellationToken
+        )
+        .ConfigureAwait(false);
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return model;
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
   /// <summary>
   /// Receives the object graph behind <paramref name="objectId"/> from the server at <paramref name="url"/>.
   /// </summary>
@@ -281,5 +351,164 @@ public partial class Operations
     SQLiteTransport defaultLocalTransport = new();
     actualLocalTransport = defaultLocalTransport;
     return defaultLocalTransport;
+  }
+
+  /// <summary>
+  /// The Speckle 2026.9.0 rail behind <see cref="Receive2"/>: downloads the version's artefact bundle via
+  /// <c>/api/v2/.../artifacts</c> and materializes it into a <see cref="Base"/> tree that legacy traversal code can
+  /// walk. The shape follows the receive fidelity contract (atlas spec <c>2026-08-big-truck-dev-compat</c> §6):
+  /// <list type="bullet">
+  /// <item>root is a <c>Collection</c> carrying <c>units</c>, <c>version = 4</c>, and the render-material /
+  /// instance-definition proxy lists;</item>
+  /// <item>objects are <c>DataObject</c>s keyed by <c>applicationId</c> (never a content hash), with SGEO-decoded
+  /// <c>displayValue</c> meshes and a nested <c>properties</c> dict rebuilt from EAV paths;</item>
+  /// <item>collections / materials / definitions get per-bundle synthetic ids — stable within one tree, not across versions;</item>
+  /// <item>v2 typed classes are NOT rehydrated; per-parameter metadata collapses to scalars.</item>
+  /// </list>
+  /// Full fidelity lives in <see cref="Receive3"/>.
+  /// </summary>
+  /// <exception cref="SpeckleException">The reference's project doesn't match <paramref name="streamId"/>, or the
+  /// server returned no artefact files for a version that promises a bundle.</exception>
+  private async Task<Base> ReceiveBundle(
+    Uri url,
+    string streamId,
+    BundleReference reference,
+    string? authorizationToken,
+    CancellationToken cancellationToken
+  )
+  {
+    using var receiveActivity = activityFactory.Start("Operations.Receive.Bundle");
+    receiveActivity?.SetTag("speckle.url", url);
+    receiveActivity?.SetTag("speckle.projectId", streamId);
+    receiveActivity?.SetTag("speckle.bundleReference", reference.ToString());
+    metricsFactory.CreateCounter<long>("Receive").Add(1);
+
+    try
+    {
+      if (reference.ProjectId != streamId)
+      {
+        throw new SpeckleException(
+          $"Bundle reference '{reference}' belongs to project '{reference.ProjectId}', but the receive was requested "
+            + $"for project '{streamId}'."
+        );
+      }
+
+      using var model = await DownloadBundleModel(
+          url,
+          reference.ProjectId,
+          reference.ModelId,
+          reference.VersionId,
+          authorizationToken,
+          ReceiveOptions.Default,
+          cancellationToken
+        )
+        .ConfigureAwait(false);
+
+      var root = new ObjectsArtifactReader().Build(
+        model.Bundle,
+        new ArtifactReceiveOptions(PreferSolids: false),
+        cancellationToken
+      );
+
+      // Vintage marker: lets consumers (and the migrator's IsV3 check) tell a materialized tree from a genuine
+      // v2/v3 graph. Same convention as BundleMigrator's TreeMaterializer.
+      root["version"] = 4;
+
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return root;
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  /// <summary>Downloads the bundle into a scratch directory and parses it. The returned <see cref="Model"/> owns the
+  /// directory; on any failure the directory is removed here.</summary>
+  private async Task<Model> DownloadBundleModel(
+    Uri url,
+    string projectId,
+    string modelId,
+    string versionId,
+    string? authorizationToken,
+    ReceiveOptions options,
+    CancellationToken cancellationToken
+  )
+  {
+    // ArtifactDownloader only reads token + serverInfo.url off the account.
+    var account = new Account
+    {
+      token = authorizationToken ?? string.Empty,
+      serverInfo = new() { url = url.ToString() },
+      userInfo = new(),
+    };
+
+    string bundleDir = Path.Combine(
+      SpecklePathProvider.UserApplicationDataPath(),
+      "Speckle",
+      "BundleReceive",
+      Guid.NewGuid().ToString("N")
+    );
+    try
+    {
+      var files = await artifactDownloader
+        .DownloadBundleAsync(
+          account,
+          projectId,
+          modelId,
+          versionId,
+          bundleDir,
+          options.ShouldDownload,
+          cancellationToken
+        )
+        .ConfigureAwait(false);
+
+      if (files.Count == 0)
+      {
+        // Never fall back to the legacy object path from here: a caller on this rail asked for the bundle, and for
+        // a bundle-only version there is no legacy graph anyway.
+        throw new SpeckleException(
+          $"Version '{versionId}' (model '{modelId}', project '{projectId}') has no artefact bundle on the server at "
+            + $"'{url}'. Either the server does not serve the /api/v2 artifacts endpoint yet, the token cannot read the "
+            + "project, or the bundle has not been produced for this version."
+        );
+      }
+
+      // Geometry stays on disk until Model.Geometries is touched — it is the bulk of every bundle.
+      var bundle = await ArtefactBundleReader
+        .ReadAsync(bundleDir, loadGeometry: false, cancellationToken)
+        .ConfigureAwait(false);
+      return new Model(projectId, modelId, versionId, bundleDir, files, bundle, options.IncludeGeometry, logger);
+    }
+    catch
+    {
+      TryDeleteDirectory(bundleDir);
+      throw;
+    }
+  }
+
+  private void TryDeleteDirectory(string dir)
+  {
+    try
+    {
+      if (Directory.Exists(dir))
+      {
+        Directory.Delete(dir, true);
+      }
+    }
+    catch (IOException ex)
+    {
+      logger.LogWarning(ex, "Could not clean up bundle scratch directory {bundleDir}", dir);
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+      logger.LogWarning(ex, "Could not clean up bundle scratch directory {bundleDir}", dir);
+    }
   }
 }
