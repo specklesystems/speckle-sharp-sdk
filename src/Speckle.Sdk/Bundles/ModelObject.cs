@@ -40,17 +40,17 @@ public sealed class ModelObject
   public string ApplicationId { get; }
 
   /// <summary>The object's root <c>name</c>, if the producer stamped one.</summary>
-  public string? Name => _model.Properties_.GetString(K, "name");
+  public string? Name => _model.PropertyTable.GetString(K, "name");
 
   // ── properties ────────────────────────────────────────────────────────────────────────────────────────
   // Views over the bundle's PropertyTable row range for this object: no dictionaries are built unless enumerated.
 
   /// <summary>Instance-level properties, flat and path-keyed (without the <c>properties.</c> root).</summary>
-  public IReadOnlyDictionary<string, object?> Properties => _model.Properties_.Under(K, PROPERTIES_ROOT);
+  public IReadOnlyDictionary<string, object?> Properties => _model.PropertyTable.Under(K, PROPERTIES_ROOT);
 
   /// <summary>Every property row of this object as stored — root scalars (<c>name</c>, <c>units</c>, …) and the
   /// <c>properties.</c>-prefixed ones together.</summary>
-  public IReadOnlyDictionary<string, object?> RootProperties => _model.Properties_[K];
+  public IReadOnlyDictionary<string, object?> RootProperties => _model.PropertyTable[K];
 
   /// <summary>Type-level properties (family/type/definition parameters) resolved for this object, flat and path-keyed.
   /// Empty when the producer wrote no type tables.</summary>
@@ -58,26 +58,26 @@ public sealed class ModelObject
 
   /// <summary>Property lookup by dotted path. Instance properties win over type properties, then root scalars; null when absent.</summary>
   public object? this[string path] =>
-    _model.Properties_.TryGetValue(K, PROPERTIES_PREFIX + path, out var v) ? v
-    : TypeK >= 0 && _model.TypeProperties_.TryGetValue(TypeK, PROPERTIES_PREFIX + path, out var t) ? t
-    : _model.Properties_.TryGetValue(K, path, out var r) ? r
+    _model.PropertyTable.TryGetValue(K, PROPERTIES_PREFIX + path, out var v) ? v
+    : TypeK >= 0 && _model.TypePropertyTable.TryGetValue(TypeK, PROPERTIES_PREFIX + path, out var t) ? t
+    : _model.PropertyTable.TryGetValue(K, path, out var r) ? r
     : null;
 
   /// <summary>Unboxed typed lookups over the same precedence as the indexer; null when absent or of another type.</summary>
   public double? GetDouble(string path) =>
-    _model.Properties_.GetDouble(K, PROPERTIES_PREFIX + path)
-    ?? (TypeK >= 0 ? _model.TypeProperties_.GetDouble(TypeK, PROPERTIES_PREFIX + path) : null)
-    ?? _model.Properties_.GetDouble(K, path);
+    _model.PropertyTable.GetDouble(K, PROPERTIES_PREFIX + path)
+    ?? (TypeK >= 0 ? _model.TypePropertyTable.GetDouble(TypeK, PROPERTIES_PREFIX + path) : null)
+    ?? _model.PropertyTable.GetDouble(K, path);
 
   public string? GetString(string path) =>
-    _model.Properties_.GetString(K, PROPERTIES_PREFIX + path)
-    ?? (TypeK >= 0 ? _model.TypeProperties_.GetString(TypeK, PROPERTIES_PREFIX + path) : null)
-    ?? _model.Properties_.GetString(K, path);
+    _model.PropertyTable.GetString(K, PROPERTIES_PREFIX + path)
+    ?? (TypeK >= 0 ? _model.TypePropertyTable.GetString(TypeK, PROPERTIES_PREFIX + path) : null)
+    ?? _model.PropertyTable.GetString(K, path);
 
   public bool? GetBool(string path) =>
-    _model.Properties_.GetBool(K, PROPERTIES_PREFIX + path)
-    ?? (TypeK >= 0 ? _model.TypeProperties_.GetBool(TypeK, PROPERTIES_PREFIX + path) : null)
-    ?? _model.Properties_.GetBool(K, path);
+    _model.PropertyTable.GetBool(K, PROPERTIES_PREFIX + path)
+    ?? (TypeK >= 0 ? _model.TypePropertyTable.GetBool(TypeK, PROPERTIES_PREFIX + path) : null)
+    ?? _model.PropertyTable.GetBool(K, path);
 
   // ── geometry ──────────────────────────────────────────────────────────────────────────────────────────
 

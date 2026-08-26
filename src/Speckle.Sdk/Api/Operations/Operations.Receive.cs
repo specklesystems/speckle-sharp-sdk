@@ -418,11 +418,11 @@ public partial class Operations
   /// </list>
   /// Full fidelity lives in <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/>.
   /// </summary>
-  /// <exception cref="SpeckleException">The reference's project doesn't match <paramref name="streamId"/>, or the
+  /// <exception cref="SpeckleException">The reference's project doesn't match <paramref name="projectId"/>, or the
   /// server returned no artefact files for a version that promises a bundle.</exception>
   private async Task<Base> ReceiveBundle(
     Uri url,
-    string streamId,
+    string projectId,
     BundleReference reference,
     string? authorizationToken,
     CancellationToken cancellationToken
@@ -430,17 +430,17 @@ public partial class Operations
   {
     using var receiveActivity = activityFactory.Start("Operations.Receive.Bundle");
     receiveActivity?.SetTag("speckle.url", url);
-    receiveActivity?.SetTag("speckle.projectId", streamId);
+    receiveActivity?.SetTag("speckle.projectId", projectId);
     receiveActivity?.SetTag("speckle.bundleReference", reference.ToString());
     metricsFactory.CreateCounter<long>("Receive").Add(1);
 
     try
     {
-      if (reference.ProjectId != streamId)
+      if (reference.ProjectId != projectId)
       {
         throw new SpeckleException(
           $"Bundle reference '{reference}' belongs to project '{reference.ProjectId}', but the receive was requested "
-            + $"for project '{streamId}'."
+            + $"for project '{projectId}'."
         );
       }
 

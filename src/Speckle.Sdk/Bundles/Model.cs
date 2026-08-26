@@ -108,7 +108,7 @@ public sealed class Model : IDisposable
   /// <summary>Every distinct instance-property path in the model (without the <c>properties.</c> root) — what
   /// <see cref="ModelObject.Properties"/> keys can be. Read from the interned path table; touches no object.</summary>
   public IReadOnlyList<string> PropertyPaths =>
-    Properties_
+    PropertyTable
       .Paths.Where(p => p.StartsWith(ModelObject.PROPERTIES_PREFIX, StringComparison.Ordinal))
       .Select(p => p.Substring(ModelObject.PROPERTIES_PREFIX.Length))
       .ToList();
@@ -117,7 +117,7 @@ public sealed class Model : IDisposable
   /// no per-object work. Pair with <see cref="ModelObject.GetDouble"/> etc. for the value.</summary>
   public IEnumerable<ModelObject> ObjectsWith(string path)
   {
-    foreach (int k in Properties_.KeysWith(ModelObject.PROPERTIES_PREFIX + path))
+    foreach (int k in PropertyTable.KeysWith(ModelObject.PROPERTIES_PREFIX + path))
     {
       if (Object(k) is { } o)
       {
@@ -126,11 +126,11 @@ public sealed class Model : IDisposable
     }
   }
 
-  internal PropertyTable Properties_ =>
+  internal PropertyTable PropertyTable =>
     Bundle.PropertyTable
     ?? throw new InvalidOperationException("Model requires a bundle read with ArtefactReadOptions.ColumnarProperties.");
 
-  internal PropertyTable TypeProperties_ => Bundle.TypePropertyTable ?? PropertyTable.Empty;
+  internal PropertyTable TypePropertyTable => Bundle.TypePropertyTable ?? PropertyTable.Empty;
 
   /// <summary>Object by host application id, or null.</summary>
   public ModelObject? ObjectByApplicationId(string applicationId) =>

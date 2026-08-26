@@ -16,7 +16,8 @@ public sealed record BundleReference(string ProjectId, string ModelId, string Ve
   private const char SEPARATOR = '.';
 
   /// <summary>Cheap pre-check: does this id look like a bundle reference at all (regardless of validity)?</summary>
-  public static bool IsBundleReference(string? id) => id is not null && id.StartsWith(PREFIX, StringComparison.Ordinal);
+  public static bool IsBundleReference([NotNullWhen(true)] string? id) =>
+    id is not null && id.StartsWith(PREFIX, StringComparison.Ordinal);
 
   /// <summary>
   /// Parses <c>bundle.&lt;projectId&gt;.&lt;modelId&gt;.&lt;versionId&gt;</c>. Returns false for anything that is not a
@@ -33,7 +34,7 @@ public sealed record BundleReference(string ProjectId, string ModelId, string Ve
     }
 
     // Speckle ids never contain '.', so a plain split is unambiguous.
-    string[] parts = id!.Split(SEPARATOR);
+    string[] parts = id.Split(SEPARATOR);
     if (parts.Length != 4 || parts.Skip(1).Any(string.IsNullOrEmpty))
     {
       throw new SpeckleException(

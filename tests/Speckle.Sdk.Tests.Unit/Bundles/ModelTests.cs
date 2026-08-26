@@ -364,7 +364,7 @@ public sealed class ModelTests : IDisposable
   }
 
   [Fact]
-  public async Task Properties_AreColumnarViews()
+  public async Task PropertyTableAreColumnarViews()
   {
     using var model = await BuildModel();
     var wall = model.ObjectByApplicationId("wall-1")!;
