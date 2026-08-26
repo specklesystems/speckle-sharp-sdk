@@ -136,7 +136,7 @@ public partial class Operations
   /// <paramref name="objectId"/> is normally <c>Version.referencedObject</c>. Two forms are accepted transparently:
   /// <list type="bullet">
   /// <item>an object hash — the legacy JSON object graph is downloaded, cached and deserialized (unchanged behaviour);</item>
-  /// <item>a <see cref="BundleReference"/> (<c>bundle.1.&lt;projectId&gt;.&lt;modelId&gt;.&lt;versionId&gt;</c>) — the
+  /// <item>a <see cref="BundleReference"/> (<c>bundle.&lt;projectId&gt;.&lt;modelId&gt;.&lt;versionId&gt;</c>) — the
   /// version is bundle-only (Speckle 2026.9.0); its artefact bundle is downloaded via the <c>/api/v2</c> artifacts rail and
   /// materialized into a <see cref="Base"/> tree in the v3 DataObject idiom. The returned root carries
   /// <c>version = 4</c> so callers can tell a materialized tree from a genuine legacy one.</item>

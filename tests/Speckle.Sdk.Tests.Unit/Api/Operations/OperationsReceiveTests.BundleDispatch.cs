@@ -13,7 +13,7 @@ namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 /// </summary>
 public sealed class OperationsReceiveBundleDispatchTests
 {
-  private const string BUNDLE_REF = "bundle.1.proj.model.ver";
+  private const string BUNDLE_REF = "bundle.proj.model.ver";
   private static readonly Uri s_url = new("https://example.speckle.invalid");
 
   private static (IOperations operations, Mock<IArtifactDownloader> downloader) Build()
