@@ -48,16 +48,18 @@ public abstract class BundleNode
   }
 }
 
-/// <summary>A CONTAINER node: layer, category, folder, federated model, group, MEP system … (<see cref="Subtype"/>).</summary>
-public sealed class BundleCollection : BundleNode
+/// <summary>A CONTAINER node (spec node kind 7): layer, category, folder, federated model, group, MEP system …
+/// (<see cref="Subtype"/>). Objects reference it through a rel — <c>IN_COLLECTION</c> for the authored scene tree,
+/// <c>IN_MODEL</c>, <c>IN_GROUP</c>, <c>IN_SYSTEM</c> for the other axes.</summary>
+public sealed class BundleContainer : BundleNode
 {
-  internal BundleCollection(
+  internal BundleContainer(
     BundleBuilder builder,
     int k,
     string key,
     string? name,
     string subtype,
-    BundleCollection? parent
+    BundleContainer? parent
   )
     : base(builder, k)
   {
@@ -70,7 +72,7 @@ public sealed class BundleCollection : BundleNode
   public string Key { get; }
   public string? Name { get; }
   public string Subtype { get; }
-  public BundleCollection? Parent { get; }
+  public BundleContainer? Parent { get; }
 
   public override string ToString() => $"{Subtype} '{Name}'";
 }
@@ -309,9 +311,9 @@ public sealed class BundleObject
   private readonly List<BundleGeometry> _geometries = new();
   private int _ord;
   private int _placementOrd;
-  private BundleCollection? _collection;
-  private BundleCollection? _model;
-  private BundleCollection? _system;
+  private BundleContainer? _collection;
+  private BundleContainer? _model;
+  private BundleContainer? _system;
   private BundleLevel? _level;
   private BundleMaterial? _material;
   private BundleColor? _color;
@@ -421,21 +423,21 @@ public sealed class BundleObject
   // ── object → node ─────────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>Authored scene-tree container (<c>IN_COLLECTION</c>).</summary>
-  public BundleCollection? Collection
+  public BundleContainer? Collection
   {
     get => _collection;
     set => Set(ref _collection, value, k => _builder.Pipeline.InCollection(K, k, 0));
   }
 
   /// <summary>Federated-model container (<c>IN_MODEL</c>): the Revit host / linked model the object came from.</summary>
-  public BundleCollection? Model
+  public BundleContainer? Model
   {
     get => _model;
     set => Set(ref _model, value, k => _builder.Pipeline.InModel(K, k, 0));
   }
 
   /// <summary>MEP system / network container (<c>IN_SYSTEM</c>).</summary>
-  public BundleCollection? System
+  public BundleContainer? System
   {
     get => _system;
     set => Set(ref _system, value, k => _builder.Pipeline.InSystem(K, k, 0));
@@ -463,7 +465,7 @@ public sealed class BundleObject
   }
 
   /// <summary>Authored group membership (<c>IN_GROUP</c>) — an object may sit in several, nested or not.</summary>
-  public void AddToGroup(BundleCollection group, int ord = 0) => _builder.Pipeline.InGroup(K, group.K, ord);
+  public void AddToGroup(BundleContainer group, int ord = 0) => _builder.Pipeline.InGroup(K, group.K, ord);
 
   // ── object → object ───────────────────────────────────────────────────────────────────────────────────
 

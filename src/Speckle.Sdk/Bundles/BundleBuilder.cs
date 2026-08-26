@@ -16,7 +16,7 @@ namespace Speckle.Sdk.Bundles;
 /// Typical shape:
 /// <code>
 /// using var b = new BundleBuilder(app, units: "m");
-/// var walls = b.GetOrAddCollection(["Level 1", "Walls"], subtype: "Category");
+/// var walls = b.GetOrAddContainerPath(["Level 1", "Walls"], subtype: "Category");
 /// var wall  = b.GetOrAddObject("wall-1");
 /// wall.SetProperties(properties, name: "Basic Wall", speckleType: "Objects.Data.DataObject");
 /// wall.Collection = walls;
@@ -36,7 +36,7 @@ public sealed class BundleBuilder : IDisposable
   private const string DEFAULT_BASE_NAME = "bundle";
 
   private readonly Dictionary<string, BundleObject> _objects = new(StringComparer.Ordinal);
-  private readonly Dictionary<string, BundleCollection> _collections = new(StringComparer.Ordinal);
+  private readonly Dictionary<string, BundleContainer> _containers = new(StringComparer.Ordinal);
   private readonly Dictionary<string, BundleDefinition> _definitions = new(StringComparer.Ordinal);
   private readonly Dictionary<string, BundleMaterial> _materials = new(StringComparer.Ordinal);
   private readonly Dictionary<int, BundleColor> _colors = new();
@@ -74,14 +74,16 @@ public sealed class BundleBuilder : IDisposable
 
   internal ObjectsArtifactPipeline Pipeline { get; }
 
-  // ── scene tree ────────────────────────────────────────────────────────────────────────────────────────
+  // ── containers (scene tree) ────────────────────────────────────────────────────────────────────────────────────────
 
-  /// <summary>Gets or creates the CONTAINER chain for a path (<c>["Level 1", "Walls"]</c>) — one node per segment,
-  /// parent-linked. Each segment is keyed by its full path, so two branches sharing a name stay distinct.</summary>
+  /// <summary>Gets or creates a CONTAINER chain for a name path (<c>["Level 1", "Walls"]</c>) — one node per segment,
+  /// parent-linked, each keyed by its full path so two branches sharing a name stay distinct. Containers are the
+  /// scene-tree nodes (spec node kind CONTAINER; <paramref name="subtype"/> says which flavour); objects join them
+  /// through the <c>IN_COLLECTION</c> / <c>IN_MODEL</c> / <c>IN_GROUP</c> / <c>IN_SYSTEM</c> rels.</summary>
   /// <param name="subtype">Tag for the leaf (and any newly created ancestors): <c>"Layer"</c>, <c>"Category"</c>,
   /// <c>"Collection"</c> …</param>
   /// <param name="ghTopology">Grasshopper data-tree topology for the leaf (<c>nodes.gh_topology</c>); null otherwise.</param>
-  public BundleCollection GetOrAddCollection(
+  public BundleContainer GetOrAddContainerPath(
     IReadOnlyList<string> path,
     string subtype = "Collection",
     string? ghTopology = null
@@ -91,7 +93,7 @@ public sealed class BundleBuilder : IDisposable
     {
       throw new ArgumentException("A collection path needs at least one segment.", nameof(path));
     }
-    BundleCollection? parent = null;
+    BundleContainer? parent = null;
     string key = "";
     foreach (var segment in path)
     {
@@ -104,15 +106,15 @@ public sealed class BundleBuilder : IDisposable
 
   /// <summary>Gets or creates one CONTAINER by explicit key — for containers that aren't a name path: a federated
   /// <c>Model</c>, a <c>Group</c>, an MEP <c>System</c>/<c>Network</c>.</summary>
-  public BundleCollection GetOrAddContainer(
+  public BundleContainer GetOrAddContainer(
     string key,
     string? name,
-    BundleCollection? parent,
+    BundleContainer? parent,
     string subtype,
     string? ghTopology = null
   )
   {
-    if (_collections.TryGetValue(key, out var existing))
+    if (_containers.TryGetValue(key, out var existing))
     {
       Same(key, existing.Name, name, "name");
       Same(key, existing.Subtype, subtype, "subtype");
@@ -120,8 +122,8 @@ public sealed class BundleBuilder : IDisposable
       return existing;
     }
     int k = Pipeline.AddCollection(key, name, parent?.K, subtype, ghTopology);
-    var c = new BundleCollection(this, k, key, name, subtype, parent);
-    _collections[key] = c;
+    var c = new BundleContainer(this, k, key, name, subtype, parent);
+    _containers[key] = c;
     return c;
   }
 

@@ -8,7 +8,7 @@ internal static class BundleBuilderTestExtensions
   public static BundleObject GetOrAddObject(
     this BundleBuilder b,
     string applicationId,
-    BundleCollection? collection,
+    BundleContainer? collection,
     IReadOnlyDictionary<string, object?>? properties,
     string? name = null,
     string? speckleType = null,
