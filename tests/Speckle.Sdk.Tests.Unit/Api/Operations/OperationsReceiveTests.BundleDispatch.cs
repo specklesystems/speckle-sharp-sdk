@@ -38,6 +38,7 @@ public sealed class OperationsReceiveBundleDispatchTests
           "model",
           "ver",
           It.IsAny<string>(),
+          It.IsAny<Func<string, bool>?>(),
           It.IsAny<CancellationToken>()
         )
       )
@@ -120,13 +121,14 @@ public sealed class OperationsReceiveBundleDispatchTests
           "model",
           "ver",
           It.IsAny<string>(),
+          It.IsAny<Func<string, bool>?>(),
           It.IsAny<CancellationToken>()
         )
       )
       .ReturnsAsync(Array.Empty<string>());
 
     var ex = await Assert.ThrowsAsync<SpeckleException>(() =>
-      operations.Receive3(s_url, "proj", "model", "ver", "tok", CancellationToken.None)
+      operations.Receive3(s_url, "proj", "model", "ver", "tok", null, CancellationToken.None)
     );
     Assert.Contains("has no artefact bundle", ex.Message, StringComparison.Ordinal);
     downloader.VerifyAll();

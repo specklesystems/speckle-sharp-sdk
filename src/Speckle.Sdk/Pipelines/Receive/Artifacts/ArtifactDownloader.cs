@@ -19,12 +19,28 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
   /// Returns an EMPTY list when the version has no artefact bundle (not a 4.0 artefact version, or the v2
   /// data endpoints are unavailable / 404) — the caller falls back to the v1 receive path.
   /// </summary>
+  public Task<IReadOnlyList<string>> DownloadBundleAsync(
+    Account account,
+    string projectId,
+    string modelId,
+    string versionId,
+    string destDir,
+    CancellationToken cancellationToken
+  ) => DownloadBundleAsync(account, projectId, modelId, versionId, destDir, fileFilter: null, cancellationToken);
+
+  /// <summary>
+  /// As <see cref="DownloadBundleAsync(Account, string, string, string, string, CancellationToken)"/>, downloading only
+  /// the listed files <paramref name="fileFilter"/> accepts (by bare basename). <see langword="null"/> downloads
+  /// everything. The empty-list contract is unchanged: it means the version has no bundle at all, never that the filter
+  /// rejected every file.
+  /// </summary>
   public async Task<IReadOnlyList<string>> DownloadBundleAsync(
     Account account,
     string projectId,
     string modelId,
     string versionId,
     string destDir,
+    Func<string, bool>? fileFilter,
     CancellationToken cancellationToken
   )
   {
@@ -44,6 +60,10 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
     var paths = new List<string>(files.Count);
     foreach (var file in files)
     {
+      if (fileFilter is not null && !fileFilter(file.Name))
+      {
+        continue;
+      }
       string path = Path.Combine(destDir, file.Name);
       await DownloadFileAsync(s3Client, file.Name, file.Url, path, cancellationToken).ConfigureAwait(false);
       paths.Add(path);

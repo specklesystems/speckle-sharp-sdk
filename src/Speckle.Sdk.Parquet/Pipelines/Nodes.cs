@@ -25,6 +25,7 @@ public static class RelKind
   public const byte InRoom = (byte)SpecRel.IN_ROOM;
   public const byte InSystem = (byte)SpecRel.IN_SYSTEM;
   public const byte InGroup = (byte)SpecRel.IN_GROUP;
+  public const byte InAssembly = (byte)SpecRel.IN_ASSEMBLY;
   public const byte ConnectsTo = (byte)SpecRel.CONNECTS_TO;
   public const byte HostedOn = (byte)SpecRel.HOSTED_ON;
   public const byte Bounds = (byte)SpecRel.BOUNDS;
