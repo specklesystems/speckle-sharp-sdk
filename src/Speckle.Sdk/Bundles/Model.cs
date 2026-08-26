@@ -28,6 +28,7 @@ public sealed class Model : IDisposable
   private readonly Lazy<IReadOnlyDictionary<int, ArtefactGeometry>> _geometries;
   private readonly Lazy<RelationIndex> _index;
   private readonly Lazy<IReadOnlyList<ModelSceneViewTier>> _sceneView;
+  private readonly Lazy<IReadOnlyDictionary<string, object?>> _modelProperties;
   private bool _disposed;
 
   internal Model(
@@ -56,6 +57,7 @@ public sealed class Model : IDisposable
     _geometries = new(LoadGeometries);
     _index = new(() => new RelationIndex(Bundle));
     _sceneView = new(() => Bundle.DefaultSceneView.Select(t => new ModelSceneViewTier(t)).ToList());
+    _modelProperties = new(() => Flatten(Bundle.ModelProperties));
     if (bundle.Relations.UnknownRels.Count > 0)
     {
       logger.LogWarning(
@@ -79,8 +81,9 @@ public sealed class Model : IDisposable
   /// <summary>Length unit every geometry in the bundle is expressed in (e.g. <c>"m"</c>, <c>"mm"</c>).</summary>
   public string Units => Bundle.Units;
 
-  /// <summary>Model-level properties (<c>eav.model</c>), flat path-keyed.</summary>
-  public IReadOnlyDictionary<string, object?> Properties => Bundle.ModelProperties;
+  /// <summary>Model-level properties (<c>eav.model</c>: project information, placement transform, document settings),
+  /// flat path-keyed like object properties.</summary>
+  public IReadOnlyDictionary<string, object?> Properties => _modelProperties.Value;
 
   /// <summary>The default scene view's grouping tiers, outermost first — how the viewer builds its tree. Empty when the
   /// producer declared none (the scene tree is then the <c>IN_COLLECTION</c> hierarchy).</summary>
@@ -231,6 +234,30 @@ public sealed class Model : IDisposable
 
   internal IReadOnlyList<ModelObject> MembersOfDefinition(int definitionK) =>
     ObjectsFor(Bundle.Relations.MemberObjectsByDefinition.TryGetValue(definitionK, out var m) ? m : null);
+
+  // The reader nests model-scoped rows by dotted path; the façade addresses them flat, like everything else.
+  private static IReadOnlyDictionary<string, object?> Flatten(IReadOnlyDictionary<string, object?> nested)
+  {
+    var flat = new Dictionary<string, object?>(StringComparer.Ordinal);
+    Walk(nested, null);
+    return flat;
+
+    void Walk(IReadOnlyDictionary<string, object?> dict, string? prefix)
+    {
+      foreach (var kv in dict)
+      {
+        string path = prefix is null ? kv.Key : prefix + "." + kv.Key;
+        if (kv.Value is IReadOnlyDictionary<string, object?> child)
+        {
+          Walk(child, path);
+        }
+        else
+        {
+          flat[path] = kv.Value;
+        }
+      }
+    }
+  }
 
   private IReadOnlyList<ModelObject> BuildObjects()
   {
