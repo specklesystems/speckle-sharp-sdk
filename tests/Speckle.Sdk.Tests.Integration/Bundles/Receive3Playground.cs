@@ -1,12 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Credentials;
 using Xunit.Abstractions;
 using Model = Speckle.Sdk.Bundles.Model;
 
 namespace Speckle.Sdk.Tests.Integration.Bundles;
 
 /// <summary>
-/// Manual playground for <see cref="Operations.Receive3(string, string?, Speckle.Sdk.Bundles.ReceiveOptions?, CancellationToken)"/> against a real server. Set <see cref="MODEL_URL"/> and
+/// Manual playground for <see cref="Operations.Receive3(Speckle.Sdk.Credentials.Account, Uri, Speckle.Sdk.Bundles.ReceiveOptions?, CancellationToken)"/> against a real server. Set <see cref="MODEL_URL"/> and
 /// <see cref="TOKEN"/> below (don't commit them), then run/debug this test. Left empty, the test returns immediately
 /// (green in CI).
 /// <code>
@@ -37,7 +38,14 @@ public sealed class Receive3Playground(ITestOutputHelper output)
 
     // ── receive by url (latest version unless the url pins one with @versionId) ──────────────────────────
     var operations = provider.GetRequiredService<IOperations>();
-    using Model received = await operations.Receive3(modelUrl, token, options: null, CancellationToken.None);
+    var url = new Uri(modelUrl, UriKind.Absolute);
+    var account = new Account
+    {
+      token = token,
+      serverInfo = new() { url = url.GetLeftPart(UriPartial.Authority) },
+      userInfo = new(),
+    };
+    using Model received = await operations.Receive3(account, url, options: null, CancellationToken.None);
     output.WriteLine($"project={received.ProjectId} model={received.ModelId} version={received.VersionId}");
 
     // ── 4. poke around — good place for a breakpoint ────────────────────────────────────────────────────

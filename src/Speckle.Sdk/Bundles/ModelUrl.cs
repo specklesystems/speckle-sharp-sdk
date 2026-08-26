@@ -2,7 +2,7 @@ namespace Speckle.Sdk.Bundles;
 
 /// <summary>
 /// A parsed Speckle model url: <c>{server}/projects/{projectId}/models/{modelId}[@{versionId}]</c>. The form the web
-/// app hands out and users paste; <see cref="Api.Operations.Receive3(string, string?, ReceiveOptions?, CancellationToken)"/>
+/// app hands out and users paste; <see cref="Api.Operations.Receive3(Speckle.Sdk.Credentials.Account, Uri, ReceiveOptions?, CancellationToken)"/>
 /// accepts it directly.
 /// </summary>
 public sealed record ModelUrl(Uri Server, string ProjectId, string ModelId, string? VersionId)

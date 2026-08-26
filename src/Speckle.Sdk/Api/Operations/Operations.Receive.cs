@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Bundles;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
@@ -13,35 +14,44 @@ namespace Speckle.Sdk.Api;
 public partial class Operations
 {
   /// <summary>
-  /// <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/> addressed by a
-  /// model url — <c>{server}/projects/{projectId}/models/{modelId}[@{versionId}]</c>, as the web app hands out. Without
+  /// <see cref="Receive3(Account, string, string, string, ReceiveOptions?, CancellationToken)"/> addressed by a model
+  /// url — <c>{server}/projects/{projectId}/models/{modelId}[@{versionId}]</c>, as the web app hands out. Without
   /// <c>@versionId</c> the model's latest version is resolved via GraphQL first.
   /// </summary>
-  /// <exception cref="ArgumentException"><paramref name="modelUrl"/> is not a model url.</exception>
+  /// <exception cref="ArgumentException"><paramref name="modelUrl"/> is not a model url, or is on a different server
+  /// than <paramref name="account"/>.</exception>
   /// <exception cref="SpeckleException">The model has no versions, or the version has no bundle.</exception>
   public async Task<Model> Receive3(
-    string modelUrl,
-    string? authorizationToken,
+    Account account,
+    Uri modelUrl,
     ReceiveOptions? options,
     CancellationToken cancellationToken
   )
   {
-    var url = ModelUrl.Parse(new Uri(modelUrl, UriKind.Absolute));
+    var url = ModelUrl.Parse(modelUrl);
+    EnsureSameServer(account, url, nameof(modelUrl));
     string versionId =
       url.VersionId
       ?? await bundleReceiver
-        .ResolveLatestVersionIdAsync(url, authorizationToken, cancellationToken)
+        .ResolveLatestVersionIdAsync(account, url.ProjectId, url.ModelId, cancellationToken)
         .ConfigureAwait(false);
-    return await Receive3(
-        url.Server,
-        url.ProjectId,
-        url.ModelId,
-        versionId,
-        authorizationToken,
-        options,
-        cancellationToken
-      )
+    return await Receive3(account, url.ProjectId, url.ModelId, versionId, options, cancellationToken)
       .ConfigureAwait(false);
+  }
+
+  /// <summary>A model url must live on the account's server — a mismatch is a caller mix-up, not a request to make.</summary>
+  private static void EnsureSameServer(Account account, ModelUrl url, string paramName)
+  {
+    if (
+      !Uri.TryCreate(account.serverInfo.url, UriKind.Absolute, out var server)
+      || !string.Equals(server.Host, url.Server.Host, StringComparison.OrdinalIgnoreCase)
+    )
+    {
+      throw new ArgumentException(
+        $"'{url}' is on '{url.Server.Host}', but the account is for '{account.serverInfo.url}'.",
+        paramName
+      );
+    }
   }
 
   /// <summary>
@@ -67,18 +77,17 @@ public partial class Operations
   /// the server predates the /api/v2 artifacts endpoint, or the token cannot read the project).</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
   public async Task<Model> Receive3(
-    Uri url,
+    Account account,
     string projectId,
     string modelId,
     string versionId,
-    string? authorizationToken,
     ReceiveOptions? options,
     CancellationToken cancellationToken
   )
   {
     options ??= ReceiveOptions.Default;
     using var receiveActivity = activityFactory.Start("Operations.Receive3");
-    receiveActivity?.SetTag("speckle.url", url);
+    receiveActivity?.SetTag("speckle.url", account.serverInfo.url);
     receiveActivity?.SetTag("speckle.projectId", projectId);
     receiveActivity?.SetTag("speckle.modelId", modelId);
     receiveActivity?.SetTag("speckle.versionId", versionId);
@@ -87,7 +96,7 @@ public partial class Operations
     try
     {
       var model = await bundleReceiver
-        .ReceiveAsync(url, projectId, modelId, versionId, authorizationToken, options, cancellationToken)
+        .ReceiveAsync(account, projectId, modelId, versionId, options, cancellationToken)
         .ConfigureAwait(false);
       receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return model;
@@ -120,7 +129,7 @@ public partial class Operations
   /// lossy compatibility projection (no typed classes, per-parameter metadata collapsed to scalars, synthetic ids for
   /// non-object entities) and it does not scale to the model sizes the bundle format is built for: every object,
   /// property and decoded mesh becomes a managed <see cref="Base"/>, so large versions that the new rail handles
-  /// comfortably can exhaust memory here. New code should call <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/>, which returns the bundle itself.
+  /// comfortably can exhaust memory here. New code should call <see cref="Receive3(Account, string, string, string, ReceiveOptions?, CancellationToken)"/>, which returns the bundle itself.
   /// </remarks>
   /// <exception cref="ArgumentException">No transports were specified</exception>
   /// <exception cref="ArgumentNullException">The <paramref name="objectId"/> was <see langword="null"/></exception>
@@ -211,7 +220,7 @@ public partial class Operations
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <returns>The requested Speckle Object</returns>
   /// <exception cref="NotSupportedException"><paramref name="objectId"/> is a <see cref="BundleReference"/>: transports
-  /// serve per-object JSON and can never carry a Speckle 2026.9.0 bundle. Use <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/> instead.</exception>
+  /// serve per-object JSON and can never carry a Speckle 2026.9.0 bundle. Use <see cref="Receive3(Account, string, string, string, ReceiveOptions?, CancellationToken)"/> instead.</exception>
   [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
   [Obsolete(
     "Transport-based Receive is frozen legacy surface: it works for existing (object-graph) versions but can never "
@@ -391,7 +400,7 @@ public partial class Operations
   /// <item>collections / materials / definitions get per-bundle synthetic ids — stable within one tree, not across versions;</item>
   /// <item>v2 typed classes are NOT rehydrated; per-parameter metadata collapses to scalars.</item>
   /// </list>
-  /// Full fidelity lives in <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/>.
+  /// Full fidelity lives in <see cref="Receive3(Account, string, string, string, ReceiveOptions?, CancellationToken)"/>.
   /// </summary>
   /// <exception cref="SpeckleException">The reference's project doesn't match <paramref name="projectId"/>, or the
   /// server returned no artefact files for a version that promises a bundle.</exception>
@@ -421,11 +430,16 @@ public partial class Operations
 
       var root = await bundleReceiver
         .ReceiveAsBaseAsync(
-          url,
+          // the legacy signature hands us a url + token; the downloader and client only read those two off an Account
+          new Account
+          {
+            token = authorizationToken ?? string.Empty,
+            serverInfo = new() { url = url.ToString() },
+            userInfo = new(),
+          },
           reference.ProjectId,
           reference.ModelId,
           reference.VersionId,
-          authorizationToken,
           cancellationToken
         )
         .ConfigureAwait(false);

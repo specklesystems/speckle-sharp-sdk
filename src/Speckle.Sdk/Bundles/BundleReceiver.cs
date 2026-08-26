@@ -11,7 +11,7 @@ namespace Speckle.Sdk.Bundles;
 
 /// <summary>
 /// Fetches a version's artefact bundle over the <c>/api/v2</c> artifacts rail and parses it — the orchestration behind
-/// <see cref="Operations.Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/>.
+/// <see cref="Operations.Receive3(Account, string, string, string, ReceiveOptions?, CancellationToken)"/>.
 /// The <see cref="Model"/> profile (columnar properties, deferred geometry) is the read surface; the <see cref="Base"/>
 /// profile is the lossy projection <see cref="Operations.Receive2"/> hands legacy scripts.
 /// </summary>
@@ -26,24 +26,15 @@ public sealed class BundleReceiver(
   /// <see cref="Model"/> owns the directory; on any failure the directory is removed here.</summary>
   /// <exception cref="SpeckleException">The server returned no artefact files for this version.</exception>
   public async Task<Model> ReceiveAsync(
-    Uri url,
+    Account account,
     string projectId,
     string modelId,
     string versionId,
-    string? authorizationToken,
     ReceiveOptions options,
     CancellationToken cancellationToken
   )
   {
-    string bundleDir = await DownloadAsync(
-        url,
-        projectId,
-        modelId,
-        versionId,
-        authorizationToken,
-        options,
-        cancellationToken
-      )
+    string bundleDir = await DownloadAsync(account, projectId, modelId, versionId, options, cancellationToken)
       .ConfigureAwait(false);
     try
     {
@@ -71,20 +62,18 @@ public sealed class BundleReceiver(
   /// cost that makes <see cref="Operations.Receive2"/> obsolete. The scratch files are deleted before returning.
   /// </summary>
   public async Task<Base> ReceiveAsBaseAsync(
-    Uri url,
+    Account account,
     string projectId,
     string modelId,
     string versionId,
-    string? authorizationToken,
     CancellationToken cancellationToken
   )
   {
     string bundleDir = await DownloadAsync(
-        url,
+        account,
         projectId,
         modelId,
         versionId,
-        authorizationToken,
         ReceiveOptions.Default,
         cancellationToken
       )
@@ -112,34 +101,29 @@ public sealed class BundleReceiver(
 
   /// <summary>The model's latest version id, for a url without <c>@versionId</c>.</summary>
   /// <exception cref="SpeckleException">The model has no versions.</exception>
-  public async Task<string> ResolveLatestVersionIdAsync(ModelUrl url, string? authorizationToken, CancellationToken ct)
+  public async Task<string> ResolveLatestVersionIdAsync(
+    Account account,
+    string projectId,
+    string modelId,
+    CancellationToken ct
+  )
   {
-    using var client = clientFactory.Create(AccountFor(url.Server, authorizationToken));
+    using var client = clientFactory.Create(account);
     var model = await client
-      .Model.GetWithVersions(url.ModelId, url.ProjectId, versionsLimit: 1, cancellationToken: ct)
+      .Model.GetWithVersions(modelId, projectId, versionsLimit: 1, cancellationToken: ct)
       .ConfigureAwait(false);
     if (model.versions.items.Count == 0)
     {
-      throw new SpeckleException($"Model '{url.ModelId}' in project '{url.ProjectId}' has no versions yet.");
+      throw new SpeckleException($"Model '{modelId}' in project '{projectId}' has no versions yet.");
     }
     return model.versions.items[0].id;
   }
 
-  // ArtifactDownloader (and the GraphQL client) only read token + serverInfo.url off the account.
-  private static Account AccountFor(Uri server, string? token) =>
-    new()
-    {
-      token = token ?? string.Empty,
-      serverInfo = new() { url = server.ToString() },
-      userInfo = new(),
-    };
-
   private async Task<string> DownloadAsync(
-    Uri url,
+    Account account,
     string projectId,
     string modelId,
     string versionId,
-    string? authorizationToken,
     ReceiveOptions options,
     CancellationToken cancellationToken
   )
@@ -154,7 +138,7 @@ public sealed class BundleReceiver(
     {
       var files = await artifactDownloader
         .DownloadBundleAsync(
-          AccountFor(url, authorizationToken),
+          account,
           projectId,
           modelId,
           versionId,
@@ -170,7 +154,7 @@ public sealed class BundleReceiver(
         // a bundle-only version there is no legacy graph anyway.
         throw new SpeckleException(
           $"Version '{versionId}' (model '{modelId}', project '{projectId}') has no artefact bundle on the server at "
-            + $"'{url}'. Either the server does not serve the /api/v2 artifacts endpoint yet, the token cannot read the "
+            + $"'{account.serverInfo.url}'. Either the server does not serve the /api/v2 artifacts endpoint yet, the token cannot read the "
             + "project, or the bundle has not been produced for this version."
         );
       }

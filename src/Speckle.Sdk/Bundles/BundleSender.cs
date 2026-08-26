@@ -13,7 +13,7 @@ namespace Speckle.Sdk.Bundles;
 /// Publishes a <see cref="BundleBuilder"/> as a new version: creates the ingestion (the server pre-allocates the
 /// version id), finishes the builder and re-keys its files to that id, uploads them over the <c>/api/v2</c> artifacts
 /// rail (sign → presigned PUT per file → complete), and marks the ingestion failed or cancelled on any error. The
-/// orchestration behind <see cref="Operations.Send3(Uri, string, string, BundleBuilder, string?, SendOptions?, CancellationToken)"/>;
+/// orchestration behind <see cref="Operations.Send3(Account, string, string, BundleBuilder, SendOptions?, CancellationToken)"/>;
 /// connectors can drive it directly once their host objects are in a builder.
 /// </summary>
 [GenerateAutoInterface]
@@ -26,26 +26,19 @@ public sealed class BundleSender(
 {
   /// <exception cref="SpeckleException">The server did not pre-allocate a version id (it predates the v2 data endpoints).</exception>
   public async Task<SendResult> SendAsync(
-    Uri url,
+    Account account,
     string projectId,
     string modelId,
     BundleBuilder builder,
-    string? authorizationToken,
     SendOptions options,
     CancellationToken cancellationToken
   )
   {
     using var activity = activityFactory.Start("BundleSender.Send");
-    activity?.SetTag("speckle.url", url);
+    activity?.SetTag("speckle.url", account.serverInfo.url);
     activity?.SetTag("speckle.projectId", projectId);
     activity?.SetTag("speckle.modelId", modelId);
 
-    var account = new Account
-    {
-      token = authorizationToken ?? string.Empty,
-      serverInfo = new() { url = url.ToString() },
-      userInfo = new(),
-    };
     using var client = clientFactory.Create(account);
 
     var ingestion = await client
@@ -65,7 +58,7 @@ public sealed class BundleSender(
     if (ingestion.versionId is not { Length: > 0 } versionId)
     {
       throw new SpeckleException(
-        $"The server at '{url}' did not pre-allocate a version id for the ingestion; the Speckle 2026.9.0 bundle "
+        $"The server at '{account.serverInfo.url}' did not pre-allocate a version id for the ingestion; the Speckle 2026.9.0 bundle "
           + "upload requires a server with the /api/v2 data endpoints."
       );
     }

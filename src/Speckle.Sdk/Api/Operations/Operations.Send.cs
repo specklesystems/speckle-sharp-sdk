@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Bundles;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
@@ -25,11 +26,10 @@ public partial class Operations
   /// </remarks>
   /// <exception cref="SpeckleException">The server did not pre-allocate a version id (it predates the v2 data endpoints).</exception>
   public async Task<SendResult> Send3(
-    Uri url,
+    Account account,
     string projectId,
     string modelId,
     BundleBuilder builder,
-    string? authorizationToken,
     SendOptions? options,
     CancellationToken cancellationToken
   )
@@ -39,15 +39,7 @@ public partial class Operations
     try
     {
       var result = await bundleSender
-        .SendAsync(
-          url,
-          projectId,
-          modelId,
-          builder,
-          authorizationToken,
-          options ?? SendOptions.Default,
-          cancellationToken
-        )
+        .SendAsync(account, projectId, modelId, builder, options ?? SendOptions.Default, cancellationToken)
         .ConfigureAwait(false);
       sendActivity?.SetStatus(SdkActivityStatusCode.Ok);
       return result;
@@ -65,20 +57,22 @@ public partial class Operations
   }
 
   /// <summary>
-  /// <see cref="Send3(Uri, string, string, BundleBuilder, string?, SendOptions?, CancellationToken)"/> addressed by a
+  /// <see cref="Send3(Account, string, string, BundleBuilder, SendOptions?, CancellationToken)"/> addressed by a
   /// model url — <c>{server}/projects/{projectId}/models/{modelId}</c>. A <c>@versionId</c> suffix is rejected: a send
   /// always creates a new version.
   /// </summary>
-  /// <exception cref="ArgumentException"><paramref name="modelUrl"/> is not a model url, or pins a version.</exception>
+  /// <exception cref="ArgumentException"><paramref name="modelUrl"/> is not a model url, pins a version, or is on a
+  /// different server than <paramref name="account"/>.</exception>
   public Task<SendResult> Send3(
-    string modelUrl,
+    Account account,
+    Uri modelUrl,
     BundleBuilder builder,
-    string? authorizationToken,
     SendOptions? options,
     CancellationToken cancellationToken
   )
   {
-    var url = ModelUrl.Parse(new Uri(modelUrl, UriKind.Absolute));
+    var url = ModelUrl.Parse(modelUrl);
+    EnsureSameServer(account, url, nameof(modelUrl));
     if (url.HasVersion)
     {
       throw new ArgumentException(
@@ -86,7 +80,7 @@ public partial class Operations
         nameof(modelUrl)
       );
     }
-    return Send3(url.Server, url.ProjectId, url.ModelId, builder, authorizationToken, options, cancellationToken);
+    return Send3(account, url.ProjectId, url.ModelId, builder, options, cancellationToken);
   }
 
   /// <summary>

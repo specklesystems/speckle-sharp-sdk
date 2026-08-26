@@ -43,8 +43,7 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
   public async Task Send3_Then_Receive3_RoundTrips()
   {
     var operations = Fixtures.ServiceProvider.GetRequiredService<IOperations>();
-    var server = new Uri(_client.Account.serverInfo.url);
-    string token = _client.Account.token;
+    var account = _client.Account;
 
     // ── send ────────────────────────────────────────────────────────────────────────────────────────────
     SendResult sent;
@@ -79,7 +78,7 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
       door.Parent = wall;
       b.ModelProperty("projectInformation.number", 42.0);
 
-      sent = await operations.Send3(server, _projectId, _modelId, b, token, null, CancellationToken.None);
+      sent = await operations.Send3(account, _projectId, _modelId, b, null, CancellationToken.None);
     }
 
     Assert.Equal(_projectId, sent.ProjectId);
@@ -106,11 +105,10 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
 
     // ── receive ─────────────────────────────────────────────────────────────────────────────────────────
     using Model received = await operations.Receive3(
-      server,
+      account,
       _projectId,
       _modelId,
       sent.VersionId,
-      token,
       null,
       CancellationToken.None
     );
@@ -133,8 +131,8 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
 
     // ── and by url, latest version ──────────────────────────────────────────────────────────────────────
     using Model latest = await operations.Receive3(
-      $"{server.ToString().TrimEnd('/')}/projects/{_projectId}/models/{_modelId}",
-      token,
+      account,
+      new Uri($"{account.serverInfo.url.TrimEnd('/')}/projects/{_projectId}/models/{_modelId}"),
       null,
       CancellationToken.None
     );

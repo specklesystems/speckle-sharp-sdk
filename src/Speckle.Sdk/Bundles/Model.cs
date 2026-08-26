@@ -5,7 +5,7 @@ using Speckle.Sdk.Pipelines.Receive.Artifacts;
 namespace Speckle.Sdk.Bundles;
 
 /// <summary>
-/// One received version of a model, as delivered by <see cref="Api.Operations.Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/> — the Speckle 2026.9.0 read
+/// One received version of a model, as delivered by <see cref="Api.Operations.Receive3(Speckle.Sdk.Credentials.Account, string, string, string, ReceiveOptions?, CancellationToken)"/> — the Speckle 2026.9.0 read
 /// surface. Wraps the version's artefact bundle and owns the local bundle files until disposed.
 /// </summary>
 /// <remarks>

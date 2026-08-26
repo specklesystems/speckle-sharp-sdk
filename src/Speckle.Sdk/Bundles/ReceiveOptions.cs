@@ -1,6 +1,6 @@
 namespace Speckle.Sdk.Bundles;
 
-/// <summary>Options for <see cref="Api.Operations.Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/>.</summary>
+/// <summary>Options for <see cref="Api.Operations.Receive3(Speckle.Sdk.Credentials.Account, string, string, string, ReceiveOptions?, CancellationToken)"/>.</summary>
 /// <param name="IncludeGeometry">
 /// Download the geometry shards (<c>*.geometries*.parquet</c>). Default <see langword="true"/>. They are only parsed
 /// when <see cref="Model.Geometries"/> is first accessed, so leaving this on costs download time and disk, not memory.

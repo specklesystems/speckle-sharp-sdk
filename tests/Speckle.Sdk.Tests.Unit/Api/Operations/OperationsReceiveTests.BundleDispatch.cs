@@ -116,7 +116,7 @@ public sealed class OperationsReceiveBundleDispatchTests
       .ReturnsAsync(Array.Empty<string>());
 
     var ex = await Assert.ThrowsAsync<SpeckleException>(() =>
-      operations.Receive3(s_url, "proj", "model", "ver", "tok", null, CancellationToken.None)
+      operations.Receive3(AccountFor("tok"), "proj", "model", "ver", null, CancellationToken.None)
     );
     Assert.Contains("has no artefact bundle", ex.Message, StringComparison.Ordinal);
     downloader.VerifyAll();
@@ -157,8 +157,8 @@ public sealed class OperationsReceiveBundleDispatchTests
 
     await Assert.ThrowsAsync<SpeckleException>(() =>
       operations.Receive3(
-        "https://example.speckle.invalid/projects/proj/models/model@ver",
-        "tok",
+        AccountFor("tok"),
+        new Uri("https://example.speckle.invalid/projects/proj/models/model@ver"),
         null,
         CancellationToken.None
       )
@@ -171,8 +171,37 @@ public sealed class OperationsReceiveBundleDispatchTests
   {
     var (operations, downloader) = Build();
     await Assert.ThrowsAsync<ArgumentException>(() =>
-      operations.Receive3("https://example.speckle.invalid/streams/abc", "tok", null, CancellationToken.None)
+      operations.Receive3(
+        AccountFor("tok"),
+        new Uri("https://example.speckle.invalid/streams/abc"),
+        null,
+        CancellationToken.None
+      )
     );
     downloader.VerifyNoOtherCalls();
   }
+
+  [Fact]
+  public async Task Receive3_ByUrl_OtherServerThanAccount_Throws()
+  {
+    var (operations, downloader) = Build();
+    var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+      operations.Receive3(
+        AccountFor("tok"),
+        new Uri("https://other.speckle.invalid/projects/proj/models/model@ver"),
+        null,
+        CancellationToken.None
+      )
+    );
+    Assert.Equal("modelUrl", ex.ParamName);
+    downloader.VerifyNoOtherCalls();
+  }
+
+  private static Account AccountFor(string token) =>
+    new()
+    {
+      token = token,
+      serverInfo = new() { url = s_url.ToString() },
+      userInfo = new(),
+    };
 }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Bundles;
+using Speckle.Sdk.Credentials;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
@@ -15,6 +16,13 @@ public sealed class OperationsSend3Tests : IDisposable
     HostApplicationVersion = "1.0",
     Slug = "test",
     SpeckleVersion = "0.0.0",
+  };
+
+  private static readonly Account s_account = new()
+  {
+    token = "tok",
+    serverInfo = new() { url = "https://example.speckle.invalid/" },
+    userInfo = new(),
   };
 
   private readonly string _dir = Path.Combine(Path.GetTempPath(), "Send3Tests", Guid.NewGuid().ToString("N"));
@@ -36,9 +44,9 @@ public sealed class OperationsSend3Tests : IDisposable
 
     var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
       operations.Send3(
-        "https://example.speckle.invalid/projects/p/models/m@v",
+        s_account,
+        new Uri("https://example.speckle.invalid/projects/p/models/m@v"),
         builder,
-        "tok",
         null,
         CancellationToken.None
       )
@@ -54,8 +62,33 @@ public sealed class OperationsSend3Tests : IDisposable
     using var builder = new BundleBuilder(s_app, "m", _dir);
 
     await Assert.ThrowsAsync<ArgumentException>(() =>
-      operations.Send3("https://example.speckle.invalid/streams/abc", builder, "tok", null, CancellationToken.None)
+      operations.Send3(
+        s_account,
+        new Uri("https://example.speckle.invalid/streams/abc"),
+        builder,
+        null,
+        CancellationToken.None
+      )
     );
+    uploads.VerifyNoOtherCalls();
+  }
+
+  [Fact]
+  public async Task Send3_ByUrl_OtherServerThanAccount_RejectedBeforeAnyIO()
+  {
+    var (operations, uploads) = Build();
+    using var builder = new BundleBuilder(s_app, "m", _dir);
+
+    var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+      operations.Send3(
+        s_account,
+        new Uri("https://other.speckle.invalid/projects/p/models/m"),
+        builder,
+        null,
+        CancellationToken.None
+      )
+    );
+    Assert.Equal("modelUrl", ex.ParamName);
     uploads.VerifyNoOtherCalls();
   }
 

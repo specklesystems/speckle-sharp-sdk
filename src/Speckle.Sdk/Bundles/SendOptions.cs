@@ -1,6 +1,6 @@
 namespace Speckle.Sdk.Bundles;
 
-/// <summary>Options for <see cref="Api.Operations.Send3(Uri, string, string, BundleBuilder, string?, SendOptions?, CancellationToken)"/>.</summary>
+/// <summary>Options for <see cref="Api.Operations.Send3(Speckle.Sdk.Credentials.Account, string, string, BundleBuilder, SendOptions?, CancellationToken)"/>.</summary>
 /// <param name="Message">Progress / version message shown while the server ingests.</param>
 /// <param name="FileName">The source file the bundle came from, if any — recorded on the ingestion.</param>
 /// <param name="FileSizeBytes">Its size, if known.</param>
