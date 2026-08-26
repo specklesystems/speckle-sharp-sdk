@@ -452,8 +452,13 @@ public partial class Operations
         )
         .ConfigureAwait(false);
 
+      // The Base projection walks nested property dictionaries and decodes every mesh: re-read the downloaded files
+      // in the eager profile. This is the lossy compat path; its memory cost is the reason Receive2 is obsolete.
+      var eager = await ArtefactBundleReader
+        .ReadAsync(model.Directory, ArtefactReadOptions.Eager, cancellationToken)
+        .ConfigureAwait(false);
       var root = new ObjectsArtifactReader().Build(
-        model.Bundle,
+        eager,
         new ArtifactReceiveOptions(PreferSolids: false),
         cancellationToken
       );
@@ -528,9 +533,10 @@ public partial class Operations
         );
       }
 
-      // Geometry stays on disk until Model.Geometries is touched — it is the bulk of every bundle.
+      // Geometry stays on disk until Model.Geometries is touched — it is the bulk of every bundle — and properties
+      // stay columnar (PropertyTable) so memory tracks the parquet size, not a dictionary per nesting level.
       var bundle = await ArtefactBundleReader
-        .ReadAsync(bundleDir, loadGeometry: false, cancellationToken)
+        .ReadAsync(bundleDir, ArtefactReadOptions.Columnar, cancellationToken)
         .ConfigureAwait(false);
       return new Model(projectId, modelId, versionId, bundleDir, files, bundle, options.IncludeGeometry, logger);
     }

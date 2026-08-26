@@ -102,7 +102,7 @@ public sealed class ModelTests : IDisposable
       pipeline.Complete();
     }
 
-    var bundle = await ArtefactBundleReader.ReadAsync(_dir, loadGeometry: false, CancellationToken.None);
+    var bundle = await ArtefactBundleReader.ReadAsync(_dir, ArtefactReadOptions.Columnar, CancellationToken.None);
     var files = Directory.GetFiles(_dir);
     return new Model("p", "m", "v", _dir, files, bundle, geometryDownloaded, NullLogger.Instance);
   }
@@ -361,6 +361,27 @@ public sealed class ModelTests : IDisposable
     Assert.Same(definition, chair.Definition);
     Assert.Equal([chair], definition.Objects);
     Assert.Empty(definition.Members); // Revit-shaped: no DEFINES_MEMBER
+  }
+
+  [Fact]
+  public async Task Properties_AreColumnarViews()
+  {
+    using var model = await BuildModel();
+    var wall = model.ObjectByApplicationId("wall-1")!;
+
+    Assert.Empty(model.Bundle.Properties); // nothing nested was built
+    Assert.NotNull(model.Bundle.PropertyTable);
+    Assert.Equal(0.5, wall.GetDouble("Constraints.Base Offset"));
+    Assert.Equal("W-01", wall.GetString("Identity Data.Mark"));
+    Assert.Null(wall.GetDouble("Identity Data.Mark")); // typed miss
+    Assert.Equal("m", wall.GetString("units")); // root scalar via fallback
+    Assert.Equal(3, wall.Properties.Count);
+    Assert.Contains("Constraints.Base Offset", model.PropertyPaths);
+    Assert.DoesNotContain("name", model.PropertyPaths);
+
+    Assert.Equal(["door-1"], model.ObjectsWith("Width").Select(o => o.ApplicationId));
+    Assert.Equal(["wall-1"], model.ObjectsWith("Constraints.Top Offset").Select(o => o.ApplicationId));
+    Assert.Empty(model.ObjectsWith("nope"));
   }
 
   public void Dispose()

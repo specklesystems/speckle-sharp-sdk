@@ -239,8 +239,34 @@ public sealed record ArtefactPropertySetField(
 /// for the connectors that still go through the v1 host-build path, e.g. Revit). Geometry blobs are kept raw; SGEO
 /// decoding (which needs <c>Speckle.Objects</c>) happens in the consumer.
 /// </summary>
+/// <summary>How <see cref="ArtefactBundleReader"/> shapes what it loads.</summary>
+/// <param name="LoadGeometry">Open the geometry shards now. False leaves <see cref="ArtefactBundle.Geometries"/> empty;
+/// load later with <see cref="ArtefactBundleReader.ReadGeometriesAsync"/>.</param>
+/// <param name="ColumnarProperties">Keep properties as a <see cref="PropertyTable"/> (columns + per-key row ranges;
+/// memory ≈ parquet size) instead of nested dictionaries. True leaves <see cref="ArtefactBundle.Properties"/> and
+/// <see cref="ArtefactBundle.TypePropertiesByObject"/> empty and fills <see cref="ArtefactBundle.PropertyTable"/>,
+/// <see cref="ArtefactBundle.TypePropertyTable"/> and <see cref="ArtefactBundle.TypeIndexByObject"/>.</param>
+public sealed record ArtefactReadOptions(bool LoadGeometry = true, bool ColumnarProperties = false)
+{
+  /// <summary>Everything materialized, nested dictionaries — the connector bake profile.</summary>
+  public static readonly ArtefactReadOptions Eager = new();
+
+  /// <summary>Geometry deferred, columnar properties — the SDK <c>Receive3</c> profile.</summary>
+  public static readonly ArtefactReadOptions Columnar = new(LoadGeometry: false, ColumnarProperties: true);
+}
+
 public sealed class ArtefactBundle
 {
+  /// <summary>Instance properties as columns (see <see cref="ArtefactReadOptions.ColumnarProperties"/>); null in
+  /// nested mode.</summary>
+  public PropertyTable? PropertyTable { get; init; }
+
+  /// <summary>Type properties as columns keyed by <c>type_index</c>; null in nested mode or when the bundle has no type tables.</summary>
+  public PropertyTable? TypePropertyTable { get; init; }
+
+  /// <summary>object_index → type_index (<c>eav.object_type</c>); empty when the bundle has no type tables.</summary>
+  public IReadOnlyDictionary<int, int> TypeIndexByObject { get; init; } = new Dictionary<int, int>();
+
   public required Dictionary<int, ArtefactGeometry> Geometries { get; init; }
   public required Dictionary<int, string> ObjectAppIds { get; init; }
   public required Dictionary<int, Dictionary<string, object?>> Properties { get; init; }
@@ -280,21 +306,23 @@ public sealed class ArtefactBundle
 public static class ArtefactBundleReader
 {
   public static Task<ArtefactBundle> ReadAsync(string bundleDir, CancellationToken cancellationToken) =>
-    ReadAsync(bundleDir, loadGeometry: true, cancellationToken);
+    ReadAsync(bundleDir, ArtefactReadOptions.Eager, cancellationToken);
 
-  /// <summary>
-  /// As <see cref="ReadAsync(string, CancellationToken)"/>; with <paramref name="loadGeometry"/> false the geometry
-  /// shards are not opened and <see cref="ArtefactBundle.Geometries"/> comes back empty — load them later with
-  /// <see cref="ReadGeometriesAsync"/>. Geometry is the bulk of a bundle, so a properties-only consumer saves most of
-  /// the parse time and memory. One compat step is skipped in that mode: the pre-ENG-8822 untagged object-colour
-  /// recovery, which needs to know which Ks are geometries.
-  /// </summary>
-  public static async Task<ArtefactBundle> ReadAsync(
+  /// <summary>As <see cref="ReadAsync(string, CancellationToken)"/>; <paramref name="loadGeometry"/> false defers the
+  /// geometry shards (see <see cref="ArtefactReadOptions.LoadGeometry"/>).</summary>
+  public static Task<ArtefactBundle> ReadAsync(
     string bundleDir,
     bool loadGeometry,
     CancellationToken cancellationToken
+  ) => ReadAsync(bundleDir, new ArtefactReadOptions(LoadGeometry: loadGeometry), cancellationToken);
+
+  public static async Task<ArtefactBundle> ReadAsync(
+    string bundleDir,
+    ArtefactReadOptions options,
+    CancellationToken cancellationToken
   )
   {
+    bool loadGeometry = options.LoadGeometry;
     var geometriesTables = loadGeometry
       ? await ReadShardsAsync(bundleDir, cancellationToken).ConfigureAwait(false)
       : new List<ParquetTable>();
@@ -319,7 +347,13 @@ public static class ArtefactBundleReader
 
     var objIdToApp = BuildObjectIds(objectsT);
     var pathById = BuildPaths(pathsT);
-    var propsByObject = BuildProperties(eavT, pathById, "object_index");
+    bool columnar = options.ColumnarProperties;
+    var propsByObject = columnar
+      ? new Dictionary<int, Dictionary<string, object?>>()
+      : BuildProperties(eavT, pathById, "object_index");
+    PropertyTable? propertyTable = columnar ? PropertyTable.Load(eavT, pathsT, "object_index") : null;
+    PropertyTable? typePropertyTable =
+      columnar && typeEavT is not null ? PropertyTable.Load(typeEavT, pathsT, "type_index") : null;
     var geometries = LoadGeometries(geometriesTables);
     var relations = LoadRelations(relationsT);
     if (loadGeometry)
@@ -334,10 +368,15 @@ public static class ArtefactBundleReader
       Properties = propsByObject,
       Nodes = LoadNodes(nodesT),
       Relations = relations,
-      Units = InferUnits(propsByObject),
+      Units = columnar ? InferUnits(propertyTable!) : InferUnits(propsByObject),
+      PropertyTable = propertyTable,
+      TypePropertyTable = typePropertyTable,
+      TypeIndexByObject = LoadTypeIndex(objectTypeT),
       DefaultSceneView = LoadDefaultSceneView(sceneViewsT),
       CameraViews = LoadCameraViews(cameraViewsT),
-      TypePropertiesByObject = LoadTypeProperties(typeEavT, objectTypeT, pathById),
+      TypePropertiesByObject = columnar
+        ? new Dictionary<int, Dictionary<string, object?>>()
+        : LoadTypeProperties(typeEavT, objectTypeT, pathById),
       ModelProperties = LoadModelProperties(modelT),
       PropertySetDefinitions = LoadPropertySetDefinitions(psetDefsT),
     };
@@ -689,6 +728,34 @@ public static class ArtefactBundleReader
       }
     }
     cursor[parts[^1]] = value;
+  }
+
+  private static string InferUnits(PropertyTable table)
+  {
+    foreach (var kv in table.ValuesOf("units"))
+    {
+      if (kv.Value is string s && s.Length > 0)
+      {
+        return s;
+      }
+    }
+    return "";
+  }
+
+  private static Dictionary<int, int> LoadTypeIndex(ParquetTable? objectTypeT)
+  {
+    var map = new Dictionary<int, int>();
+    if (objectTypeT is null || !objectTypeT.Has("object_index"))
+    {
+      return map;
+    }
+    var objIdx = objectTypeT.Ints("object_index");
+    var typeIdx = objectTypeT.Ints("type_index");
+    for (int i = 0; i < objIdx.Length; i++)
+    {
+      map[objIdx[i]] = typeIdx[i];
+    }
+    return map;
   }
 
   private static string InferUnits(Dictionary<int, Dictionary<string, object?>> propsByObject)
