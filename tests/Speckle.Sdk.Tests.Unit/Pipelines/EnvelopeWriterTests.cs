@@ -192,8 +192,10 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, "SELECT sdk_name FROM meta").Should().Be("Speckle.Sdk (.NET)");
     Scalar(db, "SELECT sdk_version FROM meta").Should().Be("3.1.0-alpha.1");
     Scalar(db, "SELECT migrated_from_schema_version FROM meta").Should().Be(2);
-    // Provenance is additive — the catalog column is untouched.
+    // Provenance is additive — the catalog column is untouched. schema_version is the spec semver as TEXT —
+    // a regression to an int column must fail on the type, not on a boxed-value mismatch.
     Scalar(db, "SELECT schema_version FROM meta").Should().Be(SpecBundle.SchemaVersion);
+    Scalar(db, "SELECT typeof(schema_version) FROM meta").Should().Be("VARCHAR");
   }
 
   // A native send leaves the migration vintage NULL; the reference point is its own opt-in.
