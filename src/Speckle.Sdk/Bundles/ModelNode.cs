@@ -161,6 +161,9 @@ public sealed class ModelContainer : ModelNode
   /// <c>MEP System</c>, <c>Network</c>, <c>Group</c> … Null on bundles written before the column existed.</summary>
   public string? Subtype => _node.Subtype;
 
+  /// <summary>Grasshopper data-tree topology (<c>nodes.gh_topology</c>) for containers a GH send wrote; null otherwise.</summary>
+  public string? GhTopology => _node.GhTopology;
+
   /// <summary>The enclosing container. Null at the root.</summary>
   public ModelContainer? Parent => _model.NodeOrNull(_node.DefRef) as ModelContainer;
 

@@ -349,6 +349,20 @@ public sealed class BundleBuilderTests : IDisposable
   }
 
   [Fact]
+  public async Task Collections_CarryGhTopology_OnTheLeaf()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var leaf = b.GetOrAddCollection(["Tree", "{0;1}"], "Collection", ghTopology: "{0;1}");
+      b.GetOrAddObject("o", leaf, null);
+    });
+
+    var o = model.ObjectByApplicationId("o")!;
+    Assert.Equal("{0;1}", o.Collection!.GhTopology);
+    Assert.Null(o.Collection.Parent!.GhTopology);
+  }
+
+  [Fact]
   public void Build_Twice_Throws_And_RenameTo_RekeysFiles()
   {
     using var b = new BundleBuilder(s_app, "m", _dir);
