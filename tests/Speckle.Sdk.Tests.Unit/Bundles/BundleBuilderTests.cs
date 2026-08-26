@@ -46,8 +46,8 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var walls = b.Collection(["Level 1", "Walls"], subtype: "Category");
-      var wall = b.Object(
+      var walls = b.GetOrAddCollection(["Level 1", "Walls"], subtype: "Category");
+      var wall = b.GetOrAddObject(
         "wall-1",
         walls,
         new Dictionary<string, object?>
@@ -60,9 +60,9 @@ public sealed class BundleBuilderTests : IDisposable
         sourceType: "Walls"
       );
       wall.AddGeometry(Tri());
-      b.Object("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
+      b.GetOrAddObject("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
       // interning: same id twice is one object
-      Assert.Same(wall, b.Object("wall-1", walls, null));
+      Assert.Same(wall, b.GetOrAddObject("wall-1", walls, null));
     });
 
     Assert.Equal("m", model.Units);
@@ -89,29 +89,30 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var layer = b.Collection(["Layer 1"], "Layer");
-      var concrete = b.Material("mat-1", "Concrete", unchecked((int)0xFF808080), roughness: 0.8);
-      var red = b.Color(unchecked((int)0xFFFF0000));
-      var l1 = b.Level("L1", "Level 1", 3.0);
+      var layer = b.GetOrAddCollection(["Layer 1"], "Layer");
+      var concrete = b.GetOrAddMaterial("mat-1", "Concrete", unchecked((int)0xFF808080), roughness: 0.8);
+      var red = b.GetOrAddColor(unchecked((int)0xFFFF0000));
+      var l1 = b.GetOrAddLevel("L1", "Level 1", 3.0);
       layer.Color = red; // node plane
 
-      var wall = b.Object("wall-1", layer, null, name: "Wall");
+      var wall = b.GetOrAddObject("wall-1", layer, null, name: "Wall");
       wall.AddGeometry(Tri()).Material = concrete; // geometry plane
       wall.Level = l1;
-      var door = b.Object("door-1", layer, null, name: "Door");
+      var door = b.GetOrAddObject("door-1", layer, null, name: "Door");
       door.Parent = wall;
       door.Host = wall;
       door.Color = red; // object plane
       door.Level = l1;
-      var room = b.Object("room-1", layer, null, name: "Office");
+      var room = b.GetOrAddObject("room-1", layer, null, name: "Office");
       wall.Bounds(room);
       door.Room = room;
-      var a = b.Object("pipe-a", layer, null);
-      var c = b.Object("pipe-b", layer, null);
+      var a = b.GetOrAddObject("pipe-a", layer, null);
+      var c = b.GetOrAddObject("pipe-b", layer, null);
       a.ConnectTo(c);
-      var group = b.Container("grp-1", "Group A", null, "Group");
+      var group = b.GetOrAddContainer("grp-1", "Group A", null, "Group");
       wall.AddToGroup(group);
-      Assert.Same(concrete, b.Material("mat-1", "other name", 0)); // interned on key
+      Assert.Same(concrete, b.GetOrAddMaterial("mat-1", "Concrete", unchecked((int)0xFF808080), roughness: 0.8)); // interned on key
+      Assert.Throws<InvalidOperationException>(() => b.GetOrAddMaterial("mat-1", "other name", 0)); // key collision
     });
 
     var wall = model.ObjectByApplicationId("wall-1")!;
@@ -142,26 +143,32 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var layer = b.Collection(["Blocks"], "Layer");
-      var chairDef = b.Definition(
+      var layer = b.GetOrAddCollection(["Blocks"], "Layer");
+      var chairDef = b.GetOrAddDefinition(
         "def-chair",
         "Chair",
-        d => d.AddGeometry(Tri()).Material = b.Material("m", "Fabric", 0)
+        d => d.AddGeometry(Tri()).Material = b.GetOrAddMaterial("m", "Fabric", 0)
       );
       double[] t = [1, 0, 0, 10, 0, 1, 0, 20, 0, 0, 1, 0, 0, 0, 0, 1];
-      var chair1 = b.Object("chair-1", layer, null, name: "Chair 1");
+      var chair1 = b.GetOrAddObject("chair-1", layer, null, name: "Chair 1");
       chair1.Place(chairDef, t);
-      var chair2 = b.Object("chair-2", layer, null, name: "Chair 2");
+      var chair2 = b.GetOrAddObject("chair-2", layer, null, name: "Chair 2");
       chair2.Place(chairDef, t);
-      Assert.Same(chairDef, b.Definition("def-chair", "x")); // populate runs once
+      Assert.Same(chairDef, b.GetOrAddDefinition("def-chair", null)); // a placement knows only the id
+      Assert.Throws<InvalidOperationException>(() => b.GetOrAddDefinition("def-chair", "x")); // key collision
 
       // a Rhino-style member object with its own properties, joined to the definition geometry by ordinal
-      var tableDef = b.Definition("def-table", "Table");
+      var tableDef = b.GetOrAddDefinition("def-table", "Table");
       int ord = tableDef.NextMemberOrdinal();
       tableDef.AddGeometry(Tri(5), memberOrd: ord);
-      var top = b.Object("table-top", layer, new Dictionary<string, object?> { ["material"] = "oak" }, name: "Top");
+      var top = b.GetOrAddObject(
+        "table-top",
+        layer,
+        new Dictionary<string, object?> { ["material"] = "oak" },
+        name: "Top"
+      );
       tableDef.AddMember(top, ord);
-      b.Object("table-1", layer, null, name: "Table 1").Place(tableDef, t);
+      b.GetOrAddObject("table-1", layer, null, name: "Table 1").Place(tableDef, t);
     });
 
     var chair1 = model.ObjectByApplicationId("chair-1")!;
@@ -185,9 +192,15 @@ public sealed class BundleBuilderTests : IDisposable
   {
     using var model = await BuildAndRead(b =>
     {
-      var host = b.Container("model-main", "Main.rvt", null, "Model");
-      var l1 = b.Level("L1", "Level 1", 0);
-      var o = b.Object("w", null, null, name: "W", rootScalars: [new("category", "Walls"), new("family", "Basic")]);
+      var host = b.GetOrAddContainer("model-main", "Main.rvt", null, "Model");
+      var l1 = b.GetOrAddLevel("L1", "Level 1", 0);
+      var o = b.GetOrAddObject(
+        "w",
+        null,
+        null,
+        name: "W",
+        rootScalars: [new("category", "Walls"), new("family", "Basic")]
+      );
       o.Model = host;
       o.Level = l1;
       b.SceneView(
@@ -220,7 +233,7 @@ public sealed class BundleBuilderTests : IDisposable
   public void Build_Twice_Throws_And_RenameTo_RekeysFiles()
   {
     using var b = new BundleBuilder(s_app, "m", _dir);
-    b.Object("o", null, null);
+    b.GetOrAddObject("o", null, null);
     var files = b.Build();
     Assert.Throws<InvalidOperationException>(() => b.Build());
 
@@ -235,9 +248,9 @@ public sealed class BundleBuilderTests : IDisposable
   public void Relation_CannotBeRetracted()
   {
     using var b = new BundleBuilder(s_app, "m", _dir);
-    var a = b.Collection(["A"]);
-    var c = b.Collection(["C"]);
-    var o = b.Object("o", a, null);
+    var a = b.GetOrAddCollection(["A"]);
+    var c = b.GetOrAddCollection(["C"]);
+    var o = b.GetOrAddObject("o", a, null);
     Assert.Throws<InvalidOperationException>(() => o.Collection = c);
     o.Collection = a; // idempotent
   }

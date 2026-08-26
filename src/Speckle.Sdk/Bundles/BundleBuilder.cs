@@ -15,16 +15,18 @@ namespace Speckle.Sdk.Bundles;
 /// Typical shape:
 /// <code>
 /// using var b = new BundleBuilder(app, units: "m");
-/// var walls = b.Collection(["Level 1", "Walls"], subtype: "Category");
-/// var wall  = b.Object("wall-1", walls, properties, name: "Basic Wall", speckleType: "Objects.Data.DataObject");
-/// wall.AddGeometry(mesh).Material = b.Material("concrete", "Concrete", 0xFF808080, 1, 0, 0.8);
-/// wall.Level = b.Level("L1", "Level 1", 0);
-/// var chair = b.Object("chair-1", walls, null, name: "Chair");
-/// chair.Place(b.Definition("def-chair", "Chair", d => d.AddGeometry(chairMesh)), transform, "m");
+/// var walls = b.GetOrAddCollection(["Level 1", "Walls"], subtype: "Category");
+/// var wall  = b.GetOrAddObject("wall-1", walls, properties, name: "Basic Wall", speckleType: "Objects.Data.DataObject");
+/// wall.AddGeometry(mesh).Material = b.GetOrAddMaterial("concrete", "Concrete", 0xFF808080, 1, 0, 0.8);
+/// wall.Level = b.GetOrAddLevel("L1", "Level 1", 0);
+/// var chair = b.GetOrAddObject("chair-1", walls, null, name: "Chair");
+/// chair.Place(b.GetOrAddDefinition("def-chair", "Chair", d => d.AddGeometry(chairMesh)), transform, "m");
 /// BundleFiles files = b.Build();
 /// </code>
-/// Keys (<c>applicationId</c>, definition / material / level keys) intern: adding the same key twice returns the same
-/// handle and writes nothing new. Edge ordinals are assigned in call order per object.
+/// Naming rule: <c>GetOrAdd…</c> interns a node by key — the same key returns the same handle and writes nothing new,
+/// and a repeat with different attributes throws (a key collision with different content would be a corrupt bundle).
+/// <c>Add…</c> appends a row every call (geometry, model properties, results, camera views). Verbs and property
+/// setters (<c>Place</c>, <c>ConnectTo</c>, <c>Host =</c>) emit one edge each. Edge ordinals follow call order.
 /// </remarks>
 public sealed class BundleBuilder : IDisposable
 {
@@ -74,7 +76,7 @@ public sealed class BundleBuilder : IDisposable
   /// parent-linked. Each segment is keyed by its full path, so two branches sharing a name stay distinct.</summary>
   /// <param name="subtype">Tag for the leaf (and any newly created ancestors): <c>"Layer"</c>, <c>"Category"</c>,
   /// <c>"Collection"</c> …</param>
-  public BundleCollection Collection(IReadOnlyList<string> path, string subtype = "Collection")
+  public BundleCollection GetOrAddCollection(IReadOnlyList<string> path, string subtype = "Collection")
   {
     if (path.Count == 0)
     {
@@ -85,17 +87,20 @@ public sealed class BundleBuilder : IDisposable
     foreach (var segment in path)
     {
       key = key.Length == 0 ? segment : key + "/" + segment;
-      parent = Container(key, segment, parent, subtype);
+      parent = GetOrAddContainer(key, segment, parent, subtype);
     }
     return parent!;
   }
 
   /// <summary>Gets or creates one CONTAINER by explicit key — for containers that aren't a name path: a federated
   /// <c>Model</c>, a <c>Group</c>, an MEP <c>System</c>/<c>Network</c>.</summary>
-  public BundleCollection Container(string key, string? name, BundleCollection? parent, string subtype)
+  public BundleCollection GetOrAddContainer(string key, string? name, BundleCollection? parent, string subtype)
   {
     if (_collections.TryGetValue(key, out var existing))
     {
+      Same(key, existing.Name, name, "name");
+      Same(key, existing.Subtype, subtype, "subtype");
+      Same(key, existing.Parent?.Key, parent?.Key, "parent");
       return existing;
     }
     int k = Pipeline.AddContainer(key, name, parent?.K, subtype);
@@ -120,7 +125,7 @@ public sealed class BundleBuilder : IDisposable
   /// <param name="typeKey">Stable per-type identity (Revit type element UniqueId). When set, <c>Type Parameters</c> /
   /// <c>System Type Parameters</c> under <c>properties.Parameters</c> are deduplicated into the type tables.</param>
   /// <param name="rootScalars">Any further root scalars (Revit: <c>category</c>, <c>family</c>).</param>
-  public BundleObject Object(
+  public BundleObject GetOrAddObject(
     string applicationId,
     BundleCollection? collection,
     IReadOnlyDictionary<string, object?>? properties,
@@ -161,11 +166,22 @@ public sealed class BundleBuilder : IDisposable
 
   private static readonly IReadOnlyDictionary<string, object?> s_noProperties = new Dictionary<string, object?>();
 
+  private static void Same<T>(string key, T written, T requested, string what)
+  {
+    if (!EqualityComparer<T>.Default.Equals(written, requested))
+    {
+      throw new InvalidOperationException(
+        $"Key '{key}' was already added with {what} '{written}'; a second GetOrAdd asked for '{requested}'. "
+          + "One key means one node — use a different key for different content."
+      );
+    }
+  }
+
   // ── value nodes ───────────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>Gets or creates a MATERIAL node. <paramref name="key"/> is the dedup identity (host material id);
   /// <paramref name="name"/> is the authored name receivers recreate the host material under.</summary>
-  public BundleMaterial Material(
+  public BundleMaterial GetOrAddMaterial(
     string key,
     string? name,
     int argb,
@@ -178,6 +194,8 @@ public sealed class BundleBuilder : IDisposable
   {
     if (_materials.TryGetValue(key, out var existing))
     {
+      Same(key, existing.Name, name, "name");
+      Same(key, existing.Argb, argb, "argb");
       return existing;
     }
     int k = Pipeline.AddMaterial(key, name, argb, opacity, metalness, roughness, emissive, ior);
@@ -187,7 +205,7 @@ public sealed class BundleBuilder : IDisposable
   }
 
   /// <summary>Gets or creates a COLOR node, keyed by its ARGB value.</summary>
-  public BundleColor Color(int argb)
+  public BundleColor GetOrAddColor(int argb)
   {
     if (_colors.TryGetValue(argb, out var existing))
     {
@@ -199,10 +217,12 @@ public sealed class BundleBuilder : IDisposable
   }
 
   /// <summary>Gets or creates a LEVEL node.</summary>
-  public BundleLevel Level(string key, string? name, double elevation)
+  public BundleLevel GetOrAddLevel(string key, string? name, double elevation)
   {
     if (_levels.TryGetValue(key, out var existing))
     {
+      Same(key, existing.Name, name, "name");
+      Same(key, existing.Elevation, elevation, "elevation");
       return existing;
     }
     var l = new BundleLevel(this, Pipeline.AddLevel(key, name, elevation), key, name, elevation);
@@ -212,10 +232,14 @@ public sealed class BundleBuilder : IDisposable
 
   /// <summary>Gets or creates a DEFINITION (block / family symbol). <paramref name="populate"/> runs only on first
   /// creation — put the definition's geometry, nested placements and member objects there.</summary>
-  public BundleDefinition Definition(string key, string? name, Action<BundleDefinition>? populate = null)
+  public BundleDefinition GetOrAddDefinition(string key, string? name, Action<BundleDefinition>? populate = null)
   {
     if (_definitions.TryGetValue(key, out var existing))
     {
+      if (name is not null)
+      {
+        Same(key, existing.Name, name, "name"); // null = "whatever it was named" (a placement only knows the id)
+      }
       return existing;
     }
     var d = new BundleDefinition(this, Pipeline.AddDefinition(key, name), key, name);
