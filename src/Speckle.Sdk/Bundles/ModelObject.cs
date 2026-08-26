@@ -14,12 +14,11 @@ public sealed class ModelObject
 {
   // Producers write an object's user-facing properties under this root; root-level scalars (name, units, …) sit
   // beside it. The façade drops the root so scripts address "Constraints.Base Offset", not "properties.Constraints…".
-  private const string PROPERTIES_ROOT = "properties";
+  internal const string PROPERTIES_ROOT = "properties";
+  internal const string PROPERTIES_PREFIX = "properties.";
   private const int NESTING_GUARD = 32;
 
   private readonly Model _model;
-  private readonly Lazy<(IReadOnlyDictionary<string, object?> Root, IReadOnlyDictionary<string, object?> Props)> _own;
-  private readonly Lazy<IReadOnlyDictionary<string, object?>> _typeProperties;
   private readonly Lazy<IReadOnlyList<string>> _collectionPath;
   private readonly Lazy<IReadOnlyList<ModelGeometry>> _geometries;
 
@@ -28,11 +27,11 @@ public sealed class ModelObject
     _model = model;
     K = k;
     ApplicationId = applicationId;
-    _own = new(() => Split(model.Bundle.Properties.TryGetValue(k, out var p) ? p : null));
-    _typeProperties = new(() => Split(model.Bundle.TypePropertiesByObject.TryGetValue(k, out var p) ? p : null).Props);
     _collectionPath = new(() => ResolveCollectionPath(model.Bundle, k));
     _geometries = new(() => ResolveGeometries(model, this));
   }
+
+  private int TypeK => _model.Bundle.TypeIndexByObject.TryGetValue(K, out int t) ? t : -1;
 
   /// <summary>Dense object index inside the bundle — the key into <see cref="Model.Bundle"/>'s object-keyed maps.</summary>
   public int K { get; }
@@ -41,26 +40,45 @@ public sealed class ModelObject
   public string ApplicationId { get; }
 
   /// <summary>The object's root <c>name</c>, if the producer stamped one.</summary>
-  public string? Name => RootProperties.TryGetValue("name", out var n) ? n as string : null;
+  public string? Name => _model.Properties_.GetString(K, "name");
 
   // ── properties ────────────────────────────────────────────────────────────────────────────────────────
+  // Views over the bundle's PropertyTable row range for this object: no dictionaries are built unless enumerated.
 
   /// <summary>Instance-level properties, flat and path-keyed (without the <c>properties.</c> root).</summary>
-  public IReadOnlyDictionary<string, object?> Properties => _own.Value.Props;
+  public IReadOnlyDictionary<string, object?> Properties => _model.Properties_.Under(K, PROPERTIES_ROOT);
 
-  /// <summary>Root-level scalars the producer stamped beside <c>properties</c> (<c>name</c>, <c>units</c>, …).</summary>
-  public IReadOnlyDictionary<string, object?> RootProperties => _own.Value.Root;
+  /// <summary>Every property row of this object as stored — root scalars (<c>name</c>, <c>units</c>, …) and the
+  /// <c>properties.</c>-prefixed ones together.</summary>
+  public IReadOnlyDictionary<string, object?> RootProperties => _model.Properties_[K];
 
   /// <summary>Type-level properties (family/type/definition parameters) resolved for this object, flat and path-keyed.
   /// Empty when the producer wrote no type tables.</summary>
-  public IReadOnlyDictionary<string, object?> TypeProperties => _typeProperties.Value;
+  public IReadOnlyDictionary<string, object?> TypeProperties =>
+    TypeK >= 0 ? _model.TypeProperties_.Under(TypeK, PROPERTIES_ROOT) : PropertyView.Empty;
 
   /// <summary>Property lookup by dotted path. Instance properties win over type properties, then root scalars; null when absent.</summary>
   public object? this[string path] =>
-    Properties.TryGetValue(path, out var v) ? v
-    : TypeProperties.TryGetValue(path, out var t) ? t
-    : RootProperties.TryGetValue(path, out var r) ? r
+    _model.Properties_.TryGetValue(K, PROPERTIES_PREFIX + path, out var v) ? v
+    : TypeK >= 0 && _model.TypeProperties_.TryGetValue(TypeK, PROPERTIES_PREFIX + path, out var t) ? t
+    : _model.Properties_.TryGetValue(K, path, out var r) ? r
     : null;
+
+  /// <summary>Unboxed typed lookups over the same precedence as the indexer; null when absent or of another type.</summary>
+  public double? GetDouble(string path) =>
+    _model.Properties_.GetDouble(K, PROPERTIES_PREFIX + path)
+    ?? (TypeK >= 0 ? _model.TypeProperties_.GetDouble(TypeK, PROPERTIES_PREFIX + path) : null)
+    ?? _model.Properties_.GetDouble(K, path);
+
+  public string? GetString(string path) =>
+    _model.Properties_.GetString(K, PROPERTIES_PREFIX + path)
+    ?? (TypeK >= 0 ? _model.TypeProperties_.GetString(TypeK, PROPERTIES_PREFIX + path) : null)
+    ?? _model.Properties_.GetString(K, path);
+
+  public bool? GetBool(string path) =>
+    _model.Properties_.GetBool(K, PROPERTIES_PREFIX + path)
+    ?? (TypeK >= 0 ? _model.TypeProperties_.GetBool(TypeK, PROPERTIES_PREFIX + path) : null)
+    ?? _model.Properties_.GetBool(K, path);
 
   // ── geometry ──────────────────────────────────────────────────────────────────────────────────────────
 
@@ -392,51 +410,5 @@ public sealed class ModelObject
       return fromView;
     }
     return SceneViewResolver.NodeAncestry(bundle.Nodes, collectionK);
-  }
-
-  // The reader rebuilds nesting from the stored dotted paths; flatten it back so a script addresses properties the way
-  // the bundle (and SQL over it) does. Root scalars and the `properties` subtree come apart here.
-  private static (IReadOnlyDictionary<string, object?> Root, IReadOnlyDictionary<string, object?> Props) Split(
-    Dictionary<string, object?>? nested
-  )
-  {
-    var root = new Dictionary<string, object?>();
-    var props = new Dictionary<string, object?>();
-    if (nested is null)
-    {
-      return (root, props);
-    }
-    foreach (var kv in nested)
-    {
-      if (kv.Key == PROPERTIES_ROOT && kv.Value is Dictionary<string, object?> subtree)
-      {
-        Walk(subtree, prefix: null, props);
-      }
-      else if (kv.Value is Dictionary<string, object?> other)
-      {
-        Walk(other, kv.Key, root);
-      }
-      else
-      {
-        root[kv.Key] = kv.Value;
-      }
-    }
-    return (root, props);
-
-    static void Walk(Dictionary<string, object?> dict, string? prefix, Dictionary<string, object?> into)
-    {
-      foreach (var kv in dict)
-      {
-        string path = prefix is null ? kv.Key : $"{prefix}.{kv.Key}";
-        if (kv.Value is Dictionary<string, object?> child)
-        {
-          Walk(child, path, into);
-        }
-        else
-        {
-          into[path] = kv.Value;
-        }
-      }
-    }
   }
 }

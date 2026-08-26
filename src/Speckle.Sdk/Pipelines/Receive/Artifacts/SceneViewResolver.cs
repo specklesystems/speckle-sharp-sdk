@@ -32,7 +32,7 @@ public static class SceneViewResolver
           segments.AddRange(NodeAncestry(bundle.Nodes, nodeK)); // walk parents → nested collections/containers
         }
       }
-      else if (tier.Source == "eav" && ResolveEav(bundle.Properties, objK, tier.Ref) is { Length: > 0 } val)
+      else if (tier.Source == "eav" && ResolveEav(bundle, objK, tier.Ref) is { Length: > 0 } val)
       {
         segments.Add(val);
       }
@@ -77,7 +77,7 @@ public static class SceneViewResolver
           segments.AddRange(NodeAncestryWithAppearance(bundle, nodeK));
         }
       }
-      else if (tier.Source == "eav" && ResolveEav(bundle.Properties, objK, tier.Ref) is { Length: > 0 } val)
+      else if (tier.Source == "eav" && ResolveEav(bundle, objK, tier.Ref) is { Length: > 0 } val)
       {
         segments.Add((val, null, null));
       }
@@ -143,6 +143,16 @@ public static class SceneViewResolver
   }
 
   /// <summary>Navigates an object's nested property dict by a (possibly dotted) eav path → its string value, or null.</summary>
+  /// <summary>EAV tier value for an object from whichever property layout the bundle was read in.</summary>
+  public static string? ResolveEav(ArtefactBundle bundle, int objK, string path)
+  {
+    if (bundle.PropertyTable is { } table)
+    {
+      return table.TryGetValue(objK, path, out var v) ? v as string ?? v?.ToString() : null;
+    }
+    return ResolveEav(bundle.Properties, objK, path);
+  }
+
   public static string? ResolveEav(
     IReadOnlyDictionary<int, Dictionary<string, object?>> properties,
     int objK,

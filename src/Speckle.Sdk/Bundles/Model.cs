@@ -105,6 +105,33 @@ public sealed class Model : IDisposable
   /// <summary>Object by dense index, or null.</summary>
   public ModelObject? Object(int k) => _objectByK.Value.TryGetValue(k, out var o) ? o : null;
 
+  /// <summary>Every distinct instance-property path in the model (without the <c>properties.</c> root) — what
+  /// <see cref="ModelObject.Properties"/> keys can be. Read from the interned path table; touches no object.</summary>
+  public IReadOnlyList<string> PropertyPaths =>
+    Properties_
+      .Paths.Where(p => p.StartsWith(ModelObject.PROPERTIES_PREFIX, StringComparison.Ordinal))
+      .Select(p => p.Substring(ModelObject.PROPERTIES_PREFIX.Length))
+      .ToList();
+
+  /// <summary>Objects carrying an instance property under <paramref name="path"/> — one scan of the path column,
+  /// no per-object work. Pair with <see cref="ModelObject.GetDouble"/> etc. for the value.</summary>
+  public IEnumerable<ModelObject> ObjectsWith(string path)
+  {
+    foreach (int k in Properties_.KeysWith(ModelObject.PROPERTIES_PREFIX + path))
+    {
+      if (Object(k) is { } o)
+      {
+        yield return o;
+      }
+    }
+  }
+
+  internal PropertyTable Properties_ =>
+    Bundle.PropertyTable
+    ?? throw new InvalidOperationException("Model requires a bundle read with ArtefactReadOptions.ColumnarProperties.");
+
+  internal PropertyTable TypeProperties_ => Bundle.TypePropertyTable ?? PropertyTable.Empty;
+
   /// <summary>Object by host application id, or null.</summary>
   public ModelObject? ObjectByApplicationId(string applicationId) =>
     _objectByAppId.Value.TryGetValue(applicationId, out var o) ? o : null;
