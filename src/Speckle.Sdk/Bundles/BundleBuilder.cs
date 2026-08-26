@@ -274,11 +274,11 @@ public sealed class BundleBuilder : IDisposable
 
   /// <summary>A model-scoped attribute (<c>eav.model</c>): project information, the placement transform, document
   /// settings — anything with no owning object. Null values write nothing.</summary>
-  public void ModelProperty(string path, object? value, string? unit = null) =>
+  public void AddModelProperty(string path, object? value, string? unit = null) =>
     Pipeline.AddModelProperty(path, value, unit);
 
   /// <summary>One analysis-result row (<c>eav.structural_results</c>); see <see cref="ObjectsArtifactPipeline.AddStructuralResult"/>.</summary>
-  public void StructuralResult(
+  public void AddStructuralResult(
     BundleObject? owner,
     string? location,
     string resultType,
@@ -306,7 +306,7 @@ public sealed class BundleBuilder : IDisposable
     );
 
   /// <summary>One property-set field definition (<c>eav.property_set_definitions</c>), in authored field order.</summary>
-  public void PropertySetDefinition(
+  public void AddPropertySetDefinition(
     string setName,
     string setKey,
     string fieldName,
@@ -336,7 +336,7 @@ public sealed class BundleBuilder : IDisposable
     );
 
   /// <summary>A named camera viewpoint (<c>envelope.camera_views</c>).</summary>
-  public void CameraView(CameraView view) => Pipeline.AddCameraView(view);
+  public void AddCameraView(CameraView view) => Pipeline.AddCameraView(view);
 
   /// <summary>
   /// Declares a scene view — how the viewer groups objects. Tiers are outermost first; each is either a relation

@@ -226,10 +226,10 @@ public sealed class BundleBuilderTests : IDisposable
         SceneViewKey.Eav("category"),
         SceneViewKey.Eav("family")
       );
-      b.ModelProperty("modelPlacement.units", "m");
-      b.ModelProperty("projectInformation.number", 42.0);
-      b.StructuralResult(o, "Base", "reaction", "DL", "Fz", value: 12.5);
-      b.CameraView(new CameraView(0, "Front", true, 0, 0, -10, 5, 0, 1, 0, 0, 0, 1));
+      b.AddModelProperty("modelPlacement.units", "m");
+      b.AddModelProperty("projectInformation.number", 42.0);
+      b.AddStructuralResult(o, "Base", "reaction", "DL", "Fz", value: 12.5);
+      b.AddCameraView(new CameraView(0, "Front", true, 0, 0, -10, 5, 0, 1, 0, 0, 0, 1));
     });
 
     var w = model.ObjectByApplicationId("w")!;

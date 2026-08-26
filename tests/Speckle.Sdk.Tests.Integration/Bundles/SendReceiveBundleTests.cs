@@ -76,7 +76,7 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
       var door = b.GetOrAddObject("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
       door.Host = wall;
       door.Parent = wall;
-      b.ModelProperty("projectInformation.number", 42.0);
+      b.AddModelProperty("projectInformation.number", 42.0);
 
       sent = await operations.Send3(account, _projectId, _modelId, b, null, CancellationToken.None);
     }
