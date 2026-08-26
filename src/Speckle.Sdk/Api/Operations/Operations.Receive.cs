@@ -14,6 +14,54 @@ namespace Speckle.Sdk.Api;
 public partial class Operations
 {
   /// <summary>
+  /// <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/> addressed by a
+  /// model url — <c>{server}/projects/{projectId}/models/{modelId}[@{versionId}]</c>, as the web app hands out. Without
+  /// <c>@versionId</c> the model's latest version is resolved via GraphQL first.
+  /// </summary>
+  /// <exception cref="ArgumentException"><paramref name="modelUrl"/> is not a model url.</exception>
+  /// <exception cref="SpeckleException">The model has no versions, or the version has no bundle.</exception>
+  public async Task<Model> Receive3(
+    string modelUrl,
+    string? authorizationToken,
+    ReceiveOptions? options,
+    CancellationToken cancellationToken
+  )
+  {
+    var url = ModelUrl.Parse(new Uri(modelUrl, UriKind.Absolute));
+    string versionId =
+      url.VersionId ?? await ResolveLatestVersionId(url, authorizationToken, cancellationToken).ConfigureAwait(false);
+    return await Receive3(
+        url.Server,
+        url.ProjectId,
+        url.ModelId,
+        versionId,
+        authorizationToken,
+        options,
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+  }
+
+  private async Task<string> ResolveLatestVersionId(ModelUrl url, string? authorizationToken, CancellationToken ct)
+  {
+    var account = new Account
+    {
+      token = authorizationToken ?? string.Empty,
+      serverInfo = new() { url = url.Server.ToString() },
+      userInfo = new(),
+    };
+    using var client = clientFactory.Create(account);
+    var model = await client
+      .Model.GetWithVersions(url.ModelId, url.ProjectId, versionsLimit: 1, cancellationToken: ct)
+      .ConfigureAwait(false);
+    if (model.versions.items.Count == 0)
+    {
+      throw new SpeckleException($"Model '{url.ModelId}' in project '{url.ProjectId}' has no versions yet.");
+    }
+    return model.versions.items[0].id;
+  }
+
+  /// <summary>
   /// Receives a version of a model — the Speckle 2026.9.0 read path. Addresses the version by id, downloads its
   /// artefact bundle via the <c>/api/v2</c> artifacts rail and returns a <see cref="Model"/>: objects with their
   /// instance- and type-level properties, ready to query with LINQ, plus the raw bundle graph underneath. Nothing is
@@ -96,7 +144,7 @@ public partial class Operations
   /// lossy compatibility projection (no typed classes, per-parameter metadata collapsed to scalars, synthetic ids for
   /// non-object entities) and it does not scale to the model sizes the bundle format is built for: every object,
   /// property and decoded mesh becomes a managed <see cref="Base"/>, so large versions that the new rail handles
-  /// comfortably can exhaust memory here. New code should call <see cref="Receive3"/>, which returns the bundle itself.
+  /// comfortably can exhaust memory here. New code should call <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/>, which returns the bundle itself.
   /// </remarks>
   /// <exception cref="ArgumentException">No transports were specified</exception>
   /// <exception cref="ArgumentNullException">The <paramref name="objectId"/> was <see langword="null"/></exception>
@@ -186,7 +234,7 @@ public partial class Operations
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <returns>The requested Speckle Object</returns>
   /// <exception cref="NotSupportedException"><paramref name="objectId"/> is a <see cref="BundleReference"/>: transports
-  /// serve per-object JSON and can never carry a Speckle 2026.9.0 bundle. Use <see cref="Receive3"/> instead.</exception>
+  /// serve per-object JSON and can never carry a Speckle 2026.9.0 bundle. Use <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/> instead.</exception>
   [Obsolete(
     "Transport-based Receive is frozen legacy surface: it works for existing (object-graph) versions but can never "
       + "receive versions created with the new Speckle object model (bundle-only, Speckle 2026.9.0) - a bundle "
@@ -365,7 +413,7 @@ public partial class Operations
   /// <item>collections / materials / definitions get per-bundle synthetic ids — stable within one tree, not across versions;</item>
   /// <item>v2 typed classes are NOT rehydrated; per-parameter metadata collapses to scalars.</item>
   /// </list>
-  /// Full fidelity lives in <see cref="Receive3"/>.
+  /// Full fidelity lives in <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/>.
   /// </summary>
   /// <exception cref="SpeckleException">The reference's project doesn't match <paramref name="streamId"/>, or the
   /// server returned no artefact files for a version that promises a bundle.</exception>

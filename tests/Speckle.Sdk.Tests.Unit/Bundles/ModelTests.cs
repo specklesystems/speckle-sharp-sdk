@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging.Abstractions;
-using Speckle.Bundle.Spec;
 using Speckle.Objects.Geometry;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Bundles;
+using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
+using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecKind = Speckle.Bundle.Spec.NodeKind;
 
 namespace Speckle.Sdk.Tests.Unit.Bundles;
 
@@ -92,6 +94,9 @@ public sealed class ModelTests : IDisposable
       int red = pipeline.AddColor(unchecked((int)0xFFFF0000));
       pipeline.ObjectHasColor(door, red); // object plane
       pipeline.NodeHasColor(walls, red); // node plane (the container)
+
+      // Default scene view = the authored IN_COLLECTION tree (so CollectionPath == container ancestry).
+      pipeline.AddSceneView(new SceneView(0, "Default", true, [SceneViewKey.Rel(RelKind.InCollection)]));
 
       pipeline.SetProducer(s_producer);
       pipeline.Complete();
@@ -249,7 +254,7 @@ public sealed class ModelTests : IDisposable
     var door = model.ObjectByApplicationId("door-1")!;
 
     Assert.Equal("Level 1", wall.Level!.Name);
-    Assert.Equal(NodeKind.LEVEL, wall.Level.Kind);
+    Assert.Equal(SpecKind.LEVEL, wall.Level.Kind);
     Assert.Equal(0.0, wall.Level.Elevation);
     Assert.Equal(2, wall.Level.Objects.Count); // wall + door
     Assert.Equal("Level 1", door.Host!.Level!.Name); // chaining
@@ -283,7 +288,7 @@ public sealed class ModelTests : IDisposable
 
     // object plane
     Assert.Equal(unchecked((int)0xFFFF0000), door.Color!.Argb);
-    Assert.Equal(NodeKind.COLOR, door.Color.Kind);
+    Assert.Equal(SpecKind.COLOR, door.Color.Kind);
     Assert.IsType<ModelColor>(door.Color);
 
     // node plane
@@ -300,7 +305,7 @@ public sealed class ModelTests : IDisposable
     var chair = model.ObjectByApplicationId("chair-1")!;
 
     ModelInstance placement = Assert.Single(chair.Placements);
-    Assert.Equal(NodeKind.INSTANCE, placement.Kind);
+    Assert.Equal(SpecKind.INSTANCE, placement.Kind);
     Assert.Same(chair.Definition, placement.Definition);
     Assert.Equal(10, placement.Transform![3]);
     Assert.Equal("Chair", chair.Definition!.Name);
@@ -310,6 +315,52 @@ public sealed class ModelTests : IDisposable
     var definition = Assert.Single(model.Definitions);
     Assert.Same(chair.Definition, definition);
     Assert.Null(model.ObjectByApplicationId("wall-1")!.Definition);
+  }
+
+  [Fact]
+  public async Task SceneView_TiersAndSegments()
+  {
+    using var model = await BuildModel();
+
+    var tier = Assert.Single(model.DefaultSceneView);
+    Assert.True(tier.IsRelation);
+    Assert.Equal(RelKind.InCollection, tier.Relation);
+
+    var wall = model.ObjectByApplicationId("wall-1")!;
+    var segments = wall.SceneViewSegments;
+    Assert.Equal(["Level 1", "Walls"], segments.Select(s => s.Name));
+    Assert.All(segments, s => Assert.IsType<ModelContainer>(s.Node));
+    Assert.Same(wall.Collection, segments[^1].Node);
+    Assert.Empty(model.UnknownRelations);
+  }
+
+  [Fact]
+  public async Task Appearance_EffectiveChains()
+  {
+    using var model = await BuildModel();
+    var wall = model.ObjectByApplicationId("wall-1")!;
+    var chair = model.ObjectByApplicationId("chair-1")!;
+
+    var wallGeometry = Assert.Single(wall.Geometries);
+    Assert.Same(wall, wallGeometry.Owner);
+    Assert.Equal("Concrete", wallGeometry.EffectiveMaterial!.Name); // geometry plane wins for material
+    Assert.Same(wall.Collection!.Color, wallGeometry.EffectiveColor); // no geometry/object colour → container's
+
+    var chairGeometry = Assert.Single(chair.Geometries);
+    Assert.Null(chairGeometry.Material);
+    Assert.Null(chairGeometry.EffectiveMaterial); // nothing anywhere in the chain
+  }
+
+  [Fact]
+  public async Task Definitions_ReverseLookups()
+  {
+    using var model = await BuildModel();
+    var chair = model.ObjectByApplicationId("chair-1")!;
+    var definition = Assert.Single(chair.Definitions);
+
+    Assert.Same(definition, chair.Definition);
+    Assert.Equal([chair], definition.Objects);
+    Assert.Empty(definition.Members); // Revit-shaped: no DEFINES_MEMBER
   }
 
   public void Dispose()

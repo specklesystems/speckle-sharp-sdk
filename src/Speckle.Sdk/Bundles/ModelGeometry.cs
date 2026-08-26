@@ -24,6 +24,7 @@ public sealed class ModelGeometry
 
   internal ModelGeometry(
     Model model,
+    ModelObject owner,
     int k,
     ArtefactGeometry geometry,
     GeometryRole role,
@@ -34,6 +35,7 @@ public sealed class ModelGeometry
   {
     _model = model;
     _instanceK = instanceK;
+    Owner = owner;
     K = k;
     Content = geometry.Content;
     Type = geometry.Type;
@@ -45,6 +47,9 @@ public sealed class ModelGeometry
 
   /// <summary>Dense geometry index — the key into <see cref="Model.Geometries"/>. Distinct id space from object Ks.</summary>
   public int K { get; }
+
+  /// <summary>The object this geometry was resolved for.</summary>
+  public ModelObject Owner { get; }
 
   /// <summary>Raw bytes as stored in the bundle: SGEO when <see cref="IsSgeo"/>, else a host-format blob.</summary>
   public ReadOnlyMemory<byte> Content { get; }
@@ -70,27 +75,25 @@ public sealed class ModelGeometry
   /// <summary>The INSTANCE node this geometry was reached through; null for directly referenced geometry.</summary>
   public ModelInstance? Placement => _model.NodeOrNull(_instanceK) as ModelInstance;
 
-  /// <summary>
-  /// Render material for this geometry: a material painted on the placement (<c>HAS_MATERIAL</c> with instance src)
-  /// wins over the geometry's own (<c>HAS_MATERIAL</c>). Null when neither is set — fall back to
-  /// <see cref="ModelObject.Material"/>, then the container's <see cref="ModelNode.Material"/>.
-  /// </summary>
-  public ModelMaterial? Material
-  {
-    get
-    {
-      var rels = _model.Bundle.Relations;
-      if (_instanceK is int ik && rels.MaterialByInstance.TryGetValue(ik, out int im))
-      {
-        return _model.NodeOrNull(im) as ModelMaterial;
-      }
-      return rels.MaterialByGeometry.TryGetValue(K, out int m) ? _model.NodeOrNull(m) as ModelMaterial : null;
-    }
-  }
+  /// <summary>Material on the geometry plane (<c>HAS_MATERIAL</c>) — the intrinsic render material. Null when unset;
+  /// <see cref="EffectiveMaterial"/> applies the fallback chain.</summary>
+  public ModelMaterial? Material =>
+    _model.Bundle.Relations.MaterialByGeometry.TryGetValue(K, out int m) ? _model.NodeOrNull(m) as ModelMaterial : null;
 
-  /// <summary>Colour painted on this geometry (<c>HAS_COLOR</c>). Null when unset — fall back to <see cref="ModelObject.Color"/>.</summary>
+  /// <summary>Colour on the geometry plane (<c>HAS_COLOR</c>). Null when unset; <see cref="EffectiveColor"/> applies
+  /// the override chain.</summary>
   public ModelColor? Color =>
     _model.Bundle.Relations.ColorByGeometry.TryGetValue(K, out int c) ? _model.NodeOrNull(c) as ModelColor : null;
+
+  /// <summary>The material to render with, per the spec's precedence: the geometry's own, else the object's
+  /// (<c>OBJECT_HAS_MATERIAL</c> fills where geometry has none), else the nearest container's
+  /// (<c>NODE_HAS_MATERIAL</c>, walking up). Null when nothing in the chain is set.</summary>
+  public ModelMaterial? EffectiveMaterial => Material ?? Owner.Material ?? Owner.ContainerMaterial;
+
+  /// <summary>The colour to display with, per the spec's precedence: the object's (<c>OBJECT_HAS_COLOR</c> overrides —
+  /// the inverse of material), else the geometry's own, else the nearest container's (<c>NODE_HAS_COLOR</c>). Null
+  /// when nothing in the chain is set; render from <see cref="EffectiveMaterial"/> then.</summary>
+  public ModelColor? EffectiveColor => Owner.Color ?? Color ?? Owner.ContainerColor;
 
   /// <summary>Decodes an SGEO blob into vertices/faces/colours; <see langword="null"/> for non-SGEO or corrupt blobs.</summary>
   public SgeoMesh? DecodeMesh() => IsSgeo && SgeoDecoder.TryDecodeMesh(Content.Span, out var mesh) ? mesh : null;

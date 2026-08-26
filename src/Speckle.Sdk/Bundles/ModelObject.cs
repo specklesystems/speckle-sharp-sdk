@@ -31,7 +31,7 @@ public sealed class ModelObject
     _own = new(() => Split(model.Bundle.Properties.TryGetValue(k, out var p) ? p : null));
     _typeProperties = new(() => Split(model.Bundle.TypePropertiesByObject.TryGetValue(k, out var p) ? p : null).Props);
     _collectionPath = new(() => ResolveCollectionPath(model.Bundle, k));
-    _geometries = new(() => ResolveGeometries(model, k));
+    _geometries = new(() => ResolveGeometries(model, this));
   }
 
   /// <summary>Dense object index inside the bundle — the key into <see cref="Model.Bundle"/>'s object-keyed maps.</summary>
@@ -125,8 +125,66 @@ public sealed class ModelObject
     _model.NodesFor<ModelContainer>(_model.Bundle.Relations.GroupsByObject.TryGetValue(K, out var g) ? g : null);
 
   /// <summary>Grouping path, outermost first (e.g. <c>["Level 1", "Walls"]</c>): the bundle's default scene view when it
-  /// declares one, otherwise the object's <c>IN_COLLECTION</c> ancestry.</summary>
+  /// declares one, otherwise the object's <c>IN_COLLECTION</c> ancestry. <see cref="SceneViewSegments"/> is the same
+  /// path with the node behind each segment.</summary>
   public IReadOnlyList<string> CollectionPath => _collectionPath.Value;
+
+  /// <summary>The object's position in the default scene view (<see cref="Model.DefaultSceneView"/>), outermost first:
+  /// relation tiers resolve to the node (Model container, level, layer …), property-value tiers to a name only.
+  /// Falls back to the <c>IN_COLLECTION</c> ancestry when the bundle declares no scene view.</summary>
+  public IReadOnlyList<ModelSceneViewSegment> SceneViewSegments
+  {
+    get
+    {
+      var bundle = _model.Bundle;
+      var segments = new List<ModelSceneViewSegment>();
+      if (bundle.DefaultSceneView.Count > 0)
+      {
+        foreach (var (name, _, nodeK) in SceneViewResolver.SegmentsWithAppearance(bundle, K))
+        {
+          segments.Add(new ModelSceneViewSegment(name, _model.NodeOrNull(nodeK)));
+        }
+        return segments;
+      }
+      for (var c = Collection; c is not null; c = c.Parent)
+      {
+        segments.Insert(0, new ModelSceneViewSegment(c.Name ?? "", c));
+      }
+      return segments;
+    }
+  }
+
+  /// <summary>Nearest container material (<c>NODE_HAS_MATERIAL</c>), walking <see cref="Collection"/> upwards.</summary>
+  internal ModelMaterial? ContainerMaterial
+  {
+    get
+    {
+      for (var c = Collection; c is not null; c = c.Parent)
+      {
+        if (c.Material is { } m)
+        {
+          return m;
+        }
+      }
+      return null;
+    }
+  }
+
+  /// <summary>Nearest container colour (<c>NODE_HAS_COLOR</c>), walking <see cref="Collection"/> upwards.</summary>
+  internal ModelColor? ContainerColor
+  {
+    get
+    {
+      for (var c = Collection; c is not null; c = c.Parent)
+      {
+        if (c.Color is { } col)
+        {
+          return col;
+        }
+      }
+      return null;
+    }
+  }
 
   /// <summary>Material on the object plane (<c>OBJECT_HAS_MATERIAL</c>): applies to all the object's geometry unless a
   /// geometry carries its own (<see cref="ModelGeometry.Material"/>).</summary>
@@ -156,8 +214,31 @@ public sealed class ModelObject
     }
   }
 
-  /// <summary>The block/family definition this object is a placement of (via its first <see cref="Placements"/> entry). Null when not instanced.</summary>
-  public ModelDefinition? Definition => Placements.Count > 0 ? Placements[0].Definition : null;
+  /// <summary>The definitions this object renders through, distinct, in placement order. Usually one; a Revit railing
+  /// with baluster placements has several. Empty when not instanced.</summary>
+  public IReadOnlyList<ModelDefinition> Definitions
+  {
+    get
+    {
+      var placements = Placements;
+      if (placements.Count == 0)
+      {
+        return Array.Empty<ModelDefinition>();
+      }
+      var list = new List<ModelDefinition>();
+      foreach (var placement in placements)
+      {
+        if (placement.Definition is { } d && !list.Contains(d))
+        {
+          list.Add(d);
+        }
+      }
+      return list;
+    }
+  }
+
+  /// <summary>The first of <see cref="Definitions"/>, or null when not instanced.</summary>
+  public ModelDefinition? Definition => Definitions.Count > 0 ? Definitions[0] : null;
 
   public override string ToString() => Name is null ? ApplicationId : $"{Name} ({ApplicationId})";
 
@@ -168,8 +249,9 @@ public sealed class ModelObject
 
   // ── resolvers ─────────────────────────────────────────────────────────────────────────────────────────
 
-  private static IReadOnlyList<ModelGeometry> ResolveGeometries(Model model, int k)
+  private static IReadOnlyList<ModelGeometry> ResolveGeometries(Model model, ModelObject owner)
   {
+    int k = owner.K;
     var rels = model.Bundle.Relations;
     var result = new List<ModelGeometry>();
 
@@ -188,7 +270,9 @@ public sealed class ModelObject
       {
         if (geometries.TryGetValue(e.Dst, out var g))
         {
-          result.Add(new ModelGeometry(model, e.Dst, g, GeometryRole.Display, e.Ord, transform: null, instanceK: null));
+          result.Add(
+            new ModelGeometry(model, owner, e.Dst, g, GeometryRole.Display, e.Ord, transform: null, instanceK: null)
+          );
         }
       }
     }
@@ -198,7 +282,9 @@ public sealed class ModelObject
       {
         if (geometries.TryGetValue(solids[i], out var g))
         {
-          result.Add(new ModelGeometry(model, solids[i], g, GeometryRole.Solid, i, transform: null, instanceK: null));
+          result.Add(
+            new ModelGeometry(model, owner, solids[i], g, GeometryRole.Solid, i, transform: null, instanceK: null)
+          );
         }
       }
     }
@@ -208,7 +294,7 @@ public sealed class ModelObject
       {
         if (e.Src == k)
         {
-          AddPlacement(model, e.Dst, e.Ord, parentTransform: null, result, depth: 0);
+          AddPlacement(model, owner, e.Dst, e.Ord, parentTransform: null, result, depth: 0);
         }
       }
     }
@@ -220,6 +306,7 @@ public sealed class ModelObject
   // INSTANCE node → its DEFINITION's geometry (and nested INSTANCEs), composing transforms outer→inner.
   private static void AddPlacement(
     Model model,
+    ModelObject owner,
     int instanceK,
     int ord,
     IReadOnlyList<double>? parentTransform,
@@ -249,6 +336,7 @@ public sealed class ModelObject
           into.Add(
             new ModelGeometry(
               model,
+              owner,
               geometryKs[i],
               g,
               GeometryRole.Display,
@@ -264,7 +352,7 @@ public sealed class ModelObject
     {
       foreach (int nestedK in nested)
       {
-        AddPlacement(model, nestedK, ord, transform, into, depth + 1);
+        AddPlacement(model, owner, nestedK, ord, transform, into, depth + 1);
       }
     }
   }

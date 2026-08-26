@@ -27,6 +27,7 @@ public sealed class Model : IDisposable
   private readonly Lazy<Dictionary<int, ModelNode>> _nodes;
   private readonly Lazy<IReadOnlyDictionary<int, ArtefactGeometry>> _geometries;
   private readonly Lazy<RelationIndex> _index;
+  private readonly Lazy<IReadOnlyList<ModelSceneViewTier>> _sceneView;
   private bool _disposed;
 
   internal Model(
@@ -54,6 +55,15 @@ public sealed class Model : IDisposable
     _nodes = new(() => Bundle.Nodes.ToDictionary(kv => kv.Key, kv => ModelNode.Create(this, kv.Key, kv.Value)));
     _geometries = new(LoadGeometries);
     _index = new(() => new RelationIndex(Bundle));
+    _sceneView = new(() => Bundle.DefaultSceneView.Select(t => new ModelSceneViewTier(t)).ToList());
+    if (bundle.Relations.UnknownRels.Count > 0)
+    {
+      logger.LogWarning(
+        "Bundle {versionId} uses relation numbers this SDK does not know ({rels}); their edges were dropped. Upgrade Speckle.Sdk.",
+        versionId,
+        string.Join(",", bundle.Relations.UnknownRels.OrderBy(r => r))
+      );
+    }
   }
 
   public string ProjectId { get; }
@@ -71,6 +81,20 @@ public sealed class Model : IDisposable
 
   /// <summary>Model-level properties (<c>eav.model</c>), flat path-keyed.</summary>
   public IReadOnlyDictionary<string, object?> Properties => Bundle.ModelProperties;
+
+  /// <summary>The default scene view's grouping tiers, outermost first — how the viewer builds its tree. Empty when the
+  /// producer declared none (the scene tree is then the <c>IN_COLLECTION</c> hierarchy).</summary>
+  public IReadOnlyList<ModelSceneViewTier> DefaultSceneView => _sceneView.Value;
+
+  /// <summary>Named camera viewpoints (<c>envelope.camera_views</c>); empty if the bundle ships none.</summary>
+  public IReadOnlyList<ArtefactCameraView> CameraViews => Bundle.CameraViews;
+
+  /// <summary>AEC property-set definitions (<c>eav.property_set_definitions</c>), one per (set, field); empty if absent.</summary>
+  public IReadOnlyList<ArtefactPropertySetField> PropertySetDefinitions => Bundle.PropertySetDefinitions;
+
+  /// <summary>Relation numbers in the bundle this SDK doesn't know (a newer bundle spec than the SDK was built against).
+  /// Their edges were dropped; empty when the vocabularies match.</summary>
+  public IReadOnlyCollection<int> UnknownRelations => Bundle.Relations.UnknownRels;
 
   // ── objects ───────────────────────────────────────────────────────────────────────────────────────────
 
@@ -175,6 +199,9 @@ public sealed class Model : IDisposable
   internal IReadOnlyList<ModelInstance> PlacementsOfDefinition(int definitionK) =>
     NodesFor<ModelInstance>(Index.Get(Index.InstancesByDefinition, definitionK));
 
+  internal IReadOnlyList<ModelObject> ObjectsOfDefinition(int definitionK) =>
+    ObjectsFor(Index.Get(Index.ObjectsByDefinition, definitionK));
+
   internal IReadOnlyList<ModelObject> MembersOfDefinition(int definitionK) =>
     ObjectsFor(Bundle.Relations.MemberObjectsByDefinition.TryGetValue(definitionK, out var m) ? m : null);
 
@@ -263,6 +290,7 @@ internal sealed class RelationIndex
   public Dictionary<int, List<int>> MembersByAssembly { get; } = new();
   public Dictionary<int, List<int>> InstancesByObject { get; } = new(); // DISPLAY_INSTANCE, all edges
   public Dictionary<int, List<int>> InstancesByDefinition { get; } = new(); // INSTANCE nodes by DefRef
+  public Dictionary<int, List<int>> ObjectsByDefinition { get; } = new(); // DISPLAY_INSTANCE → INSTANCE.DefRef, reversed
   public Dictionary<int, List<int>> ObjectsByCollection { get; } = new(); // IN_COLLECTION reversed
   public Dictionary<int, List<int>> ObjectsByLevel { get; } = new(); // ON_LEVEL reversed
   public Dictionary<int, List<int>> ChildContainersByContainer { get; } = new(); // CONTAINER.def_ref reversed
@@ -303,6 +331,13 @@ internal sealed class RelationIndex
     foreach (var e in rels.DisplayInstanceEdges.OrderBy(e => e.Ord))
     {
       Add(InstancesByObject, e.Src, e.Dst);
+      if (bundle.Nodes.TryGetValue(e.Dst, out var inst) && inst.DefRef is int defK)
+      {
+        if (!ObjectsByDefinition.TryGetValue(defK, out var objs) || !objs.Contains(e.Src))
+        {
+          Add(ObjectsByDefinition, defK, e.Src);
+        }
+      }
     }
     foreach (var kv in bundle.Nodes)
     {

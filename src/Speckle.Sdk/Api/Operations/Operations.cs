@@ -18,5 +18,6 @@ public partial class Operations(
   ISdkMetricsFactory metricsFactory,
   ISerializeProcessFactory serializeProcessFactory,
   IDeserializeProcessFactory deserializeProcessFactory,
-  IArtifactDownloader artifactDownloader
+  IArtifactDownloader artifactDownloader,
+  IClientFactory clientFactory
 ) : IOperations;
