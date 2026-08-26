@@ -98,18 +98,6 @@ public sealed class OperationsReceiveBundleDispatchTests
   }
 
   [Fact]
-  public void Receive_TransportOverload_IsObsolete_PointingAtReceive3()
-  {
-    var attr = typeof(Speckle.Sdk.Api.Operations)
-      .GetMethod(nameof(IOperations.Receive))!
-      .GetCustomAttributes(typeof(ObsoleteAttribute), false)
-      .Cast<ObsoleteAttribute>()
-      .Single();
-    Assert.False(attr.IsError);
-    Assert.Contains("Receive3", attr.Message, StringComparison.Ordinal);
-  }
-
-  [Fact]
   public async Task Receive3_AddressesVersionDirectly_EmptyListingThrows()
   {
     var (operations, downloader) = Build();
@@ -134,11 +122,14 @@ public sealed class OperationsReceiveBundleDispatchTests
     downloader.VerifyAll();
   }
 
-  [Fact]
-  public void Receive2_IsObsolete_PointingAtReceive3()
+  [Theory]
+  [InlineData(typeof(Speckle.Sdk.Api.Operations), nameof(IOperations.Receive2))]
+  [InlineData(typeof(IOperations), nameof(IOperations.Receive2))] // DI callers see the interface, not the class
+  [InlineData(typeof(Speckle.Sdk.Api.Operations), nameof(IOperations.Receive))]
+  [InlineData(typeof(IOperations), nameof(IOperations.Receive))]
+  public void LegacyReceives_AreObsolete_PointingAtReceive3(Type type, string method)
   {
-    var attr = typeof(Speckle.Sdk.Api.Operations)
-      .GetMethod(nameof(IOperations.Receive2))!
+    var attr = type.GetMethod(method)!
       .GetCustomAttributes(typeof(ObsoleteAttribute), false)
       .Cast<ObsoleteAttribute>()
       .Single();

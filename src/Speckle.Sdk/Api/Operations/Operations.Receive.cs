@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Speckle.InterfaceGenerator;
 using Speckle.Objects.Utils;
 using Speckle.Sdk.Bundles;
 using Speckle.Sdk.Credentials;
@@ -151,6 +152,7 @@ public partial class Operations
   /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
   /// <exception cref="HttpRequestException">HTTP layer errors</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
+  [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
   [Obsolete(
     "Receive2 keeps working for existing versions, but for versions created with the new Speckle object model "
       + "(bundle-only, Speckle 2026.9.0) it returns a best-effort Base projection and does not guarantee the new object "
@@ -235,6 +237,7 @@ public partial class Operations
   /// <returns>The requested Speckle Object</returns>
   /// <exception cref="NotSupportedException"><paramref name="objectId"/> is a <see cref="BundleReference"/>: transports
   /// serve per-object JSON and can never carry a Speckle 2026.9.0 bundle. Use <see cref="Receive3(Uri, string, string, string, string?, ReceiveOptions?, CancellationToken)"/> instead.</exception>
+  [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
   [Obsolete(
     "Transport-based Receive is frozen legacy surface: it works for existing (object-graph) versions but can never "
       + "receive versions created with the new Speckle object model (bundle-only, Speckle 2026.9.0) - a bundle "
@@ -565,4 +568,44 @@ public partial class Operations
       logger.LogWarning(ex, "Could not clean up bundle scratch directory {bundleDir}", dir);
     }
   }
+}
+
+/// <summary>Hand-declared members of the generated <see cref="IOperations"/>: the source generator doesn't copy
+/// attributes, and the deprecation must reach callers that resolve <c>IOperations</c> from DI (every connector and
+/// script), not only those holding a concrete <see cref="Operations"/>.</summary>
+public partial interface IOperations
+{
+  /// <inheritdoc cref="Operations.Receive2"/>
+  [Obsolete(
+    "Receive2 keeps working for existing versions, but for versions created with the new Speckle object model "
+      + "(bundle-only, Speckle 2026.9.0) it returns a best-effort Base projection and does not guarantee the new object "
+      + "model round-trips perfectly. It is also not suited to the model sizes the new format supports: materializing "
+      + "a large bundle into a Base tree inflates every object, property and mesh into managed objects and can run out "
+      + "of memory. Update your scripts to Receive3, which receives the bundle directly."
+  )]
+  Task<Base> Receive2(
+    Uri url,
+    string streamId,
+    string objectId,
+    string? authorizationToken,
+    IProgress<ProgressArgs>? onProgressAction,
+    CancellationToken cancellationToken,
+    DeserializeProcessOptions? options = null
+  );
+
+  /// <inheritdoc cref="Operations.Receive"/>
+  [Obsolete(
+    "Transport-based Receive is frozen legacy surface: it works for existing (object-graph) versions but can never "
+      + "receive versions created with the new Speckle object model (bundle-only, Speckle 2026.9.0) - a bundle "
+      + "reference throws NotSupportedException. It is also the slowest path (per-object JSON, single-threaded "
+      + "deserialization). Update your scripts to Receive3, which receives the bundle directly, or Receive2 if you "
+      + "still need a Base tree."
+  )]
+  Task<Base> Receive(
+    string objectId,
+    ITransport? remoteTransport = null,
+    ITransport? localTransport = null,
+    IProgress<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  );
 }
