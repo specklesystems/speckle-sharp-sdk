@@ -414,6 +414,57 @@ public sealed class BundleBuilderTests : IDisposable
   }
 
   [Fact]
+  public async Task Structure_IsTypeScoped_OnceForAllInstancesOfTheType()
+  {
+    // A compound element's layer buildup is a fact of its type: two walls of one type carry one Structure in
+    // type_eav (properties.Structure.{ordinal}.*), none on the object rows [ENG-9338/ENG-9355].
+    static Dictionary<string, object?> Layer(string material, string function, double thickness) =>
+      new()
+      {
+        ["material"] = new Dictionary<string, object?> { ["name"] = "Material", ["value"] = material },
+        ["function"] = new Dictionary<string, object?> { ["name"] = "Function", ["value"] = function },
+        ["thickness"] = new Dictionary<string, object?>
+        {
+          ["name"] = "Thickness",
+          ["value"] = thickness,
+          ["units"] = "mm",
+        },
+      };
+    static Dictionary<string, object?> WallProps() =>
+      new()
+      {
+        ["Parameters"] = new Dictionary<string, object?>
+        {
+          ["Constraints"] = new Dictionary<string, object?> { ["Base Offset"] = 0.5 },
+        },
+        ["Structure"] = new Dictionary<string, object?>
+        {
+          ["0"] = Layer("White Concrete", "Finish1", 65),
+          ["1"] = Layer("Concrete", "Structure", 200),
+        },
+      };
+
+    using var model = await BuildAndRead(b =>
+    {
+      b.GetOrAddObject("wall-1").SetProperties(WallProps(), "Basic Wall", typeKey: "type-basic-wall");
+      b.GetOrAddObject("wall-2").SetProperties(WallProps(), "Basic Wall", typeKey: "type-basic-wall");
+    });
+
+    foreach (var id in new[] { "wall-1", "wall-2" })
+    {
+      var wall = model.ObjectByApplicationId(id)!;
+      Assert.Equal(0.5, wall.GetDouble("Parameters.Constraints.Base Offset")); // instance-scoped stays put
+      Assert.Equal("White Concrete", wall.TypeProperties["Structure.0.material"]);
+      Assert.Equal("Finish1", wall.TypeProperties["Structure.0.function"]);
+      Assert.Equal(65.0, wall.TypeProperties["Structure.0.thickness"]);
+      Assert.Equal(200.0, wall.TypeProperties["Structure.1.thickness"]);
+      Assert.Equal(65.0, wall.GetDouble("Structure.0.thickness")); // the merged lookup sees type scope too
+      Assert.DoesNotContain(wall.Properties.Keys, k => k.StartsWith("Structure", StringComparison.Ordinal));
+    }
+    Assert.Single(model.Bundle.TypeIndexByObject!.Values.Distinct()); // one type row shared by both walls
+  }
+
+  [Fact]
   public void Relation_CannotBeRetracted()
   {
     using var b = new BundleBuilder(s_app, "m", _dir);

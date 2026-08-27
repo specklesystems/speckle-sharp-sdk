@@ -93,26 +93,32 @@ public sealed class ObjectsArtifactPipeline : IDisposable
       return;
     }
 
-    // Instance-scoped props → eav; Type/System params deduped into type_eav (flattened once per type,
-    // via the lazy factory) with an object_type weak ref. See notes/topology-envelope-SOT.md §6.
+    // Instance-scoped props → eav; type-scoped ones (Type/System Parameters, the compound Structure) deduped into
+    // type_eav (flattened once per type, via the lazy factory) with an object_type weak ref. See
+    // notes/topology-envelope-SOT.md §6.
     var instanceRows = new List<EavRow>();
     EavExtraction.FlattenProperties(applicationId, instanceProps, rootScalars, _excludedProperties, instanceRows);
     _eavWriter.AddRows(applicationId, instanceRows);
-
     _eavWriter.AddType(
       applicationId,
       typeKey,
       () =>
       {
         var typeRows = new List<EavRow>();
-        EavExtraction.FlattenSubtree(typeSubtree, "properties.Parameters", typeRows);
+        EavExtraction.FlattenSubtree(typeSubtree, "properties", typeRows);
         return typeRows;
       }
     );
   }
 
-  // Splits `properties.Parameters` into instance-scoped (kept on the object) and type-scoped (Type +
-  // System Parameters, deduped per type). False if there's nothing type-scoped to split out.
+  /// <summary>The top-level property that is a fact of the element's TYPE, not the instance: a compound
+  /// element's layer buildup (<c>properties.Structure.{ordinal}.{material|function|thickness}</c>, ENG-9338/9355).
+  /// Every wall of one type shares one buildup, so it lives in <c>type_eav</c> once, beside the type parameters.</summary>
+  private const string STRUCTURE_KEY = "Structure";
+
+  // Splits the type-scoped part of `properties` out of the instance-scoped part: `Parameters.Type Parameters`,
+  // `Parameters.System Type Parameters` and the top-level `Structure` go to type_eav (deduped per type) under
+  // the same `properties.` paths; everything else stays on the object. False if there's nothing type-scoped.
   private static bool TrySplitTypeParameters(
     IReadOnlyDictionary<string, object?> properties,
     out IReadOnlyDictionary<string, object?> instanceProps,
@@ -122,26 +128,33 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     instanceProps = properties;
     typeSubtree = s_emptyDict;
 
-    if (!properties.TryGetValue("Parameters", out var pv) || pv is not IReadOnlyDictionary<string, object?> paramsDict)
+    var typeScoped = new Dictionary<string, object?>(StringComparer.Ordinal);
+    Dictionary<string, object?>? instanceParams = null;
+    if (properties.TryGetValue("Parameters", out var pv) && pv is IReadOnlyDictionary<string, object?> paramsDict)
     {
-      return false;
+      var typeParams = new Dictionary<string, object?>(StringComparer.Ordinal);
+      instanceParams = new Dictionary<string, object?>(StringComparer.Ordinal);
+      foreach (var kv in paramsDict)
+      {
+        if (kv.Key is "Type Parameters" or "System Type Parameters")
+        {
+          typeParams[kv.Key] = kv.Value;
+        }
+        else
+        {
+          instanceParams[kv.Key] = kv.Value;
+        }
+      }
+      if (typeParams.Count > 0)
+      {
+        typeScoped["Parameters"] = typeParams;
+      }
     }
-
-    var typeParams = new Dictionary<string, object?>(StringComparer.Ordinal);
-    var instanceParams = new Dictionary<string, object?>(StringComparer.Ordinal);
-    foreach (var kv in paramsDict)
+    if (properties.TryGetValue(STRUCTURE_KEY, out var structure) && structure is IReadOnlyDictionary<string, object?>)
     {
-      if (kv.Key is "Type Parameters" or "System Type Parameters")
-      {
-        typeParams[kv.Key] = kv.Value;
-      }
-      else
-      {
-        instanceParams[kv.Key] = kv.Value;
-      }
+      typeScoped[STRUCTURE_KEY] = structure;
     }
-
-    if (typeParams.Count == 0)
+    if (typeScoped.Count == 0)
     {
       return false;
     }
@@ -153,9 +166,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     {
       merged[kv.Key] = kv.Value;
     }
-    merged["Parameters"] = instanceParams;
+    if (typeScoped.ContainsKey("Parameters"))
+    {
+      merged["Parameters"] = instanceParams;
+    }
+    merged.Remove(STRUCTURE_KEY);
     instanceProps = merged;
-    typeSubtree = typeParams;
+    typeSubtree = typeScoped;
     return true;
   }
 
