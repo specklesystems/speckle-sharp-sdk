@@ -93,9 +93,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
       return;
     }
 
-    // Instance-scoped props → eav; type-scoped ones (Type/System Parameters, the compound Structure) deduped into
-    // type_eav (flattened once per type, via the lazy factory) with an object_type weak ref. See
-    // notes/topology-envelope-SOT.md §6.
+    // Instance-scoped props → eav; Type/System params deduped into type_eav (flattened once per type,
+    // via the lazy factory) with an object_type weak ref. See notes/topology-envelope-SOT.md §6.
+    // A compound element's layer buildup rides along as `Type Parameters.Structure.{ordinal}.*` — a type fact,
+    // stored once per type like every other type parameter (ENG-9338/ENG-9355).
     var instanceRows = new List<EavRow>();
     EavExtraction.FlattenProperties(applicationId, instanceProps, rootScalars, _excludedProperties, instanceRows);
     _eavWriter.AddRows(applicationId, instanceRows);
@@ -105,20 +106,14 @@ public sealed class ObjectsArtifactPipeline : IDisposable
       () =>
       {
         var typeRows = new List<EavRow>();
-        EavExtraction.FlattenSubtree(typeSubtree, "properties", typeRows);
+        EavExtraction.FlattenSubtree(typeSubtree, "properties.Parameters", typeRows);
         return typeRows;
       }
     );
   }
 
-  /// <summary>The top-level property that is a fact of the element's TYPE, not the instance: a compound
-  /// element's layer buildup (<c>properties.Structure.{ordinal}.{material|function|thickness}</c>, ENG-9338/9355).
-  /// Every wall of one type shares one buildup, so it lives in <c>type_eav</c> once, beside the type parameters.</summary>
-  private const string STRUCTURE_KEY = "Structure";
-
-  // Splits the type-scoped part of `properties` out of the instance-scoped part: `Parameters.Type Parameters`,
-  // `Parameters.System Type Parameters` and the top-level `Structure` go to type_eav (deduped per type) under
-  // the same `properties.` paths; everything else stays on the object. False if there's nothing type-scoped.
+  // Splits `properties.Parameters` into instance-scoped (kept on the object) and type-scoped (Type +
+  // System Parameters, deduped per type). False if there's nothing type-scoped to split out.
   private static bool TrySplitTypeParameters(
     IReadOnlyDictionary<string, object?> properties,
     out IReadOnlyDictionary<string, object?> instanceProps,
@@ -127,38 +122,27 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     instanceProps = properties;
     typeSubtree = s_emptyDict;
-
-    var typeScoped = new Dictionary<string, object?>(StringComparer.Ordinal);
-    Dictionary<string, object?>? instanceParams = null;
-    if (properties.TryGetValue("Parameters", out var pv) && pv is IReadOnlyDictionary<string, object?> paramsDict)
-    {
-      var typeParams = new Dictionary<string, object?>(StringComparer.Ordinal);
-      instanceParams = new Dictionary<string, object?>(StringComparer.Ordinal);
-      foreach (var kv in paramsDict)
-      {
-        if (kv.Key is "Type Parameters" or "System Type Parameters")
-        {
-          typeParams[kv.Key] = kv.Value;
-        }
-        else
-        {
-          instanceParams[kv.Key] = kv.Value;
-        }
-      }
-      if (typeParams.Count > 0)
-      {
-        typeScoped["Parameters"] = typeParams;
-      }
-    }
-    if (properties.TryGetValue(STRUCTURE_KEY, out var structure) && structure is IReadOnlyDictionary<string, object?>)
-    {
-      typeScoped[STRUCTURE_KEY] = structure;
-    }
-    if (typeScoped.Count == 0)
+    if (!properties.TryGetValue("Parameters", out var pv) || pv is not IReadOnlyDictionary<string, object?> paramsDict)
     {
       return false;
     }
-
+    var typeParams = new Dictionary<string, object?>(StringComparer.Ordinal);
+    var instanceParams = new Dictionary<string, object?>(StringComparer.Ordinal);
+    foreach (var kv in paramsDict)
+    {
+      if (kv.Key is "Type Parameters" or "System Type Parameters")
+      {
+        typeParams[kv.Key] = kv.Value;
+      }
+      else
+      {
+        instanceParams[kv.Key] = kv.Value;
+      }
+    }
+    if (typeParams.Count == 0)
+    {
+      return false;
+    }
     // Copy via foreach (the Dictionary(IEnumerable<KVP>, comparer) ctor is net5+; netstandard2.0 only has the
     // IDictionary ctor, and `properties` is an IReadOnlyDictionary).
     var merged = new Dictionary<string, object?>(StringComparer.Ordinal);
@@ -166,13 +150,9 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     {
       merged[kv.Key] = kv.Value;
     }
-    if (typeScoped.ContainsKey("Parameters"))
-    {
-      merged["Parameters"] = instanceParams;
-    }
-    merged.Remove(STRUCTURE_KEY);
+    merged["Parameters"] = instanceParams;
     instanceProps = merged;
-    typeSubtree = typeScoped;
+    typeSubtree = typeParams;
     return true;
   }
 
@@ -454,8 +434,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void HasMaterial(int srcK, int materialK, bool srcIsInstance = false) =>
     _envelopeWriter.AddRelation(RelKind.HasMaterial, srcK, materialK, srcIsInstance ? 1 : 0);
 
-  /// <summary>geometry → node(COLOR): display colour.</summary>
-  public void HasColor(int srcK, int colorK) => _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, 0);
+  /// <summary>geometry | object → node(COLOR): display colour. The two source namespaces overlap numerically
+  /// (both are dense int spaces from 0), so <paramref name="srcIsObject"/> tags which one <paramref name="srcK"/>
+  /// belongs to in the edge's <c>ord</c> column: 0 = geometry (the default, and what every pre-tag bundle wrote),
+  /// 1 = object. Without the tag a consumer cannot tell an object-sourced instance colour from a geometry-sourced
+  /// one and must guess — dropping colours or applying them to the wrong element [ENG-8822].</summary>
+  public void HasColor(int srcK, int colorK, bool srcIsObject = false) =>
+    _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, srcIsObject ? 1 : 0);
 
   /// <summary>object → node(LEVEL): level membership.</summary>
   public void OnLevel(int objectK, int levelK) => _envelopeWriter.AddRelation(RelKind.OnLevel, objectK, levelK, 0);

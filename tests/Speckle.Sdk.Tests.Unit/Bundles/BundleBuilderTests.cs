@@ -414,10 +414,11 @@ public sealed class BundleBuilderTests : IDisposable
   }
 
   [Fact]
-  public async Task Structure_IsTypeScoped_OnceForAllInstancesOfTheType()
+  public async Task Structure_UnderTypeParameters_IsWrittenOncePerType()
   {
-    // A compound element's layer buildup is a fact of its type: two walls of one type carry one Structure in
-    // type_eav (properties.Structure.{ordinal}.*), none on the object rows [ENG-9338/ENG-9355].
+    // A compound element's layer buildup sits in Parameters.Type Parameters.Structure.{ordinal}.* and rides the
+    // type split: two walls of one type carry one Structure in type_eav, none on the object rows. The legacy
+    // flatten rule that dropped it is gone [ENG-9338/ENG-9355].
     static Dictionary<string, object?> Layer(string material, string function, double thickness) =>
       new()
       {
@@ -436,11 +437,15 @@ public sealed class BundleBuilderTests : IDisposable
         ["Parameters"] = new Dictionary<string, object?>
         {
           ["Constraints"] = new Dictionary<string, object?> { ["Base Offset"] = 0.5 },
-        },
-        ["Structure"] = new Dictionary<string, object?>
-        {
-          ["0"] = Layer("White Concrete", "Finish1", 65),
-          ["1"] = Layer("Concrete", "Structure", 200),
+          ["Type Parameters"] = new Dictionary<string, object?>
+          {
+            ["Construction"] = new Dictionary<string, object?> { ["Width"] = 265.0 },
+            ["Structure"] = new Dictionary<string, object?>
+            {
+              ["0"] = Layer("White Concrete", "Finish1", 65),
+              ["1"] = Layer("Concrete", "Structure", 200),
+            },
+          },
         },
       };
 
@@ -454,12 +459,13 @@ public sealed class BundleBuilderTests : IDisposable
     {
       var wall = model.ObjectByApplicationId(id)!;
       Assert.Equal(0.5, wall.GetDouble("Parameters.Constraints.Base Offset")); // instance-scoped stays put
-      Assert.Equal("White Concrete", wall.TypeProperties["Structure.0.material"]);
-      Assert.Equal("Finish1", wall.TypeProperties["Structure.0.function"]);
-      Assert.Equal(65.0, wall.TypeProperties["Structure.0.thickness"]);
-      Assert.Equal(200.0, wall.TypeProperties["Structure.1.thickness"]);
-      Assert.Equal(65.0, wall.GetDouble("Structure.0.thickness")); // the merged lookup sees type scope too
-      Assert.DoesNotContain(wall.Properties.Keys, k => k.StartsWith("Structure", StringComparison.Ordinal));
+      Assert.Equal(265.0, wall.TypeProperties["Parameters.Type Parameters.Construction.Width"]);
+      Assert.Equal("White Concrete", wall.TypeProperties["Parameters.Type Parameters.Structure.0.material"]);
+      Assert.Equal("Finish1", wall.TypeProperties["Parameters.Type Parameters.Structure.0.function"]);
+      Assert.Equal(65.0, wall.TypeProperties["Parameters.Type Parameters.Structure.0.thickness"]);
+      Assert.Equal(200.0, wall.TypeProperties["Parameters.Type Parameters.Structure.1.thickness"]);
+      Assert.Equal(65.0, wall.GetDouble("Parameters.Type Parameters.Structure.0.thickness")); // merged lookup
+      Assert.DoesNotContain(wall.Properties.Keys, k => k.Contains("Structure"));
     }
     Assert.Single(model.Bundle.TypeIndexByObject!.Values.Distinct()); // one type row shared by both walls
   }
