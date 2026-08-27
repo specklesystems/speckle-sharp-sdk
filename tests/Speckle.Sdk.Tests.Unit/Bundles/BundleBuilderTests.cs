@@ -414,6 +414,40 @@ public sealed class BundleBuilderTests : IDisposable
   }
 
   [Fact]
+  public async Task Assemblies_RoundTrip_MemberOrderAndReverseLookup()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var assembly = b.GetOrAddObject("asm", null, null);
+      var plate = b.GetOrAddObject("plate", null, null);
+      var boltA = b.GetOrAddObject("bolt-a", null, null);
+      var boltB = b.GetOrAddObject("bolt-b", null, null);
+      assembly.AddAssemblyMember(plate); // ord 0 = main member
+      assembly.AddAssemblyMember(boltB, ord: 2);
+      assembly.AddAssemblyMember(boltA, ord: 1);
+      assembly.AddAssemblyMember(plate); // idempotent
+      Assert.Same(assembly, plate.Assembly);
+    });
+
+    var asm = model.ObjectByApplicationId("asm")!;
+    Assert.Equal(["plate", "bolt-a", "bolt-b"], asm.AssemblyMembers.Select(m => m.ApplicationId));
+    Assert.Same(asm, model.ObjectByApplicationId("bolt-a")!.Assembly);
+    Assert.Null(asm.Assembly);
+    Assert.Empty(asm.Children); // membership is not ownership
+  }
+
+  [Fact]
+  public void AssemblyMembership_CannotBeRetracted()
+  {
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    var a1 = b.GetOrAddObject("a1", null, null);
+    var a2 = b.GetOrAddObject("a2", null, null);
+    var member = b.GetOrAddObject("m", null, null);
+    a1.AddAssemblyMember(member);
+    Assert.Throws<InvalidOperationException>(() => a2.AddAssemblyMember(member));
+  }
+
+  [Fact]
   public void Relation_CannotBeRetracted()
   {
     using var b = new BundleBuilder(s_app, "m", _dir);

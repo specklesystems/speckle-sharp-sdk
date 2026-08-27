@@ -319,6 +319,7 @@ public sealed class BundleObject
   private BundleMaterial? _material;
   private BundleColor? _color;
   private BundleObject? _parent;
+  private int _assemblyMemberOrd;
   private BundleObject? _host;
   private BundleObject? _room;
 
@@ -506,6 +507,31 @@ public sealed class BundleObject
     child._parent = this;
     _builder.Pipeline.Subelement(K, child.K, o);
   }
+
+  /// <summary>Declares <paramref name="member"/> a member of this assembly (<c>IN_ASSEMBLY</c>): authored fabrication
+  /// membership, separate from <see cref="AddChild"/> ownership. <paramref name="ord"/> is the member's position —
+  /// 0 is the main member, ≥1 orders secondary or nested-assembly members; null = next. A member belongs to one
+  /// assembly.</summary>
+  public void AddAssemblyMember(BundleObject member, int? ord = null)
+  {
+    if (member.Assembly is not null)
+    {
+      if (ReferenceEquals(member.Assembly, this))
+      {
+        return;
+      }
+      throw new InvalidOperationException(
+        $"Object '{member.ApplicationId}' is already a member of assembly '{member.Assembly.ApplicationId}'; a bundle edge cannot be retracted."
+      );
+    }
+    int o = ord ?? _assemblyMemberOrd;
+    _assemblyMemberOrd = Math.Max(_assemblyMemberOrd, o + 1);
+    member.Assembly = this;
+    _builder.Pipeline.InAssembly(member.K, K, o);
+  }
+
+  /// <summary>The assembly this object is a member of, once <see cref="AddAssemblyMember"/> declared it.</summary>
+  public BundleObject? Assembly { get; private set; }
 
   /// <summary>Host (<c>HOSTED_ON</c>): the wall a door is placed on. Not ownership.</summary>
   public BundleObject? Host
