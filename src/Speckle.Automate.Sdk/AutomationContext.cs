@@ -78,10 +78,8 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
       )
       .ConfigureAwait(false);
 #pragma warning restore CS0618
-
-    await SpeckleClient
-      .Version.Received(new(version.id, AutomationRunData.ProjectId, "automate_function"), cancellationToken)
-      .ConfigureAwait(false);
+    // Receive2 marks a bundle-backed version as received itself; a server on Speckle 2026.9.0 serves every version as a
+    // bundle, so the explicit markReceived that used to live here would only double-count.
     logger.LogInformation(
       "It took {TotalSeconds} seconds to receive the speckle version {VersionId}",
       Elapsed.TotalSeconds,

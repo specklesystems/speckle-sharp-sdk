@@ -11,7 +11,16 @@ namespace Speckle.Sdk.Bundles;
 /// a bundle and nothing in the SDK reads them; default <see langword="false"/>. Set to <see langword="true"/> only when
 /// you intend to hand <see cref="Model.Directory"/> to a viewer.
 /// </param>
-public sealed record ReceiveOptions(bool IncludeGeometry = true, bool IncludeViewerArtifacts = false)
+/// <param name="MarkReceived">
+/// Record the receive on the server once it succeeds (the version's "received" activity, which the web app and usage
+/// metrics show). Default <see langword="true"/>. Set to <see langword="false"/> for tooling that reads many versions
+/// without anyone consuming them — tests, scanners, migrations — so it doesn't show up as usage.
+/// </param>
+public sealed record ReceiveOptions(
+  bool IncludeGeometry = true,
+  bool IncludeViewerArtifacts = false,
+  bool MarkReceived = true
+)
 {
   public static readonly ReceiveOptions Default = new();
 

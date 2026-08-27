@@ -19,6 +19,7 @@ namespace Speckle.Sdk.Bundles;
 public sealed class BundleReceiver(
   IArtifactDownloader artifactDownloader,
   IClientFactory clientFactory,
+  IVersionReceivedMarker receivedMarker,
   ILogger<BundleReceiver> logger
 ) : IBundleReceiver
 {
@@ -44,7 +45,12 @@ public sealed class BundleReceiver(
         .ReadAsync(bundleDir, ArtefactReadOptions.Columnar, cancellationToken)
         .ConfigureAwait(false);
       var files = Directory.EnumerateFiles(bundleDir).OrderBy(p => p, StringComparer.Ordinal).ToList();
-      return new Model(projectId, modelId, versionId, bundleDir, files, bundle, options.IncludeGeometry, logger);
+      var model = new Model(projectId, modelId, versionId, bundleDir, files, bundle, options.IncludeGeometry, logger);
+      if (options.MarkReceived)
+      {
+        await receivedMarker.MarkAsync(account, projectId, versionId, cancellationToken).ConfigureAwait(false);
+      }
+      return model;
     }
     catch
     {
@@ -91,6 +97,7 @@ public sealed class BundleReceiver(
       // Vintage marker: lets consumers (and the migrator's IsV3 check) tell a materialized tree from a genuine
       // v2/v3 graph. Same convention as BundleMigrator's TreeMaterializer.
       root["version"] = 4;
+      await receivedMarker.MarkAsync(account, projectId, versionId, cancellationToken).ConfigureAwait(false);
       return root;
     }
     finally

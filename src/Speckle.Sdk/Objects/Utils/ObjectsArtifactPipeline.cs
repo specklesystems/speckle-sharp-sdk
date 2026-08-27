@@ -684,9 +684,29 @@ public sealed class ObjectsArtifactPipeline : IDisposable
       producer.Slug,
       producer.HostApplicationVersion,
       "Speckle.Sdk (.NET)",
-      producer.SpeckleVersion,
+      SdkVersion,
       migratedFromSchemaVersion
     );
+  }
+
+  /// <summary>The version of this SDK, for <c>meta.sdk_version</c>: the package's informational version
+  /// (<c>2026.9.0-alpha.7</c>) without the build-metadata suffix. Not <see cref="ISpeckleApplication.SpeckleVersion"/>,
+  /// which a host registers as whatever it likes (a connector's own assembly version).</summary>
+  internal static string SdkVersion { get; } = ReadSdkVersion();
+
+  private static string ReadSdkVersion()
+  {
+    string? informational = typeof(ObjectsArtifactPipeline)
+      .Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+      .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+      .FirstOrDefault()
+      ?.InformationalVersion;
+    if (informational is not { Length: > 0 })
+    {
+      return typeof(ObjectsArtifactPipeline).Assembly.GetName().Version?.ToString() ?? "unknown";
+    }
+    int plus = informational.IndexOf('+');
+    return plus < 0 ? informational : informational.Substring(0, plus);
   }
 
   /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed

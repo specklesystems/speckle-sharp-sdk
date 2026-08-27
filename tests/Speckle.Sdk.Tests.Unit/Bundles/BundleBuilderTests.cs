@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
 using Speckle.Sdk.Bundles;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
@@ -377,6 +378,24 @@ public sealed class BundleBuilderTests : IDisposable
     var o = model.ObjectByApplicationId("o")!;
     Assert.Equal("{0;1}", o.Collection!.GhTopology);
     Assert.Null(o.Collection.Parent!.GhTopology);
+  }
+
+  [Fact]
+  public async Task Meta_SdkVersion_IsThisSdk_NotTheHostsSpeckleVersion()
+  {
+    // s_app registers SpeckleVersion "0.0.0" (a host passes whatever it likes there — a connector's own assembly
+    // version). meta.sdk_version must name the SDK that wrote the bundle.
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    b.GetOrAddObject("o", null, null);
+    var files = b.Build();
+
+    var meta = await ParquetTableReader.ReadAsync(
+      files.Files.Single(f => f.EndsWith(".envelope.meta.parquet", StringComparison.Ordinal))
+    );
+    string? sdkVersion = meta.Strings("sdk_version")[0];
+    Assert.Equal(ObjectsArtifactPipeline.SdkVersion, sdkVersion);
+    Assert.NotEqual("0.0.0", sdkVersion);
+    Assert.DoesNotContain("+", sdkVersion, StringComparison.Ordinal);
   }
 
   [Fact]
