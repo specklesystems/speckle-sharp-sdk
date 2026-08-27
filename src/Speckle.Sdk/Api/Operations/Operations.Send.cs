@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json.Linq;
 using Speckle.Sdk.Bundles;
 using Speckle.Sdk.Credentials;
@@ -149,6 +150,13 @@ public partial class Operations
   /// using ServerTransport destination = new(account, streamId);
   /// var (objectId, references) = await Send(mySpeckleObject, destination, true);
   /// </code></example>
+  [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
+  [Obsolete(
+    "Transport-based Send is frozen legacy surface (Speckle 2026.9.0): it writes the legacy per-object JSON graph and "
+      + "can never produce a version in the new Speckle object model. It keeps working for existing object-graph "
+      + "workflows and has no removal date. Update your scripts to Send3 with a BundleBuilder, which publishes a "
+      + "bundle over the ingestion rail."
+  )]
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     IServerTransport transport,
@@ -185,6 +193,13 @@ public partial class Operations
   /// using ServerTransport destination = new(account, streamId);
   /// var (objectId, references) = await Send(mySpeckleObject, destination, true);
   /// </code></example>
+  [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
+  [Obsolete(
+    "Transport-based Send is frozen legacy surface (Speckle 2026.9.0): it writes the legacy per-object JSON graph and "
+      + "can never produce a version in the new Speckle object model. It keeps working for existing object-graph "
+      + "workflows and has no removal date. Update your scripts to Send3 with a BundleBuilder, which publishes a "
+      + "bundle over the ingestion rail."
+  )]
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     ITransport transport,
@@ -222,6 +237,13 @@ public partial class Operations
   /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
   /// <exception cref="TransportException">One or more <paramref name="transports"/> failed to send</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
+  [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
+  [Obsolete(
+    "Transport-based Send is frozen legacy surface (Speckle 2026.9.0): it writes the legacy per-object JSON graph and "
+      + "can never produce a version in the new Speckle object model. It keeps working for existing object-graph "
+      + "workflows and has no removal date. Update your scripts to Send3 with a BundleBuilder, which publishes a "
+      + "bundle over the ingestion rail."
+  )]
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
     IReadOnlyCollection<ITransport> transports,
@@ -319,4 +341,53 @@ public partial class Operations
 
     return idToken.ToString();
   }
+}
+
+/// <summary>Hand-declared members of the generated <see cref="IOperations"/>: the source generator doesn't copy
+/// attributes, and the deprecation must reach callers that resolve <c>IOperations</c> from DI.</summary>
+public partial interface IOperations
+{
+  /// <inheritdoc cref="Operations.Send(Base, IServerTransport, bool, IProgress{ProgressArgs}?, CancellationToken)"/>
+  [Obsolete(
+    "Transport-based Send is frozen legacy surface (Speckle 2026.9.0): it writes the legacy per-object JSON graph and "
+      + "can never produce a version in the new Speckle object model. It keeps working for existing object-graph "
+      + "workflows and has no removal date. Update your scripts to Send3 with a BundleBuilder, which publishes a "
+      + "bundle over the ingestion rail."
+  )]
+  Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
+    Base value,
+    IServerTransport transport,
+    bool useDefaultCache,
+    IProgress<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  );
+
+  /// <inheritdoc cref="Operations.Send(Base, ITransport, bool, IProgress{ProgressArgs}?, CancellationToken)"/>
+  [Obsolete(
+    "Transport-based Send is frozen legacy surface (Speckle 2026.9.0): it writes the legacy per-object JSON graph and "
+      + "can never produce a version in the new Speckle object model. It keeps working for existing object-graph "
+      + "workflows and has no removal date. Update your scripts to Send3 with a BundleBuilder, which publishes a "
+      + "bundle over the ingestion rail."
+  )]
+  Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
+    Base value,
+    ITransport transport,
+    bool useDefaultCache,
+    IProgress<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  );
+
+  /// <inheritdoc cref="Operations.Send(Base, IReadOnlyCollection{ITransport}, IProgress{ProgressArgs}?, CancellationToken)"/>
+  [Obsolete(
+    "Transport-based Send is frozen legacy surface (Speckle 2026.9.0): it writes the legacy per-object JSON graph and "
+      + "can never produce a version in the new Speckle object model. It keeps working for existing object-graph "
+      + "workflows and has no removal date. Update your scripts to Send3 with a BundleBuilder, which publishes a "
+      + "bundle over the ingestion rail."
+  )]
+  Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
+    Base value,
+    IReadOnlyCollection<ITransport> transports,
+    IProgress<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  );
 }
