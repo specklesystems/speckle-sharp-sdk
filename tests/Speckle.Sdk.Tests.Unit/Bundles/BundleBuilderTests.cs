@@ -1,0 +1,461 @@
+using Microsoft.Extensions.Logging.Abstractions;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Utils;
+using Speckle.Sdk.Bundles;
+using Speckle.Sdk.Pipelines;
+using Speckle.Sdk.Pipelines.Receive.Artifacts;
+using Speckle.Sdk.Pipelines.Send.Artifacts;
+
+namespace Speckle.Sdk.Tests.Unit.Bundles;
+
+/// <summary>Write with <see cref="BundleBuilder"/>, read back through the Receive3 façade: the two sides must agree.</summary>
+public sealed class BundleBuilderTests : IDisposable
+{
+  private static readonly SpeckleApplication s_app = new()
+  {
+    HostApplication = "Test",
+    HostApplicationVersion = "1.0",
+    Slug = "test",
+    SpeckleVersion = "0.0.0",
+  };
+
+  private readonly string _dir = Path.Combine(Path.GetTempPath(), "BundleBuilderTests", Guid.NewGuid().ToString("N"));
+
+  private static Mesh Tri(double dx = 0) =>
+    new()
+    {
+      vertices = [dx, 0, 0, dx + 1, 0, 0, dx, 1, 0],
+      faces = [3, 0, 1, 2],
+      units = "m",
+    };
+
+  private async Task<Model> BuildAndRead(Action<BundleBuilder> populate)
+  {
+    BundleFiles files;
+    using (var b = new BundleBuilder(s_app, "m", _dir))
+    {
+      populate(b);
+      files = b.Build();
+    }
+    Assert.All(files.Files, f => Assert.StartsWith("bundle.", Path.GetFileName(f), StringComparison.Ordinal));
+    var bundle = await ArtefactBundleReader.ReadAsync(_dir, ArtefactReadOptions.Columnar, CancellationToken.None);
+    return new Model("p", "m", "v", _dir, files.Files, bundle, geometryDownloaded: true, NullLogger.Instance);
+  }
+
+  [Fact]
+  public void Solid_And_Display_Ordinals_Count_Per_Relation()
+  {
+    // What the pre-BundleBuilder Rhino pipeline wrote: an object's solid is SOLID ord 0 and its first display mesh is
+    // DISPLAY ord 0 — the two relations never share a counter.
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    var o = b.GetOrAddObject("pipe-1");
+    o.SetProperties(new Dictionary<string, object?>(), "pipe");
+    var solid = o.AddRawGeometry([1, 2, 3], "3dm");
+    var display = o.AddGeometry(Tri());
+    var display2 = o.AddGeometry(Tri(1));
+
+    Assert.Equal(0, solid.Ord);
+    Assert.Equal(0, display.Ord);
+    Assert.Equal(1, display2.Ord);
+  }
+
+  [Fact]
+  public async Task Objects_Properties_Collections_RoundTrip()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var walls = b.GetOrAddContainerPath(["Level 1", "Walls"], subtype: "Category");
+      var wall = b.GetOrAddObject(
+        "wall-1",
+        walls,
+        new Dictionary<string, object?>
+        {
+          ["Constraints"] = new Dictionary<string, object?> { ["Base Offset"] = 0.5 },
+          ["Identity Data"] = new Dictionary<string, object?> { ["Mark"] = "W-01" },
+        },
+        name: "Basic Wall",
+        speckleType: "Objects.Data.DataObject",
+        sourceType: "Walls"
+      );
+      wall.AddGeometry(Tri());
+      b.GetOrAddObject("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
+      // interning: same id twice is one object
+      Assert.Same(wall, b.GetOrAddObject("wall-1", walls, null));
+    });
+
+    Assert.Equal("m", model.Units);
+    Assert.Equal(2, model.Objects.Count);
+    var wall = model.ObjectByApplicationId("wall-1")!;
+    Assert.Equal("Basic Wall", wall.Name);
+    Assert.Equal(0.5, wall.GetDouble("Constraints.Base Offset"));
+    Assert.Equal("W-01", wall.GetString("Identity Data.Mark"));
+    Assert.Equal("Objects.Data.DataObject", wall.GetString("speckle_type"));
+    Assert.Equal("Walls", wall.GetString("type"));
+    Assert.Equal(["Level 1", "Walls"], wall.CollectionPath);
+    Assert.Equal("Category", wall.Collection!.Subtype);
+    Assert.Equal("Level 1", wall.Collection.Parent!.Name);
+    var tier = Assert.Single(model.DefaultSceneView); // added by Build() when none declared
+    Assert.Equal(RelKind.InCollection, tier.Relation);
+
+    var g = Assert.Single(wall.Geometries);
+    Assert.Equal(9, g.DecodeMesh()!.Value.Vertices.Length);
+    Assert.Empty(model.ObjectByApplicationId("door-1")!.Geometries);
+  }
+
+  [Fact]
+  public async Task Relations_And_Appearance_RoundTrip()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddContainerPath(["Layer 1"], "Layer");
+      var concrete = b.GetOrAddMaterial("mat-1", "Concrete", unchecked((int)0xFF808080), roughness: 0.8);
+      var red = b.GetOrAddColor(unchecked((int)0xFFFF0000));
+      var l1 = b.GetOrAddLevel("L1", "Level 1", 3.0);
+      layer.Color = red; // node plane
+
+      var wall = b.GetOrAddObject("wall-1", layer, null, name: "Wall");
+      wall.AddGeometry(Tri()).Material = concrete; // geometry plane
+      wall.Level = l1;
+      var door = b.GetOrAddObject("door-1", layer, null, name: "Door");
+      door.Parent = wall;
+      door.Host = wall;
+      door.Color = red; // object plane
+      door.Level = l1;
+      var room = b.GetOrAddObject("room-1", layer, null, name: "Office");
+      wall.Bounds(room);
+      door.Room = room;
+      var a = b.GetOrAddObject("pipe-a", layer, null);
+      var c = b.GetOrAddObject("pipe-b", layer, null);
+      a.ConnectTo(c);
+      var group = b.GetOrAddContainer("grp-1", "Group A", null, "Group");
+      wall.AddToGroup(group);
+      Assert.Same(concrete, b.GetOrAddMaterial("mat-1", "Concrete", unchecked((int)0xFF808080), roughness: 0.8)); // interned on key
+      Assert.Throws<InvalidOperationException>(() => b.GetOrAddMaterial("mat-1", "other name", 0)); // key collision
+    });
+
+    var wall = model.ObjectByApplicationId("wall-1")!;
+    var door = model.ObjectByApplicationId("door-1")!;
+    var room = model.ObjectByApplicationId("room-1")!;
+
+    Assert.Equal("Concrete", wall.Geometries[0].Material!.Name);
+    Assert.Equal(0.8, wall.Geometries[0].Material!.Roughness);
+    Assert.Equal("Level 1", wall.Level!.Name);
+    Assert.Equal(3.0, wall.Level.Elevation);
+    Assert.Same(wall, door.Parent);
+    Assert.Same(wall, door.Host);
+    Assert.Equal([door], wall.Children);
+    Assert.Equal(unchecked((int)0xFFFF0000), door.Color!.Argb);
+    Assert.Equal(unchecked((int)0xFFFF0000), wall.Collection!.Color!.Argb);
+    Assert.Equal([room], wall.BoundsRooms);
+    Assert.Same(room, door.Room);
+    Assert.Equal([door], room.Contains);
+    Assert.Equal(["pipe-b"], model.ObjectByApplicationId("pipe-a")!.ConnectedTo.Select(o => o.ApplicationId));
+    Assert.Equal("Group A", Assert.Single(wall.Groups).Name);
+    Assert.Single(model.Materials);
+    Assert.Single(model.Colors);
+    Assert.Single(model.Levels);
+  }
+
+  [Fact]
+  public async Task Definitions_Placements_Members_RoundTrip()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddContainerPath(["Blocks"], "Layer");
+      var chairDef = b.GetOrAddDefinition(
+        "def-chair",
+        "Chair",
+        d => d.AddGeometry(Tri()).Material = b.GetOrAddMaterial("m", "Fabric", 0)
+      );
+      double[] t = [1, 0, 0, 10, 0, 1, 0, 20, 0, 0, 1, 0, 0, 0, 0, 1];
+      var chair1 = b.GetOrAddObject("chair-1", layer, null, name: "Chair 1");
+      chair1.Place(chairDef, t);
+      var chair2 = b.GetOrAddObject("chair-2", layer, null, name: "Chair 2");
+      chair2.Place(chairDef, t);
+      Assert.Same(chairDef, b.GetOrAddDefinition("def-chair", null)); // a placement knows only the id
+      Assert.Throws<InvalidOperationException>(() => b.GetOrAddDefinition("def-chair", "x")); // key collision
+
+      // a Rhino-style member object with its own properties, joined to the definition geometry by ordinal
+      var tableDef = b.GetOrAddDefinition("def-table", "Table");
+      var top = b.GetOrAddObject(
+        "table-top",
+        layer,
+        new Dictionary<string, object?> { ["material"] = "oak" },
+        name: "Top"
+      );
+      tableDef.AddMember(top, [Tri(5)]);
+      b.GetOrAddObject("table-1", layer, null, name: "Table 1").Place(tableDef, t);
+    });
+
+    var chair1 = model.ObjectByApplicationId("chair-1")!;
+    var placement = Assert.Single(chair1.Placements);
+    Assert.Equal(10, placement.Transform![3]);
+    Assert.Equal("Chair", chair1.Definition!.Name);
+    Assert.Equal(2, chair1.Definition.Placements.Count);
+    Assert.Equal(["chair-1", "chair-2"], chair1.Definition.Objects.Select(o => o.ApplicationId));
+    var g = Assert.Single(chair1.Geometries);
+    Assert.Equal("Fabric", g.Material!.Name);
+    Assert.NotNull(g.Transform);
+
+    var table = model.ObjectByApplicationId("table-1")!;
+    var top = Assert.Single(table.Definition!.Members);
+    Assert.Equal("oak", top.GetString("material"));
+    Assert.Equal(2, model.Definitions.Count);
+  }
+
+  [Fact]
+  public async Task ModelExtras_SceneView_RoundTrip()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var host = b.GetOrAddContainer("model-main", "Main.rvt", null, "Model");
+      var l1 = b.GetOrAddLevel("L1", "Level 1", 0);
+      var o = b.GetOrAddObject(
+        "w",
+        null,
+        null,
+        name: "W",
+        rootScalars: [new("category", "Walls"), new("family", "Basic")]
+      );
+      o.Model = host;
+      o.Level = l1;
+      b.SceneView(
+        "Default",
+        isDefault: true,
+        SceneViewKey.Rel(RelKind.InModel),
+        SceneViewKey.Rel(RelKind.OnLevel),
+        SceneViewKey.Eav("category"),
+        SceneViewKey.Eav("family")
+      );
+      b.AddModelProperty("modelPlacement.units", "m");
+      b.AddModelProperty("projectInformation.number", 42.0);
+      b.AddStructuralResult(o, "Base", "reaction", "DL", "Fz", value: 12.5);
+      b.AddCameraView(new CameraView(0, "Front", true, 0, 0, -10, 5, 0, 1, 0, 0, 0, 1));
+    });
+
+    var w = model.ObjectByApplicationId("w")!;
+    Assert.Equal(4, model.DefaultSceneView.Count);
+    Assert.Equal(["Main.rvt", "Level 1", "Walls", "Basic"], w.SceneViewSegments.Select(s => s.Name));
+    Assert.IsType<ModelContainer>(w.SceneViewSegments[0].Node);
+    Assert.IsType<ModelLevel>(w.SceneViewSegments[1].Node);
+    Assert.Null(w.SceneViewSegments[2].Node);
+    Assert.Equal("m", model.Properties["modelPlacement.units"]);
+    Assert.Equal(42.0, model.Properties["projectInformation.number"]);
+    Assert.Equal("Front", Assert.Single(model.CameraViews).Name);
+    Assert.Contains(model.Files, f => f.EndsWith(".eav.structural_results.parquet", StringComparison.Ordinal));
+  }
+
+  [Fact]
+  public async Task ForwardReference_ThenDescribe_WritesOnce()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddContainerPath(["L"]);
+      // a frame connects to a joint that is only described later (CSi pattern)
+      var frame = b.GetOrAddObject("frame-1", layer, null, name: "Frame");
+      var joint = b.GetOrAddObject("joint-1", null, null); // reference only
+      frame.ConnectTo(joint);
+      Assert.False(joint.PropertiesWritten);
+
+      var described = b.GetOrAddObject(
+        "joint-1",
+        layer,
+        new Dictionary<string, object?> { ["z"] = 3.0 },
+        name: "Joint 1"
+      );
+      Assert.Same(joint, described);
+      Assert.True(joint.PropertiesWritten);
+      Assert.Equal("Joint 1", joint.Name);
+      Assert.Throws<InvalidOperationException>(() => b.GetOrAddObject("joint-1", null, null, name: "again"));
+      Assert.Same(joint, b.GetOrAddObject("joint-1", null, null)); // bare reference still fine
+    });
+
+    var joint = model.ObjectByApplicationId("joint-1")!;
+    Assert.Equal("Joint 1", joint.Name);
+    Assert.Equal(3.0, joint.GetDouble("z"));
+    Assert.Equal(["L"], joint.CollectionPath);
+    Assert.Equal([joint], model.ObjectByApplicationId("frame-1")!.ConnectedTo);
+  }
+
+  [Fact]
+  public async Task Children_ExplicitOrdinals()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddContainerPath(["L"]);
+      var assembly = b.GetOrAddObject("asm", layer, null, name: "Assembly");
+      var c2 = b.GetOrAddObject("c2", layer, null, name: "C2");
+      var c0 = b.GetOrAddObject("c0", layer, null, name: "C0");
+      var c1 = b.GetOrAddObject("c1", layer, null, name: "C1");
+      assembly.AddChild(c2, ord: 2);
+      assembly.AddChild(c0, ord: 0);
+      c1.Parent = assembly; // next ordinal after the explicit ones → 3; ordering below is by ordinal
+      Assert.Throws<InvalidOperationException>(() => b.GetOrAddObject("other", layer, null).AddChild(c0));
+    });
+
+    var asm = model.ObjectByApplicationId("asm")!;
+    Assert.Equal(["c0", "c2", "c1"], asm.Children.Select(c => c.ApplicationId));
+    Assert.Same(asm, model.ObjectByApplicationId("c1")!.Parent);
+  }
+
+  [Fact]
+  public async Task Definition_MembersOwnGeometry_RenderOnlyThroughPlacements()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddContainerPath(["Blocks"], "Layer");
+      var steel = b.GetOrAddMaterial("steel", "Steel", unchecked((int)0xFF9999AA));
+
+      // Rhino-shaped: the block's contents are objects with their own layer + properties + geometry
+      var chairDef = b.GetOrAddDefinition("def-chair", "Chair");
+      var seat = b.GetOrAddObject("seat", layer, new Dictionary<string, object?> { ["part"] = "seat" }, name: "Seat");
+      foreach (var g in chairDef.AddMember(seat, [Tri()]))
+      {
+        g.Material = steel;
+      }
+      var leg = b.GetOrAddObject("leg", layer, new Dictionary<string, object?> { ["part"] = "leg" }, name: "Leg");
+      var legGeometry = chairDef.AddMember(leg, [Tri(1), Tri(2)]);
+      Assert.Equal(legGeometry[0].Ord, legGeometry[1].Ord); // one member, one ordinal, two meshes
+
+      // a block inside the block
+      var boltDef = b.GetOrAddDefinition("def-bolt", "Bolt", d => d.AddGeometry(Tri(9)));
+      var bolt = b.GetOrAddObject("bolt-in-chair", layer, null, name: "Bolt");
+      double[] t = [1, 0, 0, 0.1, 0, 1, 0, 0.2, 0, 0, 1, 0, 0, 0, 0, 1];
+      chairDef.AddMemberPlacement(bolt, boltDef, t);
+
+      double[] place = [1, 0, 0, 10, 0, 1, 0, 20, 0, 0, 1, 0, 0, 0, 0, 1];
+      b.GetOrAddObject("chair-1", layer, null, name: "Chair 1").Place(chairDef, place);
+    });
+
+    var seat = model.ObjectByApplicationId("seat")!;
+    Assert.Empty(seat.Geometries); // no DISPLAY of its own — it renders through the placement
+    Assert.Equal("seat", seat.GetString("part"));
+    Assert.Equal(["Blocks"], seat.CollectionPath);
+
+    var chair = model.ObjectByApplicationId("chair-1")!;
+    var def = chair.Definition!;
+    Assert.Equal(["seat", "leg", "bolt-in-chair"], def.Members.Select(m => m.ApplicationId));
+    Assert.Equal(4, chair.Geometries.Count); // seat + 2 leg + nested bolt, all placed
+    Assert.All(chair.Geometries, g => Assert.NotNull(g.Transform));
+    Assert.Equal("Steel", chair.Geometries[0].Material!.Name);
+
+    var bolt = model.ObjectByApplicationId("bolt-in-chair")!;
+    var placement = Assert.Single(bolt.Placements); // PLACES → its nested INSTANCE
+    Assert.Equal("Bolt", placement.Definition!.Name);
+  }
+
+  [Fact]
+  public async Task Definition_ExistingGeometry_SharedByKey()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var layer = b.GetOrAddContainerPath(["L"]);
+      // Revit-shaped: an element's mesh is written under the element; the family symbol references the same blob
+      var element = b.GetOrAddObject("el-1", layer, null, name: "Element");
+      element.AddGeometry(Tri(), geometryKey: "mesh-A");
+      var symbol = b.GetOrAddDefinition("sym", "Symbol");
+      Assert.True(b.TryGetGeometry("mesh-A", out var shared));
+      symbol.AddExistingGeometry(shared);
+      b.GetOrAddObject("inst-1", layer, null).Place(symbol, [1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+      Assert.False(b.TryGetGeometry("nope", out _));
+    });
+
+    var element = model.ObjectByApplicationId("el-1")!;
+    var inst = model.ObjectByApplicationId("inst-1")!;
+    Assert.Equal(element.Geometries[0].K, Assert.Single(inst.Geometries).K); // one blob, two routes
+    Assert.Single(model.Geometries);
+  }
+
+  [Fact]
+  public async Task Collections_CarryGhTopology_OnTheLeaf()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var leaf = b.GetOrAddContainerPath(["Tree", "{0;1}"], "Collection", ghTopology: "{0;1}");
+      b.GetOrAddObject("o", leaf, null);
+    });
+
+    var o = model.ObjectByApplicationId("o")!;
+    Assert.Equal("{0;1}", o.Collection!.GhTopology);
+    Assert.Null(o.Collection.Parent!.GhTopology);
+  }
+
+  [Fact]
+  public async Task Meta_SdkVersion_IsThisSdk_NotTheHostsSpeckleVersion()
+  {
+    // s_app registers SpeckleVersion "0.0.0" (a host passes whatever it likes there — a connector's own assembly
+    // version). meta.sdk_version must name the SDK that wrote the bundle.
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    b.GetOrAddObject("o", null, null);
+    var files = b.Build();
+
+    var meta = await ParquetTableReader.ReadAsync(
+      files.Files.Single(f => f.EndsWith(".envelope.meta.parquet", StringComparison.Ordinal))
+    );
+    string? sdkVersion = meta.Strings("sdk_version")[0];
+    Assert.Equal(ObjectsArtifactPipeline.SdkVersion, sdkVersion);
+    Assert.NotEqual("0.0.0", sdkVersion);
+    Assert.DoesNotContain("+", sdkVersion, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public void Build_Twice_Throws_And_RenameTo_RekeysFiles()
+  {
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    b.GetOrAddObject("o", null, null);
+    var files = b.Build();
+    Assert.Throws<InvalidOperationException>(() => b.Build());
+
+    var renamed = files.RenameTo("08de6a66ec");
+    Assert.All(renamed.Files, f => Assert.StartsWith("08de6a66ec.", Path.GetFileName(f), StringComparison.Ordinal));
+    Assert.All(renamed.Files, f => Assert.True(File.Exists(f)));
+    Assert.Equal(files.Files.Count, renamed.ByName.Count);
+    Assert.Equal(1, renamed.ObjectCount);
+  }
+
+  [Fact]
+  public void Relation_CannotBeRetracted()
+  {
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    var a = b.GetOrAddContainerPath(["A"]);
+    var c = b.GetOrAddContainerPath(["C"]);
+    var o = b.GetOrAddObject("o", a, null);
+    Assert.Throws<InvalidOperationException>(() => o.Collection = c);
+    o.Collection = a; // idempotent
+    // clearing is a retraction too — otherwise "= null; = c" would write a second IN_COLLECTION edge
+    Assert.Throws<InvalidOperationException>(() => o.Collection = null);
+  }
+
+  [Fact]
+  public void Relation_NullBeforeAnyEdge_IsANoOp()
+  {
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    var o = b.GetOrAddObject("o");
+    o.Collection = null;
+    o.Collection = b.GetOrAddContainerPath(["A"]);
+    Assert.Equal("A", o.Collection!.Name);
+  }
+
+  [Fact]
+  public async Task Collections_RepeatedSegmentName_GhTopologyOnlyOnTheLeaf()
+  {
+    using var model = await BuildAndRead(b =>
+    {
+      var leaf = b.GetOrAddContainerPath(["Mesh", "Mesh"], "Collection", ghTopology: "{0;1}");
+      b.GetOrAddObject("o", leaf, null);
+    });
+
+    var o = model.ObjectByApplicationId("o")!;
+    Assert.Equal("{0;1}", o.Collection!.GhTopology);
+    Assert.Null(o.Collection.Parent!.GhTopology);
+    Assert.Null(o.Collection.Parent.Parent);
+  }
+
+  public void Dispose()
+  {
+    if (Directory.Exists(_dir))
+    {
+      Directory.Delete(_dir, true);
+    }
+  }
+}
