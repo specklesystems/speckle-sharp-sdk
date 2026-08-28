@@ -1,0 +1,19 @@
+name: Checkout speckle-bundle-spec
+description: Checkout speckle-bundle-spec
+
+inputs: 
+   token:
+     required: true
+     description: "GitHub Auth Token"
+     
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout speckle-bundle-spec
+      uses: actions/checkout@v7
+      with:
+        repository: specklesystems/speckle-bundle-spec
+        ref: e360fcfeeef3354c95c2a3a5554782bae15b783a
+        token: ${{ inputs.token }}
+        path: speckle-bundle-spec
+        persist-credentials: false

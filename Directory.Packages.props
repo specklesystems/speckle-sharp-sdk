@@ -32,12 +32,13 @@
     <PackageVersion Include="AwesomeAssertions" Version="9.4.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="Bullseye" Version="6.1.0" />
+    <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.5.3" />
     <PackageVersion Include="GraphQL.Client" Version="6.1.0" />
     <PackageVersion Include="Glob" Version="1.1.9" />
     <PackageVersion Include="HttpMultipartParser" Version="10.0.0" />
     <PackageVersion Include="ILRepack.FullAuto" Version="1.6.0" />
     <!-- Keep aligned with channels -->
-    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[9.0.4,)" />
+    <PackageVersion Include="Microsoft.Bcl.AsyncInterfaces" Version="[9.0.10,)" />
     <!-- Keep version aligned with the lowest .NET framework we need to support (e.g. lowest non-eol) -->
     <PackageVersion Include="Microsoft.CSharp" Version="[4.7.0,)" />
     <!-- Keep at exactly 7.0.5 for side by side with V2 -->
@@ -46,9 +47,20 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.6" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.6" />
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Newtonsoft.Json.Schema" Version="4.0.1" />
     <PackageVersion Include="Open.ChannelExtensions" Version="9.1.0" />
+    <!-- 
+    5.6.x and greater doesn't support .NET Standard 2.0
+    5.5.0 does, but it's zstd based write doesn't appear to work properly in .NET Standard 2.0 (compress stream copy not implemented) 
+    5.4.0 works, but brings in higher versions of System.Memory that conflict with many third-party plugins
+    5.3.0 is the newest version we've found to have good compatibilty. 
+    -->
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageVersion Include="Parquet.Net" Version="[5.3.0,]" />
     <!-- Pinned due to breaking changes in newer versions -->
     <PackageVersion Include="Polly" Version="[7.2.3,8.0.0]" />
     <PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="[1.1.1,]" />
@@ -58,9 +70,17 @@
     <PackageVersion Include="Speckle.DoubleNumerics" Version="4.1.0" />
     <PackageVersion Include="SimpleExec" Version="13.0.0" />
     <!-- Pinned due to breaking changes in newer versions -->
-    <PackageVersion Include="System.CommandLine" Version="[2.0.0-beta4.22272.1]" />
+    <PackageVersion Include="System.CommandLine" Version="[2.0.0]" />
+    <!--
+    Pinned so EVERY netstandard2.0 SDK assembly bakes the SAME System.Memory reference (4.5.5 = assembly 4.0.1.2),
+    matching what the connectors repo resolves transitively (IronCompress). Without the pin, Speckle.Sdk
+    resolves 4.5.4 (4.0.1.1) while the net48 connectors compile against 4.0.1.2 — on .NET Framework hosts the two
+    ReadOnlySpan identities then differ and any span-typed SDK API throws MissingMethodException at JIT time
+    (seen in Revit 2023 and AutoCAD 2024). Keep in the 4.5.x family: 4.6.x (4.0.5.0) conflicts with third-party plugins.
+    -->
+    <PackageVersion Include="System.Memory" Version="4.5.5" />
     <!-- 9.0.4 is minimum version for .net standard2.0 because it's the first version to include async enumerables in the .NET standard target -->
-    <PackageVersion Include="System.Threading.Channels" Version="[9.0.4,]" />
+    <PackageVersion Include="System.Threading.Channels" Version="[9.0.10,]" />
     <PackageVersion Include="Verify.Quibble" Version="2.1.1" />
     <PackageVersion Include="Verify.Xunit" Version="31.12.5" />
     <PackageVersion Include="System.Text.Json" Version="10.0.7" />

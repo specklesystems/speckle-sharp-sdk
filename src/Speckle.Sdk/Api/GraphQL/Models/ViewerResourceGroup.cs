@@ -2,6 +2,6 @@
 
 public class ViewerResourceGroup
 {
-  public string identifier { get; init; }
-  public List<ViewerResourceItem> items { get; init; }
+  public required string identifier { get; init; }
+  public required List<ViewerResourceItem> items { get; init; }
 }

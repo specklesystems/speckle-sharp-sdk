@@ -278,14 +278,8 @@
         "type": "Project",
         "dependencies": {
           "Newtonsoft.Json.Schema": "[4.0.1, )",
-          "Speckle.Objects": "[1.0.0, )",
+          "Speckle.Sdk": "[1.0.0, )",
           "System.CommandLine": "[2.0.0-beta4.22272.1, 2.0.0-beta4.22272.1]"
-        }
-      },
-      "speckle.objects": {
-        "type": "Project",
-        "dependencies": {
-          "Speckle.Sdk": "[1.0.0, )"
         }
       },
       "speckle.sdk": {
@@ -297,10 +291,14 @@
           "Microsoft.Extensions.ObjectPool": "[10.0.0, )",
           "Speckle.DoubleNumerics": "[4.1.0, )",
           "Speckle.Newtonsoft.Json": "[13.0.2, )",
-          "Speckle.Sdk.Dependencies": "[1.0.0, )"
+          "Speckle.Sdk.Dependencies": "[1.0.0, )",
+          "Speckle.Sdk.Parquet": "[1.0.0, )"
         }
       },
       "speckle.sdk.dependencies": {
+        "type": "Project"
+      },
+      "speckle.sdk.parquet": {
         "type": "Project"
       },
       "speckle.sdk.testing": {
@@ -405,7 +403,7 @@
       },
       "System.CommandLine": {
         "type": "CentralTransitive",
-        "requested": "[2.0.0-beta4.22272.1, 2.0.0-beta4.22272.1]",
+        "requested": "[2.0.0, 2.0.0]",
         "resolved": "2.0.0-beta4.22272.1",
         "contentHash": "1uqED/q2H0kKoLJ4+hI2iPSBSEdTuhfCYADeJrAqERmiGQ2NNacYKRNEQ+gFbU4glgVyK8rxI+ZOe1onEtr/Pg=="
       },

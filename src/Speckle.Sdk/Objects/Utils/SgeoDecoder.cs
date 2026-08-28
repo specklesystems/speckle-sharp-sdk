@@ -1,0 +1,607 @@
+using System.Buffers.Binary;
+using System.Text;
+using Speckle.Objects.Annotation;
+using Speckle.Objects.Geometry;
+using Speckle.Objects.Primitive;
+using Speckle.Sdk;
+using Speckle.Sdk.Common;
+using Speckle.Sdk.Models;
+
+namespace Speckle.Objects.Utils;
+
+/// <summary>Base-free decoded mesh fields: flat xyz <c>Vertices</c>, Speckle-format <c>Faces</c> (count-prefixed per
+/// face), per-vertex argb <c>Colors</c> (may be empty) and <c>Units</c>. For hosts that build their own mesh type
+/// directly from a SGEO blob without allocating a <see cref="Geometry.Mesh"/> (Base). See <see cref="SgeoDecoder.TryDecodeMesh(ReadOnlySpan{byte}, out SgeoMesh)"/>.</summary>
+#pragma warning disable CA1819 // flat geometry arrays are intentional; this is a lightweight transport record
+public readonly record struct SgeoMesh(double[] Vertices, int[] Faces, int[] Colors, string Units);
+#pragma warning restore CA1819
+
+/// <summary>
+/// Decodes SGEO v1 byte buffers (see <see cref="SgeoFormat"/>) back into Speckle
+/// geometry objects. The inverse of <see cref="SgeoEncoder"/>; derived fields
+/// (length/area/volume/bbox, arc radius/measure) are recomputed by the objects.
+/// </summary>
+public static class SgeoDecoder
+{
+  /// <summary>
+  /// Reads and validates the SGEO header (magic, version, CRC over the body)
+  /// without expanding the body.
+  /// </summary>
+  public static SgeoHeader ReadHeader(ReadOnlySpan<byte> bytes)
+  {
+    if (bytes.Length < SgeoFormat.HeaderSize)
+    {
+      throw new SpeckleException("SGEO buffer too small to contain a header.");
+    }
+    if (!bytes.Slice(0, 4).SequenceEqual(SgeoFormat.Magic))
+    {
+      throw new SpeckleException("SGEO magic mismatch: expected \"SGEO\".");
+    }
+    byte version = bytes[4];
+    if (version != SgeoFormat.Version1)
+    {
+      throw new SpeckleException($"SGEO version {version} unsupported (this decoder reads {SgeoFormat.Version1}).");
+    }
+    var primitiveType = (SgeoPrimitiveType)bytes[5];
+    var flags = (SgeoFlags)BinaryPrimitives.ReadUInt16LittleEndian(bytes.Slice(6, 2));
+    ushort unitsCode = BinaryPrimitives.ReadUInt16LittleEndian(bytes.Slice(8, 2));
+    uint crc = BinaryPrimitives.ReadUInt32LittleEndian(bytes.Slice(12, 4));
+
+    uint actual = Crc32.Compute(bytes.Slice(SgeoFormat.HeaderSize));
+    if (actual != crc)
+    {
+      throw new SpeckleException($"SGEO CRC mismatch: header 0x{crc:X8}, computed 0x{actual:X8}.");
+    }
+
+    return new SgeoHeader
+    {
+      Version = version,
+      PrimitiveType = primitiveType,
+      Flags = flags,
+      UnitsCode = unitsCode,
+      Crc = crc,
+    };
+  }
+
+  // This overload is useful in .NET Standard 2.0 connectors, since using ReadOnlySpan<bytes> *can* lead to DLL conflicts
+  // with System.Memory versions being misaligned with the host app or with third party plugins.
+  // Revit 2024 is a good example of that.
+  public static bool TryDecodeMesh(byte[] bytes, out SgeoMesh mesh) => TryDecodeMesh(bytes.AsSpan(), out mesh);
+
+  /// <summary>Decodes a SGEO <see cref="SgeoPrimitiveType.Mesh"/> blob to neutral mesh fields without allocating a
+  /// <see cref="Mesh"/> (Base). Returns false for non-mesh primitives or the (unsupported) quantized layout.</summary>
+  public static bool TryDecodeMesh(ReadOnlySpan<byte> bytes, out SgeoMesh mesh)
+  {
+    mesh = default;
+    var header = ReadHeader(bytes);
+    if (header.PrimitiveType != SgeoPrimitiveType.Mesh || (header.Flags & SgeoFlags.Quantized) != 0)
+    {
+      return false;
+    }
+    string units = Units.GetUnitFromEncoding(header.UnitsCode);
+    var r = new Reader(bytes, SgeoFormat.HeaderSize);
+    int vCount = (int)r.ReadUInt32();
+    int fCount = (int)r.ReadUInt32();
+    var verts = new double[vCount * 3];
+    for (int i = 0; i < verts.Length; i++)
+    {
+      verts[i] = r.ReadDouble();
+    }
+    var faces = new int[fCount];
+    for (int i = 0; i < fCount; i++)
+    {
+      faces[i] = r.ReadInt32();
+    }
+    // skip normals + uvs (same order as Decode) so the colour cursor lands correctly.
+    if ((header.Flags & SgeoFlags.HasNormals) != 0)
+    {
+      r.Align8();
+      for (int i = 0; i < vCount * 3; i++)
+      {
+        r.ReadDouble();
+      }
+    }
+    if ((header.Flags & SgeoFlags.HasUvs) != 0)
+    {
+      r.Align8();
+      for (int i = 0; i < vCount * 2; i++)
+      {
+        r.ReadDouble();
+      }
+    }
+    int[] colors = Array.Empty<int>();
+    if ((header.Flags & SgeoFlags.HasColors) != 0)
+    {
+      colors = new int[vCount];
+      for (int i = 0; i < vCount; i++)
+      {
+        colors[i] = r.ReadInt32();
+      }
+    }
+    mesh = new SgeoMesh(verts, faces, colors, units);
+    return true;
+  }
+
+  /// <summary>Decodes an SGEO blob into the corresponding Speckle geometry object.</summary>
+  /// <remarks>
+  /// A single <see cref="Point"/> is encoded under the Points primitive and decodes
+  /// to a one-point <see cref="Pointcloud"/> — the points body does not distinguish
+  /// the two.
+  /// </remarks>
+  public static Base Decode(ReadOnlySpan<byte> bytes)
+  {
+    var header = ReadHeader(bytes);
+    if ((header.Flags & SgeoFlags.Quantized) != 0)
+    {
+      throw new SpeckleException("Quantized SGEO layout is not supported (reserved for a future iteration).");
+    }
+    string units = Units.GetUnitFromEncoding(header.UnitsCode);
+    var r = new Reader(bytes, SgeoFormat.HeaderSize);
+
+    switch (header.PrimitiveType)
+    {
+      case SgeoPrimitiveType.Mesh:
+      {
+        int vCount = r.Count(sizeof(double) * 3); // 3 doubles per vertex
+        int fCount = r.Count(4);
+        var verts = new List<double>(vCount * 3);
+        for (int i = 0; i < vCount * 3; i++)
+        {
+          verts.Add(r.ReadDouble());
+        }
+        var faces = new List<int>(fCount);
+        for (int i = 0; i < fCount; i++)
+        {
+          faces.Add(r.ReadInt32());
+        }
+        var normals = new List<double>();
+        if ((header.Flags & SgeoFlags.HasNormals) != 0)
+        {
+          r.Align8();
+          for (int i = 0; i < vCount * 3; i++)
+          {
+            normals.Add(r.ReadDouble());
+          }
+        }
+        var uvs = new List<double>();
+        if ((header.Flags & SgeoFlags.HasUvs) != 0)
+        {
+          r.Align8();
+          for (int i = 0; i < vCount * 2; i++)
+          {
+            uvs.Add(r.ReadDouble());
+          }
+        }
+        var colors = new List<int>();
+        if ((header.Flags & SgeoFlags.HasColors) != 0)
+        {
+          for (int i = 0; i < vCount; i++)
+          {
+            colors.Add(r.ReadInt32());
+          }
+        }
+        return new Mesh
+        {
+          vertices = verts,
+          faces = faces,
+          vertexNormals = normals,
+          textureCoordinates = uvs,
+          colors = colors,
+          units = units,
+        };
+      }
+
+      case SgeoPrimitiveType.Line:
+      {
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
+        var start = ReadPoint(ref r, units);
+        var end = ReadPoint(ref r, units);
+        return new Line
+        {
+          start = start,
+          end = end,
+          units = units,
+          domain = new Interval { start = ds, end = de },
+        };
+      }
+
+      case SgeoPrimitiveType.Polyline:
+      {
+        int count = r.Count(24); // 3 doubles per point
+        _ = r.ReadUInt32(); // reserved
+        var value = new List<double>(count * 3);
+        for (int i = 0; i < count * 3; i++)
+        {
+          value.Add(r.ReadDouble());
+        }
+        return new Polyline
+        {
+          value = value,
+          closed = (header.Flags & SgeoFlags.Closed) != 0,
+          units = units,
+        };
+      }
+
+      case SgeoPrimitiveType.Polycurve:
+      {
+        int segCount = r.Count(8); // each segment is at least a header + framing
+        _ = r.ReadUInt32(); // reserved
+        var segments = new List<ICurve>(segCount);
+        for (int i = 0; i < segCount; i++)
+        {
+          segments.Add(ReadCurveBlob(ref r));
+        }
+        return new Polycurve
+        {
+          segments = segments,
+          closed = (header.Flags & SgeoFlags.Closed) != 0,
+          units = units,
+        };
+      }
+
+      case SgeoPrimitiveType.Curve:
+      {
+        bool closed = (header.Flags & SgeoFlags.Closed) != 0;
+        var display = ReadPolylineBody(ref r, units, closed); // [render] leading displayValue polyline (see encoder)
+        int degree = (int)r.ReadUInt32(); // [analytical] trailing NURBS definition
+        int cpCount = r.Count(24); // control points: 3 doubles each
+        int knotCount = r.Count(8);
+        _ = r.ReadUInt32(); // reserved
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
+        bool rational = (header.Flags & SgeoFlags.Rational) != 0;
+        var points = new List<double>(cpCount * 3);
+        for (int i = 0; i < cpCount * 3; i++)
+        {
+          points.Add(r.ReadDouble());
+        }
+        var weights = new List<double>(cpCount);
+        if (rational)
+        {
+          for (int i = 0; i < cpCount; i++)
+          {
+            weights.Add(r.ReadDouble());
+          }
+        }
+        else
+        {
+          for (int i = 0; i < cpCount; i++)
+          {
+            weights.Add(1.0);
+          }
+        }
+        var knots = new List<double>(knotCount);
+        for (int i = 0; i < knotCount; i++)
+        {
+          knots.Add(r.ReadDouble());
+        }
+        bool periodic = (header.Flags & SgeoFlags.Periodic) != 0;
+        return new Curve
+        {
+          degree = degree,
+          periodic = periodic,
+          rational = rational,
+          // A periodic NURBS is closed by construction. Older bundles only flagged the display polyline's closure
+          // (see EncodeCurve), losing curve.closed for periodic splines — receivers then skip their periodic
+          // knot/point trimming and bake exploded curves. Deriving it here heals those bundles on receive.
+          closed = closed || periodic,
+          points = points,
+          weights = weights,
+          knots = knots,
+          domain = new Interval { start = ds, end = de },
+          displayValue = display,
+          units = units,
+        };
+      }
+
+      case SgeoPrimitiveType.Arc:
+      {
+        var plane = ReadPlane(ref r, units);
+        var startPoint = ReadPoint(ref r, units);
+        var midPoint = ReadPoint(ref r, units);
+        var endPoint = ReadPoint(ref r, units);
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
+        return new Arc
+        {
+          plane = plane,
+          startPoint = startPoint,
+          midPoint = midPoint,
+          endPoint = endPoint,
+          units = units,
+          domain = new Interval { start = ds, end = de },
+        };
+      }
+
+      case SgeoPrimitiveType.Circle:
+      {
+        double radius = r.ReadDouble();
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
+        var plane = ReadPlane(ref r, units);
+        return new Circle
+        {
+          radius = radius,
+          plane = plane,
+          units = units,
+          domain = new Interval { start = ds, end = de },
+        };
+      }
+
+      case SgeoPrimitiveType.Points:
+      {
+        int count = r.Count(24); // 3 doubles per point
+        _ = r.ReadUInt32(); // reserved
+        var points = new List<double>(count * 3);
+        for (int i = 0; i < count * 3; i++)
+        {
+          points.Add(r.ReadDouble());
+        }
+        var colors = new List<int>();
+        if ((header.Flags & SgeoFlags.HasColors) != 0)
+        {
+          for (int i = 0; i < count; i++)
+          {
+            colors.Add(r.ReadInt32());
+          }
+        }
+        var sizes = new List<double>();
+        if ((header.Flags & SgeoFlags.HasSizes) != 0)
+        {
+          r.Align8();
+          for (int i = 0; i < count; i++)
+          {
+            sizes.Add(r.ReadDouble());
+          }
+        }
+        return new Pointcloud
+        {
+          points = points,
+          colors = colors,
+          sizes = sizes,
+          units = units,
+        };
+      }
+
+      case SgeoPrimitiveType.Ellipse:
+      {
+        double firstRadius = r.ReadDouble();
+        double secondRadius = r.ReadDouble();
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
+        var plane = ReadPlane(ref r, units);
+        Interval? trim = null;
+        if ((header.Flags & SgeoFlags.HasTrimDomain) != 0)
+        {
+          trim = new Interval { start = r.ReadDouble(), end = r.ReadDouble() };
+        }
+        return new Ellipse
+        {
+          firstRadius = firstRadius,
+          secondRadius = secondRadius,
+          plane = plane,
+          domain = new Interval { start = ds, end = de },
+          trimDomain = trim,
+          units = units,
+        };
+      }
+
+      case SgeoPrimitiveType.Spiral:
+      {
+        bool closed = (header.Flags & SgeoFlags.Closed) != 0;
+        var display = ReadPolylineBody(ref r, units, closed); // [render] leading displayValue polyline (see encoder)
+        var spiralType = (SpiralType)r.ReadUInt32(); // [analytical] trailing spiral definition
+        _ = r.ReadUInt32(); // reserved
+        var startPoint = ReadPoint(ref r, units);
+        var endPoint = ReadPoint(ref r, units);
+        var plane = ReadPlane(ref r, units);
+        double turns = r.ReadDouble();
+        var pitchAxis = ReadVector(ref r, units);
+        double pitch = r.ReadDouble();
+        double ds = r.ReadDouble();
+        double de = r.ReadDouble();
+        return new Spiral
+        {
+          startPoint = startPoint,
+          endPoint = endPoint,
+          plane = plane,
+          turns = turns,
+          pitchAxis = pitchAxis,
+          pitch = pitch,
+          spiralType = spiralType,
+          units = units,
+          length = 0, // derived; not stored
+          domain = new Interval { start = ds, end = de },
+          displayValue = display,
+        };
+      }
+
+      case SgeoPrimitiveType.Box:
+      {
+        var plane = ReadPlane(ref r, units);
+        var xSize = new Interval { start = r.ReadDouble(), end = r.ReadDouble() };
+        var ySize = new Interval { start = r.ReadDouble(), end = r.ReadDouble() };
+        var zSize = new Interval { start = r.ReadDouble(), end = r.ReadDouble() };
+        return new Box
+        {
+          plane = plane,
+          xSize = xSize,
+          ySize = ySize,
+          zSize = zSize,
+          units = units,
+        };
+      }
+
+      case SgeoPrimitiveType.Region:
+      {
+        bool hasHatchPattern = r.ReadUInt32() != 0;
+        int loopCount = r.Count(8);
+        var boundary = ReadCurveBlob(ref r);
+        var innerLoops = new List<ICurve>(loopCount);
+        for (int i = 0; i < loopCount; i++)
+        {
+          innerLoops.Add(ReadCurveBlob(ref r));
+        }
+        return new Region
+        {
+          boundary = boundary,
+          innerLoops = innerLoops,
+          hasHatchPattern = hasHatchPattern,
+          units = units,
+          displayValue = new(),
+        };
+      }
+
+      case SgeoPrimitiveType.Text:
+      {
+        var alignmentH = (AlignmentHorizontal)r.ReadUInt32();
+        var alignmentV = (AlignmentVertical)r.ReadUInt32();
+        double height = r.ReadDouble();
+        double? maxWidth = null;
+        if ((header.Flags & SgeoFlags.HasMaxWidth) != 0)
+        {
+          maxWidth = r.ReadDouble();
+        }
+        var plane = ReadPlane(ref r, units);
+        int byteLen = r.Count(1); // utf8 bytes
+        _ = r.ReadUInt32(); // reserved
+        string value = Encoding.UTF8.GetString(r.Slice(byteLen).ToArray());
+        return new Text
+        {
+          value = value,
+          height = height,
+          maxWidth = maxWidth,
+          alignmentH = alignmentH,
+          alignmentV = alignmentV,
+          plane = plane,
+          screenOriented = (header.Flags & SgeoFlags.ScreenOriented) != 0,
+          units = units,
+        };
+      }
+
+      default:
+        throw new SpeckleException($"Unknown SGEO primitive type {(byte)header.PrimitiveType}.");
+    }
+  }
+
+  // Reads a Polyline body written by SgeoEncoder.AddPolylineBody (count, reserved, xyz…, pad-to-8): the leading render
+  // polyline prepended to Curve and Spiral blobs. Standalone Polyline blobs are NOT padded and use the Polyline case.
+  private static Polyline ReadPolylineBody(ref Reader r, string units, bool closed)
+  {
+    int count = r.Count(24); // each point is 3 doubles
+    _ = r.ReadUInt32(); // reserved
+    var value = new List<double>(count * 3);
+    for (int i = 0; i < count * 3; i++)
+    {
+      value.Add(r.ReadDouble());
+    }
+    r.Align8();
+    return new Polyline
+    {
+      value = value,
+      closed = closed,
+      units = units,
+    };
+  }
+
+  // Reads one nested curve written by SgeoEncoder.AddCurveBlob ([blobLen][reserved][blob][pad-to-8]) — shared by the
+  // Polycurve segments and Region loops.
+  private static ICurve ReadCurveBlob(ref Reader r)
+  {
+    int blobLen = r.Count(1); // bytes
+    _ = r.ReadUInt32(); // reserved
+    var curve = (ICurve)Decode(r.Slice(blobLen));
+    r.Align8();
+    return curve;
+  }
+
+  private static Point ReadPoint(ref Reader r, string units)
+  {
+    double x = r.ReadDouble();
+    double y = r.ReadDouble();
+    double z = r.ReadDouble();
+    return new Point(x, y, z, units);
+  }
+
+  private static Vector ReadVector(ref Reader r, string units)
+  {
+    double x = r.ReadDouble();
+    double y = r.ReadDouble();
+    double z = r.ReadDouble();
+    return new Vector(x, y, z, units);
+  }
+
+  private static Plane ReadPlane(ref Reader r, string units) =>
+    new()
+    {
+      origin = ReadPoint(ref r, units),
+      normal = ReadVector(ref r, units),
+      xdir = ReadVector(ref r, units),
+      ydir = ReadVector(ref r, units),
+      units = units,
+    };
+
+  /// <summary>Sequential little-endian reader over an SGEO body span.</summary>
+  private ref struct Reader
+  {
+    private readonly ReadOnlySpan<byte> _bytes;
+    private int _offset;
+
+    public Reader(ReadOnlySpan<byte> bytes, int offset)
+    {
+      _bytes = bytes;
+      _offset = offset;
+    }
+
+    public double ReadDouble()
+    {
+      var src = _bytes.Slice(_offset, sizeof(double));
+#if NET5_0_OR_GREATER
+      double v = BinaryPrimitives.ReadDoubleLittleEndian(src);
+#else
+      long bits = BinaryPrimitives.ReadInt64LittleEndian(src);
+      double v = BitConverter.Int64BitsToDouble(bits);
+#endif
+      _offset += sizeof(double);
+      return v;
+    }
+
+    public int ReadInt32()
+    {
+      int v = BinaryPrimitives.ReadInt32LittleEndian(_bytes.Slice(_offset, sizeof(int)));
+      _offset += sizeof(int);
+      return v;
+    }
+
+    public uint ReadUInt32()
+    {
+      uint v = BinaryPrimitives.ReadUInt32LittleEndian(_bytes.Slice(_offset, sizeof(uint)));
+      _offset += sizeof(uint);
+      return v;
+    }
+
+    // Reads a uint element count and rejects a value that can't fit in the remaining buffer. Guards a corrupt or
+    // misaligned blob from driving a giant allocation → OutOfMemoryException, which callers can't treat as recoverable.
+    public int Count(int elementBytes)
+    {
+      uint v = ReadUInt32();
+      if (v > int.MaxValue || v * elementBytes > _bytes.Length - _offset)
+      {
+        throw new SpeckleException(
+          $"SGEO element count {v} exceeds the remaining buffer ({_bytes.Length - _offset} bytes)."
+        );
+      }
+      return (int)v;
+    }
+
+    public ReadOnlySpan<byte> Slice(int length)
+    {
+      var s = _bytes.Slice(_offset, length);
+      _offset += length;
+      return s;
+    }
+
+    public void Align8() => _offset = (_offset + 7) & ~7;
+  }
+}

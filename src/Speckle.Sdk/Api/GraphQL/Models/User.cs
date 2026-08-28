@@ -2,13 +2,13 @@
 
 public abstract class UserBase
 {
-  public string? avatar { get; init; }
-  public string? bio { get; init; }
-  public string? company { get; set; }
-  public string id { get; init; }
-  public string name { get; init; }
-  public string? role { get; init; }
-  public bool? verified { get; init; }
+  public required string? avatar { get; init; }
+  public required string? bio { get; init; }
+  public required string? company { get; set; }
+  public required string id { get; init; }
+  public required string name { get; init; }
+  public required string? role { get; init; }
+  public required bool? verified { get; init; }
 }
 
 public sealed class LimitedUser : UserBase
@@ -21,12 +21,12 @@ public sealed class LimitedUser : UserBase
 
 public sealed class User : UserBase
 {
-  public DateTime? createdAt { get; init; }
-  public string? email { get; init; }
-  public bool? hasPendingVerification { get; init; }
-  public bool? isOnboardingFinished { get; init; }
-  public List<PendingStreamCollaborator> projectInvites { get; init; }
-  public ResourceCollection<Project> projects { get; init; }
+  public required DateTime? createdAt { get; init; }
+  public required string? email { get; init; }
+  public required bool? hasPendingVerification { get; init; }
+  public required bool? isOnboardingFinished { get; init; }
+  public required List<PendingStreamCollaborator> projectInvites { get; init; }
+  public required ResourceCollection<Project> projects { get; init; }
 
   public override string ToString()
   {

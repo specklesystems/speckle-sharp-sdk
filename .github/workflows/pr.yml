@@ -16,6 +16,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Checkout Bundle Spec Repo
+        uses: ./.github/actions/checkout-bundle-spec
+        with:
+          token: ${{ secrets.CONNECTORS_GH_TOKEN }}
+
+      # actions/checkout cannot write outside $GITHUB_WORKSPACE, but the csproj expects the spec one
+      # level up from the SDK checkout — move it there (also keeps it out of `csharpier check .`).
+      - name: Move speckle-bundle-spec to sibling location
+        run: mv speckle-bundle-spec "$GITHUB_WORKSPACE/../speckle-bundle-spec"
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -54,12 +64,14 @@ jobs:
     with:
       docker-compose-file: "docker-compose-internal.yml"
       use-internal-image: true
-    secrets: 
+    secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      
+      BUNDLE_SPEC_TOKEN: ${{ secrets.CONNECTORS_GH_TOKEN }}
+
   integration-test-public:
     uses: "./.github/workflows/integration-test.yml"
     with:
       docker-compose-file: "docker-compose.yml"
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      BUNDLE_SPEC_TOKEN: ${{ secrets.CONNECTORS_GH_TOKEN }}

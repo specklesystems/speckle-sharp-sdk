@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Label="Compiler Properties">
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
+    <RootNamespace>Speckle.Sdk</RootNamespace>
+    <Configurations>Debug;Release;Local</Configurations>
+    <ILRepackTargetConfigurations>Debug;Release;Local</ILRepackTargetConfigurations>
+    <ILRepackRenameInternalized>true</ILRepackRenameInternalized>
+    <ILRepackMergeDebugSymbols>true</ILRepackMergeDebugSymbols>
+    <!--
+      Make ILRepack.FullAuto's in-place merge incremental-safe (see ILRepackIncremental.targets). Imported via
+      CustomAfterMicrosoftCSharpTargets so our override of ILRepackBuildTarget lands AFTER the package's.
+      Without this, incremental builds double-merge the internalized polyfills into a duplicate
+      System.<guid>IAsyncDisposable and any host plugin loading this assembly fails (BadImageFormatException).
+    -->
+    <CustomAfterMicrosoftCSharpTargets>$(MSBuildThisFileDirectory)ILRepackIncremental.targets</CustomAfterMicrosoftCSharpTargets>
+  </PropertyGroup>
+  <PropertyGroup Label="Nugetspec Package Properties">
+    <PackageId>Speckle.Sdk.Parquet</PackageId>
+    <Description>Parquet repack</Description>
+    <PackageTags>$(PackageTags) core sdk</PackageTags>
+  </PropertyGroup>
+  <PropertyGroup Label="Nuget Package Properties">
+    <IsPackable>true</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+  <ItemGroup Label="Package References">
+    <PackageReference Include="ILRepack.FullAuto">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Parquet.Net" PrivateAssets="all" />
+  </ItemGroup>
+  <!-- 
+    Bundle format spec — generated C# constants/schemas (Rel/NodeKind enums, catalog rows, table column descriptors).
+    Single source of truth in speckle-bundle-spec, cloned as a sibling repo one level up (same convention as the native
+    producers). Compiled into the assembly, so the published package carries the IL — only the SDK's own build needs the
+    sibling.
+  -->
+  <ItemGroup>
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSpec.cs"
+      Link="Generated/BundleSpec.cs"
+    />
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSchemas.cs"
+      Link="Generated/BundleSchemas.cs"
+    />
+    <!-- Per-table column-index constants (BundleCols.Nodes.Argb, ….ColumnCount) — produced by the
+         speckle-bundle-spec codegen (PR in flight there); requires a sibling checkout that has it. -->
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleCols.cs"
+      Link="Generated/BundleCols.cs"
+    />
+  </ItemGroup>
+</Project>

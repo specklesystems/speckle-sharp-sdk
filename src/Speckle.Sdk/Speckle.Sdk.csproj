@@ -9,7 +9,6 @@
     <PackageId>Speckle.Sdk</PackageId>
     <Description>The .NET SDK for Speckle</Description>
     <PackageTags>$(PackageTags) core sdk</PackageTags>
-    <NoWarn>$(NoWarn);CS8618</NoWarn>
   </PropertyGroup>
   <PropertyGroup Label="Nuget Package Properties">
     <IsPackable>true</IsPackable>
@@ -20,6 +19,7 @@
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Unit" />
     <InternalsVisibleTo Include="Speckle.Sdk.Tests.Integration" />
     <InternalsVisibleTo Include="Speckle.Sdk.Serialization.Tests" />
+    <InternalsVisibleTo Include="Speckle.Sdk.BundleMigrator.Tests" />
   </ItemGroup>
   <ItemGroup Label="Package References">
     <PackageReference Include="Speckle.DoubleNumerics" />
@@ -51,10 +51,16 @@
     <PackageReference Include="Microsoft.Data.Sqlite" VersionOverride="7.0.5" />
     <!--Pinned exactly to match v2-->
     <PackageReference Include="GraphQL.Client" VersionOverride="6.0.0" />
-    <!--Pinned to match DataExchange/Dynamo/v2-->
     <PackageReference Include="System.Text.Json" NoWarn="NU1903" VersionOverride="5.0.2" />
+    <!-- Direct reference so the baked-in System.Memory assembly version matches the rest of the closure on net48 hosts (see Directory.Packages.props). -->
+    <PackageReference Include="System.Memory" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Speckle.Sdk.Dependencies\Speckle.Sdk.Dependencies.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk.Parquet\Speckle.Sdk.Parquet.csproj" />
+  </ItemGroup>
+  <ItemGroup Label="Packaged MSBuild guard against pre-merge Speckle.Objects">
+    <!-- buildTransitive\ reaches transitive PackageReference consumers; build\ covers direct/legacy ones. -->
+    <None Include="buildTransitive\Speckle.Sdk.targets" Pack="true" PackagePath="build\;buildTransitive\" />
   </ItemGroup>
 </Project>

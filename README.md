@@ -14,18 +14,17 @@ Speckle | Sharp | SDK
 <a href="https://www.nuget.org/packages/Speckle.Automate.Sdk/"><img alt="NuGet Version" src="https://img.shields.io/nuget/v/Speckle.Sdk?label=Speckle.Automate.Sdk"></a>
 
 > [!WARNING]
-> Releases Speckle.Sdk and Speckle.Objects are reliable for production use, but the APIs may not be wholly stable, and there may be breaking changes between releases, with little documentation.
+> Speckle.Sdk releases are reliable for production use, but the APIs may not be wholly stable, and there may be breaking changes between releases, with little documentation.
 
 # Repo structure
 
 This repo is the home of our Speckle .NET SDK.
 
 - **SDK**
-  - [`Speckle.Sdk`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Sdk): Send/Receive operations, Serialization, API wrappers, and more!.
+  - [`Speckle.Sdk`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Sdk): Send/Receive operations, Serialization, API wrappers, and the Speckle Objects model (`Speckle.Objects.*` namespaces) used for conversions.
   - [`Speckle.Sdk.Dependencies`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Sdk.Dependencies): Dependencies and code that shouldn't cause conflicts in Host Apps.  This uses [IL Repack](https://github.com/gluck/il-repack) to merge together and interalized only to be used by Speckle.
   - [`Speckle.Automate.Sdk`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Automate.Sdk): .NET SDK for [Speckle Automate](https://www.speckle.systems/product/automate)
-- **Speckle Objects**
-  - [`Speckle.Objects`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Objects): The Speckle Objects classes used for conversions.
+  - [`Speckle.Objects`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/src/Speckle.Objects): A deprecated type-forwarding shell — the Objects model now lives in `Speckle.Sdk`. To migrate, update all Speckle packages together, then remove the `Speckle.Objects` reference; namespaces are unchanged, so no code edits are needed.
 - **Tests**
   - [`Tests`](https://github.com/specklesystems/speckle-sharp-sdk/tree/dev/tests): Unit, serialization, integration, and performance tests.
 

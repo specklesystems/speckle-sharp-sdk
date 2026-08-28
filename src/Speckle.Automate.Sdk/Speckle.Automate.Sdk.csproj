@@ -13,11 +13,12 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
   <ItemGroup Label="Expose internals to test projects">
-    <InternalsVisibleTo Include="Speckle.Automate.Sdk.Tests.Integration" />
+    <InternalsVisibleTo Include="Speckle.Automate.Sdk.Integration" />
   </ItemGroup>
   <ItemGroup Label="Package References">
     <PackageReference Include="Newtonsoft.Json.Schema" />
-    <PackageReference Include="System.CommandLine" NoWarn="NU5104" />
+    <!-- Pinned to the beta4 API: Runner.cs uses SetHandler/InvokeAsync(args); the harness uses the 2.0.0 GA API. -->
+    <PackageReference Include="System.CommandLine" VersionOverride="[2.0.0-beta4.22272.1]" NoWarn="NU5104" />
     <!--Overide to match the lowest of the .NET core targets, we don't care about having a huge compatiblity window-->
     <PackageReference
       Include="System.Text.Json"
@@ -26,6 +27,6 @@
     />
   </ItemGroup>
   <ItemGroup Label="Project References">
-    <ProjectReference Include="..\Speckle.Objects\Speckle.Objects.csproj" />
+    <ProjectReference Include="..\Speckle.Sdk\Speckle.Sdk.csproj" />
   </ItemGroup>
 </Project>

@@ -5,7 +5,7 @@ namespace Speckle.Sdk.Credentials;
 
 public class Account : IEquatable<Account>
 {
-  private string _id;
+  private string? _id;
 
   /// <remarks>
   /// The account id is unique to user and server url.
@@ -29,8 +29,9 @@ public class Account : IEquatable<Account>
     set => _id = value;
   }
 
+#nullable disable
   public string token { get; set; }
-
+#nullable enable
   public string? refreshToken { get; set; }
 
   public bool isDefault { get; set; }
@@ -38,9 +39,13 @@ public class Account : IEquatable<Account>
   [Obsolete("Not used in v3")]
   public bool isOnline { get; set; } = true;
 
+#nullable disable
+
   public ServerInfo serverInfo { get; set; }
 
   public UserInfo userInfo { get; set; }
+
+#nullable enable
 
   #region private methods
 

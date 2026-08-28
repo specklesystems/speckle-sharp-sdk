@@ -16,6 +16,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Checkout Bundle Spec Repo
+        uses: ./.github/actions/checkout-bundle-spec
+        with:
+          token: ${{ secrets.CONNECTORS_GH_TOKEN }}
+
+      # actions/checkout cannot write outside $GITHUB_WORKSPACE; the csproj expects the spec one level up.
+      - name: Move speckle-bundle-spec to sibling location
+        run: mv speckle-bundle-spec "$GITHUB_WORKSPACE/../speckle-bundle-spec"
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:

@@ -2,10 +2,10 @@ namespace Speckle.Sdk.Api.GraphQL.Models;
 
 public sealed class ProjectPermissionChecks
 {
-  public PermissionCheckResult canCreateModel { get; init; }
-  public PermissionCheckResult canDelete { get; init; }
-  public PermissionCheckResult canLoad { get; init; }
+  public required PermissionCheckResult canCreateModel { get; init; }
+  public required PermissionCheckResult canDelete { get; init; }
+  public required PermissionCheckResult canLoad { get; init; }
 
   [Obsolete("Use ModelPermissionChecks.CanCreateVersion instead", true)]
-  public PermissionCheckResult canPublish { get; init; }
+  public PermissionCheckResult? canPublish { get; init; }
 }

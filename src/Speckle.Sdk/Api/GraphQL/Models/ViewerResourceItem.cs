@@ -2,7 +2,7 @@
 
 public class ViewerResourceItem
 {
-  public string? modelId { get; init; }
-  public string objectId { get; init; }
-  public string? versionId { get; init; }
+  public required string? modelId { get; init; }
+  public required string objectId { get; init; }
+  public required string? versionId { get; init; }
 }

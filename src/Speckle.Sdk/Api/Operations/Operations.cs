@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Bundles;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Serialisation.V2;
 
@@ -16,5 +17,7 @@ public partial class Operations(
   ISdkActivityFactory activityFactory,
   ISdkMetricsFactory metricsFactory,
   ISerializeProcessFactory serializeProcessFactory,
-  IDeserializeProcessFactory deserializeProcessFactory
+  IDeserializeProcessFactory deserializeProcessFactory,
+  IBundleReceiver bundleReceiver,
+  IBundleSender bundleSender
 ) : IOperations;

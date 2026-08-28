@@ -6,6 +6,9 @@ on:
       speckle-sharp-sdk-ref:
         required: true
         type: string
+    secrets:
+      BUNDLE_SPEC_TOKEN:
+        required: true
 
 jobs:
   integration-test:
@@ -30,6 +33,11 @@ jobs:
         with:
           repository: ${{ env.SERVER_REPO }}
           path: ${{ env.SERVER_DIR }}
+
+      - name: Checkout Bundle Spec Repo
+        uses: ./.github/actions/checkout-bundle-spec
+        with:
+          token: ${{ secrets.BUNDLE_SPEC_TOKEN }}
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v6

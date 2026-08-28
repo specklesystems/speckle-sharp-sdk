@@ -12,6 +12,8 @@ on:
     secrets:
       CODECOV_TOKEN:
         required: true
+      BUNDLE_SPEC_TOKEN:
+        required: true
 jobs:
   integration-test:
     env:
@@ -20,6 +22,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Checkout Bundle Spec Repo
+        uses: ./.github/actions/checkout-bundle-spec
+        with:
+          token: ${{ secrets.BUNDLE_SPEC_TOKEN }}
+
+      # actions/checkout cannot write outside $GITHUB_WORKSPACE; the csproj expects the spec one level up.
+      - name: Move speckle-bundle-spec to sibling location
+        run: mv speckle-bundle-spec "$GITHUB_WORKSPACE/../speckle-bundle-spec"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
