@@ -494,6 +494,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void Bounds(int boundingObjectK, int roomObjectK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Bounds, boundingObjectK, roomObjectK, ord);
 
+  /// <summary>object(member) → object(assembly): authored fabrication membership (<c>IN_ASSEMBLY</c>, rel 18), separate
+  /// from <see cref="Subelement"/> ownership — a Tekla/CSi assembly groups members it does not own. <paramref name="ord"/>
+  /// is the member's position: 0 is the main member, ≥1 orders secondary or nested-assembly members. Both endpoints
+  /// are interned objects. Direction and ordinal semantics match specklepy's <c>in_assembly</c>.</summary>
+  public void InAssembly(int memberObjectK, int assemblyObjectK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InAssembly, memberObjectK, assemblyObjectK, ord);
+
   /// <summary>object(definition member) → node(INSTANCE): the association-only object↔placement map (rel 24
   /// PLACES). Ties a render-edge-less definition-member object to its nested placement so its properties and
   /// <see cref="InCollection"/> membership stay reachable — replaces the <c>@speckle.instance_k</c> eav stamp.
