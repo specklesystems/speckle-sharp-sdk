@@ -95,11 +95,10 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
     // Instance-scoped props → eav; Type/System params deduped into type_eav (flattened once per type,
     // via the lazy factory) with an object_type weak ref. See notes/topology-envelope-SOT.md §6.
-    // A compound element's layer buildup rides along as `Type Parameters.Structure.{ordinal}.*` — a type fact,
-    // stored once per type like every other type parameter (ENG-9338/ENG-9355).
     var instanceRows = new List<EavRow>();
     EavExtraction.FlattenProperties(applicationId, instanceProps, rootScalars, _excludedProperties, instanceRows);
     _eavWriter.AddRows(applicationId, instanceRows);
+
     _eavWriter.AddType(
       applicationId,
       typeKey,
@@ -122,10 +121,12 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   {
     instanceProps = properties;
     typeSubtree = s_emptyDict;
+
     if (!properties.TryGetValue("Parameters", out var pv) || pv is not IReadOnlyDictionary<string, object?> paramsDict)
     {
       return false;
     }
+
     var typeParams = new Dictionary<string, object?>(StringComparer.Ordinal);
     var instanceParams = new Dictionary<string, object?>(StringComparer.Ordinal);
     foreach (var kv in paramsDict)
@@ -139,10 +140,12 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         instanceParams[kv.Key] = kv.Value;
       }
     }
+
     if (typeParams.Count == 0)
     {
       return false;
     }
+
     // Copy via foreach (the Dictionary(IEnumerable<KVP>, comparer) ctor is net5+; netstandard2.0 only has the
     // IDictionary ctor, and `properties` is an IReadOnlyDictionary).
     var merged = new Dictionary<string, object?>(StringComparer.Ordinal);
@@ -434,13 +437,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void HasMaterial(int srcK, int materialK, bool srcIsInstance = false) =>
     _envelopeWriter.AddRelation(RelKind.HasMaterial, srcK, materialK, srcIsInstance ? 1 : 0);
 
-  /// <summary>geometry | object → node(COLOR): display colour. The two source namespaces overlap numerically
-  /// (both are dense int spaces from 0), so <paramref name="srcIsObject"/> tags which one <paramref name="srcK"/>
-  /// belongs to in the edge's <c>ord</c> column: 0 = geometry (the default, and what every pre-tag bundle wrote),
-  /// 1 = object. Without the tag a consumer cannot tell an object-sourced instance colour from a geometry-sourced
-  /// one and must guess — dropping colours or applying them to the wrong element [ENG-8822].</summary>
-  public void HasColor(int srcK, int colorK, bool srcIsObject = false) =>
-    _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, srcIsObject ? 1 : 0);
+  /// <summary>geometry → node(COLOR): display colour.</summary>
+  public void HasColor(int srcK, int colorK) => _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, 0);
 
   /// <summary>object → node(LEVEL): level membership.</summary>
   public void OnLevel(int objectK, int levelK) => _envelopeWriter.AddRelation(RelKind.OnLevel, objectK, levelK, 0);
