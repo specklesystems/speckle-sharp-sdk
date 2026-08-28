@@ -166,7 +166,7 @@ public class EavExtractionTests
   }
 
   [Fact]
-  public void StructureUnderTypeParameters_AndMaterialQuantities_AreSkippedInWalk()
+  public void StructureUnderTypeParameters_IsFlattened_AndMaterialQuantitiesHandledSpecially()
   {
     var obj = JObject.Parse(
       """
@@ -190,8 +190,8 @@ public class EavExtractionTests
 
     var rows = EavExtraction.FlattenObjectProperties("o", obj);
 
-    // Structure skipped in walk
-    rows.Should().NotContain(r => r.Path.Contains("Structure"));
+    // Structure is data like any other (the legacy skip that dropped a wall's layer buildup is gone, ENG-9338)
+    rows.Should().ContainSingle(r => r.Path == "properties.Type Parameters.Structure.layerCount" && r.ValueNum == 3);
 
     // Material Quantities handled via the special extraction with category in path
     rows.Should()

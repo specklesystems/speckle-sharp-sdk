@@ -346,15 +346,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     string? name,
     int? parentCollectionK,
     string? subtype,
-    int? argb = null,
     string? ghTopology = null
   )
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
-      // argb carries the collection's display colour (e.g. a Rhino/AutoCAD layer colour) in the shared node
-      // `argb` column; null = no colour authored. ghTopology carries Grasshopper's data-tree paths for this
-      // collection (nodes.gh_topology) so a tree survives a round trip; null for every other producer.
+      // ghTopology carries Grasshopper's data-tree paths for this collection
+      // (nodes.gh_topology) so a tree survives a round trip; null for every other producer.
       _envelopeWriter.AddNode(
         k,
         NodeKind.Container,
@@ -363,7 +361,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         subtype,
-        argb,
+        null,
         null,
         null,
         null,
@@ -439,13 +437,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void HasMaterial(int srcK, int materialK, bool srcIsInstance = false) =>
     _envelopeWriter.AddRelation(RelKind.HasMaterial, srcK, materialK, srcIsInstance ? 1 : 0);
 
-  /// <summary>geometry | object → node(COLOR): display colour. The two source namespaces overlap numerically
-  /// (both are dense int spaces from 0), so <paramref name="srcIsObject"/> tags which one <paramref name="srcK"/>
-  /// belongs to in the edge's <c>ord</c> column: 0 = geometry (the default, and what every pre-tag bundle wrote),
-  /// 1 = object. Without the tag a consumer cannot tell an object-sourced instance colour from a geometry-sourced
-  /// one and must guess — dropping colours or applying them to the wrong element [ENG-8822].</summary>
-  public void HasColor(int srcK, int colorK, bool srcIsObject = false) =>
-    _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, srcIsObject ? 1 : 0);
+  /// <summary>geometry → node(COLOR): display colour.</summary>
+  public void HasColor(int srcK, int colorK) => _envelopeWriter.AddRelation(RelKind.HasColor, srcK, colorK, 0);
 
   /// <summary>object → node(LEVEL): level membership.</summary>
   public void OnLevel(int objectK, int levelK) => _envelopeWriter.AddRelation(RelKind.OnLevel, objectK, levelK, 0);
@@ -499,6 +492,13 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void Bounds(int boundingObjectK, int roomObjectK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Bounds, boundingObjectK, roomObjectK, ord);
 
+  /// <summary>object(member) → object(assembly): authored fabrication membership (<c>IN_ASSEMBLY</c>, rel 18), separate
+  /// from <see cref="Subelement"/> ownership — a Tekla/CSi assembly groups members it does not own. <paramref name="ord"/>
+  /// is the member's position: 0 is the main member, ≥1 orders secondary or nested-assembly members. Both endpoints
+  /// are interned objects. Direction and ordinal semantics match specklepy's <c>in_assembly</c>.</summary>
+  public void InAssembly(int memberObjectK, int assemblyObjectK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.InAssembly, memberObjectK, assemblyObjectK, ord);
+
   /// <summary>object(definition member) → node(INSTANCE): the association-only object↔placement map (rel 24
   /// PLACES). Ties a render-edge-less definition-member object to its nested placement so its properties and
   /// <see cref="InCollection"/> membership stay reachable — replaces the <c>@speckle.instance_k</c> eav stamp.
@@ -544,9 +544,12 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// Appends one structural analysis/design result value to <c>{base}.eav.structural_results.parquet</c>
   /// (see <see cref="StructuralResultsWriter"/>). <b>Object-level</b> results pass the member/joint's
   /// <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned with, so
-  /// results join back to it) and leave <paramref name="location"/> null; <b>model-level</b> results (story
-  /// drift, modal period, base reaction) pass a null <paramref name="objectApplicationId"/> and identify via
-  /// <paramref name="location"/> (story) and/or <paramref name="step"/> (mode). Numeric results set
+  /// results join back to it) and leave <paramref name="location"/> null; <b>group-level</b> results
+  /// (pier/spandrel forces) pass <paramref name="elementName"/> — a named group of walls, NOT an interned
+  /// object — with <paramref name="location"/> = story; <b>model/story-level</b> results (story drift,
+  /// modal period, base reaction) pass neither and identify via <paramref name="location"/> (story) and/or
+  /// <paramref name="step"/> (mode). <paramref name="positionLabel"/> is a categorical position/direction
+  /// (Top/Bottom, X/Y) — distinct from the numeric member <paramref name="station"/>. Numeric results set
   /// <paramref name="value"/>; non-numeric design verdicts set <paramref name="valueText"/>.
   /// </summary>
   public void AddStructuralResult(
@@ -558,17 +561,21 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     double? station,
     int? step,
     double? value,
-    string? valueText = null
+    string? valueText = null,
+    string? elementName = null,
+    string? positionLabel = null
   )
   {
     int? objectIndex = objectApplicationId is null ? null : _eavWriter.GetOrAddObject(objectApplicationId);
     _structuralResultsWriter ??= new StructuralResultsWriter(_outputDir, _baseName, _scheduler);
     _structuralResultsWriter.AddRow(
       objectIndex,
+      elementName,
       location,
       resultType,
       loadCase,
       component,
+      positionLabel,
       station,
       step,
       value,
@@ -679,9 +686,29 @@ public sealed class ObjectsArtifactPipeline : IDisposable
       producer.Slug,
       producer.HostApplicationVersion,
       "Speckle.Sdk (.NET)",
-      producer.SpeckleVersion,
+      SdkVersion,
       migratedFromSchemaVersion
     );
+  }
+
+  /// <summary>The version of this SDK, for <c>meta.sdk_version</c>: the package's informational version
+  /// (<c>2026.9.0-alpha.7</c>) without the build-metadata suffix. Not <see cref="ISpeckleApplication.SpeckleVersion"/>,
+  /// which a host registers as whatever it likes (a connector's own assembly version).</summary>
+  internal static string SdkVersion { get; } = ReadSdkVersion();
+
+  private static string ReadSdkVersion()
+  {
+    string? informational = typeof(ObjectsArtifactPipeline)
+      .Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+      .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+      .FirstOrDefault()
+      ?.InformationalVersion;
+    if (informational is not { Length: > 0 })
+    {
+      return typeof(ObjectsArtifactPipeline).Assembly.GetName().Version?.ToString() ?? "unknown";
+    }
+    int plus = informational.IndexOf('+');
+    return plus < 0 ? informational : informational.Substring(0, plus);
   }
 
   /// <summary>REMOVED — the <c>proxies(type, data JSON)</c> envelope is gone; use the typed

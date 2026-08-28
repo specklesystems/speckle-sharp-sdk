@@ -51,14 +51,33 @@ public static class ParquetTableReader
     return new ParquetTable(columns, rowCount, Array.ConvertAll(fields, f => f.Name));
   }
 
-  // Concatenates the per-row-group column arrays into one array of the column's element type. The element type is
-  // the field's CLR type (nullable for optional columns), so Array.Copy preserves null slots.
-  private static Array Concat(List<Array> chunks, Type elementType)
+  // Concatenates the per-row-group column arrays into one. Parquet.Net returns optional columns as T?[] and required
+  // ones as T[] — per row group, independent of the field's declared ClrType — so the result must be sized off the
+  // chunks' actual element type, not the schema's. When groups disagree (an all-null group can come back as T?[]
+  // beside a T[] one), widen everything to the nullable form.
+  private static Array Concat(List<Array> chunks, Type declaredType)
   {
     if (chunks.Count == 1)
     {
       return chunks[0];
     }
+
+    Type elementType = declaredType;
+    bool anyNullable = false;
+    foreach (var c in chunks)
+    {
+      var t = c.GetType().GetElementType() ?? declaredType;
+      if (Nullable.GetUnderlyingType(t) is not null)
+      {
+        anyNullable = true;
+        elementType = t;
+      }
+      else if (!anyNullable)
+      {
+        elementType = t;
+      }
+    }
+
     int total = 0;
     foreach (var c in chunks)
     {
@@ -68,7 +87,18 @@ public static class ParquetTableReader
     int offset = 0;
     foreach (var c in chunks)
     {
-      Array.Copy(c, 0, result, offset, c.Length);
+      if (c.GetType().GetElementType() == elementType)
+      {
+        Array.Copy(c, 0, result, offset, c.Length);
+      }
+      else
+      {
+        // T[] → T?[]: element-wise boxing copy; the only mismatch that reaches here.
+        for (int i = 0; i < c.Length; i++)
+        {
+          result.SetValue(c.GetValue(i), offset + i);
+        }
+      }
       offset += c.Length;
     }
     return result;

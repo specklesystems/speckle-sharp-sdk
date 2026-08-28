@@ -44,7 +44,7 @@ to generate them, fully streamable ("write and free"):
 
 {base}.envelope.relations.parquet    # typed topology edges
 {base}.envelope.nodes.parquet        # value-entities (definition/instance/material/colour/level)
-{base}.envelope.meta.parquet         # catalog: schema_version, produced_by
+{base}.envelope.meta.parquet         # catalog: schema_version (semver string), produced_by, producer_version, sdk_name, sdk_version, migrated_from_schema_version
 {base}.envelope.rel_types.parquet    # catalog: rel id → name + namespaces
 {base}.envelope.node_kinds.parquet   # catalog: kind id → name
 {base}.envelope.manifest.sql         # CREATE VIEWs over the 5 envelope tables

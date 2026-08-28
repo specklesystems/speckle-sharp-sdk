@@ -2,6 +2,7 @@
 using AwesomeAssertions;
 using DuckDB.NET.Data;
 using Speckle.Sdk.Pipelines;
+using SpecBundle = Speckle.Bundle.Spec.BundleSpec;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Sdk.Tests.Unit.Pipelines;
@@ -127,7 +128,7 @@ public sealed class EnvelopeWriterTests : IDisposable
     // retired ids (IN_NETWORK 15, IN_SPACE 13, …) are absent from the catalog.
     // 18 (IN_ASSEMBLY) was un-retired upstream and ships again; the rest stay retired-in-place.
     Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 19, 20)").Should().Be(0L);
-    Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
+    Scalar(db, "SELECT schema_version FROM meta").Should().Be(SpecBundle.SchemaVersion);
 
     // No scene views / camera views authored ⇒ the tables are absent (consumer feature-detects by file presence).
     File.Exists(Path.Combine(_dir, "model.envelope.scene_views.parquet")).Should().BeFalse();
@@ -177,7 +178,7 @@ public sealed class EnvelopeWriterTests : IDisposable
     using var scheduler = new ParquetWriteScheduler();
     using (var w = new EnvelopeWriter(_dir, "model", scheduler))
     {
-      w.SetProducer("artefact-harness", "3.2.0-alpha.5", "Speckle.Sdk (.NET)", "3.1.0-alpha.1", 2);
+      w.SetProducer("bundle-migrator", "3.2.0-alpha.5", "Speckle.Sdk (.NET)", "3.1.0-alpha.1", 2);
       w.Complete();
     }
     scheduler.CompleteAndWait();
@@ -186,13 +187,15 @@ public sealed class EnvelopeWriterTests : IDisposable
     db.Open();
     View(db, "meta");
 
-    Scalar(db, "SELECT produced_by FROM meta").Should().Be("artefact-harness");
+    Scalar(db, "SELECT produced_by FROM meta").Should().Be("bundle-migrator");
     Scalar(db, "SELECT producer_version FROM meta").Should().Be("3.2.0-alpha.5");
     Scalar(db, "SELECT sdk_name FROM meta").Should().Be("Speckle.Sdk (.NET)");
     Scalar(db, "SELECT sdk_version FROM meta").Should().Be("3.1.0-alpha.1");
     Scalar(db, "SELECT migrated_from_schema_version FROM meta").Should().Be(2);
-    // Provenance is additive — the catalog column is untouched.
-    Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
+    // Provenance is additive — the catalog column is untouched. schema_version is the spec semver as TEXT —
+    // a regression to an int column must fail on the type, not on a boxed-value mismatch.
+    Scalar(db, "SELECT schema_version FROM meta").Should().Be(SpecBundle.SchemaVersion);
+    Scalar(db, "SELECT typeof(schema_version) FROM meta").Should().Be("VARCHAR");
   }
 
   // A native send leaves the migration vintage NULL; the reference point is its own opt-in.
