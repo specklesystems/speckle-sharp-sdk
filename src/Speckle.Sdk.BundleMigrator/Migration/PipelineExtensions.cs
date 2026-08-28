@@ -37,33 +37,53 @@ internal static class PipelineExtensions
       a.plane.xdir.Normalize();
       a.plane.ydir.Normalize();
     }
-    else if (geometry is Mesh m && m.faces.Count > 0 && m.faces[0] < 3)
+    else if (geometry is Mesh m)
     {
-      MigrateLegacyFaces(m);
+      //V2 would sometimes send nulls
+      // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+      m.textureCoordinates ??= new();
+      // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+      m.colors ??= new();
+      // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
+      m.vertexNormals ??= new();
+
+      if (m.faces.Count > 0 && m.faces[0] < 3)
+      {
+        MigrateLegacyFaces(m);
+      }
+
+      // Vertex- or face-less meshes are not handled properly by the datgen (writes NaN into viewer.idx, which culls the WHOLE scene.)
+      if (m is { vertices.Count: 0 } or { faces.Count: 0 })
+      {
+        return null;
+      }
     }
     // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-    else if (geometry is ICurve c && c.domain is null)
+    else if (geometry is ICurve ic && ic.domain is null)
     {
       //v2 frequently sent null domains
       geometry["domain"] = Interval.UnitInterval;
     }
 
-    // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-    if (geometry is Curve { displayValue: null } cd)
+    if (geometry is Curve c)
     {
-      //Detecting several models who have curves with no displayValue.
-      //I only expect this from v2, so accepting this as a hack to approximate some form of displayValue
-      cd.displayValue = new Polyline()
+      // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+      if (c is { displayValue: null } cd)
       {
-        value = cd.points,
-        units = cd.units,
-        closed = cd.closed,
-      };
-    }
+        //Detecting several models who have curves with no displayValue.
+        //I only expect this from v2, so accepting this as a hack to approximate some form of displayValue
+        cd.displayValue = new Polyline()
+        {
+          value = cd.points,
+          units = cd.units,
+          closed = cd.closed,
+        };
+      }
 
-    if (geometry is Curve { points: null })
-    {
-      return null;
+      if (c is { points: null })
+      {
+        return null;
+      }
     }
 
     if (geometry is Arc { startPoint: null } or Arc { endPoint: null })
@@ -72,12 +92,6 @@ internal static class PipelineExtensions
     }
 
     if (geometry is Surface or Vector or Plane or Spiral)
-    {
-      return null;
-    }
-
-    // Vertex- or face-less meshes are not handled properly by the datgen (writes NaN into viewer.idx, which culls the WHOLE scene.)
-    if (geometry is Mesh { vertices.Count: 0 } or Mesh { faces.Count: 0 })
     {
       return null;
     }
