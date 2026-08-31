@@ -729,6 +729,8 @@ public static class ArtefactBundleReader
     var vStr = t.Strings("value_string");
     var vDbl = t.NullableDoubles("value_double");
     var vBool = t.NullableBools("value_boolean");
+    var units = t.Has("unit") ? t.Strings("unit") : null;
+    var idns = t.Has("internal_definition_name") ? t.Strings("internal_definition_name") : null;
     for (int i = 0; i < keyIdx.Length; i++)
     {
       object? value =
@@ -749,9 +751,38 @@ public static class ArtefactBundleReader
         dict = new Dictionary<string, object?>();
         byKey[keyIdx[i]] = dict;
       }
-      SetNested(dict, path, value);
+      SetNested(dict, path, WrapV3RecordLeaf(path, value, units?[i], idns?[i]));
     }
     return byKey;
+  }
+
+  // ENG-9300: v3 scripts read parameter/quantity leaves as {name, value, units} records — the flatten collapsed
+  // those records into a row (value + unit/idn columns), so the nested rebuild restores them, but ONLY in the
+  // subtrees that were records in the v3 shape (per producer convention). Everything else (user text, GH props,
+  // root scalars) was scalar in v3 and stays scalar. The record's name equals the leaf key, as it did in v3.
+  private const string ParametersRecordPrefix = "properties.Parameters.";
+  private const string QuantitiesRecordPrefix = "properties.Material Quantities.";
+
+  private static object? WrapV3RecordLeaf(string path, object? value, string? unit, string? idn)
+  {
+    if (
+      !path.StartsWith(ParametersRecordPrefix, StringComparison.Ordinal)
+      && !path.StartsWith(QuantitiesRecordPrefix, StringComparison.Ordinal)
+    )
+    {
+      return value;
+    }
+    int lastDot = path.LastIndexOf('.');
+    var record = new Dictionary<string, object?> { ["name"] = path.Substring(lastDot + 1), ["value"] = value };
+    if (unit is { Length: > 0 })
+    {
+      record["units"] = unit;
+    }
+    if (idn is { Length: > 0 })
+    {
+      record["internalDefinitionName"] = idn;
+    }
+    return record;
   }
 
   private static void SetNested(Dictionary<string, object?> root, string path, object? value)
