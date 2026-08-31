@@ -505,6 +505,21 @@ public sealed class BundleBuilderTests : IDisposable
   }
 
   [Fact]
+  public async Task Meta_SurfacesProvenance_OnTheModel()
+  {
+    using var model = await BuildAndRead(b => b.GetOrAddObject("o", null, null));
+
+    Assert.NotNull(model.Meta);
+    Assert.Equal("test", model.Meta!.ProducedBy); // s_app.Slug
+    Assert.Equal("1.0", model.Meta.ProducerVersion);
+    Assert.Equal("Speckle.Sdk (.NET)", model.Meta.SdkName);
+    Assert.Equal(ObjectsArtifactPipeline.SdkVersion, model.Meta.SdkVersion);
+    Assert.False(string.IsNullOrEmpty(model.Meta.SchemaVersion));
+    Assert.Null(model.Meta.MigratedFromSchemaVersion);
+    Assert.False(model.Meta.IsMigrated);
+  }
+
+  [Fact]
   public void Relation_CannotBeRetracted()
   {
     using var b = new BundleBuilder(s_app, "m", _dir);
