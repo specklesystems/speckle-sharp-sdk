@@ -23,6 +23,22 @@ public readonly record struct ArtefactGeometry(byte[] Content, string Type)
 /// <c>"category"</c>, <c>"family"</c>). Tiers are ordered outermost→innermost.</summary>
 public readonly record struct SceneViewTier(string Source, string Ref);
 
+/// <summary>Provenance from <c>envelope.meta.parquet</c> (single row): which spec vocabulary the bundle speaks and
+/// who wrote it. <see cref="MigratedFromSchemaVersion"/> is non-null only for bundles the server converted from a
+/// legacy (v2/v3) object graph.</summary>
+public sealed record BundleMeta(
+  string? SchemaVersion,
+  string? ProducedBy,
+  string? ProducerVersion,
+  string? SdkName,
+  string? SdkVersion,
+  int? MigratedFromSchemaVersion
+)
+{
+  /// <summary>True when this bundle was converted from a legacy object graph rather than natively published.</summary>
+  public bool IsMigrated => MigratedFromSchemaVersion is not null;
+}
+
 /// <summary>A named camera viewpoint from <c>envelope.camera_views.parquet</c> (Rhino named view, Revit 3D view,
 /// SketchUp scene). Position/target/ortho-height are in <see cref="Units"/> (model units); forward/up are unitless
 /// UNIT vectors; <see cref="Fov"/> is the VERTICAL field of view in DEGREES (perspective only, null for ortho).</summary>
@@ -258,6 +274,10 @@ public sealed record ArtefactReadOptions(bool LoadGeometry = true, bool Columnar
 
 public sealed class ArtefactBundle
 {
+  /// <summary>Bundle provenance (<c>envelope.meta</c>); null when the file is absent or unreadable (a pre-release
+  /// vintage) — never a reason to fail the read.</summary>
+  public BundleMeta? Meta { get; init; }
+
   /// <summary>Instance properties as columns (see <see cref="ArtefactReadOptions.ColumnarProperties"/>); null in
   /// nested mode.</summary>
   public PropertyTable? PropertyTable { get; init; }
@@ -375,6 +395,7 @@ public static class ArtefactBundleReader
     var modelT = await TryReadTableAsync(bundleDir, ".eav.model.parquet", cancellationToken).ConfigureAwait(false);
     var psetDefsT = await TryReadTableAsync(bundleDir, ".eav.property_set_definitions.parquet", cancellationToken)
       .ConfigureAwait(false);
+    var metaT = await TryReadTableAsync(bundleDir, ".envelope.meta.parquet", cancellationToken).ConfigureAwait(false);
 
     var objIdToApp = BuildObjectIds(objectsT);
     var pathById = BuildPaths(pathsT);
@@ -405,7 +426,34 @@ public static class ArtefactBundleReader
         : LoadTypeProperties(typeEavT, objectTypeT, pathById),
       ModelProperties = LoadModelProperties(modelT),
       PropertySetDefinitions = LoadPropertySetDefinitions(psetDefsT),
+      Meta = LoadMeta(metaT),
     };
+  }
+
+  // Single-row provenance. Deliberately forgiving: schema_version was an int before the semver renumber and the
+  // whole table is informational, so any shape surprise yields null rather than failing the read.
+  private static BundleMeta? LoadMeta(ParquetTable? t)
+  {
+    if (t is null || t.RowCount == 0)
+    {
+      return null;
+    }
+    try
+    {
+      string? Str(string col) => t.Has(col) ? t.Strings(col)[0] : null;
+      return new BundleMeta(
+        Str("schema_version"),
+        Str("produced_by"),
+        Str("producer_version"),
+        Str("sdk_name"),
+        Str("sdk_version"),
+        t.Has("migrated_from_schema_version") ? t.NullableInts("migrated_from_schema_version")[0] : null
+      );
+    }
+    catch (InvalidCastException)
+    {
+      return null;
+    }
   }
 
   // ENG-9136: type_eav has the identical (index, path_index, value_*) row shape as eav, keyed by type_index

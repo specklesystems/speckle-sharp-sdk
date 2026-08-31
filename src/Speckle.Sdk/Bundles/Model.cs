@@ -175,6 +175,10 @@ public sealed class Model : IDisposable
   /// <summary>The parsed bundle: dense-int object / geometry / node ids, relations, scene views. NB
   /// <see cref="ArtefactBundle.Geometries"/> on this instance is empty — geometry is deferred; use
   /// <see cref="Geometries"/>.</summary>
+  /// <summary>Bundle provenance (<c>envelope.meta</c>): spec vocabulary version, producing application and SDK, and
+  /// whether the bundle was migrated from a legacy object graph. Null when the bundle predates the meta table.</summary>
+  public BundleMeta? Meta => Bundle.Meta;
+
   public ArtefactBundle Bundle { get; }
 
   // ── internals shared by the façade types ──────────────────────────────────────────────────────────────
