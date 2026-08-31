@@ -120,6 +120,7 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
       }
     }
 
+#pragma warning disable CS0618 // legacy publish pair stays until the ingestion-backed helper lands (ENG-9420)
     var (rootObjectId, _) = await operations
       .Send2(
         SpeckleClient.ServerUrl,
@@ -137,6 +138,8 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
         cancellationToken
       )
       .ConfigureAwait(false);
+
+#pragma warning restore CS0618
 
     AutomationResult.ResultVersions.Add(newVersion.id);
 

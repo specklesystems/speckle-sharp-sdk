@@ -4,6 +4,8 @@ using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Models;
 
+#pragma warning disable CS0618 // exercises the legacy send on purpose
+
 namespace Speckle.Sdk.Tests.Integration;
 
 public sealed class SendReceiveTests : IAsyncLifetime
