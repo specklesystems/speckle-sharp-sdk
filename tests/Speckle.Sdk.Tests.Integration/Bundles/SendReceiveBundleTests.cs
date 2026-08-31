@@ -86,20 +86,8 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
     Assert.Equal(2, sent.ObjectCount);
     Assert.False(string.IsNullOrEmpty(sent.VersionId));
 
-    // ── the version exists once the ingestion completes; poll briefly ──────────────────────────────────
-    Speckle.Sdk.Api.GraphQL.Models.Version? version = null;
-    for (int i = 0; i < 60 && version is null; i++)
-    {
-      try
-      {
-        version = await _client.Version.Get(sent.VersionId, _projectId);
-      }
-      catch (SpeckleException)
-      {
-        await Task.Delay(500);
-      }
-    }
-    Assert.NotNull(version);
+    // ── the version exists once the ingestion completes ────────────────────────────────────────────────
+    var version = await operations.WaitForVersion(account, sent, TimeSpan.FromSeconds(30), CancellationToken.None);
     Assert.Equal(sent.BundleReference, version.referencedObject); // what Receive2 dispatches on
     Assert.True(BundleReference.TryParse(version.referencedObject, out _));
 
