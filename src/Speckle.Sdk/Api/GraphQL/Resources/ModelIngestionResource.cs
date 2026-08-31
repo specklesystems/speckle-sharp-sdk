@@ -1,4 +1,5 @@
 ﻿using GraphQL;
+using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
@@ -125,6 +126,52 @@ public sealed class ModelIngestionResource
 
     return res.data.data;
   }
+
+  /// <summary>
+  /// Polls <see cref="Get"/> until the ingestion reaches a terminal status (success, failed, invalidInput,
+  /// cancelled or timeout) and returns it. This is the readiness step after a version-creating call: the version
+  /// exists once the returned ingestion's status is <see cref="ModelIngestionStatus.success"/> (its
+  /// <c>statusData.versionId</c> is then set). See the migration guide:
+  /// https://docs.speckle.systems/developers/migration/publish-through-ingestions
+  /// </summary>
+  /// <param name="timeout">Client-side ceiling; <see langword="null"/> = wait until <paramref name="cancellationToken"/>.</param>
+  /// <param name="pollInterval">Delay between polls; default 1 second.</param>
+  /// <exception cref="TimeoutException"><paramref name="timeout"/> elapsed before a terminal status.</exception>
+  public async Task<ModelIngestion> WaitForCompletionAsync(
+    string modelIngestionId,
+    string projectId,
+    TimeSpan? timeout = null,
+    TimeSpan? pollInterval = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    var interval = pollInterval ?? TimeSpan.FromSeconds(1);
+    var deadline = timeout is { } t ? DateTime.UtcNow + t : (DateTime?)null;
+    while (true)
+    {
+      var ingestion = await Get(modelIngestionId, projectId, cancellationToken).ConfigureAwait(false);
+      if (IsTerminal(ingestion.statusData.status))
+      {
+        return ingestion;
+      }
+      if (deadline is { } d && DateTime.UtcNow + interval > d)
+      {
+        throw new TimeoutException(
+          $"Ingestion '{modelIngestionId}' (project '{projectId}') did not reach a terminal status within {timeout}: "
+            + $"last status was '{ingestion.statusData.status}'."
+        );
+      }
+      await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
+    }
+  }
+
+  private static bool IsTerminal(ModelIngestionStatus status) =>
+    status
+      is ModelIngestionStatus.success
+        or ModelIngestionStatus.failed
+        or ModelIngestionStatus.invalidInput
+        or ModelIngestionStatus.cancelled
+        or ModelIngestionStatus.timeout;
 
   /// <summary>
   /// For File Import / Cloud integrations only

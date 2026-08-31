@@ -9,9 +9,10 @@ using Speckle.Newtonsoft.Json;
 using Speckle.Sdk;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
-using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Bundles;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Models;
+using Model = Speckle.Sdk.Api.GraphQL.Models.Model;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Automate.Sdk;
@@ -106,19 +107,7 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
   )
   {
     // Confirm target branch is not the same as source branch
-    foreach (var trigger in AutomationRunData.Triggers)
-    {
-      if (trigger.Payload.ModelId == model.id)
-      {
-        throw new SpeckleException(
-          $"""
-          The target model: {model.name} ({model.id}) cannot match the model
-           that triggered this automation:
-           {trigger.Payload.ModelId}
-          """
-        );
-      }
-    }
+    GuardAgainstCircularTrigger(model);
 
 #pragma warning disable CS0618 // legacy publish pair stays until the ingestion-backed helper lands (ENG-9420)
     var (rootObjectId, _) = await operations
@@ -144,6 +133,76 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
     AutomationResult.ResultVersions.Add(newVersion.id);
 
     return newVersion;
+  }
+
+  /// <summary>
+  /// Publishes a producer-built bundle as a new version over the ingestion rail (Speckle 2026.9.0 send path).
+  /// Returns as soon as the upload completes: the <see cref="SendResult.VersionId"/> is allocated and recorded in
+  /// <see cref="AutomationResult.ResultVersions"/> immediately, but the version itself is born when the server
+  /// finishes ingesting.
+  /// <para><b>Finish the wait before you finish the run.</b> If your function returns while the ingestion is still
+  /// processing, the run's result links point at a version that does not exist yet (a viewer link 404s until the
+  /// server completes it — usually seconds). Unless your function is fire-and-forget, end with:</para>
+  /// <code>
+  /// var sent = await context.CreateNewVersionInProject(bundle, model, "Analysis results");
+  /// await context.WaitForVersion(sent);   // version exists before the run reports success
+  /// </code>
+  /// <para>Requires a server with the v2 data endpoints (the call throws a clear <see cref="SpeckleException"/>
+  /// otherwise).</para>
+  /// </summary>
+  /// <exception cref="SpeckleException">The target model matches a triggering model (circular run), or the server
+  /// did not pre-allocate a version id.</exception>
+  public async Task<SendResult> CreateNewVersionInProject(
+    BundleBuilder bundle,
+    Model model,
+    string versionMessage = "",
+    CancellationToken cancellationToken = default
+  )
+  {
+    GuardAgainstCircularTrigger(model);
+
+    var sent = await operations
+      .Send3(
+        SpeckleClient.Account,
+        AutomationRunData.ProjectId,
+        model.id,
+        bundle,
+        new SendOptions(Message: versionMessage),
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+
+    AutomationResult.ResultVersions.Add(sent.VersionId);
+
+    return sent;
+  }
+
+  /// <summary>Waits for the server to finish ingesting a publish and returns the materialized version. Call this
+  /// before your function returns (see <see cref="CreateNewVersionInProject(BundleBuilder, Model, string, CancellationToken)"/>)
+  /// so the run's result versions exist by the time the run reports success.</summary>
+  /// <exception cref="SpeckleException">The ingestion ended in a non-success terminal status.</exception>
+  /// <exception cref="TimeoutException"><paramref name="timeout"/> elapsed first.</exception>
+  public Task<Version> WaitForVersion(
+    SendResult sent,
+    TimeSpan? timeout = null,
+    CancellationToken cancellationToken = default
+  ) => operations.WaitForVersion(SpeckleClient.Account, sent, timeout, cancellationToken);
+
+  private void GuardAgainstCircularTrigger(Model model)
+  {
+    foreach (var trigger in AutomationRunData.Triggers)
+    {
+      if (trigger.Payload.ModelId == model.id)
+      {
+        throw new SpeckleException(
+          $"""
+          The target model: {model.name} ({model.id}) cannot match the model
+           that triggered this automation:
+           {trigger.Payload.ModelId}
+          """
+        );
+      }
+    }
   }
 
   /// <summary>

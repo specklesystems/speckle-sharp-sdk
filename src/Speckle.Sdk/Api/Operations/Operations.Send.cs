@@ -9,6 +9,7 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
+using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Api;
 
@@ -85,6 +86,21 @@ public partial class Operations
     }
     return Send3(account, url.ProjectId, url.ModelId, builder, options, cancellationToken);
   }
+
+  /// <summary>
+  /// The readiness step after <see cref="Send3(Account, string, string, BundleBuilder, SendOptions?, CancellationToken)"/>:
+  /// waits for the server to finish ingesting and returns the materialized <see cref="Version"/>. Optional — the
+  /// <see cref="SendResult"/> already carries the allocated version id; call this only when you need the version to
+  /// exist (to link it, read it back, or hand it to another system).
+  /// </summary>
+  /// <exception cref="SpeckleException">The ingestion ended in a non-success terminal status.</exception>
+  /// <exception cref="TimeoutException"><paramref name="timeout"/> elapsed first.</exception>
+  public Task<Version> WaitForVersion(
+    Account account,
+    SendResult sent,
+    TimeSpan? timeout = null,
+    CancellationToken cancellationToken = default
+  ) => bundleSender.WaitForVersionAsync(account, sent, timeout, cancellationToken);
 
   /// <summary>
   /// Sends a Speckle Object to the provided URL and Caches the results

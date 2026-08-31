@@ -1,11 +1,13 @@
 using Microsoft.Extensions.Logging;
 using Speckle.InterfaceGenerator;
 using Speckle.Sdk.Api;
+using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
 namespace Speckle.Sdk.Bundles;
 
@@ -109,6 +111,40 @@ public sealed class BundleSender(
         .ConfigureAwait(false);
       throw;
     }
+  }
+
+  /// <summary>
+  /// The readiness step after <see cref="SendAsync"/>: waits for the ingestion to finish server-side and returns
+  /// the materialized <see cref="Version"/>. Separate from the send on purpose — the upload returns in seconds,
+  /// ingestion can take as long as the server needs.
+  /// </summary>
+  /// <exception cref="SpeckleException">The ingestion ended in a non-success terminal status.</exception>
+  /// <exception cref="TimeoutException"><paramref name="timeout"/> elapsed first.</exception>
+  public async Task<Version> WaitForVersionAsync(
+    Account account,
+    SendResult sent,
+    TimeSpan? timeout,
+    CancellationToken cancellationToken
+  )
+  {
+    using var client = clientFactory.Create(account);
+    var ingestion = await client
+      .Ingestion.WaitForCompletionAsync(
+        sent.IngestionId,
+        sent.ProjectId,
+        timeout,
+        pollInterval: null,
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+    if (ingestion.statusData.status != ModelIngestionStatus.success)
+    {
+      throw new SpeckleException(
+        $"Ingestion '{sent.IngestionId}' for version '{sent.VersionId}' ended '{ingestion.statusData.status}'"
+          + (ingestion.statusData.progressMessage is { Length: > 0 } m ? $": {m}" : ".")
+      );
+    }
+    return await client.Version.Get(sent.VersionId, sent.ProjectId, cancellationToken).ConfigureAwait(false);
   }
 
   private void TryDeleteDirectory(string dir)
