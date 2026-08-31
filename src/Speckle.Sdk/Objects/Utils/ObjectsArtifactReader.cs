@@ -99,6 +99,12 @@ public sealed class ObjectsArtifactReader
 
       bundle.Properties.TryGetValue(objK, out var props);
       props ??= new Dictionary<string, object?>();
+      // ENG-9302: type-scoped params (Parameters.Type/System Type Parameters, the compound Structure) live once per
+      // type in type_eav; the v3 tree carried them on every element, so merge them back for the legacy consumers.
+      if (bundle.TypePropertiesByObject.TryGetValue(objK, out var typeProps))
+      {
+        props = MergeTypeScoped(typeProps, props);
+      }
       var built = BuildGeometryObject(appId, objK, props, bundle.Geometries, rels, options);
       if (built is null)
       {
@@ -531,6 +537,31 @@ public sealed class ObjectsArtifactReader
       applicationId = appId,
       id = appId,
     };
+  }
+
+  // Deep-merges the shared per-type dictionary under the instance one, INSTANCE winning on a leaf collision (the
+  // same precedence the hosts apply, ENG-9136). Copy-on-write: the result is a fresh dictionary per object, but
+  // subtrees that exist only on the type side are shared by reference across every object of the type — the
+  // one-parse-per-type property (ENG-9136) survives, and the shared type dictionaries are never mutated.
+  internal static Dictionary<string, object?> MergeTypeScoped(
+    Dictionary<string, object?> typeProps,
+    Dictionary<string, object?> instanceProps
+  )
+  {
+    var merged = new Dictionary<string, object?>(instanceProps);
+    foreach (var kv in typeProps)
+    {
+      if (!merged.TryGetValue(kv.Key, out var existing))
+      {
+        merged[kv.Key] = kv.Value; // type-only subtree: share the per-type instance
+      }
+      else if (existing is Dictionary<string, object?> instChild && kv.Value is Dictionary<string, object?> typeChild)
+      {
+        merged[kv.Key] = MergeTypeScoped(typeChild, instChild);
+      }
+      // scalar (or shape) conflict: instance value stays
+    }
+    return merged;
   }
 
   private static string Scalar(Dictionary<string, object?> props, string key, string fallback) =>
