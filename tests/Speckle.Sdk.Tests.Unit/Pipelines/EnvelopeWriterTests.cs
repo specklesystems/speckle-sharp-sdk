@@ -127,7 +127,8 @@ public sealed class EnvelopeWriterTests : IDisposable
     // retired ids (IN_NETWORK 15, IN_SPACE 13, …) are absent from the catalog.
     // 18 (IN_ASSEMBLY) was un-retired upstream and ships again; the rest stay retired-in-place.
     Scalar(db, "SELECT count(*) FROM rel_types WHERE rel IN (13, 15, 16, 19, 20)").Should().Be(0L);
-    Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
+    Scalar(db, "SELECT schema_version FROM meta").Should().Be("1.0.0");
+    Scalar(db, "SELECT typeof(schema_version) FROM meta").Should().Be("VARCHAR");
 
     // No scene views / camera views authored ⇒ the tables are absent (consumer feature-detects by file presence).
     File.Exists(Path.Combine(_dir, "model.envelope.scene_views.parquet")).Should().BeFalse();
@@ -191,8 +192,9 @@ public sealed class EnvelopeWriterTests : IDisposable
     Scalar(db, "SELECT sdk_name FROM meta").Should().Be("Speckle.Sdk (.NET)");
     Scalar(db, "SELECT sdk_version FROM meta").Should().Be("3.1.0-alpha.1");
     Scalar(db, "SELECT migrated_from_schema_version FROM meta").Should().Be(2);
-    // Provenance is additive — the catalog column is untouched.
-    Scalar(db, "SELECT schema_version FROM meta").Should().Be(5);
+    // schema_version is the bundle-spec semver string, not a legacy graph integer.
+    Scalar(db, "SELECT schema_version FROM meta").Should().Be("1.0.0");
+    Scalar(db, "SELECT typeof(schema_version) FROM meta").Should().Be("VARCHAR");
   }
 
   // A native send leaves the migration vintage NULL; the reference point is its own opt-in.

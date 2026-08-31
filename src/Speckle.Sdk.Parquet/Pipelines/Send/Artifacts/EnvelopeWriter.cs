@@ -254,7 +254,7 @@ public sealed class EnvelopeWriter : IDisposable
     using var meta = new ParquetTableWriter(
       P("meta.parquet"),
       new ParquetSchema(
-        I("schema_version"),
+        S("schema_version"),
         S("produced_by"),
         S("producer_version"),
         S("sdk_name"),
