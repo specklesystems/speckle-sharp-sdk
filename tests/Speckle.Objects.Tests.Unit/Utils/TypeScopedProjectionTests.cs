@@ -23,6 +23,9 @@ public class TypeScopedProjectionTests
     SpeckleVersion = "999.1.0-alpha.1",
   };
 
+  private static Dictionary<string, object?> Record(Dictionary<string, object?> group, string child, string leaf) =>
+    (Dictionary<string, object?>)((Dictionary<string, object?>)group[child]!)[leaf]!;
+
   private static Mesh UnitTriangle() =>
     new()
     {
@@ -42,7 +45,16 @@ public class TypeScopedProjectionTests
           ["Construction"] = new Dictionary<string, object?> { ["Width"] = 265.0 },
           ["Structure"] = new Dictionary<string, object?>
           {
-            ["0"] = new Dictionary<string, object?> { ["material"] = "White Concrete", ["thickness"] = 65.0 },
+            ["0"] = new Dictionary<string, object?>
+            {
+              ["material"] = "White Concrete",
+              ["thickness"] = new Dictionary<string, object?>
+              {
+                ["name"] = "Thickness",
+                ["value"] = 65.0,
+                ["units"] = "mm",
+              },
+            },
           },
         },
       },
@@ -76,16 +88,16 @@ public class TypeScopedProjectionTests
       {
         var properties = (Dictionary<string, object?>)wall.properties["properties"]!;
         var parameters = (Dictionary<string, object?>)properties["Parameters"]!;
-        // instance-scoped stays put
-        ((Dictionary<string, object?>)parameters["Constraints"]!)["Base Offset"]
-          .Should()
-          .Be(0.5);
-        // type-scoped merged back — the v3 shape
+        // instance-scoped stays put — as a v3 record leaf (ENG-9300)
+        Record(parameters, "Constraints", "Base Offset")["value"].Should().Be(0.5);
+        // type-scoped merged back — the v3 shape, record leaves included
         var typeParams = (Dictionary<string, object?>)parameters["Type Parameters"]!;
-        ((Dictionary<string, object?>)typeParams["Construction"]!)["Width"].Should().Be(265.0);
+        Record(typeParams, "Construction", "Width")["value"].Should().Be(265.0);
         var layer0 = (Dictionary<string, object?>)((Dictionary<string, object?>)typeParams["Structure"]!)["0"]!;
-        layer0["material"].Should().Be("White Concrete");
-        layer0["thickness"].Should().Be(65.0);
+        ((Dictionary<string, object?>)layer0["material"]!)["value"].Should().Be("White Concrete");
+        var thickness = (Dictionary<string, object?>)layer0["thickness"]!;
+        thickness["value"].Should().Be(65.0);
+        thickness["units"].Should().Be("mm");
       }
 
       // one-parse-per-type: the type-only subtree is the SAME dictionary instance on both walls (copy-on-write
