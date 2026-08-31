@@ -14,6 +14,8 @@ namespace Speckle.Sdk.Api;
 
 public partial class Operations
 {
+  private static int s_legacySendWarned; // once-per-process runtime deprecation warning (ENG-9304)
+
   /// <summary>
   /// Publishes a bundle as a new version — the Speckle 2026.9.0 send path. Creates the ingestion (the server
   /// pre-allocates the version id), finishes the <paramref name="builder"/> and re-keys its files to that id, uploads
@@ -92,6 +94,13 @@ public partial class Operations
   /// <exception cref="ArgumentNullException">The <paramref name="value"/> was <see langword="null"/></exception>
   /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
+  [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
+  [Obsolete(
+    "Legacy send: serializes the per-object JSON graph, and after server 2026.9 the follow-up Version.Create only "
+      + "reserves an id - the version is born when the server finishes ingesting. Prefer SendPipeline + "
+      + "client.Ingestion (or Send3 with a BundleBuilder for producer-built bundles). Migration guide: "
+      + "https://docs.speckle.systems/developers/migration/publish-through-ingestions"
+  )]
   public async Task<SerializeProcessResults> Send2(
     Uri url,
     string streamId,
@@ -102,6 +111,13 @@ public partial class Operations
     SerializeProcessOptions? options = null
   )
   {
+    if (Interlocked.Exchange(ref s_legacySendWarned, 1) == 0)
+    {
+      logger.LogWarning(
+        "Send2 is legacy: the version a follow-up Version.Create returns is a reservation on 2026.9 servers. "
+          + "Migration guide: https://docs.speckle.systems/developers/migration/publish-through-ingestions"
+      );
+    }
     using var receiveActivity = activityFactory.Start("Operations.Send");
     receiveActivity?.SetTag("speckle.url", url);
     receiveActivity?.SetTag("speckle.projectId", streamId);
@@ -347,6 +363,23 @@ public partial class Operations
 /// attributes, and the deprecation must reach callers that resolve <c>IOperations</c> from DI.</summary>
 public partial interface IOperations
 {
+  /// <inheritdoc cref="Operations.Send2"/>
+  [Obsolete(
+    "Legacy send: serializes the per-object JSON graph, and after server 2026.9 the follow-up Version.Create only "
+      + "reserves an id - the version is born when the server finishes ingesting. Prefer SendPipeline + "
+      + "client.Ingestion (or Send3 with a BundleBuilder for producer-built bundles). Migration guide: "
+      + "https://docs.speckle.systems/developers/migration/publish-through-ingestions"
+  )]
+  Task<SerializeProcessResults> Send2(
+    Uri url,
+    string streamId,
+    string? authorizationToken,
+    Base value,
+    IProgress<ProgressArgs>? onProgressAction,
+    CancellationToken cancellationToken,
+    SerializeProcessOptions? options = null
+  );
+
   /// <inheritdoc cref="Operations.Send(Base, IServerTransport, bool, IProgress{ProgressArgs}?, CancellationToken)"/>
   [Obsolete(
     "Transport-based Send is frozen legacy surface (Speckle 2026.9.0): it writes the legacy per-object JSON graph and "
