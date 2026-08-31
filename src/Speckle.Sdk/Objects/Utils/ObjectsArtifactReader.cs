@@ -15,7 +15,13 @@ namespace Speckle.Objects.Utils;
 /// <param name="PreferSolids">When true (Rhino), an object that carries a raw 3dm <c>SOLID</c> blob is rebuilt as a
 /// <see cref="RhinoObject"/> with <c>rawEncoding</c> set, so the connector bakes the real solid. When false (Revit,
 /// which can't import 3dm), the solid is ignored and the object is rebuilt from its <c>DISPLAY</c> meshes only.</param>
-public sealed record ArtifactReceiveOptions(bool PreferSolids);
+/// <param name="CompleteCarriage">The complete-data-carriage floor (ENG-9301), the SDK default: objects without
+/// their own DISPLAY geometry — definition members, placement carriers, non-geometric property carriers — surface
+/// in the tree with their properties (members with their DEFINES geometry as <c>displayValue</c>, joined via the
+/// (definition, member-ordinal) vocabulary), and a geometry decode failure throws instead of silently dropping the
+/// mesh. <see langword="false"/> is the connector-bake profile: the v1 hosts' shape, where such carriers are
+/// skipped and decode is best-effort.</param>
+public sealed record ArtifactReceiveOptions(bool PreferSolids, bool CompleteCarriage = true);
 
 /// <summary>
 /// Maps a parsed Speckle 4.0 artefact <see cref="ArtefactBundle"/> back into a <see cref="Base"/>/<see
@@ -68,6 +74,10 @@ public sealed class ObjectsArtifactReader
     // yields one InstanceProxy per edge instead of the last one winning (DisplayInstanceByObject is a last-wins map).
     var placementsByObject = rels.DisplayInstanceEdges.GroupBy(e => e.Src).ToDictionary(g => g.Key, g => g.ToList());
 
+    // ENG-9301: the (definition, member-ordinal) join — a member object's geometry hangs on DEFINES with the same
+    // ordinal its DEFINES_MEMBER edge carries, never on DISPLAY.
+    var memberGeomsByObject = BuildMemberGeometryJoin(rels);
+
     // ── build each object, wiring DISPLAY/SOLID/IN_COLLECTION/DISPLAY_INSTANCE ─────────────────────────
     foreach (var kv in bundle.ObjectAppIds)
     {
@@ -106,13 +116,23 @@ public sealed class ObjectsArtifactReader
         props = MergeTypeScoped(typeProps, props);
       }
       var built = BuildGeometryObject(appId, objK, props, bundle.Geometries, rels, options);
+      if (built is null && options.CompleteCarriage)
+      {
+        if (rels.PlacesByObject.ContainsKey(objK))
+        {
+          // a nested-placement member: it surfaces as the InstanceProxy AttachInstanceDefinitions emits under its
+          // real applicationId — building a DataObject here too would duplicate it.
+          continue;
+        }
+        // ENG-9301 complete carriage: a definition member (geometry via the member-ordinal join) or a pure property
+        // carrier (Level/Room/no-DISPLAY element). Both carry the data layer a script reads; the v1 unpacker pulls
+        // members out of atomic baking via the definition proxies' member lists, so nothing bakes twice.
+        built = BuildCarrierObject(appId, objK, props, memberGeomsByObject, bundle.Geometries, options);
+      }
       if (built is null)
       {
-        // Non-geometric object (no DISPLAY edges, no accepted SOLID) — e.g. a Level/Room emitted only for its
-        // properties + ON_LEVEL/IN_ROOM edges (RevitArtifactRootObjectBuilder.EmitObject's early-return for
-        // conversions that aren't a DataObject). The non-artefact v1 path never hands these to the converter either
-        // — they travel as LevelProxy/room metadata, not tree objects — so skip instead of fabricating an
-        // empty-displayValue DataObject the v1 converter has no path for.
+        // Connector-bake profile: non-geometric objects (no DISPLAY edges, no accepted SOLID) are skipped — the v1
+        // host builders have no path for an empty-displayValue DataObject (Levels/Rooms travel as proxies there).
         continue;
       }
 
@@ -123,7 +143,16 @@ public sealed class ObjectsArtifactReader
     AttachMaterials(rels, objByGeom, bundle.ObjectAppIds, materialByNode, root);
 
     // ── instance definitions (DEFINITION nodes + DEFINES/DEFINES_INSTANCE) ────────────────────────────
-    AttachInstanceDefinitions(nodes, rels, objByGeom, bundle.ObjectAppIds, bundle.Geometries, root);
+    AttachInstanceDefinitions(
+      nodes,
+      rels,
+      objByGeom,
+      bundle.ObjectAppIds,
+      bundle.Geometries,
+      root,
+      options,
+      layerByNode
+    );
 
     // ENG-8947/8808: rebuild the reference-point transform from the bundle meta offset and lift it onto the root so
     // the v1 Revit host builder can undo/redo it (translation kinds only; the offset is in display units).
@@ -328,9 +357,28 @@ public sealed class ObjectsArtifactReader
     Dictionary<int, int> objByGeom,
     Dictionary<int, string> objIdToApp,
     Dictionary<int, ArtefactGeometry> geometries,
-    Collection root
+    Collection root,
+    ArtifactReceiveOptions options,
+    Dictionary<int, Collection> layerByNode
   )
   {
+    // ENG-9301: under complete carriage, real member objects (DEFINES_MEMBER) already sit in the tree with their
+    // geometry and properties — the proxies reference them by applicationId instead of synthesizing wrappers.
+    var memberByDefOrd = new Dictionary<(int def, int ord), int>();
+    foreach (var kv in rels.MemberObjectsByDefinition)
+    {
+      var ords = rels.MemberOrdByDefinition[kv.Key];
+      for (int m = 0; m < kv.Value.Count; m++)
+      {
+        memberByDefOrd[(kv.Key, ords[m])] = kv.Value[m];
+      }
+    }
+    var placesMemberByInstNode = new Dictionary<int, int>();
+    foreach (var kv in rels.PlacesByObject)
+    {
+      placesMemberByInstNode[kv.Value] = kv.Key;
+    }
+
     // RevitFamilyBaker bakes definitions deepest-first (OrderByDescending(maxDepth)) so a parent can reference an
     // already-baked child via PlaceNestedInstance — mirrors RhinoInstanceUnpacker/GrasshopperBlockPacker's send-side
     // depth tracking. A definition reachable via multiple nesting paths takes the deepest (never bake a shared child
@@ -351,8 +399,24 @@ public sealed class ObjectsArtifactReader
       // decoded geometry directly.
       if (rels.DefinesByDefinition.TryGetValue(defNodeK, out var geomKs))
       {
-        foreach (var geomK in geomKs)
+        var geomOrds = rels.DefinesOrdByDefinition[defNodeK];
+        for (int gi = 0; gi < geomKs.Count; gi++)
         {
+          int geomK = geomKs[gi];
+          // complete carriage: the (definition, ordinal) join names the owning member — the real object is already
+          // in the tree (BuildCarrierObject) with this geometry as its displayValue.
+          if (
+            options.CompleteCarriage
+            && memberByDefOrd.TryGetValue((defNodeK, geomOrds[gi]), out int memberObjK)
+            && objIdToApp.TryGetValue(memberObjK, out var memberAppId)
+          )
+          {
+            if (!members.Contains(memberAppId))
+            {
+              members.Add(memberAppId);
+            }
+            continue;
+          }
           if (objByGeom.TryGetValue(geomK, out int objK) && objIdToApp.TryGetValue(objK, out var appId))
           {
             if (!members.Contains(appId))
@@ -361,7 +425,7 @@ public sealed class ObjectsArtifactReader
             }
             continue;
           }
-          if (geometries.TryGetValue(geomK, out var g) && TryDecode(g) is { } geom)
+          if (geometries.TryGetValue(geomK, out var g) && TryDecode(g, options.CompleteCarriage) is { } geom)
           {
             string geoAppId = "def-geo-" + geomK.ToString(CultureInfo.InvariantCulture);
             if (!members.Contains(geoAppId))
@@ -391,8 +455,30 @@ public sealed class ObjectsArtifactReader
           {
             continue;
           }
-          string nestedAppId = "nested-inst-" + instNodeK.ToString(CultureInfo.InvariantCulture);
-          root.elements.Add(BuildInstanceProxy(nestedAppId, nestedInstNode));
+          // complete carriage: the PLACES member names this nested placement — surface the proxy under the member's
+          // real applicationId, in the member's own collection, instead of a synthetic root entry.
+          string nestedAppId;
+          var nestedHost = root.elements;
+          if (
+            options.CompleteCarriage
+            && placesMemberByInstNode.TryGetValue(instNodeK, out int placesMemberK)
+            && objIdToApp.TryGetValue(placesMemberK, out var placesAppId)
+          )
+          {
+            nestedAppId = placesAppId;
+            if (
+              rels.CollectionByObject.TryGetValue(placesMemberK, out int collNodeK)
+              && layerByNode.TryGetValue(collNodeK, out var memberLayer)
+            )
+            {
+              nestedHost = memberLayer.elements;
+            }
+          }
+          else
+          {
+            nestedAppId = "nested-inst-" + instNodeK.ToString(CultureInfo.InvariantCulture);
+          }
+          nestedHost.Add(BuildInstanceProxy(nestedAppId, nestedInstNode));
           if (!members.Contains(nestedAppId))
           {
             members.Add(nestedAppId);
@@ -483,7 +569,7 @@ public sealed class ObjectsArtifactReader
     {
       foreach (var e in displayEdges.OrderBy(x => x.Ord))
       {
-        if (geometries.TryGetValue(e.Dst, out var g) && TryDecode(g) is { } geom)
+        if (geometries.TryGetValue(e.Dst, out var g) && TryDecode(g, options.CompleteCarriage) is { } geom)
         {
           // Stamp the display geometry with the owning object's applicationId so the host material baker
           // (which keys per displayValue item on the mesh path) can resolve HAS_MATERIAL → object → material.
@@ -564,17 +650,89 @@ public sealed class ObjectsArtifactReader
     return merged;
   }
 
+  // objK → the geometry Ks its DEFINES_MEMBER ordinal claims via DEFINES on the same (definition, ordinal).
+  private static Dictionary<int, List<int>> BuildMemberGeometryJoin(ArtefactRelations rels)
+  {
+    var byObject = new Dictionary<int, List<int>>();
+    foreach (var kv in rels.MemberObjectsByDefinition)
+    {
+      int def = kv.Key;
+      var ords = rels.MemberOrdByDefinition[def];
+      if (!rels.DefinesByDefinition.TryGetValue(def, out var geomKs))
+      {
+        continue;
+      }
+      var geomOrds = rels.DefinesOrdByDefinition[def];
+      for (int m = 0; m < kv.Value.Count; m++)
+      {
+        for (int g = 0; g < geomKs.Count; g++)
+        {
+          if (geomOrds[g] != ords[m])
+          {
+            continue;
+          }
+          if (!byObject.TryGetValue(kv.Value[m], out var list))
+          {
+            byObject[kv.Value[m]] = list = new List<int>();
+          }
+          list.Add(geomKs[g]);
+        }
+      }
+    }
+    return byObject;
+  }
+
+  // ENG-9301: a no-DISPLAY carrier under complete carriage — a definition member (its DEFINES geometry becomes
+  // displayValue; raw solids stay out, they are the connector profile's concern) or a pure property carrier
+  // (empty displayValue, the properties are the payload).
+  private static DataObject BuildCarrierObject(
+    string appId,
+    int objK,
+    Dictionary<string, object?> props,
+    Dictionary<int, List<int>> memberGeomsByObject,
+    Dictionary<int, ArtefactGeometry> geometries,
+    ArtifactReceiveOptions options
+  )
+  {
+    var displays = new List<Base>();
+    if (memberGeomsByObject.TryGetValue(objK, out var geomKs))
+    {
+      foreach (var geomK in geomKs)
+      {
+        if (geometries.TryGetValue(geomK, out var g) && TryDecode(g, options.CompleteCarriage) is { } geom)
+        {
+          geom.applicationId = appId;
+          displays.Add(geom);
+        }
+      }
+    }
+    return new DataObject
+    {
+      name = Scalar(props, "name", appId),
+      displayValue = displays,
+      properties = props,
+      applicationId = appId,
+      id = appId,
+    };
+  }
+
   private static string Scalar(Dictionary<string, object?> props, string key, string fallback) =>
     props.TryGetValue(key, out var v) && v is string s && s.Length > 0 ? s : fallback;
 
-  private static Base? TryDecode(ArtefactGeometry entry)
+  private static Base? TryDecode(ArtefactGeometry entry, bool loud = false)
   {
     try
     {
+      // a non-SGEO blob (raw 3dm) in a display lane is simply not display geometry — never an error
       return entry.IsSgeo ? SgeoDecoder.Decode(entry.Content) : null;
     }
     catch (Exception ex) when (ex is not OperationCanceledException)
     {
+      if (loud)
+      {
+        // ENG-9301: under the SDK profile a decode failure is data loss the caller must see, never a silent drop.
+        throw new Speckle.Sdk.SpeckleException($"SGEO geometry failed to decode ({entry.Content.Length} bytes).", ex);
+      }
       return null;
     }
   }
