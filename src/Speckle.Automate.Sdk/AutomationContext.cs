@@ -137,9 +137,18 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
 
   /// <summary>
   /// Publishes a producer-built bundle as a new version over the ingestion rail (Speckle 2026.9.0 send path).
-  /// Returns as soon as the upload completes: the <see cref="SendResult.VersionId"/> is allocated, the version
-  /// itself is born when the server finishes ingesting — call <see cref="WaitForVersion"/> if the function needs
-  /// to read it back or link it. Requires a server with the v2 data endpoints (the call throws otherwise).
+  /// Returns as soon as the upload completes: the <see cref="SendResult.VersionId"/> is allocated and recorded in
+  /// <see cref="AutomationResult.ResultVersions"/> immediately, but the version itself is born when the server
+  /// finishes ingesting.
+  /// <para><b>Finish the wait before you finish the run.</b> If your function returns while the ingestion is still
+  /// processing, the run's result links point at a version that does not exist yet (a viewer link 404s until the
+  /// server completes it — usually seconds). Unless your function is fire-and-forget, end with:</para>
+  /// <code>
+  /// var sent = await context.CreateNewVersionInProject(bundle, model, "Analysis results");
+  /// await context.WaitForVersion(sent);   // version exists before the run reports success
+  /// </code>
+  /// <para>Requires a server with the v2 data endpoints (the call throws a clear <see cref="SpeckleException"/>
+  /// otherwise).</para>
   /// </summary>
   /// <exception cref="SpeckleException">The target model matches a triggering model (circular run), or the server
   /// did not pre-allocate a version id.</exception>
@@ -168,8 +177,9 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
     return sent;
   }
 
-  /// <summary>Waits for the server to finish ingesting a <see cref="CreateNewVersionInProject(BundleBuilder, Model, string, CancellationToken)"/>
-  /// publish and returns the materialized version.</summary>
+  /// <summary>Waits for the server to finish ingesting a publish and returns the materialized version. Call this
+  /// before your function returns (see <see cref="CreateNewVersionInProject(BundleBuilder, Model, string, CancellationToken)"/>)
+  /// so the run's result versions exist by the time the run reports success.</summary>
   /// <exception cref="SpeckleException">The ingestion ended in a non-success terminal status.</exception>
   /// <exception cref="TimeoutException"><paramref name="timeout"/> elapsed first.</exception>
   public Task<Version> WaitForVersion(
