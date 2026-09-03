@@ -35,6 +35,7 @@ public static class RelKind
   public const byte ObjectHasColor = (byte)SpecRel.OBJECT_HAS_COLOR;
   public const byte NodeHasMaterial = (byte)SpecRel.NODE_HAS_MATERIAL;
   public const byte NodeHasColor = (byte)SpecRel.NODE_HAS_COLOR;
+  public const byte Centerline = (byte)SpecRel.CENTERLINE;
 }
 
 /// <summary>Value-node kinds in the envelope <c>nodes</c> table — a thin facade over the generated

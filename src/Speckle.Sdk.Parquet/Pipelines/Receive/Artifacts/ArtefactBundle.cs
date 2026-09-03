@@ -194,6 +194,11 @@ public sealed class ArtefactRelations
   /// as a first-class COLOR node rather than the CONTAINER argb overload).</summary>
   public Dictionary<int, int> ColorByNode { get; } = new();
 
+  /// <summary>CENTERLINE (30): object → its authored location-curve geometry (ord = segment order). Held apart from
+  /// <see cref="Display"/> on purpose — a receiver that bakes display geometry must not also bake the axis, so no
+  /// consumer picks these up by walking the render edges.</summary>
+  public List<RelationRow> Centerline { get; } = new();
+
   private Dictionary<int, List<RelationRow>>? _displayByObject;
 
   /// <summary>The DISPLAY edges (object → mesh geometry) for one object, or null. Lazily indexed.</summary>
@@ -201,6 +206,16 @@ public sealed class ArtefactRelations
   {
     _displayByObject ??= Display.GroupBy(e => e.Src).ToDictionary(g => g.Key, g => g.ToList());
     return _displayByObject.TryGetValue(objK, out var list) ? list : null;
+  }
+
+  private Dictionary<int, List<RelationRow>>? _centerlineByObject;
+
+  /// <summary>The CENTERLINE edges (object → location-curve geometry) for one object, or null. Lazily indexed,
+  /// mirroring <see cref="DisplayByObject"/> — most bundles carry none, so nothing is built until asked.</summary>
+  public List<RelationRow>? CenterlineByObject(int objK)
+  {
+    _centerlineByObject ??= Centerline.GroupBy(e => e.Src).ToDictionary(g => g.Key, g => g.ToList());
+    return _centerlineByObject.TryGetValue(objK, out var list) ? list : null;
   }
 
   /// <summary>Reverse of DISPLAY: mesh geometry index → owning object index (used to attribute HAS_MATERIAL/DEFINES,
@@ -979,6 +994,9 @@ public static class ArtefactBundleReader
           break;
         case RelKind.NodeHasColor:
           sets.ColorByNode[src[i]] = dst[i];
+          break;
+        case RelKind.Centerline:
+          sets.Centerline.Add(new RelationRow(src[i], dst[i], ord[i]));
           break;
         case RelKind.OnLevel:
         case RelKind.InModel:

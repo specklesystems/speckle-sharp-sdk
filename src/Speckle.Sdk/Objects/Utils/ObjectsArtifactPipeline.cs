@@ -416,6 +416,12 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void Solid(int objectK, int geometryK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Solid, objectK, geometryK, ord);
 
+  /// <summary>object → geometry: the element's authored location curve — the centerline of a duct/pipe/conduit,
+  /// the axis of a framing member. Deliberately NOT <see cref="Display"/>: a consumer that draws every
+  /// geometry-target relation would draw the axis through the middle of the object.</summary>
+  public void Centerline(int objectK, int geometryK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.Centerline, objectK, geometryK, ord);
+
   /// <summary>object → object: host→hosted (curtain wall → panel).</summary>
   public void Subelement(int parentObjectK, int childObjectK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Subelement, parentObjectK, childObjectK, ord);
