@@ -404,10 +404,15 @@ public sealed class BundleObject
     return g;
   }
 
-  /// <summary>The object's authored location curve (<c>CENTERLINE</c>), SGEO-encoded now — a duct/pipe centerline, a
-  /// framing member's axis. Its own ordinal counter, like display and solid. Deliberately absent from
-  /// <see cref="Geometries"/>: a centerline is not renderable, so a producer that walks the object's geometry to
-  /// paint or bake it must not reach the axis.</summary>
+  /// <summary>
+  /// The object's centerline (<c>CENTERLINE</c>), SGEO-encoded now — a duct/pipe/conduit axis, a framing
+  /// member's axis. Its own ordinal counter, like display and solid.
+  /// </summary>
+  /// <remarks>
+  /// NOT a render edge, and deliberately absent from <see cref="Geometries"/>: a consumer that drew every
+  /// geometry an object owns would draw the axis through the middle of it, so a producer walking geometry to
+  /// paint or bake must not reach the centerline. Read it back through <c>ModelObject.Centerlines</c>.
+  /// </remarks>
   public BundleGeometry AddCenterline(Base curve, string? geometryKey = null)
   {
     int ord = _centerlineOrd++;
