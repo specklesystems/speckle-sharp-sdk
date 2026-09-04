@@ -21,6 +21,7 @@ public sealed class ModelObject
   private readonly Model _model;
   private readonly Lazy<IReadOnlyList<string>> _collectionPath;
   private readonly Lazy<IReadOnlyList<ModelGeometry>> _geometries;
+  private readonly Lazy<IReadOnlyList<ModelGeometry>> _centerlines;
 
   internal ModelObject(Model model, int k, string applicationId)
   {
@@ -29,6 +30,7 @@ public sealed class ModelObject
     ApplicationId = applicationId;
     _collectionPath = new(() => ResolveCollectionPath(model.Bundle, k));
     _geometries = new(() => ResolveGeometries(model, this));
+    _centerlines = new(() => ResolveCenterlines(model, this));
   }
 
   private int TypeK => _model.Bundle.TypeIndexByObject.TryGetValue(K, out int t) ? t : -1;
@@ -88,6 +90,19 @@ public sealed class ModelObject
   /// shard parse) the first time any object asks. Empty for property-only objects.
   /// </summary>
   public IReadOnlyList<ModelGeometry> Geometries => _geometries.Value;
+
+  /// <summary>
+  /// The object's authored location curves (<c>CENTERLINE</c>) in emitted order — a duct/pipe/conduit centerline, a
+  /// framing member's axis. Empty for anything the producer placed by a point, and for every bundle written before
+  /// the rel existed.
+  /// </summary>
+  /// <remarks>
+  /// Separate from <see cref="Geometries"/> by design: these are not renderable, so a consumer that draws
+  /// <see cref="Geometries"/> keeps drawing exactly what it drew before. Note also that for some families the
+  /// authored curve is not literally the centre — a Revit wall's location line follows its Location Line type
+  /// parameter — so this is the element's own location curve, not a derived centroid axis.
+  /// </remarks>
+  public IReadOnlyList<ModelGeometry> Centerlines => _centerlines.Value;
 
   // ── object → object ───────────────────────────────────────────────────────────────────────────────────
 
@@ -317,6 +332,29 @@ public sealed class ModelObject
     }
 
     result.Sort((a, b) => a.Ord.CompareTo(b.Ord));
+    return result;
+  }
+
+  // CENTERLINE edges only. Deliberately does NOT walk placements: a centerline is authored on the object itself, and
+  // a definition's geometry is shared by every placement, so there is nothing sensible to compose here.
+  private static IReadOnlyList<ModelGeometry> ResolveCenterlines(Model model, ModelObject owner)
+  {
+    if (model.Bundle.Relations.CenterlineByObject(owner.K) is not { Count: > 0 } edges)
+    {
+      return [];
+    }
+
+    var geometries = model.Geometries; // one bundle-wide parse, shared by every object
+    var result = new List<ModelGeometry>(edges.Count);
+    foreach (var e in edges.OrderBy(e => e.Ord))
+    {
+      if (geometries.TryGetValue(e.Dst, out var g))
+      {
+        result.Add(
+          new ModelGeometry(model, owner, e.Dst, g, GeometryRole.Centerline, e.Ord, transform: null, instanceK: null)
+        );
+      }
+    }
     return result;
   }
 

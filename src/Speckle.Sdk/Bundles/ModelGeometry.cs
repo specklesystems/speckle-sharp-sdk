@@ -11,6 +11,11 @@ public enum GeometryRole
 
   /// <summary>Authoritative host solid (<c>SOLID</c> edge) — a raw host-format blob, e.g. a 3dm brep.</summary>
   Solid,
+
+  /// <summary>Authored location curve (<c>CENTERLINE</c> edge) — a duct's centerline, a member's axis. Never part of
+  /// <see cref="ModelObject.Geometries"/>: it is not renderable, and drawing it would put a line through the object.
+  /// Reached through <see cref="ModelObject.Centerlines"/> instead.</summary>
+  Centerline,
 }
 
 /// <summary>

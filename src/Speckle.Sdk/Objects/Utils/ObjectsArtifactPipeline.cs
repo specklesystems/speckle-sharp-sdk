@@ -416,6 +416,11 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void Solid(int objectK, int geometryK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Solid, objectK, geometryK, ord);
 
+  /// <summary>object → geometry: the element's authored location curve (axis). Prefer
+  /// <see cref="Speckle.Sdk.Bundles.BundleObject.AddCenterline"/>.</summary>
+  public void Centerline(int objectK, int geometryK, int ord) =>
+    _envelopeWriter.AddRelation(RelKind.Centerline, objectK, geometryK, ord);
+
   /// <summary>object → object: host→hosted (curtain wall → panel).</summary>
   public void Subelement(int parentObjectK, int childObjectK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Subelement, parentObjectK, childObjectK, ord);

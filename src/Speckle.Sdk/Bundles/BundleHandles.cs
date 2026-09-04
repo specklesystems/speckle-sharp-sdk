@@ -311,6 +311,7 @@ public sealed class BundleObject
   private readonly List<BundleGeometry> _geometries = new();
   private int _displayOrd;
   private int _solidOrd;
+  private int _centerlineOrd;
   private int _placementOrd;
   private BundleContainer? _collection;
   private BundleContainer? _model;
@@ -401,6 +402,24 @@ public sealed class BundleObject
     var g = _builder.RegisterGeometry(key, new BundleGeometry(_builder, gK, ord));
     _geometries.Add(g);
     return g;
+  }
+
+  /// <summary>
+  /// The object's centerline (<c>CENTERLINE</c>), SGEO-encoded now — a duct/pipe/conduit axis, a framing
+  /// member's axis. Its own ordinal counter, like display and solid.
+  /// </summary>
+  /// <remarks>
+  /// NOT a render edge, and deliberately absent from <see cref="Geometries"/>: a consumer that drew every
+  /// geometry an object owns would draw the axis through the middle of it, so a producer walking geometry to
+  /// paint or bake must not reach the centerline. Read it back through <c>ModelObject.Centerlines</c>.
+  /// </remarks>
+  public BundleGeometry AddCenterline(Base curve, string? geometryKey = null)
+  {
+    int ord = _centerlineOrd++;
+    string key = geometryKey ?? $"{ApplicationId}:cl{ord}";
+    int gK = _builder.Pipeline.AddGeometry(key, curve);
+    _builder.Pipeline.Centerline(K, gK, ord);
+    return _builder.RegisterGeometry(key, new BundleGeometry(_builder, gK, ord));
   }
 
   /// <summary>Renders this object through a placement of <paramref name="definition"/> (<c>DISPLAY_INSTANCE</c>).
