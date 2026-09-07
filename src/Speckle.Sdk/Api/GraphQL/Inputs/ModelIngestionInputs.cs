@@ -3,11 +3,15 @@ using Speckle.Sdk.Api.GraphQL.Enums;
 
 namespace Speckle.Sdk.Api.GraphQL.Inputs;
 
+/// <param name="sourceApplicationVersion">Release of the host application (Revit 2024 -> "2024"), not of the connector.</param>
+/// <param name="connectorVersion">Version of the Speckle connector / client running the ingestion (<see cref="Speckle.Sdk.ISpeckleApplication.SpeckleVersion"/>).
+/// Defaults to <see langword="null"/>, which is not serialized, so callers stay compatible with servers that predate the field.</param>
 public record SourceDataInput(
   string sourceApplicationSlug,
   string sourceApplicationVersion,
   string? fileName,
-  long? fileSizeBytes
+  long? fileSizeBytes,
+  string? connectorVersion = null
 );
 
 public record ModelIngestionCreateInput(
