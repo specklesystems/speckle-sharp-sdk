@@ -7,6 +7,12 @@ using Speckle.Sdk.Api.GraphQL.Resources;
 
 namespace Speckle.Sdk.Tests.Integration.API.GraphQL.Resources;
 
+/// <summary>
+/// Exercises the retired file-import rail (generateUploadUrl / startFileImport / finishFileImport). A 2026.9
+/// server accepts no file type on it (uploads go through startFileIngestion, converted by the in-cluster
+/// job runner), so this only runs against the public image.
+/// </summary>
+[Trait("Server", "Public")]
 public class FileUploadResourceTests : IAsyncLifetime
 {
   private FileImportResource Sut => _client.FileImport;
