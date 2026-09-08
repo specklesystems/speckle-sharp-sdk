@@ -14,6 +14,9 @@ namespace Speckle.Sdk.Tests.Integration.Bundles;
 /// and the version's <c>referencedObject</c> is the bundle reference Receive2 dispatches on.
 /// </summary>
 [Trait("Server", "Internal")]
+// A bundle without its viewer .dat is completed by a one-shot Kubernetes datgen Job, which docker compose cannot
+// stand in for; the CI internal job filters this trait out. Run it against a cluster-backed server.
+[Trait("Requires", "DatGen")]
 public sealed class SendReceiveBundleTests : IAsyncLifetime
 {
   private static readonly SpeckleApplication s_app = new()

@@ -74,5 +74,5 @@ jobs:
         working-directory: ${{ env.CLIENT_DIR }}
         
       - name: 🔨 Run .NET Integration Tests 
-        run: dotnet test ${{ env.SOLUTION }} --filter "(Category=Integration)&(Server!=Public)" --configuration Release --no-build --no-restore --verbosity=normal
+        run: dotnet test ${{ env.SOLUTION }} --filter "(Category=Integration)&(Server!=Public)&(Requires!=DatGen)" --configuration Release --no-build --no-restore --verbosity=normal
         working-directory: ${{ env.CLIENT_DIR }}
