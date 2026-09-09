@@ -88,8 +88,6 @@
     <PackageVersion Include="xunit.assert" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <GlobalPackageReference Include="PolySharp" Version="1.15.0" />
-    <!-- Will need to test how 10 behaves... -->
-    <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="[8.0.0,]" />
     <GlobalPackageReference Include="Speckle.InterfaceGenerator" Version="0.9.6" />
   </ItemGroup>
 </Project>
