@@ -32,6 +32,28 @@ public sealed class NodeFieldsTests
     Assert.Contains("nodes.opacity", ex.Message, StringComparison.Ordinal);
   }
 
+  private static ArtefactNode Container(string? subtype) =>
+    new(NodeKind.Container, "Level 1", null, null, null, null, null, null, null, null, Subtype: subtype);
+
+  [Fact]
+  public void Container_CompleteRow_Projects()
+  {
+    var fields = NodeFields.Container(4, Container("Layer"));
+
+    Assert.Equal("Level 1", fields.Name);
+    Assert.Equal("Layer", fields.Subtype);
+  }
+
+  [Fact]
+  public void Container_NullSubtype_ThrowsNamingNodeAndColumn()
+  {
+    // Bundles predating the subtype column carry NULL here; the spec now declares it mandatory for CONTAINER.
+    var ex = Assert.Throws<InvalidOperationException>(() => NodeFields.Container(4, Container(null)));
+
+    Assert.Contains("Node 4", ex.Message, StringComparison.Ordinal);
+    Assert.Contains("nodes.subtype", ex.Message, StringComparison.Ordinal);
+  }
+
   [Fact]
   public void Color_DoesNotCarryOpacity()
   {

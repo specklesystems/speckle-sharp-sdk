@@ -28,15 +28,17 @@ public static class NodeFields
 
   public static SpecLevel Level(int k, ArtefactNode node) => new(node.Name, Required(node.Elevation, k, "elevation"));
 
-  public static SpecContainer Container(ArtefactNode node) =>
-    new(node.Name, node.DefRef, node.Subtype, node.GhTopology);
+  public static SpecContainer Container(int k, ArtefactNode node) =>
+    new(node.Name, node.DefRef, Required(node.Subtype, k, "subtype"), node.GhTopology);
 
   public static SpecDefinition Definition(ArtefactNode node) => new(node.Name, node.DefRef);
 
   private static T Required<T>(T? value, int k, string column)
-    where T : struct =>
-    value
-    ?? throw new InvalidOperationException(
-      $"Node {k}: nodes.{column} is mandatory for this node kind in the bundle spec, but the row has NULL."
-    );
+    where T : struct => value ?? throw Missing(k, column);
+
+  private static T Required<T>(T? value, int k, string column)
+    where T : class => value ?? throw Missing(k, column);
+
+  private static InvalidOperationException Missing(int k, string column) =>
+    new($"Node {k}: nodes.{column} is mandatory for this node kind in the bundle spec, but the row has NULL.");
 }

@@ -171,15 +171,15 @@ public sealed class ModelContainer : ModelNode
   internal ModelContainer(Model model, int k, ArtefactNode node)
     : base(model, k, node)
   {
-    Fields = NodeFields.Container(node);
+    Fields = NodeFields.Container(k, node);
   }
 
   /// <summary>The CONTAINER row, projected onto the columns the spec declares for it.</summary>
   public SpecContainer Fields { get; }
 
   /// <summary>Container flavour as the producer wrote it: <c>Collection</c>, <c>Layer</c>, <c>Folder</c>, <c>Model</c>,
-  /// <c>MEP System</c>, <c>Network</c>, <c>Group</c> … Null on bundles written before the column existed.</summary>
-  public string? Subtype => Fields.Subtype;
+  /// <c>MEP System</c>, <c>Network</c>, <c>Group</c> …</summary>
+  public string Subtype => Fields.Subtype;
 
   /// <summary>Grasshopper data-tree topology (<c>nodes.gh_topology</c>) for containers a GH send wrote; null otherwise.</summary>
   public string? GhTopology => Fields.GhTopology;
