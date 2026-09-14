@@ -3,11 +3,14 @@ using Speckle.Objects.Utils;
 using Speckle.Sdk.Bundles.Handles;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 using SpecColor = Speckle.Bundle.Spec.Color;
 using SpecContainer = Speckle.Bundle.Spec.Container;
 using SpecDefinition = Speckle.Bundle.Spec.Definition;
 using SpecLevel = Speckle.Bundle.Spec.Level;
 using SpecMaterial = Speckle.Bundle.Spec.Material;
+using SpecPropertySetField = Speckle.Bundle.Spec.PropertySetField;
+using SpecStructuralResult = Speckle.Bundle.Spec.StructuralResult;
 
 namespace Speckle.Sdk.Bundles;
 
@@ -273,66 +276,18 @@ public sealed partial class BundleBuilder : IDisposable
   public void AddModelProperty(string path, object? value, string? unit = null) =>
     Pipeline.AddModelProperty(path, value, unit);
 
-  /// <summary>One analysis-result row (<c>eav.structural_results</c>); see <see cref="ObjectsArtifactPipeline.AddStructuralResult"/>.</summary>
-  public void AddStructuralResult(
-    BundleObject? owner,
-    string? location,
-    string resultType,
-    string loadCase,
-    string component,
-    double? station = null,
-    int? step = null,
-    double? value = null,
-    string? valueText = null,
-    string? elementName = null,
-    string? positionLabel = null
-  ) =>
-    Pipeline.AddStructuralResult(
-      owner?.ApplicationId,
-      location,
-      resultType,
-      loadCase,
-      component,
-      station,
-      step,
-      value,
-      valueText,
-      elementName,
-      positionLabel
-    );
+  /// <summary>One analysis-result row (<c>eav.structural_results</c>). <paramref name="owner"/> is the member or
+  /// joint the result belongs to; leave it null for group- and model-level results, which identify themselves by
+  /// the row's location, element name and/or step. See <see cref="ObjectsArtifactPipeline.AddStructuralResult"/>.</summary>
+  public void AddStructuralResult(BundleObject? owner, SpecStructuralResult fields) =>
+    Pipeline.AddStructuralResult(owner?.ApplicationId, fields);
 
-  /// <summary>One property-set field definition (<c>eav.property_set_definitions</c>), in authored field order.</summary>
-  public void AddPropertySetDefinition(
-    string setName,
-    string setKey,
-    string fieldName,
-    string? fieldBucketId,
-    string? dataType,
-    string? defaultString = null,
-    double? defaultDouble = null,
-    bool? defaultBoolean = null,
-    string? unit = null,
-    string? description = null,
-    string? setDescription = null,
-    string? appliesTo = null
-  ) =>
-    Pipeline.AddPropertySetDefinition(
-      setName,
-      setKey,
-      fieldName,
-      fieldBucketId,
-      dataType,
-      defaultString,
-      defaultDouble,
-      defaultBoolean,
-      unit,
-      description,
-      setDescription,
-      appliesTo
-    );
+  /// <summary>One property-set field definition (<c>eav.property_set_definitions</c>), in authored field order.
+  /// See <see cref="ObjectsArtifactPipeline.AddPropertySetDefinition"/>.</summary>
+  public void AddPropertySetDefinition(SpecPropertySetField fields) => Pipeline.AddPropertySetDefinition(fields);
 
   /// <summary>A named camera viewpoint (<c>envelope.camera_views</c>).</summary>
-  public void AddCameraView(CameraView view) => Pipeline.AddCameraView(view);
+  public void AddCameraView(SpecCameraView view) => Pipeline.AddCameraView(view);
 
   /// <summary>
   /// Declares a scene view — how the viewer groups objects. Tiers are outermost first; each is either a relation

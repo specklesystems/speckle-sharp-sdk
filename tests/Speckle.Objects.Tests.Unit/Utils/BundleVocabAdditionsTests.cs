@@ -89,24 +89,23 @@ public class BundleVocabAdditionsTests
 
         // One property-set schema, three fields in authored order (row order IS field order).
         pipeline.AddPropertySetDefinition(
-          "Pipe Data",
-          "ps_hash1",
-          "Slope",
-          "SLOPE_BUCKET",
-          "Real",
-          defaultDouble: 0.0,
-          unit: "%",
-          description: "Design slope",
-          setDescription: "Hydraulic pipe data"
+          new(
+            "Pipe Data",
+            "ps_hash1",
+            "Hydraulic pipe data",
+            "Slope",
+            "SLOPE_BUCKET",
+            "Real",
+            DefaultDouble: 0.0,
+            Unit: "%",
+            Description: "Design slope"
+          )
         );
-        pipeline.AddPropertySetDefinition("Pipe Data", "ps_hash1", "Service", "SERVICE_BUCKET", "Text", "Supply");
         pipeline.AddPropertySetDefinition(
-          "Pipe Data",
-          "ps_hash1",
-          "Insulated",
-          null,
-          "TrueFalse",
-          defaultBoolean: false
+          new("Pipe Data", "ps_hash1", null, "Service", "SERVICE_BUCKET", "Text", "Supply")
+        );
+        pipeline.AddPropertySetDefinition(
+          new("Pipe Data", "ps_hash1", null, "Insulated", null, "TrueFalse", DefaultBoolean: false)
         );
 
         pipeline.Complete();

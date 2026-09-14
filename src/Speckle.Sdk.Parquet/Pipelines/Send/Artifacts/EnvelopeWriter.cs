@@ -1,6 +1,7 @@
 using System.Globalization;
 using Parquet.Schema;
 using SpecBundle = Speckle.Bundle.Spec.BundleSpec;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 using SpecCatalog = Speckle.Bundle.Spec.Catalog;
 using SpecCols = Speckle.Bundle.Spec.BundleCols;
 using SpecSchemas = Speckle.Bundle.Spec.BundleSchemas;
@@ -25,39 +26,6 @@ public sealed record SceneViewKey(ProjectionSource Source, string Ref)
 /// (conditional keys, e.g. IN_MODEL for a single-model file) and consumers also skip single/empty-group
 /// keys, so default ≠ only — users can re-pivot or pick a named alternate.</summary>
 public sealed record SceneView(int View, string Name, bool IsDefault, IReadOnlyList<SceneViewKey> Keys);
-
-/// <summary>A named camera viewpoint authored in the source model (Rhino named view, Revit 3D view, SketchUp
-/// scene) — NOT a <see cref="SceneView"/> (which is the explorer grouping). Positions/target/ortho params are
-/// in <paramref name="Units"/> (model units — the consumer scales like geometry); forward/up are unitless UNIT
-/// vectors. <paramref name="Fov"/> is the VERTICAL field of view in DEGREES (perspective only). At most one
-/// view per artefact should be <paramref name="IsDefault"/>. Positional (constructed, not object-initialized)
-/// so net48 consumers of the ILRepack'd netstandard2.0 assembly never touch init-only setters (CS0570).</summary>
-public sealed record CameraView(
-  int View,
-  string? Name,
-  bool IsDefault,
-  int? Ord,
-  double PosX,
-  double PosY,
-  double PosZ,
-  double ForwardX,
-  double ForwardY,
-  double ForwardZ,
-  double UpX,
-  double UpY,
-  double UpZ,
-  double? TargetX = null,
-  double? TargetY = null,
-  double? TargetZ = null,
-  string? Units = null,
-  bool IsOrtho = false,
-  double? Fov = null,
-  double? LensMm = null,
-  double? OrthoHeight = null,
-  double? Aspect = null,
-  double? Near = null,
-  double? Far = null
-);
 
 /// <summary>
 /// Writes the Speckle 4.0 envelope topology artefact as DIRECT Zstd PARQUET (one file per table). The
@@ -96,7 +64,7 @@ public sealed class EnvelopeWriter : IDisposable
   private readonly ParquetTableWriter _nodes;
   private readonly ParquetWriteScheduler _scheduler;
   private readonly List<SceneView> _sceneViews = new();
-  private readonly List<CameraView> _cameraViews = new();
+  private readonly List<SpecCameraView> _cameraViews = new();
   private bool _completed;
 
   private string? _producedBy;
@@ -185,7 +153,7 @@ public sealed class EnvelopeWriter : IDisposable
 
   /// <summary>Buffers a named camera viewpoint; flushed to <c>camera_views.parquet</c> on
   /// <see cref="Complete"/>. Add none and the table is simply absent (the model ships no viewpoints).</summary>
-  public void AddCameraView(CameraView view)
+  public void AddCameraView(SpecCameraView view)
   {
     EnsureNotCompleted();
     _cameraViews.Add(view);

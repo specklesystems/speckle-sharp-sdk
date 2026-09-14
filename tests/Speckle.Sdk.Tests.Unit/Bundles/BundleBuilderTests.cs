@@ -5,6 +5,7 @@ using Speckle.Sdk.Bundles;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 
 namespace Speckle.Sdk.Tests.Unit.Bundles;
 
@@ -234,8 +235,10 @@ public sealed class BundleBuilderTests : IDisposable
       );
       b.AddModelProperty("modelPlacement.units", "m");
       b.AddModelProperty("projectInformation.number", 42.0);
-      b.AddStructuralResult(o, "Base", "reaction", "DL", "Fz", value: 12.5);
-      b.AddCameraView(new CameraView(0, "Front", true, 0, 0, -10, 5, 0, 1, 0, 0, 0, 1));
+      b.AddStructuralResult(o, new(null, null, "Base", "reaction", "DL", "Fz", Value: 12.5));
+      b.AddCameraView(
+        new SpecCameraView(0, "Front", true, 0, 0, -10, 5, 0, 1, 0, 0, 0, 1, null, null, null, "m", false)
+      );
     });
 
     var w = model.ObjectByApplicationId("w")!;
@@ -246,7 +249,12 @@ public sealed class BundleBuilderTests : IDisposable
     Assert.Null(w.SceneViewSegments[2].Node);
     Assert.Equal("m", model.Properties["modelPlacement.units"]);
     Assert.Equal(42.0, model.Properties["projectInformation.number"]);
-    Assert.Equal("Front", Assert.Single(model.CameraViews).Name);
+    var camera = Assert.Single(model.CameraViews);
+    Assert.Equal("Front", camera.Name);
+    // Non-nullable in the spec since 1.2.0, so these survive the round trip as written rather
+    // than arriving as a reader-side default.
+    Assert.False(camera.IsOrtho);
+    Assert.True(camera.IsDefault);
     Assert.Contains(model.Files, f => f.EndsWith(".eav.structural_results.parquet", StringComparison.Ordinal));
   }
 

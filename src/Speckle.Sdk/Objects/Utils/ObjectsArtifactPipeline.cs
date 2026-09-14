@@ -4,9 +4,12 @@ using Speckle.Sdk;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 using SpecContainer = Speckle.Bundle.Spec.Container;
 using SpecLevel = Speckle.Bundle.Spec.Level;
 using SpecMaterial = Speckle.Bundle.Spec.Material;
+using SpecPropertySetField = Speckle.Bundle.Spec.PropertySetField;
+using SpecStructuralResult = Speckle.Bundle.Spec.StructuralResult;
 
 namespace Speckle.Objects.Utils;
 
@@ -537,42 +540,35 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// Appends one structural analysis/design result value to <c>{base}.eav.structural_results.parquet</c>
   /// (see <see cref="StructuralResultsWriter"/>). <b>Object-level</b> results pass the member/joint's
   /// <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned with, so
-  /// results join back to it) and leave <paramref name="location"/> null; <b>group-level</b> results
-  /// (pier/spandrel forces) pass <paramref name="elementName"/> — a named group of walls, NOT an interned
-  /// object — with <paramref name="location"/> = story; <b>model/story-level</b> results (story drift,
-  /// modal period, base reaction) pass neither and identify via <paramref name="location"/> (story) and/or
-  /// <paramref name="step"/> (mode). <paramref name="positionLabel"/> is a categorical position/direction
-  /// (Top/Bottom, X/Y) — distinct from the numeric member <paramref name="station"/>. Numeric results set
-  /// <paramref name="value"/>; non-numeric design verdicts set <paramref name="valueText"/>.
+  /// results join back to it) and leave <c>location</c> null; <b>group-level</b> results (pier/spandrel
+  /// forces) set <c>element_name</c> — a named group of walls, NOT an interned object — with <c>location</c>
+  /// = story; <b>model/story-level</b> results (story drift, modal period, base reaction) set neither and
+  /// identify via <c>location</c> (story) and/or <c>step</c> (mode). <c>position_label</c> is a categorical
+  /// position/direction (Top/Bottom, X/Y) — distinct from the numeric member <c>station</c>. Numeric results
+  /// set <c>value</c>; non-numeric design verdicts set <c>value_text</c>.
   /// </summary>
-  public void AddStructuralResult(
-    string? objectApplicationId,
-    string? location,
-    string resultType,
-    string loadCase,
-    string component,
-    double? station,
-    int? step,
-    double? value,
-    string? valueText = null,
-    string? elementName = null,
-    string? positionLabel = null
-  )
+  public void AddStructuralResult(string? objectApplicationId, SpecStructuralResult fields)
   {
+    if (fields.ObjectIndex is not null)
+    {
+      // The index is this pipeline's dense object K, which only it can mint — supplying both
+      // would let a caller point a result at an object the app id does not resolve to.
+      throw new ArgumentException("ObjectIndex is derived from objectApplicationId; leave it null.", nameof(fields));
+    }
     int? objectIndex = objectApplicationId is null ? null : _eavWriter.GetOrAddObject(objectApplicationId);
     _structuralResultsWriter ??= new StructuralResultsWriter(_outputDir, _baseName, _scheduler);
     _structuralResultsWriter.AddRow(
       objectIndex,
-      elementName,
-      location,
-      resultType,
-      loadCase,
-      component,
-      positionLabel,
-      station,
-      step,
-      value,
-      valueText
+      fields.ElementName,
+      fields.Location,
+      fields.ResultType,
+      fields.LoadCase,
+      fields.Component,
+      fields.PositionLabel,
+      fields.Station,
+      fields.Step,
+      fields.Value,
+      fields.ValueText
     );
   }
 
@@ -622,39 +618,26 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <summary>Appends one field row of an AEC/Civil3D property-set DEFINITION to the optional
   /// <c>{base}.eav.property_set_definitions.parquet</c> (see <see cref="PropertySetDefinitionsWriter"/>) —
   /// the schema only; values stay per-object in eav under <c>properties.Property Sets.{set}.{field}</c> and
-  /// attachment is derived from those value paths. <paramref name="setKey"/> is the definition's content hash
-  /// (SET-level identity); <paramref name="fieldBucketId"/> is THE rebind join key — the same string the value
-  /// rows ship in <c>eav.internal_definition_name</c> (null ⇒ consumers match <paramref name="fieldName"/>
-  /// against the value path leaf). Call once per field, in authored field order (row order is field order).</summary>
-  public void AddPropertySetDefinition(
-    string setName,
-    string setKey,
-    string fieldName,
-    string? fieldBucketId,
-    string? dataType,
-    string? defaultString = null,
-    double? defaultDouble = null,
-    bool? defaultBoolean = null,
-    string? unit = null,
-    string? description = null,
-    string? setDescription = null,
-    string? appliesTo = null
-  )
+  /// attachment is derived from those value paths. <c>set_key</c> is the definition's content hash (SET-level
+  /// identity); <c>field_bucket_id</c> is THE rebind join key — the same string the value rows ship in
+  /// <c>eav.internal_definition_name</c> (null ⇒ consumers match <c>field_name</c> against the value path
+  /// leaf). Call once per field, in authored field order (row order is field order).</summary>
+  public void AddPropertySetDefinition(SpecPropertySetField fields)
   {
     _propertySetDefinitionsWriter ??= new PropertySetDefinitionsWriter(_outputDir, _baseName, _scheduler);
     _propertySetDefinitionsWriter.AddRow(
-      setName,
-      setKey,
-      setDescription,
-      fieldName,
-      fieldBucketId,
-      dataType,
-      defaultString,
-      defaultDouble,
-      defaultBoolean,
-      unit,
-      description,
-      appliesTo
+      fields.SetName,
+      fields.SetKey,
+      fields.SetDescription,
+      fields.FieldName,
+      fields.FieldBucketId,
+      fields.DataType,
+      fields.DefaultString,
+      fields.DefaultDouble,
+      fields.DefaultBoolean,
+      fields.Unit,
+      fields.Description,
+      fields.AppliesTo
     );
   }
 
@@ -664,8 +647,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void AddSceneView(SceneView view) => _envelopeWriter.AddSceneView(view);
 
   /// <summary>Authors one named camera viewpoint into <c>envelope.camera_views.parquet</c>. Position/target in
-  /// model units, forward/up unit vectors, <see cref="CameraView.Fov"/> vertical DEGREES (perspective only).</summary>
-  public void AddCameraView(CameraView view) => _envelopeWriter.AddCameraView(view);
+  /// model units, forward/up unit vectors, <c>fov</c> vertical DEGREES (perspective only).</summary>
+  public void AddCameraView(SpecCameraView view) => _envelopeWriter.AddCameraView(view);
 
   /// <summary>
   /// Records the producer information of this bundle in the <c>meta</c> file.

@@ -58,5 +58,11 @@
       Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleNodes.cs"
       Link="Generated/BundleNodes.cs"
     />
+    <!-- One record per row-shaped table (structural results, property-set fields, camera views),
+         generated from the same DDL the writers build their schemas from. -->
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleRows.cs"
+      Link="Generated/BundleRows.cs"
+    />
   </ItemGroup>
 </Project>

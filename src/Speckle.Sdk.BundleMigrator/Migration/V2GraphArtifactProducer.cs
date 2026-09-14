@@ -9,6 +9,7 @@ using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 
 namespace Speckle.Sdk.BundleMigrator.Migration;
 
@@ -308,7 +309,7 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     var ord = _cameraViewOrd++;
 
     pipeline.AddCameraView(
-      new CameraView(
+      new SpecCameraView(
         View: ord,
         Name: name,
         IsDefault: false,

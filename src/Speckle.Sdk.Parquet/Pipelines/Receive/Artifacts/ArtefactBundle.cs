@@ -1,4 +1,6 @@
 using System.Globalization;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
+using SpecPropertySetField = Speckle.Bundle.Spec.PropertySetField;
 
 namespace Speckle.Sdk.Pipelines.Receive.Artifacts;
 
@@ -38,36 +40,6 @@ public sealed record BundleMeta(
   /// <summary>True when this bundle was converted from a legacy object graph rather than natively published.</summary>
   public bool IsMigrated => MigratedFromSchemaVersion is not null;
 }
-
-/// <summary>A named camera viewpoint from <c>envelope.camera_views.parquet</c> (Rhino named view, Revit 3D view,
-/// SketchUp scene). Position/target/ortho-height are in <see cref="Units"/> (model units); forward/up are unitless
-/// UNIT vectors; <see cref="Fov"/> is the VERTICAL field of view in DEGREES (perspective only, null for ortho).</summary>
-public sealed record ArtefactCameraView(
-  int View,
-  string? Name,
-  bool IsDefault,
-  int? Ord,
-  double PosX,
-  double PosY,
-  double PosZ,
-  double ForwardX,
-  double ForwardY,
-  double ForwardZ,
-  double UpX,
-  double UpY,
-  double UpZ,
-  double? TargetX,
-  double? TargetY,
-  double? TargetZ,
-  string? Units,
-  bool IsOrtho,
-  double? Fov,
-  double? LensMm,
-  double? OrthoHeight,
-  double? Aspect,
-  double? Near,
-  double? Far
-);
 
 /// <summary>An envelope graph node (Collection/Material/Definition/Instance/Level/…). Columns are sparse — only the
 /// fields relevant to the node's <see cref="Kind"/> are populated.</summary>
@@ -241,28 +213,6 @@ public sealed class ArtefactRelations
   }
 }
 
-/// <summary>One field row of an AEC/Civil3D property-set DEFINITION from the optional
-/// <c>eav.property_set_definitions.parquet</c> — the set's SCHEMA only; values live per-object in eav under
-/// <c>properties.Property Sets.{set}.{field}</c> and attachment is derived from those value paths.
-/// <see cref="FieldBucketId"/> is THE rebind join key — the same string the value rows ship in
-/// <c>eav.internal_definition_name</c> (null ⇒ match <see cref="FieldName"/> against the value path leaf);
-/// <see cref="SetKey"/> is the definition's content hash (SET-level identity under same-name collisions).
-/// List order is authored field order (row order in the file).</summary>
-public sealed record ArtefactPropertySetField(
-  string SetName,
-  string SetKey,
-  string? SetDescription,
-  string FieldName,
-  string? FieldBucketId,
-  string? DataType,
-  string? DefaultString,
-  double? DefaultDouble,
-  bool? DefaultBoolean,
-  string? Unit,
-  string? Description,
-  string? AppliesTo
-);
-
 /// <summary>
 /// The neutral, host-agnostic parse of a Speckle 4.0 artefact bundle (the directory of
 /// <c>geometries</c>/<c>eav.*</c>/<c>envelope.*</c> parquet files produced by the send pipeline). Holds the dense-int
@@ -340,7 +290,7 @@ public sealed class ArtefactBundle
 
   /// <summary>Named camera viewpoints (<c>envelope.camera_views.parquet</c>), ordered by <c>ord</c> then
   /// <c>view</c>; empty if the bundle ships none. Native bakers recreate them as host named views.</summary>
-  public required IReadOnlyList<ArtefactCameraView> CameraViews { get; init; }
+  public required IReadOnlyList<SpecCameraView> CameraViews { get; init; }
 
   /// <summary>MODEL/document-scoped attributes from the optional <c>eav.model.parquet</c> (object-less eav:
   /// project information, the full reference-point transform, document settings), nested by dotted path like
@@ -350,8 +300,8 @@ public sealed class ArtefactBundle
   /// <summary>AEC property-set definitions from the optional <c>eav.property_set_definitions.parquet</c>, one
   /// row per (set, field); empty when absent. Receivers recreate host set definitions from these, falling back
   /// to synthesizing minimal ones from the value rows when the file is missing.</summary>
-  public IReadOnlyList<ArtefactPropertySetField> PropertySetDefinitions { get; init; } =
-    Array.Empty<ArtefactPropertySetField>();
+  public IReadOnlyList<SpecPropertySetField> PropertySetDefinitions { get; init; } =
+    Array.Empty<SpecPropertySetField>();
 
   /// <summary>Type-scoped properties (Revit Type Parameters / System Type Parameters, deduped once per type by
   /// <c>ObjectsArtifactPipeline.TrySplitTypeParameters</c>) resolved to each instance object that references a
@@ -526,11 +476,11 @@ public static class ArtefactBundleReader
     return dict;
   }
 
-  private static IReadOnlyList<ArtefactPropertySetField> LoadPropertySetDefinitions(ParquetTable? t)
+  private static IReadOnlyList<SpecPropertySetField> LoadPropertySetDefinitions(ParquetTable? t)
   {
     if (t is null || !t.Has("set_name"))
     {
-      return Array.Empty<ArtefactPropertySetField>();
+      return Array.Empty<SpecPropertySetField>();
     }
     var setName = t.Strings("set_name");
     var setKey = t.Strings("set_key");
@@ -544,11 +494,11 @@ public static class ArtefactBundleReader
     var unit = t.Strings("unit");
     var description = t.Strings("description");
     var appliesTo = t.Strings("applies_to");
-    var rows = new List<ArtefactPropertySetField>(setName.Length);
+    var rows = new List<SpecPropertySetField>(setName.Length);
     for (int i = 0; i < setName.Length; i++)
     {
       rows.Add(
-        new ArtefactPropertySetField(
+        new SpecPropertySetField(
           setName[i] ?? "",
           setKey[i] ?? "",
           setDescription[i],
@@ -608,11 +558,11 @@ public static class ArtefactBundleReader
     return tiers.OrderBy(x => x.Ord).Select(x => x.Tier).ToList();
   }
 
-  private static IReadOnlyList<ArtefactCameraView> LoadCameraViews(ParquetTable? t)
+  private static IReadOnlyList<SpecCameraView> LoadCameraViews(ParquetTable? t)
   {
     if (t is null || !t.Has("pos_x"))
     {
-      return Array.Empty<ArtefactCameraView>();
+      return Array.Empty<SpecCameraView>();
     }
     var view = t.Ints("view");
     var name = t.Strings("name");
@@ -638,11 +588,11 @@ public static class ArtefactBundleReader
     var aspect = t.NullableDoubles("aspect");
     var near = t.NullableDoubles("near");
     var far = t.NullableDoubles("far");
-    var views = new List<ArtefactCameraView>(view.Length);
+    var views = new List<SpecCameraView>(view.Length);
     for (int i = 0; i < view.Length; i++)
     {
       views.Add(
-        new ArtefactCameraView(
+        new SpecCameraView(
           view[i],
           name[i],
           isDefault[i] ?? false,

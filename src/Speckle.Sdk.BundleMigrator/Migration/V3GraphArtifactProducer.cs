@@ -13,6 +13,7 @@ using Speckle.Sdk.Models.Instances;
 using Speckle.Sdk.Models.Proxies;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 
 namespace Speckle.Sdk.BundleMigrator.Migration;
 
@@ -847,7 +848,8 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   }
 
   // Root-level viewpoints; the traversal only descends `elements`, so they're read directly.
-  // A v3 Camera has no target/fov/lens/ortho data, so those columns stay null.
+  // A v3 Camera has no target/fov/lens data, so those columns stay null. It has no projection
+  // flag either; every v3-migrated bundle already carries is_ortho = false, so keep asserting it.
   private void EmitCameraViews(Base root)
   {
     var ord = 0;
@@ -867,7 +869,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         }
 
         pipeline.AddCameraView(
-          new CameraView(
+          new SpecCameraView(
             View: ord,
             Name: cam.name,
             IsDefault: false,
@@ -881,7 +883,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
             UpX: cam.up.x,
             UpY: cam.up.y,
             UpZ: cam.up.z,
-            Units: cam.position.units
+            TargetX: null,
+            TargetY: null,
+            TargetZ: null,
+            Units: cam.position.units,
+            IsOrtho: false
           )
         );
         _stats.CameraViews++;
@@ -1134,16 +1140,19 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         }
         var (defaultString, defaultDouble, defaultBoolean) = SplitPropertyDefault(fd.GetValueOrDefault("defaultValue"));
         pipeline.AddPropertySetDefinition(
-          setName,
-          setKey,
-          fieldName,
-          fieldBucketId: null, // not recorded by v3; consumers fall back to matching fieldName
-          fd.GetValueOrDefault("dataType") as string,
-          defaultString,
-          defaultDouble,
-          defaultBoolean,
-          fd.GetValueOrDefault("units") as string,
-          fd.GetValueOrDefault("description") as string
+          new(
+            setName,
+            setKey,
+            null,
+            fieldName,
+            null, // fieldBucketId not recorded by v3; consumers fall back to matching fieldName
+            fd.GetValueOrDefault("dataType") as string,
+            defaultString,
+            defaultDouble,
+            defaultBoolean,
+            fd.GetValueOrDefault("units") as string,
+            fd.GetValueOrDefault("description") as string
+          )
         );
         emitted++;
       }
