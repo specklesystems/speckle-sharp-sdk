@@ -1,7 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 using Speckle.Objects.Utils;
+using Speckle.Sdk.Bundles.Handles;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecColor = Speckle.Bundle.Spec.Color;
+using SpecContainer = Speckle.Bundle.Spec.Container;
+using SpecDefinition = Speckle.Bundle.Spec.Definition;
+using SpecLevel = Speckle.Bundle.Spec.Level;
+using SpecMaterial = Speckle.Bundle.Spec.Material;
 
 namespace Speckle.Sdk.Bundles;
 
@@ -20,8 +26,8 @@ namespace Speckle.Sdk.Bundles;
 /// var wall  = b.GetOrAddObject("wall-1");
 /// wall.SetProperties(properties, name: "Basic Wall", speckleType: "Objects.Data.DataObject");
 /// wall.Collection = walls;
-/// wall.AddGeometry(mesh).Material = b.GetOrAddMaterial("concrete", "Concrete", 0xFF808080, 1, 0, 0.8);
-/// wall.Level = b.GetOrAddLevel("L1", "Level 1", 0);
+/// wall.AddGeometry(mesh).Material = b.GetOrAddMaterial("concrete", new("Concrete", 0xFF808080, 1, 0, 0.8, null, null));
+/// wall.Level = b.GetOrAddLevel("L1", new("Level 1", 0));
 /// var chair = b.GetOrAddObject("chair-1");
 /// chair.Place(b.GetOrAddDefinition("def-chair", "Chair", d => d.AddGeometry(chairMesh)), transform, "m");
 /// BundleFiles files = b.Build();
@@ -31,7 +37,7 @@ namespace Speckle.Sdk.Bundles;
 /// <c>Add…</c> appends a row every call (geometry, model properties, results, camera views). Verbs and property
 /// setters (<c>Place</c>, <c>ConnectTo</c>, <c>Host =</c>) emit one edge each. Edge ordinals follow call order.
 /// </remarks>
-public sealed class BundleBuilder : IDisposable
+public sealed partial class BundleBuilder : IDisposable
 {
   private const string DEFAULT_BASE_NAME = "bundle";
 
@@ -115,15 +121,13 @@ public sealed class BundleBuilder : IDisposable
     string? ghTopology = null
   )
   {
+    var fields = new SpecContainer(name, parent?.K, subtype, ghTopology);
     if (_containers.TryGetValue(key, out var existing))
     {
-      Same(key, existing.Name, name, "name");
-      Same(key, existing.Subtype, subtype, "subtype");
-      Same(key, existing.Parent?.Key, parent?.Key, "parent");
+      Same(key, existing.Fields, fields, "fields");
       return existing;
     }
-    int k = Pipeline.AddCollection(key, name, parent?.K, subtype, ghTopology);
-    var c = new BundleContainer(this, k, key, name, subtype, parent);
+    var c = new BundleContainer(Pipeline.AddCollection(key, fields), fields, parent);
     _containers[key] = c;
     return c;
   }
@@ -131,15 +135,15 @@ public sealed class BundleBuilder : IDisposable
   // ── objects ───────────────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>
-  /// Gets or adds an object (the property carrier a host element becomes) by <paramref name="applicationId"/> — a
-  /// handle only, nothing written yet. Describe it with <see cref="BundleObject.SetProperties"/>; point edges at it
-  /// before or after (a joint a frame connects to may be described later).
+  /// Gets or adds an object (the property carrier a host element becomes) by <paramref name="applicationId"/> —
+  /// interned only, nothing written yet. Describe it with <see cref="SetProperties"/>; point edges at it before or
+  /// after (a joint a frame connects to may be described later).
   /// </summary>
   public BundleObject GetOrAddObject(string applicationId)
   {
     if (!_objects.TryGetValue(applicationId, out var obj))
     {
-      obj = new BundleObject(this, Pipeline.InternObject(applicationId), applicationId);
+      obj = new BundleObject(Pipeline.InternObject(applicationId), applicationId);
       _objects[applicationId] = obj;
     }
     return obj;
@@ -202,26 +206,18 @@ public sealed class BundleBuilder : IDisposable
   // ── value nodes ───────────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>Gets or creates a MATERIAL node. <paramref name="key"/> is the dedup identity (host material id);
-  /// <paramref name="name"/> is the authored name receivers recreate the host material under.</summary>
-  public BundleMaterial GetOrAddMaterial(
-    string key,
-    string? name,
-    int argb,
-    double opacity = 1,
-    double metalness = 0,
-    double roughness = 1,
-    int? emissive = null,
-    double? ior = null
-  )
+  /// <paramref name="fields"/> is the row receivers rebuild the host material from.</summary>
+  public BundleMaterial GetOrAddMaterial(string key, SpecMaterial fields)
   {
+    // Normalize before comparing: the pipeline stores a black emissive as NULL, so an unnormalized
+    // repeat would compare unequal to the stored row and throw despite writing an identical node.
+    fields = ObjectsArtifactPipeline.NormalizeMaterial(fields);
     if (_materials.TryGetValue(key, out var existing))
     {
-      Same(key, existing.Name, name, "name");
-      Same(key, existing.Argb, argb, "argb");
+      Same(key, existing.Fields, fields, "fields");
       return existing;
     }
-    int k = Pipeline.AddMaterial(key, name, argb, opacity, metalness, roughness, emissive, ior);
-    var m = new BundleMaterial(this, k, key, name, argb);
+    var m = new BundleMaterial(Pipeline.AddMaterial(key, fields), fields);
     _materials[key] = m;
     return m;
   }
@@ -233,21 +229,20 @@ public sealed class BundleBuilder : IDisposable
     {
       return existing;
     }
-    var c = new BundleColor(this, Pipeline.AddColor(argb), argb);
+    var c = new BundleColor(Pipeline.AddColor(argb), new SpecColor(argb));
     _colors[argb] = c;
     return c;
   }
 
   /// <summary>Gets or creates a LEVEL node.</summary>
-  public BundleLevel GetOrAddLevel(string key, string? name, double elevation)
+  public BundleLevel GetOrAddLevel(string key, SpecLevel fields)
   {
     if (_levels.TryGetValue(key, out var existing))
     {
-      Same(key, existing.Name, name, "name");
-      Same(key, existing.Elevation, elevation, "elevation");
+      Same(key, existing.Fields, fields, "fields");
       return existing;
     }
-    var l = new BundleLevel(this, Pipeline.AddLevel(key, name, elevation), key, name, elevation);
+    var l = new BundleLevel(Pipeline.AddLevel(key, fields), fields);
     _levels[key] = l;
     return l;
   }
@@ -260,11 +255,12 @@ public sealed class BundleBuilder : IDisposable
     {
       if (name is not null)
       {
-        Same(key, existing.Name, name, "name"); // null = "whatever it was named" (a placement only knows the id)
+        Same(key, existing.Fields.Name, name, "name"); // null = "whatever it was named" (a placement only knows the id)
       }
       return existing;
     }
-    var d = new BundleDefinition(this, Pipeline.AddDefinition(key, name), key, name);
+    // def_ref is declared for DEFINITION in the spec but written by no producer.
+    var d = new BundleDefinition(Pipeline.AddDefinition(key, name), key, new SpecDefinition(name, null));
     _definitions[key] = d;
     populate?.Invoke(d);
     return d;

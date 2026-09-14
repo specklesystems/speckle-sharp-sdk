@@ -52,5 +52,11 @@
       Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleCols.cs"
       Link="Generated/BundleCols.cs"
     />
+    <!-- One record per live node kind, generated from node_kinds.columns — the field set and
+         nullability a MATERIAL/COLOR/LEVEL/CONTAINER row carries. -->
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleNodes.cs"
+      Link="Generated/BundleNodes.cs"
+    />
   </ItemGroup>
 </Project>

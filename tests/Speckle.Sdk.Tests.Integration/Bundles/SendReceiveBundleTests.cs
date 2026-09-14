@@ -50,8 +50,11 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
     using (var b = new BundleBuilder(s_app, "m"))
     {
       var walls = b.GetOrAddContainerPath(["Level 1", "Walls"], subtype: "Category");
-      var concrete = b.GetOrAddMaterial("mat-concrete", "Concrete", unchecked((int)0xFF808080), roughness: 0.8);
-      var l1 = b.GetOrAddLevel("L1", "Level 1", 0);
+      var concrete = b.GetOrAddMaterial(
+        "mat-concrete",
+        new("Concrete", unchecked((int)0xFF808080), 1, 0, 0.8, null, null)
+      );
+      var l1 = b.GetOrAddLevel("L1", new("Level 1", 0));
       var wall = b.GetOrAddObject(
         "wall-1",
         walls,
@@ -64,18 +67,22 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
         speckleType: "Objects.Data.DataObject",
         sourceType: "Walls"
       );
-      wall.AddGeometry(
-        new Mesh
-        {
-          vertices = [0, 0, 0, 1, 0, 0, 0, 1, 0],
-          faces = [3, 0, 1, 2],
-          units = "m",
-        }
-      ).Material = concrete;
-      wall.Level = l1;
+      b.HasMaterial(
+        b.AddGeometry(
+          wall,
+          new Mesh
+          {
+            vertices = [0, 0, 0, 1, 0, 0, 0, 1, 0],
+            faces = [3, 0, 1, 2],
+            units = "m",
+          }
+        ),
+        concrete
+      );
+      b.OnLevel(wall, l1);
       var door = b.GetOrAddObject("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
-      door.Host = wall;
-      door.Parent = wall;
+      b.HostedOn(door, wall);
+      b.Subelement(wall, door);
       b.AddModelProperty("projectInformation.number", 42.0);
 
       sent = await operations.Send3(account, _projectId, _modelId, b, null, CancellationToken.None);

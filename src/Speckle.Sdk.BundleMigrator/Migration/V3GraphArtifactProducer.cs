@@ -113,7 +113,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         {
           // Federation tier: a source model is a CONTAINER, not a collection — its child collections become
           // top-level (flat containers, as the v4 Revit builder writes them).
-          var mk = pipeline.AddContainer(helper.CollectionKey(col), col.name, null, "Model");
+          var mk = pipeline.AddContainer(helper.CollectionKey(col), new(col.name, null, "Model", null));
           _modelContainerByAppId[helper.Aid(col)] = mk;
           _stats.Models++;
           continue;
@@ -124,10 +124,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         var ghTopology = ReadGhTopology(col);
         var k = pipeline.AddCollection(
           helper.CollectionKey(col),
-          col.name,
-          parentK,
-          helper.CollectionSubtype(col),
-          ghTopology
+          new(col.name, parentK, helper.CollectionSubtype(col), ghTopology)
         );
         _collectionMap[helper.Aid(col)] = k;
         _stats.Collections++;
@@ -498,13 +495,15 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       // emissive is passed naively — the pipeline normalizes a black RGB to the bundle's NULL "no emission".
       var matK = pipeline.AddMaterial(
         helper.MaterialKey(rmp),
-        v.name,
-        v.diffuse,
-        v.opacity,
-        v.metalness,
-        v.roughness,
-        v.emissive,
-        helper.ReadDouble(v, "ior") // untyped on RenderMaterial
+        new(
+          v.name,
+          v.diffuse,
+          v.opacity,
+          v.metalness,
+          v.roughness,
+          v.emissive,
+          helper.ReadDouble(v, "ior") // untyped on RenderMaterial
+        )
       );
       matProxies.Add((matK, rmp.objects));
       _stats.Materials++;
@@ -589,7 +588,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       }
       var name = lp.value.name;
       var elevation = helper.ReadDouble(lp.value, "elevation") ?? 0.0; // dynamic member on the level DataObject
-      var lvlK = pipeline.AddLevel(helper.LevelKey(lp, name), name, elevation);
+      var lvlK = pipeline.AddLevel(helper.LevelKey(lp, name), new(name, elevation));
       _stats.Levels++;
       foreach (var objAppId in lp.objects)
       {
@@ -646,7 +645,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         continue;
       }
 
-      var grpK = pipeline.AddContainer(helper.GroupKey(gp), gp.name, null, "Group");
+      var grpK = pipeline.AddContainer(helper.GroupKey(gp), new(gp.name, null, "Group", null));
       _stats.Groups++;
       foreach (var objK in members)
       {

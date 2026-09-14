@@ -66,7 +66,7 @@ public sealed class OperationsReceiveBundleDispatchTests
         (Account _, string _, string _, string _, string dir, Func<string, bool>? _, CancellationToken _) =>
         {
           using var b = new BundleBuilder(s_app, "m", dir);
-          b.GetOrAddObject("o").SetProperties(new Dictionary<string, object?> { ["a"] = 1.0 }, "o");
+          b.SetProperties(b.GetOrAddObject("o"), new Dictionary<string, object?> { ["a"] = 1.0 }, "o");
           return Task.FromResult<IReadOnlyList<string>>(b.Build().Files);
         }
       );

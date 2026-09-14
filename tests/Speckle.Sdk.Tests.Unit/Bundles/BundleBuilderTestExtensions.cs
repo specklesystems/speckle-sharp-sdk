@@ -1,4 +1,5 @@
 using Speckle.Sdk.Bundles;
+using Speckle.Sdk.Bundles.Handles;
 
 namespace Speckle.Sdk.Tests.Unit.Bundles;
 
@@ -29,11 +30,11 @@ internal static class BundleBuilderTestExtensions
       || rootScalars is not null;
     if (describes)
     {
-      obj.SetProperties(properties, name, speckleType, sourceType, units, typeKey, rootScalars);
+      b.SetProperties(obj, properties, name, speckleType, sourceType, units, typeKey, rootScalars);
     }
     if (collection is not null)
     {
-      obj.Collection = collection;
+      b.InCollection(obj, collection);
     }
     return obj;
   }

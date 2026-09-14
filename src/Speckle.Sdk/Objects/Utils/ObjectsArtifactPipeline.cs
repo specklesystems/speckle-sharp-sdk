@@ -4,6 +4,9 @@ using Speckle.Sdk;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecContainer = Speckle.Bundle.Spec.Container;
+using SpecLevel = Speckle.Bundle.Spec.Level;
+using SpecMaterial = Speckle.Bundle.Spec.Material;
 
 namespace Speckle.Objects.Utils;
 
@@ -240,52 +243,44 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     return k;
   }
 
-  /// <summary>Interns a MATERIAL value-node (inline render value), writing it once. <paramref name="name"/> is the
-  /// authored material name (Rhino/Revit/AutoCAD material table entry) carried in the shared node <c>name</c> column
-  /// so receivers can recreate the host material under its original name instead of a colour-derived placeholder;
-  /// null = unnamed. It is NOT part of the intern key — dedup stays keyed on <paramref name="materialKey"/>.
-  /// <paramref name="emissive"/> is the packed ARGB emissive colour — NULL is the canonical "no emission" in the
-  /// bundle and consumers default it to black; a black RGB is normalized to NULL here, so producers may pass
-  /// <c>RenderMaterial.emissive</c> (black default) naively. <paramref name="ior"/> is the index of refraction
-  /// (null = the host has no IOR concept) — together the remaining universal PBR scalars [ENG-8791].</summary>
-  public int AddMaterial(
-    string materialKey,
-    string? name,
-    int argb,
-    double opacity,
-    double metalness,
-    double roughness,
-    int? emissive = null,
-    double? ior = null
-  )
+  /// <summary>Interns a MATERIAL value-node (inline render value), writing it once. <paramref name="fields"/> is the
+  /// MATERIAL row; its name is the authored host material name so receivers recreate the host material under it
+  /// instead of a colour-derived placeholder, and is NOT part of the intern key — dedup stays keyed on
+  /// <paramref name="materialKey"/>.</summary>
+  public int AddMaterial(string materialKey, SpecMaterial fields)
   {
-    // Black emission IS "no emission" (the alpha byte is meaningless on an emissive colour) — normalize to NULL so
-    // the column has one spelling of "off" and null-RLEs away, regardless of which producer sent it.
-    if (emissive is int e && (e & 0xFFFFFF) == 0)
-    {
-      emissive = null;
-    }
+    fields = NormalizeMaterial(fields);
     if (_nodeInterner.GetOrAdd("mat:" + materialKey, out var k))
     {
       _envelopeWriter.AddNode(
         k,
         NodeKind.Material,
-        name,
+        fields.Name,
         null,
         null,
         null,
         null,
-        argb,
-        opacity,
-        metalness,
-        roughness,
-        emissive,
-        ior,
+        fields.Argb,
+        fields.Opacity,
+        fields.Metalness,
+        fields.Roughness,
+        fields.Emissive,
+        fields.Ior,
         null
       );
     }
     return k;
   }
+
+  /// <summary>Black emission IS "no emission" (the alpha byte is meaningless on an emissive colour), so the column
+  /// keeps one spelling of "off" whichever producer sent it. Public because a caller that interns by key must
+  /// normalize before comparing a repeat against the stored row [ENG-8791].</summary>
+  // Rebuilt positionally, not `with`: the record's init setters are unusable across the assembly
+  // boundary (CS0570), which is also why the generated records are positional-only.
+  public static SpecMaterial NormalizeMaterial(SpecMaterial fields) =>
+    fields.Emissive is int e && (e & 0xFFFFFF) == 0
+      ? new SpecMaterial(fields.Name, fields.Argb, fields.Opacity, fields.Metalness, fields.Roughness, null, fields.Ior)
+      : fields;
 
   /// <summary>Interns a COLOR value-node (keyed by its argb), writing it once.</summary>
   public int AddColor(int argb)
@@ -313,14 +308,14 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   }
 
   /// <summary>Interns a LEVEL value-node (name + elevation), writing it once.</summary>
-  public int AddLevel(string levelKey, string? name, double elevation)
+  public int AddLevel(string levelKey, SpecLevel fields)
   {
     if (_nodeInterner.GetOrAdd("lvl:" + levelKey, out var k))
     {
       _envelopeWriter.AddNode(
         k,
         NodeKind.Level,
-        name,
+        fields.Name,
         null,
         null,
         null,
@@ -331,7 +326,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         null,
-        elevation
+        fields.Elevation
       );
     }
     return k;
@@ -339,64 +334,57 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
   /// <summary>Interns a scene-tree collection (layer / category / story) node, once. A collection is a
   /// CONTAINER node whose <c>subtype</c> carries its tag; <c>IN_COLLECTION</c> marks the grouping axis.
-  /// <paramref name="parentCollectionK"/> is the parent collection (null = top-level) — the parent chain IS
-  /// the source hierarchy. <paramref name="subtype"/> tags it (e.g. "Layer") for the loader.</summary>
-  public int AddCollection(
-    string collectionKey,
-    string? name,
-    int? parentCollectionK,
-    string? subtype,
-    string? ghTopology = null
-  )
+  /// <see cref="SpecContainer.DefRef"/> is the parent collection (null = top-level) — the parent chain IS the
+  /// source hierarchy. <see cref="SpecContainer.GhTopology"/> carries Grasshopper's data-tree paths so a tree
+  /// survives a round trip; null for every other producer.</summary>
+  public int AddCollection(string collectionKey, SpecContainer fields)
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
-      // ghTopology carries Grasshopper's data-tree paths for this collection
-      // (nodes.gh_topology) so a tree survives a round trip; null for every other producer.
       _envelopeWriter.AddNode(
         k,
         NodeKind.Container,
-        name,
-        parentCollectionK,
+        fields.Name,
+        fields.DefRef,
         null,
         null,
-        subtype,
-        null,
-        null,
-        null,
+        fields.Subtype,
         null,
         null,
         null,
         null,
-        ghTopology
+        null,
+        null,
+        null,
+        fields.GhTopology
       );
     }
     return k;
   }
 
   /// <summary>Interns a CONTAINER (semantic-topology bucket: model / room / system / …) node, once. Distinct
-  /// from <see cref="AddCollection"/> (authored scene-tree). <paramref name="parentContainerK"/> is its parent
-  /// CONTAINER (null = top-level; self-nesting for nested links). <paramref name="subtype"/> is the canonical
+  /// from <see cref="AddCollection"/> (authored scene-tree). <see cref="SpecContainer.Subtype"/> is the canonical
   /// axis tag (e.g. "Model") — use the SAME tag across connectors for the same concept.</summary>
-  public int AddContainer(string containerKey, string? name, int? parentContainerK, string? subtype)
+  public int AddContainer(string containerKey, SpecContainer fields)
   {
     if (_nodeInterner.GetOrAdd("cont:" + containerKey, out var k))
     {
       _envelopeWriter.AddNode(
         k,
         NodeKind.Container,
-        name,
-        parentContainerK,
+        fields.Name,
+        fields.DefRef,
         null,
         null,
-        subtype,
-        null,
-        null,
-        null,
+        fields.Subtype,
         null,
         null,
         null,
-        null
+        null,
+        null,
+        null,
+        null,
+        fields.GhTopology
       );
     }
     return k;
@@ -417,7 +405,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _envelopeWriter.AddRelation(RelKind.Solid, objectK, geometryK, ord);
 
   /// <summary>object → geometry: the element's authored location curve (axis). Prefer
-  /// <see cref="Speckle.Sdk.Bundles.BundleObject.AddCenterline"/>.</summary>
+  /// <see cref="Speckle.Sdk.Bundles.BundleBuilder.AddCenterline"/>.</summary>
   public void Centerline(int objectK, int geometryK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Centerline, objectK, geometryK, ord);
 

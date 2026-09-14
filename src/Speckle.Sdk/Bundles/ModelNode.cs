@@ -1,6 +1,10 @@
 using System.Globalization;
 using Speckle.Bundle.Spec;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
+using SpecContainer = Speckle.Bundle.Spec.Container;
+using SpecDefinition = Speckle.Bundle.Spec.Definition;
+using SpecLevel = Speckle.Bundle.Spec.Level;
+using SpecMaterial = Speckle.Bundle.Spec.Material;
 
 namespace Speckle.Sdk.Bundles;
 
@@ -59,9 +63,13 @@ public class ModelNode
 public sealed class ModelLevel : ModelNode
 {
   internal ModelLevel(Model model, int k, ArtefactNode node)
-    : base(model, k, node) { }
+    : base(model, k, node)
+  {
+    Fields = NodeFields.Level(k, node);
+  }
 
-  public double? Elevation => _node.Elevation;
+  /// <summary>The LEVEL row, projected onto the columns the spec declares for it.</summary>
+  public SpecLevel Fields { get; }
 
   /// <summary>Objects on this level (<c>ON_LEVEL</c> reversed).</summary>
   public IReadOnlyList<ModelObject> Objects => _model.ObjectsOnLevel(K);
@@ -71,33 +79,39 @@ public sealed class ModelLevel : ModelNode
 public sealed class ModelMaterial : ModelNode
 {
   internal ModelMaterial(Model model, int k, ArtefactNode node)
-    : base(model, k, node) { }
+    : base(model, k, node)
+  {
+    Fields = NodeFields.Material(k, node);
+  }
 
-  /// <summary>Diffuse colour, ARGB.</summary>
-  public int? Argb => _node.Argb;
-  public double? Opacity => _node.Opacity;
-  public double? Metalness => _node.Metalness;
-  public double? Roughness => _node.Roughness;
-
-  /// <summary>Emissive colour, ARGB.</summary>
-  public int? Emissive => _node.Emissive;
-  public double? Ior => _node.Ior;
+  /// <summary>The MATERIAL row, projected onto the columns the spec declares for it.</summary>
+  public SpecMaterial Fields { get; }
 }
 
 /// <summary>A flat colour (<c>COLOR</c>), deduplicated per bundle.</summary>
 public sealed class ModelColor : ModelNode
 {
   internal ModelColor(Model model, int k, ArtefactNode node)
-    : base(model, k, node) { }
+    : base(model, k, node)
+  {
+    Fields = NodeFields.Color(k, node);
+  }
 
-  public int Argb => _node.Argb ?? 0;
+  /// <summary>The COLOR row, projected onto the columns the spec declares for it.</summary>
+  public Bundle.Spec.Color Fields { get; }
 }
 
 /// <summary>A block / family definition (<c>DEFINITION</c>): shared geometry placed by <see cref="ModelInstance"/>s.</summary>
 public sealed class ModelDefinition : ModelNode
 {
   internal ModelDefinition(Model model, int k, ArtefactNode node)
-    : base(model, k, node) { }
+    : base(model, k, node)
+  {
+    Fields = NodeFields.Definition(node);
+  }
+
+  /// <summary>The DEFINITION row, projected onto the columns the spec declares for it.</summary>
+  public SpecDefinition Fields { get; }
 
   /// <summary>Every placement of this definition.</summary>
   public IReadOnlyList<ModelInstance> Placements => _model.PlacementsOfDefinition(K);
@@ -155,14 +169,20 @@ public sealed class ModelInstance : ModelNode
 public sealed class ModelContainer : ModelNode
 {
   internal ModelContainer(Model model, int k, ArtefactNode node)
-    : base(model, k, node) { }
+    : base(model, k, node)
+  {
+    Fields = NodeFields.Container(node);
+  }
+
+  /// <summary>The CONTAINER row, projected onto the columns the spec declares for it.</summary>
+  public SpecContainer Fields { get; }
 
   /// <summary>Container flavour as the producer wrote it: <c>Collection</c>, <c>Layer</c>, <c>Folder</c>, <c>Model</c>,
   /// <c>MEP System</c>, <c>Network</c>, <c>Group</c> … Null on bundles written before the column existed.</summary>
-  public string? Subtype => _node.Subtype;
+  public string? Subtype => Fields.Subtype;
 
   /// <summary>Grasshopper data-tree topology (<c>nodes.gh_topology</c>) for containers a GH send wrote; null otherwise.</summary>
-  public string? GhTopology => _node.GhTopology;
+  public string? GhTopology => Fields.GhTopology;
 
   /// <summary>The enclosing container. Null at the root.</summary>
   public ModelContainer? Parent => _model.NodeOrNull(_node.DefRef) as ModelContainer;
@@ -175,7 +195,4 @@ public sealed class ModelContainer : ModelNode
 
   /// <summary>Child containers.</summary>
   public IReadOnlyList<ModelContainer> Children => _model.ChildContainers(K);
-
-  /// <summary>Legacy container colour stamped directly on the row (pre-<c>NODE_HAS_COLOR</c> bundles), ARGB.</summary>
-  public int? Argb => _node.Argb;
 }
