@@ -20,5 +20,8 @@ public sealed class BundleContainer : BundleNode
   /// <summary>The parent handle behind <see cref="SpecContainer.DefRef"/>.</summary>
   public BundleContainer? Parent { get; }
 
+  internal BundleMaterial? NodeMaterial;
+  internal BundleColor? NodeColor;
+
   public override string ToString() => $"{Fields.Subtype} '{Fields.Name}'";
 }

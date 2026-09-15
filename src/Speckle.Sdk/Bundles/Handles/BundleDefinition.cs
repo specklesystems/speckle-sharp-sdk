@@ -18,4 +18,8 @@ public sealed class BundleDefinition : BundleNode
 
   /// <summary>The DEFINITION row this handle points at.</summary>
   public SpecDefinition Fields { get; }
+
+  // One authored sequence numbers geometry and members alike, so both counters advance together.
+  internal int GeometryOrd;
+  internal int MemberOrd;
 }

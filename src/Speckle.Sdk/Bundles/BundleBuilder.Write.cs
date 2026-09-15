@@ -4,51 +4,11 @@ using Speckle.Sdk.Models;
 namespace Speckle.Sdk.Bundles;
 
 /// <summary>
-/// Everything that writes an edge or a row for an already-interned entity. The entities themselves carry no writer,
-/// so this is the only place a bundle is mutated — and the only place that holds the per-entity ordinals and the
-/// write-once state a single-valued relation needs.
+/// Everything that writes an edge or a row for an already-interned entity. The handles carry no writer, so this is
+/// the only place a bundle is mutated; the per-entity ordinals and write-once slots live on the handle itself.
 /// </summary>
 public sealed partial class BundleBuilder
 {
-  private readonly Dictionary<int, ObjectState> _objectState = new();
-  private readonly Dictionary<int, DefinitionState> _definitionState = new();
-  private readonly Dictionary<int, int> _nodeMaterial = new();
-  private readonly Dictionary<int, int> _nodeColor = new();
-
-  private sealed class ObjectState
-  {
-    public readonly List<BundleGeometry> Geometries = new();
-    public int DisplayOrd;
-    public int SolidOrd;
-    public int CenterlineOrd;
-    public int PlacementOrd;
-    public int ChildOrd;
-    public int AssemblyMemberOrd;
-    public bool PropertiesWritten;
-    public BundleContainer? Collection;
-    public BundleContainer? Model;
-    public BundleContainer? System;
-    public BundleLevel? Level;
-    public BundleMaterial? Material;
-    public BundleColor? Color;
-    public BundleObject? Parent;
-    public BundleObject? Assembly;
-    public BundleObject? Host;
-    public BundleObject? Room;
-  }
-
-  private sealed class DefinitionState
-  {
-    public int GeometryOrd;
-    public int MemberOrd;
-  }
-
-  private ObjectState State(BundleObject obj) =>
-    _objectState.TryGetValue(obj.K, out var s) ? s : _objectState[obj.K] = new ObjectState();
-
-  private DefinitionState State(BundleDefinition definition) =>
-    _definitionState.TryGetValue(definition.K, out var s) ? s : _definitionState[definition.K] = new DefinitionState();
-
   // ── properties ────────────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>
@@ -74,15 +34,14 @@ public sealed partial class BundleBuilder
     IEnumerable<KeyValuePair<string, object?>>? rootScalars = null
   )
   {
-    var state = State(obj);
-    if (state.PropertiesWritten)
+    if (obj.PropertiesWritten)
     {
       throw new InvalidOperationException(
         $"Properties for '{obj.ApplicationId}' were already written; an object's properties are written once."
       );
     }
     WriteProperties(obj, properties, name, speckleType, sourceType, units, typeKey, rootScalars);
-    state.PropertiesWritten = true;
+    obj.PropertiesWritten = true;
     obj.Name = name;
     return obj;
   }
@@ -90,25 +49,25 @@ public sealed partial class BundleBuilder
   // ── object geometry ───────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>The assembly <paramref name="obj"/> was declared a member of, if any.</summary>
-  public BundleObject? AssemblyOf(BundleObject obj) => State(obj).Assembly;
+  public BundleObject? AssemblyOf(BundleObject obj) => obj.Assembly;
 
   /// <summary>Whether <see cref="SetProperties"/> has run for <paramref name="obj"/>.</summary>
-  public bool PropertiesWritten(BundleObject obj) => State(obj).PropertiesWritten;
+  public bool PropertiesWritten(BundleObject obj) => obj.PropertiesWritten;
 
   /// <summary>Geometry written for <paramref name="obj"/> so far, in call order. Excludes centerlines.</summary>
-  public IReadOnlyList<BundleGeometry> GeometriesOf(BundleObject obj) => State(obj).Geometries;
+  public IReadOnlyList<BundleGeometry> GeometriesOf(BundleObject obj) =>
+    obj.Geometries ?? (IReadOnlyList<BundleGeometry>)Array.Empty<BundleGeometry>();
 
   /// <summary>Render geometry (<c>DISPLAY</c>), SGEO-encoded now. Ordinal = call order, counted per relation:
   /// an object's first display mesh is ord 0 whether or not a solid preceded it.</summary>
   public BundleGeometry AddGeometry(BundleObject obj, Base geometry, string? geometryKey = null)
   {
-    var state = State(obj);
-    int ord = state.DisplayOrd++;
+    int ord = obj.DisplayOrd++;
     string key = geometryKey ?? $"{obj.ApplicationId}:g{ord}";
     int gK = Pipeline.AddGeometry(key, geometry);
     Pipeline.Display(obj.K, gK, ord);
     var g = RegisterGeometry(key, new BundleGeometry(gK, ord));
-    state.Geometries.Add(g);
+    (obj.Geometries ??= new()).Add(g);
     return g;
   }
 
@@ -116,13 +75,12 @@ public sealed partial class BundleBuilder
   /// host that can import them bakes the real solid instead of the display mesh.</summary>
   public BundleGeometry AddRawGeometry(BundleObject obj, byte[] content, string type, string? geometryKey = null)
   {
-    var state = State(obj);
-    int ord = state.SolidOrd++;
+    int ord = obj.SolidOrd++;
     string key = geometryKey ?? $"{obj.ApplicationId}:raw{ord}";
     int gK = Pipeline.AddRawGeometry(key, content, type);
     Pipeline.Solid(obj.K, gK, ord);
     var g = RegisterGeometry(key, new BundleGeometry(gK, ord));
-    state.Geometries.Add(g);
+    (obj.Geometries ??= new()).Add(g);
     return g;
   }
 
@@ -137,8 +95,7 @@ public sealed partial class BundleBuilder
   /// </remarks>
   public BundleGeometry AddCenterline(BundleObject obj, Base curve, string? geometryKey = null)
   {
-    var state = State(obj);
-    int ord = state.CenterlineOrd++;
+    int ord = obj.CenterlineOrd++;
     string key = geometryKey ?? $"{obj.ApplicationId}:cl{ord}";
     int gK = Pipeline.AddGeometry(key, curve);
     Pipeline.Centerline(obj.K, gK, ord);
@@ -155,8 +112,7 @@ public sealed partial class BundleBuilder
     string? key = null
   )
   {
-    var state = State(obj);
-    int ord = state.PlacementOrd++;
+    int ord = obj.PlacementOrd++;
     int instK = Pipeline.AddInstance(key ?? $"{obj.ApplicationId}:inst{ord}", definition.K, transform, units ?? Units);
     Pipeline.DisplayInstance(obj.K, instK, ord);
     return new BundleInstance(instK, definition);
@@ -173,8 +129,7 @@ public sealed partial class BundleBuilder
     int? memberOrd = null
   )
   {
-    var state = State(definition);
-    int ord = memberOrd ?? state.GeometryOrd++;
+    int ord = memberOrd ?? definition.GeometryOrd++;
     int gK = Pipeline.AddGeometry(geometryKey ?? $"{definition.Key}:g{ord}", geometry);
     Pipeline.Defines(definition.K, gK, ord);
     return new BundleGeometry(gK, ord);
@@ -189,8 +144,7 @@ public sealed partial class BundleBuilder
     int? memberOrd = null
   )
   {
-    var state = State(definition);
-    int ord = memberOrd ?? state.GeometryOrd++;
+    int ord = memberOrd ?? definition.GeometryOrd++;
     int gK = Pipeline.AddRawGeometry(geometryKey ?? $"{definition.Key}:raw{ord}", content, type);
     Pipeline.Defines(definition.K, gK, ord);
     return new BundleGeometry(gK, ord);
@@ -205,8 +159,7 @@ public sealed partial class BundleBuilder
     string? key = null
   )
   {
-    var state = State(definition);
-    int ord = state.GeometryOrd++;
+    int ord = definition.GeometryOrd++;
     int instK = Pipeline.AddInstance(key ?? $"{definition.Key}:inst{ord}", nested.K, transform, units);
     Pipeline.DefinesInstance(definition.K, instK, ord);
     return new BundleInstance(instK, nested);
@@ -291,15 +244,13 @@ public sealed partial class BundleBuilder
   /// geometry, which is what survives content-hash geometry dedup.</summary>
   public int NextMemberOrdinal(BundleDefinition definition)
   {
-    var state = State(definition);
-    return Math.Max(state.GeometryOrd, state.MemberOrd);
+    return Math.Max(definition.GeometryOrd, definition.MemberOrd);
   }
 
   private void Bump(BundleDefinition definition, int ord)
   {
-    var state = State(definition);
-    state.MemberOrd = Math.Max(state.MemberOrd, ord + 1);
-    state.GeometryOrd = Math.Max(state.GeometryOrd, ord + 1);
+    definition.MemberOrd = Math.Max(definition.MemberOrd, ord + 1);
+    definition.GeometryOrd = Math.Max(definition.GeometryOrd, ord + 1);
   }
 
   // ── geometry appearance ───────────────────────────────────────────────────────────────────────────────
@@ -316,78 +267,72 @@ public sealed partial class BundleBuilder
   /// <summary>Authored scene-tree container (<c>IN_COLLECTION</c>).</summary>
   public void InCollection(BundleObject obj, BundleContainer collection)
   {
-    var state = State(obj);
-    if (ReferenceEquals(state.Collection, collection))
+    if (ReferenceEquals(obj.Collection, collection))
     {
       return;
     }
-    ThrowIfAlreadySet(state.Collection);
-    state.Collection = collection;
+    ThrowIfAlreadySet(obj.Collection);
+    obj.Collection = collection;
     Pipeline.InCollection(obj.K, collection.K, 0);
   }
 
   /// <summary>Federated-model container (<c>IN_MODEL</c>): the Revit host / linked model the object came from.</summary>
   public void InModel(BundleObject obj, BundleContainer model)
   {
-    var state = State(obj);
-    if (ReferenceEquals(state.Model, model))
+    if (ReferenceEquals(obj.Model, model))
     {
       return;
     }
-    ThrowIfAlreadySet(state.Model);
-    state.Model = model;
+    ThrowIfAlreadySet(obj.Model);
+    obj.Model = model;
     Pipeline.InModel(obj.K, model.K, 0);
   }
 
   /// <summary>MEP system / network container (<c>IN_SYSTEM</c>).</summary>
   public void InSystem(BundleObject obj, BundleContainer system)
   {
-    var state = State(obj);
-    if (ReferenceEquals(state.System, system))
+    if (ReferenceEquals(obj.System, system))
     {
       return;
     }
-    ThrowIfAlreadySet(state.System);
-    state.System = system;
+    ThrowIfAlreadySet(obj.System);
+    obj.System = system;
     Pipeline.InSystem(obj.K, system.K, 0);
   }
 
   /// <summary>Storey (<c>ON_LEVEL</c>).</summary>
   public void OnLevel(BundleObject obj, BundleLevel level)
   {
-    var state = State(obj);
-    if (ReferenceEquals(state.Level, level))
+    if (ReferenceEquals(obj.Level, level))
     {
       return;
     }
-    ThrowIfAlreadySet(state.Level);
-    state.Level = level;
+    ThrowIfAlreadySet(obj.Level);
+    obj.Level = level;
     Pipeline.OnLevel(obj.K, level.K);
   }
 
   /// <summary>Object-plane material (<c>OBJECT_HAS_MATERIAL</c>): fills where a geometry has none of its own.</summary>
   public void ObjectHasMaterial(BundleObject obj, BundleMaterial material)
   {
-    var state = State(obj);
-    if (ReferenceEquals(state.Material, material))
+    if (ReferenceEquals(obj.Material, material))
     {
       return;
     }
-    ThrowIfAlreadySet(state.Material);
-    state.Material = material;
+    ThrowIfAlreadySet(obj.Material);
+    obj.Material = material;
     Pipeline.ObjectHasMaterial(obj.K, material.K);
   }
 
   /// <summary>Object-plane colour (<c>OBJECT_HAS_COLOR</c>): overrides the geometry's own.</summary>
   public void ObjectHasColor(BundleObject obj, BundleColor color)
   {
-    var state = State(obj);
-    if (ReferenceEquals(state.Color, color))
+    if (ReferenceEquals(obj.Color, color))
     {
       return;
     }
-    ThrowIfAlreadySet(state.Color);
-    state.Color = color;
+    ThrowIfAlreadySet(obj.Color);
+    obj.Color = color;
     Pipeline.ObjectHasColor(obj.K, color.K);
   }
 
@@ -398,11 +343,11 @@ public sealed partial class BundleBuilder
   /// Weakest tier of the material ladder — geometry, then object, then this.</summary>
   public void NodeHasMaterial(BundleContainer node, BundleMaterial material)
   {
-    if (_nodeMaterial.TryGetValue(node.K, out int already) && already == material.K)
+    if (ReferenceEquals(node.NodeMaterial, material))
     {
       return;
     }
-    _nodeMaterial[node.K] = material.K;
+    node.NodeMaterial = material;
     Pipeline.NodeHasMaterial(node.K, material.K);
   }
 
@@ -410,11 +355,11 @@ public sealed partial class BundleBuilder
   /// nothing more specific does.</summary>
   public void NodeHasColor(BundleContainer node, BundleColor color)
   {
-    if (_nodeColor.TryGetValue(node.K, out int already) && already == color.K)
+    if (ReferenceEquals(node.NodeColor, color))
     {
       return;
     }
-    _nodeColor[node.K] = color.K;
+    node.NodeColor = color;
     Pipeline.NodeHasColor(node.K, color.K);
   }
 
@@ -424,21 +369,19 @@ public sealed partial class BundleBuilder
   /// <paramref name="ord"/> is the child's position; null = next.</summary>
   public void Subelement(BundleObject parent, BundleObject child, int? ord = null)
   {
-    var childState = State(child);
-    if (childState.Parent is not null)
+    if (child.Parent is not null)
     {
-      if (ReferenceEquals(childState.Parent, parent))
+      if (ReferenceEquals(child.Parent, parent))
       {
         return;
       }
       throw new InvalidOperationException(
-        $"Object '{child.ApplicationId}' already has parent '{childState.Parent.ApplicationId}'; a bundle edge cannot be retracted."
+        $"Object '{child.ApplicationId}' already has parent '{child.Parent.ApplicationId}'; a bundle edge cannot be retracted."
       );
     }
-    var parentState = State(parent);
-    int o = ord ?? parentState.ChildOrd;
-    parentState.ChildOrd = Math.Max(parentState.ChildOrd, o + 1);
-    childState.Parent = parent;
+    int o = ord ?? parent.ChildOrd;
+    parent.ChildOrd = Math.Max(parent.ChildOrd, o + 1);
+    child.Parent = parent;
     Pipeline.Subelement(parent.K, child.K, o);
   }
 
@@ -448,47 +391,43 @@ public sealed partial class BundleBuilder
   /// belongs to one assembly.</summary>
   public void InAssembly(BundleObject assembly, BundleObject member, int? ord = null)
   {
-    var memberState = State(member);
-    if (memberState.Assembly is not null)
+    if (member.Assembly is not null)
     {
-      if (ReferenceEquals(memberState.Assembly, assembly))
+      if (ReferenceEquals(member.Assembly, assembly))
       {
         return;
       }
       throw new InvalidOperationException(
-        $"Object '{member.ApplicationId}' is already a member of assembly '{memberState.Assembly.ApplicationId}'; a bundle edge cannot be retracted."
+        $"Object '{member.ApplicationId}' is already a member of assembly '{member.Assembly.ApplicationId}'; a bundle edge cannot be retracted."
       );
     }
-    var assemblyState = State(assembly);
-    int o = ord ?? assemblyState.AssemblyMemberOrd;
-    assemblyState.AssemblyMemberOrd = Math.Max(assemblyState.AssemblyMemberOrd, o + 1);
-    memberState.Assembly = assembly;
+    int o = ord ?? assembly.AssemblyMemberOrd;
+    assembly.AssemblyMemberOrd = Math.Max(assembly.AssemblyMemberOrd, o + 1);
+    member.Assembly = assembly;
     Pipeline.InAssembly(member.K, assembly.K, o);
   }
 
   /// <summary>Host (<c>HOSTED_ON</c>): the wall a door is placed on. Not ownership.</summary>
   public void HostedOn(BundleObject obj, BundleObject host)
   {
-    var state = State(obj);
-    if (ReferenceEquals(state.Host, host))
+    if (ReferenceEquals(obj.Host, host))
     {
       return;
     }
-    ThrowIfAlreadySet(state.Host);
-    state.Host = host;
+    ThrowIfAlreadySet(obj.Host);
+    obj.Host = host;
     Pipeline.HostedOn(obj.K, host.K);
   }
 
   /// <summary>Containing room object (<c>IN_ROOM</c>).</summary>
   public void InRoom(BundleObject obj, BundleObject room)
   {
-    var state = State(obj);
-    if (ReferenceEquals(state.Room, room))
+    if (ReferenceEquals(obj.Room, room))
     {
       return;
     }
-    ThrowIfAlreadySet(state.Room);
-    state.Room = room;
+    ThrowIfAlreadySet(obj.Room);
+    obj.Room = room;
     Pipeline.InRoom(obj.K, room.K, 0);
   }
 
