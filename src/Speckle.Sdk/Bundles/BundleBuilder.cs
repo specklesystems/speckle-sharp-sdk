@@ -39,6 +39,7 @@ namespace Speckle.Sdk.Bundles;
 /// and a repeat with different attributes throws (a key collision with different content would be a corrupt bundle).
 /// <c>Add…</c> appends a row every call (geometry, model properties, results, camera views). Verbs and property
 /// setters (<c>Place</c>, <c>ConnectTo</c>, <c>Host =</c>) emit one edge each. Edge ordinals follow call order.
+/// Every handle verb has a builder-side spelling too (<c>b.AddGeometry(wall, mesh)</c>); see BundleBuilder.Write.cs.
 /// </remarks>
 public sealed partial class BundleBuilder : IDisposable
 {
@@ -130,7 +131,7 @@ public sealed partial class BundleBuilder : IDisposable
       Same(key, existing.Fields, fields, "fields");
       return existing;
     }
-    var c = new BundleContainer(Pipeline.AddCollection(key, fields), fields, parent);
+    var c = new BundleContainer(this, Pipeline.AddCollection(key, fields), key, fields, parent);
     _containers[key] = c;
     return c;
   }
@@ -146,7 +147,7 @@ public sealed partial class BundleBuilder : IDisposable
   {
     if (!_objects.TryGetValue(applicationId, out var obj))
     {
-      obj = new BundleObject(Pipeline.InternObject(applicationId), applicationId);
+      obj = new BundleObject(this, Pipeline.InternObject(applicationId), applicationId);
       _objects[applicationId] = obj;
     }
     return obj;
@@ -220,7 +221,7 @@ public sealed partial class BundleBuilder : IDisposable
       Same(key, existing.Fields, fields, "fields");
       return existing;
     }
-    var m = new BundleMaterial(Pipeline.AddMaterial(key, fields), fields);
+    var m = new BundleMaterial(this, Pipeline.AddMaterial(key, fields), key, fields);
     _materials[key] = m;
     return m;
   }
@@ -232,7 +233,7 @@ public sealed partial class BundleBuilder : IDisposable
     {
       return existing;
     }
-    var c = new BundleColor(Pipeline.AddColor(argb), new SpecColor(argb));
+    var c = new BundleColor(this, Pipeline.AddColor(argb), new SpecColor(argb));
     _colors[argb] = c;
     return c;
   }
@@ -245,7 +246,7 @@ public sealed partial class BundleBuilder : IDisposable
       Same(key, existing.Fields, fields, "fields");
       return existing;
     }
-    var l = new BundleLevel(Pipeline.AddLevel(key, fields), fields);
+    var l = new BundleLevel(this, Pipeline.AddLevel(key, fields), key, fields);
     _levels[key] = l;
     return l;
   }
@@ -263,7 +264,7 @@ public sealed partial class BundleBuilder : IDisposable
       return existing;
     }
     // def_ref is declared for DEFINITION in the spec but written by no producer.
-    var d = new BundleDefinition(Pipeline.AddDefinition(key, name), key, new SpecDefinition(name, null));
+    var d = new BundleDefinition(this, Pipeline.AddDefinition(key, name), key, new SpecDefinition(name, null));
     _definitions[key] = d;
     populate?.Invoke(d);
     return d;

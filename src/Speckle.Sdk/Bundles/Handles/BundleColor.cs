@@ -4,8 +4,8 @@ namespace Speckle.Sdk.Bundles.Handles;
 
 public sealed class BundleColor : BundleNode
 {
-  internal BundleColor(int k, SpecColor fields)
-    : base(k)
+  internal BundleColor(BundleBuilder builder, int k, SpecColor fields)
+    : base(builder, k)
   {
     Fields = fields;
   }
