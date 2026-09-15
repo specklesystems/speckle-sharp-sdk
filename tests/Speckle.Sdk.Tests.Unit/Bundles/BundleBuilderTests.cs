@@ -50,10 +50,10 @@ public sealed class BundleBuilderTests : IDisposable
     // DISPLAY ord 0 — the two relations never share a counter.
     using var b = new BundleBuilder(s_app, "m", _dir);
     var o = b.GetOrAddObject("pipe-1");
-    b.SetProperties(o, new Dictionary<string, object?>(), "pipe");
-    var solid = b.AddRawGeometry(o, [1, 2, 3], "3dm");
-    var display = b.AddGeometry(o, Tri());
-    var display2 = b.AddGeometry(o, Tri(1));
+    o.SetProperties(new Dictionary<string, object?>(), "pipe");
+    var solid = o.AddRawGeometry([1, 2, 3], "3dm");
+    var display = o.AddGeometry(Tri());
+    var display2 = o.AddGeometry(Tri(1));
 
     Assert.Equal(0, solid.Ord);
     Assert.Equal(0, display.Ord);
@@ -78,7 +78,7 @@ public sealed class BundleBuilderTests : IDisposable
         speckleType: "Objects.Data.DataObject",
         sourceType: "Walls"
       );
-      b.AddGeometry(wall, Tri());
+      wall.AddGeometry(Tri());
       b.GetOrAddObject("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
       // interning: same id twice is one object
       Assert.Same(wall, b.GetOrAddObject("wall-1", walls, null));
@@ -112,24 +112,24 @@ public sealed class BundleBuilderTests : IDisposable
       var concrete = b.GetOrAddMaterial("mat-1", new("Concrete", unchecked((int)0xFF808080), 1, 0, 0.8, null, null));
       var red = b.GetOrAddColor(unchecked((int)0xFFFF0000));
       var l1 = b.GetOrAddLevel("L1", new("Level 1", 3.0));
-      b.NodeHasColor(layer, red); // node plane
+      layer.Color = red; // node plane
 
       var wall = b.GetOrAddObject("wall-1", layer, null, name: "Wall");
-      b.HasMaterial(b.AddGeometry(wall, Tri()), concrete); // geometry plane
-      b.OnLevel(wall, l1);
+      wall.AddGeometry(Tri()).Material = concrete; // geometry plane
+      wall.Level = l1;
       var door = b.GetOrAddObject("door-1", layer, null, name: "Door");
-      b.Subelement(wall, door);
-      b.HostedOn(door, wall);
-      b.ObjectHasColor(door, red); // object plane
-      b.OnLevel(door, l1);
+      wall.AddChild(door);
+      door.Host = wall;
+      door.Color = red; // object plane
+      door.Level = l1;
       var room = b.GetOrAddObject("room-1", layer, null, name: "Office");
-      b.Bounds(wall, room);
-      b.InRoom(door, room);
+      wall.Bounds(room);
+      door.Room = room;
       var a = b.GetOrAddObject("pipe-a", layer, null);
       var c = b.GetOrAddObject("pipe-b", layer, null);
-      b.ConnectsTo(a, c);
+      a.ConnectTo(c);
       var group = b.GetOrAddContainer("grp-1", "Group A", null, "Group");
-      b.InGroup(wall, group);
+      wall.AddToGroup(group);
       Assert.Same(
         concrete,
         b.GetOrAddMaterial("mat-1", new("Concrete", unchecked((int)0xFF808080), 1, 0, 0.8, null, null))
@@ -171,13 +171,13 @@ public sealed class BundleBuilderTests : IDisposable
       var chairDef = b.GetOrAddDefinition(
         "def-chair",
         "Chair",
-        d => b.HasMaterial(b.AddGeometry(d, Tri()), b.GetOrAddMaterial("m", new("Fabric", 0, 1, 0, 1, null, null)))
+        d => d.AddGeometry(Tri()).Material = b.GetOrAddMaterial("m", new("Fabric", 0, 1, 0, 1, null, null))
       );
       double[] t = [1, 0, 0, 10, 0, 1, 0, 20, 0, 0, 1, 0, 0, 0, 0, 1];
       var chair1 = b.GetOrAddObject("chair-1", layer, null, name: "Chair 1");
-      b.Place(chair1, chairDef, t);
+      chair1.Place(chairDef, t);
       var chair2 = b.GetOrAddObject("chair-2", layer, null, name: "Chair 2");
-      b.Place(chair2, chairDef, t);
+      chair2.Place(chairDef, t);
       Assert.Same(chairDef, b.GetOrAddDefinition("def-chair", null)); // a placement knows only the id
       Assert.Throws<InvalidOperationException>(() => b.GetOrAddDefinition("def-chair", "x")); // key collision
 
@@ -189,8 +189,8 @@ public sealed class BundleBuilderTests : IDisposable
         new Dictionary<string, object?> { ["material"] = "oak" },
         name: "Top"
       );
-      b.AddMember(tableDef, top, [Tri(5)]);
-      b.Place(b.GetOrAddObject("table-1", layer, null, name: "Table 1"), tableDef, t);
+      tableDef.AddMember(top, [Tri(5)]);
+      b.GetOrAddObject("table-1", layer, null, name: "Table 1").Place(tableDef, t);
     });
 
     var chair1 = model.ObjectByApplicationId("chair-1")!;
@@ -223,8 +223,8 @@ public sealed class BundleBuilderTests : IDisposable
         name: "W",
         rootScalars: [new("category", "Walls"), new("family", "Basic")]
       );
-      b.InModel(o, host);
-      b.OnLevel(o, l1);
+      o.Model = host;
+      o.Level = l1;
       b.SceneView(
         "Default",
         isDefault: true,
@@ -267,8 +267,8 @@ public sealed class BundleBuilderTests : IDisposable
       // a frame connects to a joint that is only described later (CSi pattern)
       var frame = b.GetOrAddObject("frame-1", layer, null, name: "Frame");
       var joint = b.GetOrAddObject("joint-1", null, null); // reference only
-      b.ConnectsTo(frame, joint);
-      Assert.False(b.PropertiesWritten(joint));
+      frame.ConnectTo(joint);
+      Assert.False(joint.PropertiesWritten);
 
       var described = b.GetOrAddObject(
         "joint-1",
@@ -277,7 +277,7 @@ public sealed class BundleBuilderTests : IDisposable
         name: "Joint 1"
       );
       Assert.Same(joint, described);
-      Assert.True(b.PropertiesWritten(joint));
+      Assert.True(joint.PropertiesWritten);
       Assert.Equal("Joint 1", joint.Name);
       Assert.Throws<InvalidOperationException>(() => b.GetOrAddObject("joint-1", null, null, name: "again"));
       Assert.Same(joint, b.GetOrAddObject("joint-1", null, null)); // bare reference still fine
@@ -300,10 +300,10 @@ public sealed class BundleBuilderTests : IDisposable
       var c2 = b.GetOrAddObject("c2", layer, null, name: "C2");
       var c0 = b.GetOrAddObject("c0", layer, null, name: "C0");
       var c1 = b.GetOrAddObject("c1", layer, null, name: "C1");
-      b.Subelement(assembly, c2, ord: 2);
-      b.Subelement(assembly, c0, ord: 0);
-      b.Subelement(assembly, c1); // next ordinal after the explicit ones → 3; ordering below is by ordinal
-      Assert.Throws<InvalidOperationException>(() => b.Subelement(b.GetOrAddObject("other", layer, null), c0));
+      assembly.AddChild(c2, ord: 2);
+      assembly.AddChild(c0, ord: 0);
+      assembly.AddChild(c1); // next ordinal after the explicit ones → 3; ordering below is by ordinal
+      Assert.Throws<InvalidOperationException>(() => b.GetOrAddObject("other", layer, null).AddChild(c0));
     });
 
     var asm = model.ObjectByApplicationId("asm")!;
@@ -322,22 +322,22 @@ public sealed class BundleBuilderTests : IDisposable
       // Rhino-shaped: the block's contents are objects with their own layer + properties + geometry
       var chairDef = b.GetOrAddDefinition("def-chair", "Chair");
       var seat = b.GetOrAddObject("seat", layer, new Dictionary<string, object?> { ["part"] = "seat" }, name: "Seat");
-      foreach (var g in b.AddMember(chairDef, seat, [Tri()]))
+      foreach (var g in chairDef.AddMember(seat, [Tri()]))
       {
-        b.HasMaterial(g, steel);
+        g.Material = steel;
       }
       var leg = b.GetOrAddObject("leg", layer, new Dictionary<string, object?> { ["part"] = "leg" }, name: "Leg");
-      var legGeometry = b.AddMember(chairDef, leg, [Tri(1), Tri(2)]);
+      var legGeometry = chairDef.AddMember(leg, [Tri(1), Tri(2)]);
       Assert.Equal(legGeometry[0].Ord, legGeometry[1].Ord); // one member, one ordinal, two meshes
 
       // a block inside the block
-      var boltDef = b.GetOrAddDefinition("def-bolt", "Bolt", d => b.AddGeometry(d, Tri(9)));
+      var boltDef = b.GetOrAddDefinition("def-bolt", "Bolt", d => d.AddGeometry(Tri(9)));
       var bolt = b.GetOrAddObject("bolt-in-chair", layer, null, name: "Bolt");
       double[] t = [1, 0, 0, 0.1, 0, 1, 0, 0.2, 0, 0, 1, 0, 0, 0, 0, 1];
-      b.AddMemberPlacement(chairDef, bolt, boltDef, t);
+      chairDef.AddMemberPlacement(bolt, boltDef, t);
 
       double[] place = [1, 0, 0, 10, 0, 1, 0, 20, 0, 0, 1, 0, 0, 0, 0, 1];
-      b.Place(b.GetOrAddObject("chair-1", layer, null, name: "Chair 1"), chairDef, place);
+      b.GetOrAddObject("chair-1", layer, null, name: "Chair 1").Place(chairDef, place);
     });
 
     var seat = model.ObjectByApplicationId("seat")!;
@@ -365,11 +365,11 @@ public sealed class BundleBuilderTests : IDisposable
       var layer = b.GetOrAddContainerPath(["L"]);
       // Revit-shaped: an element's mesh is written under the element; the family symbol references the same blob
       var element = b.GetOrAddObject("el-1", layer, null, name: "Element");
-      b.AddGeometry(element, Tri(), geometryKey: "mesh-A");
+      element.AddGeometry(Tri(), geometryKey: "mesh-A");
       var symbol = b.GetOrAddDefinition("sym", "Symbol");
       Assert.True(b.TryGetGeometry("mesh-A", out var shared));
-      b.AddExistingGeometry(symbol, shared);
-      b.Place(b.GetOrAddObject("inst-1", layer, null), symbol, [1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+      symbol.AddExistingGeometry(shared);
+      b.GetOrAddObject("inst-1", layer, null).Place(symbol, [1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
       Assert.False(b.TryGetGeometry("nope", out _));
     });
 
@@ -464,8 +464,8 @@ public sealed class BundleBuilderTests : IDisposable
 
     using var model = await BuildAndRead(b =>
     {
-      b.SetProperties(b.GetOrAddObject("wall-1"), WallProps(), "Basic Wall", typeKey: "type-basic-wall");
-      b.SetProperties(b.GetOrAddObject("wall-2"), WallProps(), "Basic Wall", typeKey: "type-basic-wall");
+      b.GetOrAddObject("wall-1").SetProperties(WallProps(), "Basic Wall", typeKey: "type-basic-wall");
+      b.GetOrAddObject("wall-2").SetProperties(WallProps(), "Basic Wall", typeKey: "type-basic-wall");
     });
 
     foreach (var id in new[] { "wall-1", "wall-2" })
@@ -492,11 +492,11 @@ public sealed class BundleBuilderTests : IDisposable
       var plate = b.GetOrAddObject("plate", null, null);
       var boltA = b.GetOrAddObject("bolt-a", null, null);
       var boltB = b.GetOrAddObject("bolt-b", null, null);
-      b.InAssembly(assembly, plate); // ord 0 = main member
-      b.InAssembly(assembly, boltB, ord: 2);
-      b.InAssembly(assembly, boltA, ord: 1);
-      b.InAssembly(assembly, plate); // idempotent
-      Assert.Same(assembly, b.AssemblyOf(plate));
+      assembly.AddAssemblyMember(plate); // ord 0 = main member
+      assembly.AddAssemblyMember(boltB, ord: 2);
+      assembly.AddAssemblyMember(boltA, ord: 1);
+      assembly.AddAssemblyMember(plate); // idempotent
+      Assert.Same(assembly, plate.Assembly);
     });
 
     var asm = model.ObjectByApplicationId("asm")!;
@@ -513,8 +513,8 @@ public sealed class BundleBuilderTests : IDisposable
     var a1 = b.GetOrAddObject("a1", null, null);
     var a2 = b.GetOrAddObject("a2", null, null);
     var member = b.GetOrAddObject("m", null, null);
-    b.InAssembly(a1, member);
-    Assert.Throws<InvalidOperationException>(() => b.InAssembly(a2, member));
+    a1.AddAssemblyMember(member);
+    Assert.Throws<InvalidOperationException>(() => a2.AddAssemblyMember(member));
   }
 
   [Fact]
@@ -539,8 +539,8 @@ public sealed class BundleBuilderTests : IDisposable
     var a = b.GetOrAddContainerPath(["A"]);
     var c = b.GetOrAddContainerPath(["C"]);
     var o = b.GetOrAddObject("o", a, null);
-    Assert.Throws<InvalidOperationException>(() => b.InCollection(o, c));
-    b.InCollection(o, a); // idempotent
+    Assert.Throws<InvalidOperationException>(() => o.Collection = c);
+    o.Collection = a; // idempotent
   }
 
   [Fact]

@@ -39,9 +39,8 @@ namespace Speckle.Sdk.Bundles;
 /// and a repeat with different attributes throws (a key collision with different content would be a corrupt bundle).
 /// <c>Add…</c> appends a row every call (geometry, model properties, results, camera views). Verbs and property
 /// setters (<c>Place</c>, <c>ConnectTo</c>, <c>Host =</c>) emit one edge each. Edge ordinals follow call order.
-/// Every handle verb has a builder-side spelling too (<c>b.AddGeometry(wall, mesh)</c>); see BundleBuilder.Write.cs.
 /// </remarks>
-public sealed partial class BundleBuilder : IDisposable
+public sealed class BundleBuilder : IDisposable
 {
   private const string DEFAULT_BASE_NAME = "bundle";
 
@@ -140,7 +139,7 @@ public sealed partial class BundleBuilder : IDisposable
 
   /// <summary>
   /// Gets or adds an object (the property carrier a host element becomes) by <paramref name="applicationId"/> —
-  /// interned only, nothing written yet. Describe it with <see cref="SetProperties"/>; point edges at it before or
+  /// interned only, nothing written yet. Describe it with <see cref="BundleObject.SetProperties"/>; point edges at it before or
   /// after (a joint a frame connects to may be described later).
   /// </summary>
   public BundleObject GetOrAddObject(string applicationId)

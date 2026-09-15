@@ -67,22 +67,18 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
         speckleType: "Objects.Data.DataObject",
         sourceType: "Walls"
       );
-      b.HasMaterial(
-        b.AddGeometry(
-          wall,
-          new Mesh
-          {
-            vertices = [0, 0, 0, 1, 0, 0, 0, 1, 0],
-            faces = [3, 0, 1, 2],
-            units = "m",
-          }
-        ),
-        concrete
-      );
-      b.OnLevel(wall, l1);
+      wall.AddGeometry(
+        new Mesh
+        {
+          vertices = [0, 0, 0, 1, 0, 0, 0, 1, 0],
+          faces = [3, 0, 1, 2],
+          units = "m",
+        }
+      ).Material = concrete;
+      wall.Level = l1;
       var door = b.GetOrAddObject("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
-      b.HostedOn(door, wall);
-      b.Subelement(wall, door);
+      door.Host = wall;
+      wall.AddChild(door);
       b.AddModelProperty("projectInformation.number", 42.0);
 
       sent = await operations.Send3(account, _projectId, _modelId, b, null, CancellationToken.None);

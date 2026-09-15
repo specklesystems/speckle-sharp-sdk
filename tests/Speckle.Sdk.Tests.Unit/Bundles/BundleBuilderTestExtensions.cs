@@ -30,11 +30,11 @@ internal static class BundleBuilderTestExtensions
       || rootScalars is not null;
     if (describes)
     {
-      b.SetProperties(obj, properties, name, speckleType, sourceType, units, typeKey, rootScalars);
+      obj.SetProperties(properties, name, speckleType, sourceType, units, typeKey, rootScalars);
     }
     if (collection is not null)
     {
-      b.InCollection(obj, collection);
+      obj.Collection = collection;
     }
     return obj;
   }
