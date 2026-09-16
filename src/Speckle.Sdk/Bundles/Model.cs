@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
+using SpecPropertySetField = Speckle.Bundle.Spec.PropertySetField;
 
 namespace Speckle.Sdk.Bundles;
 
@@ -90,10 +92,10 @@ public sealed class Model : IDisposable
   public IReadOnlyList<ModelSceneViewTier> DefaultSceneView => _sceneView.Value;
 
   /// <summary>Named camera viewpoints (<c>envelope.camera_views</c>); empty if the bundle ships none.</summary>
-  public IReadOnlyList<ArtefactCameraView> CameraViews => Bundle.CameraViews;
+  public IReadOnlyList<SpecCameraView> CameraViews => Bundle.CameraViews;
 
   /// <summary>AEC property-set definitions (<c>eav.property_set_definitions</c>), one per (set, field); empty if absent.</summary>
-  public IReadOnlyList<ArtefactPropertySetField> PropertySetDefinitions => Bundle.PropertySetDefinitions;
+  public IReadOnlyList<SpecPropertySetField> PropertySetDefinitions => Bundle.PropertySetDefinitions;
 
   /// <summary>Relation numbers in the bundle this SDK doesn't know (a newer bundle spec than the SDK was built against).
   /// Their edges were dropped; empty when the vocabularies match.</summary>

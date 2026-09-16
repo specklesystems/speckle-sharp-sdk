@@ -68,13 +68,16 @@ public class BundleVocabAdditionsTests
           "m"
         );
         pipeline.DisplayInstance(topObjK, instK, 0);
-        int matK = pipeline.AddMaterial("fabric", "Fabric, Blue", unchecked((int)0xFF2244CC), 1.0, 0.0, 0.8);
+        int matK = pipeline.AddMaterial(
+          "fabric",
+          new("Fabric, Blue", unchecked((int)0xFF2244CC), 1.0, 0.0, 0.8, null, null)
+        );
         pipeline.ObjectHasMaterial(topObjK, matK);
         int colK = pipeline.AddColor(unchecked((int)0xFFE03A2F));
         pipeline.ObjectHasColor(topObjK, colK);
 
         // Container appearance (rels 28/29): a CONTAINER node carrying material + colour.
-        int tagK = pipeline.AddContainer("tag:Interiors", "Interiors", null, "Collection");
+        int tagK = pipeline.AddContainer("tag:Interiors", new("Interiors", null, "Collection", null));
         pipeline.NodeHasMaterial(tagK, matK);
         pipeline.NodeHasColor(tagK, colK);
 
@@ -86,24 +89,23 @@ public class BundleVocabAdditionsTests
 
         // One property-set schema, three fields in authored order (row order IS field order).
         pipeline.AddPropertySetDefinition(
-          "Pipe Data",
-          "ps_hash1",
-          "Slope",
-          "SLOPE_BUCKET",
-          "Real",
-          defaultDouble: 0.0,
-          unit: "%",
-          description: "Design slope",
-          setDescription: "Hydraulic pipe data"
+          new(
+            "Pipe Data",
+            "ps_hash1",
+            "Hydraulic pipe data",
+            "Slope",
+            "SLOPE_BUCKET",
+            "Real",
+            DefaultDouble: 0.0,
+            Unit: "%",
+            Description: "Design slope"
+          )
         );
-        pipeline.AddPropertySetDefinition("Pipe Data", "ps_hash1", "Service", "SERVICE_BUCKET", "Text", "Supply");
         pipeline.AddPropertySetDefinition(
-          "Pipe Data",
-          "ps_hash1",
-          "Insulated",
-          null,
-          "TrueFalse",
-          defaultBoolean: false
+          new("Pipe Data", "ps_hash1", null, "Service", "SERVICE_BUCKET", "Text", "Supply")
+        );
+        pipeline.AddPropertySetDefinition(
+          new("Pipe Data", "ps_hash1", null, "Insulated", null, "TrueFalse", DefaultBoolean: false)
         );
 
         pipeline.Complete();

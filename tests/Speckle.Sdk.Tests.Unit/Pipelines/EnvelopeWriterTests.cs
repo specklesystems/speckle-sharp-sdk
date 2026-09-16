@@ -1,4 +1,5 @@
 ﻿#if NET8_0_OR_GREATER
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 using AwesomeAssertions;
 using DuckDB.NET.Data;
 using Speckle.Sdk.Pipelines;
@@ -235,7 +236,7 @@ public sealed class EnvelopeWriterTests : IDisposable
     {
       // A perspective named view (Rhino-style: target + lens) and an ortho one (SketchUp-style: ortho_height).
       w.AddCameraView(
-        new CameraView(
+        new SpecCameraView(
           View: 0,
           Name: "Entrance",
           IsDefault: true,
@@ -259,7 +260,7 @@ public sealed class EnvelopeWriterTests : IDisposable
         )
       );
       w.AddCameraView(
-        new CameraView(
+        new SpecCameraView(
           View: 1,
           Name: "Plan",
           IsDefault: false,
@@ -273,6 +274,9 @@ public sealed class EnvelopeWriterTests : IDisposable
           UpX: 0,
           UpY: 1,
           UpZ: 0,
+          TargetX: null,
+          TargetY: null,
+          TargetZ: null,
           Units: "m",
           IsOrtho: true,
           OrthoHeight: 42.5

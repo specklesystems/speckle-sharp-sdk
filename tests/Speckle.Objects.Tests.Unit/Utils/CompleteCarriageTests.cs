@@ -74,7 +74,7 @@ public class CompleteCarriageTests
   /// where the old projection wiped the whole data layer.</summary>
   private static void FullyInstancedGraph(ObjectsArtifactPipeline pipeline)
   {
-    int layerK = pipeline.AddCollection("layer-a", "Layer A", null, "Layer");
+    int layerK = pipeline.AddCollection("layer-a", new("Layer A", null, "Layer", null));
     int defK = pipeline.AddDefinition("def-chair", "Chair");
 
     // geometry member: properties + IN_COLLECTION + geometry via the member-ordinal join (no DISPLAY of its own)

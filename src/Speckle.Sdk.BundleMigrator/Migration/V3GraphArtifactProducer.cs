@@ -13,6 +13,7 @@ using Speckle.Sdk.Models.Instances;
 using Speckle.Sdk.Models.Proxies;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 
 namespace Speckle.Sdk.BundleMigrator.Migration;
 
@@ -113,7 +114,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         {
           // Federation tier: a source model is a CONTAINER, not a collection — its child collections become
           // top-level (flat containers, as the v4 Revit builder writes them).
-          var mk = pipeline.AddContainer(helper.CollectionKey(col), col.name, null, "Model");
+          var mk = pipeline.AddContainer(helper.CollectionKey(col), new(col.name, null, "Model", null));
           _modelContainerByAppId[helper.Aid(col)] = mk;
           _stats.Models++;
           continue;
@@ -124,10 +125,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         var ghTopology = ReadGhTopology(col);
         var k = pipeline.AddCollection(
           helper.CollectionKey(col),
-          col.name,
-          parentK,
-          helper.CollectionSubtype(col),
-          ghTopology
+          new(col.name, parentK, helper.CollectionSubtype(col), ghTopology)
         );
         _collectionMap[helper.Aid(col)] = k;
         _stats.Collections++;
@@ -498,13 +496,15 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       // emissive is passed naively — the pipeline normalizes a black RGB to the bundle's NULL "no emission".
       var matK = pipeline.AddMaterial(
         helper.MaterialKey(rmp),
-        v.name,
-        v.diffuse,
-        v.opacity,
-        v.metalness,
-        v.roughness,
-        v.emissive,
-        helper.ReadDouble(v, "ior") // untyped on RenderMaterial
+        new(
+          v.name,
+          v.diffuse,
+          v.opacity,
+          v.metalness,
+          v.roughness,
+          v.emissive,
+          helper.ReadDouble(v, "ior") // untyped on RenderMaterial
+        )
       );
       matProxies.Add((matK, rmp.objects));
       _stats.Materials++;
@@ -589,7 +589,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       }
       var name = lp.value.name;
       var elevation = helper.ReadDouble(lp.value, "elevation") ?? 0.0; // dynamic member on the level DataObject
-      var lvlK = pipeline.AddLevel(helper.LevelKey(lp, name), name, elevation);
+      var lvlK = pipeline.AddLevel(helper.LevelKey(lp, name), new(name, elevation));
       _stats.Levels++;
       foreach (var objAppId in lp.objects)
       {
@@ -646,7 +646,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         continue;
       }
 
-      var grpK = pipeline.AddContainer(helper.GroupKey(gp), gp.name, null, "Group");
+      var grpK = pipeline.AddContainer(helper.GroupKey(gp), new(gp.name, null, "Group", null));
       _stats.Groups++;
       foreach (var objK in members)
       {
@@ -848,7 +848,8 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
   }
 
   // Root-level viewpoints; the traversal only descends `elements`, so they're read directly.
-  // A v3 Camera has no target/fov/lens/ortho data, so those columns stay null.
+  // A v3 Camera has no target/fov/lens data, so those columns stay null. It has no projection
+  // flag either; every v3-migrated bundle already carries is_ortho = false, so keep asserting it.
   private void EmitCameraViews(Base root)
   {
     var ord = 0;
@@ -868,7 +869,7 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         }
 
         pipeline.AddCameraView(
-          new CameraView(
+          new SpecCameraView(
             View: ord,
             Name: cam.name,
             IsDefault: false,
@@ -882,7 +883,11 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
             UpX: cam.up.x,
             UpY: cam.up.y,
             UpZ: cam.up.z,
-            Units: cam.position.units
+            TargetX: null,
+            TargetY: null,
+            TargetZ: null,
+            Units: cam.position.units,
+            IsOrtho: false
           )
         );
         _stats.CameraViews++;
@@ -1135,16 +1140,19 @@ internal sealed class V3GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         }
         var (defaultString, defaultDouble, defaultBoolean) = SplitPropertyDefault(fd.GetValueOrDefault("defaultValue"));
         pipeline.AddPropertySetDefinition(
-          setName,
-          setKey,
-          fieldName,
-          fieldBucketId: null, // not recorded by v3; consumers fall back to matching fieldName
-          fd.GetValueOrDefault("dataType") as string,
-          defaultString,
-          defaultDouble,
-          defaultBoolean,
-          fd.GetValueOrDefault("units") as string,
-          fd.GetValueOrDefault("description") as string
+          new(
+            setName,
+            setKey,
+            null,
+            fieldName,
+            null, // fieldBucketId not recorded by v3; consumers fall back to matching fieldName
+            fd.GetValueOrDefault("dataType") as string,
+            defaultString,
+            defaultDouble,
+            defaultBoolean,
+            fd.GetValueOrDefault("units") as string,
+            fd.GetValueOrDefault("description") as string
+          )
         );
         emitted++;
       }

@@ -1,7 +1,16 @@
 using System.Diagnostics.CodeAnalysis;
 using Speckle.Objects.Utils;
+using Speckle.Sdk.Bundles.Handles;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
+using SpecColor = Speckle.Bundle.Spec.Color;
+using SpecContainer = Speckle.Bundle.Spec.Container;
+using SpecDefinition = Speckle.Bundle.Spec.Definition;
+using SpecLevel = Speckle.Bundle.Spec.Level;
+using SpecMaterial = Speckle.Bundle.Spec.Material;
+using SpecPropertySetField = Speckle.Bundle.Spec.PropertySetField;
+using SpecStructuralResult = Speckle.Bundle.Spec.StructuralResult;
 
 namespace Speckle.Sdk.Bundles;
 
@@ -20,8 +29,8 @@ namespace Speckle.Sdk.Bundles;
 /// var wall  = b.GetOrAddObject("wall-1");
 /// wall.SetProperties(properties, name: "Basic Wall", speckleType: "Objects.Data.DataObject");
 /// wall.Collection = walls;
-/// wall.AddGeometry(mesh).Material = b.GetOrAddMaterial("concrete", "Concrete", 0xFF808080, 1, 0, 0.8);
-/// wall.Level = b.GetOrAddLevel("L1", "Level 1", 0);
+/// wall.AddGeometry(mesh).Material = b.GetOrAddMaterial("concrete", new("Concrete", 0xFF808080, 1, 0, 0.8, null, null));
+/// wall.Level = b.GetOrAddLevel("L1", new("Level 1", 0));
 /// var chair = b.GetOrAddObject("chair-1");
 /// chair.Place(b.GetOrAddDefinition("def-chair", "Chair", d => d.AddGeometry(chairMesh)), transform, "m");
 /// BundleFiles files = b.Build();
@@ -115,15 +124,13 @@ public sealed class BundleBuilder : IDisposable
     string? ghTopology = null
   )
   {
+    var fields = new SpecContainer(name, parent?.K, subtype, ghTopology);
     if (_containers.TryGetValue(key, out var existing))
     {
-      Same(key, existing.Name, name, "name");
-      Same(key, existing.Subtype, subtype, "subtype");
-      Same(key, existing.Parent?.Key, parent?.Key, "parent");
+      Same(key, existing.Fields, fields, "fields");
       return existing;
     }
-    int k = Pipeline.AddCollection(key, name, parent?.K, subtype, ghTopology);
-    var c = new BundleContainer(this, k, key, name, subtype, parent);
+    var c = new BundleContainer(this, Pipeline.AddCollection(key, fields), key, fields, parent);
     _containers[key] = c;
     return c;
   }
@@ -131,9 +138,9 @@ public sealed class BundleBuilder : IDisposable
   // ── objects ───────────────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>
-  /// Gets or adds an object (the property carrier a host element becomes) by <paramref name="applicationId"/> — a
-  /// handle only, nothing written yet. Describe it with <see cref="BundleObject.SetProperties"/>; point edges at it
-  /// before or after (a joint a frame connects to may be described later).
+  /// Gets or adds an object (the property carrier a host element becomes) by <paramref name="applicationId"/> —
+  /// interned only, nothing written yet. Describe it with <see cref="BundleObject.SetProperties"/>; point edges at it before or
+  /// after (a joint a frame connects to may be described later).
   /// </summary>
   public BundleObject GetOrAddObject(string applicationId)
   {
@@ -202,26 +209,18 @@ public sealed class BundleBuilder : IDisposable
   // ── value nodes ───────────────────────────────────────────────────────────────────────────────────────
 
   /// <summary>Gets or creates a MATERIAL node. <paramref name="key"/> is the dedup identity (host material id);
-  /// <paramref name="name"/> is the authored name receivers recreate the host material under.</summary>
-  public BundleMaterial GetOrAddMaterial(
-    string key,
-    string? name,
-    int argb,
-    double opacity = 1,
-    double metalness = 0,
-    double roughness = 1,
-    int? emissive = null,
-    double? ior = null
-  )
+  /// <paramref name="fields"/> is the row receivers rebuild the host material from.</summary>
+  public BundleMaterial GetOrAddMaterial(string key, SpecMaterial fields)
   {
+    // Normalize before comparing: the pipeline stores a black emissive as NULL, so an unnormalized
+    // repeat would compare unequal to the stored row and throw despite writing an identical node.
+    fields = ObjectsArtifactPipeline.NormalizeMaterial(fields);
     if (_materials.TryGetValue(key, out var existing))
     {
-      Same(key, existing.Name, name, "name");
-      Same(key, existing.Argb, argb, "argb");
+      Same(key, existing.Fields, fields, "fields");
       return existing;
     }
-    int k = Pipeline.AddMaterial(key, name, argb, opacity, metalness, roughness, emissive, ior);
-    var m = new BundleMaterial(this, k, key, name, argb);
+    var m = new BundleMaterial(this, Pipeline.AddMaterial(key, fields), key, fields);
     _materials[key] = m;
     return m;
   }
@@ -233,21 +232,20 @@ public sealed class BundleBuilder : IDisposable
     {
       return existing;
     }
-    var c = new BundleColor(this, Pipeline.AddColor(argb), argb);
+    var c = new BundleColor(this, Pipeline.AddColor(argb), new SpecColor(argb));
     _colors[argb] = c;
     return c;
   }
 
   /// <summary>Gets or creates a LEVEL node.</summary>
-  public BundleLevel GetOrAddLevel(string key, string? name, double elevation)
+  public BundleLevel GetOrAddLevel(string key, SpecLevel fields)
   {
     if (_levels.TryGetValue(key, out var existing))
     {
-      Same(key, existing.Name, name, "name");
-      Same(key, existing.Elevation, elevation, "elevation");
+      Same(key, existing.Fields, fields, "fields");
       return existing;
     }
-    var l = new BundleLevel(this, Pipeline.AddLevel(key, name, elevation), key, name, elevation);
+    var l = new BundleLevel(this, Pipeline.AddLevel(key, fields), key, fields);
     _levels[key] = l;
     return l;
   }
@@ -260,11 +258,12 @@ public sealed class BundleBuilder : IDisposable
     {
       if (name is not null)
       {
-        Same(key, existing.Name, name, "name"); // null = "whatever it was named" (a placement only knows the id)
+        Same(key, existing.Fields.Name, name, "name"); // null = "whatever it was named" (a placement only knows the id)
       }
       return existing;
     }
-    var d = new BundleDefinition(this, Pipeline.AddDefinition(key, name), key, name);
+    // def_ref is declared for DEFINITION in the spec but written by no producer.
+    var d = new BundleDefinition(this, Pipeline.AddDefinition(key, name), key, new SpecDefinition(name, null));
     _definitions[key] = d;
     populate?.Invoke(d);
     return d;
@@ -277,66 +276,18 @@ public sealed class BundleBuilder : IDisposable
   public void AddModelProperty(string path, object? value, string? unit = null) =>
     Pipeline.AddModelProperty(path, value, unit);
 
-  /// <summary>One analysis-result row (<c>eav.structural_results</c>); see <see cref="ObjectsArtifactPipeline.AddStructuralResult"/>.</summary>
-  public void AddStructuralResult(
-    BundleObject? owner,
-    string? location,
-    string resultType,
-    string loadCase,
-    string component,
-    double? station = null,
-    int? step = null,
-    double? value = null,
-    string? valueText = null,
-    string? elementName = null,
-    string? positionLabel = null
-  ) =>
-    Pipeline.AddStructuralResult(
-      owner?.ApplicationId,
-      location,
-      resultType,
-      loadCase,
-      component,
-      station,
-      step,
-      value,
-      valueText,
-      elementName,
-      positionLabel
-    );
+  /// <summary>One analysis-result row (<c>eav.structural_results</c>). <paramref name="owner"/> is the member or
+  /// joint the result belongs to; leave it null for group- and model-level results, which identify themselves by
+  /// the row's location, element name and/or step. See <see cref="ObjectsArtifactPipeline.AddStructuralResult"/>.</summary>
+  public void AddStructuralResult(BundleObject? owner, SpecStructuralResult fields) =>
+    Pipeline.AddStructuralResult(owner?.ApplicationId, fields);
 
-  /// <summary>One property-set field definition (<c>eav.property_set_definitions</c>), in authored field order.</summary>
-  public void AddPropertySetDefinition(
-    string setName,
-    string setKey,
-    string fieldName,
-    string? fieldBucketId,
-    string? dataType,
-    string? defaultString = null,
-    double? defaultDouble = null,
-    bool? defaultBoolean = null,
-    string? unit = null,
-    string? description = null,
-    string? setDescription = null,
-    string? appliesTo = null
-  ) =>
-    Pipeline.AddPropertySetDefinition(
-      setName,
-      setKey,
-      fieldName,
-      fieldBucketId,
-      dataType,
-      defaultString,
-      defaultDouble,
-      defaultBoolean,
-      unit,
-      description,
-      setDescription,
-      appliesTo
-    );
+  /// <summary>One property-set field definition (<c>eav.property_set_definitions</c>), in authored field order.
+  /// See <see cref="ObjectsArtifactPipeline.AddPropertySetDefinition"/>.</summary>
+  public void AddPropertySetDefinition(SpecPropertySetField fields) => Pipeline.AddPropertySetDefinition(fields);
 
   /// <summary>A named camera viewpoint (<c>envelope.camera_views</c>).</summary>
-  public void AddCameraView(CameraView view) => Pipeline.AddCameraView(view);
+  public void AddCameraView(SpecCameraView view) => Pipeline.AddCameraView(view);
 
   /// <summary>
   /// Declares a scene view — how the viewer groups objects. Tiers are outermost first; each is either a relation
