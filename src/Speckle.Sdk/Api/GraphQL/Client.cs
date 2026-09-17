@@ -171,7 +171,15 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   {
     try
     {
-      var res = GQLClient.CreateSubscriptionStream<T>(request);
+      var res = GQLClient.CreateSubscriptionStream<T>(
+        request,
+        ex =>
+        {
+          // Returning normally is what triggers the library's reconnect; a throw here kills the
+          // subscription permanently.
+          _logger.LogInformation(ex, "Subscription for {resultType} dropped, reconnecting", typeof(T));
+        }
+      );
       return res.Subscribe(
         response =>
         {
@@ -183,7 +191,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
           }
           catch (AggregateException ex)
           {
-            _logger.LogWarning(ex, "Subscription for {type} got a response with errors", typeof(T).Name);
+            _logger.LogWarning(ex, "Subscription for {type} got a response with errors", typeof(T));
             throw;
           }
         },
@@ -194,7 +202,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
           _logger.LogError(
             ex,
             "Subscription for {resultType} terminated unexpectedly with {exceptionMessage}",
-            typeof(T).Name,
+            typeof(T),
             ex.Message
           );
           // we could be throwing like this:
