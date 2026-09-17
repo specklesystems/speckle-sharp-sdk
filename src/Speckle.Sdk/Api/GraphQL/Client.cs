@@ -171,7 +171,17 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
   {
     try
     {
-      var res = GQLClient.CreateSubscriptionStream<T>(request);
+      var res = SubscriptionReconnect.WithReconnect(
+        () => GQLClient.CreateSubscriptionStream<T>(request),
+        (ex, delay) =>
+          _logger.LogWarning(
+            ex,
+            "Subscription for {resultType} dropped with {exceptionMessage}, reconnecting in {reconnectDelayMs}ms",
+            typeof(T).Name,
+            ex.Message,
+            (long)delay.TotalMilliseconds
+          )
+      );
       return res.Subscribe(
         response =>
         {
@@ -188,18 +198,14 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
           }
         },
         ex =>
-        {
-          // we're logging this as an error for now, to keep track of failures
-          // so far we've swallowed these errors
+          // Reached only if the retry pipeline itself faults, so the subscription really is dead — unlike the
+          // per-drop warning above, nothing will re-establish it.
           _logger.LogError(
             ex,
             "Subscription for {resultType} terminated unexpectedly with {exceptionMessage}",
             typeof(T).Name,
             ex.Message
-          );
-          // we could be throwing like this:
-          // throw ex;
-        }
+          )
       );
     }
     catch (Exception ex) when (!ex.IsFatal() && ex is not ObjectDisposedException)

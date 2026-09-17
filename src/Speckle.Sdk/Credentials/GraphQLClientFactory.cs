@@ -58,11 +58,14 @@ public class GraphQLClientFactory(
       CreateHttpClient(authToken)
     );
 
+    // Warning, not error: this observable is diagnostic only. It reports transport drops that the client recovers
+    // from (and that subscriptions now re-establish themselves after, see SubscriptionReconnect), so a long-lived
+    // session logging one of these every few minutes is normal and was drowning genuine connector errors.
     gQLClient.WebSocketReceiveErrors.Subscribe(ex =>
     {
       if (ex is WebSocketException we)
       {
-        logger.LogError(
+        logger.LogWarning(
           we,
           "GraphQL Websocket received an {WebSocketErrorCode} ({NativeErrorCode}) error that has been swallowed",
           we.WebSocketErrorCode,
@@ -71,7 +74,7 @@ public class GraphQLClientFactory(
       }
       else
       {
-        logger.LogError(ex, "GraphQL Websocket received an error that has been swallowed");
+        logger.LogWarning(ex, "GraphQL Websocket received an error that has been swallowed");
       }
     });
     return gQLClient;
