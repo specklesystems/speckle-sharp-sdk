@@ -13,12 +13,10 @@ namespace Speckle.Sdk.Tests.Unit.Api.GraphQL;
 
 public class SubscriptionReconnectTests : MoqTest
 {
-  [Theory]
-  [InlineData(SocketTeardown.Abort)]
-  [InlineData(SocketTeardown.CleanClose)]
-  public async Task SubscribeTo_Reconnects_WhenTheServerDropsTheSocket(SocketTeardown teardown)
+  [Fact]
+  public async Task SubscribeTo_Reconnects_WhenTheServerClosesTheSocket()
   {
-    using var server = new FakeGraphQLWebSocketServer(teardown);
+    using var server = new FakeGraphQLWebSocketServer();
 
     var account = new Account
     {

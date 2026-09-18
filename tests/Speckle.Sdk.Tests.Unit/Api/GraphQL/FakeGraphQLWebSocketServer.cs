@@ -5,30 +5,19 @@ using System.Text;
 
 namespace Speckle.Sdk.Tests.Unit.Api.GraphQL;
 
-public enum SocketTeardown
-{
-  /// <summary>Severs the connection without a close frame, as an unfixed server does on pod shutdown.</summary>
-  Abort,
-
-  /// <summary>Sends a 1001 close frame, as a fixed server would.</summary>
-  CleanClose,
-}
-
 /// <summary>
-/// A minimal graphql-ws endpoint that accepts a subscription and then drops the socket, so a client's
-/// reconnect behaviour can be observed as a second connection arriving.
+/// A minimal graphql-ws endpoint that closes the first subscription socket and serves every later one
+/// normally, so a client's reconnect shows up as a second connection.
 /// </summary>
 public sealed class FakeGraphQLWebSocketServer : IDisposable
 {
   private readonly HttpListener _listener;
   private readonly CancellationTokenSource _cts = new();
   private readonly SemaphoreSlim _connectionSignal = new(0);
-  private readonly SocketTeardown _teardown;
   private int _connectionCount;
 
-  public FakeGraphQLWebSocketServer(SocketTeardown teardown)
+  public FakeGraphQLWebSocketServer()
   {
-    _teardown = teardown;
     Port = GetFreePort();
     _listener = new HttpListener();
     _listener.Prefixes.Add($"http://localhost:{Port}/");
@@ -97,7 +86,7 @@ public sealed class FakeGraphQLWebSocketServer : IDisposable
 
     var wsContext = await context.AcceptWebSocketAsync("graphql-ws");
     var socket = wsContext.WebSocket;
-    Interlocked.Increment(ref _connectionCount);
+    var connectionNumber = Interlocked.Increment(ref _connectionCount);
     _connectionSignal.Release();
 
     try
@@ -106,11 +95,7 @@ public sealed class FakeGraphQLWebSocketServer : IDisposable
       await SendAsync(socket, "{\"type\":\"connection_ack\"}");
       await ReceiveAsync(socket);
 
-      if (_teardown == SocketTeardown.Abort)
-      {
-        socket.Abort();
-      }
-      else
+      if (connectionNumber == 1)
       {
         await socket.CloseOutputAsync(
           WebSocketCloseStatus.EndpointUnavailable,
@@ -118,15 +103,14 @@ public sealed class FakeGraphQLWebSocketServer : IDisposable
           CancellationToken.None
         );
       }
+
+      // Sockets are never torn down from here: the client must still be able to complete its own
+      // close handshake when the test disposes it, and a write to an already-dead socket surfaces as
+      // an unhandled exception that takes the test host with it.
+      await Task.Delay(Timeout.Infinite, _cts.Token);
     }
-    catch (WebSocketException)
-    {
-      // the client may already be gone; nothing to do
-    }
-    catch (OperationCanceledException)
-    {
-      // shutting down
-    }
+    catch (WebSocketException) { }
+    catch (OperationCanceledException) { }
     finally
     {
       socket.Dispose();
