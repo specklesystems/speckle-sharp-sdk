@@ -14,9 +14,6 @@ namespace Speckle.Sdk.Tests.Integration.Bundles;
 /// and the version's <c>referencedObject</c> is the bundle reference Receive2 dispatches on.
 /// </summary>
 [Trait("Server", "Internal")]
-// A bundle without its viewer .dat is completed by a one-shot Kubernetes datgen Job, which docker compose cannot
-// stand in for; the CI internal job filters this trait out. Run it against a cluster-backed server.
-[Trait("Requires", "DatGen")]
 public sealed class SendReceiveBundleTests : IAsyncLifetime
 {
   private static readonly SpeckleApplication s_app = new()
@@ -93,7 +90,9 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
     Assert.False(string.IsNullOrEmpty(sent.VersionId));
 
     // ── the version exists once the ingestion completes ────────────────────────────────────────────────
-    var version = await operations.WaitForVersion(account, sent, TimeSpan.FromSeconds(30), CancellationToken.None);
+    // A bundle without its viewer .dat is born by the server's datgen job: a cold converter container start
+    // under docker compose can take well over the 30 s an in-cluster pod needs.
+    var version = await operations.WaitForVersion(account, sent, TimeSpan.FromMinutes(2), CancellationToken.None);
     Assert.Equal(sent.BundleReference, version.referencedObject); // what Receive2 dispatches on
     Assert.True(BundleReference.TryParse(version.referencedObject, out _));
 

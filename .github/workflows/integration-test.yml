@@ -47,6 +47,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      # The datgen stand-in inside speckle-server launches this image over the mounted
+      # Docker socket but never pulls it, so the pull (and its credentials) stay here.
+      - name: 📥 Pull converter image
+        if: ${{ inputs.use-internal-image }}
+        run: docker pull ghcr.io/specklesystems/speckle-converters:latest
+
       - name: ⚙️ Spin up Server
         run: docker compose --file ${{ inputs.docker-compose-file }} up --wait
 
@@ -62,7 +68,7 @@ jobs:
 
       - name: 🔨 Integration Tests against Internal Server
         if: ${{ inputs.use-internal-image }}
-        run: dotnet test ${{ env.Solution }} --filter "(Category=Integration)&(Server!=Public)&(Requires!=DatGen)" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
+        run: dotnet test ${{ env.Solution }} --filter "(Category=Integration)&(Server!=Public)" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v7

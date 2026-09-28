@@ -50,6 +50,18 @@ jobs:
         run: docker build --file "./packages/server/Dockerfile" --tag ${{ env.SPECKLE_SERVER_IMAGE }} .
         working-directory: ${{ env.SERVER_DIR }}
           
+      - name: 🔐 Login to Github Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: "ghcr.io"
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      # The datgen stand-in inside speckle-server launches this image over the mounted
+      # Docker socket but never pulls it, so the pull (and its credentials) stay here.
+      - name: 📥 Pull converter image
+        run: docker pull ghcr.io/specklesystems/speckle-converters:latest
+
       - name: ⚙️ Spin up Server
         run: docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" up --wait
         working-directory: ${{ env.SERVER_DIR }}
@@ -74,5 +86,5 @@ jobs:
         working-directory: ${{ env.CLIENT_DIR }}
         
       - name: 🔨 Run .NET Integration Tests 
-        run: dotnet test ${{ env.SOLUTION }} --filter "(Category=Integration)&(Server!=Public)&(Requires!=DatGen)" --configuration Release --no-build --no-restore --verbosity=normal
+        run: dotnet test ${{ env.SOLUTION }} --filter "(Category=Integration)&(Server!=Public)" --configuration Release --no-build --no-restore --verbosity=normal
         working-directory: ${{ env.CLIENT_DIR }}
