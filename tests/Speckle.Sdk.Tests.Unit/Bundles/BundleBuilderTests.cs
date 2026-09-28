@@ -5,6 +5,7 @@ using Speckle.Sdk.Bundles;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Receive.Artifacts;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 
 namespace Speckle.Sdk.Tests.Unit.Bundles;
 
@@ -108,16 +109,16 @@ public sealed class BundleBuilderTests : IDisposable
     using var model = await BuildAndRead(b =>
     {
       var layer = b.GetOrAddContainerPath(["Layer 1"], "Layer");
-      var concrete = b.GetOrAddMaterial("mat-1", "Concrete", unchecked((int)0xFF808080), roughness: 0.8);
+      var concrete = b.GetOrAddMaterial("mat-1", new("Concrete", unchecked((int)0xFF808080), 1, 0, 0.8, null, null));
       var red = b.GetOrAddColor(unchecked((int)0xFFFF0000));
-      var l1 = b.GetOrAddLevel("L1", "Level 1", 3.0);
+      var l1 = b.GetOrAddLevel("L1", new("Level 1", 3.0));
       layer.Color = red; // node plane
 
       var wall = b.GetOrAddObject("wall-1", layer, null, name: "Wall");
       wall.AddGeometry(Tri()).Material = concrete; // geometry plane
       wall.Level = l1;
       var door = b.GetOrAddObject("door-1", layer, null, name: "Door");
-      door.Parent = wall;
+      wall.AddChild(door);
       door.Host = wall;
       door.Color = red; // object plane
       door.Level = l1;
@@ -129,8 +130,13 @@ public sealed class BundleBuilderTests : IDisposable
       a.ConnectTo(c);
       var group = b.GetOrAddContainer("grp-1", "Group A", null, "Group");
       wall.AddToGroup(group);
-      Assert.Same(concrete, b.GetOrAddMaterial("mat-1", "Concrete", unchecked((int)0xFF808080), roughness: 0.8)); // interned on key
-      Assert.Throws<InvalidOperationException>(() => b.GetOrAddMaterial("mat-1", "other name", 0)); // key collision
+      Assert.Same(
+        concrete,
+        b.GetOrAddMaterial("mat-1", new("Concrete", unchecked((int)0xFF808080), 1, 0, 0.8, null, null))
+      ); // interned on key
+      Assert.Throws<InvalidOperationException>(() =>
+        b.GetOrAddMaterial("mat-1", new("other name", 0, 1, 0, 1, null, null))
+      ); // key collision
     });
 
     var wall = model.ObjectByApplicationId("wall-1")!;
@@ -138,14 +144,14 @@ public sealed class BundleBuilderTests : IDisposable
     var room = model.ObjectByApplicationId("room-1")!;
 
     Assert.Equal("Concrete", wall.Geometries[0].Material!.Name);
-    Assert.Equal(0.8, wall.Geometries[0].Material!.Roughness);
+    Assert.Equal(0.8, wall.Geometries[0].Material!.Fields.Roughness);
     Assert.Equal("Level 1", wall.Level!.Name);
-    Assert.Equal(3.0, wall.Level.Elevation);
+    Assert.Equal(3.0, wall.Level.Fields.Elevation);
     Assert.Same(wall, door.Parent);
     Assert.Same(wall, door.Host);
     Assert.Equal([door], wall.Children);
-    Assert.Equal(unchecked((int)0xFFFF0000), door.Color!.Argb);
-    Assert.Equal(unchecked((int)0xFFFF0000), wall.Collection!.Color!.Argb);
+    Assert.Equal(unchecked((int)0xFFFF0000), door.Color!.Fields.Argb);
+    Assert.Equal(unchecked((int)0xFFFF0000), wall.Collection!.Color!.Fields.Argb);
     Assert.Equal([room], wall.BoundsRooms);
     Assert.Same(room, door.Room);
     Assert.Equal([door], room.Contains);
@@ -165,7 +171,7 @@ public sealed class BundleBuilderTests : IDisposable
       var chairDef = b.GetOrAddDefinition(
         "def-chair",
         "Chair",
-        d => d.AddGeometry(Tri()).Material = b.GetOrAddMaterial("m", "Fabric", 0)
+        d => d.AddGeometry(Tri()).Material = b.GetOrAddMaterial("m", new("Fabric", 0, 1, 0, 1, null, null))
       );
       double[] t = [1, 0, 0, 10, 0, 1, 0, 20, 0, 0, 1, 0, 0, 0, 0, 1];
       var chair1 = b.GetOrAddObject("chair-1", layer, null, name: "Chair 1");
@@ -209,7 +215,7 @@ public sealed class BundleBuilderTests : IDisposable
     using var model = await BuildAndRead(b =>
     {
       var host = b.GetOrAddContainer("model-main", "Main.rvt", null, "Model");
-      var l1 = b.GetOrAddLevel("L1", "Level 1", 0);
+      var l1 = b.GetOrAddLevel("L1", new("Level 1", 0));
       var o = b.GetOrAddObject(
         "w",
         null,
@@ -229,8 +235,10 @@ public sealed class BundleBuilderTests : IDisposable
       );
       b.AddModelProperty("modelPlacement.units", "m");
       b.AddModelProperty("projectInformation.number", 42.0);
-      b.AddStructuralResult(o, "Base", "reaction", "DL", "Fz", value: 12.5);
-      b.AddCameraView(new CameraView(0, "Front", true, 0, 0, -10, 5, 0, 1, 0, 0, 0, 1));
+      b.AddStructuralResult(o, new(null, null, "Base", "reaction", "DL", "Fz", Value: 12.5));
+      b.AddCameraView(
+        new SpecCameraView(0, "Front", true, 0, 0, -10, 5, 0, 1, 0, 0, 0, 1, null, null, null, "m", false)
+      );
     });
 
     var w = model.ObjectByApplicationId("w")!;
@@ -241,7 +249,12 @@ public sealed class BundleBuilderTests : IDisposable
     Assert.Null(w.SceneViewSegments[2].Node);
     Assert.Equal("m", model.Properties["modelPlacement.units"]);
     Assert.Equal(42.0, model.Properties["projectInformation.number"]);
-    Assert.Equal("Front", Assert.Single(model.CameraViews).Name);
+    var camera = Assert.Single(model.CameraViews);
+    Assert.Equal("Front", camera.Name);
+    // Non-nullable in the spec since 1.2.0, so these survive the round trip as written rather
+    // than arriving as a reader-side default.
+    Assert.False(camera.IsOrtho);
+    Assert.True(camera.IsDefault);
     Assert.Contains(model.Files, f => f.EndsWith(".eav.structural_results.parquet", StringComparison.Ordinal));
   }
 
@@ -289,7 +302,7 @@ public sealed class BundleBuilderTests : IDisposable
       var c1 = b.GetOrAddObject("c1", layer, null, name: "C1");
       assembly.AddChild(c2, ord: 2);
       assembly.AddChild(c0, ord: 0);
-      c1.Parent = assembly; // next ordinal after the explicit ones → 3; ordering below is by ordinal
+      assembly.AddChild(c1); // next ordinal after the explicit ones → 3; ordering below is by ordinal
       Assert.Throws<InvalidOperationException>(() => b.GetOrAddObject("other", layer, null).AddChild(c0));
     });
 
@@ -304,7 +317,7 @@ public sealed class BundleBuilderTests : IDisposable
     using var model = await BuildAndRead(b =>
     {
       var layer = b.GetOrAddContainerPath(["Blocks"], "Layer");
-      var steel = b.GetOrAddMaterial("steel", "Steel", unchecked((int)0xFF9999AA));
+      var steel = b.GetOrAddMaterial("steel", new("Steel", unchecked((int)0xFF9999AA), 1, 0, 1, null, null));
 
       // Rhino-shaped: the block's contents are objects with their own layer + properties + geometry
       var chairDef = b.GetOrAddDefinition("def-chair", "Chair");
@@ -528,18 +541,46 @@ public sealed class BundleBuilderTests : IDisposable
     var o = b.GetOrAddObject("o", a, null);
     Assert.Throws<InvalidOperationException>(() => o.Collection = c);
     o.Collection = a; // idempotent
-    // clearing is a retraction too — otherwise "= null; = c" would write a second IN_COLLECTION edge
-    Assert.Throws<InvalidOperationException>(() => o.Collection = null);
   }
 
   [Fact]
-  public void Relation_NullBeforeAnyEdge_IsANoOp()
+  public void GetOrAddMaterial_SameKeyDifferentScalar_Throws()
   {
     using var b = new BundleBuilder(s_app, "m", _dir);
-    var o = b.GetOrAddObject("o");
-    o.Collection = null;
-    o.Collection = b.GetOrAddContainerPath(["A"]);
-    Assert.Equal("A", o.Collection!.Name);
+    b.GetOrAddMaterial("mat-1", new("Concrete", unchecked((int)0xFF808080), 1, 0, 0.8, null, null));
+    // Only the whole row is compared, so a scalar the old per-field check ignored can no longer be dropped.
+    Assert.Throws<InvalidOperationException>(() =>
+      b.GetOrAddMaterial("mat-1", new("Concrete", unchecked((int)0xFF808080), 1, 0, 0.2, null, null))
+    );
+  }
+
+  [Fact]
+  public void GetOrAddMaterial_SameKeyBlackOrNullEmissive_IsTheSameRow()
+  {
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    var withNull = b.GetOrAddMaterial("mat-1", new("Concrete", unchecked((int)0xFF808080), 1, 0, 1, null, null));
+    // Black emissive normalizes to NULL, so it must not read as a different row.
+    var withBlack = b.GetOrAddMaterial(
+      "mat-1",
+      new("Concrete", unchecked((int)0xFF808080), 1, 0, 1, unchecked((int)0xFF000000), null)
+    );
+    Assert.Same(withNull, withBlack);
+  }
+
+  [Fact]
+  public void GetOrAddContainer_SameKeyDifferentGhTopology_Throws()
+  {
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    b.GetOrAddContainer("c", "C", null, "Collection", "{0}");
+    Assert.Throws<InvalidOperationException>(() => b.GetOrAddContainer("c", "C", null, "Collection", "{1}"));
+  }
+
+  [Fact]
+  public void GetOrAddLevel_SameKeyDifferentElevation_Throws()
+  {
+    using var b = new BundleBuilder(s_app, "m", _dir);
+    b.GetOrAddLevel("L1", new("Level 1", 0));
+    Assert.Throws<InvalidOperationException>(() => b.GetOrAddLevel("L1", new("Level 1", 3)));
   }
 
   [Fact]

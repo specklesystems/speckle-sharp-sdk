@@ -46,11 +46,22 @@
       Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleSchemas.cs"
       Link="Generated/BundleSchemas.cs"
     />
-    <!-- Per-table column-index constants (BundleCols.Nodes.Argb, ….ColumnCount) — produced by the
-         speckle-bundle-spec codegen (PR in flight there); requires a sibling checkout that has it. -->
+    <!-- Per-table column-index constants (BundleCols.Nodes.Argb, ….ColumnCount). -->
     <Compile
       Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleCols.cs"
       Link="Generated/BundleCols.cs"
+    />
+    <!-- One record per live node kind, generated from node_kinds.columns — the field set and
+         nullability a MATERIAL/COLOR/LEVEL/CONTAINER row carries. -->
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleNodes.cs"
+      Link="Generated/BundleNodes.cs"
+    />
+    <!-- One record per row-shaped table (structural results, property-set fields, camera views),
+         generated from the same DDL the writers build their schemas from. -->
+    <Compile
+      Include="$(MSBuildThisFileDirectory)../../../speckle-bundle-spec/generated/csharp/BundleRows.cs"
+      Link="Generated/BundleRows.cs"
     />
   </ItemGroup>
 </Project>

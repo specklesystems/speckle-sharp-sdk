@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Parquet;
 using Speckle.Bundle.Spec;
+using Speckle.Objects.Utils;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
 
 namespace Speckle.Sdk.Tests.Unit.Pipelines.Send.Artifacts;
@@ -13,6 +14,14 @@ namespace Speckle.Sdk.Tests.Unit.Pipelines.Send.Artifacts;
 /// </summary>
 public class StructuralResultsWriterTests : IDisposable
 {
+  private static readonly SpeckleApplication s_app = new()
+  {
+    HostApplication = "Test",
+    HostApplicationVersion = "1.0",
+    Slug = "test",
+    SpeckleVersion = "0.0.0",
+  };
+
   private readonly string _dir = Path.Combine(Path.GetTempPath(), $"structural-results-writer-{Guid.NewGuid():N}");
 
   public StructuralResultsWriterTests()
@@ -66,5 +75,39 @@ public class StructuralResultsWriterTests : IDisposable
     ((int?[])await Col(BundleCols.StructuralResults.Step)).Should().Equal(2, null, 1);
     ((double?[])await Col(BundleCols.StructuralResults.Value)).Should().Equal(-12.25, 431.7, 900.0);
     ((string?[])await Col(BundleCols.StructuralResults.ValueText)).Should().Equal(null, null, null);
+  }
+
+  [Fact]
+  public async Task PipelineRecord_LandsEachFieldInItsOwnColumn()
+  {
+    // Every same-typed column gets a distinct value, so any transposition shows up. The pipeline
+    // used to re-order these by hand between its own parameter list and the writer's.
+    using (var pipeline = new ObjectsArtifactPipeline(_dir, "rec", s_app))
+    {
+      pipeline.AddStructuralResult(
+        null,
+        new(null, "PIER1", "Story4", "pierForce", "Dead", "P", "Top", 1.5, 2, null, "PASS")
+      );
+      pipeline.Complete();
+    }
+
+    var path = Path.Combine(_dir, "rec.eav.structural_results.parquet");
+    await using var fs = File.OpenRead(path);
+    using var reader = await ParquetReader.CreateAsync(fs);
+    var fields = reader.Schema.DataFields;
+    using var rg = reader.OpenRowGroupReader(0);
+    async Task<Array> Col(int ordinal) => (await rg.ReadColumnAsync(fields[ordinal])).Data;
+
+    ((int?[])await Col(BundleCols.StructuralResults.ObjectIndex)).Should().Equal([null]);
+    ((string?[])await Col(BundleCols.StructuralResults.ElementName)).Should().Equal("PIER1");
+    ((string?[])await Col(BundleCols.StructuralResults.Location)).Should().Equal("Story4");
+    ((string?[])await Col(BundleCols.StructuralResults.ResultType)).Should().Equal("pierForce");
+    ((string?[])await Col(BundleCols.StructuralResults.LoadCase)).Should().Equal("Dead");
+    ((string?[])await Col(BundleCols.StructuralResults.Component)).Should().Equal("P");
+    ((string?[])await Col(BundleCols.StructuralResults.PositionLabel)).Should().Equal("Top");
+    ((double?[])await Col(BundleCols.StructuralResults.Station)).Should().Equal(1.5);
+    ((int?[])await Col(BundleCols.StructuralResults.Step)).Should().Equal(2);
+    ((double?[])await Col(BundleCols.StructuralResults.Value)).Should().Equal([null]);
+    ((string?[])await Col(BundleCols.StructuralResults.ValueText)).Should().Equal("PASS");
   }
 }

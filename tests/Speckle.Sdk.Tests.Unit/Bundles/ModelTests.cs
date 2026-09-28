@@ -26,8 +26,8 @@ public sealed class ModelTests : IDisposable
   {
     using (var pipeline = new ObjectsArtifactPipeline(_dir, "m", s_producer))
     {
-      int level = pipeline.AddCollection("lvl-1", "Level 1", null, "Level");
-      int walls = pipeline.AddCollection("walls", "Walls", level, "Category");
+      int level = pipeline.AddCollection("lvl-1", new("Level 1", null, "Level", null));
+      int walls = pipeline.AddCollection("walls", new("Walls", level, "Category", null));
 
       int wall = pipeline.InternObject("wall-1");
       pipeline.AddProperties(
@@ -75,7 +75,7 @@ public sealed class ModelTests : IDisposable
       pipeline.InCollection(chair, walls, 0);
 
       // Relationships: level, ownership, hosting, room bounds, connectivity, appearance on three planes.
-      int level1 = pipeline.AddLevel("L1", "Level 1", 0.0);
+      int level1 = pipeline.AddLevel("L1", new("Level 1", 0.0));
       pipeline.OnLevel(wall, level1);
       pipeline.OnLevel(door, level1);
       pipeline.Subelement(wall, door, 0); // door is a component of the wall
@@ -89,7 +89,10 @@ public sealed class ModelTests : IDisposable
       pipeline.AddProperties("pipe-a", new Dictionary<string, object?>(), [new("name", "Pipe A")]);
       pipeline.AddProperties("pipe-b", new Dictionary<string, object?>(), [new("name", "Pipe B")]);
       pipeline.ConnectsTo(pipeA, pipeB);
-      int concrete = pipeline.AddMaterial("mat-concrete", "Concrete", unchecked((int)0xFF808080), 1.0, 0.0, 0.8);
+      int concrete = pipeline.AddMaterial(
+        "mat-concrete",
+        new("Concrete", unchecked((int)0xFF808080), 1.0, 0.0, 0.8, null, null)
+      );
       pipeline.HasMaterial(g, concrete); // geometry plane
       int red = pipeline.AddColor(unchecked((int)0xFFFF0000));
       pipeline.ObjectHasColor(door, red); // object plane
@@ -255,7 +258,7 @@ public sealed class ModelTests : IDisposable
 
     Assert.Equal("Level 1", wall.Level!.Name);
     Assert.Equal(SpecKind.LEVEL, wall.Level.Kind);
-    Assert.Equal(0.0, wall.Level.Elevation);
+    Assert.Equal(0.0, wall.Level.Fields.Elevation);
     Assert.Equal(2, wall.Level.Objects.Count); // wall + door
     Assert.Equal("Level 1", door.Host!.Level!.Name); // chaining
 
@@ -282,17 +285,17 @@ public sealed class ModelTests : IDisposable
     // geometry plane
     var wallGeometry = Assert.Single(wall.Geometries);
     Assert.Equal("Concrete", wallGeometry.Material!.Name);
-    Assert.Equal(0.8, wallGeometry.Material.Roughness);
+    Assert.Equal(0.8, wallGeometry.Material.Fields.Roughness);
     Assert.Null(wallGeometry.Color);
     Assert.Null(wall.Material); // nothing on the object plane
 
     // object plane
-    Assert.Equal(unchecked((int)0xFFFF0000), door.Color!.Argb);
+    Assert.Equal(unchecked((int)0xFFFF0000), door.Color!.Fields.Argb);
     Assert.Equal(SpecKind.COLOR, door.Color.Kind);
     Assert.IsType<ModelColor>(door.Color);
 
     // node plane
-    Assert.Equal(unchecked((int)0xFFFF0000), wall.Collection!.Color!.Argb);
+    Assert.Equal(unchecked((int)0xFFFF0000), wall.Collection!.Color!.Fields.Argb);
 
     Assert.Single(model.Materials);
     Assert.Single(model.Colors);

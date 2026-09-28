@@ -1,4 +1,5 @@
 using Speckle.Sdk.Bundles;
+using Speckle.Sdk.Bundles.Handles;
 
 namespace Speckle.Sdk.Tests.Unit.Bundles;
 

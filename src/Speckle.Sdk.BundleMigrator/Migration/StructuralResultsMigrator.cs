@@ -212,14 +212,7 @@ internal sealed class StructuralResultsMigrator(ObjectsArtifactPipeline pipeline
           }
           pipeline.AddStructuralResult(
             null,
-            location,
-            d.ResultType,
-            loadCase,
-            "drift",
-            null,
-            step,
-            drift,
-            positionLabel: direction
+            new(null, null, location, d.ResultType, loadCase, "drift", direction, null, step, drift)
           );
           stats.StructuralResultRows++;
           return;
@@ -235,15 +228,18 @@ internal sealed class StructuralResultsMigrator(ObjectsArtifactPipeline pipeline
           var component = d.ComponentRenames?.GetValueOrDefault(kv.Key) ?? kv.Key;
           pipeline.AddStructuralResult(
             objectAppId,
-            location,
-            d.ResultType,
-            loadCase,
-            component,
-            station,
-            step,
-            value,
-            elementName: Axis(d.ElementNameKey),
-            positionLabel: Axis(d.PositionKey)
+            new(
+              null,
+              Axis(d.ElementNameKey),
+              location,
+              d.ResultType,
+              loadCase,
+              component,
+              Axis(d.PositionKey),
+              station,
+              step,
+              value
+            )
           );
           stats.StructuralResultRows++;
         }
