@@ -51,7 +51,7 @@ jobs:
         working-directory: ${{ env.SERVER_DIR }}
           
       - name: ⚙️ Spin up Server
-        run: docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" up --wait
+        run: docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose.yml" up --wait
         working-directory: ${{ env.SERVER_DIR }}
         env:
           SPECKLE_SERVER_IMAGE: ${{ env.SPECKLE_SERVER_IMAGE }}
@@ -61,8 +61,8 @@ jobs:
       - name: 🐛 Dump container state
         if: failure()
         run: |
-          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" ps -a
-          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" logs --no-color --tail=200
+          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose.yml" ps -a
+          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose.yml" logs --no-color --tail=200
         working-directory: ${{ env.SERVER_DIR }}
 
       - name: 📦 Restore .NET Solution

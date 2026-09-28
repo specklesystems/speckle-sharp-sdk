@@ -62,7 +62,7 @@ jobs:
   integration-test:
     uses: "./.github/workflows/integration-test.yml"
     with:
-      docker-compose-file: "docker-compose-internal.yml"
+      docker-compose-file: "docker-compose.yml"
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       BUNDLE_SPEC_TOKEN: ${{ secrets.CONNECTORS_GH_TOKEN }}

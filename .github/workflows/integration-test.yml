@@ -46,6 +46,15 @@ jobs:
       - name: ⚙️ Spin up Server
         run: docker compose --file ${{ inputs.docker-compose-file }} up --wait
 
+      # `up --wait` only reports that a container is unhealthy, never its output, so a
+      # dependency that dies on startup is otherwise undiagnosable from the run log.
+      - name: 🐛 Dump container state
+        if: failure()
+        run: |
+          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose.yml" ps -a
+          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose.yml" logs --no-color --tail=200
+        working-directory: ${{ env.SERVER_DIR }}
+
       - name: 📦 Restore
         run: dotnet restore ${{ env.Solution }} --locked-mode
 
