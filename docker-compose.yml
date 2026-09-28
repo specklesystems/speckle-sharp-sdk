@@ -5,7 +5,7 @@ services:
   # Speckle Server dependencies
   #######
   postgres:
-    image: "postgres:16.4-alpine3.20@sha256:d898b0b78a2627cb4ee63464a14efc9d296884f1b28c841b0ab7d7c42f1fffdf"
+    image: "postgres:18.3-alpine3.23@sha256:54451ecb8ab38c24c3ec123f2fd501303a3a1856a5c66e98cecf2460d5e1e9d7"
     restart: always
     environment:
       POSTGRES_DB: speckle
@@ -32,7 +32,7 @@ services:
       retries: 30
 
   minio:
-    image: "minio/minio:RELEASE.2023-10-25T06-33-25Z"
+    image: "minio/minio:RELEASE.2025-10-15T17-29-55Z"
     command: server /data --console-address ":9001"
     restart: always
     volumes:
