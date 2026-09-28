@@ -13,7 +13,6 @@ namespace Speckle.Sdk.Tests.Integration.Bundles;
 /// Receive3 (artifacts listing, download, parse) → the same objects, properties, relations and geometry come back;
 /// and the version's <c>referencedObject</c> is the bundle reference Receive2 dispatches on.
 /// </summary>
-[Trait("Server", "Internal")]
 public sealed class SendReceiveBundleTests : IAsyncLifetime
 {
   private static readonly SpeckleApplication s_app = new()

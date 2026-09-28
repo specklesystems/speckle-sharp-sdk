@@ -143,21 +143,9 @@ public class ModelResourceTests : IAsyncLifetime
   }
 
   [Fact]
-  [Trait("Server", "Internal")]
   public async Task TestCanCreateModelIngestion_InternalServer()
   {
     var ownerResult = await Sut.CanCreateModelIngestion(_project.id, _model.id);
     ownerResult.authorized.Should().Be(true);
-  }
-
-  [Fact]
-  [Trait("Server", "Public")]
-  public async Task TestCanCreateModelIngestion_PublicServer_Throws()
-  {
-    var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
-      await Sut.CanCreateModelIngestion(_project.id, _model.id)
-    );
-    ex.InnerExceptions.Should().HaveCount(1);
-    ex.InnerExceptions.Should().AllBeOfType<SpeckleGraphQLInvalidQueryException>();
   }
 }

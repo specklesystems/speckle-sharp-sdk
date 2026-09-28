@@ -10,7 +10,6 @@ using Speckle.Sdk.Pipelines.Send;
 
 namespace Speckle.Sdk.Tests.Integration.Pipelines.Send;
 
-[Trait("Server", "Internal")]
 public sealed class SendPipelineTests : IAsyncLifetime
 {
   private Project _project;

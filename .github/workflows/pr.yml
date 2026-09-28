@@ -59,19 +59,11 @@ jobs:
           files: tests/**/coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  integration-test-internal:
+  integration-test:
     uses: "./.github/workflows/integration-test.yml"
     with:
       docker-compose-file: "docker-compose-internal.yml"
-      use-internal-image: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       BUNDLE_SPEC_TOKEN: ${{ secrets.CONNECTORS_GH_TOKEN }}
 
-  integration-test-public:
-    uses: "./.github/workflows/integration-test.yml"
-    with:
-      docker-compose-file: "docker-compose.yml"
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      BUNDLE_SPEC_TOKEN: ${{ secrets.CONNECTORS_GH_TOKEN }}

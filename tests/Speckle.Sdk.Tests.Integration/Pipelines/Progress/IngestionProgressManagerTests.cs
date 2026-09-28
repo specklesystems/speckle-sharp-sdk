@@ -6,7 +6,6 @@ using Speckle.Sdk.Pipelines.Progress;
 
 namespace Speckle.Sdk.Tests.Integration.Pipelines.Progress;
 
-[Trait("Server", "Internal")]
 public class IngestionProgressManagerTests : IAsyncLifetime
 {
   private IIngestionProgressManagerFactory _factory;
