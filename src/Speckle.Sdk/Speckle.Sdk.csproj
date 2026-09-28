@@ -63,4 +63,7 @@
     <!-- buildTransitive\ reaches transitive PackageReference consumers; build\ covers direct/legacy ones. -->
     <None Include="buildTransitive\Speckle.Sdk.targets" Pack="true" PackagePath="build\;buildTransitive\" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Bundles\Handles\" />
+  </ItemGroup>
 </Project>

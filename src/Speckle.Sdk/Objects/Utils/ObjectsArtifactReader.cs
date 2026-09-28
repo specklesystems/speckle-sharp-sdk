@@ -270,20 +270,21 @@ public sealed class ObjectsArtifactReader
       {
         continue;
       }
+      var fields = NodeFields.Material(kv.Key, n);
       var material = new RenderMaterial
       {
-        name = n.Name ?? "material",
-        diffuse = n.Argb ?? unchecked((int)0xFFFFFFFF),
-        opacity = n.Opacity ?? 1.0,
-        metalness = n.Metalness ?? 0.0,
-        roughness = n.Roughness ?? 1.0,
+        name = fields.Name ?? "material",
+        diffuse = fields.Argb,
+        opacity = fields.Opacity,
+        metalness = fields.Metalness,
+        roughness = fields.Roughness,
         applicationId = "mat-" + kv.Key,
       };
-      if (n.Emissive is int emissive)
+      if (fields.Emissive is int emissive)
       {
         material.emissive = emissive;
       }
-      if (n.Ior is double ior)
+      if (fields.Ior is double ior)
       {
         // dynamic prop, matching the v1 RhinoMaterialUnpacker convention so receive converters find it where v1 put it
         material["ior"] = ior;

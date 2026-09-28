@@ -4,6 +4,12 @@ using Speckle.Sdk;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
+using SpecContainer = Speckle.Bundle.Spec.Container;
+using SpecLevel = Speckle.Bundle.Spec.Level;
+using SpecMaterial = Speckle.Bundle.Spec.Material;
+using SpecPropertySetField = Speckle.Bundle.Spec.PropertySetField;
+using SpecStructuralResult = Speckle.Bundle.Spec.StructuralResult;
 
 namespace Speckle.Objects.Utils;
 
@@ -240,52 +246,44 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     return k;
   }
 
-  /// <summary>Interns a MATERIAL value-node (inline render value), writing it once. <paramref name="name"/> is the
-  /// authored material name (Rhino/Revit/AutoCAD material table entry) carried in the shared node <c>name</c> column
-  /// so receivers can recreate the host material under its original name instead of a colour-derived placeholder;
-  /// null = unnamed. It is NOT part of the intern key — dedup stays keyed on <paramref name="materialKey"/>.
-  /// <paramref name="emissive"/> is the packed ARGB emissive colour — NULL is the canonical "no emission" in the
-  /// bundle and consumers default it to black; a black RGB is normalized to NULL here, so producers may pass
-  /// <c>RenderMaterial.emissive</c> (black default) naively. <paramref name="ior"/> is the index of refraction
-  /// (null = the host has no IOR concept) — together the remaining universal PBR scalars [ENG-8791].</summary>
-  public int AddMaterial(
-    string materialKey,
-    string? name,
-    int argb,
-    double opacity,
-    double metalness,
-    double roughness,
-    int? emissive = null,
-    double? ior = null
-  )
+  /// <summary>Interns a MATERIAL value-node (inline render value), writing it once. <paramref name="fields"/> is the
+  /// MATERIAL row; its name is the authored host material name so receivers recreate the host material under it
+  /// instead of a colour-derived placeholder, and is NOT part of the intern key — dedup stays keyed on
+  /// <paramref name="materialKey"/>.</summary>
+  public int AddMaterial(string materialKey, SpecMaterial fields)
   {
-    // Black emission IS "no emission" (the alpha byte is meaningless on an emissive colour) — normalize to NULL so
-    // the column has one spelling of "off" and null-RLEs away, regardless of which producer sent it.
-    if (emissive is int e && (e & 0xFFFFFF) == 0)
-    {
-      emissive = null;
-    }
+    fields = NormalizeMaterial(fields);
     if (_nodeInterner.GetOrAdd("mat:" + materialKey, out var k))
     {
       _envelopeWriter.AddNode(
         k,
         NodeKind.Material,
-        name,
+        fields.Name,
         null,
         null,
         null,
         null,
-        argb,
-        opacity,
-        metalness,
-        roughness,
-        emissive,
-        ior,
+        fields.Argb,
+        fields.Opacity,
+        fields.Metalness,
+        fields.Roughness,
+        fields.Emissive,
+        fields.Ior,
         null
       );
     }
     return k;
   }
+
+  /// <summary>Black emission IS "no emission" (the alpha byte is meaningless on an emissive colour), so the column
+  /// keeps one spelling of "off" whichever producer sent it. Public because a caller that interns by key must
+  /// normalize before comparing a repeat against the stored row [ENG-8791].</summary>
+  // Rebuilt positionally, not `with`: the record's init setters are unusable across the assembly
+  // boundary (CS0570), which is also why the generated records are positional-only.
+  public static SpecMaterial NormalizeMaterial(SpecMaterial fields) =>
+    fields.Emissive is int e && (e & 0xFFFFFF) == 0
+      ? new SpecMaterial(fields.Name, fields.Argb, fields.Opacity, fields.Metalness, fields.Roughness, null, fields.Ior)
+      : fields;
 
   /// <summary>Interns a COLOR value-node (keyed by its argb), writing it once.</summary>
   public int AddColor(int argb)
@@ -313,14 +311,14 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   }
 
   /// <summary>Interns a LEVEL value-node (name + elevation), writing it once.</summary>
-  public int AddLevel(string levelKey, string? name, double elevation)
+  public int AddLevel(string levelKey, SpecLevel fields)
   {
     if (_nodeInterner.GetOrAdd("lvl:" + levelKey, out var k))
     {
       _envelopeWriter.AddNode(
         k,
         NodeKind.Level,
-        name,
+        fields.Name,
         null,
         null,
         null,
@@ -331,7 +329,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
         null,
         null,
         null,
-        elevation
+        fields.Elevation
       );
     }
     return k;
@@ -339,64 +337,57 @@ public sealed class ObjectsArtifactPipeline : IDisposable
 
   /// <summary>Interns a scene-tree collection (layer / category / story) node, once. A collection is a
   /// CONTAINER node whose <c>subtype</c> carries its tag; <c>IN_COLLECTION</c> marks the grouping axis.
-  /// <paramref name="parentCollectionK"/> is the parent collection (null = top-level) — the parent chain IS
-  /// the source hierarchy. <paramref name="subtype"/> tags it (e.g. "Layer") for the loader.</summary>
-  public int AddCollection(
-    string collectionKey,
-    string? name,
-    int? parentCollectionK,
-    string? subtype,
-    string? ghTopology = null
-  )
+  /// <see cref="SpecContainer.DefRef"/> is the parent collection (null = top-level) — the parent chain IS the
+  /// source hierarchy. <see cref="SpecContainer.GhTopology"/> carries Grasshopper's data-tree paths so a tree
+  /// survives a round trip; null for every other producer.</summary>
+  public int AddCollection(string collectionKey, SpecContainer fields)
   {
     if (_nodeInterner.GetOrAdd("coll:" + collectionKey, out var k))
     {
-      // ghTopology carries Grasshopper's data-tree paths for this collection
-      // (nodes.gh_topology) so a tree survives a round trip; null for every other producer.
       _envelopeWriter.AddNode(
         k,
         NodeKind.Container,
-        name,
-        parentCollectionK,
+        fields.Name,
+        fields.DefRef,
         null,
         null,
-        subtype,
-        null,
-        null,
-        null,
+        fields.Subtype,
         null,
         null,
         null,
         null,
-        ghTopology
+        null,
+        null,
+        null,
+        fields.GhTopology
       );
     }
     return k;
   }
 
   /// <summary>Interns a CONTAINER (semantic-topology bucket: model / room / system / …) node, once. Distinct
-  /// from <see cref="AddCollection"/> (authored scene-tree). <paramref name="parentContainerK"/> is its parent
-  /// CONTAINER (null = top-level; self-nesting for nested links). <paramref name="subtype"/> is the canonical
+  /// from <see cref="AddCollection"/> (authored scene-tree). <see cref="SpecContainer.Subtype"/> is the canonical
   /// axis tag (e.g. "Model") — use the SAME tag across connectors for the same concept.</summary>
-  public int AddContainer(string containerKey, string? name, int? parentContainerK, string? subtype)
+  public int AddContainer(string containerKey, SpecContainer fields)
   {
     if (_nodeInterner.GetOrAdd("cont:" + containerKey, out var k))
     {
       _envelopeWriter.AddNode(
         k,
         NodeKind.Container,
-        name,
-        parentContainerK,
+        fields.Name,
+        fields.DefRef,
         null,
         null,
-        subtype,
-        null,
-        null,
-        null,
+        fields.Subtype,
         null,
         null,
         null,
-        null
+        null,
+        null,
+        null,
+        null,
+        fields.GhTopology
       );
     }
     return k;
@@ -417,7 +408,7 @@ public sealed class ObjectsArtifactPipeline : IDisposable
     _envelopeWriter.AddRelation(RelKind.Solid, objectK, geometryK, ord);
 
   /// <summary>object → geometry: the element's authored location curve (axis). Prefer
-  /// <see cref="Speckle.Sdk.Bundles.BundleObject.AddCenterline"/>.</summary>
+  /// <see cref="Speckle.Sdk.Bundles.Handles.BundleObject.AddCenterline"/>.</summary>
   public void Centerline(int objectK, int geometryK, int ord) =>
     _envelopeWriter.AddRelation(RelKind.Centerline, objectK, geometryK, ord);
 
@@ -549,42 +540,35 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// Appends one structural analysis/design result value to <c>{base}.eav.structural_results.parquet</c>
   /// (see <see cref="StructuralResultsWriter"/>). <b>Object-level</b> results pass the member/joint's
   /// <paramref name="objectApplicationId"/> (resolved to the SAME dense K the object was interned with, so
-  /// results join back to it) and leave <paramref name="location"/> null; <b>group-level</b> results
-  /// (pier/spandrel forces) pass <paramref name="elementName"/> — a named group of walls, NOT an interned
-  /// object — with <paramref name="location"/> = story; <b>model/story-level</b> results (story drift,
-  /// modal period, base reaction) pass neither and identify via <paramref name="location"/> (story) and/or
-  /// <paramref name="step"/> (mode). <paramref name="positionLabel"/> is a categorical position/direction
-  /// (Top/Bottom, X/Y) — distinct from the numeric member <paramref name="station"/>. Numeric results set
-  /// <paramref name="value"/>; non-numeric design verdicts set <paramref name="valueText"/>.
+  /// results join back to it) and leave <c>location</c> null; <b>group-level</b> results (pier/spandrel
+  /// forces) set <c>element_name</c> — a named group of walls, NOT an interned object — with <c>location</c>
+  /// = story; <b>model/story-level</b> results (story drift, modal period, base reaction) set neither and
+  /// identify via <c>location</c> (story) and/or <c>step</c> (mode). <c>position_label</c> is a categorical
+  /// position/direction (Top/Bottom, X/Y) — distinct from the numeric member <c>station</c>. Numeric results
+  /// set <c>value</c>; non-numeric design verdicts set <c>value_text</c>.
   /// </summary>
-  public void AddStructuralResult(
-    string? objectApplicationId,
-    string? location,
-    string resultType,
-    string loadCase,
-    string component,
-    double? station,
-    int? step,
-    double? value,
-    string? valueText = null,
-    string? elementName = null,
-    string? positionLabel = null
-  )
+  public void AddStructuralResult(string? objectApplicationId, SpecStructuralResult fields)
   {
+    if (fields.ObjectIndex is not null)
+    {
+      // The index is this pipeline's dense object K, which only it can mint — supplying both
+      // would let a caller point a result at an object the app id does not resolve to.
+      throw new ArgumentException("ObjectIndex is derived from objectApplicationId; leave it null.", nameof(fields));
+    }
     int? objectIndex = objectApplicationId is null ? null : _eavWriter.GetOrAddObject(objectApplicationId);
     _structuralResultsWriter ??= new StructuralResultsWriter(_outputDir, _baseName, _scheduler);
     _structuralResultsWriter.AddRow(
       objectIndex,
-      elementName,
-      location,
-      resultType,
-      loadCase,
-      component,
-      positionLabel,
-      station,
-      step,
-      value,
-      valueText
+      fields.ElementName,
+      fields.Location,
+      fields.ResultType,
+      fields.LoadCase,
+      fields.Component,
+      fields.PositionLabel,
+      fields.Station,
+      fields.Step,
+      fields.Value,
+      fields.ValueText
     );
   }
 
@@ -634,39 +618,26 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   /// <summary>Appends one field row of an AEC/Civil3D property-set DEFINITION to the optional
   /// <c>{base}.eav.property_set_definitions.parquet</c> (see <see cref="PropertySetDefinitionsWriter"/>) —
   /// the schema only; values stay per-object in eav under <c>properties.Property Sets.{set}.{field}</c> and
-  /// attachment is derived from those value paths. <paramref name="setKey"/> is the definition's content hash
-  /// (SET-level identity); <paramref name="fieldBucketId"/> is THE rebind join key — the same string the value
-  /// rows ship in <c>eav.internal_definition_name</c> (null ⇒ consumers match <paramref name="fieldName"/>
-  /// against the value path leaf). Call once per field, in authored field order (row order is field order).</summary>
-  public void AddPropertySetDefinition(
-    string setName,
-    string setKey,
-    string fieldName,
-    string? fieldBucketId,
-    string? dataType,
-    string? defaultString = null,
-    double? defaultDouble = null,
-    bool? defaultBoolean = null,
-    string? unit = null,
-    string? description = null,
-    string? setDescription = null,
-    string? appliesTo = null
-  )
+  /// attachment is derived from those value paths. <c>set_key</c> is the definition's content hash (SET-level
+  /// identity); <c>field_bucket_id</c> is THE rebind join key — the same string the value rows ship in
+  /// <c>eav.internal_definition_name</c> (null ⇒ consumers match <c>field_name</c> against the value path
+  /// leaf). Call once per field, in authored field order (row order is field order).</summary>
+  public void AddPropertySetDefinition(SpecPropertySetField fields)
   {
     _propertySetDefinitionsWriter ??= new PropertySetDefinitionsWriter(_outputDir, _baseName, _scheduler);
     _propertySetDefinitionsWriter.AddRow(
-      setName,
-      setKey,
-      setDescription,
-      fieldName,
-      fieldBucketId,
-      dataType,
-      defaultString,
-      defaultDouble,
-      defaultBoolean,
-      unit,
-      description,
-      appliesTo
+      fields.SetName,
+      fields.SetKey,
+      fields.SetDescription,
+      fields.FieldName,
+      fields.FieldBucketId,
+      fields.DataType,
+      fields.DefaultString,
+      fields.DefaultDouble,
+      fields.DefaultBoolean,
+      fields.Unit,
+      fields.Description,
+      fields.AppliesTo
     );
   }
 
@@ -676,8 +647,8 @@ public sealed class ObjectsArtifactPipeline : IDisposable
   public void AddSceneView(SceneView view) => _envelopeWriter.AddSceneView(view);
 
   /// <summary>Authors one named camera viewpoint into <c>envelope.camera_views.parquet</c>. Position/target in
-  /// model units, forward/up unit vectors, <see cref="CameraView.Fov"/> vertical DEGREES (perspective only).</summary>
-  public void AddCameraView(CameraView view) => _envelopeWriter.AddCameraView(view);
+  /// model units, forward/up unit vectors, <c>fov</c> vertical DEGREES (perspective only).</summary>
+  public void AddCameraView(SpecCameraView view) => _envelopeWriter.AddCameraView(view);
 
   /// <summary>
   /// Records the producer information of this bundle in the <c>meta</c> file.
