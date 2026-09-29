@@ -47,17 +47,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      # The converter package does not grant this repo's GITHUB_TOKEN read access
-      # (`denied`), unlike speckle-server; the org PAT that checks out the private
-      # bundle spec can read it.
-      - name: 🔐 Login to Github Container Registry for the converter image
-        if: ${{ inputs.use-internal-image }}
-        uses: docker/login-action@v4
-        with:
-          registry: "ghcr.io"
-          username: ${{ github.actor }}
-          password: ${{ secrets.BUNDLE_SPEC_TOKEN }}
-
       # The datgen stand-in inside speckle-server launches this image over the mounted
       # Docker socket but never pulls it, so the pull (and its credentials) stay here.
       - name: 📥 Pull converter image
@@ -65,7 +54,16 @@ jobs:
         run: docker pull ghcr.io/specklesystems/speckle-converters:latest
 
       - name: ⚙️ Spin up Server
-        run: docker compose --file ${{ inputs.docker-compose-file }} up --wait
+        run: DOCKER_GID=$(stat -c %g /var/run/docker.sock) docker compose --file ${{ inputs.docker-compose-file }} up --wait
+
+      # `up --wait` only reports that a container is unhealthy, never its output, and
+      # the datgen stand-in's launches are only visible in the server's log.
+      - name: 🐛 Dump container state
+        if: failure()
+        run: |
+          docker compose --file ${{ inputs.docker-compose-file }} ps -a
+          docker ps -a
+          docker compose --file ${{ inputs.docker-compose-file }} logs --no-color --tail=300
 
       - name: 📦 Restore
         run: dotnet restore ${{ env.Solution }} --locked-mode
