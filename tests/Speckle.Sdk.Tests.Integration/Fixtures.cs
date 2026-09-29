@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
+using Speckle.Sdk.Api.GraphQL.Resources;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Host;
@@ -61,7 +62,37 @@ public static class Fixtures
       .GetRequiredService<IOperations>()
       .Send(new() { applicationId = "ASDF" }, remote, false);
     CreateVersionInput input = new(objectId, modelId, projectId);
-    return await client.Version.Create(input);
+    var reserved = await client.Version.Create(input);
+    return await WaitForVersion(client, projectId, reserved.id);
+  }
+
+  /// <summary>
+  /// On 2026.9 servers <see cref="VersionResource.Create"/> only reserves an id: the version is born when the
+  /// bundle-migration worker completes the ingestion (docker-compose-internal.yml runs one). Pre-2026.9 servers
+  /// create the version inline, so the first poll returns.
+  /// </summary>
+  public static async Task<Version> WaitForVersion(
+    IClient client,
+    string projectId,
+    string versionId,
+    TimeSpan? timeout = null
+  )
+  {
+    var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromMinutes(2));
+    SpeckleGraphQLException? last = null;
+    while (DateTime.UtcNow < deadline)
+    {
+      try
+      {
+        return await client.Version.Get(versionId, projectId);
+      }
+      catch (SpeckleGraphQLException ex)
+      {
+        last = ex;
+      }
+      await Task.Delay(TimeSpan.FromSeconds(1));
+    }
+    throw new TimeoutException($"Version {versionId} was not born within the timeout", last);
   }
 
   public static async Task<Account> SeedUser()
