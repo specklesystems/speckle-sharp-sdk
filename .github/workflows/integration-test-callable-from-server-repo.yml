@@ -50,14 +50,12 @@ jobs:
         run: docker build --file "./packages/server/Dockerfile" --tag ${{ env.SPECKLE_SERVER_IMAGE }} .
         working-directory: ${{ env.SERVER_DIR }}
           
-      # The converter package does not grant a repo GITHUB_TOKEN read access
-      # (`denied`); the org PAT that checks out the private bundle spec can read it.
       - name: 🔐 Login to Github Container Registry
         uses: docker/login-action@v4
         with:
           registry: "ghcr.io"
           username: ${{ github.actor }}
-          password: ${{ secrets.BUNDLE_SPEC_TOKEN }}
+          password: ${{ github.token }}
 
       # The datgen stand-in inside speckle-server launches this image over the mounted
       # Docker socket but never pulls it, so the pull (and its credentials) stay here.
