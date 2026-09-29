@@ -63,7 +63,7 @@ jobs:
         run: docker pull ghcr.io/specklesystems/speckle-converters:latest
 
       - name: ⚙️ Spin up Server
-        run: docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" up --wait
+        run: DOCKER_GID=$(stat -c %g /var/run/docker.sock) docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" up --wait
         working-directory: ${{ env.SERVER_DIR }}
         env:
           SPECKLE_SERVER_IMAGE: ${{ env.SPECKLE_SERVER_IMAGE }}
@@ -74,7 +74,8 @@ jobs:
         if: failure()
         run: |
           docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" ps -a
-          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" logs --no-color --tail=200
+          docker ps -a
+          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" logs --no-color --tail=300
         working-directory: ${{ env.SERVER_DIR }}
 
       - name: 📦 Restore .NET Solution

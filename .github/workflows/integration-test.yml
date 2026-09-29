@@ -54,7 +54,16 @@ jobs:
         run: docker pull ghcr.io/specklesystems/speckle-converters:latest
 
       - name: ⚙️ Spin up Server
-        run: docker compose --file ${{ inputs.docker-compose-file }} up --wait
+        run: DOCKER_GID=$(stat -c %g /var/run/docker.sock) docker compose --file ${{ inputs.docker-compose-file }} up --wait
+
+      # `up --wait` only reports that a container is unhealthy, never its output, and
+      # the datgen stand-in's launches are only visible in the server's log.
+      - name: 🐛 Dump container state
+        if: failure()
+        run: |
+          docker compose --file ${{ inputs.docker-compose-file }} ps -a
+          docker ps -a
+          docker compose --file ${{ inputs.docker-compose-file }} logs --no-color --tail=300
 
       - name: 📦 Restore
         run: dotnet restore ${{ env.Solution }} --locked-mode
