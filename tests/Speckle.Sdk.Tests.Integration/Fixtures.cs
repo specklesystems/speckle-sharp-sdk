@@ -79,12 +79,17 @@ public static class Fixtures
   )
   {
     var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromMinutes(2));
-    SpeckleGraphQLException? last = null;
+    Exception? last = null;
     while (DateTime.UtcNow < deadline)
     {
       try
       {
         return await client.Version.Get(versionId, projectId);
+      }
+      // The client surfaces GraphQL errors as an AggregateException of SpeckleGraphQLExceptions
+      catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is SpeckleGraphQLException))
+      {
+        last = ex;
       }
       catch (SpeckleGraphQLException ex)
       {

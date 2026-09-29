@@ -77,6 +77,10 @@ services:
     # on the host first.
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    # The image runs as distroless uid 65532; the socket is root:docker 0660, so the
+    # server needs the host's docker group (the CI job passes its gid).
+    group_add:
+      - "${DOCKER_GID:-0}"
     depends_on:
       postgres:
         condition: service_healthy

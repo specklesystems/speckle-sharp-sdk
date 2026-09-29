@@ -359,11 +359,7 @@ public sealed class ModelIngestionResource
         data: projectMutations {
           data: modelIngestionMutations {
             data: completeWithVersion(input: $input) {
-              data:statusData {
-                ... on ModelIngestionSuccessStatus {
-                  data:versionId
-                }
-              }
+              data: versionId
             }
           }
         }
@@ -372,13 +368,17 @@ public sealed class ModelIngestionResource
 
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
+    // Since server 2026.9 this mutation only records the version inputs; the version itself is born later by the
+    // bundle-migration worker, so the returned ingestion is still processing and its success status has no id yet.
+    // The id reserved at ingestion creation is the one the version will get.
     var res = await _client
-      .ExecuteGraphQLRequest<
-        RequiredResponse<RequiredResponse<RequiredResponse<RequiredResponse<RequiredResponse<string>>>>>
-      >(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<RequiredResponse<string>>>>>(
+        request,
+        cancellationToken
+      )
       .ConfigureAwait(false);
 
-    return res.data.data.data.data.data;
+    return res.data.data.data.data;
   }
 
   /// <summary>
