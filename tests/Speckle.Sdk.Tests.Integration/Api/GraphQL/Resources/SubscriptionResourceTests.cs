@@ -102,7 +102,8 @@ public class SubscriptionResourceTests : IAsyncLifetime
   {
     TaskCompletionSource<ProjectVersionsUpdatedMessage> tcs = new();
     using var sub = Sut.CreateProjectVersionsUpdatedSubscription(_testProject.id);
-    sub.Listeners += (_, message) => tcs.SetResult(message);
+    // A 2026.9 server also emits UPDATED once the worker stamps the bundle onto the born version
+    sub.Listeners += (_, message) => tcs.TrySetResult(message);
 
     await Task.Delay(WAIT_PERIOD); // Give time to subscription to be setup
 
