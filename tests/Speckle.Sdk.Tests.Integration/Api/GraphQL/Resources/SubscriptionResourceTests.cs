@@ -16,6 +16,9 @@ public class SubscriptionResourceTests : IAsyncLifetime
   private const int WAIT_PERIOD = 600; // For CI runs, a much smaller wait time is acceptable
 #endif
   private const int TIMEOUT = WAIT_PERIOD + WAIT_PERIOD + 600;
+
+  // A test that creates a version inside its body also waits for the bundle-migration worker to birth it
+  private const int VERSION_BIRTH_TIMEOUT = TIMEOUT + 120_000;
   private IClient _testUser;
   private Project _testProject;
   private Model _testModel;
@@ -97,7 +100,7 @@ public class SubscriptionResourceTests : IAsyncLifetime
     subscriptionMessage.project.Should().NotBeNull();
   }
 
-  [Fact(Timeout = TIMEOUT)]
+  [Fact(Timeout = VERSION_BIRTH_TIMEOUT)]
   public async Task ProjectVersionsUpdated_SubscriptionIsCalled()
   {
     TaskCompletionSource<ProjectVersionsUpdatedMessage> tcs = new();
