@@ -19,17 +19,17 @@ jobs:
       SERVER_REPO: "specklesystems/speckle-server-internal"
       SOLUTION: "Speckle.Sdk.slnx"
       SPECKLE_SERVER_IMAGE: "speckle-server:local"
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Checkout ${{ env.CLIENT_REPO }}
-        uses: actions/checkout@v7
+        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # v1.0.0-beta
         with:
           path: ${{ env.CLIENT_DIR }}
           repository: ${{ env.CLIENT_REPO }}
           ref: ${{ inputs.speckle-sharp-sdk-ref }}
 
       - name: Checkout ${{ env.SERVER_REPO }}
-        uses: actions/checkout@v7
+        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # v1.0.0-beta
         with:
           repository: ${{ env.SERVER_REPO }}
           path: ${{ env.SERVER_DIR }}

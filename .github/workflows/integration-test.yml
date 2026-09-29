@@ -18,10 +18,10 @@ jobs:
   integration-test:
     env:
       Solution: "Speckle.Sdk.slnx"
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # v1.0.0-beta
 
       - name: Checkout Bundle Spec Repo
         uses: ./.github/actions/checkout-bundle-spec
