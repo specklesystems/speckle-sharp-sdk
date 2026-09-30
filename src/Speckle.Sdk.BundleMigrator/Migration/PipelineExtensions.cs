@@ -29,15 +29,23 @@ internal static class PipelineExtensions
     }
 #pragma warning restore CS0618
 
-    if (geometry is Arc a)
+    // V3 often sent non-normalized planes; Viewer 2.0 ignored them and recomputed from origin+start+end.
+    // Viewer 3 (SGO) samples along the plane's basis, so a scaled basis scales the curve (ENG-9577: circles at x304.8).
+    Plane? plane = geometry switch
     {
-      // V3 often sent non-normalized planes; Viewer 2.0 ignored them and recomputed from origin+start+end.
-      // Viewer 3 (SGO) uses the plane, so normalize to remove one source of invalid arcs.
-      a.plane.normal.Normalize();
-      a.plane.xdir.Normalize();
-      a.plane.ydir.Normalize();
+      Arc a => a.plane,
+      Circle c => c.plane,
+      Ellipse e => e.plane,
+      _ => null,
+    };
+    if (plane is not null)
+    {
+      plane.normal.Normalize();
+      plane.xdir.Normalize();
+      plane.ydir.Normalize();
     }
-    else if (geometry is Mesh m && m.faces.Count > 0 && m.faces[0] < 3)
+
+    if (geometry is Mesh m && m.faces.Count > 0 && m.faces[0] < 3)
     {
       MigrateLegacyFaces(m);
     }

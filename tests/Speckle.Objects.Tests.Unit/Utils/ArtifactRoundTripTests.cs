@@ -37,7 +37,7 @@ public class ArtifactRoundTripTests
     {
       using (var pipeline = new ObjectsArtifactPipeline(dir, "rt", TestProducer))
       {
-        int collK = pipeline.AddCollection("layer-1", "Layer 1", null, "Layer");
+        int collK = pipeline.AddCollection("layer-1", new("Layer 1", null, "Layer", null));
         int objK = pipeline.InternObject("obj-1");
         pipeline.AddProperties(
           "obj-1",
@@ -55,13 +55,7 @@ public class ArtifactRoundTripTests
         pipeline.InCollection(objK, collK, 0);
         int matK = pipeline.AddMaterial(
           "mat-1",
-          "Concrete - Cast In Situ",
-          unchecked((int)0xFFAABBCC),
-          1.0,
-          0.0,
-          0.5,
-          unchecked((int)0xFF102030),
-          1.52
+          new("Concrete - Cast In Situ", unchecked((int)0xFFAABBCC), 1.0, 0.0, 0.5, unchecked((int)0xFF102030), 1.52)
         );
         pipeline.HasMaterial(gK, matK);
         pipeline.SetProducer(TestProducer);
@@ -174,8 +168,8 @@ public class ArtifactRoundTripTests
     {
       using (var pipeline = new ObjectsArtifactPipeline(dir, "rt", TestProducer))
       {
-        int layerAK = pipeline.AddCollection("layer-a", "Layer A", null, "Layer");
-        layerBK = pipeline.AddCollection("layer-b", "Layer B", null, "Layer");
+        int layerAK = pipeline.AddCollection("layer-a", new("Layer A", null, "Layer", null));
+        layerBK = pipeline.AddCollection("layer-b", new("Layer B", null, "Layer", null));
 
         // the placement, on Layer A — a real scene object
         int defK = pipeline.AddDefinition("def-1", "Frame");

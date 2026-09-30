@@ -18,10 +18,10 @@ jobs:
   integration-test:
     env:
       Solution: "Speckle.Sdk.slnx"
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # zizmor: ignore[ref-version-mismatch] Blacksmith mutates tags
 
       - name: Checkout Bundle Spec Repo
         uses: ./.github/actions/checkout-bundle-spec
@@ -47,14 +47,44 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - name: ⚙️ Spin up Server
-        run: docker compose --file ${{ inputs.docker-compose-file }} up --wait
+      # Image pulls are network-bound, so they run in the background under the restore +
+      # build; the stack itself (migrations, server boot) starts only after the build so
+      # it does not compete with it for the runner's CPUs. The datgen stand-in inside
+      # speckle-server launches the converter image over the mounted Docker socket but
+      # never pulls it, so that pull (and its credentials) stays here too.
+      - name: 📥 Pull images in the background
+        run: |
+          {
+            docker compose --file ${{ inputs.docker-compose-file }} pull --quiet
+            if [[ "${{ inputs.use-internal-image }}" == "true" ]]; then
+              docker pull --quiet ghcr.io/specklesystems/speckle-converters:latest
+            fi
+          } > pull.log 2>&1 &
 
       - name: 📦 Restore
         run: dotnet restore ${{ env.Solution }} --locked-mode
 
       - name: 🏗️ Build
         run: dotnet build ${{ env.Solution }} --configuration Release --no-restore -warnaserror
+
+      # Re-pulling an image the background pull already has is a no-op; one it is still
+      # fetching joins the same layer downloads.
+      - name: 📥 Pull converter image
+        if: ${{ inputs.use-internal-image }}
+        run: docker pull --quiet ghcr.io/specklesystems/speckle-converters:latest
+
+      - name: ⚙️ Spin up Server
+        run: DOCKER_GID=$(stat -c %g /var/run/docker.sock) docker compose --file ${{ inputs.docker-compose-file }} up --wait
+
+      # `up --wait` only reports that a container is unhealthy, never its output, and
+      # the datgen stand-in's launches are only visible in the server's log.
+      - name: 🐛 Dump container state
+        if: failure()
+        run: |
+          cat pull.log || true
+          docker compose --file ${{ inputs.docker-compose-file }} ps -a
+          docker ps -a
+          docker compose --file ${{ inputs.docker-compose-file }} logs --no-color --tail=300
 
       - name: 🔨 Integration Tests against Public Server
         if: ${{ !inputs.use-internal-image }}

@@ -50,8 +50,11 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
     using (var b = new BundleBuilder(s_app, "m"))
     {
       var walls = b.GetOrAddContainerPath(["Level 1", "Walls"], subtype: "Category");
-      var concrete = b.GetOrAddMaterial("mat-concrete", "Concrete", unchecked((int)0xFF808080), roughness: 0.8);
-      var l1 = b.GetOrAddLevel("L1", "Level 1", 0);
+      var concrete = b.GetOrAddMaterial(
+        "mat-concrete",
+        new("Concrete", unchecked((int)0xFF808080), 1, 0, 0.8, null, null)
+      );
+      var l1 = b.GetOrAddLevel("L1", new("Level 1", 0));
       var wall = b.GetOrAddObject(
         "wall-1",
         walls,
@@ -75,7 +78,7 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
       wall.Level = l1;
       var door = b.GetOrAddObject("door-1", walls, new Dictionary<string, object?> { ["Width"] = 0.9 }, name: "Door");
       door.Host = wall;
-      door.Parent = wall;
+      wall.AddChild(door);
       b.AddModelProperty("projectInformation.number", 42.0);
 
       sent = await operations.Send3(account, _projectId, _modelId, b, null, CancellationToken.None);
@@ -87,7 +90,9 @@ public sealed class SendReceiveBundleTests : IAsyncLifetime
     Assert.False(string.IsNullOrEmpty(sent.VersionId));
 
     // ── the version exists once the ingestion completes ────────────────────────────────────────────────
-    var version = await operations.WaitForVersion(account, sent, TimeSpan.FromSeconds(30), CancellationToken.None);
+    // A bundle without its viewer .dat is born by the server's datgen job: a cold converter container start
+    // under docker compose can take well over the 30 s an in-cluster pod needs.
+    var version = await operations.WaitForVersion(account, sent, TimeSpan.FromMinutes(2), CancellationToken.None);
     Assert.Equal(sent.BundleReference, version.referencedObject); // what Receive2 dispatches on
     Assert.True(BundleReference.TryParse(version.referencedObject, out _));
 

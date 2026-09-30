@@ -19,17 +19,17 @@ jobs:
       SERVER_REPO: "specklesystems/speckle-server-internal"
       SOLUTION: "Speckle.Sdk.slnx"
       SPECKLE_SERVER_IMAGE: "speckle-server:local"
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Checkout ${{ env.CLIENT_REPO }}
-        uses: actions/checkout@v7
+        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # zizmor: ignore[ref-version-mismatch] Blacksmith mutates tags
         with:
           path: ${{ env.CLIENT_DIR }}
           repository: ${{ env.CLIENT_REPO }}
           ref: ${{ inputs.speckle-sharp-sdk-ref }}
 
       - name: Checkout ${{ env.SERVER_REPO }}
-        uses: actions/checkout@v7
+        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # zizmor: ignore[ref-version-mismatch] Blacksmith mutates tags
         with:
           repository: ${{ env.SERVER_REPO }}
           path: ${{ env.SERVER_DIR }}
@@ -46,12 +46,45 @@ jobs:
       #          cache: true
       #          cache-dependency-path: "**/packages.lock.json"
 
+      # Network-bound pulls run under the server image build; the stack itself starts
+      # only after the .NET build so it does not compete with it for the runner's CPUs.
+      - name: 📥 Pull images in the background
+        run: |
+          {
+            docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" pull --quiet --ignore-buildable
+            docker pull --quiet ghcr.io/specklesystems/speckle-converters:latest
+          } > pull.log 2>&1 &
+        working-directory: ${{ env.SERVER_DIR }}
+        env:
+          SPECKLE_SERVER_IMAGE: ${{ env.SPECKLE_SERVER_IMAGE }}
+
       - name: 🏗️ Build Server
         run: docker build --file "./packages/server/Dockerfile" --tag ${{ env.SPECKLE_SERVER_IMAGE }} .
         working-directory: ${{ env.SERVER_DIR }}
           
+      - name: 🔐 Login to Github Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: "ghcr.io"
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: 📦 Restore .NET Solution
+        run: dotnet restore ${{ env.SOLUTION }} --locked-mode
+        working-directory: ${{ env.CLIENT_DIR }}
+        
+      - name: 🏗️ Build .NET Solution
+        run: dotnet build ${{ env.SOLUTION }} --configuration Release --no-restore -warnaserror
+        working-directory: ${{ env.CLIENT_DIR }}
+
+      # The datgen stand-in inside speckle-server launches this image over the mounted
+      # Docker socket but never pulls it, so the pull (and its credentials) stay here;
+      # a no-op when the background pull already has it.
+      - name: 📥 Pull converter image
+        run: docker pull --quiet ghcr.io/specklesystems/speckle-converters:latest
+
       - name: ⚙️ Spin up Server
-        run: docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" up --wait
+        run: DOCKER_GID=$(stat -c %g /var/run/docker.sock) docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" up --wait
         working-directory: ${{ env.SERVER_DIR }}
         env:
           SPECKLE_SERVER_IMAGE: ${{ env.SPECKLE_SERVER_IMAGE }}
@@ -61,17 +94,11 @@ jobs:
       - name: 🐛 Dump container state
         if: failure()
         run: |
+          cat pull.log || true
           docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" ps -a
-          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" logs --no-color --tail=200
+          docker ps -a
+          docker compose --file "../${{ env.CLIENT_DIR }}/docker-compose-internal.yml" logs --no-color --tail=300
         working-directory: ${{ env.SERVER_DIR }}
-
-      - name: 📦 Restore .NET Solution
-        run: dotnet restore ${{ env.SOLUTION }} --locked-mode
-        working-directory: ${{ env.CLIENT_DIR }}
-        
-      - name: 🏗️ Build .NET Solution
-        run: dotnet build ${{ env.SOLUTION }} --configuration Release --no-restore -warnaserror
-        working-directory: ${{ env.CLIENT_DIR }}
         
       - name: 🔨 Run .NET Integration Tests 
         run: dotnet test ${{ env.SOLUTION }} --filter "(Category=Integration)&(Server!=Public)" --configuration Release --no-build --no-restore --verbosity=normal

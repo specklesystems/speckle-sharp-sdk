@@ -142,7 +142,7 @@ public sealed class ModelObject
 
   // ── object → node ─────────────────────────────────────────────────────────────────────────────────────
 
-  /// <summary>Level (<c>ON_LEVEL</c>), with <see cref="ModelLevel.Elevation"/>.</summary>
+  /// <summary>Level (<c>ON_LEVEL</c>), with its elevation on <see cref="ModelLevel.Fields"/>.</summary>
   public ModelLevel? Level => NodeByRel(RelKind.OnLevel) as ModelLevel;
 
   /// <summary>MEP system container (<c>IN_SYSTEM</c>).</summary>
