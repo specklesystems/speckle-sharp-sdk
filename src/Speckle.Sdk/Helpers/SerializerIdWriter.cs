@@ -8,6 +8,7 @@ namespace Speckle.Sdk.Helpers;
 
 //just a wrapper around a lot of newtonsoft overloads
 [ExcludeFromCodeCoverage]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class SerializerIdWriter : JsonWriter
 {
   private readonly JsonWriter _jsonWriter;

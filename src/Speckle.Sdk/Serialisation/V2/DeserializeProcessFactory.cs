@@ -10,6 +10,7 @@ namespace Speckle.Sdk.Serialisation.V2;
 /// <seealso cref="DeserializeProcessFactoryNoCache"/>
 /// <seealso cref="DeserializeProcess"/>
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class DeserializeProcessFactory(
   IBaseDeserializer baseDeserializer,
   ISqLiteJsonCacheManagerFactory sqLiteJsonCacheManagerFactory,

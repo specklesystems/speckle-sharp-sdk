@@ -2,6 +2,7 @@ using Speckle.Newtonsoft.Json;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public readonly struct PropertyAttributeInfo
 {
   public PropertyAttributeInfo(

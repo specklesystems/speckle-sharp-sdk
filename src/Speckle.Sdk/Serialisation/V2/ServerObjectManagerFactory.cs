@@ -5,6 +5,7 @@ using Speckle.Sdk.Logging;
 namespace Speckle.Sdk.Serialisation.V2;
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class ServerObjectManagerFactory(ISpeckleHttp speckleHttp, ISdkActivityFactory activityFactory)
   : IServerObjectManagerFactory
 {

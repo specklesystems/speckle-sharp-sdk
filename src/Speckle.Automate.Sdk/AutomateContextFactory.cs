@@ -55,7 +55,6 @@ internal sealed class AutomationContextFactory(
     {
       AutomationRunData = automationRunData,
       SpeckleClient = client,
-      _speckleToken = account.token,
       _initTime = initTime,
       AutomationResult = new AutomationResult(),
     };

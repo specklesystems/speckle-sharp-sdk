@@ -9,6 +9,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public record DeserializeProcessOptions(
   bool SkipCache = false, //TODO: This appears to be bugged when set to `true`, `LoadId` depends on sqlite
   bool ThrowOnMissingReferences = true,
@@ -20,6 +21,7 @@ public record DeserializeProcessOptions(
 public partial interface IDeserializeProcess : IAsyncDisposable;
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class DeserializeProcess(
   IObjectLoader objectLoader,
   IProgress<ProgressArgs>? progress,

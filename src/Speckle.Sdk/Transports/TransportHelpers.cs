@@ -1,8 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Transports;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public static class TransportHelpers
 {
   public static async Task<string> CopyObjectAndChildrenAsync(

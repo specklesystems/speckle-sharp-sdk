@@ -8,6 +8,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public record SerializeProcessOptions(
   bool SkipCacheRead = false,
   bool SkipCacheWrite = false,
@@ -20,16 +21,19 @@ public record SerializeProcessOptions(
   public int? MaxParallelism { get; set; }
 }
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public readonly record struct SerializeProcessResults(
   string RootId,
   IReadOnlyDictionary<Id, ObjectReference> ConvertedReferences
 );
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public interface ISerializeProcess : IAsyncDisposable
 {
   Task<SerializeProcessResults> Serialize(Base root);
 }
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class SerializeProcess(
   IProgress<ProgressArgs>? progress,
   IObjectSaver objectSaver,

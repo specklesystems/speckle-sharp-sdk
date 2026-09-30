@@ -1,5 +1,6 @@
 ﻿namespace Speckle.Sdk.Serialisation.V2.Send;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public static class ClosureMath
 {
   public static void IncrementClosures(this Dictionary<Id, int> current, IEnumerable<KeyValuePair<Id, int>> child)

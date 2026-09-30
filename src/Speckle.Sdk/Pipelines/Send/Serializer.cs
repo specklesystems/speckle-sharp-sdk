@@ -18,6 +18,7 @@ namespace Speckle.Sdk.Pipelines.Send;
 /// <remarks>
 /// Unlike previous SDK serializers, this one uses <see cref="System.Text.Json"/> rather than <see cref="Speckle.Newtonsoft"/>
 /// </remarks>
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 internal sealed class Serializer
 {
   private readonly record struct PropertyInfo(string Name, object? Value, bool IsDetachable);

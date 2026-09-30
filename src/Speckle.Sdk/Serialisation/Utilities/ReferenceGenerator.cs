@@ -1,5 +1,6 @@
 ﻿namespace Speckle.Sdk.Serialisation.Utilities;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public static class ReferenceGenerator
 {
   private const string REFERENCE_JSON_START = "{\"speckle_type\":\"reference\",\"referencedId\":\"";

@@ -6,10 +6,12 @@ using System.Timers;
 using Microsoft.Data.Sqlite;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 using Timer = System.Timers.Timer;
 
 namespace Speckle.Sdk.Transports;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class SQLiteTransport : IDisposable, ICloneable, ITransport, IBlobCapableTransport
 {
   private bool _isWriting;

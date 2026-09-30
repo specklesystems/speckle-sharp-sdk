@@ -13,6 +13,7 @@ using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class ServerObjectManagerOptions(TimeSpan? timeout = null, string? boundary = null)
 {
   public TimeSpan Timeout => timeout ?? TimeSpan.FromSeconds(120);
@@ -20,6 +21,7 @@ public class ServerObjectManagerOptions(TimeSpan? timeout = null, string? bounda
 }
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class ServerObjectManager : IServerObjectManager
 {
   private static readonly char[] s_separator = ['\t'];
