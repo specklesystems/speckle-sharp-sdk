@@ -4,11 +4,13 @@ using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
 using Speckle.Sdk.Transports.ServerUtils;
 
 namespace Speckle.Sdk.Transports;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class ServerTransport : IServerTransport
 {
   private readonly ISpeckleHttp _http;

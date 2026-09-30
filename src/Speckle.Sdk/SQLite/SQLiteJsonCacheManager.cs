@@ -8,6 +8,7 @@ namespace Speckle.Sdk.SQLite;
 
 public partial interface ISqLiteJsonCacheManager : IDisposable;
 
+//Can't deprecate yet, still used by account manager.
 [GenerateAutoInterface]
 public sealed class SqLiteJsonCacheManager : ISqLiteJsonCacheManager
 {

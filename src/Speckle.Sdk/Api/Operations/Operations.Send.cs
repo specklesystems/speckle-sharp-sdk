@@ -112,10 +112,12 @@ public partial class Operations
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
   [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
   [Obsolete(
-    "Legacy send: serializes the per-object JSON graph, and after server 2026.9 the follow-up Version.Create only "
-      + "reserves an id - the version is born when the server finishes ingesting. Prefer SendPipeline + "
-      + "client.Ingestion (or Send3 with a BundleBuilder for producer-built bundles). Migration guide: "
-      + "https://docs.speckle.systems/developers/migration/publish-through-ingestions"
+    "Since 2026.9 - JSON based send pipelines are deprecated and are a frozen surface. "
+      + "Sends via legacy JSON are compatible with legacy JSON API receives"
+      + "And are compatible with bundle receives via a server-side migrator."
+      + $"It is recommended you transition to using native bundle sends via {nameof(Send3)}."
+      + "Currently, there is no date set for removal of JSON API"
+      + "See https://docs.speckle.systems/next/welcome for more info"
   )]
   public async Task<SerializeProcessResults> Send2(
     Uri url,
@@ -184,10 +186,12 @@ public partial class Operations
   /// </code></example>
   [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
   [Obsolete(
-    "Transport-based Send is frozen legacy surface (Speckle 2026.9.0): it writes the legacy per-object JSON graph and "
-      + "can never produce a version in the new Speckle object model. It keeps working for existing object-graph "
-      + "workflows and has no removal date. Update your scripts to Send3 with a BundleBuilder, which publishes a "
-      + "bundle over the ingestion rail."
+    "Since 2026.9 - JSON based send pipelines are deprecated and are a frozen surface. "
+      + "Sends via legacy JSON are compatible with legacy JSON API receives"
+      + "And are compatible with bundle receives via a server-side migrator."
+      + $"It is recommended you transition to using native bundle sends via {nameof(Send3)}."
+      + "Currently, there is no date set for removal of JSON API"
+      + "See https://docs.speckle.systems/next/welcome for more info"
   )]
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
@@ -227,10 +231,12 @@ public partial class Operations
   /// </code></example>
   [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
   [Obsolete(
-    "Transport-based Send is frozen legacy surface (Speckle 2026.9.0): it writes the legacy per-object JSON graph and "
-      + "can never produce a version in the new Speckle object model. It keeps working for existing object-graph "
-      + "workflows and has no removal date. Update your scripts to Send3 with a BundleBuilder, which publishes a "
-      + "bundle over the ingestion rail."
+    "Since 2026.9 - JSON based send pipelines are deprecated and are a frozen surface. "
+      + "Sends via legacy JSON are compatible with legacy JSON API receives"
+      + "And are compatible with bundle receives via a server-side migrator."
+      + $"It is recommended you transition to using native bundle sends via {nameof(Send3)} ."
+      + "Currently, there is no date set for removal of JSON API"
+      + "See https://docs.speckle.systems/next/welcome for more info"
   )]
   public async Task<(string rootObjId, IReadOnlyDictionary<string, ObjectReference> convertedReferences)> Send(
     Base value,
@@ -352,6 +358,7 @@ public partial class Operations
   }
 
   /// <returns><inheritdoc cref="Send(Base, IReadOnlyCollection{ITransport}, IProgress{ProgressArgs}?, CancellationToken)"/></returns>
+  [Obsolete(Json.DEPRECATION_MESSAGE)]
   internal static async Task<string> SerializerSend(
     Base value,
     SpeckleObjectSerializer serializer,

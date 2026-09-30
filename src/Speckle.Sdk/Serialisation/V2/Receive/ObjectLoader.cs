@@ -13,6 +13,7 @@ namespace Speckle.Sdk.Serialisation.V2.Receive;
 public partial interface IObjectLoader : IDisposable;
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class ObjectLoader(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IServerObjectManager serverObjectManager,

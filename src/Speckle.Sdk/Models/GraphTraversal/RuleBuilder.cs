@@ -1,4 +1,5 @@
 using Speckle.Sdk.Common;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Models.GraphTraversal;
 
@@ -7,6 +8,7 @@ namespace Speckle.Sdk.Models.GraphTraversal;
 /// Specifies what members to traverse if any provided <see cref="_conditions"/> are met.
 /// </summary>
 /// <remarks>Follows the builder pattern to ensure that a rule is complete before usable, see usages</remarks>
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class TraversalRule : ITraversalBuilderReturn, ITraversalBuilderTraverse
 {
   private readonly List<WhenCondition> _conditions;

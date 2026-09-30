@@ -8,6 +8,7 @@ using Speckle.Sdk.Transports;
 namespace Speckle.Sdk.Serialisation.V2;
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class SerializeProcessFactory(
   IBaseChildFinder baseChildFinder,
   IObjectSerializerFactory objectSerializerFactory,
