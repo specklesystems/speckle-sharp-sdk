@@ -136,16 +136,16 @@ services:
       CONVERSION_RUNNER_LOCAL_DEV: 'true'
       CONVERTER_IMAGE: ${SPECKLE_CONVERTER_IMAGE:-ghcr.io/specklesystems/speckle-converters:latest}
       JOB_SYSTEM_KUBECONFIG: /kind/kubeconfig
-      CONVERSION_JOB_NAMESPACE: conversion
-      CONVERSION_NODE_POOL: conversion
+      JOB_SYSTEM_NAMESPACE: conversion
+      JOB_SYSTEM_NODE_POOL: conversion
       # scripts/integration-cluster.sh load-image puts the image on the node.
-      CONVERSION_IMAGE_PULL_POLICY: IfNotPresent
+      JOB_SYSTEM_IMAGE_PULL_POLICY: IfNotPresent
       # Job pods reach the server through the host, not over the compose network.
       FILEIMPORT_SERVICE_USE_PRIVATE_OBJECTS_SERVER_URL: 'true'
       PRIVATE_OBJECTS_SERVER_URL: "http://${KIND_HOST_ADDRESS}:3000"
       # Requests are hard reservations on the one node, which the stack and the test
       # run share; test models are small, and an OOM climbs the x2 memory ladder.
-      DATGEN_BASE_MEMORY_MIB: 1024
+      MODEL_INGESTION_DAT_GENERATION_BASE_MEMORY_MIB: 1024
 
       # The legacy-send switch (server ADR-0003): unset, versionMutations.create and the
       # v1 uploads/process rail answer LEGACY_SEND_UNSUPPORTED. Any value works, the
