@@ -22,14 +22,14 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Checkout ${{ env.CLIENT_REPO }}
-        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # zizmor: ignore[ref-version-mismatch] Blacksmith mutates tags
+        uses: useblacksmith/checkout@4a338d9e78beb326c7222f0693507fe80bae37f2 # zizmor: ignore[ref-version-mismatch] Blacksmith mutates tags
         with:
           path: ${{ env.CLIENT_DIR }}
           repository: ${{ env.CLIENT_REPO }}
           ref: ${{ inputs.speckle-sharp-sdk-ref }}
 
       - name: Checkout ${{ env.SERVER_REPO }}
-        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # zizmor: ignore[ref-version-mismatch] Blacksmith mutates tags
+        uses: useblacksmith/checkout@4a338d9e78beb326c7222f0693507fe80bae37f2 # zizmor: ignore[ref-version-mismatch] Blacksmith mutates tags
         with:
           repository: ${{ env.SERVER_REPO }}
           path: ${{ env.SERVER_DIR }}
