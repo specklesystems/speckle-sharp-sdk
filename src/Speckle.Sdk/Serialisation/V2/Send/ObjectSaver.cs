@@ -6,6 +6,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public interface IObjectSaver : IDisposable
 {
   Exception? Exception { get; set; }
@@ -15,6 +16,7 @@ public interface IObjectSaver : IDisposable
   Task SaveAsync(BaseItem item);
 }
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class ObjectSaver(
   IProgress<ProgressArgs>? progress,
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,

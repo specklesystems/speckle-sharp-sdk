@@ -28,7 +28,8 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
   }
   public required IClient SpeckleClient { get; init; }
 
-  public required string _speckleToken { get; init; }
+  [Obsolete("Use SpeckleClient.Account.token instead")]
+  public string _speckleToken => SpeckleClient.Account.token;
 
   // added for performance measuring
   public required Stopwatch _initTime { get; init; }
@@ -40,11 +41,45 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
   public string? StatusMessage => AutomationResult.StatusMessage;
   public TimeSpan Elapsed => _initTime.Elapsed;
 
+  public async Task<Speckle.Sdk.Bundles.Model> ReceiveVersionBundle(
+    ReceiveOptions? options = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    // TODO: this is a quick hack to keep implementation consistency. Move to proper receive many versions
+    if (AutomationRunData.Triggers.First() is not VersionCreationTrigger trigger)
+    {
+      throw new SpeckleException("Processed automation run data without any triggers");
+    }
+
+    var rootObject = await operations
+      .Receive3(
+        SpeckleClient.Account,
+        AutomationRunData.ProjectId,
+        trigger.Payload.ModelId,
+        trigger.Payload.VersionId,
+        options,
+        cancellationToken
+      )
+      .ConfigureAwait(false);
+
+    logger.LogInformation(
+      "It took {TotalSeconds} seconds to receive the speckle version {ServerUrl}projects/{ProjectId}/models/{ModelId}@{VersionId}",
+      Elapsed.TotalSeconds,
+      SpeckleClient.ServerUrl,
+      AutomationRunData.ProjectId,
+      trigger.Payload.ModelId,
+      trigger.Payload.VersionId
+    );
+    return rootObject;
+  }
+
   /// <summary>
   /// Receive version for automation.
   /// </summary>
   /// <returns> Commit object. </returns>
   /// <exception cref="SpeckleException">Throws if commit object is null.</exception>
+  [Obsolete("Receiving Base object trees have been deprecated, use  LoadModelVersion instead")]
   public async Task<Base> ReceiveVersion(CancellationToken cancellationToken = default)
   {
     // TODO: this is a quick hack to keep implementation consistency. Move to proper receive many versions
@@ -65,9 +100,6 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
       );
     }
 
-    // Automate's function-author surface still hands out a Base tree; its bundle-era successor is a separate effort
-    // (atlas spec 2026-08-big-truck-dev-compat, Out of Scope §Automate). Until then it rides the compat projection.
-#pragma warning disable CS0618 // Receive2 is obsolete
     Base rootObject = await operations
       .Receive2(
         SpeckleClient.ServerUrl,
@@ -78,7 +110,6 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
         cancellationToken
       )
       .ConfigureAwait(false);
-#pragma warning restore CS0618
     // Receive2 marks a bundle-backed version as received itself; a server on Speckle 2026.9.0 serves every version as a
     // bundle, so the explicit markReceived that used to live here would only double-count.
     logger.LogInformation(
@@ -92,6 +123,34 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
   /// <summary>
   /// Creates new version in the project.
   /// </summary>
+  /// <param name="builder">The data to create the new version of the model.</param>
+  /// <param name="model">The model to create the version under.</param>
+  /// <param name="cancellationToken"></param>
+  /// <returns></returns>
+  /// <exception cref="SpeckleException">Throws if given model name is as same as with model name in automation run data.
+  /// The reason is to prevent circular run loop in automation.</exception>
+  public async Task<SendResult> CreateNewVersionInProject(
+    BundleBuilder builder,
+    Model model,
+    SendOptions? option = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    // Confirm target branch is not the same as source branch
+    GuardAgainstCircularTrigger(model);
+
+    var result = await operations
+      .Send3(SpeckleClient.Account, AutomationRunData.ProjectId, model.id, builder, null, cancellationToken)
+      .ConfigureAwait(false);
+
+    AutomationResult.ResultVersions.Add(result.VersionId);
+
+    return result;
+  }
+
+  /// <summary>
+  /// Creates new version in the project.
+  /// </summary>
   /// <param name="rootObject">Object to send to project.</param>
   /// <param name="model">The model to create the version under</param>
   /// <param name="versionMessage">Version message.</param>
@@ -99,6 +158,7 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
   /// <returns>Version id.</returns>
   /// <exception cref="SpeckleException"> Throws if given model name is as same as with model name in automation run data.
   /// The reason is to prevent circular run loop in automation.</exception>
+  [Obsolete("Base object trees are deprecated, use bundle builder overload")]
   public async Task<Version> CreateNewVersionInProject(
     Base rootObject,
     Model model,
@@ -109,7 +169,6 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
     // Confirm target branch is not the same as source branch
     GuardAgainstCircularTrigger(model);
 
-#pragma warning disable CS0618 // legacy publish pair stays until the ingestion-backed helper lands (ENG-9420)
     var (rootObjectId, _) = await operations
       .Send2(
         SpeckleClient.ServerUrl,
@@ -127,8 +186,6 @@ internal sealed class AutomationContext(IOperations operations, ILogger<Automati
         cancellationToken
       )
       .ConfigureAwait(false);
-
-#pragma warning restore CS0618
 
     AutomationResult.ResultVersions.Add(newVersion.id);
 

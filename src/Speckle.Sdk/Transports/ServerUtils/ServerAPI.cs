@@ -7,9 +7,11 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Transports.ServerUtils;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class ServerApi : IDisposable, IServerApi
 {
   private readonly ISdkActivityFactory _activityFactory;

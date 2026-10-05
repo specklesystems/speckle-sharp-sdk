@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 [GenerateAutoInterface]
+[Obsolete("JSON based serializers are deprecated, use parquet bundle pipeline")]
 public class BaseDeserializer(IObjectDeserializerFactory objectDeserializerFactory) : IBaseDeserializer
 {
   public Base Deserialise(

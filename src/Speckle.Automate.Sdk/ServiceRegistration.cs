@@ -39,7 +39,9 @@ public static class ServiceRegistration
     serviceCollection.AddSpeckleSdk(speckleSdkOptions);
 
     //Overwrite the SDK's default IDeserializeProcessFactory to ensure SQLite is not used to cache objects
+#pragma warning disable CS0618 // Type or member is obsolete
     serviceCollection.AddTransient<IDeserializeProcessFactory, DeserializeProcessFactoryNoCache>();
+#pragma warning restore CS0618 // Type or member is obsolete
 
     //Add automate assembly services
     serviceCollection.AddTransient<IAutomationContextFactory, AutomationContextFactory>();

@@ -7,6 +7,7 @@ using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public static class DictionaryConverter
 {
   /// <summary>

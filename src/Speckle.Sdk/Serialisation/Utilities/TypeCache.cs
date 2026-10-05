@@ -5,6 +5,7 @@ using Speckle.Sdk.Host;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 internal static class TypeCache
 {
   #region Getting Types

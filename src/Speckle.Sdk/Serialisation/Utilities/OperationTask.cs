@@ -1,5 +1,6 @@
 namespace Speckle.Sdk.Serialisation.Utilities;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 internal readonly struct OperationTask<T>
   where T : struct
 {
