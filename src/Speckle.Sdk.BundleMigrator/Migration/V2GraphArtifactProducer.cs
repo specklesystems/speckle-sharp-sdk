@@ -9,6 +9,7 @@ using Speckle.Sdk.Models.Collections;
 using Speckle.Sdk.Models.GraphTraversal;
 using Speckle.Sdk.Pipelines;
 using Speckle.Sdk.Pipelines.Send.Artifacts;
+using SpecCameraView = Speckle.Bundle.Spec.CameraView;
 
 namespace Speckle.Sdk.BundleMigrator.Migration;
 
@@ -83,7 +84,10 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       {
         // Parent is a Collection except at the root, which is skipped above and never mapped → top-level (null).
         int? parentK = _collectionMap.TryGetValue(helper.Aid(parent.Current), out var pk) ? pk : null;
-        var k = pipeline.AddCollection(helper.CollectionKey(col), col.name, parentK, helper.CollectionSubtype(col));
+        var k = pipeline.AddCollection(
+          helper.CollectionKey(col),
+          new(col.name, parentK, helper.CollectionSubtype(col), null)
+        );
         _collectionMap[helper.Aid(col)] = k;
         _stats.Collections++;
         continue;
@@ -148,7 +152,7 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
       path = path.Length == 0 ? name : path + "/" + name;
       if (!_v2CollByPath.TryGetValue(path, out var pathK))
       {
-        pathK = pipeline.AddCollection(path, name.TrimStart('@'), parentK, "Layer");
+        pathK = pipeline.AddCollection(path, new(name.TrimStart('@'), parentK, "Layer", null));
         _v2CollByPath[path] = pathK;
         _stats.Collections++;
       }
@@ -258,7 +262,7 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     var key = lvl.id ?? lvl.applicationId ?? $"{name}:{elevation}"; // id is the reliable v2 level identity
     if (!_levelKByKey.TryGetValue(key, out var lvlK))
     {
-      lvlK = pipeline.AddLevel(key, name, elevation);
+      lvlK = pipeline.AddLevel(key, new(name, elevation));
       _levelKByKey[key] = lvlK;
       _stats.Levels++;
     }
@@ -305,7 +309,7 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
     var ord = _cameraViewOrd++;
 
     pipeline.AddCameraView(
-      new CameraView(
+      new SpecCameraView(
         View: ord,
         Name: name,
         IsDefault: false,
@@ -365,13 +369,15 @@ internal sealed class V2GraphArtifactProducer(ObjectsArtifactPipeline pipeline, 
         // emissive is passed naively — the pipeline normalizes a black RGB to the bundle's NULL "no emission".
         matK = pipeline.AddMaterial(
           key,
-          rm.name,
-          rm.diffuse,
-          rm.opacity,
-          rm.metalness,
-          rm.roughness,
-          rm.emissive,
-          helper.ReadDouble(rm, "ior") // untyped on RenderMaterial
+          new(
+            rm.name,
+            rm.diffuse,
+            rm.opacity,
+            rm.metalness,
+            rm.roughness,
+            rm.emissive,
+            helper.ReadDouble(rm, "ior") // untyped on RenderMaterial
+          )
         );
         materialKs[key] = matK;
         _stats.Materials++;

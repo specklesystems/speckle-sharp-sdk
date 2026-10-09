@@ -375,12 +375,6 @@ public static class EavExtraction
         continue;
       }
 
-      // Skip Structure layer definitions under Type Parameters
-      if (key == "Structure" && prefix.EndsWith(".Type Parameters"))
-      {
-        continue;
-      }
-
       // Skip Material Quantities — handled separately
       if (key == "Material Quantities")
       {
@@ -694,10 +688,6 @@ public static class EavExtraction
         }
 
         // Parity with the JObject walk's special-cases.
-        if (key == "Structure" && prefix.EndsWith(".Type Parameters", StringComparison.Ordinal))
-        {
-          continue;
-        }
         if (key == "Material Quantities")
         {
           continue; // handled separately

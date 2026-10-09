@@ -46,9 +46,9 @@ Developer docs are a bit patchy. See our [📚 Speckle Docs website](https://doc
 # Developing and Debugging
 
 
-To build solutions in this repo, version [10.0.2xx of the .NET SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) is required.
+To build solutions in this repo, version [10.0.4xx of the .NET SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0) is required.
 
-It is recommended to use JetBrains Rider (version 2025.3 or greater) or Microsoft Visual Studio 2026 (version 18.4 or greater)
+It is recommended to use JetBrains Rider (version 2026.1 or greater) or Microsoft Visual Studio 2026 (version 18.9 or greater)
 
 From there you can open the main `Speckle.Sdk.slnx` solution and build the project.
 

@@ -64,8 +64,10 @@ public sealed class GeometriesParquetWriter : IDisposable
   // them in Dispose() would race the scheduler's pending footer write and could corrupt the parquet file.
   // The analyzer can't see the deferred disposal, so its CA2213 here is a false positive. (An in-code
   // suppression can't satisfy both the net8 and net10 analyzers at once — see the editorconfig note.)
-  private Stream _stream = null!; // created + owned on the scheduler thread by OpenShard
-  private ParquetWriter _writer = null!;
+#nullable disable
+  private Stream _stream; // created + owned on the scheduler thread by OpenShard
+  private ParquetWriter _writer;
+#nullable enable
   private readonly DataField _indexField;
   private readonly DataField _contentField;
   private readonly DataField _idField;

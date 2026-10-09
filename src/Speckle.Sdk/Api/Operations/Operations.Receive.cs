@@ -1,6 +1,10 @@
 using Microsoft.Extensions.Logging;
+using Speckle.InterfaceGenerator;
+using Speckle.Sdk.Bundles;
+using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Pipelines.Receive.Artifacts;
 using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.V2.Receive;
 using Speckle.Sdk.Transports;
@@ -10,14 +14,136 @@ namespace Speckle.Sdk.Api;
 public partial class Operations
 {
   /// <summary>
-  /// Receives a Object to the provided URL and Caches the results
+  /// <see cref="Receive3(Account, string, string, string, ReceiveOptions?, CancellationToken)"/> addressed by a model
+  /// url — <c>{server}/projects/{projectId}/models/{modelId}[@{versionId}]</c>, as the web app hands out. Without
+  /// <c>@versionId</c> the model's latest version is resolved via GraphQL first.
   /// </summary>
-  /// <remarks/>
+  /// <exception cref="ArgumentException"><paramref name="modelUrl"/> is not a model url, or is on a different server
+  /// than <paramref name="account"/>.</exception>
+  /// <exception cref="SpeckleException">The model has no versions, or the version has no bundle.</exception>
+  public async Task<Model> Receive3(
+    Account account,
+    Uri modelUrl,
+    ReceiveOptions? options,
+    CancellationToken cancellationToken
+  )
+  {
+    var url = ModelUrl.Parse(modelUrl);
+    EnsureSameServer(account, url, nameof(modelUrl));
+    string versionId =
+      url.VersionId
+      ?? await bundleReceiver
+        .ResolveLatestVersionIdAsync(account, url.ProjectId, url.ModelId, cancellationToken)
+        .ConfigureAwait(false);
+    return await Receive3(account, url.ProjectId, url.ModelId, versionId, options, cancellationToken)
+      .ConfigureAwait(false);
+  }
+
+  /// <summary>A model url must live on the account's server — a mismatch is a caller mix-up, not a request to make.</summary>
+  private static void EnsureSameServer(Account account, ModelUrl url, string paramName)
+  {
+    if (
+      !Uri.TryCreate(account.serverInfo.url, UriKind.Absolute, out var server)
+      || !string.Equals(server.Host, url.Server.Host, StringComparison.OrdinalIgnoreCase)
+    )
+    {
+      throw new ArgumentException(
+        $"'{url}' is on '{url.Server.Host}', but the account is for '{account.serverInfo.url}'.",
+        paramName
+      );
+    }
+  }
+
+  /// <summary>
+  /// Receives a version of a model — the Speckle 2026.9.0 read path. Addresses the version by id, downloads its
+  /// artefact bundle via the <c>/api/v2</c> artifacts rail and returns a <see cref="Model"/>: objects with their
+  /// instance- and type-level properties, ready to query with LINQ, plus the raw bundle graph underneath. Nothing is
+  /// projected or dropped.
+  /// </summary>
+  /// <remarks>
+  /// Works for every version the server has a bundle for — natively published ones and legacy versions the server
+  /// has converted. The returned <see cref="Model"/> keeps the bundle files on disk until it is disposed, so wrap it
+  /// in <c>using</c>.
+  /// <para><b>Memory.</b> Objects, properties, nodes and relations are parsed fully into memory up front; geometry is
+  /// parsed only when <see cref="Model.Geometries"/> is first accessed (and not downloaded at all with
+  /// <see cref="ReceiveOptions.IncludeGeometry"/> false). This is the in-process path: it suits models whose
+  /// property tables fit comfortably in RAM. For very large models — or for questions that only touch a slice of
+  /// the data — use the SQL query API (the separate <c>Speckle.Sdk.Query</c> package), which streams over the same
+  /// parquet files on disk instead of loading them.</para>
+  /// </remarks>
+  /// <param name="options">What to download; <see langword="null"/> = <see cref="ReceiveOptions.Default"/> (viewer
+  /// artefacts skipped).</param>
+  /// <exception cref="SpeckleException">The server returned no artefact files for this version (no bundle exists yet,
+  /// the server predates the /api/v2 artifacts endpoint, or the token cannot read the project).</exception>
+  /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
+  public async Task<Model> Receive3(
+    Account account,
+    string projectId,
+    string modelId,
+    string versionId,
+    ReceiveOptions? options,
+    CancellationToken cancellationToken
+  )
+  {
+    options ??= ReceiveOptions.Default;
+    using var receiveActivity = activityFactory.Start("Operations.Receive3");
+    receiveActivity?.SetTag("speckle.url", account.serverInfo.url);
+    receiveActivity?.SetTag("speckle.projectId", projectId);
+    receiveActivity?.SetTag("speckle.modelId", modelId);
+    receiveActivity?.SetTag("speckle.versionId", versionId);
+    metricsFactory.CreateCounter<long>("Receive").Add(1);
+
+    try
+    {
+      var model = await bundleReceiver
+        .ReceiveAsync(account, projectId, modelId, versionId, options, cancellationToken)
+        .ConfigureAwait(false);
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return model;
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+
+  /// <summary>
+  /// Receives the object graph behind <paramref name="objectId"/> from the server at <paramref name="url"/>.
+  /// </summary>
+  /// <remarks>
+  /// <paramref name="objectId"/> is normally <c>Version.referencedObject</c>. Two forms are accepted transparently:
+  /// <list type="bullet">
+  /// <item>an object hash — the legacy JSON object graph is downloaded, cached and deserialized (unchanged behaviour);</item>
+  /// <item>a <see cref="BundleReference"/> (<c>bundle.&lt;projectId&gt;.&lt;modelId&gt;.&lt;versionId&gt;</c>) — the
+  /// version is bundle-only (Speckle 2026.9.0); its artefact bundle is downloaded via the <c>/api/v2</c> artifacts rail and
+  /// materialized into a <see cref="Base"/> tree in the v3 DataObject idiom. The returned root carries
+  /// <c>version = 4</c> so callers can tell a materialized tree from a genuine legacy one.</item>
+  /// </list>
+  /// Existing scripts therefore keep working after an SDK bump without code changes — but the bundle branch is a
+  /// lossy compatibility projection (no typed classes, per-parameter metadata collapsed to scalars, synthetic ids for
+  /// non-object entities) and it does not scale to the model sizes the bundle format is built for: every object,
+  /// property and decoded mesh becomes a managed <see cref="Base"/>, so large versions that the new rail handles
+  /// comfortably can exhaust memory here. New code should call <see cref="Receive3(Account, string, string, string, ReceiveOptions?, CancellationToken)"/>, which returns the bundle itself.
+  /// </remarks>
   /// <exception cref="ArgumentException">No transports were specified</exception>
   /// <exception cref="ArgumentNullException">The <paramref name="objectId"/> was <see langword="null"/></exception>
   /// <exception cref="SpeckleException">Serialization or Send operation was unsuccessful</exception>
   /// <exception cref="HttpRequestException">HTTP layer errors</exception>
   /// <exception cref="OperationCanceledException">The <paramref name="cancellationToken"/> requested cancellation</exception>
+  [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
+  [Obsolete(
+    "Receive2 keeps working for existing versions, but for versions created with the new Speckle object model "
+      + "(bundle-only, Speckle 2026.9.0) it returns a best-effort Base projection and does not guarantee the new object "
+      + "model round-trips perfectly. It is also not suited to the model sizes the new format supports: materializing "
+      + "a large bundle into a Base tree inflates every object, property and mesh into managed objects and can run out "
+      + "of memory. Update your scripts to Receive3, which receives the bundle directly."
+  )]
   public async Task<Base> Receive2(
     Uri url,
     string streamId,
@@ -28,6 +154,14 @@ public partial class Operations
     DeserializeProcessOptions? options = null
   )
   {
+    // Speckle 2026.9.0 dispatch: a bundle-only version has no legacy object graph to download. Decide here, above
+    // everything else, so the legacy path below stays byte-for-byte what it was.
+    if (BundleReference.TryParse(objectId, out var bundleReference))
+    {
+      return await ReceiveBundle(url, streamId, bundleReference, authorizationToken, cancellationToken)
+        .ConfigureAwait(false);
+    }
+
     using var receiveActivity = activityFactory.Start("Operations.Receive");
     receiveActivity?.SetTag("speckle.url", url);
     receiveActivity?.SetTag("speckle.projectId", streamId);
@@ -85,6 +219,16 @@ public partial class Operations
   /// <exception cref="SpeckleDeserializeException">Deserialization of the requested object(s) failed</exception>
   /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> requested cancel</exception>
   /// <returns>The requested Speckle Object</returns>
+  /// <exception cref="NotSupportedException"><paramref name="objectId"/> is a <see cref="BundleReference"/>: transports
+  /// serve per-object JSON and can never carry a Speckle 2026.9.0 bundle. Use <see cref="Receive3(Account, string, string, string, ReceiveOptions?, CancellationToken)"/> instead.</exception>
+  [AutoInterfaceIgnore] // declared by hand on IOperations so the [Obsolete] reaches interface callers
+  [Obsolete(
+    "Transport-based Receive is frozen legacy surface: it works for existing (object-graph) versions but can never "
+      + "receive versions created with the new Speckle object model (bundle-only, Speckle 2026.9.0) - a bundle "
+      + "reference throws NotSupportedException. It is also the slowest path (per-object JSON, single-threaded "
+      + "deserialization). Update your scripts to Receive3, which receives the bundle directly, or Receive2 if you "
+      + "still need a Base tree."
+  )]
   public async Task<Base> Receive(
     string objectId,
     ITransport? remoteTransport = null,
@@ -93,6 +237,16 @@ public partial class Operations
     CancellationToken cancellationToken = default
   )
   {
+    if (BundleReference.IsBundleReference(objectId))
+    {
+      throw new NotSupportedException(
+        $"'{objectId}' is a bundle reference, not an object id: this version is bundle-only and has no legacy object "
+          + "graph, so the transport-based Receive cannot serve it. Call Operations.Receive3(url, projectId, modelId, "
+          + "versionId, token, ...) to receive the bundle, or Receive2(url, projectId, version.referencedObject, "
+          + "token, ...) if you still need a Base tree."
+      );
+    }
+
     using var receiveActivity = activityFactory.Start("Operations.Receive");
     metricsFactory.CreateCounter<long>("Receive").Add(1);
 
@@ -233,4 +387,115 @@ public partial class Operations
     actualLocalTransport = defaultLocalTransport;
     return defaultLocalTransport;
   }
+
+  /// <summary>
+  /// The Speckle 2026.9.0 rail behind <see cref="Receive2"/>: downloads the version's artefact bundle via
+  /// <c>/api/v2/.../artifacts</c> and materializes it into a <see cref="Base"/> tree that legacy traversal code can
+  /// walk. The shape follows the receive fidelity contract (atlas spec <c>2026-08-big-truck-dev-compat</c> §6):
+  /// <list type="bullet">
+  /// <item>root is a <c>Collection</c> carrying <c>units</c>, <c>version = 4</c>, and the render-material /
+  /// instance-definition proxy lists;</item>
+  /// <item>objects are <c>DataObject</c>s keyed by <c>applicationId</c> (never a content hash), with SGEO-decoded
+  /// <c>displayValue</c> meshes and a nested <c>properties</c> dict rebuilt from EAV paths;</item>
+  /// <item>collections / materials / definitions get per-bundle synthetic ids — stable within one tree, not across versions;</item>
+  /// <item>v2 typed classes are NOT rehydrated; per-parameter metadata collapses to scalars.</item>
+  /// </list>
+  /// Full fidelity lives in <see cref="Receive3(Account, string, string, string, ReceiveOptions?, CancellationToken)"/>.
+  /// </summary>
+  /// <exception cref="SpeckleException">The reference's project doesn't match <paramref name="projectId"/>, or the
+  /// server returned no artefact files for a version that promises a bundle.</exception>
+  private async Task<Base> ReceiveBundle(
+    Uri url,
+    string projectId,
+    BundleReference reference,
+    string? authorizationToken,
+    CancellationToken cancellationToken
+  )
+  {
+    using var receiveActivity = activityFactory.Start("Operations.Receive.Bundle");
+    receiveActivity?.SetTag("speckle.url", url);
+    receiveActivity?.SetTag("speckle.projectId", projectId);
+    receiveActivity?.SetTag("speckle.bundleReference", reference.ToString());
+    metricsFactory.CreateCounter<long>("Receive").Add(1);
+
+    try
+    {
+      if (reference.ProjectId != projectId)
+      {
+        throw new SpeckleException(
+          $"Bundle reference '{reference}' belongs to project '{reference.ProjectId}', but the receive was requested "
+            + $"for project '{projectId}'."
+        );
+      }
+
+      var root = await bundleReceiver
+        .ReceiveAsBaseAsync(
+          // the legacy signature hands us a url + token; the downloader and client only read those two off an Account
+          new Account
+          {
+            token = authorizationToken ?? string.Empty,
+            serverInfo = new() { url = url.ToString() },
+            userInfo = new(),
+          },
+          reference.ProjectId,
+          reference.ModelId,
+          reference.VersionId,
+          cancellationToken
+        )
+        .ConfigureAwait(false);
+
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Ok);
+      return root;
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      receiveActivity?.SetStatus(SdkActivityStatusCode.Error);
+      receiveActivity?.RecordException(ex);
+      throw;
+    }
+  }
+}
+
+/// <summary>Hand-declared members of the generated <see cref="IOperations"/>: the source generator doesn't copy
+/// attributes, and the deprecation must reach callers that resolve <c>IOperations</c> from DI (every connector and
+/// script), not only those holding a concrete <see cref="Operations"/>.</summary>
+public partial interface IOperations
+{
+  /// <inheritdoc cref="Operations.Receive2"/>
+  [Obsolete(
+    "Receive2 keeps working for existing versions, but for versions created with the new Speckle object model "
+      + "(bundle-only, Speckle 2026.9.0) it returns a best-effort Base projection and does not guarantee the new object "
+      + "model round-trips perfectly. It is also not suited to the model sizes the new format supports: materializing "
+      + "a large bundle into a Base tree inflates every object, property and mesh into managed objects and can run out "
+      + "of memory. Update your scripts to Receive3, which receives the bundle directly."
+  )]
+  Task<Base> Receive2(
+    Uri url,
+    string streamId,
+    string objectId,
+    string? authorizationToken,
+    IProgress<ProgressArgs>? onProgressAction,
+    CancellationToken cancellationToken,
+    DeserializeProcessOptions? options = null
+  );
+
+  /// <inheritdoc cref="Operations.Receive"/>
+  [Obsolete(
+    "Transport-based Receive is frozen legacy surface: it works for existing (object-graph) versions but can never "
+      + "receive versions created with the new Speckle object model (bundle-only, Speckle 2026.9.0) - a bundle "
+      + "reference throws NotSupportedException. It is also the slowest path (per-object JSON, single-threaded "
+      + "deserialization). Update your scripts to Receive3, which receives the bundle directly, or Receive2 if you "
+      + "still need a Base tree."
+  )]
+  Task<Base> Receive(
+    string objectId,
+    ITransport? remoteTransport = null,
+    ITransport? localTransport = null,
+    IProgress<ProgressArgs>? onProgressAction = null,
+    CancellationToken cancellationToken = default
+  );
 }

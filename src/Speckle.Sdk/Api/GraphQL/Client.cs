@@ -63,7 +63,7 @@ public sealed class Client : ISpeckleGraphQLClient, IClient
 
     Project = new(this);
     Model = new(this);
-    Version = new(this);
+    Version = new(this, logger);
     ActiveUser = new(this);
     OtherUser = new(this);
     ProjectInvite = new(this);

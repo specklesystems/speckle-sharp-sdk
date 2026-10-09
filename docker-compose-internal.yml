@@ -13,14 +13,12 @@ services:
       POSTGRES_PASSWORD: speckle
     volumes:
       - ./.volumes/postgres-data:/var/lib/postgresql
-      - ./setup/db/10-docker_postgres_init.sql:/docker-entrypoint-initdb.d/10-docker_postgres_init.sql
-      - ./setup/db/11-docker_postgres_authentik_init.sql:/docker-entrypoint-initdb.d/11-docker_postgres_authentik_init.sql
     command: postgres -c max_prepared_transactions=150
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U speckle -d speckle"]
-      interval: 10s
+      interval: 2s
       timeout: 5s
-      retries: 5
+      retries: 25
       start_period: 20s
 
   redis:
@@ -28,31 +26,34 @@ services:
     restart: always
     volumes:
       - ./.volumes/redis-data:/data
+    # Published for the host-networked bundle-migration worker below.
+    ports:
+      - '127.0.0.1:6379:6379'
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 5s
+      interval: 2s
       timeout: 5s
       retries: 30
 
-  minio:
-    image: "minio/minio:RELEASE.2025-09-07T16-13-09Z"
-    command: server /data --console-address ":9001"
+  garage:
+    image: "dxflrs/garage:v2.4.1@sha256:9c96caa2612d3411acc5b0e6701fb238dbfba33e533a6d7d3d811a4b12d0d020"
+    command: /garage server --single-node --default-access-key --default-bucket
     restart: always
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: "minioadmin"
+      GARAGE_DEFAULT_SECRET_KEY: "minioadminminioadmin"
+      GARAGE_DEFAULT_BUCKET: "speckle-server"
     volumes:
-      - ./.volumes/minio-data:/data
+      - ./garage.toml:/etc/garage.toml:ro
+      - ./.volumes/garage-data:/data
     ports:
       - '127.0.0.1:9000:9000'
-      - '127.0.0.1:9001:9001'
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -s -o /dev/null http://127.0.0.1:9000/minio/index.html",
-        ]
-      interval: 5s
-      timeout: 30s
+      test: ["CMD", "/garage", "health"]
+      interval: 2s
+      timeout: 10s
       retries: 30
-      start_period: 10s
+      start_period: 5s
 
   speckle-server:
     image: ${SPECKLE_SERVER_IMAGE:-ghcr.io/specklesystems/speckle-server:latest}
@@ -63,18 +64,29 @@ services:
         - /nodejs/bin/node
         - -e
         - "try { require('node:http').request({headers: {'Content-Type': 'application/json'}, port:3000, hostname:'127.0.0.1', path:'/readiness', method: 'GET', timeout: 2000 }, (res) => { body = ''; res.on('data', (chunk) => {body += chunk;}); res.on('end', () => {process.exit(Number(res.statusCode != 200 || body.toLowerCase().includes('error')));}); }).end(); } catch { process.exit(1); }"
-      interval: 10s
+      interval: 2s
       timeout: 10s
-      retries: 3
+      retries: 15
       start_period: 90s
     ports:
       - "0.0.0.0:3000:3000"
+    # Viewer-.dat generation is a one-shot Job in-cluster; off-cluster the server's
+    # CONVERSION_RUNNER_LOCAL_DEV stand-in runs CONVERTER_IMAGE through the Docker
+    # Engine API on this socket instead, on the host network (server
+    # modules/conversionRunner/README.md). It never pulls: the CI job pulls the image
+    # on the host first.
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    # The image runs as distroless uid 65532; the socket is root:docker 0660, so the
+    # server needs the host's docker group (the CI job passes its gid).
+    group_add:
+      - "${DOCKER_GID:-0}"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
+      garage:
         condition: service_healthy
     environment:
       CANONICAL_URL: "http://127.0.0.1:3000"
@@ -85,10 +97,10 @@ services:
       # TODO: Change thvolumes:
       REDIS_URL: "redis://redis"
 
-      S3_ENDPOINT: "http://minio:9000"
+      S3_ENDPOINT: "http://garage:9000"
       S3_PUBLIC_ENDPOINT: "http://127.0.0.1:9000"
       S3_ACCESS_KEY: "minioadmin"
-      S3_SECRET_KEY: "minioadmin"
+      S3_SECRET_KEY: "minioadminminioadmin"
       S3_BUCKET: "speckle-server"
       S3_CREATE_BUCKET: "true"
 
@@ -107,6 +119,46 @@ services:
 
       FF_DATA_MODULE_ENABLED: 'true'
 
+      FF_JOBRUNNER_ENABLED: 'true'
+      CONVERSION_RUNNER_LOCAL_DEV: 'true'
+      CONVERTER_IMAGE: ${SPECKLE_CONVERTER_IMAGE:-ghcr.io/specklesystems/speckle-converters:latest}
+
+      # The legacy-send switch (server ADR-0003): unset, versionMutations.create and the
+      # v1 uploads/process rail answer LEGACY_SEND_UNSUPPORTED. Any value works, the
+      # worker below never sees it (the server mints per-job tokens from it).
+      BUNDLE_MIGRATION_TOKEN_SECRET: "integration-tests-bundle-migration-token-secret"
+
+  # Since server ADR-0003 a legacy send only reserves a version; this worker packs the
+  # bundle (+ viewer .dat) and completes it, which is when the version is born. It runs
+  # on the host network because the server hands it its own CANONICAL_URL and presigned
+  # S3_PUBLIC_ENDPOINT urls, both 127.0.0.1 from the runner's point of view.
+  bundle-migration-service:
+    image: ${SPECKLE_BUNDLE_MIGRATION_IMAGE:-ghcr.io/specklesystems/speckle-bundle-migration-service:latest}
+    restart: always
+    network_mode: host
+    depends_on:
+      speckle-server:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('node:http').get({ port: 3031, hostname: '127.0.0.1', path: '/readiness', timeout: 2000 }, (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+      interval: 2s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+    environment:
+      HOST: "127.0.0.1"
+      PORT: 3031
+      REDIS_URL: "redis://127.0.0.1:6379"
+      BUNDLE_MIGRATION_LANE: "standard"
+      # Fixed DuckDB memory limit for datgen: unset sizes from the cgroup, which is
+      # unbounded in a plain docker container.
+      DATGEN_MEM: "2GB"
+      LOG_PRETTY: "true"
+
 networks:
   default:
     name: speckle-server
@@ -114,4 +166,4 @@ networks:
 volumes:
   postgres-data:
   redis-data:
-  minio-data:
+  garage-data:

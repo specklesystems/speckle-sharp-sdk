@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using Speckle.InterfaceGenerator;
 using Speckle.Newtonsoft.Json;
@@ -9,8 +10,11 @@ using Speckle.Sdk.Logging;
 namespace Speckle.Sdk.Pipelines.Send.Artifacts;
 
 [GenerateAutoInterface]
-public sealed class ArtifactPipelineFactory(ISpeckleHttp httpClientFactory, ISdkActivityFactory activityFactory)
-  : IArtifactPipelineFactory
+public sealed class ArtifactPipelineFactory(
+  ISpeckleApplication application,
+  ISpeckleHttp httpClientFactory,
+  ISdkActivityFactory activityFactory
+) : IArtifactPipelineFactory
 {
   public ArtifactPipeline CreateInstance(
     string projectId,
@@ -20,7 +24,17 @@ public sealed class ArtifactPipelineFactory(ISpeckleHttp httpClientFactory, ISdk
     string outputDir,
     CancellationToken cancellationToken
   ) =>
-    new(projectId, ingestionId, versionId, account, outputDir, httpClientFactory, activityFactory, cancellationToken);
+    new(
+      projectId,
+      ingestionId,
+      versionId,
+      account,
+      outputDir,
+      application,
+      httpClientFactory,
+      activityFactory,
+      cancellationToken
+    );
 }
 
 /// <summary>
@@ -63,6 +77,7 @@ public sealed class ArtifactPipeline : IDisposable
     string versionId,
     Account account,
     string outputDir,
+    ISpeckleApplication application,
     ISpeckleHttp httpClientFactory,
     ISdkActivityFactory activityFactory,
     CancellationToken cancellationToken
@@ -79,7 +94,16 @@ public sealed class ArtifactPipeline : IDisposable
 
     _speckleClient = httpClientFactory.CreateHttpClient(authorizationToken: account.token);
     _speckleClient.BaseAddress = new(new(account.serverInfo.url), "/api/v2/");
+    // ENG-9490: the server reads clientAppVersion for envelope-born versions from these headers on the v2
+    // uploads/complete request (speckle-server-internal#2719); mirror GraphQLClientFactory so bundle sends
+    // report the same client identity as legacy GraphQL sends.
+    _speckleClient.DefaultRequestHeaders.Add("apollographql-client-name", application.ApplicationAndVersion);
+    _speckleClient.DefaultRequestHeaders.Add(
+      "apollographql-client-version",
+      Assembly.GetExecutingAssembly().GetName().Version?.ToString()
+    );
 
+    // No extra default headers here: _s3Client sends presigned PUTs, which must carry only the signed headers.
     _s3Client = httpClientFactory.CreateHttpClient();
   }
 

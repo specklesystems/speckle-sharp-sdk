@@ -12,6 +12,8 @@ using Speckle.Sdk.Models;
 using Speckle.Sdk.Tests.Integration;
 using Utils = Speckle.Automate.Sdk.Integration.TestAutomateUtils;
 
+#pragma warning disable CS0618 // exercises the legacy publish pair on purpose
+
 namespace Speckle.Automate.Sdk.Integration;
 
 public sealed class AutomationContextTest : IAsyncLifetime

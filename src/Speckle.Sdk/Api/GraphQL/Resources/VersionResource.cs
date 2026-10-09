@@ -1,4 +1,5 @@
-﻿using GraphQL;
+using GraphQL;
+using Microsoft.Extensions.Logging;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
@@ -8,11 +9,14 @@ namespace Speckle.Sdk.Api.GraphQL.Resources;
 
 public sealed class VersionResource
 {
+  private static int s_legacyCreateWarned; // once-per-process runtime deprecation warning (ENG-9418)
   private readonly ISpeckleGraphQLClient _client;
+  private readonly ILogger? _logger;
 
-  internal VersionResource(ISpeckleGraphQLClient client)
+  internal VersionResource(ISpeckleGraphQLClient client, ILogger? logger = null)
   {
     _client = client;
+    _logger = logger;
   }
 
   /// <param name="projectId"></param>
@@ -125,10 +129,25 @@ public sealed class VersionResource
 
   /// <param name="input"></param>
   /// <param name="cancellationToken"></param>
-  /// <returns>The created <see cref="Version"/></returns>
+  /// <returns>The created <see cref="Version"/>. On a 2026.9 server this is a RESERVATION: the id is allocated
+  /// immediately, but the version only becomes queryable when the server finishes ingesting - read it back through
+  /// the model ingestion (see the migration guide).</returns>
   /// <inheritdoc cref="ISpeckleGraphQLClient.ExecuteGraphQLRequest{T}"/>
+  [Obsolete(
+    "Legacy version creation: after server 2026.9 this call reserves an id and the version is born when the server "
+      + "finishes ingesting - the returned Version is a reservation, not yet queryable. Prefer SendPipeline + "
+      + "client.Ingestion (or Send3 with a BundleBuilder). Migration guide: "
+      + "https://docs.speckle.systems/developers/migration/publish-through-ingestions"
+  )]
   public async Task<Version> Create(CreateVersionInput input, CancellationToken cancellationToken = default)
   {
+    if (Interlocked.Exchange(ref s_legacyCreateWarned, 1) == 0)
+    {
+      _logger?.LogWarning(
+        "Version.Create is legacy: on 2026.9 servers the returned Version is a reservation until ingestion "
+          + "completes. Migration guide: https://docs.speckle.systems/developers/migration/publish-through-ingestions"
+      );
+    }
     //language=graphql
     const string QUERY = """
       mutation Create($input: CreateVersionInput!) {

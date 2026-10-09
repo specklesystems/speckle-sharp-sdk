@@ -1,4 +1,5 @@
 ﻿using GraphQL;
+using Speckle.Sdk.Api.GraphQL.Enums;
 using Speckle.Sdk.Api.GraphQL.Inputs;
 using Speckle.Sdk.Api.GraphQL.Models;
 using Speckle.Sdk.Api.GraphQL.Models.Responses;
@@ -125,6 +126,52 @@ public sealed class ModelIngestionResource
 
     return res.data.data;
   }
+
+  /// <summary>
+  /// Polls <see cref="Get"/> until the ingestion reaches a terminal status (success, failed, invalidInput,
+  /// cancelled or timeout) and returns it. This is the readiness step after a version-creating call: the version
+  /// exists once the returned ingestion's status is <see cref="ModelIngestionStatus.success"/> (its
+  /// <c>statusData.versionId</c> is then set). See the migration guide:
+  /// https://docs.speckle.systems/developers/migration/publish-through-ingestions
+  /// </summary>
+  /// <param name="timeout">Client-side ceiling; <see langword="null"/> = wait until <paramref name="cancellationToken"/>.</param>
+  /// <param name="pollInterval">Delay between polls; default 1 second.</param>
+  /// <exception cref="TimeoutException"><paramref name="timeout"/> elapsed before a terminal status.</exception>
+  public async Task<ModelIngestion> WaitForCompletionAsync(
+    string modelIngestionId,
+    string projectId,
+    TimeSpan? timeout = null,
+    TimeSpan? pollInterval = null,
+    CancellationToken cancellationToken = default
+  )
+  {
+    var interval = pollInterval ?? TimeSpan.FromSeconds(1);
+    var deadline = timeout is { } t ? DateTime.UtcNow + t : (DateTime?)null;
+    while (true)
+    {
+      var ingestion = await Get(modelIngestionId, projectId, cancellationToken).ConfigureAwait(false);
+      if (IsTerminal(ingestion.statusData.status))
+      {
+        return ingestion;
+      }
+      if (deadline is { } d && DateTime.UtcNow + interval > d)
+      {
+        throw new TimeoutException(
+          $"Ingestion '{modelIngestionId}' (project '{projectId}') did not reach a terminal status within {timeout}: "
+            + $"last status was '{ingestion.statusData.status}'."
+        );
+      }
+      await Task.Delay(interval, cancellationToken).ConfigureAwait(false);
+    }
+  }
+
+  private static bool IsTerminal(ModelIngestionStatus status) =>
+    status
+      is ModelIngestionStatus.success
+        or ModelIngestionStatus.failed
+        or ModelIngestionStatus.invalidInput
+        or ModelIngestionStatus.cancelled
+        or ModelIngestionStatus.timeout;
 
   /// <summary>
   /// For File Import / Cloud integrations only
@@ -312,11 +359,7 @@ public sealed class ModelIngestionResource
         data: projectMutations {
           data: modelIngestionMutations {
             data: completeWithVersion(input: $input) {
-              data:statusData {
-                ... on ModelIngestionSuccessStatus {
-                  data:versionId
-                }
-              }
+              data: versionId
             }
           }
         }
@@ -325,13 +368,17 @@ public sealed class ModelIngestionResource
 
     GraphQLRequest request = new() { Query = QUERY, Variables = new { input } };
 
+    // Since server 2026.9 this mutation only records the version inputs; the version itself is born later by the
+    // bundle-migration worker, so the returned ingestion is still processing and its success status has no id yet.
+    // The id reserved at ingestion creation is the one the version will get.
     var res = await _client
-      .ExecuteGraphQLRequest<
-        RequiredResponse<RequiredResponse<RequiredResponse<RequiredResponse<RequiredResponse<string>>>>>
-      >(request, cancellationToken)
+      .ExecuteGraphQLRequest<RequiredResponse<RequiredResponse<RequiredResponse<RequiredResponse<string>>>>>(
+        request,
+        cancellationToken
+      )
       .ConfigureAwait(false);
 
-    return res.data.data.data.data.data;
+    return res.data.data.data.data;
   }
 
   /// <summary>

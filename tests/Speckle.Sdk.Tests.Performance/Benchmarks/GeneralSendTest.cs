@@ -13,6 +13,8 @@ using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Transports;
 using Version = Speckle.Sdk.Api.GraphQL.Models.Version;
 
+#pragma warning disable CS0618 // transport Send/Receive are frozen legacy surface; these tests cover exactly that surface
+
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 
 /// <summary>

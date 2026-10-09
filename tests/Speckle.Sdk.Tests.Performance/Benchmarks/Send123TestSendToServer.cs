@@ -12,6 +12,8 @@ using Speckle.Sdk.Pipelines.Send;
 using Speckle.Sdk.Serialisation.V2.Send;
 using Speckle.Sdk.Transports;
 
+#pragma warning disable CS0618 // transport Send/Receive are frozen legacy surface; these tests cover exactly that surface
+
 namespace Speckle.Sdk.Tests.Performance.Benchmarks;
 
 [MemoryDiagnoser]

@@ -144,15 +144,23 @@ public class V3GraphArtifactProducerTypeParameterTests
       // Same type ⇒ literally the same parsed dictionary; different type ⇒ a different one.
       typeProps[a1].Should().BeSameAs(typeProps[a2]);
       typeProps[b1].Should().NotBeSameAs(typeProps[a1]);
-      Nested(typeProps[a1], "properties", "Parameters", "Type Parameters", "Identity Data", "Type Mark")
+      Nested(typeProps[a1], "properties", "Parameters", "Type Parameters", "Identity Data", "Type Mark", "value")
         .Should()
         .Be("W1");
-      Nested(typeProps[b1], "properties", "Parameters", "Type Parameters", "Identity Data", "Type Mark")
+      Nested(typeProps[b1], "properties", "Parameters", "Type Parameters", "Identity Data", "Type Mark", "value")
         .Should()
         .Be("W2");
 
       // Instance eav keeps instance params but no longer carries the type subtree.
-      Nested(bundle.Properties[a1], "properties", "Parameters", "Instance Parameters", "Constraints", "Base Offset")
+      Nested(
+          bundle.Properties[a1],
+          "properties",
+          "Parameters",
+          "Instance Parameters",
+          "Constraints",
+          "Base Offset",
+          "value"
+        )
         .Should()
         .Be(0.5);
       Nested(bundle.Properties[a1], "properties", "Parameters", "Type Parameters").Should().BeNull();
@@ -208,7 +216,15 @@ public class V3GraphArtifactProducerTypeParameterTests
 
       bundle.TypePropertiesByObject.Should().BeEmpty();
       var c1 = ObjIdx(bundle, "c1");
-      Nested(bundle.Properties[c1], "properties", "Parameters", "Type Parameters", "Identity Data", "Type Mark")
+      Nested(
+          bundle.Properties[c1],
+          "properties",
+          "Parameters",
+          "Type Parameters",
+          "Identity Data",
+          "Type Mark",
+          "value"
+        )
         .Should()
         .Be("W1");
       stats.RevitTypeKeys.Should().Be(0);
@@ -233,7 +249,15 @@ public class V3GraphArtifactProducerTypeParameterTests
 
       bundle.TypePropertiesByObject.Should().BeEmpty();
       var d1 = ObjIdx(bundle, "d1");
-      Nested(bundle.Properties[d1], "properties", "Parameters", "Instance Parameters", "Constraints", "Base Offset")
+      Nested(
+          bundle.Properties[d1],
+          "properties",
+          "Parameters",
+          "Instance Parameters",
+          "Constraints",
+          "Base Offset",
+          "value"
+        )
         .Should()
         .Be(0.5);
       stats.RevitTypeKeys.Should().Be(1); // candidate count: the key was derived even though no type row was emitted

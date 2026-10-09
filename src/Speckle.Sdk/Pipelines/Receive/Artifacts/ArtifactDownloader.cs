@@ -19,12 +19,28 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
   /// Returns an EMPTY list when the version has no artefact bundle (not a 4.0 artefact version, or the v2
   /// data endpoints are unavailable / 404) — the caller falls back to the v1 receive path.
   /// </summary>
+  public Task<IReadOnlyList<string>> DownloadBundleAsync(
+    Account account,
+    string projectId,
+    string modelId,
+    string versionId,
+    string destDir,
+    CancellationToken cancellationToken
+  ) => DownloadBundleAsync(account, projectId, modelId, versionId, destDir, fileFilter: null, cancellationToken);
+
+  /// <summary>
+  /// As <see cref="DownloadBundleAsync(Account, string, string, string, string, CancellationToken)"/>, downloading only
+  /// the listed files <paramref name="fileFilter"/> accepts (by bare basename). <see langword="null"/> downloads
+  /// everything. The empty-list contract is unchanged: it means the version has no bundle at all, never that the filter
+  /// rejected every file.
+  /// </summary>
   public async Task<IReadOnlyList<string>> DownloadBundleAsync(
     Account account,
     string projectId,
     string modelId,
     string versionId,
     string destDir,
+    Func<string, bool>? fileFilter,
     CancellationToken cancellationToken
   )
   {
@@ -44,6 +60,16 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
     var paths = new List<string>(files.Count);
     foreach (var file in files)
     {
+      if (fileFilter is not null && !fileFilter(file.Name))
+      {
+        continue;
+      }
+      // The listing comes from the server: a name that is anything but a bare filename ("../x", "C:\\x") would
+      // escape the receive directory through Path.Combine. Never trust it.
+      if (!IsBareFileName(file.Name))
+      {
+        throw new SpeckleException($"Artifact listing contains an invalid file name '{file.Name}'.");
+      }
       string path = Path.Combine(destDir, file.Name);
       await DownloadFileAsync(s3Client, file.Name, file.Url, path, cancellationToken).ConfigureAwait(false);
       paths.Add(path);
@@ -77,6 +103,17 @@ public sealed class ArtifactDownloader(ISpeckleHttp httpClientFactory) : IArtifa
     var parsed = JsonConvert.DeserializeObject<ArtifactsListResponse>(json);
     return parsed?.Files ?? new List<ArtifactFile>();
   }
+
+  /// <summary>A name the listing may address a file by: one path segment — no separators of either platform, no
+  /// drive/rooting — regardless of the OS this runs on (the same server serves Windows and macOS hosts).</summary>
+  internal static bool IsBareFileName(string? name) =>
+    name is { Length: > 0 }
+    && name != "."
+    && name != ".."
+    && name.IndexOfAny(s_pathSeparators) < 0
+    && !Path.IsPathRooted(name);
+
+  private static readonly char[] s_pathSeparators = ['/', '\\', ':'];
 
   private static async Task DownloadFileAsync(
     HttpClient client,

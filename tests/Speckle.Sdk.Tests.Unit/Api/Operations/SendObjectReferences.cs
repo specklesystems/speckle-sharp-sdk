@@ -5,6 +5,8 @@ using Speckle.Sdk.Host;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Transports;
 
+#pragma warning disable CS0618 // transport Send/Receive are frozen legacy surface; these tests cover exactly that surface
+
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
 [Collection(nameof(RequiresTypeLoaderCollection))]

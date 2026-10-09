@@ -37,7 +37,7 @@ public class ArtifactRoundTripTests
     {
       using (var pipeline = new ObjectsArtifactPipeline(dir, "rt", TestProducer))
       {
-        int collK = pipeline.AddCollection("layer-1", "Layer 1", null, "Layer");
+        int collK = pipeline.AddCollection("layer-1", new("Layer 1", null, "Layer", null));
         int objK = pipeline.InternObject("obj-1");
         pipeline.AddProperties(
           "obj-1",
@@ -55,13 +55,7 @@ public class ArtifactRoundTripTests
         pipeline.InCollection(objK, collK, 0);
         int matK = pipeline.AddMaterial(
           "mat-1",
-          "Concrete - Cast In Situ",
-          unchecked((int)0xFFAABBCC),
-          1.0,
-          0.0,
-          0.5,
-          unchecked((int)0xFF102030),
-          1.52
+          new("Concrete - Cast In Situ", unchecked((int)0xFFAABBCC), 1.0, 0.0, 0.5, unchecked((int)0xFF102030), 1.52)
         );
         pipeline.HasMaterial(gK, matK);
         pipeline.SetProducer(TestProducer);
@@ -131,13 +125,20 @@ public class ArtifactRoundTripTests
       rhinoObj.rawEncoding!.format.Should().Be("3dm");
       Convert.FromBase64String(rhinoObj.rawEncoding.contents).Should().Equal(solidBytes);
 
-      // Revit (PreferSolids = false): the 3dm blob is not accepted and the object has no DISPLAY meshes — since
-      // #520 the reader skips such objects entirely rather than fabricating an empty-displayValue DataObject the
-      // v1 converter pipeline has no path for (see BuildGeometryObject's null return).
+      // Connector-bake profile (PreferSolids = false, CompleteCarriage = false): the 3dm blob is not accepted and
+      // the object has no DISPLAY meshes — since #520 the v1 profile skips such objects entirely rather than
+      // fabricating an empty-displayValue DataObject the v1 converter pipeline has no path for.
       var rootMeshes = (Collection)
-        await reader.ReadAsync(dir, new ArtifactReceiveOptions(PreferSolids: false), default);
+        await reader.ReadAsync(dir, new ArtifactReceiveOptions(PreferSolids: false, CompleteCarriage: false), default);
       Flatten(rootMeshes).OfType<RhinoObject>().Should().BeEmpty();
       Flatten(rootMeshes).Where(b => b.applicationId == "solid-1").Should().BeEmpty();
+
+      // SDK default (complete carriage, ENG-9301): the same object surfaces as a property carrier — its data layer
+      // is the payload even when its geometry isn't consumable in this profile.
+      var rootComplete = (Collection)
+        await reader.ReadAsync(dir, new ArtifactReceiveOptions(PreferSolids: false), default);
+      var carrier = Flatten(rootComplete).OfType<DataObject>().Single(b => b.applicationId == "solid-1");
+      carrier.displayValue.Should().BeEmpty();
     }
     finally
     {
@@ -167,8 +168,8 @@ public class ArtifactRoundTripTests
     {
       using (var pipeline = new ObjectsArtifactPipeline(dir, "rt", TestProducer))
       {
-        int layerAK = pipeline.AddCollection("layer-a", "Layer A", null, "Layer");
-        layerBK = pipeline.AddCollection("layer-b", "Layer B", null, "Layer");
+        int layerAK = pipeline.AddCollection("layer-a", new("Layer A", null, "Layer", null));
+        layerBK = pipeline.AddCollection("layer-b", new("Layer B", null, "Layer", null));
 
         // the placement, on Layer A — a real scene object
         int defK = pipeline.AddDefinition("def-1", "Frame");
@@ -212,11 +213,13 @@ public class ArtifactRoundTripTests
       bundle.Relations.CollectionByObject[memberObjK].Should().Be(layerBK);
       SceneViewResolver.Segments(bundle, memberObjK).Should().Equal("Layer B");
 
-      // 3. the carrier has no render edge, so the v1 reader drops it rather than emitting a phantom scene object.
-      //    This is the invariant the whole approach depends on (see DefinitionMemberStamps in the connectors repo).
+      // 3. the carrier has no render edge, so the CONNECTOR-BAKE profile drops it rather than emitting a phantom
+      //    scene object (see DefinitionMemberStamps in the connectors repo). Under the SDK default (complete
+      //    carriage, ENG-9301) it surfaces with its properties instead — covered in CompleteCarriageTests.
       bundle.Relations.DisplayByObject(memberObjK).Should().BeNull();
       var reader = new ObjectsArtifactReader();
-      var root = (Collection)await reader.ReadAsync(dir, new ArtifactReceiveOptions(PreferSolids: true), default);
+      var root = (Collection)
+        await reader.ReadAsync(dir, new ArtifactReceiveOptions(PreferSolids: true, CompleteCarriage: false), default);
       Flatten(root).Where(b => b.applicationId == "member-1").Should().BeEmpty();
     }
     finally

@@ -26,9 +26,9 @@ jobs:
         run: mv speckle-bundle-spec "$GITHUB_WORKSPACE/../speckle-bundle-spec"
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.2xx #Keep aligned with global.json
+          dotnet-version: 10.0.4xx #Keep aligned with global.json
           cache: true
           cache-dependency-path: "**/packages.lock.json"
 
