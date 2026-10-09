@@ -72,10 +72,10 @@ internal static class PipelineExtensions
       geometry["domain"] = Interval.UnitInterval;
     }
 
-    if (geometry is Curve c)
+    if (geometry is Curve curve)
     {
       // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-      if (c is { displayValue: null } cd)
+      if (curve is { displayValue: null } cd)
       {
         //Detecting several models who have curves with no displayValue.
         //I only expect this from v2, so accepting this as a hack to approximate some form of displayValue
@@ -87,7 +87,7 @@ internal static class PipelineExtensions
         };
       }
 
-      if (c is { points: null })
+      if (curve is { points: null })
       {
         return null;
       }
