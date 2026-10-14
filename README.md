@@ -73,6 +73,21 @@ You must have docker installed. Then you can run `docker compose up` from the ro
 In CI, they will be run against both the public and private versions of the server.
 It is important that we remain compatible with both server versions.
 
+To run them against the private server locally (`docker-compose-internal.yml`; its images are private GHCR packages, so `docker login ghcr.io` first), you also need [kind](https://kind.sigs.k8s.io/) v0.31.
+That server generates viewer `.dat` files as Kubernetes Jobs, so `scripts/integration-cluster.sh` brings up a single-node kind cluster for it (the same script CI uses):
+
+```bash
+./scripts/integration-cluster.sh up          # idempotent; cluster speckle-sdk-integration, kubeconfig in .kind/
+./scripts/integration-cluster.sh load-image  # the converter image the Jobs run
+./scripts/integration-cluster.sh env > .kind/compose.env
+DOCKER_GID=$(stat -c %g /var/run/docker.sock) docker compose --env-file .kind/compose.env -f docker-compose-internal.yml up --wait
+./scripts/integration-cluster.sh check       # Job pods reach the server and garage
+```
+
+Job pods and the tests share one host address for the server and garage: the gateway of the `kind` docker network on Linux, `host.docker.internal` on Docker Desktop (add `127.0.0.1 host.docker.internal` to `/etc/hosts` there).
+If `check` fails, it prints what to look at (the stack not being up, or on Linux a host firewall dropping traffic from the kind bridge).
+`./scripts/integration-cluster.sh down` deletes the cluster.
+
 ## Contributing
 
 Before embarking on submitting a patch, please make sure you read:

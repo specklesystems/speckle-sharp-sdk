@@ -47,11 +47,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      - name: ☸️ Install kind
+        if: ${{ inputs.use-internal-image }}
+        uses: helm/kind-action@v1
+        with:
+          install_only: true
+          version: v0.31.0 # Keep aligned with NODE_IMAGE in scripts/integration-cluster.sh
+
+      # The server under test launches viewer-.dat generation as Kubernetes Jobs on this
+      # cluster; the compose file interpolates the host address its pods reach us on.
+      - name: ☸️ Create kind cluster
+        if: ${{ inputs.use-internal-image }}
+        run: |
+          ./scripts/integration-cluster.sh up
+          ./scripts/integration-cluster.sh env >> "$GITHUB_ENV"
+
       # Image pulls are network-bound, so they run in the background under the restore +
       # build; the stack itself (migrations, server boot) starts only after the build so
-      # it does not compete with it for the runner's CPUs. The datgen stand-in inside
-      # speckle-server launches the converter image over the mounted Docker socket but
-      # never pulls it, so that pull (and its credentials) stays here too.
+      # it does not compete with it for the runner's CPUs. The cluster never pulls the
+      # converter image (it is loaded into the node), so that pull (and its credentials)
+      # stays here too.
       - name: 📥 Pull images in the background
         run: |
           {
@@ -73,11 +88,14 @@ jobs:
         if: ${{ inputs.use-internal-image }}
         run: docker pull --quiet ghcr.io/specklesystems/speckle-converters:latest
 
+      - name: ☸️ Load converter image into kind
+        if: ${{ inputs.use-internal-image }}
+        run: ./scripts/integration-cluster.sh load-image
+
       - name: ⚙️ Spin up Server
         run: DOCKER_GID=$(stat -c %g /var/run/docker.sock) docker compose --file ${{ inputs.docker-compose-file }} up --wait
 
-      # `up --wait` only reports that a container is unhealthy, never its output, and
-      # the datgen stand-in's launches are only visible in the server's log.
+      # `up --wait` only reports that a container is unhealthy, never its output.
       - name: 🐛 Dump container state
         if: failure()
         run: |
@@ -93,6 +111,13 @@ jobs:
       - name: 🔨 Integration Tests against Internal Server
         if: ${{ inputs.use-internal-image }}
         run: dotnet test ${{ env.Solution }} --filter "(Category=Integration)&(Server!=Public)" --configuration Release --no-build --no-restore --verbosity=normal /p:AltCover=true /p:AltCoverAttributeFilter=ExcludeFromCodeCoverage
+
+      # .dat generation runs as Jobs on the kind cluster; their state is only there.
+      - name: 🐛 Dump job cluster state
+        if: ${{ failure() && inputs.use-internal-image }}
+        run: |
+          ./scripts/integration-cluster.sh status || true
+          docker compose --file ${{ inputs.docker-compose-file }} logs --no-color --tail=300 speckle-server
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v7

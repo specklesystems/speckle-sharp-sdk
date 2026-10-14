@@ -16,6 +16,7 @@ tools
 .vscode
 .idea/
 .volumes/
+.kind/
 
 .DS_Store
 *.snupkg
