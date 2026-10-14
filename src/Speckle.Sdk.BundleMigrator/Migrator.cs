@@ -28,7 +28,8 @@ internal sealed class Migrator(
   BundleMigrationClient migrationClient,
   ISdkActivityFactory activityFactory,
   ILogger<Migrator> logger,
-  IServerTransportFactory serverTransportFactory
+  IServerTransportFactory serverTransportFactory,
+  EavSortPostPass eavSortPostPass
 )
 {
   /// <summary>Migrates a server version. With no destination the bundle is uploaded ONTO THAT VERSION
@@ -215,6 +216,7 @@ internal sealed class Migrator(
     {
       stats = producer.Produce(root);
     }
+    eavSortPostPass.Run(outDir, baseName);
 
     logger.LogInformation("Produce stats:\n{Stats}", stats);
     foreach (var note in stats.Notes)
@@ -427,6 +429,7 @@ internal sealed class Migrator(
     {
       stats = producer.Produce(root);
     }
+    eavSortPostPass.Run(outDir, baseName);
 
     logger.LogInformation("Produce stats:\n{Stats}", stats);
     foreach (var note in stats.Notes)
