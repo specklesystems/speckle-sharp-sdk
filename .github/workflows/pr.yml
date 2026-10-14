@@ -14,7 +14,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Checkout
-        uses: useblacksmith/checkout@41cdeedae8edb2e684ba22896a5fd2a3cb85db6b # zizmor: ignore[ref-version-mismatch] Blacksmith mutates tags
+        uses: useblacksmith/checkout@4a338d9e78beb326c7222f0693507fe80bae37f2 # zizmor: ignore[ref-version-mismatch] Blacksmith mutates tags
 
       - name: Checkout Bundle Spec Repo
         uses: ./.github/actions/checkout-bundle-spec
