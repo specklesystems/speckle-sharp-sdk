@@ -62,7 +62,7 @@ public class GraphQLClientFactory(
     {
       if (ex is WebSocketException we)
       {
-        logger.LogError(
+        logger.LogWarning(
           we,
           "GraphQL Websocket received an {WebSocketErrorCode} ({NativeErrorCode}) error that has been swallowed",
           we.WebSocketErrorCode,
@@ -71,7 +71,7 @@ public class GraphQLClientFactory(
       }
       else
       {
-        logger.LogError(ex, "GraphQL Websocket received an error that has been swallowed");
+        logger.LogWarning(ex, "GraphQL Websocket received an error that has been swallowed");
       }
     });
     return gQLClient;
