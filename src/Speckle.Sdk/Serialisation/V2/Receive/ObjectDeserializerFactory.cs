@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 namespace Speckle.Sdk.Serialisation.V2.Receive;
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class ObjectDeserializerFactory : IObjectDeserializerFactory
 {
   public IObjectDeserializer Create(

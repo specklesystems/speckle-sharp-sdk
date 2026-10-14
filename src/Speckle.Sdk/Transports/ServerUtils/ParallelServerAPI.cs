@@ -3,10 +3,12 @@ using System.Diagnostics;
 using Speckle.Sdk.Common;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Logging;
+using Speckle.Sdk.Serialisation;
 using Speckle.Sdk.Serialisation.Utilities;
 
 namespace Speckle.Sdk.Transports.ServerUtils;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 internal enum ServerApiOperation
 {
   NoOp = default,
@@ -19,6 +21,7 @@ internal enum ServerApiOperation
   HasBlobs,
 }
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 internal class ParallelServerApi : ParallelOperationExecutor<ServerApiOperation>, IServerApi
 {
   private readonly string _authToken;

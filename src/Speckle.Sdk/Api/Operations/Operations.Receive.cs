@@ -87,6 +87,7 @@ public partial class Operations
   {
     options ??= ReceiveOptions.Default;
     using var receiveActivity = activityFactory.Start("Operations.Receive3");
+
     receiveActivity?.SetTag("speckle.url", account.serverInfo.url);
     receiveActivity?.SetTag("speckle.projectId", projectId);
     receiveActivity?.SetTag("speckle.modelId", modelId);
@@ -276,6 +277,7 @@ public partial class Operations
   }
 
   /// <inheritdoc cref="Receive(string,ITransport?,ITransport?,IProgress{ProgressArgs}?,CancellationToken)"/>
+  [Obsolete(Json.DEPRECATION_MESSAGE)]
   private async Task<Base> ReceiveImpl(
     string objectId,
     ITransport? remoteTransport,
@@ -340,6 +342,7 @@ public partial class Operations
   /// <param name="localTransport"></param>
   /// <returns></returns>
   /// <exception cref="SpeckleDeserializeException"></exception>
+  [Obsolete(Json.DEPRECATION_MESSAGE)]
   internal static async Task<string?> LocalReceive(string objectId, ITransport localTransport)
   {
     string? objString = await localTransport.GetObject(objectId).ConfigureAwait(false);
@@ -359,6 +362,7 @@ public partial class Operations
   /// <param name="localTransport"></param>
   /// <returns></returns>
   /// <exception cref="TransportException">Remote transport was not specified</exception>
+  [Obsolete(Json.DEPRECATION_MESSAGE)]
   private static async Task<string> RemoteReceive(
     string objectId,
     ITransport remoteTransport,
@@ -374,6 +378,7 @@ public partial class Operations
     return objString;
   }
 
+  [Obsolete(Json.DEPRECATION_MESSAGE)]
   private static IDisposable? UseDefaultTransportIfNull(ITransport? userTransport, out ITransport actualLocalTransport)
   {
     if (userTransport is not null)

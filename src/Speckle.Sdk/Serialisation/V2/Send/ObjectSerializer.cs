@@ -9,10 +9,13 @@ using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Serialisation.Utilities;
+#pragma warning disable CS0618 // Type or member is obsolete
 using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
+#pragma warning restore CS0618 // Type or member is obsolete
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public readonly record struct NodeInfo(Json Json, Closures? C)
 {
   public Closures GetClosures(CancellationToken cancellationToken) =>
@@ -22,6 +25,7 @@ public readonly record struct NodeInfo(Json Json, Closures? C)
 public partial interface IObjectSerializer : IDisposable;
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class ObjectSerializer : IObjectSerializer
 {
   private HashSet<object> _parentObjects = new();

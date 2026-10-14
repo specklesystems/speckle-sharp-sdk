@@ -3,6 +3,7 @@ using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public static class ClosureParser
 {
   public static IReadOnlyList<(string, int)> GetClosures(string json, CancellationToken cancellationToken) =>

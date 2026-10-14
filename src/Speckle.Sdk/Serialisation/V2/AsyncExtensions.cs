@@ -1,5 +1,6 @@
 ﻿namespace Speckle.Sdk.Serialisation.V2;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public static class AsyncExtensions
 {
   public static async ValueTask<TItem> FirstAsync<TItem>(this IAsyncEnumerable<TItem> source)

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class PriorityScheduler(
   ILogger<PriorityScheduler> logger,
   ThreadPriority priority,

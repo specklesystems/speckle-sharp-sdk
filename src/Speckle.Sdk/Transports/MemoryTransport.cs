@@ -2,12 +2,14 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Speckle.Sdk.Logging;
 using Speckle.Sdk.Models;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Transports;
 
 /// <summary>
 /// An in memory storage of speckle objects.
 /// </summary>
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class MemoryTransport : ITransport, ICloneable, IBlobCapableTransport
 {
   private readonly string _basePath;

@@ -4,6 +4,7 @@ using Speckle.Sdk.SQLite;
 namespace Speckle.Sdk.Serialisation.V2;
 
 #pragma warning disable CA1063
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class MemoryJsonCacheManager(ConcurrentDictionary<Id, Json> jsonCache) : ISqLiteJsonCacheManager
 #pragma warning restore CA1063
 {

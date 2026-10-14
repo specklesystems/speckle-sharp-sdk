@@ -2,6 +2,7 @@ using System.Text;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed record BaseItem(
   Id Id,
   Json Json,

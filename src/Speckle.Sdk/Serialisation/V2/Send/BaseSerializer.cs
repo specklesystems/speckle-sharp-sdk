@@ -4,11 +4,14 @@ using Speckle.Sdk.Common;
 using Speckle.Sdk.Dependencies;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.SQLite;
+#pragma warning disable CS0618 // Type or member is obsolete
 using Closures = System.Collections.Generic.Dictionary<Speckle.Sdk.Serialisation.Id, int>;
+#pragma warning restore CS0618 // Type or member is obsolete
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class BaseSerializer(
   ISqLiteJsonCacheManager sqLiteJsonCacheManager,
   IObjectSerializerFactory objectSerializerFactory

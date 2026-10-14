@@ -5,6 +5,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation.V2;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class MemoryServerObjectManager(ConcurrentDictionary<string, string> objects) : IServerObjectManager
 {
   public virtual async IAsyncEnumerable<(string, string)> DownloadObjects(
