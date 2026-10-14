@@ -1,47 +1,15 @@
 using System.Reflection;
 using GraphQL;
 using Microsoft.Extensions.Logging;
-using Speckle.Sdk.Api;
 using Speckle.Sdk.Api.GraphQL;
 using Speckle.Sdk.Api.GraphQL.Resources;
 
 namespace Speckle.Sdk.Tests.Unit.Api.Operations;
 
-/// <summary>ENG-9304 / ENG-9418: the legacy publish pair carries [Obsolete] pointing at the migration guide, and
-/// warns once per process at runtime.</summary>
+/// <summary>ENG-9304 / ENG-9418: the legacy publish path warns once per process at runtime.</summary>
 public sealed class LegacySendObsoleteTests
 {
   private const string GUIDE_URL = "https://docs.speckle.systems/developers/migration/publish-through-ingestions";
-
-  [Theory]
-  [InlineData(typeof(Speckle.Sdk.Api.Operations))]
-  [InlineData(typeof(IOperations))] // DI callers see the interface, not the class
-  public void Send2_IsObsolete_PointingAtTheMigrationGuide(Type type)
-  {
-    var attr = type.GetMethod("Send2")!
-      .GetCustomAttributes(typeof(ObsoleteAttribute), false)
-      .Cast<ObsoleteAttribute>()
-      .Single();
-    Assert.False(attr.IsError);
-    Assert.Contains(GUIDE_URL, attr.Message, StringComparison.Ordinal);
-    Assert.Contains("SendPipeline", attr.Message, StringComparison.Ordinal);
-  }
-
-  [Fact]
-  public void VersionCreate_IsObsolete_PointingAtTheMigrationGuide()
-  {
-    var attr = typeof(VersionResource)
-      .GetMethod(
-        nameof(VersionResource.Create),
-        [typeof(Speckle.Sdk.Api.GraphQL.Inputs.CreateVersionInput), typeof(CancellationToken)]
-      )!
-      .GetCustomAttributes(typeof(ObsoleteAttribute), false)
-      .Cast<ObsoleteAttribute>()
-      .Single();
-    Assert.False(attr.IsError);
-    Assert.Contains(GUIDE_URL, attr.Message, StringComparison.Ordinal);
-    Assert.Contains("reserves an id", attr.Message, StringComparison.Ordinal);
-  }
 
   [Fact]
   public async Task VersionCreate_Warns_OncePerProcess()

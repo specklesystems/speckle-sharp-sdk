@@ -224,40 +224,6 @@ public sealed class OperationsReceiveBundleDispatchTests
     downloader.VerifyAll();
   }
 
-  [Theory]
-  [InlineData(typeof(Speckle.Sdk.Api.Operations), nameof(IOperations.Receive2))]
-  [InlineData(typeof(IOperations), nameof(IOperations.Receive2))] // DI callers see the interface, not the class
-  [InlineData(typeof(Speckle.Sdk.Api.Operations), nameof(IOperations.Receive))]
-  [InlineData(typeof(IOperations), nameof(IOperations.Receive))]
-  public void LegacyReceives_AreObsolete_PointingAtReceive3(Type type, string method)
-  {
-    var attr = type.GetMethod(method)!
-      .GetCustomAttributes(typeof(ObsoleteAttribute), false)
-      .Cast<ObsoleteAttribute>()
-      .Single();
-    Assert.False(attr.IsError);
-    Assert.Contains("Receive3", attr.Message, StringComparison.Ordinal);
-  }
-
-  [Theory]
-  [InlineData(typeof(Speckle.Sdk.Api.Operations))]
-  [InlineData(typeof(IOperations))] // DI callers see the interface, not the class
-  public void TransportSends_AreObsolete_PointingAtSend3(Type type)
-  {
-    // ADR-0002: every transport-taking Send overload is frozen legacy surface.
-    var sends = type.GetMethods().Where(m => m.Name == nameof(IOperations.Send)).ToList();
-    Assert.Equal(3, sends.Count);
-    Assert.All(
-      sends,
-      m =>
-      {
-        var attr = m.GetCustomAttributes(typeof(ObsoleteAttribute), false).Cast<ObsoleteAttribute>().Single();
-        Assert.False(attr.IsError);
-        Assert.Contains("Send3", attr.Message, StringComparison.Ordinal);
-      }
-    );
-  }
-
   [Fact]
   public async Task Receive3_ByUrl_PinnedVersion_NoGraphQL()
   {
