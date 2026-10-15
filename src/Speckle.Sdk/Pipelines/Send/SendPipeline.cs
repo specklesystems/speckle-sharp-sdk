@@ -4,10 +4,12 @@ using Speckle.Sdk.Credentials;
 using Speckle.Sdk.Helpers;
 using Speckle.Sdk.Models;
 using Speckle.Sdk.Pipelines.Progress;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Pipelines.Send;
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class SendPipelineFactory(IUploaderFactory uploaderFactory, IDiskStoreFactory diskStoreFactory)
   : ISendPipelineFactory
 {
@@ -43,6 +45,7 @@ public sealed class SendPipelineFactory(IUploaderFactory uploaderFactory, IDiskS
   }
 }
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class SendPipeline : IDisposable
 {
   private readonly Serializer _serializer = new();

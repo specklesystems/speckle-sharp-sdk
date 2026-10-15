@@ -8,9 +8,11 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public readonly record struct Property(string Name, object? Value, PropertyAttributeInfo PropertyAttributeInfo);
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class BasePropertyGatherer : IBasePropertyGatherer
 {
   private readonly record struct TypeProperty(PropertyInfo PropertyInfo, PropertyAttributeInfo PropertyAttributeInfo);

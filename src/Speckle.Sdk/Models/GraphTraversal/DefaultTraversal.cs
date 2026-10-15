@@ -1,7 +1,9 @@
 using System.Diagnostics.Contracts;
+using Speckle.Sdk.Serialisation;
 
 namespace Speckle.Sdk.Models.GraphTraversal;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public static class DefaultTraversal
 {
   public static GraphTraversal CreateTraversalFunc()

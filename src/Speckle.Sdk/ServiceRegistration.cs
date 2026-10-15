@@ -83,8 +83,9 @@ public static class ServiceRegistration
     serviceCollection.TryAddSingleton<ISdkMetricsFactory, NullSdkMetricsFactory>();
     serviceCollection.AddMatchingInterfacesAsTransient(
       Assembly.GetExecutingAssembly(),
-      typeof(ServerTransport),
       typeof(Account),
+#pragma warning disable CS0618 // Type or member is obsolete
+      typeof(ServerTransport),
       typeof(ServerApi),
       typeof(SqLiteJsonCacheManager),
       typeof(ServerObjectManager),
@@ -97,6 +98,7 @@ public static class ServiceRegistration
       typeof(DeserializeProcess),
       typeof(ObjectLoader),
       typeof(TraversalRule),
+#pragma warning restore CS0618 // Type or member is obsolete
       typeof(Client),
       typeof(IngestionProgressManager)
     );

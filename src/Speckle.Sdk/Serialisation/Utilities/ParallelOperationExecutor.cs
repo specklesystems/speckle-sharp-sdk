@@ -2,6 +2,7 @@
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 internal abstract class ParallelOperationExecutor<TOperation> : IDisposable
   where TOperation : struct
 {

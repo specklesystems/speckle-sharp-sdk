@@ -5,6 +5,7 @@ using Speckle.Sdk.Models;
 namespace Speckle.Sdk.Serialisation.V2.Send;
 
 [GenerateAutoInterface]
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class BaseChildFinder(IBasePropertyGatherer propertyGatherer) : IBaseChildFinder
 {
   public IEnumerable<Property> GetChildProperties(Base obj) =>

@@ -14,6 +14,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public class SpeckleObjectSerializer
 {
   private readonly Stopwatch _stopwatch = new();

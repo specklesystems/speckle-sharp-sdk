@@ -4,6 +4,7 @@ using Speckle.Sdk.Models;
 
 namespace Speckle.Sdk.Serialisation;
 
+[Obsolete("JSON based serializers are deprecated, use parquet bundle pipeline")]
 public static class IdGenerator
 {
   [Pure]

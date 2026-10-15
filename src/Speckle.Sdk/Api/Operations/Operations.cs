@@ -11,6 +11,7 @@ namespace Speckle.Sdk.Api;
 /// <para>Serialize/Deserialize</para>
 /// <para>Push/Pull (methods to serialize and send data to one or more servers)</para>
 /// </summary>
+#pragma warning disable CS0618 //Type of member is obsolete
 [GenerateAutoInterface]
 public partial class Operations(
   ILogger<Operations> logger,
@@ -21,3 +22,4 @@ public partial class Operations(
   IBundleReceiver bundleReceiver,
   IBundleSender bundleSender
 ) : IOperations;
+#pragma warning restore CS0618

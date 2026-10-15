@@ -8,6 +8,7 @@ using Speckle.Sdk.Common;
 
 namespace Speckle.Sdk.Serialisation.Utilities;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 internal static class ValueConverter
 {
   private static readonly object[] s_singleValue = new object[1];

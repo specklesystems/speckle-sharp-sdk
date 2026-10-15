@@ -11,6 +11,7 @@ using Speckle.Sdk.Transports;
 
 namespace Speckle.Sdk.Serialisation;
 
+[Obsolete(Json.DEPRECATION_MESSAGE)]
 public sealed class SpeckleObjectDeserializer
 {
   private volatile bool _isBusy;

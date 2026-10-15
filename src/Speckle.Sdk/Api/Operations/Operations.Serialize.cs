@@ -21,6 +21,7 @@ public partial class Operations
   /// <param name="value">The object to serialise</param>
   /// <param name="cancellationToken"></param>
   /// <returns>A json string representation of the object.</returns>
+  [Obsolete(Json.DEPRECATION_MESSAGE)]
   public string Serialize(Base value, CancellationToken cancellationToken = default)
   {
     var serializer = new SpeckleObjectSerializer { CancellationToken = cancellationToken };
@@ -32,9 +33,7 @@ public partial class Operations
   /// </summary>
   /// <param name="value">The object to serializer</param>
   /// <returns>A json string representation of the object.</returns>
-  /// <remarks>
-  /// TODO: Once we strip out the old send2 functionality, we can make this this the normal <see cref="Serialize"/> implementation
-  /// </remarks>
+  [Obsolete(Json.DEPRECATION_MESSAGE)]
   public string SerializeNew(Base value)
   {
     var serializer = new Serializer();
@@ -53,6 +52,7 @@ public partial class Operations
   /// <exception cref="JsonReaderException "><paramref name="value"/> was not valid JSON</exception>
   /// <exception cref="SpeckleException"><paramref name="value"/> cannot be deserialised to type <see cref="Base"/></exception>
   /// <exception cref="Speckle.Sdk.Transports.TransportException"><paramref name="value"/> contains closure references (see Remarks)</exception>
+  [Obsolete(Json.DEPRECATION_MESSAGE)]
   public async Task<Base> DeserializeAsync(string value, CancellationToken cancellationToken = default)
   {
     var deserializer = new SpeckleObjectDeserializer { CancellationToken = cancellationToken };
@@ -60,6 +60,7 @@ public partial class Operations
   }
 
   /// <inheritdoc cref="SpeckleObjectDeserializer.DeserializeAsync"/>
+  [Obsolete(Json.DEPRECATION_MESSAGE)]
   private async Task<Base> DeserializeActivity([NotNull] string? objString, SpeckleObjectDeserializer deserializer)
   {
     using var activity = activityFactory.Start();

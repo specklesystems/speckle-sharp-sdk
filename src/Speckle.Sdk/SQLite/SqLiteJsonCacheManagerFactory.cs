@@ -4,6 +4,7 @@ using Speckle.Sdk.Logging;
 
 namespace Speckle.Sdk.SQLite;
 
+//Can't deprecate yet, still used by account manager.
 [GenerateAutoInterface]
 public class SqLiteJsonCacheManagerFactory(IModelCacheManager modelCacheManager) : ISqLiteJsonCacheManagerFactory
 {
