@@ -46,8 +46,9 @@ services:
     volumes:
       - ./garage.toml:/etc/garage.toml:ro
       - ./.volumes/garage-data:/data
+    # Presigned URLs embed S3_PUBLIC_ENDPOINT, consumed by Job pods and the host alike.
     ports:
-      - '127.0.0.1:9000:9000'
+      - '${KIND_PUBLISH_ADDRESS:?run scripts/integration-cluster.sh up, then export its env}:9000:9000'
     healthcheck:
       test: ["CMD", "/garage", "health"]
       interval: 2s
@@ -70,12 +71,24 @@ services:
       start_period: 90s
     ports:
       - "0.0.0.0:3000:3000"
-    # Viewer-.dat generation is a one-shot Job in-cluster; off-cluster the server's
-    # CONVERSION_RUNNER_LOCAL_DEV stand-in runs CONVERTER_IMAGE through the Docker
-    # Engine API on this socket instead, on the host network (server
-    # modules/conversionRunner/README.md). It never pulls: the CI job pulls the image
-    # on the host first.
+    # Viewer-.dat generation runs as Kubernetes Jobs on the kind cluster of
+    # scripts/integration-cluster.sh; its internal kubeconfig addresses the API server by
+    # container name on the kind network.
+    networks:
+      - default
+      - kind
     volumes:
+      - type: bind
+        source: ./.kind/kubeconfig
+        target: /kind/kubeconfig
+        read_only: true
+        bind:
+          create_host_path: false
+      # A server predating the job system ignores JOB_SYSTEM_KUBECONFIG and runs
+      # CONVERTER_IMAGE through the Docker Engine API on this socket instead
+      # (CONVERSION_RUNNER_LOCAL_DEV, host network, never pulls: CI pulls on the host).
+      # Drop the socket, group_add and CONVERSION_RUNNER_LOCAL_DEV once a
+      # speckle-server:latest without that stand-in is published.
       - /var/run/docker.sock:/var/run/docker.sock
     # The image runs as distroless uid 65532; the socket is root:docker 0660, so the
     # server needs the host's docker group (the CI job passes its gid).
@@ -98,7 +111,7 @@ services:
       REDIS_URL: "redis://redis"
 
       S3_ENDPOINT: "http://garage:9000"
-      S3_PUBLIC_ENDPOINT: "http://127.0.0.1:9000"
+      S3_PUBLIC_ENDPOINT: "http://${KIND_HOST_ADDRESS:?run scripts/integration-cluster.sh up, then export its env}:9000"
       S3_ACCESS_KEY: "minioadmin"
       S3_SECRET_KEY: "minioadminminioadmin"
       S3_BUCKET: "speckle-server"
@@ -122,6 +135,17 @@ services:
       FF_JOBRUNNER_ENABLED: 'true'
       CONVERSION_RUNNER_LOCAL_DEV: 'true'
       CONVERTER_IMAGE: ${SPECKLE_CONVERTER_IMAGE:-ghcr.io/specklesystems/speckle-converters:latest}
+      JOB_SYSTEM_KUBECONFIG: /kind/kubeconfig
+      JOB_SYSTEM_NAMESPACE: conversion
+      JOB_SYSTEM_NODE_POOL: conversion
+      # scripts/integration-cluster.sh load-image puts the image on the node.
+      JOB_SYSTEM_IMAGE_PULL_POLICY: IfNotPresent
+      # Job pods reach the server through the host, not over the compose network.
+      FILEIMPORT_SERVICE_USE_PRIVATE_OBJECTS_SERVER_URL: 'true'
+      PRIVATE_OBJECTS_SERVER_URL: "http://${KIND_HOST_ADDRESS}:3000"
+      # Requests are hard reservations on the one node, which the stack and the test
+      # run share; test models are small, and an OOM climbs the x2 memory ladder.
+      MODEL_INGESTION_DAT_GENERATION_BASE_MEMORY_MIB: 1024
 
       # The legacy-send switch (server ADR-0003): unset, versionMutations.create and the
       # v1 uploads/process rail answer LEGACY_SEND_UNSUPPORTED. Any value works, the
@@ -131,7 +155,7 @@ services:
   # Since server ADR-0003 a legacy send only reserves a version; this worker packs the
   # bundle (+ viewer .dat) and completes it, which is when the version is born. It runs
   # on the host network because the server hands it its own CANONICAL_URL and presigned
-  # S3_PUBLIC_ENDPOINT urls, both 127.0.0.1 from the runner's point of view.
+  # S3_PUBLIC_ENDPOINT urls, both host addresses from the runner's point of view.
   bundle-migration-service:
     image: ${SPECKLE_BUNDLE_MIGRATION_IMAGE:-ghcr.io/specklesystems/speckle-bundle-migration-service:latest}
     restart: always
@@ -162,6 +186,8 @@ services:
 networks:
   default:
     name: speckle-server
+  kind:
+    external: true
 
 volumes:
   postgres-data:
