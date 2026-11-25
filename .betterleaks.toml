@@ -15,7 +15,7 @@ let line = finding["line"];
 let generic = rule in ["generic-api-key", "generic-credential-uri", "generic-password"];
 
 // Credentials of the local dev server (docker-compose).
-(generic && secret == "speckle")
+(generic && secret == "speckle" && matchesAny(path, [`(?:^|/)docker-compose[^/]*\.yml$`]))
 
 // rpc_secret of the single-node Garage in the local dev stack.
 || (rule == "generic-api-key" && matchesAny(line, [`^rpc_secret = `]) && matchesAny(path, [`(?:^|/)garage\.toml$`]))

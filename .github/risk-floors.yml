@@ -13,10 +13,11 @@ yellow:
   - '**/.claude/**'
   - '**/.codex/**'
   - '**/.omp/**'
-  # Authentication and secrets code: accounts, tokens and the auth flow, and
-  # the secret inputs of Automate functions (the attribute, and the schema
-  # provider in Runner.cs that hides them)
+  # Authentication and secrets code: accounts, tokens and the auth flow, the
+  # header that sends the token, and the secret inputs of Automate functions
+  # (the attribute, and the schema provider in Runner.cs that hides them)
   - src/Speckle.Sdk/Credentials/**
+  - src/Speckle.Sdk/Helpers/SpeckleHttp.cs
   - src/Speckle.Automate.Sdk/DataAnnotations/SecretAttribute.cs
   - src/Speckle.Automate.Sdk/Runner.cs
   # Betterleaks exceptions
