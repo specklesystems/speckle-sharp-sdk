@@ -40,6 +40,7 @@ services.AddSingleton<GraphArtifactProducerFactory>();
 services.AddTransient<BundleUploader>();
 services.AddTransient<BundleMigrationClient>();
 services.AddTransient<SgeoSelfTest>();
+services.AddTransient<EavSortPostPass>();
 services.AddTransient<Migrator>();
 services.AddTransient<MigratorCommandLine>();
 services.AddSingleton<ISdkActivityFactory, SdkActivityFactory>();
