@@ -106,7 +106,7 @@ public static class Fixtures
     Dictionary<string, string> user = new()
     {
       ["email"] = $"{seed[..7]}@example.com",
-      // The server refuses a password without a digit, a lowercase and an uppercase letter (server ENG-10517).
+      // Must satisfy the server's registration password rule (ENG-10517).
       ["password"] = "12ABC3456789def0GHO",
       ["name"] = $"{seed[..5]} Name",
     };
