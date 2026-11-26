@@ -106,7 +106,8 @@ public static class Fixtures
     Dictionary<string, string> user = new()
     {
       ["email"] = $"{seed[..7]}@example.com",
-      ["password"] = "12ABC3456789DEF0GHO",
+      // The server refuses a password without a digit, a lowercase and an uppercase letter (server ENG-10517).
+      ["password"] = "12ABC3456789def0GHO",
       ["name"] = $"{seed[..5]} Name",
     };
 
